@@ -21,7 +21,14 @@ const bytes=readFileSync(new URL('./integration-source-closure.json',import.meta
 assert.equal(hash(bytes),'800fcc9efd889f482259d0e1e9f1501f0e9597ac05552622ede00dd3dcdb4a94','complete integration helper closure identity');
 const currentBytes=readFileSync(new URL('./closeout-source-closure.json',import.meta.url));
 assert.equal(hash(currentBytes),'031c42758ec5b37d1782c5fdb70542358d4b2631a5ee9b486b6bb5faccc988b5','complete closeout source helper closure');
-const files=extendIntegratedHelperClosure(extendFeedbackHelperClosure(JSON.parse(currentBytes),feedbackCiPatch.helperClosure)),inside=(root,path)=>{const r=relative(root,path);return r!==''&&!isAbsolute(r)&&r!=='..'&&!r.startsWith('../')&&!r.startsWith('..\\');};
+const files={...extendIntegratedHelperClosure(extendFeedbackHelperClosure(JSON.parse(currentBytes),feedbackCiPatch.helperClosure))};
+export const mobilePotionHelperCopies=[
+ {path:'tests/helpers/closeout-source-epoch.mjs',before:'163f0f84fcd4f9b4bcb982b250891a9c5156df556699d8a65ec0cf1b354d25f7',after:'05ffc1ef75dd3acce2d91062714c19ed578de2dd45d7897b238019aaaaaf3c60'},
+ {path:'tests/helpers/mobile-potion-source.mjs',before:null,after:'6ed42296f87ed7ba349e6f1cf258c60003bfd7cdea70279a8ada00d06ce84669'},
+ {path:'tests/helpers/mobile-potion-source.json.gz',before:null,after:'2af4fb9d547eb50d7dc75fd54fc4b505ecaf8b5f343330e31ac91054d75c2a06'}
+];
+for(const row of mobilePotionHelperCopies){assert.equal(files[row.path]??null,row.before,'exact mobile potion helper-copy predecessor: '+row.path);files[row.path]=row.after;}
+const inside=(root,path)=>{const r=relative(root,path);return r!==''&&!isAbsolute(r)&&r!=='..'&&!r.startsWith('../')&&!r.startsWith('..\\');};
 export function copyIntegrationSourceClosure(directory,{sourceRoot=process.cwd()}={}){
  const destination=realpathSync.native(directory);
  assert.notEqual(destination,realpathSync.native(sourceRoot),'isolated helper copy destination');
