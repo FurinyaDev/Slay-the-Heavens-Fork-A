@@ -1,0 +1,13 @@
+{
+  "rawSha256": "f9b7b354b99f6ffb37b13481fb6f47f6b89ec709ccb4d4ee68fe2d8f79cef7d2",
+  "gzipSha256": "7feab0643c5cb4a10ce649015198416bf845889bd4eaf24e2758be64387997a0",
+  "tests": 5,
+  "pass": 5,
+  "fail": 0,
+  "skip": 0,
+  "independentReportSha256": "3b85a9cc81646619247db02d0c64933175ca1134d693d7c825f05f4cfc1b41e4",
+  "policy": "docs/CI.md:168",
+  "forecast": "diagnostic only",
+  "actualExecutionGuards": "rules45/local75,POSIX30",
+  "notHosted": true
+}

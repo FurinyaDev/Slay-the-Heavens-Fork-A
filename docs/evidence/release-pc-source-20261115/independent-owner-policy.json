@@ -1,0 +1,135 @@
+{
+  "schemaVersion": 1,
+  "reviewId": "/root/release_navigation_source_review",
+  "reviewedBaseSha": "ae5194a7c514b0d432e566a109cf6d2332db73a1",
+  "reviewedHeadSha": "f244edd30580757c3d8b63eb637734da18849b9f",
+  "reviewedTree": "cd6df8ec0e31daa7d197d8483d69353ffa34ef3f",
+  "conclusion": "pass",
+  "status": "CODE_PASS_SCOPED",
+  "unresolved": [],
+  "generatedAt": "2026-11-15T18:33:11.077Z",
+  "coveredPaths": [
+    "docs/evidence/release-pc-source-20261115/ci-source-before-owner-policy.json.gz",
+    "docs/evidence/release-pc-source-20261115/owner-policy-correction.json",
+    "tests/ci-complete-calibration.test.mjs",
+    "tests/helpers/release-pc-ci-source.json.gz",
+    "tests/helpers/release-pc-ci-source.mjs"
+  ],
+  "scope": "Owner policy correction delta only: current forecast is diagnostic, exact physical execution timeout remains strict; earlier source/product reviews separately scoped",
+  "correction": {
+    "priorAdviceWasWrong": true,
+    "reason": "Earlier reviewer advice hard-gated forecast<target and forecast<guard without checking the existing 2026-11-07 Owner policy in docs/CI.md:168. That policy makes forecast and reserve diagnostic and actual workflow timeouts mandatory.",
+    "policySource": "docs/CI.md:168",
+    "policy": "2026-11-07 Owner要求停止逐秒放宽、反复整套重跑：Windows30分钟、POSIX20分钟改为性能目标，当前执行硬超时分别45/30分钟；耗时预测及60秒预留只作提示，不因超过预测扩分片或阻止交付。17/13分片、worker、安全资格、完整唯一覆盖、功能断言及严格合并门禁保持。默认Lua防卡死预算集中于`ci-timeout-policy.mjs`；调用方显式timeout和故意超时测试仍按原值执行。Sapphire每片准备、构建、Lua共用90秒防卡死预算，原21组与五片不变。保留真实耗时日志，用实际性能回退证据处理速度问题。",
+    "oldReviewsPreserved": true,
+    "supersedesOnlyForecastHardGateRecommendations": true
+  },
+  "verified": {
+    "all5PathDiffRead": true,
+    "oldFrozenPrefixUnchanged": true,
+    "singleCurrentRowUpdated": true,
+    "otherRows": 44,
+    "allBeforeAndInventoriesPreserved": true,
+    "physicalImmutableArchives": 93,
+    "workflowUnchanged": true,
+    "newAfterGitBlob": "257a384d9bae4bca1f5058acdbce52b9a2ec77bf",
+    "oldPacketOriginalBytesRetained": true,
+    "beforePacketSha256": "f8a1103c7f1b194370e3084b5d8ec9f1f1a8b5a7f46b35319cb775a34a5ebed7",
+    "currentPacketSha256": "4a71ab67baedcd287d4ecae07880663ee0de2a06ad3c3e242ff23af7795c421c",
+    "metadataChanges": [
+      "currentCommit",
+      "currentCommitRole",
+      "policyCorrection"
+    ],
+    "physicalHelperChecks": "unique named job, exactly one canonical four-space job timeout, exact local75/hosted45/POSIX30",
+    "physicalNegativeResults": [
+      {
+        "name": "changed local75",
+        "status": "REJECTED",
+        "message": "rules actual execution timeout"
+      },
+      {
+        "name": "changed hosted45",
+        "status": "REJECTED",
+        "message": "rules actual execution timeout"
+      },
+      {
+        "name": "missing windows",
+        "status": "REJECTED",
+        "message": "rules actual execution timeout"
+      },
+      {
+        "name": "duplicate windows timeout",
+        "status": "REJECTED",
+        "message": "rules actual execution timeout"
+      },
+      {
+        "name": "step-only windows timeout",
+        "status": "REJECTED",
+        "message": "rules actual execution timeout"
+      },
+      {
+        "name": "changed posix30",
+        "status": "REJECTED",
+        "message": "engineering-posix-shards actual execution timeout"
+      },
+      {
+        "name": "missing posix",
+        "status": "REJECTED",
+        "message": "engineering-posix-shards actual execution timeout"
+      },
+      {
+        "name": "duplicate posix timeout",
+        "status": "REJECTED",
+        "message": "engineering-posix-shards actual execution timeout"
+      },
+      {
+        "name": "step-only posix timeout",
+        "status": "REJECTED",
+        "message": "engineering-posix-shards actual execution timeout"
+      },
+      {
+        "name": "wrong windows job",
+        "status": "REJECTED",
+        "message": "one actual rules job"
+      },
+      {
+        "name": "wrong posix job",
+        "status": "REJECTED",
+        "message": "one actual engineering-posix-shards job"
+      },
+      {
+        "name": "duplicate windows job",
+        "status": "REJECTED",
+        "message": "one actual rules job"
+      }
+    ],
+    "actualCallbackForecasts": [
+      "win32: raw 887 JS / 1431 Lua; forecast 1766189ms; target 1800000ms; overrun 0ms; unchanged execution guard 2700000ms; not hosted completion",
+      "linux: raw 887 JS / 1431 Lua; forecast 1196961ms; target 1200000ms; overrun 0ms; unchanged execution guard 1800000ms; not hosted completion",
+      "win32: raw 887 JS / 1431 Lua; forecast 2966189ms; target 1800000ms; overrun 1166189ms; unchanged execution guard 2700000ms; not hosted completion",
+      "linux: raw 887 JS / 1431 Lua; forecast 1196961ms; target 1200000ms; overrun 0ms; unchanged execution guard 1800000ms; not hosted completion",
+      "win32: raw 887 JS / 1431 Lua; forecast 1766189ms; target 1800000ms; overrun 0ms; unchanged execution guard 2700000ms; not hosted completion",
+      "linux: raw 887 JS / 1431 Lua; forecast 2396961ms; target 1200000ms; overrun 1196961ms; unchanged execution guard 1800000ms; not hosted completion"
+    ],
+    "forecastOverrunAboveBothTargetsAndOldForecastGuardsAccepted": true,
+    "sourceBindingPass": true
+  },
+  "authorEvidence": {
+    "file": "pr684-owner-policy-green.log",
+    "sha256": "f9b7b354b99f6ffb37b13481fb6f47f6b89ec709ccb4d4ee68fe2d8f79cef7d2",
+    "tests": 5,
+    "pass": 5,
+    "fail": 0,
+    "notRerunByReviewer": true
+  },
+  "boundary": {
+    "fast": "not rerun",
+    "full": "not rerun or polled",
+    "complete73or44": "not rerun",
+    "productOrHost": "not rerun",
+    "officialAndDevices": "not tested",
+    "releaseAdmission": "not granted"
+  },
+  "findings": []
+}
