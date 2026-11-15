@@ -112,6 +112,14 @@ function M.install(owner, ownership, host, dependencies)
         reclaimPointer(event)
         owner.swallow = nil
         if owner.gesture then return false end
+        -- Retire a changed potion context before the target captures a token.
+        -- This press only cancels; a refreshed actor must need a new Down.
+        if owner.active and not owner.busy and owner.potionAim and not dependencies.aimReady(owner.potionAim) then
+            dependencies.cancelPotionAim("药水瞄准已失效，已取消；请重新选择药水。")
+            owner.swallow = {touch = event and event.touchId}
+            owner:render()
+            return true
+        end
         local closed,automaticCard=dependencies.closeInfo()
         if not closed or automaticCard then return false end
         owner.swallow = {touch = event and event.touchId}

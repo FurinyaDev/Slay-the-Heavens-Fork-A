@@ -96,7 +96,7 @@ function M.new(root, data, presentation, clickEvent, platform, options)
     install(services, require("abyss_battle_card_gestures").install(self, ownership, host, ports(links, {
         "closeInfo", "cardReady", "dragTarget", "notice", "cancelCardInputs",
         "cancelActionInputs", "cancelPotionInputs", "cancelPotionAim", "refresh", "rewardScreen",
-        "movePotion", "releasePotionDrag"
+        "movePotion", "releasePotionDrag", "aimReady"
     })))
     install(services, require("abyss_battle_action_bindings").install(self, ownership, host, ports(links, {
         "swallowed", "cardReady", "down", "point", "inPlayArea",
