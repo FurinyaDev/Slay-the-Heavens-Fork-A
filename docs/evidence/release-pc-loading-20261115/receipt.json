@@ -1,0 +1,80 @@
+{
+  "schemaVersion": 1,
+  "layer": "OFFLINE_LUA_HOST_AND_ENGINEERING",
+  "baseCommit": "36b9b157ee6f05b65eb9f1da7e2978647d36c210",
+  "productionCommits": [
+    "e0a2e8466361bce307aeb79b008659a27ffdb99f",
+    "16785c397533ba3c2a91dbaa0a0522b6cc8ba055"
+  ],
+  "nodeVersion": "24.18.0",
+  "inputsLfSha256": {
+    "src/lua/abyss_game_ui.lua": "1ebcc412f18c51c41a943a648ebed487b8531618dc4ec7d8cef68b9657d303e9",
+    "src/lua/abyss_game_ui_view.lua": "d122d66ddf22b16da1ca060eb116aa9ed314476bb3ef0242c3c284c92a0fc3af",
+    "src/lua/abyss_map_ui.lua": "1aef3a4f67bcf40513b73d542d7a3722411d738ffaf98d64c0f1798e08c1793c",
+    "src/lua/abyss_node_ui_lifecycle.lua": "a3f90bcbfdbb96ff1321871c28da2d3a44562b3e7f7858cbac150ec0612d5cd9",
+    "src/lua/abyss_page_reveal.lua": "b735419988642a03f0edc062aa4e1e18c1d6505821a65eeecf8fb91dc7e78d5e",
+    "tests/helpers/isolated-battle-regression.mjs": "b09cd53b56af011a2b44eb70cdaac3d21eb855b46d8991aebe404b31dd4b9997",
+    "tests/lua/modal_cover_setters.lua": "1607d0872125f71c99bb7c22c97d7c3db6b253e7d925100b5c0fee3e77358d82",
+    "tests/lua/modal_loading_frames.lua": "26007e42036b1270362a86e08f7c4fc8ef8383729c88102e514f808955cf7ea6",
+    "tests/modal-loading-frames.test.mjs": "37c03bdfd62d045fb903abe042559973cb5d751cdc6d28e6a5eee33cfa38ed57",
+    "tests/modal-page-preparation.test.mjs": "6194af260478310761fd5b531ca099e7d6d2d3958b3263b0d85469cc16fc9e4e",
+    "tests/lua/map_ui.lua": "4da504ab0dc0c7ebd184482d93ee2eae2e8f5f3d65a7054f281b919dd4270f95",
+    "tests/sts-page-reveal.test.mjs": "4e7d8f81e4035b3c70bc71fab6297a1625593ff956324c862beea465bb01893d"
+  },
+  "logs": {
+    "red.log": {
+      "sha256": "e90bc0c3a61ca6fd221783e537eb33f021bfeacdacba51e9bb53f0546caf0bff",
+      "gzipSha256": "7e8634ecbf4972919b32e04daecb5ec7a18c657be05abe608fc107ae36613b63",
+      "bytes": 4399
+    },
+    "green.log": {
+      "sha256": "539a3ed573d635d586427304560004e03be9590a9c5fac1f46418e599f67243a",
+      "gzipSha256": "5f8f12e185bd582c8475093f7c9820d74c1ee1f93b37585e8b8fa7b1f3660a07",
+      "bytes": 429
+    },
+    "engineering-ready.log": {
+      "sha256": "0ed622fbf4d17b2911f9e7283e51f533651fd525a9349f42611c212cb7b9d277",
+      "gzipSha256": "04dc6538e6aa1d85850e17fb0fcdc18a19d44a972934c43ed867a532f574badd",
+      "bytes": 377
+    },
+    "step-reentry-red.log": {
+      "sha256": "3df6295a908920d7e059f6382b3d333184c3bb431aabcabd9ca9d52069f7fa80",
+      "gzipSha256": "bc6aae90b339d8fc722f9bb51a025a0e1d581a8d3ec4d50d521e4ecded4b864b",
+      "bytes": 2697
+    },
+    "step-reentry-green.log": {
+      "sha256": "280bd409124a3ec2bd64a103711459ad9a1b0249948e0bea3bfd5633a57b953e",
+      "gzipSha256": "d75a2829617cfa60f713ceca9982ab44e9443487a337b49f9a7448b30903c81c",
+      "bytes": 429
+    },
+    "step-reentry-related.log": {
+      "sha256": "1bccd74cf489ee866b2ff4f839372930e12637818a1090fccadeb7d39f80845d",
+      "gzipSha256": "dd81bf636fbd131e8efd332350320e67928cf7471006f3a3a404924224ef8307",
+      "bytes": 1092
+    },
+    "step-reentry-engineering.log": {
+      "sha256": "0ed622fbf4d17b2911f9e7283e51f533651fd525a9349f42611c212cb7b9d277",
+      "gzipSha256": "04dc6538e6aa1d85850e17fb0fcdc18a19d44a972934c43ed867a532f574badd",
+      "bytes": 377
+    },
+    "related-corrected.log": {
+      "sha256": "a2f674341d3932a018c7ba65cdbbce30773da10375bba68993dd838fd1f6b7bd",
+      "gzipSha256": "f18ae9085b3082c1c19ecd962a02808fbd0e892f1b295ba5397b94075b2f830a",
+      "bytes": 14711
+    },
+    "related-built.log": {
+      "sha256": "76ad72e27cc8eff160ea2f19a0495a708d040d0c2be593552a44250ab586da03",
+      "gzipSha256": "3c94578ec53a9283fa9bf0a188ab6f41d860c4858f60414ba5cf3db1ca04dfeb",
+      "bytes": 12267
+    }
+  },
+  "limitations": {
+    "officialCandidate": "not_built",
+    "ready": "not_run",
+    "pc": "not_run",
+    "mobile": "not_run",
+    "capacity": "not_run",
+    "fullCi": "not_run",
+    "historicalHost": "two frozen old-snapshot 22-24 cases timed out at original 30-second boundary; not a pass"
+  }
+}
