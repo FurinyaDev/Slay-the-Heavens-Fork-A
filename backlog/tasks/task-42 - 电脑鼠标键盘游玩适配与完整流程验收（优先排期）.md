@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@Furinya'
 created_date: '2026-10-23 12:23'
-updated_date: '2026-11-15 16:10'
+updated_date: '2026-11-15 16:14'
 labels:
   - awaiting-live
 milestone: m-8
@@ -77,4 +77,6 @@ ordinal: 40000
 第二次候选安全替代：F内物理复制既有工具且逐hash同一；build400fb7ea真实源182179cf/dirty=false被未签名private-runtime.ps1执行策略拒绝，尚未图编译，无完整GIL/严格audit/官方或设备证据。未改系统策略或工具代码，base/latest保持。详见候选环境失败收据。最终整合EOF门禁已修并同步CI绑定，失败审计保留；不标Done。
 
 Release来源独审发现新增raw current仅guard断言而未继续硬验原forecast target。已在0a4705ff补forecast<target，原guard/预算/timings不动；CI只重绑该test行，其他44输入、before/库存及旧92档案+原production packet不变，96558初CI packet另存。修正后当前绑定/库存/raw target4/4通过：Win1766189<1800000、POSIX1196961<1200000；旧73结果仍绑定旧输入，不转记为新Full。增量独审/最终精确HEAD与当前PR CI待继续。
+
+d396→d6555c40当前目标补强独审release_navigation_source_review CODE_PASS_SCOPED/unresolved=[]：8路径完整覆盖，实际raw回调与当前绑定通过；独立双平台+60000ms令预测超target但不超guard，旧回调接受、新回调按target拒绝，证明新增断言有效。报告docs/evidence/release-pc-source-20261115/independent-current-target.json。产品未改，原完整代码审查与本增量审查分段保留，HostedFull/实机仍未授准入。
 <!-- SECTION:NOTES:END -->
