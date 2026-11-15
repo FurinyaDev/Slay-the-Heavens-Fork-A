@@ -1,6 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {readFileSync as rawReadFileSync,readdirSync} from 'node:fs';
+import {readFileSync as actualDiskReadFileSync,readdirSync} from 'node:fs';
+import {releaseBootstrapCiPacket,releaseBootstrapCiSource,releaseBootstrapWorkflowBefore,assertReleaseBootstrapCiCurrent,assertReleaseBootstrapRawInventory} from './helpers/release-bootstrap-ci-source.mjs';
+import {potionBootstrapCiPacket,potionBootstrapCiSource,potionBootstrapHistoricalRead,assertPotionBootstrapCiCurrent,assertPotionBootstrapRawInventory} from './helpers/potion-bootstrap-ci-source.mjs';
+const rawReadFileSync=potionBootstrapHistoricalRead('potion',actualDiskReadFileSync);
+const rawBootstrapReadFileSync=potionBootstrapHistoricalRead('bootstrap',actualDiskReadFileSync);
 import {mobilePotionCiRead,mobilePotionPriorInventory,mobilePotionCiPacket,mobilePotionCiSource,assertMobilePotionCiCurrent,assertMobilePotionRawInventory} from './helpers/mobile-potion-ci-source.mjs';
 import {createHash} from 'node:crypto';
 import {discoverJs} from '../scripts/ci-shards.mjs';
@@ -24,7 +28,7 @@ test('integration validates complete raw sources and leaves every foreign byte a
  }
  for(const path of ['.gitattributes','docs/legal/assets.json','tests/helpers/closeout-source-epoch.mjs','tests/helpers/run-hud-ci-source.mjs','tests/helpers/integrated-ci-source.mjs'])
   assert.throws(()=>assertIntegratedCurrent((p,e)=>{
-   const value=rawReadFileSync(p,e);
+   const value=actualDiskReadFileSync(p,e);
    return p!==path?value:typeof value==='string'?value+'\n':Buffer.concat([value,Buffer.from('\n')]);
   }),error=>{assert.match(error.message,/fresh complete integration source/);assert(error.message.includes(path),'the intended after owner must reject');return true;});
  assert.equal(raw('tests/helpers/integrated-ci-binding.mjs'),renderIntegratedCiBinding(hash(readFileSync('tests/helpers/integrated-ci-source.json.gz'))));
@@ -65,7 +69,7 @@ test('mobile potion production packet retains all old views and rejects partial 
 });
 
 test('mobile potion CI bindings authenticate complete fresh after sources and unchanged archives',async()=>{
- assertMobilePotionCiCurrent();
+ assertMobilePotionCiCurrent(rawReadFileSync);
  assert.equal(mobilePotionCiPacket.currentTreeCommitted,false,'auxiliary after bindings have a separate uncommitted capture identity');
  for(const [path,row]of Object.entries(mobilePotionCiPacket.files)){
   const source=rawReadFileSync(path,'utf8').replaceAll('\r\n','\n');
@@ -88,6 +92,38 @@ test('mobile potion CI bindings authenticate complete fresh after sources and un
  await assert.rejects(import('data:text/javascript;base64,'+Buffer.from(broken).toString('base64')),/complete mobile potion CI continuation/);
 });
 
+test('potion bootstrap combination authenticates raw union before either historical view and rejects fresh drift',async()=>{
+ assertPotionBootstrapCiCurrent(actualDiskReadFileSync);
+ assertReleaseBootstrapCiCurrent(rawBootstrapReadFileSync);
+ assertMobilePotionCiCurrent(rawReadFileSync);
+ for(const [path,row]of Object.entries(potionBootstrapCiPacket.files)){
+  const source=actualDiskReadFileSync(path,'utf8').replaceAll('\r\n','\n');
+  assert.equal(hash(source),row.current.sha256,path);
+  const production=path.startsWith('src/')||path==='config/architecture.json';
+  assert.equal(potionBootstrapCiSource(path,source),production?source:row.before?.source??source,path);
+  for(const foreign of [source+'\n',source.slice(1),source.slice(0,-1),null,{},17])assert.equal(potionBootstrapCiSource(path,foreign),foreign);
+  for(const foreignPath of ['__proto__','constructor','foreign/'+path])assert.equal(potionBootstrapCiSource(foreignPath,source),source);
+  assert.equal(potionBootstrapCiSource(path,source,{sha256:'0'.repeat(64)}),source,'wrong predecessor stays visible');
+  assert.throws(()=>assertPotionBootstrapCiCurrent((p,e)=>{
+   const value=actualDiskReadFileSync(p,e);return p!==path?value:typeof value==='string'?value.slice(1):value.subarray(1);
+  }),error=>{assert(error.message.includes(path),'the exact raw current owner rejects');return true;});
+  assert.throws(()=>assertPotionBootstrapCiCurrent((p,e)=>{if(p===path)throw Error('missing '+p);return actualDiskReadFileSync(p,e);}),/missing/);
+ }
+ for(const path of Object.keys(potionBootstrapCiPacket.immutableArchives))
+  assert.throws(()=>assertPotionBootstrapCiCurrent((p,e)=>p===path?actualDiskReadFileSync(p).subarray(1):actualDiskReadFileSync(p,e)),/immutable.*predecessor/);
+ const inventories={js:discoverJs(),lua:readdirSync('tests/lua').filter(n=>n.endsWith('.lua')).map(n=>'tests/lua/'+n).sort()};
+ for(const [kind,paths]of Object.entries(inventories)){
+  assertPotionBootstrapRawInventory(paths,kind);
+  for(const bad of [[],paths.slice(1),[...paths,paths[0]],[...paths,`tests/${kind==='lua'?'lua/':''}foreign.${kind==='lua'?'lua':'test.mjs'}`]])
+   assert.throws(()=>assertPotionBootstrapRawInventory(bad,kind),/raw discovery inventory/);
+ }
+ const leaf=actualDiskReadFileSync('tests/helpers/potion-bootstrap-ci-source.mjs','utf8'),bytes=actualDiskReadFileSync('tests/helpers/potion-bootstrap-ci-source.json.gz');
+ const marker="const bytes=readFileSync(new URL('./potion-bootstrap-ci-source.json.gz',import.meta.url));";
+ assert.equal(leaf.split(marker).length,2);
+ const broken=leaf.replace(marker,`const bytes=Buffer.from(${JSON.stringify(bytes.subarray(0,-1).toString('base64'))},'base64');`);
+ await assert.rejects(import('data:text/javascript;base64,'+Buffer.from(broken).toString('base64')),/complete potion bootstrap CI continuation/);
+});
+
 test('mobile potion raw inventories retain every new test and reject missing duplicate foreign or changed additions',()=>{
  const all={js:discoverJs(),lua:readdirSync('tests/lua').filter(n=>n.endsWith('.lua')).map(n=>'tests/lua/'+n).sort()};
  for(const [kind,paths]of Object.entries(all)){
@@ -103,4 +139,37 @@ test('mobile potion raw inventories retain every new test and reject missing dup
    }),/fresh mobile potion added inventory source/);
   }
  }
+});
+test('Release bootstrap exact sources retain every old byte and reject missing drift and partial packets',async()=>{
+ assertReleaseBootstrapCiCurrent(rawBootstrapReadFileSync);
+ for(const [path,row]of Object.entries(releaseBootstrapCiPacket.files)){
+  const source=rawBootstrapReadFileSync(path,'utf8').replaceAll('\r\n','\n');
+  assert.equal(releaseBootstrapCiSource(path,source),row.before.source,path);
+  for(const foreign of [source+'\n',source.slice(1),source.slice(0,-1),null,{},17])assert.equal(releaseBootstrapCiSource(path,foreign),foreign);
+  for(const foreignPath of ['__proto__','constructor','foreign/'+path])assert.equal(releaseBootstrapCiSource(foreignPath,source),source);
+  assert.throws(()=>assertReleaseBootstrapCiCurrent((p,e)=>{
+   const value=rawBootstrapReadFileSync(p,e);return p!==path?value:typeof value==='string'?value.slice(1):value.subarray(1);
+  }),error=>{assert(error.message.includes(path));return true;});
+  assert.throws(()=>assertReleaseBootstrapCiCurrent((p,e)=>{if(p===path)throw Error('missing '+p);return rawBootstrapReadFileSync(p,e);}),/missing/);
+  if(path.startsWith('.github/')){
+   for(const input of [source,source.replaceAll('\n','\r\n')])assert.equal(releaseBootstrapWorkflowBefore(path,input),row.before.source);
+   for(const foreign of [source+'\n',source.slice(1),source.replace('release/**','foreign/**')])
+    assert.throws(()=>releaseBootstrapWorkflowBefore(path,foreign),/fresh complete Release bootstrap workflow/);
+  }
+ }
+ const archive=Object.keys(releaseBootstrapCiPacket.immutableArchives)[0];
+ assert.throws(()=>assertReleaseBootstrapCiCurrent((p,e)=>p===archive?rawBootstrapReadFileSync(p).subarray(1):rawBootstrapReadFileSync(p,e)),/immutable bootstrap predecessor/);
+ const inventories={js:mobilePotionPriorInventory(discoverJs()),lua:readdirSync('tests/lua').filter(n=>n.endsWith('.lua')).map(n=>'tests/lua/'+n).sort()};
+ inventories.lua=mobilePotionPriorInventory(inventories.lua,'lua');
+ for(const [kind,paths]of Object.entries(inventories)){
+  assertReleaseBootstrapRawInventory(paths,kind);
+  for(const bad of [[],paths.slice(1),[...paths,paths[0]],[...paths,`tests/${kind==='lua'?'lua/':''}foreign.${kind==='lua'?'lua':'test.mjs'}`]])
+   assert.throws(()=>assertReleaseBootstrapRawInventory(bad,kind),/raw discovery inventory/);
+ }
+ const leaf=rawBootstrapReadFileSync('tests/helpers/release-bootstrap-ci-source.mjs','utf8');
+ const bytes=rawBootstrapReadFileSync('tests/helpers/release-bootstrap-ci-source.json.gz');
+ const marker="const bytes=readFileSync(new URL('./release-bootstrap-ci-source.json.gz',import.meta.url));";
+ assert.equal(leaf.split(marker).length,2);
+ const broken=leaf.replace(marker,`const bytes=Buffer.from(${JSON.stringify(bytes.subarray(0,bytes.length-1).toString('base64'))},'base64');`);
+ await assert.rejects(import('data:text/javascript;base64,'+Buffer.from(broken).toString('base64')),/complete Release bootstrap CI continuation/);
 });
