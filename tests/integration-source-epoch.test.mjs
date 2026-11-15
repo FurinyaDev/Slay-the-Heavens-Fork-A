@@ -48,6 +48,28 @@ test('runtime helper copy freshly rejects isolated edits and deletion after warm
   rmSync(actual,{recursive:true,force:true});
  }}
 });
+
+test('mobile potion copy closure retains fresh packet dependencies and rejects drift or missing bytes after warm success',async()=>{
+ const {copyIntegrationSourceClosure,mobilePotionHelperCopies}=await import('./helpers/copy-integration-source-closure.mjs');
+ const temp=tmpdir(),source=mkdtempSync(join(temp,'mobile-potion-source-')),target=mkdtempSync(join(temp,'mobile-potion-copy-'));
+ try{
+  copyIntegrationSourceClosure(source);copyIntegrationSourceClosure(target,{sourceRoot:source});
+  for(const {path}of mobilePotionHelperCopies){
+   const file=join(source,path),bytes=readFileSync(file);
+   assert.deepEqual(readFileSync(join(target,path)),bytes);
+   writeFileSync(file,Buffer.concat([bytes,Buffer.from('\n')]));
+   assert.throws(()=>copyIntegrationSourceClosure(target,{sourceRoot:source}),/fresh helper copy identity/);
+   writeFileSync(file,bytes);unlinkSync(file);
+   assert.throws(()=>copyIntegrationSourceClosure(target,{sourceRoot:source}),/ENOENT/);
+   writeFileSync(file,bytes);copyIntegrationSourceClosure(target,{sourceRoot:source});
+  }
+ }finally{for(const directory of [source,target]){
+  const {realpathSync}=await import('node:fs');const {relative,isAbsolute}=await import('node:path');
+  const within=relative(realpathSync.native(temp),realpathSync.native(directory));
+  assert(!isAbsolute(within)&&within.startsWith('mobile-potion-')&&!within.startsWith('..'));
+  rmSync(directory,{recursive:true,force:true});
+ }}
+});
 test('shop/deck continuation retains the complete closeout predecessor and every original target',async()=>{
  const {closeoutPriorEpoch,ciRepairSourceEpoch}=await import('./helpers/closeout-source-epoch.mjs');
  const frozen=ciRepairSourceEpoch.proof;
@@ -62,7 +84,8 @@ test('shop/deck continuation retains the complete closeout predecessor and every
  for(const [path,binding]of Object.entries(shopDeckBeforeCiRepairPrior.current))assert.deepEqual(proof.targets.shopDeckBeforeCiRepairPrior.files[path],binding);
  for(const [name,target]of Object.entries(closeoutPriorEpoch.proof.targets))assert.deepEqual(frozen.targets[name],target,name);
  assert.deepEqual(Object.keys(frozen.current),Object.keys(closeoutPriorEpoch.proof.current));
- assert.equal(proof.currentTreeCommitted,false,'working source hashes do not invent a committed corpus');
+ const {preMobilePotionSourceEpoch}=await import('./helpers/closeout-source-epoch.mjs');
+ assert.equal(preMobilePotionSourceEpoch.proof.currentTreeCommitted,false,'working source hashes do not invent a committed corpus');
  for(const path of Object.keys(frozen.current))if(!shopDeckPaths.includes(path))assert.deepEqual(frozen.current[path],closeoutPriorEpoch.proof.current[path],path);
  for(const path of shopDeckPaths){
   assert.equal(readFileSync(path,'utf8').replaceAll('\r\n','\n'),raw(path),path);
