@@ -170,7 +170,10 @@ function M.new(cover,ready,onIntent,frames)
         if message then message.text=self.error and '画面暂未准备完成，可返回菜单。' or '正在准备画面…'end
     end
     function gate:step(intent)
-        self.tick=self.tick+1;self:request(intent)
+        self.tick=self.tick+1
+        local unchanged=same(intent,self.intent)
+        if not self:request(intent) and not unchanged then return false end
+        if not same(intent,self.intent)then return false end
         if self.state=='visible'then return false end
         local ticket=self.epoch
         local value,reason=readiness(ready,intent)

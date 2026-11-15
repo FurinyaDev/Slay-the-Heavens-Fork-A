@@ -57,4 +57,28 @@ do
  assert(veil.x==0 and veil.y==28 and veil.w==1120 and veil.h==560)
  local completed=writes();g:paint();assert(writes()==completed,'same-epoch outer paint replaced the nested success cache')
 end
-print('MODAL_COVER_SETTERS_PASS partial-failure/position-reentry/size-reentry/same-epoch-paint')
+for _,boundary in ipairs({'position','size','onIntent'})do
+ local hooks,queries={},{}
+ local veil={alive=true}
+ function veil:SetAnchoredPosition()if hooks.position then hooks.position()end end
+ function veil:SetSizeDelta()if hooks.size then hooks.size()end end
+ local cover={SetVisible=function(self,v)self.visible=v end,SetAsLastSibling=function()end,
+  GetChild=function(_,name)if name=='veil'then return veil end end}
+ local frames={full={0,0,1280,720},deckPanel={0,28,1120,560},potionPanel={0,0,500,400}}
+ local g=Gate.new(cover,function(intent)queries[#queries+1]=intent.page;return intent.page~='potionPanel' end,
+  function()if hooks.onIntent then hooks.onIntent()end end,frames)
+ local run,battle={},{}
+ local base={page='battlePanel',mode='battle',phase='combat',run=run,battle=battle}
+ local deck={page='deckPanel',mode='battle',phase='combat',run=run,battle=battle}
+ local potion={page='potionPanel',mode='battle',phase='combat',run=run,battle=battle}
+ g:request(base);g:step(base);assert(g:step(base))
+ local once=false
+ hooks[boundary]=function()if not once then once=true;g:request(potion)end end
+ local reads=#queries
+ assert(not g:step(deck),'retired outer step reported publication after '..boundary..' reentry')
+ assert(g.intent==potion and g.published==base,'step published an obsolete modal after '..boundary..' reentry')
+ assert(g:covered() and cover.visible,'unready replacement modal lost its input cover')
+ assert(#queries==reads,'retired outer step queried readiness for the old modal')
+ assert(not g:step(potion) and queries[#queries]=='potionPanel','replacement must use its own readiness')
+end
+print('MODAL_COVER_SETTERS_PASS partial-failure/position-reentry/size-reentry/same-epoch-paint/step-reentry')
