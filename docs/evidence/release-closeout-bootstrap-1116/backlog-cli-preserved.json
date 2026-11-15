@@ -1,0 +1,896 @@
+{
+  "schemaVersion": 1,
+  "kind": "BACKLOG_CLI_APPEND_ONLY_READBACK",
+  "codeReviewHead": "ff2d28d0aeaa09d364db948d0b57f95a89406d5c",
+  "actualReleaseBase": "1cc5479b713edab6fd26db4e20f8eb22b7401cb2",
+  "taskSelection": "Only parent explicitly authorized existing task IDs, all already modified in this PR; no guessed/new task.",
+  "beforeSnapshotSha256": "6f1a9487725960cbbb740facae0d613ed79d6c05608187f4e813d3b90a3d2db1",
+  "afterSnapshotSha256": "0c082e1f54b332c8641bfd2a066bf4b77f93061176cd965b69cb880542adda91",
+  "tasks": [
+    {
+      "id": "TASK-103",
+      "path": "backlog/tasks/task-103 - 移植V25原生2D并交付两幕可玩候选.md",
+      "statusBefore": "In Progress",
+      "statusAfter": "In Progress",
+      "oldNotesSha256": "4357585f5c640b5c4d0d0fd338ca1dda3aa0efb86b6bd98d2c2db83d62eb8db0",
+      "newNotesSha256": "e85a1f2f103fe88e24fb12d7e940804784c814c29b5f6a5b57295b55b3327584",
+      "oldNotesPrefixPreserved": true,
+      "acceptanceCriteriaBefore": [
+        {
+          "index": 1,
+          "text": "私有原创V25 commit 7e40d2d的91文件和11屏冻结截图身份核验，逐屏对照真实接入；第三方技术库单独记录。",
+          "checked": false
+        },
+        {
+          "index": 2,
+          "text": "完整战斗背景、原角色、合法敌人数、10手牌与交互通过原创V25对照，不以降清晰度或风格替代解性能。",
+          "checked": false
+        },
+        {
+          "index": 3,
+          "text": "复用#582生命周期与共享组件，覆盖启动至两幕结算；隐藏准备、缓存、释放、规则RNG和输入事务均不回退。",
+          "checked": false
+        },
+        {
+          "index": 4,
+          "text": "使用真实原创V25同候选构建读回、SDK全流程与20次切场回归；官方ready、PC手机帧时、响应、内存及官方容量缺项保持未验证。",
+          "checked": false
+        },
+        {
+          "index": 5,
+          "text": "源码PR正常门禁和可追溯独立审查通过；交付采用清单、逐屏差异、录像及Go或No-Go，不将SDK等同官方或设备验收。",
+          "checked": false
+        },
+        {
+          "index": 6,
+          "text": "#676 拟议 TASK-103.6 AC1：打开已准备好的同页面板、关闭、排序及选项切换不调用全屏遮罩；真正异步准备须明确局部反馈与输入隔离，不能先闪黑再返同页。",
+          "checked": false
+        },
+        {
+          "index": 7,
+          "text": "#676 拟议 TASK-103.6 AC2：跨页使用现有批准的璃月转场和真实准备/可见状态；取消、重复点击、迟到回调不会揭露旧页或卡在黑幕。",
+          "checked": false
+        },
+        {
+          "index": 8,
+          "text": "#676 拟议 TASK-103.6 AC4：在同一准确 GIL/源码 SHA 下按原录音路径做 PC 连续操作回归，提供屏幕录像或等价帧与操作日志，并记录实测延迟/闪烁次数，不把 SDK 计数冒充实机。",
+          "checked": false
+        },
+        {
+          "index": 9,
+          "text": "#676 拟议 TASK-103.6 AC5：受影响的手机页面与正式候选需要复验；异常恢复、10次快速往返、空牌堆与长列表均不得退化。",
+          "checked": false
+        },
+        {
+          "index": 10,
+          "text": "#676 拟议 TASK-103.6 AC6：与 #672 的模态加载修复逐文件对账：只接续未完成AC，不复制既有实现；#663已合入develop；#672尚未最终整合/实机验收时保留本任务In Progress，不冒充已合入。",
+          "checked": false
+        },
+        {
+          "index": 11,
+          "text": "#676 拟议 TASK-42.1 AC3：按费用/类型/名称等排序重复执行并测量触发至呈现的耗时与原生更新量；不得因为排序重建全屏页面、进入准备遮罩或导致不必要重复绘制。",
+          "checked": false
+        }
+      ],
+      "acceptanceCriteriaAfter": [
+        {
+          "index": 1,
+          "text": "私有原创V25 commit 7e40d2d的91文件和11屏冻结截图身份核验，逐屏对照真实接入；第三方技术库单独记录。",
+          "checked": false
+        },
+        {
+          "index": 2,
+          "text": "完整战斗背景、原角色、合法敌人数、10手牌与交互通过原创V25对照，不以降清晰度或风格替代解性能。",
+          "checked": false
+        },
+        {
+          "index": 3,
+          "text": "复用#582生命周期与共享组件，覆盖启动至两幕结算；隐藏准备、缓存、释放、规则RNG和输入事务均不回退。",
+          "checked": false
+        },
+        {
+          "index": 4,
+          "text": "使用真实原创V25同候选构建读回、SDK全流程与20次切场回归；官方ready、PC手机帧时、响应、内存及官方容量缺项保持未验证。",
+          "checked": false
+        },
+        {
+          "index": 5,
+          "text": "源码PR正常门禁和可追溯独立审查通过；交付采用清单、逐屏差异、录像及Go或No-Go，不将SDK等同官方或设备验收。",
+          "checked": false
+        },
+        {
+          "index": 6,
+          "text": "#676 拟议 TASK-103.6 AC1：打开已准备好的同页面板、关闭、排序及选项切换不调用全屏遮罩；真正异步准备须明确局部反馈与输入隔离，不能先闪黑再返同页。",
+          "checked": false
+        },
+        {
+          "index": 7,
+          "text": "#676 拟议 TASK-103.6 AC2：跨页使用现有批准的璃月转场和真实准备/可见状态；取消、重复点击、迟到回调不会揭露旧页或卡在黑幕。",
+          "checked": false
+        },
+        {
+          "index": 8,
+          "text": "#676 拟议 TASK-103.6 AC4：在同一准确 GIL/源码 SHA 下按原录音路径做 PC 连续操作回归，提供屏幕录像或等价帧与操作日志，并记录实测延迟/闪烁次数，不把 SDK 计数冒充实机。",
+          "checked": false
+        },
+        {
+          "index": 9,
+          "text": "#676 拟议 TASK-103.6 AC5：受影响的手机页面与正式候选需要复验；异常恢复、10次快速往返、空牌堆与长列表均不得退化。",
+          "checked": false
+        },
+        {
+          "index": 10,
+          "text": "#676 拟议 TASK-103.6 AC6：与 #672 的模态加载修复逐文件对账：只接续未完成AC，不复制既有实现；#663已合入develop；#672尚未最终整合/实机验收时保留本任务In Progress，不冒充已合入。",
+          "checked": false
+        },
+        {
+          "index": 11,
+          "text": "#676 拟议 TASK-42.1 AC3：按费用/类型/名称等排序重复执行并测量触发至呈现的耗时与原生更新量；不得因为排序重建全屏页面、进入准备遮罩或导致不必要重复绘制。",
+          "checked": false
+        }
+      ],
+      "definitionOfDonePreserved": true,
+      "allOtherTaskFieldsPreservedExceptUpdatedAt": true,
+      "cli": "backlog task edit TASK-103 --append-notes <本轮新base与证据摘要>"
+    },
+    {
+      "id": "TASK-30",
+      "path": "backlog/tasks/task-30 - M3-出牌手感：防御等无目标牌拖到空旷处松手即打出.md",
+      "statusBefore": "In Progress",
+      "statusAfter": "In Progress",
+      "oldNotesSha256": "db2da9f22e54df05b25e4f7e8574077c36c835acf941dd98915b4e8e7b0c224e",
+      "newNotesSha256": "082ec2a2dc47a00504c436822ff667fd4b5cc9778ad4442a67467b2ec2995028",
+      "oldNotesPrefixPreserved": true,
+      "acceptanceCriteriaBefore": [
+        {
+          "index": 1,
+          "text": "不需要选敌人的牌，拖到战场有效空地松手就出，不用第二次点击。",
+          "checked": true
+        },
+        {
+          "index": 2,
+          "text": "一次拖动只出一次；费用不足或当前不能出牌时，不扣费用也不丢牌。",
+          "checked": true
+        },
+        {
+          "index": 3,
+          "text": "电脑鼠标和手机触摸都测过，并保留点选出牌的备用方式。",
+          "checked": false
+        },
+        {
+          "index": 4,
+          "text": "记录游戏里的实际操作结果；做不到的说明原因，不能把点选可用当成拖牌已完成。",
+          "checked": true
+        },
+        {
+          "index": 5,
+          "text": "连续点击同一张牌两次只取消选中，不出牌；无目标牌点选后仅在明确战场出牌区确认。",
+          "checked": true
+        },
+        {
+          "index": 6,
+          "text": "同一副本实测按住拖动和松手跟随，卡牌不突然跳到其他手牌上。",
+          "checked": true
+        },
+        {
+          "index": 7,
+          "text": "同一副本实测回到手牌区取消后，不保留选中或响应旧触点。",
+          "checked": true
+        },
+        {
+          "index": 8,
+          "text": "手机拖动无效释放时回手并清除选中、引导线和准星；点选备用保留。",
+          "checked": false
+        },
+        {
+          "index": 9,
+          "text": "手机有效与无效释放各快速和慢速连续20次，记录实体设备同候选结果。",
+          "checked": false
+        },
+        {
+          "index": 10,
+          "text": "手机实际拖动后在无效区、手牌区或屏幕外释放须取消并回手，清除选中、引导线和准星；点选备用保留。",
+          "checked": false
+        },
+        {
+          "index": 11,
+          "text": "PC鼠标按既有交互规则验证有效释放、取消和目标选择；记录新候选结果，不把手机反馈当作PC复现。",
+          "checked": false
+        },
+        {
+          "index": 12,
+          "text": "IMG_1168/1169/1175对应的手机拖动从按下到瞄准无突跳；视觉交互锚点、预览和松手命中一致，多敌人不得空地猜最近目标，记录同候选轨迹与事件。",
+          "checked": false
+        },
+        {
+          "index": 13,
+          "text": "保留点选后备、双击取消和长按关键词；去除贯穿战场的常驻阈值横线与冗余操作提示后，合法目标/取消仍清楚，旧触点不重复出牌。",
+          "checked": true
+        },
+        {
+          "index": 14,
+          "text": "当前选牌、明确目标、牌面预览与最终提交使用一致的卡牌和目标身份；固定原版点击携牌、拖放、触屏和手柄映射有可追溯对照，移动端确认前可见目标伤害，旧触点不得误提交新牌；与原版的既有项目差异明确留档。",
+          "checked": false
+        },
+        {
+          "index": 15,
+          "text": "official-assets-first与旧版均覆盖触屏和鼠标，多敌人自由瞄准、锁定、移出及取消；断言实际绘制的箭头方向、终点及目标身份，原错误实现被回归拒绝。",
+          "checked": true
+        },
+        {
+          "index": 16,
+          "text": "#676 拟议 TASK-42.1 AC1：使用有来源的统一候选，PC正常负载与用户多任务负载分开采样悬停、换牌、手牌升起、20次快速有效/无效拖放与取消，记录事件、响应耗时及设备条件。",
+          "checked": false
+        },
+        {
+          "index": 17,
+          "text": "#676 拟议 TASK-42.1 AC2：确认快速连续释放时每张有效卡仅出一次、无效不扣费不吞牌、取消归位及新旧目标身份正确；复用 TASK-30 既有合同，不复制状态机。",
+          "checked": false
+        },
+        {
+          "index": 18,
+          "text": "#676 拟议 TASK-42.1 AC5：经实际 PC 和相关手机回归、独立评审及当前最终候选验证后才可标验收；性能改善以同机同路数据证明，不捏造 FPS 或刚性延迟目标。",
+          "checked": false
+        },
+        {
+          "index": 19,
+          "text": "#676 拟议 TASK-42.2 AC1：卡牌不可用提示在取消、切牌、重新有效选牌、切页/回合结束时按真实状态清理，无过期提示残留或事件穿透。",
+          "checked": false
+        },
+        {
+          "index": 20,
+          "text": "#676 拟议 TASK-42.2 AC2：攻击/技能/无目标牌的合法锁敌、取消、跟手及无效位置提示参照已批准初代行为；不引入常驻金线或无目的四角加号；已有目标身份与出牌规则不退化。",
+          "checked": false
+        },
+        {
+          "index": 21,
+          "text": "#676 拟议 TASK-42.2 AC4：同一候选真实 PC 快慢点选/拖动/取消各20次及相关手机操作回归，保存截图、事件与精确SHA，提示不遮住牌面及旁边文字。",
+          "checked": false
+        },
+        {
+          "index": 22,
+          "text": "#676 拟议 TASK-42.2 AC5：核对 #672 对 card-cancel-notice/drag-line/target-corner 的代码和测试，未合入或未实机通过前不勾AC；与 TASK-4.5/4.6 不重复立核心数值任务。",
+          "checked": false
+        }
+      ],
+      "acceptanceCriteriaAfter": [
+        {
+          "index": 1,
+          "text": "不需要选敌人的牌，拖到战场有效空地松手就出，不用第二次点击。",
+          "checked": true
+        },
+        {
+          "index": 2,
+          "text": "一次拖动只出一次；费用不足或当前不能出牌时，不扣费用也不丢牌。",
+          "checked": true
+        },
+        {
+          "index": 3,
+          "text": "电脑鼠标和手机触摸都测过，并保留点选出牌的备用方式。",
+          "checked": false
+        },
+        {
+          "index": 4,
+          "text": "记录游戏里的实际操作结果；做不到的说明原因，不能把点选可用当成拖牌已完成。",
+          "checked": true
+        },
+        {
+          "index": 5,
+          "text": "连续点击同一张牌两次只取消选中，不出牌；无目标牌点选后仅在明确战场出牌区确认。",
+          "checked": true
+        },
+        {
+          "index": 6,
+          "text": "同一副本实测按住拖动和松手跟随，卡牌不突然跳到其他手牌上。",
+          "checked": true
+        },
+        {
+          "index": 7,
+          "text": "同一副本实测回到手牌区取消后，不保留选中或响应旧触点。",
+          "checked": true
+        },
+        {
+          "index": 8,
+          "text": "手机拖动无效释放时回手并清除选中、引导线和准星；点选备用保留。",
+          "checked": false
+        },
+        {
+          "index": 9,
+          "text": "手机有效与无效释放各快速和慢速连续20次，记录实体设备同候选结果。",
+          "checked": false
+        },
+        {
+          "index": 10,
+          "text": "手机实际拖动后在无效区、手牌区或屏幕外释放须取消并回手，清除选中、引导线和准星；点选备用保留。",
+          "checked": false
+        },
+        {
+          "index": 11,
+          "text": "PC鼠标按既有交互规则验证有效释放、取消和目标选择；记录新候选结果，不把手机反馈当作PC复现。",
+          "checked": false
+        },
+        {
+          "index": 12,
+          "text": "IMG_1168/1169/1175对应的手机拖动从按下到瞄准无突跳；视觉交互锚点、预览和松手命中一致，多敌人不得空地猜最近目标，记录同候选轨迹与事件。",
+          "checked": false
+        },
+        {
+          "index": 13,
+          "text": "保留点选后备、双击取消和长按关键词；去除贯穿战场的常驻阈值横线与冗余操作提示后，合法目标/取消仍清楚，旧触点不重复出牌。",
+          "checked": true
+        },
+        {
+          "index": 14,
+          "text": "当前选牌、明确目标、牌面预览与最终提交使用一致的卡牌和目标身份；固定原版点击携牌、拖放、触屏和手柄映射有可追溯对照，移动端确认前可见目标伤害，旧触点不得误提交新牌；与原版的既有项目差异明确留档。",
+          "checked": false
+        },
+        {
+          "index": 15,
+          "text": "official-assets-first与旧版均覆盖触屏和鼠标，多敌人自由瞄准、锁定、移出及取消；断言实际绘制的箭头方向、终点及目标身份，原错误实现被回归拒绝。",
+          "checked": true
+        },
+        {
+          "index": 16,
+          "text": "#676 拟议 TASK-42.1 AC1：使用有来源的统一候选，PC正常负载与用户多任务负载分开采样悬停、换牌、手牌升起、20次快速有效/无效拖放与取消，记录事件、响应耗时及设备条件。",
+          "checked": false
+        },
+        {
+          "index": 17,
+          "text": "#676 拟议 TASK-42.1 AC2：确认快速连续释放时每张有效卡仅出一次、无效不扣费不吞牌、取消归位及新旧目标身份正确；复用 TASK-30 既有合同，不复制状态机。",
+          "checked": false
+        },
+        {
+          "index": 18,
+          "text": "#676 拟议 TASK-42.1 AC5：经实际 PC 和相关手机回归、独立评审及当前最终候选验证后才可标验收；性能改善以同机同路数据证明，不捏造 FPS 或刚性延迟目标。",
+          "checked": false
+        },
+        {
+          "index": 19,
+          "text": "#676 拟议 TASK-42.2 AC1：卡牌不可用提示在取消、切牌、重新有效选牌、切页/回合结束时按真实状态清理，无过期提示残留或事件穿透。",
+          "checked": false
+        },
+        {
+          "index": 20,
+          "text": "#676 拟议 TASK-42.2 AC2：攻击/技能/无目标牌的合法锁敌、取消、跟手及无效位置提示参照已批准初代行为；不引入常驻金线或无目的四角加号；已有目标身份与出牌规则不退化。",
+          "checked": false
+        },
+        {
+          "index": 21,
+          "text": "#676 拟议 TASK-42.2 AC4：同一候选真实 PC 快慢点选/拖动/取消各20次及相关手机操作回归，保存截图、事件与精确SHA，提示不遮住牌面及旁边文字。",
+          "checked": false
+        },
+        {
+          "index": 22,
+          "text": "#676 拟议 TASK-42.2 AC5：核对 #672 对 card-cancel-notice/drag-line/target-corner 的代码和测试，未合入或未实机通过前不勾AC；与 TASK-4.5/4.6 不重复立核心数值任务。",
+          "checked": false
+        }
+      ],
+      "definitionOfDonePreserved": true,
+      "allOtherTaskFieldsPreservedExceptUpdatedAt": true,
+      "cli": "backlog task edit TASK-30 --append-notes <本轮新base与证据摘要>"
+    },
+    {
+      "id": "TASK-16.1",
+      "path": "backlog/tasks/task-16.1 - M3-战斗算法、随机流与结算顺序原版对照.md",
+      "statusBefore": "In Progress",
+      "statusAfter": "In Progress",
+      "oldNotesSha256": "fa4d974c45ff7f40965550015561c6e00104cb1e8cccb3ce5238c23656462e88",
+      "newNotesSha256": "ae6b170b288e0d828678df4577bd3776f0715ac167ca568aa58f7238be39be88",
+      "oldNotesPrefixPreserved": true,
+      "acceptanceCriteriaBefore": [
+        {
+          "index": 1,
+          "text": "现有共享计算的固定来源、差异与验证边界已记录。",
+          "checked": true
+        },
+        {
+          "index": 2,
+          "text": "已实现战士75卡及现有共享机制的伤害、格挡、状态、多段、反伤、中毒和死亡顺序已有独立预期回归通过。",
+          "checked": true
+        },
+        {
+          "index": 3,
+          "text": "已实现路径的抽牌、洗牌、弃牌、消耗、满手和费用已有回归；75卡150版本、49组交互及75获取事务已验证。",
+          "checked": true
+        },
+        {
+          "index": 4,
+          "text": "现有测试与客户端专项证据已按版本留档；本地、候选、导入和实机没有混算。",
+          "checked": true
+        },
+        {
+          "index": 5,
+          "text": "完整职业和遗物药水补齐后，逐项验证新增及跨域组合的原版数值、先后顺序和同一共享结算入口。",
+          "checked": true
+        },
+        {
+          "index": 6,
+          "text": "验证完整来源池的随机抽取、流初始化与全部消费顺序，并保留对应实际游戏记录；未接入内容不能以现有子集测试替代。",
+          "checked": false
+        },
+        {
+          "index": 7,
+          "text": "#676 拟议 TASK-103.6 AC3：末击到死亡/奖励的切换不得重复遮幕；分别保留视觉时序和真实业务状态的自动回归、反例及截图/帧序列。",
+          "checked": false
+        },
+        {
+          "index": 8,
+          "text": "#676 拟议 TASK-16.1.5 AC1：固定源敌人死亡、末击命中、状态结算、Victory/奖励揭幕的事实顺序；对可见帧作真实观察，不能只凭业务日志或仅测试最后存活敌人的HP。",
+          "checked": false
+        },
+        {
+          "index": 9,
+          "text": "#676 拟议 TASK-16.1.5 AC2：敌人死亡/消失后才按正式时序稳定呈现奖励；无重复全屏遮挡、奖励先出现再撤回或错误返回战斗。",
+          "checked": false
+        },
+        {
+          "index": 10,
+          "text": "#676 拟议 TASK-16.1.5 AC3：覆盖多敌、过量伤害、死亡触发、连锁伤害、多段、战斗结束前旧事件以及奖励返回地图；不改RNG/数值和奖励内容。",
+          "checked": false
+        },
+        {
+          "index": 11,
+          "text": "#676 拟议 TASK-16.1.5 AC4：核对 #672 原死亡路径测试并新增确实检验可见转场顺序的RED/GREEN，最终官方PC及移动端同候选录像/帧证据通过后再完成。",
+          "checked": false
+        }
+      ],
+      "acceptanceCriteriaAfter": [
+        {
+          "index": 1,
+          "text": "现有共享计算的固定来源、差异与验证边界已记录。",
+          "checked": true
+        },
+        {
+          "index": 2,
+          "text": "已实现战士75卡及现有共享机制的伤害、格挡、状态、多段、反伤、中毒和死亡顺序已有独立预期回归通过。",
+          "checked": true
+        },
+        {
+          "index": 3,
+          "text": "已实现路径的抽牌、洗牌、弃牌、消耗、满手和费用已有回归；75卡150版本、49组交互及75获取事务已验证。",
+          "checked": true
+        },
+        {
+          "index": 4,
+          "text": "现有测试与客户端专项证据已按版本留档；本地、候选、导入和实机没有混算。",
+          "checked": true
+        },
+        {
+          "index": 5,
+          "text": "完整职业和遗物药水补齐后，逐项验证新增及跨域组合的原版数值、先后顺序和同一共享结算入口。",
+          "checked": true
+        },
+        {
+          "index": 6,
+          "text": "验证完整来源池的随机抽取、流初始化与全部消费顺序，并保留对应实际游戏记录；未接入内容不能以现有子集测试替代。",
+          "checked": false
+        },
+        {
+          "index": 7,
+          "text": "#676 拟议 TASK-103.6 AC3：末击到死亡/奖励的切换不得重复遮幕；分别保留视觉时序和真实业务状态的自动回归、反例及截图/帧序列。",
+          "checked": false
+        },
+        {
+          "index": 8,
+          "text": "#676 拟议 TASK-16.1.5 AC1：固定源敌人死亡、末击命中、状态结算、Victory/奖励揭幕的事实顺序；对可见帧作真实观察，不能只凭业务日志或仅测试最后存活敌人的HP。",
+          "checked": false
+        },
+        {
+          "index": 9,
+          "text": "#676 拟议 TASK-16.1.5 AC2：敌人死亡/消失后才按正式时序稳定呈现奖励；无重复全屏遮挡、奖励先出现再撤回或错误返回战斗。",
+          "checked": false
+        },
+        {
+          "index": 10,
+          "text": "#676 拟议 TASK-16.1.5 AC3：覆盖多敌、过量伤害、死亡触发、连锁伤害、多段、战斗结束前旧事件以及奖励返回地图；不改RNG/数值和奖励内容。",
+          "checked": false
+        },
+        {
+          "index": 11,
+          "text": "#676 拟议 TASK-16.1.5 AC4：核对 #672 原死亡路径测试并新增确实检验可见转场顺序的RED/GREEN，最终官方PC及移动端同候选录像/帧证据通过后再完成。",
+          "checked": false
+        }
+      ],
+      "definitionOfDonePreserved": true,
+      "allOtherTaskFieldsPreservedExceptUpdatedAt": true,
+      "cli": "backlog task edit TASK-16.1 --append-notes <本轮新base与证据摘要>"
+    },
+    {
+      "id": "TASK-42",
+      "path": "backlog/tasks/task-42 - 电脑鼠标键盘游玩适配与完整流程验收（优先排期）.md",
+      "statusBefore": "In Progress",
+      "statusAfter": "In Progress",
+      "oldNotesSha256": "83b126b354e87fb010f0130e9a6157b1acd053206e4e4a8f493e641ef5887f04",
+      "newNotesSha256": "4454d1c68da076aff31e9b4efb191dfaa01867c2ec51a74d181e1dc79e214fe6",
+      "oldNotesPrefixPreserved": true,
+      "acceptanceCriteriaBefore": [
+        {
+          "index": 1,
+          "text": "鼠标选牌、看详情、选敌人、出牌、取消和结束回合正常，不重复执行。",
+          "checked": false
+        },
+        {
+          "index": 2,
+          "text": "可用键位有说明，键盘能切换焦点、确认和取消，不与原神按键冲突。",
+          "checked": false
+        },
+        {
+          "index": 3,
+          "text": "鼠标键盘能完成地图、各类房间、领奖、胜败结算和重开。",
+          "checked": false
+        },
+        {
+          "index": 4,
+          "text": "保存电脑实测结果，有限制或没做好的地方写清楚。",
+          "checked": false
+        },
+        {
+          "index": 5,
+          "text": "同一候选实测跨战斗首次点牌、旧触点、药水、奖励、弹窗和取消退出的真实事件派发；已完成本地手势切片不能代替电脑验收。",
+          "checked": false
+        },
+        {
+          "index": 6,
+          "text": "同一候选两职业覆盖两幕、换幕、胜败与重开，保存真实设备证据及通关耗时；预览不能替代。",
+          "checked": false
+        },
+        {
+          "index": 7,
+          "text": "PC01–PC38逐项对应实现、PR、提交、回归与当前正式候选设备验收，未验、待判、延期分别记录。",
+          "checked": false
+        },
+        {
+          "index": 8,
+          "text": "#676 拟议 TASK-16.1.6 AC1：按真实分裂触发生成两个可分别辨识的敌人实体；视觉位置/生命值/意图/点击命中区对应各自实体，无重叠和不可选目标。",
+          "checked": false
+        },
+        {
+          "index": 9,
+          "text": "#676 拟议 TASK-16.1.6 AC2：同场已有敌人时、第一/最后一列、不同可用宽度及反复遭遇下布局稳定，无遮挡重要战斗HUD。",
+          "checked": false
+        },
+        {
+          "index": 10,
+          "text": "#676 拟议 TASK-16.1.6 AC3：核心分裂数量、HP、RNG/行动顺序和死亡奖励规则不改；用真实Lua/Host复现并保留旧错误RED和新行为GREEN。",
+          "checked": false
+        },
+        {
+          "index": 11,
+          "text": "#676 拟议 TASK-16.1.6 AC4：复核 #672 的 slime-split-positions 回归与实际正式GIL布局；同候选PC和相关手机实测未完成前不得标记Done。",
+          "checked": false
+        }
+      ],
+      "acceptanceCriteriaAfter": [
+        {
+          "index": 1,
+          "text": "鼠标选牌、看详情、选敌人、出牌、取消和结束回合正常，不重复执行。",
+          "checked": false
+        },
+        {
+          "index": 2,
+          "text": "可用键位有说明，键盘能切换焦点、确认和取消，不与原神按键冲突。",
+          "checked": false
+        },
+        {
+          "index": 3,
+          "text": "鼠标键盘能完成地图、各类房间、领奖、胜败结算和重开。",
+          "checked": false
+        },
+        {
+          "index": 4,
+          "text": "保存电脑实测结果，有限制或没做好的地方写清楚。",
+          "checked": false
+        },
+        {
+          "index": 5,
+          "text": "同一候选实测跨战斗首次点牌、旧触点、药水、奖励、弹窗和取消退出的真实事件派发；已完成本地手势切片不能代替电脑验收。",
+          "checked": false
+        },
+        {
+          "index": 6,
+          "text": "同一候选两职业覆盖两幕、换幕、胜败与重开，保存真实设备证据及通关耗时；预览不能替代。",
+          "checked": false
+        },
+        {
+          "index": 7,
+          "text": "PC01–PC38逐项对应实现、PR、提交、回归与当前正式候选设备验收，未验、待判、延期分别记录。",
+          "checked": false
+        },
+        {
+          "index": 8,
+          "text": "#676 拟议 TASK-16.1.6 AC1：按真实分裂触发生成两个可分别辨识的敌人实体；视觉位置/生命值/意图/点击命中区对应各自实体，无重叠和不可选目标。",
+          "checked": false
+        },
+        {
+          "index": 9,
+          "text": "#676 拟议 TASK-16.1.6 AC2：同场已有敌人时、第一/最后一列、不同可用宽度及反复遭遇下布局稳定，无遮挡重要战斗HUD。",
+          "checked": false
+        },
+        {
+          "index": 10,
+          "text": "#676 拟议 TASK-16.1.6 AC3：核心分裂数量、HP、RNG/行动顺序和死亡奖励规则不改；用真实Lua/Host复现并保留旧错误RED和新行为GREEN。",
+          "checked": false
+        },
+        {
+          "index": 11,
+          "text": "#676 拟议 TASK-16.1.6 AC4：复核 #672 的 slime-split-positions 回归与实际正式GIL布局；同候选PC和相关手机实测未完成前不得标记Done。",
+          "checked": false
+        }
+      ],
+      "definitionOfDonePreserved": true,
+      "allOtherTaskFieldsPreservedExceptUpdatedAt": true,
+      "cli": "backlog task edit TASK-42 --append-notes <本轮新base与证据摘要>"
+    },
+    {
+      "id": "TASK-103.2",
+      "path": "backlog/tasks/task-103.2 - 地图事件与房间页V25原生视觉交互优化.md",
+      "statusBefore": "In Progress",
+      "statusAfter": "In Progress",
+      "oldNotesSha256": "b6cc5f63d3bf0007afa4c51bc507e387a92c917a3bc5894a1523499cb61bcc34",
+      "newNotesSha256": "9fb451706f0ab89d572da5c51f8a240042cf442821acbb581d82703bb34c2cd9",
+      "oldNotesPrefixPreserved": true,
+      "acceptanceCriteriaBefore": [
+        {
+          "index": 1,
+          "text": "真实事件和房间的视觉层次、选项状态、长文与多分支符合V25风格，逐屏实际截图自检。",
+          "checked": false
+        },
+        {
+          "index": 2,
+          "text": "既有事件选择、费用奖励、卡牌选择、返回地图与同局状态回归通过。",
+          "checked": true
+        },
+        {
+          "index": 3,
+          "text": "可交互Web Simulator入口及同源SDK连续操作/资源释放证据可复现；官方设备未测明确说明。",
+          "checked": true
+        },
+        {
+          "index": 4,
+          "text": "独立PR和证据交付，不擅自合并或发布。",
+          "checked": true
+        },
+        {
+          "index": 5,
+          "text": "#676 拟议 TASK-103.7 AC1：在5卡、遗物、药水、删牌、售价/不足金币等完整商品布局中，卡面、物品icon、价格、交互命中区及提示互不压盖且Z序正确；截图08缺陷有RED→GREEN回归。",
+          "checked": false
+        },
+        {
+          "index": 6,
+          "text": "#676 拟议 TASK-103.7 AC2：固定原版卡牌选择语义与项目正式浏览器；商店删牌、营地升级、战斗看牌组的分页/滚动以现有可复用的正式方案为准，不能另造第三套、不靠盲猜滚动成本。",
+          "checked": false
+        },
+        {
+          "index": 7,
+          "text": "#676 拟议 TASK-103.7 AC3：连续购买、移除、分页、返回、取消和再次进入页面不出现未销毁旧控件、幽灵商品/重复结算；商品图标身份与 TASK-4.15 / #672 交叉验收。",
+          "checked": false
+        },
+        {
+          "index": 8,
+          "text": "#676 拟议 TASK-103.7 AC4：在PC目标尺寸、常见宽高比、手机受影响布局进行真实来源与像素检查；保留较长中文卡面、优惠与不同库存数量压力。",
+          "checked": false
+        },
+        {
+          "index": 9,
+          "text": "#676 拟议 TASK-103.7 AC5：逐项审查 #672 的 shop-shelf-clearance 及图标修复，不能把未合并或软件生成截图冒充正式候选实机通过。",
+          "checked": false
+        },
+        {
+          "index": 10,
+          "text": "#676 旧任务 TASK-103.2 AC5：PC实机截图02/05/07的返回战斗、事件继续、营地升级/奖励确认等按钮按既有批准全局设计复用，保持合法输入，避免锯齿、非统一边框、页内闪屏或文字截断；同候选PC/相关手机逐屏验收。",
+          "checked": false
+        }
+      ],
+      "acceptanceCriteriaAfter": [
+        {
+          "index": 1,
+          "text": "真实事件和房间的视觉层次、选项状态、长文与多分支符合V25风格，逐屏实际截图自检。",
+          "checked": false
+        },
+        {
+          "index": 2,
+          "text": "既有事件选择、费用奖励、卡牌选择、返回地图与同局状态回归通过。",
+          "checked": true
+        },
+        {
+          "index": 3,
+          "text": "可交互Web Simulator入口及同源SDK连续操作/资源释放证据可复现；官方设备未测明确说明。",
+          "checked": true
+        },
+        {
+          "index": 4,
+          "text": "独立PR和证据交付，不擅自合并或发布。",
+          "checked": true
+        },
+        {
+          "index": 5,
+          "text": "#676 拟议 TASK-103.7 AC1：在5卡、遗物、药水、删牌、售价/不足金币等完整商品布局中，卡面、物品icon、价格、交互命中区及提示互不压盖且Z序正确；截图08缺陷有RED→GREEN回归。",
+          "checked": false
+        },
+        {
+          "index": 6,
+          "text": "#676 拟议 TASK-103.7 AC2：固定原版卡牌选择语义与项目正式浏览器；商店删牌、营地升级、战斗看牌组的分页/滚动以现有可复用的正式方案为准，不能另造第三套、不靠盲猜滚动成本。",
+          "checked": false
+        },
+        {
+          "index": 7,
+          "text": "#676 拟议 TASK-103.7 AC3：连续购买、移除、分页、返回、取消和再次进入页面不出现未销毁旧控件、幽灵商品/重复结算；商品图标身份与 TASK-4.15 / #672 交叉验收。",
+          "checked": false
+        },
+        {
+          "index": 8,
+          "text": "#676 拟议 TASK-103.7 AC4：在PC目标尺寸、常见宽高比、手机受影响布局进行真实来源与像素检查；保留较长中文卡面、优惠与不同库存数量压力。",
+          "checked": false
+        },
+        {
+          "index": 9,
+          "text": "#676 拟议 TASK-103.7 AC5：逐项审查 #672 的 shop-shelf-clearance 及图标修复，不能把未合并或软件生成截图冒充正式候选实机通过。",
+          "checked": false
+        },
+        {
+          "index": 10,
+          "text": "#676 旧任务 TASK-103.2 AC5：PC实机截图02/05/07的返回战斗、事件继续、营地升级/奖励确认等按钮按既有批准全局设计复用，保持合法输入，避免锯齿、非统一边框、页内闪屏或文字截断；同候选PC/相关手机逐屏验收。",
+          "checked": false
+        }
+      ],
+      "definitionOfDonePreserved": true,
+      "allOtherTaskFieldsPreservedExceptUpdatedAt": true,
+      "cli": "backlog task edit TASK-103.2 --append-notes <本轮新base与证据摘要>"
+    },
+    {
+      "id": "TASK-4.4",
+      "path": "backlog/tasks/task-4.4 - 敌人意图一眼看懂，状态详情改成分组卡片.md",
+      "statusBefore": "In Progress",
+      "statusAfter": "In Progress",
+      "oldNotesSha256": "24f9cd652bd96b50d80c4cba3bceb1d3546cc8acde86609978222e5fc5229b5d",
+      "newNotesSha256": "c8213b4ee5e0a1e284fff48825ab05345ad6732b4d13b1c6a4022a75d3748c23",
+      "oldNotesPrefixPreserved": true,
+      "acceptanceCriteriaBefore": [
+        {
+          "index": 1,
+          "text": "敌人头顶：攻击显示含修正的伤害（多段写 9×2），其余意图在图标旁写两字类型名并用意图颜色，复合意图保留角标",
+          "checked": true
+        },
+        {
+          "index": 2,
+          "text": "意图详情按动作逐行列出名称、关键数值、效果与持续，并标明尚未执行",
+          "checked": true
+        },
+        {
+          "index": 3,
+          "text": "状态详情按 单位 → 生命/格挡 → 增益/减益分组 → 名称层数与持续 → 效果 → 条件 排列",
+          "checked": true
+        },
+        {
+          "index": 4,
+          "text": "状态多于一页时点按面板翻页，所有状态都能看到；点空白处关闭且不会误出牌",
+          "checked": true
+        },
+        {
+          "index": 5,
+          "text": "原神千星奇域实机截图确认意图与详情面板显示完整、布局正确",
+          "checked": false
+        },
+        {
+          "index": 6,
+          "text": "按手机实测核对状态详情与意图可读性，记录缺口。",
+          "checked": false
+        },
+        {
+          "index": 7,
+          "text": "单位详情从头像入口即可发现全部当前增益/减益及剩余回合，超过高度可连续滚动；易伤不藏在缺乏提示的第二页，关闭不穿透。",
+          "checked": false
+        },
+        {
+          "index": 8,
+          "text": "默认显示最终伤害和必要效果，删除力量+0及取整等无效计算链；非零修正按需查询，保留多段/窃金/逃跑等真实机制信息。",
+          "checked": false
+        }
+      ],
+      "acceptanceCriteriaAfter": [
+        {
+          "index": 1,
+          "text": "敌人头顶：攻击显示含修正的伤害（多段写 9×2），其余意图在图标旁写两字类型名并用意图颜色，复合意图保留角标",
+          "checked": true
+        },
+        {
+          "index": 2,
+          "text": "意图详情按动作逐行列出名称、关键数值、效果与持续，并标明尚未执行",
+          "checked": true
+        },
+        {
+          "index": 3,
+          "text": "状态详情按 单位 → 生命/格挡 → 增益/减益分组 → 名称层数与持续 → 效果 → 条件 排列",
+          "checked": true
+        },
+        {
+          "index": 4,
+          "text": "状态多于一页时点按面板翻页，所有状态都能看到；点空白处关闭且不会误出牌",
+          "checked": true
+        },
+        {
+          "index": 5,
+          "text": "原神千星奇域实机截图确认意图与详情面板显示完整、布局正确",
+          "checked": false
+        },
+        {
+          "index": 6,
+          "text": "按手机实测核对状态详情与意图可读性，记录缺口。",
+          "checked": false
+        },
+        {
+          "index": 7,
+          "text": "单位详情从头像入口即可发现全部当前增益/减益及剩余回合，超过高度可连续滚动；易伤不藏在缺乏提示的第二页，关闭不穿透。",
+          "checked": false
+        },
+        {
+          "index": 8,
+          "text": "默认显示最终伤害和必要效果，删除力量+0及取整等无效计算链；非零修正按需查询，保留多段/窃金/逃跑等真实机制信息。",
+          "checked": false
+        }
+      ],
+      "definitionOfDonePreserved": true,
+      "allOtherTaskFieldsPreservedExceptUpdatedAt": true,
+      "cli": "backlog task edit TASK-4.4 --append-notes <本轮新base与证据摘要>"
+    },
+    {
+      "id": "TASK-4.15",
+      "path": "backlog/tasks/task-4.15 - 修复药水说明截断与不同药水图标混用.md",
+      "statusBefore": "In Progress",
+      "statusAfter": "In Progress",
+      "oldNotesSha256": "66873a682f04151ca5b3960d1a7665d6f613442a1f594cbeb1c7af7047f3d6ee",
+      "newNotesSha256": "0822440380235b01b5446bb85e5aaa8772ecdf00baf922238b4d865643b75e8c",
+      "oldNotesPrefixPreserved": true,
+      "acceptanceCriteriaBefore": [
+        {
+          "index": 1,
+          "text": "肌肉药水及其余长描述均完整显示，文本真实含义和使用/丢弃控件不被裁剪。",
+          "checked": false
+        },
+        {
+          "index": 2,
+          "text": "不同药水可通过正确的图形/语义可靠区分，保持原有效果和点击确认规则。",
+          "checked": false
+        },
+        {
+          "index": 3,
+          "text": "顶部生命等数值完整显示；裁剪问题与真实数值异常作出区分。",
+          "checked": false
+        },
+        {
+          "index": 4,
+          "text": "#676 旧任务 TASK-4.15 AC4：同一最终候选在战斗顶部、商店、奖励及药水使用弹窗中显示正确且可区分的不同药水语义图标；药水标题、描述、价格与使用/丢弃逻辑一致，不因图标共用让玩家选错物品。",
+          "checked": false
+        }
+      ],
+      "acceptanceCriteriaAfter": [
+        {
+          "index": 1,
+          "text": "肌肉药水及其余长描述均完整显示，文本真实含义和使用/丢弃控件不被裁剪。",
+          "checked": false
+        },
+        {
+          "index": 2,
+          "text": "不同药水可通过正确的图形/语义可靠区分，保持原有效果和点击确认规则。",
+          "checked": false
+        },
+        {
+          "index": 3,
+          "text": "顶部生命等数值完整显示；裁剪问题与真实数值异常作出区分。",
+          "checked": false
+        },
+        {
+          "index": 4,
+          "text": "#676 旧任务 TASK-4.15 AC4：同一最终候选在战斗顶部、商店、奖励及药水使用弹窗中显示正确且可区分的不同药水语义图标；药水标题、描述、价格与使用/丢弃逻辑一致，不因图标共用让玩家选错物品。",
+          "checked": false
+        }
+      ],
+      "definitionOfDonePreserved": true,
+      "allOtherTaskFieldsPreservedExceptUpdatedAt": true,
+      "cli": "backlog task edit TASK-4.15 --append-notes <本轮新base与证据摘要>"
+    }
+  ],
+  "checkedPreserved": true,
+  "notesPreserved": true,
+  "statusPreserved": true
+}

@@ -1,0 +1,423 @@
+{
+  "schemaVersion": 1,
+  "kind": "DOCS_BACKLOG_ONLY_DELIVERY",
+  "codeReviewHead": "ff2d28d0aeaa09d364db948d0b57f95a89406d5c",
+  "codeReviewTree": "0470010e3c54a2a4378cffd62ee1c7b92ff95ce7",
+  "actualReleaseBase": "1cc5479b713edab6fd26db4e20f8eb22b7401cb2",
+  "reviewId": "closeout-release1cc-independent-20261116",
+  "originalReviewSha256": "eba6863b59f1f8686091e33c8555f0849f7e30bbed93888cf92f15644fd48da4",
+  "reviewedHeadNotRewritten": true,
+  "metadataParentExpected": "ff2d28d0aeaa09d364db948d0b57f95a89406d5c",
+  "metadataSelfHashExcluded": true,
+  "finalMetadataHead": "Read back after commit by root; not invented in this self-containing receipt.",
+  "nonMetadataCodeChangedPaths": [
+    {
+      "path": "data/presentation/ui_theme.json",
+      "baseGitBlob": "413d6c5ae8137e1d2477cf764e73160e07ac9eb6",
+      "reviewedGitBlob": "50319b498745c0140f29b0743616e32a423bd3b3",
+      "preMetadataGitBlob": "50319b498745c0140f29b0743616e32a423bd3b3",
+      "postMetadataWorkingGitBlob": "50319b498745c0140f29b0743616e32a423bd3b3",
+      "unchanged": true
+    },
+    {
+      "path": "scripts/official-assets-layout.mjs",
+      "baseGitBlob": "c1421b71cd85dd3c11d60b037c52161d3f6e4060",
+      "reviewedGitBlob": "f48e248913e7afcdb76fe59cb998310126a6d650",
+      "preMetadataGitBlob": "f48e248913e7afcdb76fe59cb998310126a6d650",
+      "postMetadataWorkingGitBlob": "f48e248913e7afcdb76fe59cb998310126a6d650",
+      "unchanged": true
+    },
+    {
+      "path": "scripts/ui-layout.mjs",
+      "baseGitBlob": "d06c59a95d584397488155566123cc331c18bc88",
+      "reviewedGitBlob": "29c4842be38ee746b39bb8b12b82c92e8d7dbbeb",
+      "preMetadataGitBlob": "29c4842be38ee746b39bb8b12b82c92e8d7dbbeb",
+      "postMetadataWorkingGitBlob": "29c4842be38ee746b39bb8b12b82c92e8d7dbbeb",
+      "unchanged": true
+    },
+    {
+      "path": "src/lua/abyss_battle_card_bindings.lua",
+      "baseGitBlob": "af9561f79c59834549a3114f5ebb99a843f0b2fd",
+      "reviewedGitBlob": "d15c600bb85094bc28f8453a9e5af036d7f5469a",
+      "preMetadataGitBlob": "d15c600bb85094bc28f8453a9e5af036d7f5469a",
+      "postMetadataWorkingGitBlob": "d15c600bb85094bc28f8453a9e5af036d7f5469a",
+      "unchanged": true
+    },
+    {
+      "path": "src/lua/abyss_battle_card_gestures.lua",
+      "baseGitBlob": "81eed260f3ad33aa042f3aecfbab0cf650ee5634",
+      "reviewedGitBlob": "282e3fa8c20710cbc050b11083c4083f44f6ef86",
+      "preMetadataGitBlob": "282e3fa8c20710cbc050b11083c4083f44f6ef86",
+      "postMetadataWorkingGitBlob": "282e3fa8c20710cbc050b11083c4083f44f6ef86",
+      "unchanged": true
+    },
+    {
+      "path": "src/lua/abyss_battle_render_actors.lua",
+      "baseGitBlob": "4da4eb463738063f161b9094f791114be08e4b50",
+      "reviewedGitBlob": "43342e628c20e86e4156dbce605ff5b0179496ec",
+      "preMetadataGitBlob": "43342e628c20e86e4156dbce605ff5b0179496ec",
+      "postMetadataWorkingGitBlob": "43342e628c20e86e4156dbce605ff5b0179496ec",
+      "unchanged": true
+    },
+    {
+      "path": "src/lua/abyss_battle_unit_view.lua",
+      "baseGitBlob": "07d8f49ba51fccca7a5e32e39ab534588fe4b2d6",
+      "reviewedGitBlob": "341007da0f482115e05083ed0cddead8010c9b0b",
+      "preMetadataGitBlob": "341007da0f482115e05083ed0cddead8010c9b0b",
+      "postMetadataWorkingGitBlob": "341007da0f482115e05083ed0cddead8010c9b0b",
+      "unchanged": true
+    },
+    {
+      "path": "src/lua/abyss_combat.lua",
+      "baseGitBlob": "2f0c4d6ca051f2df93f386e300e6b28c79bdf943",
+      "reviewedGitBlob": "6c92fd3a9c359eccd20f29fcdffa8b34b086b10b",
+      "preMetadataGitBlob": "6c92fd3a9c359eccd20f29fcdffa8b34b086b10b",
+      "postMetadataWorkingGitBlob": "6c92fd3a9c359eccd20f29fcdffa8b34b086b10b",
+      "unchanged": true
+    },
+    {
+      "path": "src/lua/abyss_game_ui.lua",
+      "baseGitBlob": "48e5a3a03d85e8efb79ab460079103dc62b3c30d",
+      "reviewedGitBlob": "4c2568b40a34bd4a45012dab4a834dc2d90ad2cc",
+      "preMetadataGitBlob": "4c2568b40a34bd4a45012dab4a834dc2d90ad2cc",
+      "postMetadataWorkingGitBlob": "4c2568b40a34bd4a45012dab4a834dc2d90ad2cc",
+      "unchanged": true
+    },
+    {
+      "path": "src/lua/abyss_game_ui_view.lua",
+      "baseGitBlob": "f28eaed6242ddbb87069fff951a71da38a208033",
+      "reviewedGitBlob": "45bb2b69ab4ccc9df5517d388a4b7e61633df076",
+      "preMetadataGitBlob": "45bb2b69ab4ccc9df5517d388a4b7e61633df076",
+      "postMetadataWorkingGitBlob": "45bb2b69ab4ccc9df5517d388a4b7e61633df076",
+      "unchanged": true
+    },
+    {
+      "path": "src/lua/abyss_map_ui.lua",
+      "baseGitBlob": "518a25da0b3cacc6891170184ca6d80de960cd28",
+      "reviewedGitBlob": "67d345f9b90aa333e704b06cba183248d57a9c81",
+      "preMetadataGitBlob": "67d345f9b90aa333e704b06cba183248d57a9c81",
+      "postMetadataWorkingGitBlob": "67d345f9b90aa333e704b06cba183248d57a9c81",
+      "unchanged": true
+    },
+    {
+      "path": "src/lua/abyss_node_ui_lifecycle.lua",
+      "baseGitBlob": "24b2c8e175c9f5cc7400643f5f5e6086848fc46b",
+      "reviewedGitBlob": "2193efbc5e04918dab47947d8140df6ccfe8ac50",
+      "preMetadataGitBlob": "2193efbc5e04918dab47947d8140df6ccfe8ac50",
+      "postMetadataWorkingGitBlob": "2193efbc5e04918dab47947d8140df6ccfe8ac50",
+      "unchanged": true
+    },
+    {
+      "path": "src/lua/abyss_page_reveal.lua",
+      "baseGitBlob": "0c6bf33668283ccd996b41d4ecedc8d3f59564bc",
+      "reviewedGitBlob": "57897ccf9bbf735eff79ff63446fcf64848596c2",
+      "preMetadataGitBlob": "57897ccf9bbf735eff79ff63446fcf64848596c2",
+      "postMetadataWorkingGitBlob": "57897ccf9bbf735eff79ff63446fcf64848596c2",
+      "unchanged": true
+    },
+    {
+      "path": "tests/card-cancel-notice.test.mjs",
+      "baseGitBlob": null,
+      "reviewedGitBlob": "18f3c9b47545397e4749bb373dd9a6b74cd403a2",
+      "preMetadataGitBlob": "18f3c9b47545397e4749bb373dd9a6b74cd403a2",
+      "postMetadataWorkingGitBlob": "18f3c9b47545397e4749bb373dd9a6b74cd403a2",
+      "unchanged": true
+    },
+    {
+      "path": "tests/ci-complete-calibration.test.mjs",
+      "baseGitBlob": "a6753dcc9e77d6166b9fd1d530f511eb4d178523",
+      "reviewedGitBlob": "8029bf21c0760e79f892c431837e6b8356bd99bd",
+      "preMetadataGitBlob": "8029bf21c0760e79f892c431837e6b8356bd99bd",
+      "postMetadataWorkingGitBlob": "8029bf21c0760e79f892c431837e6b8356bd99bd",
+      "unchanged": true
+    },
+    {
+      "path": "tests/drag-line-initial-state.test.mjs",
+      "baseGitBlob": null,
+      "reviewedGitBlob": "fff4dd64c15886b0d215e561a3ac6fdef65accf2",
+      "preMetadataGitBlob": "fff4dd64c15886b0d215e561a3ac6fdef65accf2",
+      "postMetadataWorkingGitBlob": "fff4dd64c15886b0d215e561a3ac6fdef65accf2",
+      "unchanged": true
+    },
+    {
+      "path": "tests/helpers/closeout-source-epoch.mjs",
+      "baseGitBlob": "e7d0fad2be2808eac7ff18d2477d007c36dae98a",
+      "reviewedGitBlob": "df3013097d1a6b2071fa1528f036e71838e3fd79",
+      "preMetadataGitBlob": "df3013097d1a6b2071fa1528f036e71838e3fd79",
+      "postMetadataWorkingGitBlob": "df3013097d1a6b2071fa1528f036e71838e3fd79",
+      "unchanged": true
+    },
+    {
+      "path": "tests/helpers/copy-integration-source-closure.mjs",
+      "baseGitBlob": "90ee0583dc0ecf1ce2dc732065af7a18daf565e3",
+      "reviewedGitBlob": "869921c9bd83e0f0aa3a468b81ad4a13a5aa63b1",
+      "preMetadataGitBlob": "869921c9bd83e0f0aa3a468b81ad4a13a5aa63b1",
+      "postMetadataWorkingGitBlob": "869921c9bd83e0f0aa3a468b81ad4a13a5aa63b1",
+      "unchanged": true
+    },
+    {
+      "path": "tests/helpers/integrated-ci-source.mjs",
+      "baseGitBlob": "f913526930596b85d6e10963a4b7bcb1804af31f",
+      "reviewedGitBlob": "09b634b9e24a89de85c10db43d8f75ed9531e5fd",
+      "preMetadataGitBlob": "09b634b9e24a89de85c10db43d8f75ed9531e5fd",
+      "postMetadataWorkingGitBlob": "09b634b9e24a89de85c10db43d8f75ed9531e5fd",
+      "unchanged": true
+    },
+    {
+      "path": "tests/helpers/isolated-battle-regression.mjs",
+      "baseGitBlob": null,
+      "reviewedGitBlob": "a816eee3dd93cca12552887f2b43ca412c169d01",
+      "preMetadataGitBlob": "a816eee3dd93cca12552887f2b43ca412c169d01",
+      "postMetadataWorkingGitBlob": "a816eee3dd93cca12552887f2b43ca412c169d01",
+      "unchanged": true
+    },
+    {
+      "path": "tests/helpers/release-bootstrap-merge-ci-source.json.gz",
+      "baseGitBlob": null,
+      "reviewedGitBlob": "a29d822b137624c0838541f1cf0f94fec6e8b65c",
+      "preMetadataGitBlob": "a29d822b137624c0838541f1cf0f94fec6e8b65c",
+      "postMetadataWorkingGitBlob": "a29d822b137624c0838541f1cf0f94fec6e8b65c",
+      "unchanged": true
+    },
+    {
+      "path": "tests/helpers/release-bootstrap-merge-ci-source.mjs",
+      "baseGitBlob": null,
+      "reviewedGitBlob": "8ee8765041e884032610538b7fdad3f524395d85",
+      "preMetadataGitBlob": "8ee8765041e884032610538b7fdad3f524395d85",
+      "postMetadataWorkingGitBlob": "8ee8765041e884032610538b7fdad3f524395d85",
+      "unchanged": true
+    },
+    {
+      "path": "tests/helpers/release-pc-ci-source.json.gz",
+      "baseGitBlob": null,
+      "reviewedGitBlob": "5db79a0098964deb162c0be61c5099468725d22f",
+      "preMetadataGitBlob": "5db79a0098964deb162c0be61c5099468725d22f",
+      "postMetadataWorkingGitBlob": "5db79a0098964deb162c0be61c5099468725d22f",
+      "unchanged": true
+    },
+    {
+      "path": "tests/helpers/release-pc-ci-source.mjs",
+      "baseGitBlob": null,
+      "reviewedGitBlob": "9213795eb193f99c99187c113e6c72f437259a96",
+      "preMetadataGitBlob": "9213795eb193f99c99187c113e6c72f437259a96",
+      "postMetadataWorkingGitBlob": "9213795eb193f99c99187c113e6c72f437259a96",
+      "unchanged": true
+    },
+    {
+      "path": "tests/helpers/release-pc-source.json.gz",
+      "baseGitBlob": null,
+      "reviewedGitBlob": "cd30f11084ecc4a3f9d66cf0f674f13744f3ef7f",
+      "preMetadataGitBlob": "cd30f11084ecc4a3f9d66cf0f674f13744f3ef7f",
+      "postMetadataWorkingGitBlob": "cd30f11084ecc4a3f9d66cf0f674f13744f3ef7f",
+      "unchanged": true
+    },
+    {
+      "path": "tests/helpers/release-pc-source.mjs",
+      "baseGitBlob": null,
+      "reviewedGitBlob": "2a8293bb60cbdd42646d0a0cc7b349786eb1f82a",
+      "preMetadataGitBlob": "2a8293bb60cbdd42646d0a0cc7b349786eb1f82a",
+      "postMetadataWorkingGitBlob": "2a8293bb60cbdd42646d0a0cc7b349786eb1f82a",
+      "unchanged": true
+    },
+    {
+      "path": "tests/integrated-ci-source.cases.mjs",
+      "baseGitBlob": "74a96bdfb647a7f7d27673ef87df4e52121ceb2c",
+      "reviewedGitBlob": "b89ae3c324ec5ec142fd4363d815dd729c7a4748",
+      "preMetadataGitBlob": "b89ae3c324ec5ec142fd4363d815dd729c7a4748",
+      "postMetadataWorkingGitBlob": "b89ae3c324ec5ec142fd4363d815dd729c7a4748",
+      "unchanged": true
+    },
+    {
+      "path": "tests/integration-source-epoch.test.mjs",
+      "baseGitBlob": "6693fb1206d302c7fecfb0677c6a32730d349782",
+      "reviewedGitBlob": "708641577239faf68fe55606681336f63f2c8cab",
+      "preMetadataGitBlob": "708641577239faf68fe55606681336f63f2c8cab",
+      "postMetadataWorkingGitBlob": "708641577239faf68fe55606681336f63f2c8cab",
+      "unchanged": true
+    },
+    {
+      "path": "tests/lua/card_cancel_notice.lua",
+      "baseGitBlob": null,
+      "reviewedGitBlob": "7fcfdd66189d8a18d3c7fcc769d48f995b139b27",
+      "preMetadataGitBlob": "7fcfdd66189d8a18d3c7fcc769d48f995b139b27",
+      "postMetadataWorkingGitBlob": "7fcfdd66189d8a18d3c7fcc769d48f995b139b27",
+      "unchanged": true
+    },
+    {
+      "path": "tests/lua/map_ui.lua",
+      "baseGitBlob": "2686ee8683569d2de5868d906bd7b56c1e3b401e",
+      "reviewedGitBlob": "ed1d6417e9040023ae069f6b91807c9913c34164",
+      "preMetadataGitBlob": "ed1d6417e9040023ae069f6b91807c9913c34164",
+      "postMetadataWorkingGitBlob": "ed1d6417e9040023ae069f6b91807c9913c34164",
+      "unchanged": true
+    },
+    {
+      "path": "tests/lua/modal_cover_setters.lua",
+      "baseGitBlob": null,
+      "reviewedGitBlob": "4db53c9c75b23adbd2cb5cfc026570cbc2f3e899",
+      "preMetadataGitBlob": "4db53c9c75b23adbd2cb5cfc026570cbc2f3e899",
+      "postMetadataWorkingGitBlob": "4db53c9c75b23adbd2cb5cfc026570cbc2f3e899",
+      "unchanged": true
+    },
+    {
+      "path": "tests/lua/modal_loading_frames.lua",
+      "baseGitBlob": null,
+      "reviewedGitBlob": "6cb45ddc2a674f4180374d7dc0a78592b58a3eac",
+      "preMetadataGitBlob": "6cb45ddc2a674f4180374d7dc0a78592b58a3eac",
+      "postMetadataWorkingGitBlob": "6cb45ddc2a674f4180374d7dc0a78592b58a3eac",
+      "unchanged": true
+    },
+    {
+      "path": "tests/lua/sleep_intent_label.lua",
+      "baseGitBlob": null,
+      "reviewedGitBlob": "b607a4d6d8544b72bc7a89a240e3dd5e8a79b51e",
+      "preMetadataGitBlob": "b607a4d6d8544b72bc7a89a240e3dd5e8a79b51e",
+      "postMetadataWorkingGitBlob": "b607a4d6d8544b72bc7a89a240e3dd5e8a79b51e",
+      "unchanged": true
+    },
+    {
+      "path": "tests/lua/slime_split_positions.lua",
+      "baseGitBlob": null,
+      "reviewedGitBlob": "3d092263f6aa56fbae3c463b59d11c87a0c186e0",
+      "preMetadataGitBlob": "3d092263f6aa56fbae3c463b59d11c87a0c186e0",
+      "postMetadataWorkingGitBlob": "3d092263f6aa56fbae3c463b59d11c87a0c186e0",
+      "unchanged": true
+    },
+    {
+      "path": "tests/lua/sparse_card_flick.lua",
+      "baseGitBlob": null,
+      "reviewedGitBlob": "459ad305d444358b4a337cda9daed609dec41961",
+      "preMetadataGitBlob": "459ad305d444358b4a337cda9daed609dec41961",
+      "postMetadataWorkingGitBlob": "459ad305d444358b4a337cda9daed609dec41961",
+      "unchanged": true
+    },
+    {
+      "path": "tests/lua/sparse_card_flick_safety.lua",
+      "baseGitBlob": null,
+      "reviewedGitBlob": "53a01c8db2ad1ce4f4a22496e404686cfc6f12cc",
+      "preMetadataGitBlob": "53a01c8db2ad1ce4f4a22496e404686cfc6f12cc",
+      "postMetadataWorkingGitBlob": "53a01c8db2ad1ce4f4a22496e404686cfc6f12cc",
+      "unchanged": true
+    },
+    {
+      "path": "tests/lua/target_corner_geometry.lua",
+      "baseGitBlob": null,
+      "reviewedGitBlob": "62904e67bb50059cab30a683a7f895913d795f46",
+      "preMetadataGitBlob": "62904e67bb50059cab30a683a7f895913d795f46",
+      "postMetadataWorkingGitBlob": "62904e67bb50059cab30a683a7f895913d795f46",
+      "unchanged": true
+    },
+    {
+      "path": "tests/modal-loading-frames.test.mjs",
+      "baseGitBlob": null,
+      "reviewedGitBlob": "daaad4e59ee7a6b694fcc743872d3d71957d2e7d",
+      "preMetadataGitBlob": "daaad4e59ee7a6b694fcc743872d3d71957d2e7d",
+      "postMetadataWorkingGitBlob": "daaad4e59ee7a6b694fcc743872d3d71957d2e7d",
+      "unchanged": true
+    },
+    {
+      "path": "tests/modal-page-preparation.test.mjs",
+      "baseGitBlob": null,
+      "reviewedGitBlob": "d0aeb9a3e00fa2219c8d2461f799c1e4e0fffade",
+      "preMetadataGitBlob": "d0aeb9a3e00fa2219c8d2461f799c1e4e0fffade",
+      "postMetadataWorkingGitBlob": "d0aeb9a3e00fa2219c8d2461f799c1e4e0fffade",
+      "unchanged": true
+    },
+    {
+      "path": "tests/official-potion-popup-style.test.mjs",
+      "baseGitBlob": null,
+      "reviewedGitBlob": "28301706593ce6aeb169f8c6cdb0ae455a48734c",
+      "preMetadataGitBlob": "28301706593ce6aeb169f8c6cdb0ae455a48734c",
+      "postMetadataWorkingGitBlob": "28301706593ce6aeb169f8c6cdb0ae455a48734c",
+      "unchanged": true
+    },
+    {
+      "path": "tests/release-pc-source.test.mjs",
+      "baseGitBlob": null,
+      "reviewedGitBlob": "723e2aa993e309d79f1308a74e69dbb1f661786b",
+      "preMetadataGitBlob": "723e2aa993e309d79f1308a74e69dbb1f661786b",
+      "postMetadataWorkingGitBlob": "723e2aa993e309d79f1308a74e69dbb1f661786b",
+      "unchanged": true
+    },
+    {
+      "path": "tests/shop-shelf-clearance.test.mjs",
+      "baseGitBlob": null,
+      "reviewedGitBlob": "aa22b54de69456d7b8be53d3b9f96827e4b47856",
+      "preMetadataGitBlob": "aa22b54de69456d7b8be53d3b9f96827e4b47856",
+      "postMetadataWorkingGitBlob": "aa22b54de69456d7b8be53d3b9f96827e4b47856",
+      "unchanged": true
+    },
+    {
+      "path": "tests/sleep-intent-label.test.mjs",
+      "baseGitBlob": null,
+      "reviewedGitBlob": "61412533af9b78c5f4bf3e62e3c1263c281fbca0",
+      "preMetadataGitBlob": "61412533af9b78c5f4bf3e62e3c1263c281fbca0",
+      "postMetadataWorkingGitBlob": "61412533af9b78c5f4bf3e62e3c1263c281fbca0",
+      "unchanged": true
+    },
+    {
+      "path": "tests/slime-split-positions.test.mjs",
+      "baseGitBlob": null,
+      "reviewedGitBlob": "c4e83fc4d9b4a0ec91515aea46474788b544b065",
+      "preMetadataGitBlob": "c4e83fc4d9b4a0ec91515aea46474788b544b065",
+      "postMetadataWorkingGitBlob": "c4e83fc4d9b4a0ec91515aea46474788b544b065",
+      "unchanged": true
+    },
+    {
+      "path": "tests/sparse-card-flick.test.mjs",
+      "baseGitBlob": null,
+      "reviewedGitBlob": "94283f36a4c26df679b545aa6ad65f98a190e96c",
+      "preMetadataGitBlob": "94283f36a4c26df679b545aa6ad65f98a190e96c",
+      "postMetadataWorkingGitBlob": "94283f36a4c26df679b545aa6ad65f98a190e96c",
+      "unchanged": true
+    },
+    {
+      "path": "tests/sts-page-reveal.test.mjs",
+      "baseGitBlob": "6e2f9718a81ccabc903b199940ad3929872efb52",
+      "reviewedGitBlob": "33807da00076ff1a017a90ad0070f5b1da6a114b",
+      "preMetadataGitBlob": "33807da00076ff1a017a90ad0070f5b1da6a114b",
+      "postMetadataWorkingGitBlob": "33807da00076ff1a017a90ad0070f5b1da6a114b",
+      "unchanged": true
+    },
+    {
+      "path": "tests/target-corner-geometry.test.mjs",
+      "baseGitBlob": null,
+      "reviewedGitBlob": "ae58fb3e86f9b322906c141d99ed5f91d4db90f4",
+      "preMetadataGitBlob": "ae58fb3e86f9b322906c141d99ed5f91d4db90f4",
+      "postMetadataWorkingGitBlob": "ae58fb3e86f9b322906c141d99ed5f91d4db90f4",
+      "unchanged": true
+    }
+  ],
+  "completeNonMetadataTreeDigest": "abe63c7f4cdcdc26fddedce58fe688170eb3b42c8509d4c02cd3130ad9370c66",
+  "allNonMetadataChangedPathsBlobsPreserved": true,
+  "metadataPathsBeforeReceipt": [
+    "backlog/tasks/task-103 - 移植V25原生2D并交付两幕可玩候选.md",
+    "backlog/tasks/task-103.2 - 地图事件与房间页V25原生视觉交互优化.md",
+    "backlog/tasks/task-16.1 - M3-战斗算法、随机流与结算顺序原版对照.md",
+    "backlog/tasks/task-30 - M3-出牌手感：防御等无目标牌拖到空旷处松手即打出.md",
+    "backlog/tasks/task-4.15 - 修复药水说明截断与不同药水图标混用.md",
+    "backlog/tasks/task-4.4 - 敌人意图一眼看懂，状态详情改成分组卡片.md",
+    "backlog/tasks/task-42 - 电脑鼠标键盘游玩适配与完整流程验收（优先排期）.md",
+    "docs/evidence/release-closeout-bootstrap-1116/README.md",
+    "docs/evidence/release-closeout-bootstrap-1116/backlog-cli-preserved.json",
+    "docs/evidence/release-closeout-bootstrap-1116/independent-review-support.bundle.json.gz",
+    "docs/evidence/release-closeout-bootstrap-1116/independent-review-support.manifest.json",
+    "docs/evidence/release-closeout-bootstrap-1116/independent-review.json",
+    "docs/evidence/release-closeout-bootstrap-1116/independent-review.md"
+  ],
+  "cliReceiptSha256": "90df230ed59da47bed36a01a262f567059fdbeaa6dca445ce5e269e3ba9a41be",
+  "supportManifestSha256": "fa018fca4a0f4ee8eac580349626930d98eba5e0ef389f67c57c40047deb0637",
+  "taskCount": 7,
+  "status": "LOCAL_METADATA_ONLY_READY_FOR_COMMIT",
+  "notRun": [
+    "product",
+    "Source",
+    "Fast",
+    "Full",
+    "CI",
+    "GUI/MCP",
+    "push",
+    "PR update"
+  ],
+  "fullDeviceCapacity": "UNVERIFIED"
+}

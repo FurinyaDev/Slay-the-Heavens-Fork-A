@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@Furinya'
 created_date: '2026-10-24 10:34'
-updated_date: '2026-11-15 13:24'
+updated_date: '2026-11-15 21:00'
 labels:
   - awaiting-live
   - 待验
@@ -84,4 +84,6 @@ PR #304：手机反馈己方与敌方详情关闭不一致，可能为旧线上�
 2026-11-14第二轮状态纠正：已有4/8项AC通过及既有实施证据，剩余未完成要求属于后续验证或接续。 状态表示整个任务的完成进展，不表示当前有执行者持续占用；保留原未验AC、负责人、依赖及历史证据。更正过去把已开展待验事项退回To Do的处理。
 
 2026-11-15 Release PC台账：PC32/PC33由本任务主责；逐字依据、修复提交/PR和未验缺口见 docs/backlog-details/PC-QA-20261115.md。仅文本核对和源码/离线回归不能勾官方或设备AC；本轮不新增重复任务、不改变原已验AC。
+
+2026-11-16 本轮追加：共同前置#692已合，实际Release新base为1cc5479b713edab6fd26db4e20f8eb22b7401cb2；PR684代码独审HEAD ff2d28d0aeaa09d364db948d0b57f95a89406d5c限定通过，Source/CI9/9、raw硬guard4/4、copy/corpus3/3，原独审报告和同reviewer支持bundle见docs/evidence/release-closeout-bootstrap-1116/independent-review.json及manifest。本轮仅归档和CLI附记；Source约53.6秒、每正投影145读约33MB是重复fresh成本限制，不是性能PASS。当前Hosted Full、同候选官方导入/ready/PC手机/容量仍未验；保留旧notes、所有已勾与未勾AC（含#676），status保持In Progress，不授合并或发布许可。
 <!-- SECTION:NOTES:END -->

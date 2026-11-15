@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "reviewId": "closeout-release1cc-independent-20261116",
+  "reviewer": "fresh independent sub-agent picker_release1cc_review",
+  "codeReviewHead": "ff2d28d0aeaa09d364db948d0b57f95a89406d5c",
+  "actualReleaseBase": "1cc5479b713edab6fd26db4e20f8eb22b7401cb2",
+  "reportCopies": [
+    {
+      "path": "independent-review.json",
+      "source": "review-closeout-release1cc.json",
+      "sha256": "eba6863b59f1f8686091e33c8555f0849f7e30bbed93888cf92f15644fd48da4",
+      "sizeBytes": 425642
+    },
+    {
+      "path": "independent-review.md",
+      "source": "review-closeout-release1cc.md",
+      "sha256": "ef4ab4506acad5440900c7a907eec1d8599fdd59446e9a1997f17f27ee709d99",
+      "sizeBytes": 1757
+    }
+  ],
+  "bundle": {
+    "path": "independent-review-support.bundle.json.gz",
+    "sha256": "9057e645b89ab06fe6da9042923235a6110e3421ffdcc9204252f3c5234b5ca1",
+    "sizeBytes": 13474,
+    "rawSha256": "221dcd094c0d6b0f8808ae6c7f44703edc9725cb16c9ef52b5adcc3a96d69c3b",
+    "rawBytes": 33258
+  },
+  "members": [
+    {
+      "source": "closeout-1cc-review-temp/probe-closeout-release1cc.mjs",
+      "role": "same-reviewer probe source snapshot, not executed in this task",
+      "sha256": "6d9cb0f08147c7a01084acb7e1fda84e750cf4c3d8fece7a5767e1502dd2cd74",
+      "sizeBytes": 24550,
+      "roundTripVerified": true
+    }
+  ],
+  "whitelistPolicy": "Only these exact same-reviewer files are archived. No recursive directory traversal, generated UI, copy temp trees, private PNG, unrelated source or earlier foreign-reviewer probes. No independent log file was present in this exact whitelist; existing author logs remain at their original committed paths.",
+  "verification": "Exact original report bytes copied; gzip decoded, every member hash/size and original bytes read back; probes not executed."
+}

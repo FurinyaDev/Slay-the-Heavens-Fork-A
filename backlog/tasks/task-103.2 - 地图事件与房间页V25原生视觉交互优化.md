@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - Furinya
 created_date: '2026-11-10 11:46'
-updated_date: '2026-11-15 13:34'
+updated_date: '2026-11-15 21:00'
 labels:
   - 待验
   - delivery-verify
@@ -72,4 +72,6 @@ Owner要求集中减负：2026-11-10旧PR/分支入口已关闭或清理，唯�
 Full43473829313失败后已用原入口暂停授权并续修。真实冷列表提前ready的P1修于ab895b0c：按文档可见索引+不同存活控件准入，保空弃牌与warm排序。新SDK自然7屏/181祝福帧0cover、controlled17卡266排序帧0cover通过；旧55316已停，新56606可玩。Full旧合同按明确新要求续接并保原before全文、原业务/RNG/输入断言和预算；source10与repair binding复验通过，Defect隔离旧H身份明确保留。按用户最新指示不扩测，收口后立即重新挂正常自动合并，不等待整轮CI。
 
 2026-11-15 Release PC台账：PC08/PC14/PC19/PC24/PC29/PC30由本任务主责；逐字依据、修复提交/PR和未验缺口见 docs/backlog-details/PC-QA-20261115.md。仅文本核对和源码/离线回归不能勾官方或设备AC；本轮不新增重复任务、不改变原已验AC。
+
+2026-11-16 本轮追加：共同前置#692已合，实际Release新base为1cc5479b713edab6fd26db4e20f8eb22b7401cb2；PR684代码独审HEAD ff2d28d0aeaa09d364db948d0b57f95a89406d5c限定通过，Source/CI9/9、raw硬guard4/4、copy/corpus3/3，原独审报告和同reviewer支持bundle见docs/evidence/release-closeout-bootstrap-1116/independent-review.json及manifest。本轮仅归档和CLI附记；Source约53.6秒、每正投影145读约33MB是重复fresh成本限制，不是性能PASS。当前Hosted Full、同候选官方导入/ready/PC手机/容量仍未验；保留旧notes、所有已勾与未勾AC（含#676），status保持In Progress，不授合并或发布许可。
 <!-- SECTION:NOTES:END -->

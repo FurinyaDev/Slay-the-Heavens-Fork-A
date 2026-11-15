@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@Furinya'
 created_date: '2026-10-23 12:23'
-updated_date: '2026-11-15 18:36'
+updated_date: '2026-11-15 21:00'
 labels:
   - awaiting-live
 milestone: m-8
@@ -81,4 +81,6 @@ Release来源独审发现新增raw current仅guard断言而未继续硬验原for
 d396→d6555c40当前目标补强独审release_navigation_source_review CODE_PASS_SCOPED/unresolved=[]：8路径完整覆盖，实际raw回调与当前绑定通过；独立双平台+60000ms令预测超target但不超guard，旧回调接受、新回调按target拒绝，证明新增断言有效。报告docs/evidence/release-pc-source-20261115/independent-current-target.json。产品未改，原完整代码审查与本增量审查分段保留，HostedFull/实机仍未授准入。
 
 2026-11-16 已纠正本片此前新增的forecast<target/guard硬门槛：docs/CI.md168原Owner政策要求预测仅诊断，实际workflow45/30/local75才是执行硬超时。代码8a44cd2f/绑定f244edd3保留产品5bd、所有旧冻结断言与45行原before；只1个CI当前after及leaf接续，其余44行/93归档/库存保持。当前5/5通过，独审CODE_PASS_SCOPED报告independent-owner-policy.json，12个直接job负控拒绝；forecast超目标和旧预测guard仍诊断。此前独审错误建议与报告原文保留更正，未重复73/Full。新发现共同前置PR692已负责Release bootstrap实际10失败，尚未合；不得把旧预测绿灯当本次RequiredCI或官方许可。
+
+2026-11-16 本轮追加：共同前置#692已合，实际Release新base为1cc5479b713edab6fd26db4e20f8eb22b7401cb2；PR684代码独审HEAD ff2d28d0aeaa09d364db948d0b57f95a89406d5c限定通过，Source/CI9/9、raw硬guard4/4、copy/corpus3/3，原独审报告和同reviewer支持bundle见docs/evidence/release-closeout-bootstrap-1116/independent-review.json及manifest。本轮仅归档和CLI附记；Source约53.6秒、每正投影145读约33MB是重复fresh成本限制，不是性能PASS。当前Hosted Full、同候选官方导入/ready/PC手机/容量仍未验；保留旧notes、所有已勾与未勾AC（含#676），status保持In Progress，不授合并或发布许可。
 <!-- SECTION:NOTES:END -->
