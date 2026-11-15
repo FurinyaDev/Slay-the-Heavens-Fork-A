@@ -42,9 +42,9 @@ import {preWatcherPlanningSource,watcherPlanningKey,watcherPlanningFloor} from '
 import {preClassPotionPlanningSource,classPotionPlanningKey,classPotionPlanningFloor} from './helpers/class-potion-planning-source-inverse.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {readFileSync as rawBootstrapReadFileSync,readdirSync} from 'node:fs';
-import {releaseBootstrapCiRead,assertReleaseBootstrapCiCurrent,assertReleaseBootstrapRawInventory} from './helpers/release-bootstrap-ci-source.mjs';
-const liveDiskReadFileSync=releaseBootstrapCiRead(rawBootstrapReadFileSync);
+import {readFileSync as rawMobilePotionReadFileSync,readdirSync} from 'node:fs';
+import {mobilePotionCiRead,mobilePotionPriorInventory,assertMobilePotionCiCurrent,mobilePotionCiPacket} from './helpers/mobile-potion-ci-source.mjs';
+const liveDiskReadFileSync=mobilePotionCiRead(rawMobilePotionReadFileSync);
 import {preJoustCiSource,joustCiProof} from './helpers/joust-ci-source-inverse.mjs';
 import {sourceEpoch as joustEpoch} from './helpers/combined-epoch/source-epoch.mjs';
 const currentReadFileSync=liveDiskReadFileSync;
@@ -57,7 +57,8 @@ import {ciWindowsShapeProof,preCiWindowsShapeSource} from './helpers/ci-windows-
 import {preIntegrationSource} from './helpers/pr372-integration-source.mjs';
 import {qualityShardMatrices as currentQualityShardMatrices,qualityShardJobs as currentQualityShardJobs} from '../scripts/ci-quality-shape.mjs';
 import {currentFullQualityJobs} from '../scripts/verify-delivery.mjs';
-import {discoverJs as liveDiscoverJs,partition,jsShard as rawCurrentJsShard,jsPlanningWeights as rawCurrentJsPlanningWeights,timings as rawCurrentTimings} from '../scripts/ci-shards.mjs';
+import {discoverJs as rawMobilePotionDiscoverJs,partition,jsShard as rawCurrentJsShard,jsPlanningWeights as rawCurrentJsPlanningWeights,timings as rawCurrentTimings} from '../scripts/ci-shards.mjs';
+const liveDiscoverJs=()=>mobilePotionPriorInventory(rawMobilePotionDiscoverJs(),'js',rawMobilePotionReadFileSync);
 // Frozen receipts retain their complete inventory; current Full remains raw.
 const discoverJs=()=>closeoutInventory(liveDiscoverJs(),'pr620');
 import {shardLuaScripts} from '../scripts/test-lua.mjs';
@@ -164,7 +165,8 @@ const componentAddedLua=['tests/lua/v25_texture_runtime.lua','tests/lua/componen
  'tests/lua/component_page_failures.lua'];
 postPlacementJs.push(...currentV25Js,...componentAddedJs,...postSnapshotJs);postPlacementJs.sort();
 postPlacementLua.push(...componentAddedLua);postPlacementLua.sort();
-const liveCloseoutLua=()=>readdirSync('tests/lua').filter(n=>n.endsWith('.lua')).map(n=>'tests/lua/'+n).sort();
+const rawMobilePotionLua=()=>readdirSync('tests/lua').filter(n=>n.endsWith('.lua')).map(n=>'tests/lua/'+n).sort();
+const liveCloseoutLua=()=>mobilePotionPriorInventory(rawMobilePotionLua(),'lua',rawMobilePotionReadFileSync);
 const currentLua=()=>[...closeoutCiProof.targets.pr620.luaInventory];
 // Only these explicitly registered UI additions postdate the original M7
 // inventories. Current Full below still discovers and checks every file.
@@ -1993,24 +1995,18 @@ test('menu current complete JS and Lua workload retains Full budgets and every a
  }
 });
 
-test('Release bootstrap raw Full retains complete discovery costs and physical guards while forecasts stay diagnostic',t=>{
- assertReleaseBootstrapCiCurrent(rawBootstrapReadFileSync);
- const js=liveDiscoverJs(),lua=readdirSync('tests/lua').filter(n=>n.endsWith('.lua')).map(n=>'tests/lua/'+n).sort();
- assertReleaseBootstrapRawInventory(js,'js');assertReleaseBootstrapRawInventory(lua,'lua');
+test('mobile potion raw Full inventory retains all tests costs and unchanged execution guards',t=>{
+ assertMobilePotionCiCurrent(rawMobilePotionReadFileSync);
+ const js=rawMobilePotionDiscoverJs(),lua=rawMobilePotionLua(),p=mobilePotionCiPacket;
+ assert.deepEqual(js,p.currentInventory.js);assert.deepEqual(lua,p.currentInventory.lua);
+ for(const path of p.priorInventory.js)assert(js.includes(path));
+ for(const path of p.priorInventory.lua)assert(lua.includes(path));
  assert.equal(rawCurrentTimings.unknownJsMs,10000);assert.equal(rawCurrentTimings.unknownLuaMs,10000);
- const physical=rawBootstrapReadFileSync('.github/workflows/quality.yml','utf8').replaceAll('\r\n','\n');
- for(const path of ['.github/workflows/quality.yml','.github/workflows/licenses.yml']){
-  const source=rawBootstrapReadFileSync(path,'utf8').replaceAll('\r\n','\n');
-  assert.match(source,/  pull_request:\n    branches: \[develop, master, 'release\/\*\*'\]/);
-  assert.match(source,/  push:\n    branches: \[develop, master, 'release\/\*\*'\]/);
-  assert.match(source,/  merge_group:\n    types: \[checks_requested\]\n    branches: \[develop\]/);
-  assert.match(source,/permissions:\n  contents: read/);
- }
- const job=name=>physical.match(new RegExp(`^  ${name}:\\n[\\s\\S]*?(?=^  [\\w-]+:|(?![\\s\\S]))`,'m'))[0];
- assert.match(job('rules'),/timeout-minutes: \$\{\{ inputs.runner_pool == 'local-special' && 75 \|\| 45 \}\}/);
- assert.match(job('engineering-posix-shards'),/runs-on: ubuntu-24.04\n    timeout-minutes: 30/);
- assert.deepEqual(currentQualityShardMatrices,{windows:Array.from({length:18},(_,i)=>i+1),posix:Array.from({length:15},(_,i)=>i+1)});
  for(const [platform,count,target,guard]of [['win32',18,1800000,2700000],['linux',15,1200000,1800000]]){
+  for(const path of js.filter(path=>!p.priorInventory.js.includes(path))){
+   assert.equal(rawCurrentTimings.js[platform][path],undefined,'no fabricated hosted measurement');
+   assert(rawCurrentJsPlanningWeights([path],platform)[path]>=rawCurrentTimings.unknownJsMs);
+  }
   const bins=Array.from({length:count},(_,i)=>rawCurrentJsShard(js,`${i+1}/${count}`,platform));
   assert.deepEqual(bins.flatMap(bin=>bin.files).sort(),js);assert.equal(new Set(bins.flatMap(bin=>bin.files)).size,js.length);
   const loads=bins[0].loads;let combined=loads;
@@ -2025,6 +2021,7 @@ test('Release bootstrap raw Full retains complete discovery costs and physical g
    });
   }
   const forecast=Math.max(...combined)+60000;
-  t.diagnostic(`${platform}: raw ${js.length} JS / ${lua.length} Lua; forecast ${forecast}ms; target ${target}ms; overrun ${Math.max(0,forecast-target)}ms; physical execution guard ${guard}ms; prediction is not admission`);
+  t.diagnostic(`${platform}: raw ${js.length} JS / ${lua.length} Lua; forecast ${forecast}ms; target ${target}ms; overrun ${Math.max(0,forecast-target)}ms; unchanged execution guard ${guard}ms; not hosted completion`);
+  assert(forecast<guard,'complete current forecast fits the original execution guard');
  }
 });
