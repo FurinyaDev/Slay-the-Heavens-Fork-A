@@ -56,3 +56,5 @@ git diff --check
 真实 PC 闪屏/延迟、最后一击动画→奖励的实际帧序、当前候选 official ready/容量、受影响实体手机路径尚未执行。本切片不把“同战斗不再全屏遮盖”升级为整个战斗结算体验已通过。
 
 Release 来源证明 continuation、完整 CI、纠正后的独立复审及 PR 由主集成统一完成；两项本地历史 snapshot 超时须由原正常门禁继续核查。本切片不复制 #672 绑定全部手机/图标生产改动的历史来源链，不申请合并、不发版。
+
+本轮切片独审已针对16785c39修正通过，初次e0失败和反例仍保留，见 ../evidence/release-pc-qa-20261115/review-loading.json；此结论不覆盖后续整合HEAD、Release Full或设备验收。
