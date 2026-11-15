@@ -1,0 +1,43 @@
+{
+  "sourceCommit": "5bd55d7691480b10d00e947076e15c8870640474",
+  "node": "v24.18.0",
+  "layer": "OFFLINE_SOURCE_AND_CI_CONTRACTS",
+  "final": {
+    "sourceTests": 49,
+    "sourcePass": 49,
+    "ciTests": 73,
+    "ciPass": 73
+  },
+  "notHostedFull": true,
+  "notOfficialCandidate": true,
+  "files": {
+    "ci-calibration-complete-corrected.log.gz": {
+      "bytes": 3304,
+      "sha256": "45adea6f4f3d33dfc8477c90970bf48266dcb029068b272a0a97ef29b040352e"
+    },
+    "ci-calibration-complete.log.gz": {
+      "bytes": 9659,
+      "sha256": "79a0b3706d93e8c0dce749467b3e9f01fe40544d5719f5c634048a1321199bcc"
+    },
+    "ci-inventory-corrected.log.gz": {
+      "bytes": 390,
+      "sha256": "6d415693a6787b1552e931a984991d690cbe2b9a7d223dacddfb5608c7345ed4"
+    },
+    "ci-inventory.log.gz": {
+      "bytes": 1576,
+      "sha256": "241956507326f4b6012ac5a347adda31eb60baba30d667049d6c2bef8cc86b79"
+    },
+    "source-contracts-final.log.gz": {
+      "bytes": 1340,
+      "sha256": "ab1f61cc2790344e4cdeed04502c713d2d37dfb60a622a73f9c6f7eb431df051"
+    },
+    "source-contracts-workspace-temp.log.gz": {
+      "bytes": 1337,
+      "sha256": "6d255173b61a5452b17adf844b7d752b6fc01025c3c26052b74b38132c86b0f1"
+    },
+    "source-contracts.log.gz": {
+      "bytes": 1811,
+      "sha256": "af5239c5eaee39485dcf9a92911495f2a00376d8c042c810d116c5b3f71afb46"
+    }
+  }
+}
