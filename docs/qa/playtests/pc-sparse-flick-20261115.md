@@ -28,4 +28,6 @@
 
 尚未取得当前候选的官方导入、ready、PC快速操作及受影响实体手机证据，也没有容量读数。PC12仍In Progress；其他连续操作、busy时输入、系统多任务卡顿及末击奖励闪屏问题没有被本切片宣布解决。
 
-原始诊断与执行输出存于本机`.artifacts/release-pc-qa-20261115/`，该目录不是Git已上传证据。真实用户截图仍按私有证据条件处理；本片没有生成或引用伪造的官方图像。
+修复RED/GREEN、相关回归、架构、工程质量及Luacheck的原始执行输出仅在**本会话工具对话**，未单独保存raw日志；上文为执行摘要，不是磁盘原始日志的替代品。新增回归执行命令为`node --test --test-concurrency=1 tests/sparse-card-flick.test.mjs`；生产身份绑定见上面的Git blob。
+
+本机`.artifacts/release-pc-qa-20261115/`只保存了本片前置诊断脚本与部分原始诊断日志：`diagnosis-release/tests-lua-drag_response.lua.log`、`diagnosis-release/tests-lua-hand_flick_intent.lua.log`、`diagnosis-release/tests-lua-original_monster_death.lua.log`，以及`diagnosis-sparse-v2/`内的稀疏采样单变量probe日志。它们不冒充修复后20个Host场景或工程检查的raw日志，该目录也不是Git已上传证据。真实用户截图仍按私有证据条件处理；本片没有生成或引用伪造的官方图像。
