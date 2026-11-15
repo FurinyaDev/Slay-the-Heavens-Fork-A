@@ -5,7 +5,7 @@ import {createHash} from 'node:crypto';
 import {gunzipSync} from 'node:zlib';
 const hash=b=>createHash('sha256').update(b).digest('hex'),norm=s=>s.replaceAll('\r\n','\n');
 const bytes=readFileSync(new URL('./mobile-potion-ci-source.json.gz',import.meta.url));
-assert.equal(hash(bytes),'6fc8df52d805ddb45fadc7fabe77cc65664908313f1f057b70e837ed49b2a1b6','complete mobile potion CI continuation');
+assert.equal(hash(bytes),'16f2e5dc4c4b1e530fdb6b3b5a2059642d3e8c9b3a03bfef177f59e1341ac002','complete mobile potion CI continuation');
 const packet=JSON.parse(gunzipSync(bytes));
 assert.equal(packet.schemaVersion,1);assert.equal(packet.normalization,'LF');
 assert.equal(packet.baseCommit,'36b9b157ee6f05b65eb9f1da7e2978647d36c210');

@@ -1995,8 +1995,37 @@ test('menu current complete JS and Lua workload retains Full budgets and every a
  }
 });
 
+// The Owner's live-CI policy makes forecasts diagnostic. Check the actual
+// workflow execution guards here; frozen receipt budgets above stay unchanged.
+function assertMobilePotionExecutionGuards(workflow){
+ const source=workflow.replaceAll('\r\n','\n');
+ const timeoutLines=name=>{
+  const block=source.match(new RegExp('^  '+name+':\\n[\\s\\S]*?(?=^  [\\w-]+:|(?![\\s\\S]))','m'));
+  assert.ok(block,'current '+name+' job is present');
+  return block[0].match(/^    timeout-minutes: .+$/gm)??[];
+ };
+ assert.deepEqual(timeoutLines('rules'),["    timeout-minutes: ${{ inputs.runner_pool == 'local-special' && 75 || 45 }}"],'actual rules execution guard');
+ assert.deepEqual(timeoutLines('engineering-posix-shards'),['    timeout-minutes: 30'],'actual POSIX execution guard');
+}
+
+test('mobile potion execution guards remain job scoped without forecast admission',()=>{
+ const workflow=rawMobilePotionReadFileSync('.github/workflows/quality.yml','utf8').replaceAll('\r\n','\n');
+ assertMobilePotionExecutionGuards(workflow);
+ assertMobilePotionExecutionGuards(workflow.replaceAll('\n','\r\n'));
+ const line="    timeout-minutes: ${{ inputs.runner_pool == 'local-special' && 75 || 45 }}";
+ const rulesDrift=workflow.replace(line,line.replace('|| 45','|| 44'));
+ const posixDrift=workflow.replace(/(^  engineering-posix-shards:\n[\s\S]*?^    timeout-minutes:) 30$/m,'$1 29');
+ assert.notEqual(rulesDrift,workflow);assert.notEqual(posixDrift,workflow);
+ assert.throws(()=>assertMobilePotionExecutionGuards(rulesDrift),/actual rules execution guard/);
+ assert.throws(()=>assertMobilePotionExecutionGuards(posixDrift),/actual POSIX execution guard/);
+ assert.throws(()=>assertMobilePotionExecutionGuards(workflow.replace(line,line+'\n'+line)),/actual rules execution guard/);
+ assert.throws(()=>assertMobilePotionExecutionGuards(workflow.replace('  engineering-posix-shards:\n','  unrelated-posix-shards:\n')),/current engineering-posix-shards job is present/);
+ assert.throws(()=>assertMobilePotionExecutionGuards(rulesDrift+'\n  unrelated:\n'+line+'\n'),/actual rules execution guard/);
+});
+
 test('mobile potion raw Full inventory retains all tests costs and unchanged execution guards',t=>{
  assertMobilePotionCiCurrent(rawMobilePotionReadFileSync);
+ assertMobilePotionExecutionGuards(rawMobilePotionReadFileSync('.github/workflows/quality.yml','utf8'));
  const js=rawMobilePotionDiscoverJs(),lua=rawMobilePotionLua(),p=mobilePotionCiPacket;
  assert.deepEqual(js,p.currentInventory.js);assert.deepEqual(lua,p.currentInventory.lua);
  for(const path of p.priorInventory.js)assert(js.includes(path));
@@ -2022,6 +2051,5 @@ test('mobile potion raw Full inventory retains all tests costs and unchanged exe
   }
   const forecast=Math.max(...combined)+60000;
   t.diagnostic(`${platform}: raw ${js.length} JS / ${lua.length} Lua; forecast ${forecast}ms; target ${target}ms; overrun ${Math.max(0,forecast-target)}ms; unchanged execution guard ${guard}ms; not hosted completion`);
-  assert(forecast<guard,'complete current forecast fits the original execution guard');
  }
 });
