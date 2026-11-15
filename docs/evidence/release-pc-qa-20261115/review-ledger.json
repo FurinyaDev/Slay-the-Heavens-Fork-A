@@ -1,0 +1,615 @@
+{
+  "schemaVersion": 1,
+  "reviewer": "/root/pc_feedback_audit",
+  "result": "PASS_SCOPED",
+  "scope": "38-row ledger, handoff, two CLI-readback JSONs, live CLI AC readback and evidence provenance only; no independent code review of own sparse slice",
+  "observedHead": "58185619339c7b1e44ea34fc9a74ad8241b1cf5f",
+  "workingTreeDocuments": [
+    {
+      "path": "docs/backlog-details/PC-QA-20261115.md",
+      "diskSha256": "7c42a80aaf1dabc7e689ef8a90afb9f2ff407757b19991470107456435c4f220",
+      "normalizedGitBlob": "3cab6b55727a8a7c8831b4db2479bd67fc8cf701"
+    },
+    {
+      "path": "docs/qa/playtests/pc-20261115-handoff.md",
+      "diskSha256": "f9ead95f8287f084836db83b3e6f4db5c81ba66561c26cd3f68df6fedc8acca9",
+      "normalizedGitBlob": "257b4896c03b6e25de45d3c2d135cd15900805c7"
+    },
+    {
+      "path": "docs/evidence/release-pc-qa-20261115/backlog-readback.json",
+      "diskSha256": "4ce8f1f8bffc02018141bc994edcced341248c1891cb685ff2e4edacb7386b2e",
+      "normalizedGitBlob": "d080c593ea2b133dabbf2e5800174a46bbaeb1a3"
+    },
+    {
+      "path": "docs/evidence/release-pc-qa-20261115/prior-task-ac-transfer.json",
+      "diskSha256": "164965dd0057cbb5aa96c55802a6b8180a567bfe4d1883047966a26d99ab8ed5",
+      "normalizedGitBlob": "7bffaeda9e4c2c9bd3d0f4b64129bdebef7b3aac"
+    }
+  ],
+  "checks": [
+    {
+      "name": "all_38_observations",
+      "pass": true,
+      "detail": 38
+    },
+    {
+      "name": "source_observation_columns_preserved",
+      "pass": true,
+      "detail": "ID/severity/time/observation/image columns compared against #676"
+    },
+    {
+      "name": "exactly_one_existing_primary_owner",
+      "pass": true,
+      "detail": [
+        "TASK-100",
+        "TASK-103",
+        "TASK-103.2",
+        "TASK-103.3",
+        "TASK-16.1",
+        "TASK-25.5",
+        "TASK-29.1",
+        "TASK-30",
+        "TASK-4.10",
+        "TASK-4.11",
+        "TASK-4.13",
+        "TASK-4.15",
+        "TASK-4.16",
+        "TASK-4.2",
+        "TASK-4.23",
+        "TASK-4.4",
+        "TASK-4.5",
+        "TASK-42",
+        "TASK-91"
+      ]
+    },
+    {
+      "name": "owner_notes_cover_every_PC",
+      "pass": true,
+      "detail": "CLI live readback of all primary tasks"
+    },
+    {
+      "name": "six_proposals_29_AC_exact_unchecked",
+      "pass": true,
+      "detail": [
+        {
+          "source": "TASK-103.6",
+          "sourceIndex": 1,
+          "destination": "TASK-103",
+          "destinationIndex": 6,
+          "sourceTextExact": true,
+          "snapshotMatchesCli": true,
+          "checked": false
+        },
+        {
+          "source": "TASK-103.6",
+          "sourceIndex": 2,
+          "destination": "TASK-103",
+          "destinationIndex": 7,
+          "sourceTextExact": true,
+          "snapshotMatchesCli": true,
+          "checked": false
+        },
+        {
+          "source": "TASK-103.6",
+          "sourceIndex": 4,
+          "destination": "TASK-103",
+          "destinationIndex": 8,
+          "sourceTextExact": true,
+          "snapshotMatchesCli": true,
+          "checked": false
+        },
+        {
+          "source": "TASK-103.6",
+          "sourceIndex": 5,
+          "destination": "TASK-103",
+          "destinationIndex": 9,
+          "sourceTextExact": true,
+          "snapshotMatchesCli": true,
+          "checked": false
+        },
+        {
+          "source": "TASK-103.6",
+          "sourceIndex": 6,
+          "destination": "TASK-103",
+          "destinationIndex": 10,
+          "sourceTextExact": true,
+          "snapshotMatchesCli": true,
+          "checked": false
+        },
+        {
+          "source": "TASK-42.1",
+          "sourceIndex": 3,
+          "destination": "TASK-103",
+          "destinationIndex": 11,
+          "sourceTextExact": true,
+          "snapshotMatchesCli": true,
+          "checked": false
+        },
+        {
+          "source": "TASK-42.1",
+          "sourceIndex": 1,
+          "destination": "TASK-30",
+          "destinationIndex": 16,
+          "sourceTextExact": true,
+          "snapshotMatchesCli": true,
+          "checked": false
+        },
+        {
+          "source": "TASK-42.1",
+          "sourceIndex": 2,
+          "destination": "TASK-30",
+          "destinationIndex": 17,
+          "sourceTextExact": true,
+          "snapshotMatchesCli": true,
+          "checked": false
+        },
+        {
+          "source": "TASK-42.1",
+          "sourceIndex": 5,
+          "destination": "TASK-30",
+          "destinationIndex": 18,
+          "sourceTextExact": true,
+          "snapshotMatchesCli": true,
+          "checked": false
+        },
+        {
+          "source": "TASK-42.2",
+          "sourceIndex": 1,
+          "destination": "TASK-30",
+          "destinationIndex": 19,
+          "sourceTextExact": true,
+          "snapshotMatchesCli": true,
+          "checked": false
+        },
+        {
+          "source": "TASK-42.2",
+          "sourceIndex": 2,
+          "destination": "TASK-30",
+          "destinationIndex": 20,
+          "sourceTextExact": true,
+          "snapshotMatchesCli": true,
+          "checked": false
+        },
+        {
+          "source": "TASK-42.2",
+          "sourceIndex": 4,
+          "destination": "TASK-30",
+          "destinationIndex": 21,
+          "sourceTextExact": true,
+          "snapshotMatchesCli": true,
+          "checked": false
+        },
+        {
+          "source": "TASK-42.2",
+          "sourceIndex": 5,
+          "destination": "TASK-30",
+          "destinationIndex": 22,
+          "sourceTextExact": true,
+          "snapshotMatchesCli": true,
+          "checked": false
+        },
+        {
+          "source": "TASK-103.6",
+          "sourceIndex": 3,
+          "destination": "TASK-16.1",
+          "destinationIndex": 7,
+          "sourceTextExact": true,
+          "snapshotMatchesCli": true,
+          "checked": false
+        },
+        {
+          "source": "TASK-16.1.5",
+          "sourceIndex": 1,
+          "destination": "TASK-16.1",
+          "destinationIndex": 8,
+          "sourceTextExact": true,
+          "snapshotMatchesCli": true,
+          "checked": false
+        },
+        {
+          "source": "TASK-16.1.5",
+          "sourceIndex": 2,
+          "destination": "TASK-16.1",
+          "destinationIndex": 9,
+          "sourceTextExact": true,
+          "snapshotMatchesCli": true,
+          "checked": false
+        },
+        {
+          "source": "TASK-16.1.5",
+          "sourceIndex": 3,
+          "destination": "TASK-16.1",
+          "destinationIndex": 10,
+          "sourceTextExact": true,
+          "snapshotMatchesCli": true,
+          "checked": false
+        },
+        {
+          "source": "TASK-16.1.5",
+          "sourceIndex": 4,
+          "destination": "TASK-16.1",
+          "destinationIndex": 11,
+          "sourceTextExact": true,
+          "snapshotMatchesCli": true,
+          "checked": false
+        },
+        {
+          "source": "TASK-103.7",
+          "sourceIndex": 1,
+          "destination": "TASK-103.2",
+          "destinationIndex": 5,
+          "sourceTextExact": true,
+          "snapshotMatchesCli": true,
+          "checked": false
+        },
+        {
+          "source": "TASK-103.7",
+          "sourceIndex": 2,
+          "destination": "TASK-103.2",
+          "destinationIndex": 6,
+          "sourceTextExact": true,
+          "snapshotMatchesCli": true,
+          "checked": false
+        },
+        {
+          "source": "TASK-103.7",
+          "sourceIndex": 3,
+          "destination": "TASK-103.2",
+          "destinationIndex": 7,
+          "sourceTextExact": true,
+          "snapshotMatchesCli": true,
+          "checked": false
+        },
+        {
+          "source": "TASK-103.7",
+          "sourceIndex": 4,
+          "destination": "TASK-103.2",
+          "destinationIndex": 8,
+          "sourceTextExact": true,
+          "snapshotMatchesCli": true,
+          "checked": false
+        },
+        {
+          "source": "TASK-103.7",
+          "sourceIndex": 5,
+          "destination": "TASK-103.2",
+          "destinationIndex": 9,
+          "sourceTextExact": true,
+          "snapshotMatchesCli": true,
+          "checked": false
+        },
+        {
+          "source": "TASK-16.1.6",
+          "sourceIndex": 1,
+          "destination": "TASK-42",
+          "destinationIndex": 8,
+          "sourceTextExact": true,
+          "snapshotMatchesCli": true,
+          "checked": false
+        },
+        {
+          "source": "TASK-16.1.6",
+          "sourceIndex": 2,
+          "destination": "TASK-42",
+          "destinationIndex": 9,
+          "sourceTextExact": true,
+          "snapshotMatchesCli": true,
+          "checked": false
+        },
+        {
+          "source": "TASK-16.1.6",
+          "sourceIndex": 3,
+          "destination": "TASK-42",
+          "destinationIndex": 10,
+          "sourceTextExact": true,
+          "snapshotMatchesCli": true,
+          "checked": false
+        },
+        {
+          "source": "TASK-16.1.6",
+          "sourceIndex": 4,
+          "destination": "TASK-42",
+          "destinationIndex": 11,
+          "sourceTextExact": true,
+          "snapshotMatchesCli": true,
+          "checked": false
+        },
+        {
+          "source": "TASK-42.1",
+          "sourceIndex": 4,
+          "destination": "TASK-100",
+          "destinationIndex": 4,
+          "sourceTextExact": true,
+          "snapshotMatchesCli": true,
+          "checked": false
+        },
+        {
+          "source": "TASK-42.2",
+          "sourceIndex": 3,
+          "destination": "TASK-4.5",
+          "destinationIndex": 8,
+          "sourceTextExact": true,
+          "snapshotMatchesCli": true,
+          "checked": false
+        }
+      ]
+    },
+    {
+      "name": "old_tasks_8_AC_exact_unchecked",
+      "pass": true,
+      "detail": [
+        {
+          "source": "TASK-103.2",
+          "sourceIndex": 5,
+          "destination": "TASK-103.2",
+          "sourceTextExact": true,
+          "liveUniqueUnchecked": true,
+          "checked": false
+        },
+        {
+          "source": "TASK-103.3",
+          "sourceIndex": 4,
+          "destination": "TASK-103.3",
+          "sourceTextExact": true,
+          "liveUniqueUnchecked": true,
+          "checked": false
+        },
+        {
+          "source": "TASK-103.3",
+          "sourceIndex": 5,
+          "destination": "TASK-103.3",
+          "sourceTextExact": true,
+          "liveUniqueUnchecked": true,
+          "checked": false
+        },
+        {
+          "source": "TASK-25.5",
+          "sourceIndex": 4,
+          "destination": "TASK-25.5",
+          "sourceTextExact": true,
+          "liveUniqueUnchecked": true,
+          "checked": false
+        },
+        {
+          "source": "TASK-4.11",
+          "sourceIndex": 3,
+          "destination": "TASK-4.11",
+          "sourceTextExact": true,
+          "liveUniqueUnchecked": true,
+          "checked": false
+        },
+        {
+          "source": "TASK-4.13",
+          "sourceIndex": 4,
+          "destination": "TASK-4.13",
+          "sourceTextExact": true,
+          "liveUniqueUnchecked": true,
+          "checked": false
+        },
+        {
+          "source": "TASK-4.15",
+          "sourceIndex": 4,
+          "destination": "TASK-4.15",
+          "sourceTextExact": true,
+          "liveUniqueUnchecked": true,
+          "checked": false
+        },
+        {
+          "source": "TASK-4.16",
+          "sourceIndex": 5,
+          "destination": "TASK-4.16",
+          "sourceTextExact": true,
+          "liveUniqueUnchecked": true,
+          "checked": false
+        }
+      ]
+    },
+    {
+      "name": "TASK42_total_tracking_unchecked",
+      "pass": true,
+      "detail": "CLI readback"
+    },
+    {
+      "name": "no_primary_task_marked_Done",
+      "pass": true,
+      "detail": {
+        "TASK-100": "In Progress",
+        "TASK-103": "In Progress",
+        "TASK-103.2": "In Progress",
+        "TASK-103.3": "In Progress",
+        "TASK-16.1": "In Progress",
+        "TASK-25.5": "In Progress",
+        "TASK-29.1": "In Progress",
+        "TASK-30": "In Progress",
+        "TASK-4.10": "In Progress",
+        "TASK-4.11": "In Progress",
+        "TASK-4.13": "In Progress",
+        "TASK-4.15": "In Progress",
+        "TASK-4.16": "In Progress",
+        "TASK-4.2": "To Do",
+        "TASK-4.23": "In Progress",
+        "TASK-4.4": "In Progress",
+        "TASK-4.5": "In Progress",
+        "TASK-42": "In Progress",
+        "TASK-91": "In Progress"
+      }
+    },
+    {
+      "name": "original_AC_text_and_checks_preserved",
+      "pass": true,
+      "detail": [
+        {
+          "task": "TASK-103.3",
+          "originalCriteria": 3,
+          "unchanged": true
+        },
+        {
+          "task": "TASK-103",
+          "originalCriteria": 5,
+          "unchanged": true
+        },
+        {
+          "task": "TASK-4.16",
+          "originalCriteria": 4,
+          "unchanged": true
+        },
+        {
+          "task": "TASK-4.13",
+          "originalCriteria": 3,
+          "unchanged": true
+        },
+        {
+          "task": "TASK-103.2",
+          "originalCriteria": 4,
+          "unchanged": true
+        },
+        {
+          "task": "TASK-25.5",
+          "originalCriteria": 3,
+          "unchanged": true
+        },
+        {
+          "task": "TASK-4.2",
+          "originalCriteria": 9,
+          "unchanged": true
+        },
+        {
+          "task": "TASK-30",
+          "originalCriteria": 15,
+          "unchanged": true
+        },
+        {
+          "task": "TASK-16.1",
+          "originalCriteria": 6,
+          "unchanged": true
+        },
+        {
+          "task": "TASK-4.15",
+          "originalCriteria": 3,
+          "unchanged": true
+        },
+        {
+          "task": "TASK-100",
+          "originalCriteria": 3,
+          "unchanged": true
+        },
+        {
+          "task": "TASK-29.1",
+          "originalCriteria": 6,
+          "unchanged": true
+        },
+        {
+          "task": "TASK-4.23",
+          "originalCriteria": 3,
+          "unchanged": true
+        },
+        {
+          "task": "TASK-42",
+          "originalCriteria": 6,
+          "unchanged": true
+        },
+        {
+          "task": "TASK-4.10",
+          "originalCriteria": 5,
+          "unchanged": true
+        },
+        {
+          "task": "TASK-4.4",
+          "originalCriteria": 8,
+          "unchanged": true
+        },
+        {
+          "task": "TASK-4.5",
+          "originalCriteria": 7,
+          "unchanged": true
+        },
+        {
+          "task": "TASK-91",
+          "originalCriteria": 2,
+          "unchanged": true
+        },
+        {
+          "task": "TASK-4.11",
+          "originalCriteria": 2,
+          "unchanged": true
+        }
+      ]
+    },
+    {
+      "name": "canonical_first_hand_blob_identity",
+      "pass": true,
+      "detail": [
+        {
+          "path": "docs/qa/playtests/pc-20261115-verbatim.txt",
+          "sourceBlob": "4c91ae24feb13adc3abdd8944537ec66e9d2cd2e",
+          "currentBlob": "4c91ae24feb13adc3abdd8944537ec66e9d2cd2e"
+        },
+        {
+          "path": "docs/qa/playtests/pc-20261115-image-manifest.json",
+          "sourceBlob": "921fb9c737a4dd81307916327fdabe8d38efb188",
+          "currentBlob": "921fb9c737a4dd81307916327fdabe8d38efb188"
+        }
+      ]
+    },
+    {
+      "name": "private_images_not_claimed_accessed",
+      "pass": true,
+      "detail": "Ledger explicitly states no original-image access, distinguishes two manifests, and requires secure/deidentified transfer with source SHA."
+    },
+    {
+      "name": "source_ready_capacity_device_layers_separated",
+      "pass": true,
+      "detail": "No observed issue or transferred AC marked device-complete; 9b20.1781 FAIL preserved with user-associated identity limitation; current final candidate/ready/mobile/PC/capacity absent."
+    },
+    {
+      "name": "deferrals_limited_to_authorized_scope",
+      "pass": true,
+      "detail": "PC09/10/14/24 low-priority art fits latest user permission; PC25/31/33/36 explicitly low-priority in verbatim. PC22 retains necessary feedback review, postpones only decorative polish; shortcuts/preinput remain post-release."
+    },
+    {
+      "name": "seven_source_slices_and_loading_evidence_consistent",
+      "pass": true,
+      "detail": "All seven source-port commits exist on release integration; shared/battle/corner-sleep scoped reports bind their producer paths. Loading stale-step finding retained and corrected; only target source blobs, not live pixels or final CI, are claimed."
+    },
+    {
+      "name": "sparse_evidence_authored_code_not_self_reviewed",
+      "pass": true,
+      "detail": "Verified e279/8a51 source-document lineage -> release5bd55/59c34, production blob d15c600b matches independent reviewer report. Only ledger claim/source provenance checked here; no self-authored code approval."
+    },
+    {
+      "name": "resolved_task_identity_and_RED_GREEN_wording_notes",
+      "pass": true,
+      "detail": "Parent changed loading entry to canonical TASK103 and handoff seven slices wording to targeted regression results; no unsupported all-seven RED claim remains."
+    }
+  ],
+  "counts": {
+    "observations": 38,
+    "uniquePrimaryTasks": 19,
+    "proposedTaskCriteria": 29,
+    "oldTaskAddedCriteria": 8,
+    "sourceCriteria": 37,
+    "allSourceCriteriaUnchecked": true,
+    "additionalTASK42TrackingCriterionUnchecked": true
+  },
+  "findings": [],
+  "resolvedNotes": [
+    {
+      "id": "LEDGER-CANONICAL-ENTRY",
+      "path": "docs/backlog-details/RELEASE-PC-LOADING-20261115.md",
+      "detail": "Release main task corrected to TASK103; proposed103.6 is source-only."
+    },
+    {
+      "id": "LEDGER-RED-GREEN-SCOPE",
+      "path": "docs/qa/playtests/pc-20261115-handoff.md",
+      "detail": "Seven ports now described as targeted regression results, avoiding unpersisted blanket RED/GREEN assertion."
+    }
+  ],
+  "nonblockingHistoricalSnapshotNote": "Final follow-up58185619 explicitly distinguishes completed slice independent reviews from pending exact final integration/CI in battle and loading documents.",
+  "limits": [
+    "Live CLI readback was audited at59c34be2 while ledger drafts were pending; final reviewed docs are committed by145ca075/58185619. Document hashes bind final reviewed bytes.",
+    "No original screenshot review, official client, ready, capacity, actual PC/mobile or full CI verification.",
+    "No claim that PC12/13/18/20 or remaining P1 have passed product acceptance.",
+    "Filesystem source/index CRLF differs from Git LF; normalized Git blobs exactly equal #676. Automated literal filesystem-byte check is retained as informational false, not hidden."
+  ],
+  "initialCliReadbackHead": "59c34be2b4e88a7c8af905505bb0201def8e81d1"
+}

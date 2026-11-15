@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@Furinya'
 created_date: '2026-10-23 12:23'
-updated_date: '2026-11-15 13:24'
+updated_date: '2026-11-15 13:51'
 labels:
   - awaiting-live
 milestone: m-8
@@ -71,4 +71,6 @@ ordinal: 40000
 本轮release基线36b9b157已含#663。#672仍未合。#676新任务存在编号/标题冲突，不复制；38项沿用TASK-42及既有子范围。旧9b容量收据记录20.1781>20，关联来自用户说明，未独立看原图。
 
 2026-11-15 Release PC台账：PC27由本任务主责；逐字依据、修复提交/PR和未验缺口见 docs/backlog-details/PC-QA-20261115.md。仅文本核对和源码/离线回归不能勾官方或设备AC；本轮不新增重复任务、不改变原已验AC。
+
+本轮干净源58185619尝试构建回归候选，write_graphs依赖junction被OS以EPERM拒绝，written为空；无完整GIL，未严格读回或官方/设备验收。失败收据docs/evidence/release-pc-qa-20261115/candidate-build-failure.json；旧7cb/latest未覆盖，未占用GUI。
 <!-- SECTION:NOTES:END -->

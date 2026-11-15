@@ -1,0 +1,19 @@
+{
+  "content": [
+    {
+      "type": "text",
+      "text": "{\"mapPath\":\"F:\\\\New folder\\\\.worktrees\\\\release-pc-closeout-1115\\\\build\\\\release-pc-regression-58185619\\\\full\\\\5a911672-2c80-4e5e-8f53-ea6d7f317104\\\\scenes\\\\saves\\\\abyss-full-game-test.gil\",\"written\":[],\"failed\":{\"graphId\":1073741825,\"position\":0,\"code\":\"EPERM\",\"message\":\"EPERM: operation not permitted, symlink 'D:\\\\MiliastraTools\\\\genshin-miliastra-mcp\\\\node_modules' -> 'F:\\\\New folder\\\\.worktrees\\\\release-pc-closeout-1115\\\\build\\\\release-pc-regression-58185619\\\\full\\\\5a911672-2c80-4e5e-8f53-ea6d7f317104\\\\wmwhw59i3-0\\\\node_modules'\"},\"next\":\"Graph 1073741825 was not written. Correct its source and call write_graphs again on this mapPath with it and the graphs after it.\"}"
+    }
+  ],
+  "structuredContent": {
+    "mapPath": "F:\\New folder\\.worktrees\\release-pc-closeout-1115\\build\\release-pc-regression-58185619\\full\\5a911672-2c80-4e5e-8f53-ea6d7f317104\\scenes\\saves\\abyss-full-game-test.gil",
+    "written": [],
+    "failed": {
+      "graphId": 1073741825,
+      "position": 0,
+      "code": "EPERM",
+      "message": "EPERM: operation not permitted, symlink 'D:\\MiliastraTools\\genshin-miliastra-mcp\\node_modules' -> 'F:\\New folder\\.worktrees\\release-pc-closeout-1115\\build\\release-pc-regression-58185619\\full\\5a911672-2c80-4e5e-8f53-ea6d7f317104\\wmwhw59i3-0\\node_modules'"
+    },
+    "next": "Graph 1073741825 was not written. Correct its source and call write_graphs again on this mapPath with it and the graphs after it."
+  }
+}

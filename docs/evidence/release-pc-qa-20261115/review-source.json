@@ -1,0 +1,150 @@
+{
+  "schemaVersion": 1,
+  "reviewer": "/root/pc_battle_port",
+  "producer": "/root/release_ci_provenance",
+  "reviewedAt": "2026-11-15T13:56:40.330Z",
+  "baseSha": "5bd55d7691480b10d00e947076e15c8870640474",
+  "releaseBaselineSha": "36b9b157ee6f05b65eb9f1da7e2978647d36c210",
+  "reviewedHeadSha": "878dff22e381edd31050c0ce6fb8aa1e1e0b772e",
+  "reviewedTreeSha": "14c5df00f6e3bb0b67490fe3bd28e06df9238759",
+  "scope": "Source/CI continuation only, 20 tests/docs paths after product freeze. No product implementation authored/reviewed here.",
+  "verdict": "PASS_CODE_AND_SOURCE_CONTRACTS_PENDING_COLD_PACK_AND_RELEASE_CI",
+  "findings": [],
+  "paths": [
+    {
+      "path": "docs/backlog-details/RELEASE-PC-SOURCE-20261115.md",
+      "blob": "3e3cea98333eb53fc459823dda61ea153affcfe1"
+    },
+    {
+      "path": "docs/evidence/release-pc-source-20261115/ci-calibration-complete-corrected.log.gz",
+      "blob": "9c2ca611a9618a5e8aa90cc1e6a7ac59a4eae670"
+    },
+    {
+      "path": "docs/evidence/release-pc-source-20261115/ci-calibration-complete.log.gz",
+      "blob": "63f8849313a8e29eec5f9644ea2701e54cd01920"
+    },
+    {
+      "path": "docs/evidence/release-pc-source-20261115/ci-inventory-corrected.log.gz",
+      "blob": "57486bee342e1a9043eda16f2d76df3d840c708e"
+    },
+    {
+      "path": "docs/evidence/release-pc-source-20261115/ci-inventory.log.gz",
+      "blob": "88af43365c7322595ec91fbda512e42aceba2364"
+    },
+    {
+      "path": "docs/evidence/release-pc-source-20261115/receipt.json",
+      "blob": "08cbe83afeea3166c7272e160ef833b054e83dbf"
+    },
+    {
+      "path": "docs/evidence/release-pc-source-20261115/source-contracts-final.log.gz",
+      "blob": "61d7b29e21a5742409233381976db95164e7e884"
+    },
+    {
+      "path": "docs/evidence/release-pc-source-20261115/source-contracts-workspace-temp.log.gz",
+      "blob": "743c5ba97abac463964492f21fb89ee957fccd67"
+    },
+    {
+      "path": "docs/evidence/release-pc-source-20261115/source-contracts.log.gz",
+      "blob": "7132d039e17127e4573f7fc9a23652eaf09f4e73"
+    },
+    {
+      "path": "tests/ci-complete-calibration.test.mjs",
+      "blob": "4642c4d14fe23046b62439d6239721c4baa8e0db"
+    },
+    {
+      "path": "tests/helpers/closeout-source-epoch.mjs",
+      "blob": "df3013097d1a6b2071fa1528f036e71838e3fd79"
+    },
+    {
+      "path": "tests/helpers/copy-integration-source-closure.mjs",
+      "blob": "869921c9bd83e0f0aa3a468b81ad4a13a5aa63b1"
+    },
+    {
+      "path": "tests/helpers/integrated-ci-source.mjs",
+      "blob": "ba57314238e53424b31705b539a7bf669eeb24d2"
+    },
+    {
+      "path": "tests/helpers/release-pc-ci-source.json.gz",
+      "blob": "3fe460ed6fe03c408e9ae6531809aef1ce63f8c7"
+    },
+    {
+      "path": "tests/helpers/release-pc-ci-source.mjs",
+      "blob": "ca87a5d4b3f8a900b5d667fb10913ea56e0c450d"
+    },
+    {
+      "path": "tests/helpers/release-pc-source.json.gz",
+      "blob": "cd30f11084ecc4a3f9d66cf0f674f13744f3ef7f"
+    },
+    {
+      "path": "tests/helpers/release-pc-source.mjs",
+      "blob": "2a8293bb60cbdd42646d0a0cc7b349786eb1f82a"
+    },
+    {
+      "path": "tests/integrated-ci-source.cases.mjs",
+      "blob": "62875bff97a116b525d1ea1f7ceb561fdf2b7ce2"
+    },
+    {
+      "path": "tests/integration-source-epoch.test.mjs",
+      "blob": "708641577239faf68fe55606681336f63f2c8cab"
+    },
+    {
+      "path": "tests/release-pc-source.test.mjs",
+      "blob": "6be05da500db81418480b2ba75148e3e248f45bd"
+    }
+  ],
+  "assessments": {
+    "production": "10 current Lua owners and each producer path/actual parents independently match committed product 5bd55d76. Added releasePcPrior preserves complete predecessor; all old targets/archives retained. CI adapter defaults leave production source opaque and use fresh complete owner authorization.",
+    "ci": "45 exact current bindings verified. Three bootstrap workflow prior bindings explicitly use c2409ad7; remaining prior bindings use36b9b157. Actual workflows, CI config, unknown costs, budgets, workers and runtime/scene code unchanged.",
+    "unknownInputs": "Exact complete after bindings alone project to explicit prior sources. Changed bytes, null/nontext, foreign/prototype paths stay opaque. New raw inventory negative cases reject missing, duplicated, foreign, changed added inputs and deletion of every release addition. Legacy no-release-addition arrays pass through unchanged for their original validator; they are never treated as current raw inventory.",
+    "history": "92/92 baseline helper gzip payload identities retain original bytes/OIDs, no uncovered archive; 93rd immutable item is the new production packet. Old integrated archive/views remain physically unchanged, original assertions preserved through explicit outer adapters.",
+    "cost": "Raw Full inventory876→887JS and1423→1431Lua. Conservative unknownJsMs10000 and 60s reserve remain; Windows1766189ms/POSIX1196961ms forecasts within unchanged1800000/1200000 performance targets, original2700000/1800000 execution guards unchanged. Forecasts are not hosted completion."
+  },
+  "results": [
+    {
+      "kind": "independent current tests",
+      "command": "Node24.18.0 --test --test-concurrency=1 tests/release-pc-source.test.mjs",
+      "exitCode": 0,
+      "tests": 3,
+      "pass": 3,
+      "fail": 0,
+      "log": "source-independent-tests.log",
+      "sha256": "75a1af5b547982034bf76f4143ddefda5b16989118351cf748c461c7f0395e05"
+    },
+    {
+      "kind": "independent Git audit",
+      "result": "pass",
+      "productOwners": 10,
+      "ciBindings": 45,
+      "baselineArchives": 92,
+      "immutableTotal": 93,
+      "retainedLfsArchives": 2,
+      "log": "source-independent-git-audit.json",
+      "sha256": "45f955e4216a177309cdefe60cdd9f3ff84f0496fbc5e36a3eeb8094ea4b6546"
+    },
+    {
+      "kind": "producer evidence readback",
+      "result": "pass",
+      "sourceTests": "49/49",
+      "completeCiFile": "73/73",
+      "detail": "Read committed gzip actual outputs and validated every compressed log bytes/SHA against committed receipt. Initial environment failures and CI compatibility failures retained; no full suite duplicated."
+    },
+    {
+      "kind": "diff checks",
+      "result": "pass",
+      "detail": "git diff --check clean; product/scripts/data/config/packages/workflows/gitattributes diff from product freeze empty."
+    }
+  ],
+  "packetHashes": {
+    "production": "007271848a37da024ef7e25d6e2c7719b2c1d3aeffd36fa157b18e26895253ee",
+    "ci": "49eac62b185ce38d07ec342b24762790ead5adb25ac0b89f242b2c6eba9f15d4"
+  },
+  "pendingGates": [
+    "Exact878dff22 cold empty-object-database pack and existing128MiB checkout validator still running at report time; do not claim passed.",
+    "Exact final Release PR HEAD/BASE Full CI and required repository checks.",
+    "Same official candidate import/ready/capacity and PC/affected mobile acceptance, outside test-source scope."
+  ],
+  "limits": [
+    "This review certifies only the20 source/CI/test/doc paths at exact878dff22; does not certify any later helper/packet modification or integrated HEAD.",
+    "No new LFS migration or limit change is present; any later storage change requires independent follow-up."
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "sha": "878dff22e381edd31050c0ce6fb8aa1e1e0b772e",
+  "layer": "OFFLINE_COLD_GIT_PACK_WITH_EXISTING_HOSTED_GUARD",
+  "source": "F:\\New folder\\.worktrees\\release-pc-source-1115",
+  "cold": "F:\\New folder\\.artifacts\\release-pc-qa-20261115\\cold-pack\\cold-878dff22-18ebe488-4a11-4e88-b4aa-1477af99f0c5",
+  "filter": "blob:none",
+  "fetchDepth": 2,
+  "lfsSkipSmudge": true,
+  "bytes": 127798065,
+  "limit": 134217728,
+  "packs": [
+    {
+      "path": "pack-38c82dd22d256c10c3ffd5492987c0134aa1168c.pack",
+      "bytes": 377575
+    },
+    {
+      "path": "pack-50a5fe50e72debd85d8970bb5a0d8e2a0d8caf03.pack",
+      "bytes": 126869118
+    },
+    {
+      "path": "pack-c328dac4be2db2b78b935f362925e587934bf71e.pack",
+      "bytes": 374938
+    },
+    {
+      "path": "pack-cd6ef133aafaa3fe1297b07460c03519490f6e98.pack",
+      "bytes": 176434
+    }
+  ],
+  "notNetworkTraffic": true,
+  "notHostedActions": true,
+  "beforeComparisonsBytes": 127246693,
+  "comparisons": {
+    "parents": [
+      "5bd55d7691480b10d00e947076e15c8870640474"
+    ],
+    "base": "36b9b157ee6f05b65eb9f1da7e2978647d36c210",
+    "objects": 9274,
+    "fetched": 21,
+    "bytes": 713220
+  }
+}

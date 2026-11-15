@@ -1,0 +1,27 @@
+{
+  "layer": "OFFLINE_CANDIDATE_BUILD_FAILURE",
+  "sourceCommit": "58185619339c7b1e44ea34fc9a74ad8241b1cf5f",
+  "sourceDirty": false,
+  "buildId": "5a911672-2c80-4e5e-8f53-ea6d7f317104",
+  "payloadDigest": "9d704a120e7897ee72a6b141f89efa30d33b2b782a5622dd9142a8466b67044f",
+  "baseSha256After": "81204ef46c437761c65f8dec93e2af30e475ed057cb7cbad4c0903129d4a309b",
+  "status": "BLOCKED_ENVIRONMENT",
+  "failedStep": "write_graphs settlement compile/write",
+  "failure": {
+    "graphId": 1073741825,
+    "position": 0,
+    "code": "EPERM",
+    "message": "EPERM: operation not permitted, symlink 'D:\\MiliastraTools\\genshin-miliastra-mcp\\node_modules' -> 'F:\\New folder\\.worktrees\\release-pc-closeout-1115\\build\\release-pc-regression-58185619\\full\\5a911672-2c80-4e5e-8f53-ea6d7f317104\\wmwhw59i3-0\\node_modules'"
+  },
+  "sourceFailureReceiptSha256": "52ece8dd058d1595a8e1f1bb0098f1e7e2e646ea20044e9a47782578ae2ac849",
+  "candidateComplete": false,
+  "strictReadback": "not_run",
+  "officialImport": "not_run",
+  "officialReady": "not_run",
+  "officialCapacity": "not_run",
+  "pc": "not_run",
+  "mobile": "not_run",
+  "desktopInputUsed": false,
+  "liveWriteEnabled": false,
+  "oldLatestOverwritten": false
+}

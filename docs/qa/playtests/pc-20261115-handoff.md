@@ -17,3 +17,5 @@ Release保护已在本轮远端读回：Ruleset27313515 active，匹配release/*
 PC13末击/死亡/奖励可见时序、PC18语义图标正式映射/容量、PC20多任务卡顿或进程崩溃归因仍是实质缺口；其余P1不得从表中消失。基础动画反馈仍待核，装饰美术、新快捷键/预输入按发版后规划。
 
 最终仍需同一source SHA/buildId/GIL SHA256/payloadDigest的官方导入、真实ready、PC两幕、受影响手机路径、官方容量/负载验收。没有本轮窗口授权不占键鼠。未验不标Done、不修改master/Tag、不执行正式发布。
+
+自动化合并边界：本轮源码核实verify:delivery的targetHead也只接受develop/master，不能传假base宣称Release预审已过。Release继续依实际Ruleset、精确HEAD独审与原生Full检查办理受保护PR；本轮不调用Develop专用merge:auto，不绕过门禁。
