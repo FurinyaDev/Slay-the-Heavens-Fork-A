@@ -1,0 +1,83 @@
+{
+  "schemaVersion": 1,
+  "reviewer": "/root/pc_battle_port",
+  "role": "Independent shared UI reviewer; no authorship of reviewed changes",
+  "baseSha": "36b9b157ee6f05b65eb9f1da7e2978647d36c210",
+  "reviewedHeadSha": "cea8e11992ba2976aaba6648ecec26b2d14b6139",
+  "observedCurrentHeadSha": "670719bf4e56746c25fc15cfc4e799fee9e6ac79",
+  "scope": "Only three shared UI backports, base..reviewedHead; excludes battle commits and all later HEAD changes",
+  "verdict": "PASS_WITH_PENDING_DEVICE_AND_CI_ACCEPTANCE",
+  "paths": [
+    {
+      "path": "data/presentation/ui_theme.json",
+      "gitBlobSha": "50319b498745c0140f29b0743616e32a423bd3b3"
+    },
+    {
+      "path": "scripts/official-assets-layout.mjs",
+      "gitBlobSha": "f48e248913e7afcdb76fe59cb998310126a6d650"
+    },
+    {
+      "path": "scripts/ui-layout.mjs",
+      "gitBlobSha": "29c4842be38ee746b39bb8b12b82c92e8d7dbbeb"
+    },
+    {
+      "path": "tests/drag-line-initial-state.test.mjs",
+      "gitBlobSha": "fff4dd64c15886b0d215e561a3ac6fdef65accf2"
+    },
+    {
+      "path": "tests/official-potion-popup-style.test.mjs",
+      "gitBlobSha": "28301706593ce6aeb169f8c6cdb0ae455a48734c"
+    },
+    {
+      "path": "tests/shop-shelf-clearance.test.mjs",
+      "gitBlobSha": "aa22b54de69456d7b8be53d3b9f96827e4b47856"
+    }
+  ],
+  "sourceComparisons": [
+    {
+      "source": "9801fc107721661c78bbc181cef727973c7126eb",
+      "port": "5cec3d117a87741256c688f4903e003ad9e45f00",
+      "normalizedPatchMatch": true
+    },
+    {
+      "source": "a1825475e5212cf8a61f48eb7ce5e6a25c4843d2",
+      "port": "cd2f653b2a9e962e5315f5a5be2c9a7794a6c058",
+      "normalizedPatchMatch": true
+    },
+    {
+      "source": "24ea539e95ec6ca859ac469f6aab6bd03e7fa2ee",
+      "port": "cea8e11992ba2976aaba6648ecec26b2d14b6139",
+      "normalizedPatchMatch": true
+    }
+  ],
+  "patchNormalization": "Ignore index blob IDs and hunk line offsets only; all source/test changes and context remain identical.",
+  "findings": [],
+  "checks": [
+    {
+      "kind": "static review",
+      "result": "pass",
+      "detail": "Inspected all six changed files and callers: native shop goods/price token consumers; official theme composition; runtime dragLayer line writers; potion subtree/atlas skin boundaries and existing pointer ownership regression."
+    },
+    {
+      "kind": "diff integrity",
+      "result": "pass",
+      "detail": "All three original commits and release ports have identical normalized diff patches; git diff --check clean; only six scoped files."
+    },
+    {
+      "kind": "existing test evidence",
+      "result": "reported_by_parent_not_rerun",
+      "detail": "Parent reports shop 2/2 and drag+potion 6/6. Reviewed all assertions. No duplicated full execution."
+    }
+  ],
+  "assessment": {
+    "shop": "Only relic/potion X anchors shift +50; item/price owners consume same tokens. Regression checks default+official goods/hit/name bounds and nonoverlap at rest and each of seven focused card states; composition normalization proves no hiding/shrinking/additional controls.",
+    "goldLine": "Generation starts line invisible; both runtime card and potion drag paths already force invisible. Existing geometric anchor and hit area remain; default/official compiled battle and full Host roots checked.",
+    "potion": "Protected popup retains native rectangle tokens and action materials. Popup subtree excluded only from generic buttonFaces, popup root excluded from generic panel replacement. No changes to Lua use/discard/target/input ownership; existing default+official runtime matrix observes those boundaries.",
+    "scope": "No future features, new shortcuts, preinput, balance/RNG, develop/master/Tag changes or CI weakening."
+  },
+  "limits": [
+    "Independent review covers only reviewedHeadSha and listed paths; does not certify later integrated HEAD.",
+    "Generated layouts and Lua mock interactions do not prove official pixels, timing, device behavior, official ready or capacity.",
+    "Current Release exact HEAD/BASE Full CI and same-candidate PC/mobile acceptance remain required."
+  ]
+}

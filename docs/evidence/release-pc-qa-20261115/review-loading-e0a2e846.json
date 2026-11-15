@@ -1,0 +1,88 @@
+{
+  "schemaVersion": 1,
+  "reviewer": "/root/pc_battle_port",
+  "producer": "/root/pc_backport_audit",
+  "baseSha": "36b9b157ee6f05b65eb9f1da7e2978647d36c210",
+  "reviewedHeadSha": "e0a2e8466361bce307aeb79b008659a27ffdb99f",
+  "scope": "Loading backport only, 12 changed paths; no later source or integrated HEAD certification",
+  "paths": [
+    {
+      "path": "src/lua/abyss_game_ui.lua",
+      "blob": "4c2568b40a34bd4a45012dab4a834dc2d90ad2cc"
+    },
+    {
+      "path": "src/lua/abyss_game_ui_view.lua",
+      "blob": "45bb2b69ab4ccc9df5517d388a4b7e61633df076"
+    },
+    {
+      "path": "src/lua/abyss_map_ui.lua",
+      "blob": "67d345f9b90aa333e704b06cba183248d57a9c81"
+    },
+    {
+      "path": "src/lua/abyss_node_ui_lifecycle.lua",
+      "blob": "2193efbc5e04918dab47947d8140df6ccfe8ac50"
+    },
+    {
+      "path": "src/lua/abyss_page_reveal.lua",
+      "blob": "fed8dc2e7c5a7e4d8618ae46f0649ea4deae986e"
+    },
+    {
+      "path": "tests/helpers/isolated-battle-regression.mjs",
+      "blob": "a816eee3dd93cca12552887f2b43ca412c169d01"
+    },
+    {
+      "path": "tests/lua/map_ui.lua",
+      "blob": "ed1d6417e9040023ae069f6b91807c9913c34164"
+    },
+    {
+      "path": "tests/lua/modal_cover_setters.lua",
+      "blob": "262c67d522c61dedb1a5411ba58818c179c5624f"
+    },
+    {
+      "path": "tests/lua/modal_loading_frames.lua",
+      "blob": "6cb45ddc2a674f4180374d7dc0a78592b58a3eac"
+    },
+    {
+      "path": "tests/modal-loading-frames.test.mjs",
+      "blob": "daaad4e59ee7a6b694fcc743872d3d71957d2e7d"
+    },
+    {
+      "path": "tests/modal-page-preparation.test.mjs",
+      "blob": "d0aeb9a3e00fa2219c8d2461f799c1e4e0fffade"
+    },
+    {
+      "path": "tests/sts-page-reveal.test.mjs",
+      "blob": "33807da00076ff1a017a90ad0070f5b1da6a114b"
+    }
+  ],
+  "verdict": "REQUEST_CHANGES",
+  "findings": [
+    {
+      "id": "LOADING-REENTRY-1",
+      "severity": "P1",
+      "path": "src/lua/abyss_page_reveal.lua",
+      "line": 173,
+      "summary": "step publishes an obsolete local-modal readiness result after request reenters a newer local modal",
+      "cause": "step ignores request rejection and captures the new epoch after reentrant native setter/onIntent work, then calls readiness using its old intent argument; localFrame truthiness publishes without a fresh intent equality check.",
+      "reproduction": "Published battle base; ready(deck)=true, ready(potion)=false; SetSizeDelta during step(deck) reenters request(potion). Actual: intent=potionPanel, published=deckPanel, state=visible, cover=false.",
+      "expected": "Keep current unready potion request covered; old outer step must return false and must not publish old readiness.",
+      "fix": "After request, require passed intent still matches current self.intent before consulting readiness; retain epoch/readiness callback guards. Add step entry to the native setter reentrancy matrix, including reentry to a different same-base local modal."
+    }
+  ],
+  "results": [
+    {
+      "command": "node scripts/test-lua.mjs .artifacts/review-loading/step-reentry.lua",
+      "exitCode": 1,
+      "result": "Independent actual regression assertion failed; stale deck readiness exposed the newer pending potion modal.",
+      "log": "loading-step-reentry-red.log",
+      "logSha256": "37d9001b274485e555fa877eb3aa1a73e7ac679f9325f0414a2701b94630b3af"
+    },
+    {
+      "result": "Reviewed existing new 3/3 green evidence and all assertions; did not rerun full suite. Existing map lifecycle assertions are additive. One prior choice ready assertion changes from two scheduler calls to immediate same-base ready publication; async-not-ready assertion remains."
+    }
+  ],
+  "limits": [
+    "No official device/ready/capacity evidence",
+    "Later corrective commit requires independent follow-up review"
+  ]
+}

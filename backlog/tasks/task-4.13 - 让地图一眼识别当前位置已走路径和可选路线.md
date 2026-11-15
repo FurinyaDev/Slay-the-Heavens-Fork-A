@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@Furinya'
 created_date: '2026-10-30 21:58'
-updated_date: '2026-11-14 06:50'
+updated_date: '2026-11-15 13:34'
 labels:
   - playtest-20261030
   - p1
@@ -18,6 +18,7 @@ references:
   - docs/backlog-details/PLAYTEST-20261030.md
   - docs/backlog-details/MOBILE-QA-20261029.md
   - backlog/tasks/task-95 - 对照验证美术、交互与动效设计工具.md
+  - docs/backlog-details/PC-QA-20261115.md
 parent_task_id: TASK-4
 priority: medium
 type: enhancement
@@ -34,6 +35,7 @@ Owner强调地图是**整体交互体验**问题：当前节点和连线灰暗�
 - [ ] #1 地图静态可见时能清楚回答「我在哪、走过哪里、下一步能去哪」。
 - [ ] #2 不同节点/线路状态、对比度和交互反馈整体协调，PC/手机实际屏幕上可辨。
 - [ ] #3 不回退既有地图滚动、点击输入以及合法路径判定。
+- [ ] #4 #676 旧任务 TASK-4.13 AC4：复核PC地图路线向右偏移、图例附近节点/线被遮挡的截图01；在正式画面尺寸下确保整图有合理视窗/布局，合法节点位置、连接及点击保持不变；验证不同层级和窗口尺寸。
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -55,4 +57,6 @@ Owner强调地图是**整体交互体验**问题：当前节点和连线灰暗�
 2026-11-14逐项对账：地图源码和SDK切片103.1已收口，仍缺本任务明确的PC/手机可辨性结果；不重做滚动/路线算法。
 
 2026-11-14第二轮状态纠正：已核对本任务原实施计划、技术附件或已有PR/修复记录；工作已经开展，未勾AC不等于未开始。 状态表示整个任务的完成进展，不表示当前有执行者持续占用；保留原未验AC、负责人、依赖及历史证据。更正过去把已开展待验事项退回To Do的处理。
+
+2026-11-15 Release PC台账：PC07由本任务主责；逐字依据、修复提交/PR和未验缺口见 docs/backlog-details/PC-QA-20261115.md。仅文本核对和源码/离线回归不能勾官方或设备AC；本轮不新增重复任务、不改变原已验AC。
 <!-- SECTION:NOTES:END -->

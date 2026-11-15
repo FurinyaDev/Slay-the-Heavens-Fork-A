@@ -5,7 +5,7 @@ status: To Do
 assignee:
   - '@Furinya'
 created_date: '2026-10-24 06:50'
-updated_date: '2026-11-14 06:50'
+updated_date: '2026-11-15 13:23'
 labels:
   - art
   - launch
@@ -18,6 +18,7 @@ references:
   - docs/backlog-details/TASK-4.2.md
   - docs/DELIVERY-CLOSEOUT.md
   - docs/design/BACKGROUND_PROPOSAL.md
+  - docs/backlog-details/PC-QA-20261115.md
 parent_task_id: TASK-4
 priority: medium
 type: task
@@ -55,4 +56,6 @@ ordinal: 83000
 2026-11-14清理旧窗口日期：原due_date=2026-10-28保留于历史，不再显示为当前截止；实际未完成AC和审批不变。
 
 2026-11-14第二轮逐项核对，保留To Do：已有官方3D+环境路线决定，但本项正式装配与目标设备验收缺少可确认施工证据；不把其他2D实验当作本项已经完成。
+
+2026-11-15 Release PC台账：PC10/PC25由本任务主责；逐字依据、修复提交/PR和未验缺口见 docs/backlog-details/PC-QA-20261115.md。仅文本核对和源码/离线回归不能勾官方或设备AC；本轮不新增重复任务、不改变原已验AC。
 <!-- SECTION:NOTES:END -->

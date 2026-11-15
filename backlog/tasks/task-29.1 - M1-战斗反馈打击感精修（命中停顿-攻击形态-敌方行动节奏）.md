@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@Furinya'
 created_date: '2026-10-23 03:53'
-updated_date: '2026-11-14 06:51'
+updated_date: '2026-11-15 13:24'
 labels:
   - enhancement
   - awaiting-live
@@ -20,6 +20,7 @@ references:
   - docs/BACKLOG-AUDIT-20261026.md
   - docs/plans/2026-10-30-battle-life.md
   - backlog/tasks/task-95 - 对照验证美术、交互与动效设计工具.md
+  - docs/backlog-details/PC-QA-20261115.md
 parent_task_id: TASK-29
 priority: medium
 ordinal: 44000
@@ -72,4 +73,6 @@ ordinal: 44000
 2026-11-07 看板核对（develop 2c85bc61）：实现类交付已按历史记录保留，剩余 AC 待同候选官方/设备验证；当前无在途 PR，状态由 In Progress 归 To Do（待验）。
 
 2026-11-14第二轮状态纠正：已有5/6项AC通过及既有实施证据，剩余未完成要求属于后续验证或接续。 状态表示整个任务的完成进展，不表示当前有执行者持续占用；保留原未验AC、负责人、依赖及历史证据。更正过去把已开展待验事项退回To Do的处理。
+
+2026-11-15 Release PC台账：PC22由本任务主责；逐字依据、修复提交/PR和未验缺口见 docs/backlog-details/PC-QA-20261115.md。仅文本核对和源码/离线回归不能勾官方或设备AC；本轮不新增重复任务、不改变原已验AC。
 <!-- SECTION:NOTES:END -->

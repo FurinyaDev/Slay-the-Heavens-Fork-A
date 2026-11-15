@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@Furinya'
 created_date: '2026-10-24 10:34'
-updated_date: '2026-11-14 06:50'
+updated_date: '2026-11-15 13:24'
 labels:
   - awaiting-live
   - 待验
@@ -17,6 +17,7 @@ references:
   - docs/backlog-details/MOBILE-QA-20261028.md
   - docs/backlog-details/MOBILE-QA-20261029.md
   - docs/backlog-details/MOBILE-QA-20261029-SOURCES.md
+  - docs/backlog-details/PC-QA-20261115.md
 parent_task_id: TASK-4
 priority: medium
 type: feature
@@ -81,4 +82,6 @@ PR #304：手机反馈己方与敌方详情关闭不一致，可能为旧线上�
 2026-11-14清理旧窗口日期：原due_date=2026-10-26保留于历史，不再显示为当前截止；实际未完成AC和审批不变。
 
 2026-11-14第二轮状态纠正：已有4/8项AC通过及既有实施证据，剩余未完成要求属于后续验证或接续。 状态表示整个任务的完成进展，不表示当前有执行者持续占用；保留原未验AC、负责人、依赖及历史证据。更正过去把已开展待验事项退回To Do的处理。
+
+2026-11-15 Release PC台账：PC32/PC33由本任务主责；逐字依据、修复提交/PR和未验缺口见 docs/backlog-details/PC-QA-20261115.md。仅文本核对和源码/离线回归不能勾官方或设备AC；本轮不新增重复任务、不改变原已验AC。
 <!-- SECTION:NOTES:END -->

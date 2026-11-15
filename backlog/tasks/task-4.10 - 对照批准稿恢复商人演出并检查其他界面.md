@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - Furinya
 created_date: '2026-10-29 05:10'
-updated_date: '2026-11-12 16:12'
+updated_date: '2026-11-15 13:24'
 labels:
   - 待验
 milestone: m-5
@@ -14,6 +14,7 @@ references:
   - docs/design/UI_DESIGN.md
   - docs/design/prototype/index.html
   - docs/evidence/merchant-action-group-20261101/README.md
+  - docs/backlog-details/PC-QA-20261115.md
 parent_task_id: TASK-4
 priority: medium
 type: bug
@@ -57,4 +58,6 @@ QA-R2-07本轮先处理用户明确要求的购买/取消同组：原对白插�
 2026-11-12 来源合同子切片：新增四文件完整源到903bf2a31的精确接续，旧closeout/CI/source档案未改；旧96-owner断言保留，当前精确增加merchant为97。定向48项及Formation两项/Defect一项共51项通过；新四组负控最终复跑通过。早先三文件并跑曾触发终端120秒超时，不计通过。重绑入口tests/helpers/generate-shop-deck-source-epoch.mjs --write-archive（只写新gz并打印apply_patch补丁）；应用补丁后--check。当前archive SHA256=4b00f911da479f8dae228c9ff8351492db7eb53bfab80c2b68d534768bb0f413；input/feedback尚绑定903原源，主线完成生产修改后须最终重绑。未跑Full、未提交推送，任务AC及设备验收不变。
 
 本轮12份生产文件实现完成，10张当前Simulator图已逐张查看；独审R2关闭两项P2且无剩余阻断。工程346模块/6016测量、四变异与6原生UI合同通过。完整本地check已尝试，单线程20分钟终止，含旧Act1差分探针失败，未报Full通过；原严格远端Full仍须成功。Owner授权成熟后提交PR与自动合并。官方候选导入/ready、PC手机未测，AC不勾。证据docs/evidence/shop-deck-parity-20261112/。
+
+2026-11-15 Release PC台账：PC31由本任务主责；逐字依据、修复提交/PR和未验缺口见 docs/backlog-details/PC-QA-20261115.md。仅文本核对和源码/离线回归不能勾官方或设备AC；本轮不新增重复任务、不改变原已验AC。
 <!-- SECTION:NOTES:END -->

@@ -1,0 +1,18 @@
+{
+  "recordedAt": "2026-11-15T10:29:01.295Z",
+  "layer": "USER_PROVIDED_OFFICIAL_VALIDATION_SCREENSHOT",
+  "image": "F:\\New folder\\.artifacts\\pc-perf-1115\\capacity\\official-9b-20.1781-over-20.png",
+  "imageSha256": "4760e1801de76c06118b7916ba5016f6a71adf5aa4166864ce366a32f6c77690",
+  "observed": {
+    "size": 20.1781,
+    "limit": 20,
+    "status": "FAILED_OVER_LIMIT"
+  },
+  "candidateAssociation": "User states this is the just-delivered save; screenshot itself does not display buildId/SHA",
+  "candidatePath": "F:\\New folder\\playtest\\pc-closeout-9b7794e9.gil",
+  "candidateSha256": "cbf98fa7fe9362f3703388df057b00a36b3825307bdc5d9d087fece9092c8b27",
+  "candidateSource": "9b7794e944eb8dde1c5e9f9b2c1800dc5d653caf",
+  "gilBytesNotOfficialCapacity": true,
+  "action": "P0_LOSSLESS_CAPACITY_FIX",
+  "baseline7cbPreserved": true
+}

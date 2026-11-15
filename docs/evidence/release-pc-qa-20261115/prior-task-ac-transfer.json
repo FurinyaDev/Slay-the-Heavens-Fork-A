@@ -1,0 +1,63 @@
+{
+  "layer": "BACKLOG_CLI_READBACK",
+  "sourceCriteria": 8,
+  "allUnchecked": true,
+  "items": [
+    {
+      "source": "TASK-103.2",
+      "sourceIndex": "5",
+      "destination": "TASK-103.2",
+      "text": "PC实机截图02/05/07的返回战斗、事件继续、营地升级/奖励确认等按钮按既有批准全局设计复用，保持合法输入，避免锯齿、非统一边框、页内闪屏或文字截断；同候选PC/相关手机逐屏验收。",
+      "checked": false
+    },
+    {
+      "source": "TASK-103.3",
+      "sourceIndex": "4",
+      "destination": "TASK-103.3",
+      "text": "同候选PC选角的半透明信息区应仅覆盖批准HUD位置、不误蒙角色及背景；截图06与用户00:02:45/30:52不直接证明蒙层实现根因，必须做原版/批准稿位置对照。",
+      "checked": false
+    },
+    {
+      "source": "TASK-103.3",
+      "sourceIndex": "5",
+      "destination": "TASK-103.3",
+      "text": "主菜单标题、开始及退出按钮与最新批准方案一致：核对旧#650“移除标题”与本轮00:12用户要求“主标题去哪了”的明确冲突，不能自动恢复旧稿；最终决策及真实画面保存。",
+      "checked": false
+    },
+    {
+      "source": "TASK-25.5",
+      "sourceIndex": "4",
+      "destination": "TASK-25.5",
+      "text": "旅行者战斗角色需有与现有怪物一致且低成本的接地阴影，角色与场景不显悬空；截图12与27:42反馈为观察，不自动推断性能开销，需同候选PC/实体手机对照。",
+      "checked": false
+    },
+    {
+      "source": "TASK-4.11",
+      "sourceIndex": "3",
+      "destination": "TASK-4.11",
+      "text": "按2026-11-15 PC用户最新要求，退出界面彻底移除多余操作说明及其失效触点/状态残留，同时保留放弃确认、取消继续和平台退出的准确操作；在当前最终GIL实测。",
+      "checked": false
+    },
+    {
+      "source": "TASK-4.13",
+      "sourceIndex": "4",
+      "destination": "TASK-4.13",
+      "text": "复核PC地图路线向右偏移、图例附近节点/线被遮挡的截图01；在正式画面尺寸下确保整图有合理视窗/布局，合法节点位置、连接及点击保持不变；验证不同层级和窗口尺寸。",
+      "checked": false
+    },
+    {
+      "source": "TASK-4.15",
+      "sourceIndex": "4",
+      "destination": "TASK-4.15",
+      "text": "同一最终候选在战斗顶部、商店、奖励及药水使用弹窗中显示正确且可区分的不同药水语义图标；药水标题、描述、价格与使用/丢弃逻辑一致，不因图标共用让玩家选错物品。",
+      "checked": false
+    },
+    {
+      "source": "TASK-4.16",
+      "sourceIndex": "5",
+      "destination": "TASK-4.16",
+      "text": "核对顶栏地图与设置菜单重复地图入口、右上角齿轮样式、返回/关闭后的菜单层级；只保留符合当前状态的单一清晰导航，任何取消/返回都不覆盖原运行状态；按当前原版参照与最终设备复核。",
+      "checked": false
+    }
+  ]
+}

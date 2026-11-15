@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "result": "PASS_SCOPED",
+  "reviewer": "/root/pc_backport_audit",
+  "implementer": "/root/pc_battle_port",
+  "base": "36b9b157ee6f05b65eb9f1da7e2978647d36c210",
+  "commits": [
+    "42378151c54a514119e658f8c94752392da69007",
+    "bf02775301a30e5d638bda9bf550264d07dcaf27",
+    "03beb581e0799744df90e34a81e1a730ddf2d878"
+  ],
+  "mappedIntegrationCommits": [
+    "e1e2e663d4369a3f6ab7d7b53a53321ec37d976c",
+    "99ab019a329497725d98d6a475db4fc0910054fe",
+    "670719bf4e56746c25fc15cfc4e799fee9e6ac79"
+  ],
+  "changedPaths": 14,
+  "findings": [],
+  "checks": {
+    "sourceInputHashes": {"passed": 7, "total": 7},
+    "rawAndCompressedLogIdentities": {"passed": 5, "total": 5},
+    "mappedChangedBlobEquality": true,
+    "additionalFocusedTest": {
+      "command": "node scripts/test-lua.mjs tests/lua/act1_bosses.lua",
+      "node": "24.18.0",
+      "cwdHead": "03beb581e0799744df90e34a81e1a730ddf2d878",
+      "tmp": "workspace .artifacts/review-battle-tmp",
+      "exitCode": 0,
+      "marker": "LUA_ACT1_BOSSES_PASS 21",
+      "durationMs": 14604
+    }
+  },
+  "notClaimed": ["whole integration HEAD", "source continuation", "Release Full CI", "official ready", "official capacity", "PC live", "mobile live", "quick-play latency", "battle settlement timing"]
+}

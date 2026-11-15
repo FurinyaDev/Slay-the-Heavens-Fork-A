@@ -1,0 +1,80 @@
+{
+  "schemaVersion": 1,
+  "reviewer": "/root/pc_battle_port",
+  "role": "Independent reviewer; no authorship of corner/sleep changes",
+  "baseSha": "670719bf4e56746c25fc15cfc4e799fee9e6ac79",
+  "reviewedHeadSha": "0331597e164536234c035debb6b7607972727d80",
+  "scope": "Only four corner/sleep commits; six paths; excludes all previous battle and later loading/integration changes",
+  "verdict": "PASS_WITH_PENDING_CURRENT_TEST_OUTPUT_DEVICE_AND_CI",
+  "paths": [
+    {
+      "path": "src/lua/abyss_battle_render_actors.lua",
+      "blob": "43342e628c20e86e4156dbce605ff5b0179496ec"
+    },
+    {
+      "path": "src/lua/abyss_battle_unit_view.lua",
+      "blob": "341007da0f482115e05083ed0cddead8010c9b0b"
+    },
+    {
+      "path": "tests/lua/sleep_intent_label.lua",
+      "blob": "b607a4d6d8544b72bc7a89a240e3dd5e8a79b51e"
+    },
+    {
+      "path": "tests/lua/target_corner_geometry.lua",
+      "blob": "62904e67bb50059cab30a683a7f895913d795f46"
+    },
+    {
+      "path": "tests/sleep-intent-label.test.mjs",
+      "blob": "61412533af9b78c5f4bf3e62e3c1263c281fbca0"
+    },
+    {
+      "path": "tests/target-corner-geometry.test.mjs",
+      "blob": "2f93fbb4b7dde7772045db21f482c3a6f3019e8d"
+    }
+  ],
+  "sourceComparisons": [
+    {
+      "port": "13c9981431e04ac1be75592842da180225dbaf63",
+      "source": "dc1a25407ff659c562fb22dc6e92fa3a6e9d4d01",
+      "normalizedPatchMatch": true
+    },
+    {
+      "port": "91a8ae2ccd1db69e74a14b3633c7844f24639df0",
+      "source": "bb04af5e4c950fa6a83953f25b4daea4f2b1e038",
+      "normalizedPatchMatch": true
+    },
+    {
+      "port": "d4866650cf17ebee07d3742156c179a87a77fe03",
+      "source": "39f81eba2587166e0e133f1694aff203968fbfa1",
+      "normalizedPatchMatch": true
+    },
+    {
+      "port": "0331597e164536234c035debb6b7607972727d80",
+      "source": "fe6f7be2d9dd3f498f54042afd42a25bfdf8f8c2",
+      "normalizedPatchMatch": true
+    }
+  ],
+  "findings": [],
+  "results": [
+    {
+      "kind": "static independent review",
+      "result": "pass",
+      "detail": "Read both production modules, source intent enum/displayed-state producer, Runic Dome visibility gate and all four regression files. Existing rectangular bars move inward by their half length to form corners; sizes/input/order conserved. Sleep reuses existing intentLabel and clears text/visibility on wake/rebind, respects original hidden/dying/escaping/player-dead allowed guard; no game state or RNG writes. Refactor only extracts pure tone/writer closures."
+    },
+    {
+      "kind": "test adequacy",
+      "result": "pass",
+      "detail": "Default/official generated UI tests check all 8 marker bars/zero added controls, original hit geometry, selected/cancel/reused pool; sleep/wake attack icons, repeated refresh no state mutation, Runic Dome hide/reveal and reused slot. Parent reports baseline 4/4 red; green output is pending at review time and not independently rerun."
+    },
+    {
+      "kind": "source equivalence",
+      "result": "pass",
+      "detail": "Four port patches match source patches after index IDs/hunk line offsets normalization; no test/threshold reduction."
+    }
+  ],
+  "limits": [
+    "No assertion about official visual quality or device readiness/capacity",
+    "No whole current integrated HEAD certification",
+    "Parent must verify current green output and exact Release Full CI before merge"
+  ]
+}

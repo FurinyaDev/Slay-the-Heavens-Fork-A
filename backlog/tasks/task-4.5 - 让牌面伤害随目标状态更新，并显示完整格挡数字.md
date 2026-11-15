@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@Furinya'
 created_date: '2026-10-24 12:17'
-updated_date: '2026-11-14 06:50'
+updated_date: '2026-11-15 13:24'
 labels:
   - awaiting-live
   - release-qa-20261101
@@ -20,6 +20,7 @@ references:
   - docs/BACKLOG-AUDIT-20261026.md
   - docs/backlog-details/MOBILE-QA-20261028.md
   - docs/backlog-details/MOBILE-RELEASE-QA-20261101.md
+  - docs/backlog-details/PC-QA-20261115.md
 parent_task_id: TASK-4
 priority: medium
 type: bug
@@ -41,6 +42,7 @@ ordinal: 86000
 - [ ] #5 分别实测点选和拖动瞄准目标的预览及结算，记录实际差异。
 - [ ] #6 无其他修正的基础6普通攻击进入明确待出牌目标状态后，易伤敌人的当前牌面在出牌提交前显示9，切至普通敌人显示6、切回显示9；不能只在结算时正确，也不能把同一目标修正套到整手牌。
 - [ ] #7 同候选分别记录手机点选与实际拖动、PC点击携牌／拖放、已支持手柄选牌切目标的预览和确认顺序；按固定源核实映射，保留取消、移出目标、切牌和状态变化后的数值恢复，预览不扣能量、不移牌、不造成伤害。
+- [ ] #8 #676 拟议 TASK-42.2 AC3：核实“全力进攻”卡牌截图中的数字与↓是否为正确的已实现伤害修正/禁用反馈，判断异常时给出完整状态与预览依据，禁止直接修改平衡数字。
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -77,4 +79,6 @@ PR #304：手机反馈瞄准易伤目标时伤害未更新；离线拖动对照�
 2026-11-14清理旧窗口日期：原due_date=2026-10-24保留于历史，不再显示为当前截止；实际未完成AC和审批不变。
 
 2026-11-14第二轮状态纠正：已有3/7项AC通过及既有实施证据，剩余未完成要求属于后续验证或接续。 状态表示整个任务的完成进展，不表示当前有执行者持续占用；保留原未验AC、负责人、依赖及历史证据。更正过去把已开展待验事项退回To Do的处理。
+
+2026-11-15 Release PC台账：PC34由本任务主责；逐字依据、修复提交/PR和未验缺口见 docs/backlog-details/PC-QA-20261115.md。仅文本核对和源码/离线回归不能勾官方或设备AC；本轮不新增重复任务、不改变原已验AC。
 <!-- SECTION:NOTES:END -->

@@ -1,0 +1,215 @@
+{
+  "layer": "BACKLOG_CLI_READBACK",
+  "criteria": 29,
+  "allUnchecked": true,
+  "tasks": [
+    {
+      "id": "TASK-103",
+      "status": "In Progress",
+      "assignees": [
+        "Furinya"
+      ],
+      "transferredCriteria": [
+        {
+          "index": 6,
+          "text": "#676 拟议 TASK-103.6 AC1：打开已准备好的同页面板、关闭、排序及选项切换不调用全屏遮罩；真正异步准备须明确局部反馈与输入隔离，不能先闪黑再返同页。",
+          "checked": false
+        },
+        {
+          "index": 7,
+          "text": "#676 拟议 TASK-103.6 AC2：跨页使用现有批准的璃月转场和真实准备/可见状态；取消、重复点击、迟到回调不会揭露旧页或卡在黑幕。",
+          "checked": false
+        },
+        {
+          "index": 8,
+          "text": "#676 拟议 TASK-103.6 AC4：在同一准确 GIL/源码 SHA 下按原录音路径做 PC 连续操作回归，提供屏幕录像或等价帧与操作日志，并记录实测延迟/闪烁次数，不把 SDK 计数冒充实机。",
+          "checked": false
+        },
+        {
+          "index": 9,
+          "text": "#676 拟议 TASK-103.6 AC5：受影响的手机页面与正式候选需要复验；异常恢复、10次快速往返、空牌堆与长列表均不得退化。",
+          "checked": false
+        },
+        {
+          "index": 10,
+          "text": "#676 拟议 TASK-103.6 AC6：与 #672 的模态加载修复逐文件对账：只接续未完成AC，不复制既有实现；#663已合入develop；#672尚未最终整合/实机验收时保留本任务In Progress，不冒充已合入。",
+          "checked": false
+        },
+        {
+          "index": 11,
+          "text": "#676 拟议 TASK-42.1 AC3：按费用/类型/名称等排序重复执行并测量触发至呈现的耗时与原生更新量；不得因为排序重建全屏页面、进入准备遮罩或导致不必要重复绘制。",
+          "checked": false
+        }
+      ]
+    },
+    {
+      "id": "TASK-30",
+      "status": "In Progress",
+      "assignees": [
+        "Furinya"
+      ],
+      "transferredCriteria": [
+        {
+          "index": 16,
+          "text": "#676 拟议 TASK-42.1 AC1：使用有来源的统一候选，PC正常负载与用户多任务负载分开采样悬停、换牌、手牌升起、20次快速有效/无效拖放与取消，记录事件、响应耗时及设备条件。",
+          "checked": false
+        },
+        {
+          "index": 17,
+          "text": "#676 拟议 TASK-42.1 AC2：确认快速连续释放时每张有效卡仅出一次、无效不扣费不吞牌、取消归位及新旧目标身份正确；复用 TASK-30 既有合同，不复制状态机。",
+          "checked": false
+        },
+        {
+          "index": 18,
+          "text": "#676 拟议 TASK-42.1 AC5：经实际 PC 和相关手机回归、独立评审及当前最终候选验证后才可标验收；性能改善以同机同路数据证明，不捏造 FPS 或刚性延迟目标。",
+          "checked": false
+        },
+        {
+          "index": 19,
+          "text": "#676 拟议 TASK-42.2 AC1：卡牌不可用提示在取消、切牌、重新有效选牌、切页/回合结束时按真实状态清理，无过期提示残留或事件穿透。",
+          "checked": false
+        },
+        {
+          "index": 20,
+          "text": "#676 拟议 TASK-42.2 AC2：攻击/技能/无目标牌的合法锁敌、取消、跟手及无效位置提示参照已批准初代行为；不引入常驻金线或无目的四角加号；已有目标身份与出牌规则不退化。",
+          "checked": false
+        },
+        {
+          "index": 21,
+          "text": "#676 拟议 TASK-42.2 AC4：同一候选真实 PC 快慢点选/拖动/取消各20次及相关手机操作回归，保存截图、事件与精确SHA，提示不遮住牌面及旁边文字。",
+          "checked": false
+        },
+        {
+          "index": 22,
+          "text": "#676 拟议 TASK-42.2 AC5：核对 #672 对 card-cancel-notice/drag-line/target-corner 的代码和测试，未合入或未实机通过前不勾AC；与 TASK-4.5/4.6 不重复立核心数值任务。",
+          "checked": false
+        }
+      ]
+    },
+    {
+      "id": "TASK-16.1",
+      "status": "In Progress",
+      "assignees": [
+        "@Furinya"
+      ],
+      "transferredCriteria": [
+        {
+          "index": 7,
+          "text": "#676 拟议 TASK-103.6 AC3：末击到死亡/奖励的切换不得重复遮幕；分别保留视觉时序和真实业务状态的自动回归、反例及截图/帧序列。",
+          "checked": false
+        },
+        {
+          "index": 8,
+          "text": "#676 拟议 TASK-16.1.5 AC1：固定源敌人死亡、末击命中、状态结算、Victory/奖励揭幕的事实顺序；对可见帧作真实观察，不能只凭业务日志或仅测试最后存活敌人的HP。",
+          "checked": false
+        },
+        {
+          "index": 9,
+          "text": "#676 拟议 TASK-16.1.5 AC2：敌人死亡/消失后才按正式时序稳定呈现奖励；无重复全屏遮挡、奖励先出现再撤回或错误返回战斗。",
+          "checked": false
+        },
+        {
+          "index": 10,
+          "text": "#676 拟议 TASK-16.1.5 AC3：覆盖多敌、过量伤害、死亡触发、连锁伤害、多段、战斗结束前旧事件以及奖励返回地图；不改RNG/数值和奖励内容。",
+          "checked": false
+        },
+        {
+          "index": 11,
+          "text": "#676 拟议 TASK-16.1.5 AC4：核对 #672 原死亡路径测试并新增确实检验可见转场顺序的RED/GREEN，最终官方PC及移动端同候选录像/帧证据通过后再完成。",
+          "checked": false
+        }
+      ]
+    },
+    {
+      "id": "TASK-103.2",
+      "status": "In Progress",
+      "assignees": [
+        "Furinya"
+      ],
+      "transferredCriteria": [
+        {
+          "index": 5,
+          "text": "#676 拟议 TASK-103.7 AC1：在5卡、遗物、药水、删牌、售价/不足金币等完整商品布局中，卡面、物品icon、价格、交互命中区及提示互不压盖且Z序正确；截图08缺陷有RED→GREEN回归。",
+          "checked": false
+        },
+        {
+          "index": 6,
+          "text": "#676 拟议 TASK-103.7 AC2：固定原版卡牌选择语义与项目正式浏览器；商店删牌、营地升级、战斗看牌组的分页/滚动以现有可复用的正式方案为准，不能另造第三套、不靠盲猜滚动成本。",
+          "checked": false
+        },
+        {
+          "index": 7,
+          "text": "#676 拟议 TASK-103.7 AC3：连续购买、移除、分页、返回、取消和再次进入页面不出现未销毁旧控件、幽灵商品/重复结算；商品图标身份与 TASK-4.15 / #672 交叉验收。",
+          "checked": false
+        },
+        {
+          "index": 8,
+          "text": "#676 拟议 TASK-103.7 AC4：在PC目标尺寸、常见宽高比、手机受影响布局进行真实来源与像素检查；保留较长中文卡面、优惠与不同库存数量压力。",
+          "checked": false
+        },
+        {
+          "index": 9,
+          "text": "#676 拟议 TASK-103.7 AC5：逐项审查 #672 的 shop-shelf-clearance 及图标修复，不能把未合并或软件生成截图冒充正式候选实机通过。",
+          "checked": false
+        }
+      ]
+    },
+    {
+      "id": "TASK-42",
+      "status": "In Progress",
+      "assignees": [
+        "@Furinya"
+      ],
+      "transferredCriteria": [
+        {
+          "index": 8,
+          "text": "#676 拟议 TASK-16.1.6 AC1：按真实分裂触发生成两个可分别辨识的敌人实体；视觉位置/生命值/意图/点击命中区对应各自实体，无重叠和不可选目标。",
+          "checked": false
+        },
+        {
+          "index": 9,
+          "text": "#676 拟议 TASK-16.1.6 AC2：同场已有敌人时、第一/最后一列、不同可用宽度及反复遭遇下布局稳定，无遮挡重要战斗HUD。",
+          "checked": false
+        },
+        {
+          "index": 10,
+          "text": "#676 拟议 TASK-16.1.6 AC3：核心分裂数量、HP、RNG/行动顺序和死亡奖励规则不改；用真实Lua/Host复现并保留旧错误RED和新行为GREEN。",
+          "checked": false
+        },
+        {
+          "index": 11,
+          "text": "#676 拟议 TASK-16.1.6 AC4：复核 #672 的 slime-split-positions 回归与实际正式GIL布局；同候选PC和相关手机实测未完成前不得标记Done。",
+          "checked": false
+        }
+      ]
+    },
+    {
+      "id": "TASK-100",
+      "status": "In Progress",
+      "assignees": [
+        "Furinya"
+      ],
+      "transferredCriteria": [
+        {
+          "index": 4,
+          "text": "#676 拟议 TASK-42.1 AC4：对战斗重载、持续内存/控件增长、资源释放及其他应用干扰进行单因素取证；区分系统卡顿、游戏卡顿和真正进程崩溃，未证实不得定性。",
+          "checked": false
+        }
+      ]
+    },
+    {
+      "id": "TASK-4.5",
+      "status": "In Progress",
+      "assignees": [
+        "@Furinya"
+      ],
+      "transferredCriteria": [
+        {
+          "index": 8,
+          "text": "#676 拟议 TASK-42.2 AC3：核实“全力进攻”卡牌截图中的数字与↓是否为正确的已实现伤害修正/禁用反馈，判断异常时给出完整状态与预览依据，禁止直接修改平衡数字。",
+          "checked": false
+        }
+      ]
+    }
+  ]
+}

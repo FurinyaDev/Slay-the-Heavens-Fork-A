@@ -1,11 +1,11 @@
 ---
 id: TASK-42
 title: 在电脑上用鼠标和键盘完整玩一遍
-status: To Do
+status: In Progress
 assignee:
   - '@Furinya'
 created_date: '2026-10-23 12:23'
-updated_date: '2026-11-14 06:51'
+updated_date: '2026-11-15 13:24'
 labels:
   - awaiting-live
 milestone: m-8
@@ -18,6 +18,7 @@ references:
   - docs/backlog-details/TASK-42.md
   - docs/DELIVERY-CLOSEOUT.md
   - docs/BACKLOG-AUDIT-20261026.md
+  - docs/backlog-details/PC-QA-20261115.md
 priority: medium
 type: feature
 ordinal: 40000
@@ -37,7 +38,18 @@ ordinal: 40000
 - [ ] #4 保存电脑实测结果，有限制或没做好的地方写清楚。
 - [ ] #5 同一候选实测跨战斗首次点牌、旧触点、药水、奖励、弹窗和取消退出的真实事件派发；已完成本地手势切片不能代替电脑验收。
 - [ ] #6 同一候选两职业覆盖两幕、换幕、胜败与重开，保存真实设备证据及通关耗时；预览不能替代。
+- [ ] #7 PC01–PC38逐项对应实现、PR、提交、回归与当前正式候选设备验收，未验、待判、延期分别记录。
+- [ ] #8 #676 拟议 TASK-16.1.6 AC1：按真实分裂触发生成两个可分别辨识的敌人实体；视觉位置/生命值/意图/点击命中区对应各自实体，无重叠和不可选目标。
+- [ ] #9 #676 拟议 TASK-16.1.6 AC2：同场已有敌人时、第一/最后一列、不同可用宽度及反复遭遇下布局稳定，无遮挡重要战斗HUD。
+- [ ] #10 #676 拟议 TASK-16.1.6 AC3：核心分裂数量、HP、RNG/行动顺序和死亡奖励规则不改；用真实Lua/Host复现并保留旧错误RED和新行为GREEN。
+- [ ] #11 #676 拟议 TASK-16.1.6 AC4：复核 #672 的 slime-split-positions 回归与实际正式GIL布局；同候选PC和相关手机实测未完成前不得标记Done。
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+2026-11-15 Release接续：PC01–PC38逐项核原文与证据，选择性移植#672本版修复，定向回归、独审及Release Full。同候选PC/手机/ready/容量未过不勾AC。
+<!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
 
@@ -55,4 +67,8 @@ ordinal: 40000
 2026-11-03 赛后调整：m-5 → M7（产品体验与核心特色）；保留状态和未验 AC；旧截止日期 '2026-10-28' 已移除，不设新期限。
 
 2026-11-14第二轮逐项核对，保留To Do：本项要求同一当前候选的完整PC鼠标键盘操作矩阵，未找到本项已执行的设备记录；源码输入支持不等于该整轮实测已经开始。
+
+本轮release基线36b9b157已含#663。#672仍未合。#676新任务存在编号/标题冲突，不复制；38项沿用TASK-42及既有子范围。旧9b容量收据记录20.1781>20，关联来自用户说明，未独立看原图。
+
+2026-11-15 Release PC台账：PC27由本任务主责；逐字依据、修复提交/PR和未验缺口见 docs/backlog-details/PC-QA-20261115.md。仅文本核对和源码/离线回归不能勾官方或设备AC；本轮不新增重复任务、不改变原已验AC。
 <!-- SECTION:NOTES:END -->
