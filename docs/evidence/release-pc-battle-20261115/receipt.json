@@ -1,0 +1,55 @@
+{
+  "schemaVersion": 1,
+  "base": "36b9b157ee6f05b65eb9f1da7e2978647d36c210",
+  "sourceCommits": [
+    "dde71325414f39aae7381752da740445645b1c52",
+    "97ed740e83e2f6bb0f8377eea2209070a300b36c"
+  ],
+  "releasePortCommits": [
+    "42378151",
+    "bf027753"
+  ],
+  "sourceHelper": "1f7ce04c53189db8c39b59c797a45d57a2c7bac1:tests/helpers/isolated-battle-regression.mjs",
+  "inputsLfSha256": {
+    "src/lua/abyss_combat.lua": "d8dceaabd56e937d80756579b45fbce4efbefcda4570702ac7d0e9c52e33f392",
+    "src/lua/abyss_battle_card_gestures.lua": "dae42c2bbd6b6223bc0548c6a5b714af0b7a7c43a27936483458c627299fddfe",
+    "tests/helpers/isolated-battle-regression.mjs": "b09cd53b56af011a2b44eb70cdaac3d21eb855b46d8991aebe404b31dd4b9997",
+    "tests/card-cancel-notice.test.mjs": "19080b8ff3f5240cfa17ae1a480977cccc8f113f2961e5596feb58276a4a1089",
+    "tests/slime-split-positions.test.mjs": "9a12d6e633faa0247c7ba76e8937a06f347ee2d56d1c298d333d61c44530a226",
+    "tests/lua/card_cancel_notice.lua": "738e88154627427a0b2a58ddf45caddff5777a21969f10456b131746d022831a",
+    "tests/lua/slime_split_positions.lua": "35e39d140ac30e3b01d3331d07186a41db1915d141c6dcbcaf46f8544e501c9c"
+  },
+  "logs": {
+    "red.tap": {
+      "sha256": "09136019d11e43c186a96772910f4d9bfccd62cdbd444fa3ee9e751090c8b58e",
+      "gzipSha256": "c53462328d9949dcd5112bee930ba9d6ad9fa8ba173cb1bc54a877a7533ba5d9",
+      "bytes": 3231
+    },
+    "green.tap": {
+      "sha256": "cd1e73a85a65f7dfa30922272161c976fa925dd4b721ef7dfad6817e4634a76f",
+      "gzipSha256": "048385cceca5d92ab339c9d956c6af03e27edbe1ba70ef40d5b959d5f30d9f13",
+      "bytes": 566
+    },
+    "affected.tap": {
+      "sha256": "9f52c3583fa812b396fc904221adfb1b301e14d9e87dc4da5b91f4c360fb1f00",
+      "gzipSha256": "39fa0e6d82c59fcd9ca3b72ce5325dbf289176c8dc0e028feb66ef3c9957eb63",
+      "bytes": 7774
+    },
+    "fast.tap": {
+      "sha256": "f50f5258e42ead915f6c35e74db39c04532079077d2f3b504be0cf9741512b73",
+      "gzipSha256": "958876160772c4048dcc753bc1f82c5d2118e3b65e2a0a29a2581985f9fd5dfd",
+      "bytes": 136740
+    },
+    "engineering.txt": {
+      "sha256": "6ee14aaec4340d2dfcc65b461504f10ec19bc82c77395a0475469612fd7ff85d",
+      "gzipSha256": "880882764b6826ab876f53974bf57c0c7ceb13927341499f375729a4af7430d6",
+      "bytes": 377
+    }
+  },
+  "node": "v22.22.1",
+  "officialCandidate": "not_built",
+  "officialReady": "not_run",
+  "pcLive": "not_run",
+  "mobileLive": "not_run",
+  "officialCapacity": "not_run"
+}
