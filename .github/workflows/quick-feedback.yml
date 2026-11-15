@@ -1,7 +1,7 @@
 name: Quick feedback
 on:
   pull_request:
-    branches: [develop]
+    branches: [develop, 'release/**']
   workflow_dispatch:
     inputs:
       base_sha:

@@ -1,13 +1,13 @@
 name: Quality
 on:
   pull_request:
-    branches: [develop, master]
+    branches: [develop, master, 'release/**']
     types: [opened, synchronize, reopened, ready_for_review, converted_to_draft, labeled, unlabeled]
   merge_group:
     types: [checks_requested]
     branches: [develop]
   push:
-    branches: [develop, master]
+    branches: [develop, master, 'release/**']
   workflow_dispatch:
     inputs:
       runner_pool:
