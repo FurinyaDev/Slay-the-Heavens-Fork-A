@@ -1,0 +1,46 @@
+{
+  "baseline": "9361d5cf9559ea30f8bdbd5da13eaadd9bcd36b0",
+  "node": "v24.18.0",
+  "scope": "CI/test fixtures only; no product, workflow, timeout or inventory changes",
+  "logs": {
+    "pr684-before.log": {
+      "tests": 5,
+      "pass": 1,
+      "fail": 4,
+      "skip": 0
+    },
+    "pr684-after.log": {
+      "tests": 7,
+      "pass": 7,
+      "fail": 0,
+      "skip": 0
+    },
+    "pr684-card-input-after.log": {
+      "tests": 2,
+      "pass": 1,
+      "fail": 1,
+      "skip": 0
+    },
+    "pr684-card-input-after-generated.log": {
+      "tests": 2,
+      "pass": 2,
+      "fail": 0,
+      "skip": 0
+    },
+    "pr684-source-after.log": {
+      "tests": 8,
+      "pass": 8,
+      "fail": 0,
+      "skip": 0
+    }
+  },
+  "gitProof": {
+    "objects": 12,
+    "commits": 3,
+    "trees": 9,
+    "queriesComparedToActualGit": 25
+  },
+  "sourcePacket": "533b470c786e02972a0359d6df10b6dbc3d0f946e7e054561f53f9635e77e966",
+  "ciNotRerunManually": true,
+  "deviceAcceptance": false
+}

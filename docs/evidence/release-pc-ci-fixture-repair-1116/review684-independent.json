@@ -1,0 +1,226 @@
+{
+  "reviewer": "/root/ci_release_failed_jobs_inventory",
+  "scope": "PR684 current uncommitted CI repair only; previous product reviews retained separately",
+  "base": "9361d5cf9559ea30f8bdbd5da13eaadd9bcd36b0",
+  "head": "9361d5cf9559ea30f8bdbd5da13eaadd9bcd36b0",
+  "timestamp": "2026-11-15T22:33:34.095Z",
+  "node": "v24.18.0",
+  "decision": "CI_REPAIR_REVIEW_PASS",
+  "checks": [
+    {
+      "name": "exact base HEAD and zero production/workflow/config diff",
+      "result": "PASS"
+    },
+    {
+      "name": "complete old outer packet unchanged, all 95 original archive pins retained",
+      "result": "PASS"
+    },
+    {
+      "name": "every original and added before is the actual complete Git source at its declared commit",
+      "result": "PASS"
+    },
+    {
+      "name": "all live 55 after and 96 archives authenticate without projection",
+      "result": "PASS"
+    },
+    {
+      "name": "each archived raw commit/tree equals the actual local Git object, including type and full bytes",
+      "result": "PASS"
+    },
+    {
+      "name": "unchanged provenance assertions issue identical complete online/offline queries and results",
+      "result": "PASS"
+    },
+    {
+      "name": "foreign archived queries fail closed and missing producer commit is rejected",
+      "result": "PASS"
+    },
+    {
+      "name": "two original 116-owner assertion bodies are retained verbatim apart from explicit frozen epoch shadow",
+      "result": "PASS"
+    },
+    {
+      "name": "all original historical card input assertions remain plus narrow binding guard; runtime scripts unchanged",
+      "result": "PASS"
+    }
+  ],
+  "gitObjects": {
+    "count": 12,
+    "types": {
+      "commit": 3,
+      "tree": 9
+    },
+    "queries": [
+      [
+        "show",
+        "-s",
+        "--format=%P",
+        "1cc5479b713edab6fd26db4e20f8eb22b7401cb2"
+      ],
+      [
+        "rev-parse",
+        "1cc5479b713edab6fd26db4e20f8eb22b7401cb2^{tree}"
+      ],
+      [
+        "rev-parse",
+        "b67226945c2be47c8fff31f1362412b973f68875^{tree}"
+      ],
+      [
+        "ls-tree",
+        "-r",
+        "--format=%(path)\t%(objectname)",
+        "36b9b157ee6f05b65eb9f1da7e2978647d36c210",
+        "--",
+        "src/lua",
+        "config/architecture.json"
+      ],
+      [
+        "ls-tree",
+        "-r",
+        "--format=%(path)\t%(objectname)",
+        "1cc5479b713edab6fd26db4e20f8eb22b7401cb2",
+        "--",
+        "src/lua",
+        "config/architecture.json"
+      ],
+      [
+        "show",
+        "1cc5479b713edab6fd26db4e20f8eb22b7401cb2:.github/workflows/licenses.yml"
+      ],
+      [
+        "rev-parse",
+        "1cc5479b713edab6fd26db4e20f8eb22b7401cb2:.github/workflows/licenses.yml"
+      ],
+      [
+        "show",
+        "1cc5479b713edab6fd26db4e20f8eb22b7401cb2:.github/workflows/quality.yml"
+      ],
+      [
+        "rev-parse",
+        "1cc5479b713edab6fd26db4e20f8eb22b7401cb2:.github/workflows/quality.yml"
+      ],
+      [
+        "show",
+        "1cc5479b713edab6fd26db4e20f8eb22b7401cb2:.github/workflows/quick-feedback.yml"
+      ],
+      [
+        "rev-parse",
+        "1cc5479b713edab6fd26db4e20f8eb22b7401cb2:.github/workflows/quick-feedback.yml"
+      ],
+      [
+        "show",
+        "1cc5479b713edab6fd26db4e20f8eb22b7401cb2:tests/ci-complete-calibration.test.mjs"
+      ],
+      [
+        "rev-parse",
+        "1cc5479b713edab6fd26db4e20f8eb22b7401cb2:tests/ci-complete-calibration.test.mjs"
+      ],
+      [
+        "show",
+        "1cc5479b713edab6fd26db4e20f8eb22b7401cb2:tests/ci-posix-concurrency.test.mjs"
+      ],
+      [
+        "rev-parse",
+        "1cc5479b713edab6fd26db4e20f8eb22b7401cb2:tests/ci-posix-concurrency.test.mjs"
+      ],
+      [
+        "show",
+        "1cc5479b713edab6fd26db4e20f8eb22b7401cb2:tests/engineering-quality.test.mjs"
+      ],
+      [
+        "rev-parse",
+        "1cc5479b713edab6fd26db4e20f8eb22b7401cb2:tests/engineering-quality.test.mjs"
+      ],
+      [
+        "show",
+        "1cc5479b713edab6fd26db4e20f8eb22b7401cb2:tests/full-quality.test.mjs"
+      ],
+      [
+        "rev-parse",
+        "1cc5479b713edab6fd26db4e20f8eb22b7401cb2:tests/full-quality.test.mjs"
+      ],
+      [
+        "show",
+        "1cc5479b713edab6fd26db4e20f8eb22b7401cb2:tests/helpers/integrated-ci-source.mjs"
+      ],
+      [
+        "rev-parse",
+        "1cc5479b713edab6fd26db4e20f8eb22b7401cb2:tests/helpers/integrated-ci-source.mjs"
+      ],
+      [
+        "show",
+        "1cc5479b713edab6fd26db4e20f8eb22b7401cb2:tests/integrated-ci-source.cases.mjs"
+      ],
+      [
+        "rev-parse",
+        "1cc5479b713edab6fd26db4e20f8eb22b7401cb2:tests/integrated-ci-source.cases.mjs"
+      ],
+      [
+        "show",
+        "1cc5479b713edab6fd26db4e20f8eb22b7401cb2:tests/quick-feedback.test.mjs"
+      ],
+      [
+        "rev-parse",
+        "1cc5479b713edab6fd26db4e20f8eb22b7401cb2:tests/quick-feedback.test.mjs"
+      ]
+    ],
+    "productionBindings": 352,
+    "bootstrapBindings": 10
+  },
+  "reviewedFiles": {
+    "backlog/tasks/task-103 - 移植V25原生2D并交付两幕可玩候选.md": {
+      "rawSha256": "4debc5e2c77da52027858f75f9257d1fa3b50d00e62cd53474b26c04e17932fb",
+      "lfSha256": "10f3f9a7f9997149c3c0037fe0df71c2326fe0032c6ec04a03fe01132f9182fe"
+    },
+    "tests/card-input-slices.test.mjs": {
+      "rawSha256": "c6474df3e49df8efcea7ac3add7ab59812de183d54fa4a6150c27ae620ac6bfb",
+      "lfSha256": "6878d57438d7af3310dc804b02dd1b54df7e15db9e9022c4015ec5b95b3f0def"
+    },
+    "tests/defect-final-source-epoch.test.mjs": {
+      "rawSha256": "635a14cd4053ad1f43fe756c24bdd1a8a93add833115813b9a676a23a07b5eaf",
+      "lfSha256": "635a14cd4053ad1f43fe756c24bdd1a8a93add833115813b9a676a23a07b5eaf"
+    },
+    "tests/encounter-formation-source-epoch.test.mjs": {
+      "rawSha256": "294b181bf64b9467046a78d9b5e9b463ee11d63e2f4dba08b9934e080b6486cf",
+      "lfSha256": "294b181bf64b9467046a78d9b5e9b463ee11d63e2f4dba08b9934e080b6486cf"
+    },
+    "tests/helpers/historical-card-input.mjs": {
+      "rawSha256": "b03621b2a1d7a8301a03f166a96990dbedba2ebdfd95fbe7e232e141d8bb3dbe",
+      "lfSha256": "23f270e334a66954324c615782d5f79ae578b300290e8c9a224e276392b9241d"
+    },
+    "tests/helpers/release-bootstrap-merge-ci-source.json.gz": {
+      "rawSha256": "533b470c786e02972a0359d6df10b6dbc3d0f946e7e054561f53f9635e77e966",
+      "lfSha256": "bebdcb396ecbf9737247d5c5f5e6760cb4148b76e1a06468947c7e49edfbfd36"
+    },
+    "tests/helpers/release-bootstrap-merge-ci-source.mjs": {
+      "rawSha256": "943b22f91d7c40ebc8f5d5261f92c6f8b1d446173e5ec72a96badf0789f2cf1d",
+      "lfSha256": "943b22f91d7c40ebc8f5d5261f92c6f8b1d446173e5ec72a96badf0789f2cf1d"
+    },
+    "tests/release-pc-source.test.mjs": {
+      "rawSha256": "11b7f0c7ee19a2a25efce1ff719a4ea7b8d3c9299f4696e7214e2ddc578fc26d",
+      "lfSha256": "11b7f0c7ee19a2a25efce1ff719a4ea7b8d3c9299f4696e7214e2ddc578fc26d"
+    },
+    "tests/session-menu-navigation.test.mjs": {
+      "rawSha256": "859d38ab4644bcb9c202f8a0a67507b61b35152a3303dc400b2062ee9830049b",
+      "lfSha256": "859d38ab4644bcb9c202f8a0a67507b61b35152a3303dc400b2062ee9830049b"
+    },
+    "tests/helpers/release-bootstrap-merge-before-owner-repair-ci-source.json.gz": {
+      "rawSha256": "30ecf61e75ea05e477ef862fa21ad7a1532316f2042eac3cc8028bccfb91ddc6",
+      "lfSha256": "43e51c92bd1bc9c3f98d5b9562bd530c7af97ccc6fc861b37ed0a403efb83478"
+    }
+  },
+  "notRun": [
+    "owner loops",
+    "12 historical Lua groups",
+    "Source suite",
+    "Full",
+    "Hosted CI",
+    "official import",
+    "ready",
+    "PC",
+    "mobile",
+    "private screenshots"
+  ],
+  "findings": [],
+  "unresolved": []
+}

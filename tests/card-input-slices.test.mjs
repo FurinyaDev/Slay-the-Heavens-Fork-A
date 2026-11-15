@@ -44,6 +44,7 @@ test('only the three frozen input archives load exact pre-browsing gesture seman
   // Call the ordinary current-cwd API, as runLua does. Only its explicit
   // historical fixture inputs are old; no test-wide historical cwd can mask a live-reader bug.
   const actual=historicalCardInputPrelude(path);assert.match(actual,/HISTORICAL_CARD_INPUT_PRE_BROWSE/);
+  assert.match(actual,/package\.preload\.abyss_battle_card_bindings=/);
   const reads=[];
   assert.equal(historicalCardInputPrelude(path,{cwd,readSource:p=>{reads.push(p);return original(p);}}),actual);
   assert.ok(reads.includes(host)&&reads.includes(linked),'the real inverse validates both host and complete linked owner closure');
@@ -51,7 +52,9 @@ test('only the three frozen input archives load exact pre-browsing gesture seman
   for(let attempt=0;attempt<2;attempt++){
    assert.throws(()=>historicalCardInputPrelude(path,{readSource:p=>original(p)+(p===host?'\n-- drift':'')}),/unreviewed source-input gesture host/);
    assert.throws(()=>historicalCardInputPrelude(path,{readSource:p=>original(p)+(p===linked?'\n-- drift':'')}),/delivery linked source identity/);
+   assert.throws(()=>historicalCardInputPrelude(path,{readSource:p=>original(p)+(p==='src/lua/abyss_battle_card_bindings.lua'?'\n-- drift':'')}),/unreviewed source-input binding host/);
   }
+  for(const replacement of [null,new Error('missing original binding host')])assert.throws(()=>historicalCardInputPrelude(path,{readSource:p=>{if(p==='src/lua/abyss_battle_card_bindings.lua'){if(replacement instanceof Error)throw replacement;return replacement;}return original(p);}}));
   assert.throws(()=>historicalCardInputPrelude(path,{readSource:p=>{if(p===linked)throw Error('missing original linked owner');return original(p);}}),'missing linked original source cannot fall back to a current or cached owner');
   assert.equal(historicalCardInputPrelude(path,{cwd:resolve(cwd,'unrelated-source-directory'),readSource:()=>{throw Error('foreign cwd must not read inputs');}}),'');
   assert.equal(process.cwd(),cwd,'the current runtime cwd remains unchanged');

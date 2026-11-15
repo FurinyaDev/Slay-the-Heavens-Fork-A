@@ -26,5 +26,10 @@ export function historicalCardInputPrelude(script,{cwd=process.cwd(),readSource}
  const source=readSource(path).replaceAll('\r\n','\n');
  assert.equal(createHash('sha256').update(source).digest('hex'),binding.sha256,'unreviewed source-input gesture host');
  const prior=preIntegrationSource(path,source,'base',{readSource});
- return `print('HISTORICAL_CARD_INPUT_PRE_BROWSE')\npackage.preload.abyss_battle_card_gestures=function()return assert(load(${luaString(prior)},'@pre-browse-gesture'))()end\n`;
+ // This old gesture module has no Intent port. Keep its original binding host
+ // in the same explicit historical invocation; current tests still load live code.
+ const bindingPath='src/lua/abyss_battle_card_bindings.lua';
+ const bindingSource=readSource(bindingPath).replaceAll('\r\n','\n');
+ assert.equal(createHash('sha256').update(bindingSource).digest('hex'),'add73e13c968039d9eee32dacd3d7d866c21ec6e2ccc89182d4f199d2ee9b7e7','unreviewed source-input binding host');
+ return `print('HISTORICAL_CARD_INPUT_PRE_BROWSE')\npackage.preload.abyss_battle_card_bindings=function()return assert(load(${luaString(bindingSource)},'@pre-browse-binding'))()end\npackage.preload.abyss_battle_card_gestures=function()return assert(load(${luaString(prior)},'@pre-browse-gesture'))()end\n`;
 }

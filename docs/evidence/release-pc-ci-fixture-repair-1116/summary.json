@@ -1,0 +1,579 @@
+{
+  "kind": "BOUNDED_ONE_SNAPSHOT_COMPLETE_LATEST_ATTEMPT_JOB_INVENTORY",
+  "captured": "2026-11-15T22:23:08.5870626Z",
+  "notReleaseAdmission": true,
+  "noWorkflowMutation": true,
+  "noPolling": true,
+  "logsFormat": "Provider decoded UTF8 text serialized by PowerShell; not original HTTP bytes, except existing preserved 684 rules4 log",
+  "runs": [
+    {
+      "pr": 684,
+      "run": 43762265986,
+      "startedUtc": "2026-11-15T22:21:04.4110567Z",
+      "finishedUtc": "2026-11-15T22:21:05.7580712Z",
+      "pageCount": 1,
+      "reportedTotals": [
+        36
+      ],
+      "actualJobs": 36,
+      "completePageInventory": true,
+      "rawPagesPath": "F:\\New folder\\.artifacts\\release-pc-qa-20261115\\ci-owner-repair-1116\\ci-inventory\\pr684-run43762265986-pages.json",
+      "rawPagesSha256": "B13613F61557DDC8D532CA6506E8AC9A2174A39C77166053EE4B0E8F9209411E",
+      "states": [
+        {
+          "Name": "completed, failure",
+          "Count": 6
+        },
+        {
+          "Name": "completed, skipped",
+          "Count": 1
+        },
+        {
+          "Name": "completed, success",
+          "Count": 5
+        },
+        {
+          "Name": "in_progress",
+          "Count": 3
+        },
+        {
+          "Name": "queued",
+          "Count": 21
+        }
+      ],
+      "failedJobs": [
+        {
+          "id": 132959767958,
+          "name": "engineering-posix (3/15)",
+          "url": "https://github.com/FurinyaWorks/Slay-the-Heavens/actions/runs/43762265986/job/132959767958",
+          "headSha": "9361d5cf9559ea30f8bdbd5da13eaadd9bcd36b0",
+          "failedSteps": [
+            {
+              "number": 9,
+              "name": "POSIX JavaScript regression shard",
+              "conclusion": "failure"
+            }
+          ],
+          "logPath": "F:\\New folder\\.artifacts\\release-pc-qa-20261115\\ci-owner-repair-1116\\ci-inventory\\pr684-job132959767958.log",
+          "sha256": "B0CFAD963F4DD0DA95DE62507C5B2E7C0883C5E370850C76A1C55B58767BB65A",
+          "cases": [
+            "✖ current raw production retains the exact power-view owner and complete release owner continuation"
+          ],
+          "sourceLocations": [
+            "test at tests/defect-final-source-epoch.test.mjs:171:1",
+            "at TestContext.<anonymous> (file:///home/runner/work/Slay-the-Heavens/Slay-the-Heavens/tests/defect-final-source-epoch.test.mjs:177:9)"
+          ]
+        },
+        {
+          "id": 132959767975,
+          "name": "rules (4/18)",
+          "url": "https://github.com/FurinyaWorks/Slay-the-Heavens/actions/runs/43762265986/job/132959767975",
+          "headSha": "9361d5cf9559ea30f8bdbd5da13eaadd9bcd36b0",
+          "failedSteps": [
+            {
+              "number": 19,
+              "name": "JavaScript regression shard",
+              "conclusion": "failure"
+            }
+          ],
+          "logPath": "F:/New folder/.artifacts/release-pc-qa-20261115/ci-owner-repair-1116/pr684-rules4-decoded-log.log",
+          "sha256": "4A6DB2D96AE5A9074157FB6DB158AAA93E608637E38A69C9B65A09FA6EF42513",
+          "cases": [
+            "✖ current UI facade authenticates all 116 disk owners once in order and rejects every warm drift or removal"
+          ],
+          "sourceLocations": [
+            "test at tests\\encounter-formation-source-epoch.test.mjs:214:1",
+            "at TestContext.<anonymous> (file:///D:/a/Slay-the-Heavens/Slay-the-Heavens/tests/encounter-formation-source-epoch.test.mjs:221:9)"
+          ]
+        },
+        {
+          "id": 132959767987,
+          "name": "engineering-posix (9/15)",
+          "url": "https://github.com/FurinyaWorks/Slay-the-Heavens/actions/runs/43762265986/job/132959767987",
+          "headSha": "9361d5cf9559ea30f8bdbd5da13eaadd9bcd36b0",
+          "failedSteps": [
+            {
+              "number": 9,
+              "name": "POSIX JavaScript regression shard",
+              "conclusion": "failure"
+            }
+          ],
+          "logPath": "F:\\New folder\\.artifacts\\release-pc-qa-20261115\\ci-owner-repair-1116\\ci-inventory\\pr684-job132959767987.log",
+          "sha256": "2E2DC7888736050FDDBDEA4EDB46EF1CCA37CD743F1AB412DF47F79055A35404",
+          "cases": [
+            "✖ actual Release merge proves all production base Git blobs and exact bootstrap sources without relabelling producers"
+          ],
+          "sourceLocations": [
+            "test at tests/release-pc-source.test.mjs:86:1",
+            "at TestContext.<anonymous> (file:///home/runner/work/Slay-the-Heavens/Slay-the-Heavens/tests/release-pc-source.test.mjs:87:2)"
+          ]
+        },
+        {
+          "id": 132959768018,
+          "name": "rules (7/18)",
+          "url": "https://github.com/FurinyaWorks/Slay-the-Heavens/actions/runs/43762265986/job/132959768018",
+          "headSha": "9361d5cf9559ea30f8bdbd5da13eaadd9bcd36b0",
+          "failedSteps": [
+            {
+              "number": 19,
+              "name": "JavaScript regression shard",
+              "conclusion": "failure"
+            }
+          ],
+          "logPath": "F:\\New folder\\.artifacts\\release-pc-qa-20261115\\ci-owner-repair-1116\\ci-inventory\\pr684-job132959768018.log",
+          "sha256": "F1A8A11629383BA6CBD8DDF4C248B8CB95D4757042284F3C77EB26EDF3AE8959",
+          "cases": [
+            "✖ deck notification continuation preserves immutable menu sources and authenticates both exact current owners",
+            "✖ optional Neow flow helper retains the exact first fix and rejects changed producer bytes"
+          ],
+          "sourceLocations": [
+            "test at tests\\session-menu-navigation.test.mjs:19:1",
+            "at TestContext.<anonymous> (file:///D:/a/Slay-the-Heavens/Slay-the-Heavens/tests/session-menu-navigation.test.mjs:36:9)",
+            "test at tests\\session-menu-navigation.test.mjs:78:1",
+            "at TestContext.<anonymous> (file:///D:/a/Slay-the-Heavens/Slay-the-Heavens/tests/session-menu-navigation.test.mjs:88:51)"
+          ]
+        },
+        {
+          "id": 132959768022,
+          "name": "engineering-posix (2/15)",
+          "url": "https://github.com/FurinyaWorks/Slay-the-Heavens/actions/runs/43762265986/job/132959768022",
+          "headSha": "9361d5cf9559ea30f8bdbd5da13eaadd9bcd36b0",
+          "failedSteps": [
+            {
+              "number": 9,
+              "name": "POSIX JavaScript regression shard",
+              "conclusion": "failure"
+            }
+          ],
+          "logPath": "F:\\New folder\\.artifacts\\release-pc-qa-20261115\\ci-owner-repair-1116\\ci-inventory\\pr684-job132959768022.log",
+          "sha256": "F43A735ED4B0BD8B9ABF5F655BFF6A0F628188074D1134B3559702CE1BF49056",
+          "cases": [
+            "✖ deck notification continuation preserves immutable menu sources and authenticates both exact current owners",
+            "✖ optional Neow flow helper retains the exact first fix and rejects changed producer bytes"
+          ],
+          "sourceLocations": [
+            "test at tests/session-menu-navigation.test.mjs:19:1",
+            "at TestContext.<anonymous> (file:///home/runner/work/Slay-the-Heavens/Slay-the-Heavens/tests/session-menu-navigation.test.mjs:36:9)",
+            "test at tests/session-menu-navigation.test.mjs:78:1",
+            "at TestContext.<anonymous> (file:///home/runner/work/Slay-the-Heavens/Slay-the-Heavens/tests/session-menu-navigation.test.mjs:88:51)"
+          ]
+        },
+        {
+          "id": 132959768064,
+          "name": "engineering-posix (8/15)",
+          "url": "https://github.com/FurinyaWorks/Slay-the-Heavens/actions/runs/43762265986/job/132959768064",
+          "headSha": "9361d5cf9559ea30f8bdbd5da13eaadd9bcd36b0",
+          "failedSteps": [
+            {
+              "number": 9,
+              "name": "POSIX JavaScript regression shard",
+              "conclusion": "failure"
+            }
+          ],
+          "logPath": "F:\\New folder\\.artifacts\\release-pc-qa-20261115\\ci-owner-repair-1116\\ci-inventory\\pr684-job132959768064.log",
+          "sha256": "2EE59BE40C1E84F2E00FAB9EEE20D46FE294D85BBF0EACE113830230CEED114A",
+          "cases": [
+            "✖ all 12 original source-input groups retain their complete body and run once with the original 30-second budget"
+          ],
+          "sourceLocations": [
+            "test at tests/card-input-slices.test.mjs:10:1",
+            "at TestContext.<anonymous> (file:///home/runner/work/Slay-the-Heavens/Slay-the-Heavens/tests/card-input-slices.test.mjs:30:12)"
+          ]
+        }
+      ]
+    },
+    {
+      "pr": 690,
+      "run": 43762292320,
+      "startedUtc": "2026-11-15T22:21:05.694496Z",
+      "finishedUtc": "2026-11-15T22:21:07.1292805Z",
+      "pageCount": 1,
+      "reportedTotals": [
+        36
+      ],
+      "actualJobs": 36,
+      "completePageInventory": true,
+      "rawPagesPath": "F:\\New folder\\.artifacts\\release-pc-qa-20261115\\ci-owner-repair-1116\\ci-inventory\\pr690-run43762292320-pages.json",
+      "rawPagesSha256": "B8948AA5F57C4A884E180F841ABFCE9C529CDC7412CFF62A6E471EE79AC93843",
+      "states": [
+        {
+          "Name": "completed, failure",
+          "Count": 4
+        },
+        {
+          "Name": "completed, skipped",
+          "Count": 1
+        },
+        {
+          "Name": "completed, success",
+          "Count": 4
+        },
+        {
+          "Name": "in_progress",
+          "Count": 3
+        },
+        {
+          "Name": "queued",
+          "Count": 24
+        }
+      ],
+      "failedJobs": [
+        {
+          "id": 132959834335,
+          "name": "engineering-posix (1/15)",
+          "url": "https://github.com/FurinyaWorks/Slay-the-Heavens/actions/runs/43762292320/job/132959834335",
+          "headSha": "392818d0bcb8fcc7fb9b80f7082218e0b3c9de74",
+          "failedSteps": [
+            {
+              "number": 9,
+              "name": "POSIX JavaScript regression shard",
+              "conclusion": "failure"
+            },
+            {
+              "number": 13,
+              "name": "Run actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02",
+              "conclusion": "failure"
+            }
+          ],
+          "logPath": "F:\\New folder\\.artifacts\\release-pc-qa-20261115\\ci-owner-repair-1116\\ci-inventory\\pr690-job132959834335.log",
+          "sha256": "D7FCFAB2F734479028B9D05981451E89BD44E81F351E2BF352E3D5701E7C7465",
+          "cases": [
+            "✖ whole Host overlays boundaries 7-12",
+            "✖ whole Host overlays boundaries 13-13",
+            "✖ release additions remain in raw Full and exact historical inventories reject gaps and source drift",
+            "✖ real style CI admits only full inventory, complete source and freshly verified executable helpers",
+            "✖ feedback real current source and CI preserve all four immutable archives and every historical view"
+          ],
+          "sourceLocations": [
+            "test at tests/game-ui-host-overlays.test.mjs:3:86",
+            "at TestContext.<anonymous> (file:///home/runner/work/Slay-the-Heavens/Slay-the-Heavens/tests/game-ui-host-overlays.test.mjs:3:141)",
+            "test at tests/sts-style-source-epoch.test.mjs:26:1",
+            "at TestContext.<anonymous> (file:///home/runner/work/Slay-the-Heavens/Slay-the-Heavens/tests/sts-style-source-epoch.test.mjs:29:9)",
+            "test at tests/sts-style-source-epoch.test.mjs:93:1",
+            "at TestContext.<anonymous> (file:///home/runner/work/Slay-the-Heavens/Slay-the-Heavens/tests/sts-style-source-epoch.test.mjs:111:10)",
+            "at TestContext.<anonymous> (file:///home/runner/work/Slay-the-Heavens/Slay-the-Heavens/tests/sts-style-source-epoch.test.mjs:111:10),",
+            "test at tests/sts-style-source-epoch.test.mjs:185:1",
+            "at TestContext.<anonymous> (file:///home/runner/work/Slay-the-Heavens/Slay-the-Heavens/tests/sts-style-source-epoch.test.mjs:216:43)",
+            "at TestContext.<anonymous> (file:///home/runner/work/Slay-the-Heavens/Slay-the-Heavens/tests/sts-style-source-epoch.test.mjs:216:43),"
+          ]
+        },
+        {
+          "id": 132959834382,
+          "name": "rules (1/18)",
+          "url": "https://github.com/FurinyaWorks/Slay-the-Heavens/actions/runs/43762292320/job/132959834382",
+          "headSha": "392818d0bcb8fcc7fb9b80f7082218e0b3c9de74",
+          "failedSteps": [
+            {
+              "number": 19,
+              "name": "JavaScript regression shard",
+              "conclusion": "failure"
+            }
+          ],
+          "logPath": "F:\\New folder\\.artifacts\\release-pc-qa-20261115\\ci-owner-repair-1116\\ci-inventory\\pr690-job132959834382.log",
+          "sha256": "CEF95CE53B0BDEC390FD43A38B13A4DB702CE8957517F5137210BC2DED720038",
+          "cases": [
+            "✖ formal OnStart reaches the two-act endpoint through claim/skip, honest results and new-run restart"
+          ],
+          "sourceLocations": [
+            "test at tests\\formal-campaign-entry.test.mjs:132:1",
+            "at TestContext.<anonymous> (file:///D:/a/Slay-the-Heavens/Slay-the-Heavens/tests/formal-campaign-entry.test.mjs:134:10)"
+          ]
+        },
+        {
+          "id": 132959834412,
+          "name": "rules (8/18)",
+          "url": "https://github.com/FurinyaWorks/Slay-the-Heavens/actions/runs/43762292320/job/132959834412",
+          "headSha": "392818d0bcb8fcc7fb9b80f7082218e0b3c9de74",
+          "failedSteps": [
+            {
+              "number": 19,
+              "name": "JavaScript regression shard",
+              "conclusion": "failure"
+            }
+          ],
+          "logPath": "F:\\New folder\\.artifacts\\release-pc-qa-20261115\\ci-owner-repair-1116\\ci-inventory\\pr690-job132959834412.log",
+          "sha256": "6E93B1140A452424B20BCB6DA4F6C2CA1AAFA5114227EB94F8900ADF8FAEE74B",
+          "cases": [
+            "✖ normal menu reading and warnings use larger text without fallback shrink"
+          ],
+          "sourceLocations": [
+            "test at tests\\mobile-typography.test.mjs:25:1",
+            "at TestContext.<anonymous> (file:///D:/a/Slay-the-Heavens/Slay-the-Heavens/tests/mobile-typography.test.mjs:30:196)"
+          ]
+        },
+        {
+          "id": 132959834427,
+          "name": "rules (9/18)",
+          "url": "https://github.com/FurinyaWorks/Slay-the-Heavens/actions/runs/43762292320/job/132959834427",
+          "headSha": "392818d0bcb8fcc7fb9b80f7082218e0b3c9de74",
+          "failedSteps": [
+            {
+              "number": 19,
+              "name": "JavaScript regression shard",
+              "conclusion": "failure"
+            }
+          ],
+          "logPath": "F:\\New folder\\.artifacts\\release-pc-qa-20261115\\ci-owner-repair-1116\\ci-inventory\\pr690-job132959834427.log",
+          "sha256": "553A7CC09A3CDF553856EDC9F829405CFC255C95A42386FD001CFBF1A72C1CA4",
+          "cases": [
+            "✖ release additions remain in raw Full and exact historical inventories reject gaps and source drift",
+            "✖ real style CI admits only full inventory, complete source and freshly verified executable helpers",
+            "✖ feedback real current source and CI preserve all four immutable archives and every historical view"
+          ],
+          "sourceLocations": [
+            "test at tests\\sts-style-source-epoch.test.mjs:26:1",
+            "at TestContext.<anonymous> (file:///D:/a/Slay-the-Heavens/Slay-the-Heavens/tests/sts-style-source-epoch.test.mjs:29:9)",
+            "test at tests\\sts-style-source-epoch.test.mjs:93:1",
+            "at TestContext.<anonymous> (file:///D:/a/Slay-the-Heavens/Slay-the-Heavens/tests/sts-style-source-epoch.test.mjs:111:10)",
+            "at TestContext.<anonymous> (file:///D:/a/Slay-the-Heavens/Slay-the-Heavens/tests/sts-style-source-epoch.test.mjs:111:10),",
+            "test at tests\\sts-style-source-epoch.test.mjs:185:1",
+            "at TestContext.<anonymous> (file:///D:/a/Slay-the-Heavens/Slay-the-Heavens/tests/sts-style-source-epoch.test.mjs:216:43)",
+            "at TestContext.<anonymous> (file:///D:/a/Slay-the-Heavens/Slay-the-Heavens/tests/sts-style-source-epoch.test.mjs:216:43),"
+          ]
+        }
+      ]
+    },
+    {
+      "pr": 695,
+      "run": 43760647040,
+      "startedUtc": "2026-11-15T22:21:05.2819705Z",
+      "finishedUtc": "2026-11-15T22:21:06.8210725Z",
+      "pageCount": 1,
+      "reportedTotals": [
+        36
+      ],
+      "actualJobs": 36,
+      "completePageInventory": true,
+      "rawPagesPath": "F:\\New folder\\.artifacts\\release-pc-qa-20261115\\ci-owner-repair-1116\\ci-inventory\\pr695-run43760647040-pages.json",
+      "rawPagesSha256": "0277BB56FCDEF8FD2607EDC36319B8B20A06265E3471418F15BB579F53DB8AEA",
+      "states": [
+        {
+          "Name": "completed, failure",
+          "Count": 2
+        },
+        {
+          "Name": "completed, skipped",
+          "Count": 1
+        },
+        {
+          "Name": "completed, success",
+          "Count": 13
+        },
+        {
+          "Name": "in_progress",
+          "Count": 4
+        },
+        {
+          "Name": "queued",
+          "Count": 16
+        }
+      ],
+      "failedJobs": [
+        {
+          "id": 132957182176,
+          "name": "engineering-posix (5/15)",
+          "url": "https://github.com/FurinyaWorks/Slay-the-Heavens/actions/runs/43760647040/job/132957182176",
+          "headSha": "350c447c96dc65c1b48c48c3e0e24a3b627e4b2f",
+          "failedSteps": [
+            {
+              "number": 9,
+              "name": "POSIX JavaScript regression shard",
+              "conclusion": "failure"
+            }
+          ],
+          "logPath": "F:\\New folder\\.artifacts\\release-pc-qa-20261115\\ci-owner-repair-1116\\ci-inventory\\pr695-job132957182176.log",
+          "sha256": "17E944A784DCDC3EA53F9E6465634B1CA210448A6A9A6BD4A8BEFBE96AD7061F",
+          "cases": [
+            "✖ battle continuation retains exact historical sources and complete current Full coverage",
+            "✖ combined closeout validates raw current sources and complete Full discovery independently of immutable slice views",
+            "✖ run HUD continuation authenticates complete current sources and raw Full inventory without rewriting historical receipts",
+            "✖ Release bootstrap raw Full retains complete discovery costs and physical guards while forecasts stay diagnostic"
+          ],
+          "sourceLocations": [
+            "test at tests/ci-complete-calibration.test.mjs:1501:1",
+            "at TestContext.<anonymous> (file:///home/runner/work/Slay-the-Heavens/Slay-the-Heavens/tests/ci-complete-calibration.test.mjs:1519:10)",
+            "test at tests/ci-complete-calibration.test.mjs:1854:1",
+            "at TestContext.<anonymous> (file:///home/runner/work/Slay-the-Heavens/Slay-the-Heavens/tests/ci-complete-calibration.test.mjs:1878:10)",
+            "test at tests/ci-complete-calibration.test.mjs:1940:1",
+            "at TestContext.<anonymous> (file:///home/runner/work/Slay-the-Heavens/Slay-the-Heavens/tests/ci-complete-calibration.test.mjs:1949:10)",
+            "test at tests/ci-complete-calibration.test.mjs:1996:1",
+            "at TestContext.<anonymous> (file:///home/runner/work/Slay-the-Heavens/Slay-the-Heavens/tests/ci-complete-calibration.test.mjs:1997:2)"
+          ]
+        },
+        {
+          "id": 132957182214,
+          "name": "engineering-posix (11/15)",
+          "url": "https://github.com/FurinyaWorks/Slay-the-Heavens/actions/runs/43760647040/job/132957182214",
+          "headSha": "350c447c96dc65c1b48c48c3e0e24a3b627e4b2f",
+          "failedSteps": [
+            {
+              "number": 9,
+              "name": "POSIX JavaScript regression shard",
+              "conclusion": "failure"
+            }
+          ],
+          "logPath": "F:\\New folder\\.artifacts\\release-pc-qa-20261115\\ci-owner-repair-1116\\ci-inventory\\pr695-job132957182214.log",
+          "sha256": "1DD5C20C1CC93E15AEA725D3C25A10043DA3556412E356133924B1F6BBADFFC3",
+          "cases": [
+            "✖ official repair adds exact complete-file identities without rewriting the battle predecessor"
+          ],
+          "sourceLocations": [
+            "test at tests/encounter-formation-source-epoch.test.mjs:159:1",
+            "at TestContext.<anonymous> (file:///home/runner/work/Slay-the-Heavens/Slay-the-Heavens/tests/encounter-formation-source-epoch.test.mjs:163:10)"
+          ]
+        }
+      ]
+    },
+    {
+      "pr": 696,
+      "run": 43762495111,
+      "startedUtc": "2026-11-15T22:21:04.7655089Z",
+      "finishedUtc": "2026-11-15T22:21:06.0705168Z",
+      "pageCount": 1,
+      "reportedTotals": [
+        36
+      ],
+      "actualJobs": 36,
+      "completePageInventory": true,
+      "rawPagesPath": "F:\\New folder\\.artifacts\\release-pc-qa-20261115\\ci-owner-repair-1116\\ci-inventory\\pr696-run43762495111-pages.json",
+      "rawPagesSha256": "FC189E0322AFE4D4E53ADB530349213A6B9F752C0B4AE96ADE85BA99F62639A8",
+      "states": [
+        {
+          "Name": "completed, failure",
+          "Count": 1
+        },
+        {
+          "Name": "completed, skipped",
+          "Count": 1
+        },
+        {
+          "Name": "completed, success",
+          "Count": 6
+        },
+        {
+          "Name": "in_progress",
+          "Count": 5
+        },
+        {
+          "Name": "queued",
+          "Count": 23
+        }
+      ],
+      "failedJobs": [
+        {
+          "id": 132966457131,
+          "name": "engineering-posix (10/15)",
+          "url": "https://github.com/FurinyaWorks/Slay-the-Heavens/actions/runs/43762495111/job/132966457131",
+          "headSha": "45008d10feb08b9c4d44ea26c1e35205583761b2",
+          "failedSteps": [
+            {
+              "number": 9,
+              "name": "POSIX JavaScript regression shard",
+              "conclusion": "failure"
+            }
+          ],
+          "logPath": "F:\\New folder\\.artifacts\\release-pc-qa-20261115\\ci-owner-repair-1116\\ci-inventory\\pr696-job132966457131.log",
+          "sha256": "6C6E90FE1255D9130797A19D88CA454E87DBB7CB5B8AB65B3B0114C40055C4B1",
+          "cases": [
+            "✖ official choice profile keeps two unchanged faces while default retains ten and Match retains twelve"
+          ],
+          "sourceLocations": [
+            "test at tests/official-choice-pagination.test.mjs:18:1",
+            "at TestContext.<anonymous> (file:///home/runner/work/Slay-the-Heavens/Slay-the-Heavens/tests/official-choice-pagination.test.mjs:28:9)"
+          ]
+        }
+      ]
+    },
+    {
+      "pr": 697,
+      "run": 43762803303,
+      "startedUtc": "2026-11-15T22:21:03.4917382Z",
+      "finishedUtc": "2026-11-15T22:21:04.5719905Z",
+      "pageCount": 1,
+      "reportedTotals": [
+        36
+      ],
+      "actualJobs": 36,
+      "completePageInventory": true,
+      "rawPagesPath": "F:\\New folder\\.artifacts\\release-pc-qa-20261115\\ci-owner-repair-1116\\ci-inventory\\pr697-run43762803303-pages.json",
+      "rawPagesSha256": "483D347D450D0704EC60D675EE3A2C7E64CF7B35AFFA7E83B95A8229C853644E",
+      "states": [
+        {
+          "Name": "completed, skipped",
+          "Count": 1
+        },
+        {
+          "Name": "completed, success",
+          "Count": 2
+        },
+        {
+          "Name": "queued",
+          "Count": 33
+        }
+      ],
+      "failedJobs": []
+    },
+    {
+      "pr": 698,
+      "run": 43762861577,
+      "startedUtc": "2026-11-15T22:21:04.7962442Z",
+      "finishedUtc": "2026-11-15T22:21:05.9207002Z",
+      "pageCount": 1,
+      "reportedTotals": [
+        36
+      ],
+      "actualJobs": 36,
+      "completePageInventory": true,
+      "rawPagesPath": "F:\\New folder\\.artifacts\\release-pc-qa-20261115\\ci-owner-repair-1116\\ci-inventory\\pr698-run43762861577-pages.json",
+      "rawPagesSha256": "A82CA022C4E0EEDC212A4024910EABFD79839EFFA834A10E7D38D6085AF577B5",
+      "states": [
+        {
+          "Name": "completed, skipped",
+          "Count": 1
+        },
+        {
+          "Name": "completed, success",
+          "Count": 2
+        },
+        {
+          "Name": "in_progress",
+          "Count": 2
+        },
+        {
+          "Name": "queued",
+          "Count": 31
+        }
+      ],
+      "failedJobs": []
+    },
+    {
+      "pr": 699,
+      "run": 43765128105,
+      "startedUtc": "2026-11-15T22:21:05.4497488Z",
+      "finishedUtc": "2026-11-15T22:21:06.5071748Z",
+      "pageCount": 1,
+      "reportedTotals": [
+        36
+      ],
+      "actualJobs": 36,
+      "completePageInventory": true,
+      "rawPagesPath": "F:\\New folder\\.artifacts\\release-pc-qa-20261115\\ci-owner-repair-1116\\ci-inventory\\pr699-run43765128105-pages.json",
+      "rawPagesSha256": "6D1AE5071168AB176156B0035053B194540B38B8A8BB600AA41AF266EB7C8D72",
+      "states": [
+        {
+          "Name": "completed, skipped",
+          "Count": 1
+        },
+        {
+          "Name": "completed, success",
+          "Count": 2
+        },
+        {
+          "Name": "queued",
+          "Count": 33
+        }
+      ],
+      "failedJobs": []
+    }
+  ]
+}
