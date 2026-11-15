@@ -15,4 +15,3 @@ dofile('tests/lua/target_corner_geometry.lua')`;
   assert.equal(r.status,0,r.stdout+r.stderr+String(r.error??''));assert.match(r.stdout,/TARGET_CORNER_GEOMETRY_PASS/);
  }finally{rmSync(dir,{recursive:true,force:true});}
 });
-
