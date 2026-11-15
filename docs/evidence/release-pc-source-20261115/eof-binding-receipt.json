@@ -1,0 +1,18 @@
+{
+  "beforeFormatHead": "182179cfca7744036c2cfa4773fd95a984543e9f",
+  "formatHead": "46f7f20650ce6bea060739eeca89f9336665e96f",
+  "productSource": "5bd55d7691480b10d00e947076e15c8870640474",
+  "initialPacket": {
+    "bytes": 345960,
+    "sha256": "49eac62b185ce38d07ec342b24762790ead5adb25ac0b89f242b2c6eba9f15d4"
+  },
+  "currentPacket": {
+    "bytes": 346253,
+    "sha256": "96558aa710814554a18db79368d27ccb23c4682e1bc46f91432db6c4c0201490"
+  },
+  "changedSource": "tests/target-corner-geometry.test.mjs",
+  "onlyRemovedOneFinalNewline": true,
+  "originalPacketPhysicalReconstruction": true,
+  "allOtherPacketFieldsUnchanged": true,
+  "notRetestedOriginal73": true
+}

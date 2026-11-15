@@ -13,9 +13,13 @@
 | packet | 字节 | SHA256 |
 |---|---:|---|
 | `tests/helpers/release-pc-source.json.gz` | 139789 | `007271848a37da024ef7e25d6e2c7719b2c1d3aeffd36fa157b18e26895253ee` |
-| `tests/helpers/release-pc-ci-source.json.gz` | 345960 | `49eac62b185ce38d07ec342b24762790ead5adb25ac0b89f242b2c6eba9f15d4` |
+| `tests/helpers/release-pc-ci-source.json.gz` | 346253 | `96558aa710814554a18db79368d27ccb23c4682e1bc46f91432db6c4c0201490` |
 
 CI packet 的 currentCommit 仅指精确产品检查点；辅助适配绑定是在本工作树采集，`currentTreeCommitted=false`，没有冒称这些辅助文件已包含于5bd55d76。
+
+EOF 格式接续：`46f7f20650ce6bea060739eeca89f9336665e96f` 只删除 `tests/target-corner-geometry.test.mjs` 最后一个多余换行，原代码和断言保持。本轮 CI packet 仅更新该 after 绑定并增加格式来源元数据；初次345960字节/`49eac62b…`的完整 packet 另存 `docs/evidence/release-pc-source-20261115/initial-ci-source.json.gz`。移除格式元数据并恢复该旧绑定可逐字节重构初次 gzip，其他44项来源、前驱、库存、预算及92旧档案均未改变；生产 packet 保持原值。
+
+格式接续后仅重跑本轮新鲜绑定/完整生产身份/raw库存负例 **3/3 PASS**，并通过 `git diff --check 36b9b157`。收据和日志为 `eof-binding-receipt.json`、`eof-binding-tests.log.gz`。下述49/49、73/73保留初次来源切片身份，没有冒写为格式接续的新完整执行结果。
 
 ## 本轮定向验证
 
