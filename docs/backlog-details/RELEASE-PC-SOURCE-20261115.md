@@ -33,3 +33,11 @@ Node v24.18.0；没有运行本地全仓 Full，也没有调整分片、timings�
 失败证据保留：首次来源合同45/49，4项因系统 Temp 的 mkdtemp EPERM；改用本工作树可写 TMP/TEMP 后原断言全部通过。首次完整 CI 合同62/73，暴露旧库存幂等入口和 Release bootstrap 工作流历史来源缺口；原输入/断言/预算未删，修正外层适配后73/73。最初2项定向预算中的报错文案契约失败也保留，不冒称初次即全绿。
 
 冷 Git pack 必须在本片提交后用空数据库实际检出及现有 `checkHostedCheckout` 验证原128MiB上限。该结果另附精确提交收据；GIL、Lua与packet字节均不冒充冷pack读数。官方导入/ready、容量、PC及受影响手机仍未由本片验收。
+
+## 当前库存目标门禁补强（11月16日接续）
+
+导航来源独审发现同类缺口：新增 raw current 用例只硬验执行 guard，原 target 仅诊断输出，旧 current 的 target 断言仍只认证前驱库存。`0a4705ff9273c97f6042daf0cd2d11675da56804` 为 PR684 同步补回 `forecast < target`，原 target/guard、timings、未知成本和全部历史断言不改；产品仍冻结 `5bd55d76`。
+
+CI packet 只更新 `ci-complete-calibration.test.mjs` 的 after 与准确修正 checkpoint 元数据；其他44项、before、库存和93项不可变记录（旧92归档+原生产packet）逐项相同。旧 `96558aa7…` packet 原字节另存 `ci-source-before-current-target.json.gz`，新摘要为 `f8a1103c7f1b194370e3084b5d8ec9f1f1a8b5a7f46b35319cb775a34a5ebed7`。
+
+新鲜目标/guard、生产全集、当前CI绑定及库存负例定向 **4/4 PASS**，预测 Win1766189<1800000、POSIX1196961<1200000。`current-target-binding-receipt.json` / `current-target-tests.log.gz` 保留身份与输出；未重跑旧73或全仓Full，不将其旧结果转记到新输入。增量独审和最终精确HEAD准入仍需单独留据。

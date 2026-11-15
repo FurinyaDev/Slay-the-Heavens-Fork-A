@@ -1,0 +1,23 @@
+{
+  "producerCommit": "0a4705ff9273c97f6042daf0cd2d11675da56804",
+  "productCommit": "5bd55d7691480b10d00e947076e15c8870640474",
+  "beforeArchive": "docs/evidence/release-pc-source-20261115/ci-source-before-current-target.json.gz",
+  "beforeSha256": "96558aa710814554a18db79368d27ccb23c4682e1bc46f91432db6c4c0201490",
+  "afterSha256": "f8a1103c7f1b194370e3084b5d8ec9f1f1a8b5a7f46b35319cb775a34a5ebed7",
+  "changedInput": "tests/ci-complete-calibration.test.mjs",
+  "unchangedOtherInputs": 44,
+  "originalArchivesUnchanged": 93,
+  "priorInventoryUnchanged": true,
+  "currentInventoryUnchanged": true,
+  "beforeBindingUnchanged": true,
+  "notHostedFull": true,
+  "validation": {
+    "tests": 4,
+    "pass": 4,
+    "rawSha256": "798ddc0d0362829790329df061e09e1a57fc077bfa7845cbc0ef94303c96c238",
+    "gzipSha256": "65aaa0f89b69b017f6bafad92b852c1528545c1ebe24f265c1a42f9b79d7af8c",
+    "winForecastMs": 1766189,
+    "posixForecastMs": 1196961,
+    "notRerunOfOriginal73": true
+  }
+}
