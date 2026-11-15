@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "status": "BLOCKED_MCP_STARTUP_UNSIGNED_HELPER",
+  "recordedAt": "2026-11-15T14:12:07.165917+00:00",
+  "sourceCommit": "182179cfca7744036c2cfa4773fd95a984543e9f",
+  "sourceDirty": false,
+  "buildId": "400fb7ea-88a8-48a3-9202-dfbcde8cf359",
+  "payloadDigest": "2e9c0bf3f9387001b0a8fb130f673ce796305b810442eeb82d17c4205ce1edf0",
+  "outputDirectoryNameDoesNotDetermineIdentity": "release-pc-toolcopy-eb805e0f is only a directory label; receipt captured actual clean182179cf source.",
+  "profile": {
+    "officialAssetsProfile": "official-assets-battle-v2",
+    "artFeatures": {
+      "schemaVersion": 2,
+      "flags": {
+        "cards": false,
+        "menuBackground": false,
+        "selectionAvatar": true,
+        "battlePortrait": true,
+        "monsters": false
+      },
+      "configSha256": "7540f5dc080ffc6074b1357b0cb3435fa14df397880f3fbe8794a19ad52f6a0d"
+    },
+    "uiProfile": {
+      "schemaVersion": 1,
+      "nativePageLifecycle": true,
+      "configSha256": "fcd16aa1d35aeab4102c7bc49c0889a3c46135466e9a3198f6dcac21e5c59c81"
+    }
+  },
+  "stage": {
+    "generatedInputs": "prepared",
+    "mcpConnection": "failed before tool call",
+    "graphCompilation": "NOT_STARTED",
+    "saveCopy": "base copy only; no complete native/audio GIL",
+    "staticCheck": "NOT_RUN",
+    "strictCandidateAudit": "NOT_RUN: no complete candidate exists"
+  },
+  "error": {
+    "builder": "MCP error -32000: Connection closed",
+    "coreCode": "CORE_START_FAILED",
+    "startupCause": "PowerShell refused the unchanged unsigned private-runtime.ps1 helper under the observed RemoteSigned execution policy."
+  },
+  "toolCopy": {
+    "files": 10021,
+    "bytes": 115998252,
+    "allFileHashesEqual": true,
+    "manifestPath": "F:\\New folder\\.artifacts\\release-pc-qa-20261115\\miliastra-toolchain-copy.json",
+    "manifestSha256": "05587ac5ce0b77bcd364ed76960d018d46de8870e2029c08152bae4f0e52c176",
+    "installedToolUnmodified": true,
+    "npmInstall": false
+  },
+  "evidence": {
+    "originalFailure": {
+      "path": "F:\\New folder\\.worktrees\\release-pc-closeout-1115\\build\\release-pc-toolcopy-eb805e0f\\full\\400fb7ea-88a8-48a3-9202-dfbcde8cf359\\failure.json",
+      "sha256": "43f4f23a650d1b86acec737c873d5e3ade161504fa9074b640f977bf4043fda8",
+      "bytes": 108606
+    },
+    "originalStartupError": {
+      "path": "F:\\New folder\\.artifacts\\release-pc-qa-20261115\\mcp-local-cache\\MiliastraMCP\\runtime\\188f80b925abf9958bbd31fe77e59ceb9f9140b71b79b4c1f6874cdaee472bb6\\startup.log",
+      "sha256": "210b28fbab4bd7aa5ff0880c50c3b2ff09a5d68db258f73d2e0195ab21b51293",
+      "bytes": 2752
+    },
+    "sanitizedStartupSummary": {
+      "path": "F:\\New folder\\.artifacts\\release-pc-qa-20261115\\native-toolcopy-startup-error-summary.log",
+      "sha256": "96b59acb861d003204e2332ddfdea2bf2455060b526d0504d117b0674bdd7eab"
+    },
+    "builderLog": {
+      "path": "F:\\New folder\\.artifacts\\release-pc-qa-20261115\\native-build-toolcopy.log",
+      "sha256": "43e63f80e11f853ce09d90f4c73cfce0c124ed2fcd718b9571093f8960f02185"
+    }
+  },
+  "protectedInputs": {
+    "baseSha256Before": "81204ef46c437761c65f8dec93e2af30e475ed057cb7cbad4c0903129d4a309b",
+    "baseSha256After": "81204ef46c437761c65f8dec93e2af30e475ed057cb7cbad4c0903129d4a309b",
+    "latestSha256Before": "81204ef46c437761c65f8dec93e2af30e475ed057cb7cbad4c0903129d4a309b",
+    "latestSha256After": "81204ef46c437761c65f8dec93e2af30e475ed057cb7cbad4c0903129d4a309b",
+    "unchanged": true
+  },
+  "boundaries": {
+    "allowLiveWrite": false,
+    "GUI": "NOT_USED",
+    "officialSave": "NOT_WRITTEN",
+    "latest": "NOT_OVERWRITTEN",
+    "playtestFlag": false,
+    "releaseCandidateFlag": false,
+    "systemConfigurationChanged": false,
+    "executionPolicyBypassed": false,
+    "toolCodeChanged": false
+  },
+  "nextStep": "Retain the release PR and environment blocker. An authorized environment owner must provide a policy-compliant executable MCP runtime/helper or build on an existing compatible host. Then rerun the unchanged builder to a fresh output, followed by the original strict audit and separate official/device/capacity evidence. No bypass or formal release was performed."
+}

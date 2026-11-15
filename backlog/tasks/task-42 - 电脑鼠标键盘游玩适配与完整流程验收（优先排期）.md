@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@Furinya'
 created_date: '2026-10-23 12:23'
-updated_date: '2026-11-15 13:51'
+updated_date: '2026-11-15 14:16'
 labels:
   - awaiting-live
 milestone: m-8
@@ -73,4 +73,6 @@ ordinal: 40000
 2026-11-15 Release PC台账：PC27由本任务主责；逐字依据、修复提交/PR和未验缺口见 docs/backlog-details/PC-QA-20261115.md。仅文本核对和源码/离线回归不能勾官方或设备AC；本轮不新增重复任务、不改变原已验AC。
 
 本轮干净源58185619尝试构建回归候选，write_graphs依赖junction被OS以EPERM拒绝，written为空；无完整GIL，未严格读回或官方/设备验收。失败收据docs/evidence/release-pc-qa-20261115/candidate-build-failure.json；旧7cb/latest未覆盖，未占用GUI。
+
+第二次候选安全替代：F内物理复制既有工具且逐hash同一；build400fb7ea真实源182179cf/dirty=false被未签名private-runtime.ps1执行策略拒绝，尚未图编译，无完整GIL/严格audit/官方或设备证据。未改系统策略或工具代码，base/latest保持。详见候选环境失败收据。最终整合EOF门禁已修并同步CI绑定，失败审计保留；不标Done。
 <!-- SECTION:NOTES:END -->
