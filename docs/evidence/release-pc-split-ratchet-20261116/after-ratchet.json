@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "base": "1cc5479b713edab6fd26db4e20f8eb22b7401cb2",
+  "head": "53e410696bee6209d2ba0152b5548ec46245d1d7",
+  "changedLua": [
+    "src/lua/abyss_battle_card_bindings.lua",
+    "src/lua/abyss_battle_card_gestures.lua",
+    "src/lua/abyss_battle_render_actors.lua",
+    "src/lua/abyss_battle_unit_view.lua",
+    "src/lua/abyss_combat.lua",
+    "src/lua/abyss_combat_enemy_setup.lua",
+    "src/lua/abyss_game_ui.lua",
+    "src/lua/abyss_game_ui_view.lua",
+    "src/lua/abyss_map_ui.lua",
+    "src/lua/abyss_node_ui_lifecycle.lua",
+    "src/lua/abyss_page_reveal.lua"
+  ],
+  "status": "pass",
+  "errors": [],
+  "sccBefore": [
+    67,
+    11,
+    2
+  ],
+  "sccAfter": [
+    67,
+    11,
+    2
+  ]
+}

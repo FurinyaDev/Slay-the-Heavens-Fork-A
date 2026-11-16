@@ -186,7 +186,7 @@ test('frozen pre-PC 116-owner continuation: current raw production retains the e
  }
 });
 
-test('current PC 119-owner continuation: current raw production retains the exact power-view owner and complete release owner continuation',()=>{
+test('current PC 120-owner continuation: current raw production retains the exact power-view owner and complete release owner continuation',()=>{
  const current=currentEpoch.proof,file='config/architecture.json',source=diskReadFileSync(file,'utf8'),owner='src/lua/abyss_monster_power_view.lua';
  const pad=files=>Object.fromEntries(Object.keys(current.current).map(path=>[path,files[path]??null]));
  assert.deepEqual(current.targets.stsFeedbackPrior.files,pad(stsStyleEpoch.proof.current));
@@ -195,7 +195,7 @@ test('current PC 119-owner continuation: current raw production retains the exac
  assert.deepEqual(preReleasePcSourceEpoch.proof.owners,[...menuRedEpoch.proof.owners,...additions].sort());
  assert.equal(preReleasePcSourceEpoch.proof.owners.length,116);
  assert.deepEqual(current.targets.releasePcPrior.files,preReleasePcSourceEpoch.proof.current);
- assert.deepEqual(current.owners,[...preReleasePcSourceEpoch.proof.owners,...['battle_card_bindings','battle_unit_view','combat'].map(name=>'src/lua/abyss_'+name+'.lua')].sort());assert.equal(current.owners.length,119);
+ assert.deepEqual(current.owners,[...preReleasePcSourceEpoch.proof.owners,...['battle_card_bindings','battle_unit_view','combat','combat_enemy_setup'].map(name=>'src/lua/abyss_'+name+'.lua')].sort());assert.equal(current.owners.length,120);
  const reads=[],raw=path=>{reads.push(path);return diskReadFileSync(path,'utf8');};
  const expected=current.targets.develop.files[file].source;
  assert.equal(currentEpoch.preCombinedSource(file,source,{target:'develop',readSource:raw}),expected);assert.deepEqual(reads,current.owners);

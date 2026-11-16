@@ -1,0 +1,9 @@
+{
+  "files": [
+    "src/lua/abyss_combat.lua",
+    "src/lua/abyss_combat_enemy_setup.lua"
+  ],
+  "status": 0,
+  "actual": [],
+  "unexpected": []
+}

@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - Furinya
 created_date: '2026-11-06 01:46'
-updated_date: '2026-11-15 13:24'
+updated_date: '2026-11-16 01:21'
 labels:
   - 待验
   - delivery-verify
@@ -13,6 +13,7 @@ milestone: m-8
 dependencies: []
 references:
   - docs/backlog-details/PC-QA-20261115.md
+  - docs/evidence/release-pc-split-ratchet-20261116/README.md
 documentation:
   - docs/backlog-details/M7-SCOPE-GAP-20261105.md
   - docs/backlog-details/TASK-100.md
@@ -44,6 +45,8 @@ ordinal: 163000
 4.按Owner集成要求保留原#523，以实际合入的#521/c685409d建立线性接续，不强推、不引入合并提交；刷新schema2三VM来源与分项，保留历史证据和未勾AC，完成精确独审及原生Full/队列/合后验证。
 
 2026-11-07：复用#532已审六intent控件增量，在当前核心加#538候选依赖组合执行一次原48样本固定协议，不重采求绿；依赖实际落地后核对494输入同源，和既有成本/协议/回滚保护共用正常Full与独审。
+
+2026-11-16 协助684实际Required阻塞：独立goal-v2-split-ratchet-1116树，仅split位置等价整理，旧特征合同/精确1cc ratchet RED到GREEN及现有source追加，本地提交交父独审；不泛化生命周期、不改阈值/旧包、不Full/GUI，Furinya/In Progress/AC保留。
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -68,4 +71,6 @@ PR #523 首份离线Host全路径基线已实现：固定实际seed、源摘要�
 2026-11-14第二轮状态纠正：已有Host基准、visibility配对与SDK阶段记录，当前候选完整覆盖待补；工具及研究已开展，不应标To Do。 更正上一轮将待验统一退回To Do的处理；未勾AC及独立审批保持，In Progress表示工作已开展，不表示有人正持续占用执行窗口。
 
 2026-11-15 Release PC台账：PC20由本任务主责；逐字依据、修复提交/PR和未验缺口见 docs/backlog-details/PC-QA-20261115.md。仅文本核对和源码/离线回归不能勾官方或设备AC；本轮不新增重复任务、不改变原已验AC。
+
+2026-11-16 协助684最小分裂位置等价片：产品53e41069，精确1cc原ratchet由2295→2302行/CC14→17拒绝转2295行/CC13/0新违规；没有泛化生命周期或改预算。18同条件状态/事件/RNG配对及显式位置复制负控通过；真实新source和隔离copy闭合，旧包保留。证据docs/evidence/release-pc-split-ratchet-20261116/；仅本地提交交父独审，无Full/GUI/新候选，不宣称原性能或设备AC完成。
 <!-- SECTION:NOTES:END -->

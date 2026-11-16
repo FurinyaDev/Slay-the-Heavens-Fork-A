@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {createHash} from 'node:crypto';
 import {gunzipSync} from 'node:zlib';
+import {sourceEpoch} from './closeout-source-epoch.mjs';
 const hash=b=>createHash('sha256').update(b).digest('hex'),norm=s=>s.replaceAll('\r\n','\n');
 const bytes=readFileSync(new URL('./release-pc-ci-source.json.gz',import.meta.url));
 assert.equal(hash(bytes),'4a71ab67baedcd287d4ecae07880663ee0de2a06ad3c3e242ff23af7795c421c','complete release PC CI continuation');
@@ -20,10 +21,17 @@ for(const [path,row]of Object.entries(packet.files))for(const binding of [row.be
 }
 const freeze=v=>{if(v&&typeof v==='object'&&!Object.isFrozen(v)){Object.values(v).forEach(freeze);Object.freeze(v);}return v;};
 export const releasePcCiPacket=freeze(packet);
+// Explicit CI comparison only: the production projector freshly authenticates
+// all current owners before recovering this packet's immutable predecessor.
+export function releasePcSplitPriorSource(path,source,read=readFileSync){
+ if(!path.startsWith('src/'))return source;
+ return sourceEpoch.preCombinedSource(path,source,{target:'releasePcSplitPrior',readSource:p=>read(p,'utf8')});
+}
 function checkedSource(path,source,before){
  const row=Object.hasOwn(packet.files,path)?packet.files[path]:null;
  if(!row?.before||typeof source!=='string'||source.includes('\r\r\n'))return source;
  if(before&&row.before.sha256!==before.sha256)return source;
+ source=releasePcSplitPriorSource(path,source);
  return hash(norm(source))===row.current.sha256?row.before.source:source;
 }
 // Only the explicit complete-CI validator may compare a production owner's
@@ -54,8 +62,17 @@ export function assertReleasePcRawInventory(paths,kind='js'){
  assert.deepEqual([...paths].sort(),packet.currentInventory[kind],'complete release PC raw discovery inventory');
 }
 export function assertReleasePcCiCurrent(read=readFileSync){
- for(const [path,row]of Object.entries(packet.files))
-  assert.equal(hash(norm(read(path,'utf8'))),row.current.sha256,'fresh complete integration source: release PC '+path);
+ for(const path of sourceEpoch.proof.owners){
+  const source=read(path,'utf8'),message='fresh complete integration source: split current '+path;
+  assert.equal(typeof source,'string',message);
+  assert.equal(hash(norm(source)),sourceEpoch.proof.current[path].sha256,message);
+ }
+ for(const [path,row]of Object.entries(packet.files)){
+  let source;
+  try{source=releasePcSplitPriorSource(path,read(path,'utf8'),read);}
+  catch(error){assert.fail('fresh complete integration source: release PC '+path+': '+error.message);}
+  assert.equal(hash(norm(source)),row.current.sha256,'fresh complete integration source: release PC '+path);
+ }
  for(const [path,sha]of Object.entries(packet.immutableArchives))
   assert.equal(hash(read(path)),sha,'retained complete immutable release predecessor: '+path);
 }

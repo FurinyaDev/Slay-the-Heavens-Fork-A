@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@Furinya'
 created_date: '2026-10-23 12:23'
-updated_date: '2026-11-15 21:00'
+updated_date: '2026-11-16 01:21'
 labels:
   - awaiting-live
 milestone: m-8
@@ -19,6 +19,7 @@ references:
   - docs/DELIVERY-CLOSEOUT.md
   - docs/BACKLOG-AUDIT-20261026.md
   - docs/backlog-details/PC-QA-20261115.md
+  - docs/evidence/release-pc-split-ratchet-20261116/README.md
 priority: medium
 type: feature
 ordinal: 40000
@@ -49,6 +50,8 @@ ordinal: 40000
 
 <!-- SECTION:PLAN:BEGIN -->
 2026-11-15 Release接续：PC01–PC38逐项核原文与证据，选择性移植#672本版修复，定向回归、独审及Release Full。同候选PC/手机/ready/容量未过不勾AC。
+
+2026-11-16 用户授权684窄修：独立goal-v2-split-ratchet-1116树以6c45778/actual1cc为祖先，仅整理split位置既有边界；旧实现特征合同与精确1cc ratchet先RED，保留酸/棘刺/布局、RNG/HP/事件与显式位置深拷贝，最小改动后GREEN。沿现有collector追加真实新字节且保留旧包；定向检查后本地提交交父独审，不push原PR、不Full/GUI/轮询，Owner Furinya和状态/AC保持。
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -83,4 +86,6 @@ d396→d6555c40当前目标补强独审release_navigation_source_review CODE_PAS
 2026-11-16 已纠正本片此前新增的forecast<target/guard硬门槛：docs/CI.md168原Owner政策要求预测仅诊断，实际workflow45/30/local75才是执行硬超时。代码8a44cd2f/绑定f244edd3保留产品5bd、所有旧冻结断言与45行原before；只1个CI当前after及leaf接续，其余44行/93归档/库存保持。当前5/5通过，独审CODE_PASS_SCOPED报告independent-owner-policy.json，12个直接job负控拒绝；forecast超目标和旧预测guard仍诊断。此前独审错误建议与报告原文保留更正，未重复73/Full。新发现共同前置PR692已负责Release bootstrap实际10失败，尚未合；不得把旧预测绿灯当本次RequiredCI或官方许可。
 
 2026-11-16 本轮追加：共同前置#692已合，实际Release新base为1cc5479b713edab6fd26db4e20f8eb22b7401cb2；PR684代码独审HEAD ff2d28d0aeaa09d364db948d0b57f95a89406d5c限定通过，Source/CI9/9、raw硬guard4/4、copy/corpus3/3，原独审报告和同reviewer支持bundle见docs/evidence/release-closeout-bootstrap-1116/independent-review.json及manifest。本轮仅归档和CLI附记；Source约53.6秒、每正投影145读约33MB是重复fresh成本限制，不是性能PASS。当前Hosted Full、同候选官方导入/ready/PC手机/容量仍未验；保留旧notes、所有已勾与未勾AC（含#676），status保持In Progress，不授合并或发布许可。
+
+2026-11-16 PR684分裂窄修本地产品53e41069（08590首片）：位置职责移到已有EnemySetup，combat回2295行/CC13，新helper CC5；原精确1cc ratchet两项RED转0违规，酸/棘刺/Boss/UI定向通过，18场景完整状态/事件/RNG等价及3负控通过。原包保留，新source/current/copy接续120 owners，来源12项与owner4项、菜单7项通过。证据docs/evidence/release-pc-split-ratchet-20261116/；待父独审和原PR正常准入，未push/Full/GUI，设备/容量AC不勾。
 <!-- SECTION:NOTES:END -->

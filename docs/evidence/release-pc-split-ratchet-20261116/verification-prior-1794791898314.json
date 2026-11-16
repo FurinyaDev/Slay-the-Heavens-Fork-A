@@ -1,0 +1,41 @@
+{
+  "base": "6c45778c47788c2e69a68d3a48ec7a5a5ba3455b",
+  "product": "08590b143a451e235ff0ee9013469696a749a41a",
+  "paired": {
+    "cases": 18,
+    "identical": true,
+    "bytes": 19929008,
+    "sha256": "f90fd5a12c193c5ff576dd3aafd4990f0dc8e9b53a7c98d371e493711a51a41a"
+  },
+  "negativeControls": [
+    "offset",
+    "floor",
+    "alias"
+  ],
+  "copiedOwners": 120,
+  "isolatedHelperCopy": "F:\\New folder\\.worktrees\\goal-v2-split-ratchet-1116\\.artifacts\\split-ratchet\\isolated-helper-copy-K8kEkm",
+  "metrics": [
+    {
+      "file": "src/lua/abyss_combat.lua",
+      "lines": 2295,
+      "functions": [
+        {
+          "name": "splitEnemy",
+          "complexity": 13,
+          "line": 234
+        }
+      ]
+    },
+    {
+      "file": "src/lua/abyss_combat_enemy_setup.lua",
+      "lines": 203,
+      "functions": [
+        {
+          "name": "M.splitPosition",
+          "complexity": 5,
+          "line": 86
+        }
+      ]
+    }
+  ]
+}

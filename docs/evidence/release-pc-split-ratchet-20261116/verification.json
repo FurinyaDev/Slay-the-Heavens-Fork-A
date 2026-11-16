@@ -1,0 +1,61 @@
+{
+  "base": "6c45778c47788c2e69a68d3a48ec7a5a5ba3455b",
+  "product": "53e410696bee6209d2ba0152b5548ec46245d1d7",
+  "paired": {
+    "cases": 18,
+    "identical": true,
+    "cohorts": [
+      {
+        "family": "acid_slime_l",
+        "cases": 6,
+        "bytes": 6656433,
+        "sha256": "453e8c428af364fe6a090822a5de81cf4c322e6364de8f48df37ca239f66f76c"
+      },
+      {
+        "family": "spike_slime_l",
+        "cases": 6,
+        "bytes": 6624207,
+        "sha256": "84444190b88a52b478b7e82b862eaed1a299503ce2f356b914bff8808e1cb842"
+      },
+      {
+        "family": "slime_boss",
+        "cases": 6,
+        "bytes": 6648402,
+        "sha256": "89d56a96b9efd0c8f9389283f7a0b45a8edfbaaed6e8903d624d94bb89aaf58e"
+      }
+    ],
+    "bytes": 19929042,
+    "sha256": "a6b40a196c6373b8c125fb0466bb2e9a07ed0512412fd9ac6743e9d66300f5c3"
+  },
+  "negativeControls": [
+    "offset",
+    "floor",
+    "alias"
+  ],
+  "copiedOwners": 120,
+  "isolatedHelperCopy": "F:\\New folder\\.worktrees\\goal-v2-split-ratchet-1116\\.artifacts\\split-ratchet\\isolated-helper-copy-W1PM43",
+  "metrics": [
+    {
+      "file": "src/lua/abyss_combat.lua",
+      "lines": 2295,
+      "functions": [
+        {
+          "name": "splitEnemy",
+          "complexity": 13,
+          "line": 234
+        }
+      ]
+    },
+    {
+      "file": "src/lua/abyss_combat_enemy_setup.lua",
+      "lines": 203,
+      "functions": [
+        {
+          "name": "M.splitPosition",
+          "complexity": 5,
+          "line": 86
+        }
+      ]
+    }
+  ]
+}

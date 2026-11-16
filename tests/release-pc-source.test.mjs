@@ -6,16 +6,21 @@ const readFileSync=releaseMergeRead('slicePrior',physicalReadFileSync);
 import {createHash} from 'node:crypto';
 import {gunzipSync} from 'node:zlib';
 import {discoverJs} from '../scripts/ci-shards.mjs';
-import {sourceEpoch,preReleasePcSourceEpoch} from './helpers/closeout-source-epoch.mjs';
-import {releasePcSourcePacket,extendReleasePcSource} from './helpers/release-pc-source.mjs';
-import {releasePcCiPacket,releasePcCiSource,releasePcPriorInventory,assertReleasePcRawInventory,assertReleasePcCiCurrent} from './helpers/release-pc-ci-source.mjs';
+import {sourceEpoch,preReleasePcSourceEpoch,preSplitSourceEpoch} from './helpers/closeout-source-epoch.mjs';
+import {releasePcSourcePacket,releasePcSplitSourcePacket,extendReleasePcSource} from './helpers/release-pc-source.mjs';
+import {releasePcCiPacket,releasePcCiSource,releasePcPriorInventory,assertReleasePcRawInventory,assertReleasePcCiCurrent,releasePcSplitPriorSource} from './helpers/release-pc-ci-source.mjs';
 const hash=b=>createHash('sha256').update(b).digest('hex'),norm=s=>s.replaceAll('\r\n','\n');
 
 test('release PC production preserves every complete prior target and freshly authenticates the committed source tree',()=>{
  const p=sourceEpoch.proof,prior=preReleasePcSourceEpoch.proof;
  for(const [name,target]of Object.entries(prior.targets))assert.deepEqual(p.targets[name],target,name);
  assert.deepEqual(p.targets.releasePcPrior.files,prior.current);
- assert.equal(p.currentTreeCommitted,true);assert.equal(p.currentCommit,releasePcSourcePacket.currentCommit);
+ assert.equal(p.currentTreeCommitted,true);assert.equal(p.currentCommit,releasePcSplitSourcePacket.currentCommit);
+ assert.equal(preSplitSourceEpoch.proof.currentCommit,releasePcSourcePacket.currentCommit);
+ assert.equal(preSplitSourceEpoch.proof.owners.length,119);
+ assert.deepEqual(p.targets.releasePcSplitPrior.files,preSplitSourceEpoch.proof.current);
+ assert.deepEqual(p.owners,[...preSplitSourceEpoch.proof.owners,'src/lua/abyss_combat_enemy_setup.lua'].sort());
+ for(const [name,target]of Object.entries(preSplitSourceEpoch.proof.targets))assert.deepEqual(p.targets[name],target,name);
  const files=['config/architecture.json',...readdirSync('src/lua').filter(n=>n.endsWith('.lua')).map(n=>'src/lua/'+n)].sort();
  assert.deepEqual(files,Object.keys(p.current).filter(path=>p.current[path]!==null).sort());
  for(const path of files)assert.equal(norm(readFileSync(path,'utf8')),p.current[path].source,path);
@@ -26,7 +31,7 @@ test('release PC production preserves every complete prior target and freshly au
 test('release PC CI validates complete live bindings while unknown or changed bytes stay visible',()=>{
  assertReleasePcCiCurrent(readFileSync);
  for(const [path,row]of Object.entries(releasePcCiPacket.files)){
-  const source=norm(readFileSync(path,'utf8'));assert.equal(hash(source),row.current.sha256,path);
+   const source=norm(releasePcSplitPriorSource(path,readFileSync(path,'utf8')));assert.equal(hash(source),row.current.sha256,path);
   const production=path.startsWith('src/')||path==='config/architecture.json';
   assert.equal(releasePcCiSource(path,source),production?source:row.before?.source??source,path);
   for(const foreign of [source+'\n',source.slice(1),null,{},17])assert.equal(releasePcCiSource(path,foreign),foreign,path);
@@ -92,6 +97,7 @@ test('actual Release merge proves all production base Git blobs and exact bootst
 });
 
 test('PC fixture repair retains the complete prior merge packet and exact historical test bindings',()=>{
+ const releaseMergeCiPacket=JSON.parse(gunzipSync(physicalReadFileSync('tests/helpers/release-bootstrap-merge-ci-source.json.gz')));
  const path='tests/helpers/release-bootstrap-merge-before-owner-repair-ci-source.json.gz';
  const bytes=physicalReadFileSync(path);
  assert.equal(hash(bytes),'30ecf61e75ea05e477ef862fa21ad7a1532316f2042eac3cc8028bccfb91ddc6');
@@ -134,10 +140,30 @@ test('archived Git provenance rejects changed missing and mistyped objects witho
  }
 });
 
+test('split continuation retains the exact 119-owner predecessor and every prior CI byte',()=>{
+ const path='tests/helpers/release-bootstrap-merge-ci-source.json.gz',bytes=physicalReadFileSync(path);
+ assert.equal(hash(bytes),'533b470c786e02972a0359d6df10b6dbc3d0f946e7e054561f53f9635e77e966');
+ const prior=JSON.parse(gunzipSync(bytes));assert.equal(releaseMergeCiPacket.immutableArchives[path],hash(bytes));
+ for(const field of Object.keys(prior).filter(key=>!['files','immutableArchives'].includes(key)))assert.deepEqual(releaseMergeCiPacket[field],prior[field],field);
+ for(const [path,row]of Object.entries(prior.files))for(const view of ['slicePrior','bootstrapView'])assert.deepEqual(releaseMergeCiPacket.files[path][view],row[view],path+':'+view);
+ for(const [path,sha]of Object.entries(prior.immutableArchives))assert.equal(releaseMergeCiPacket.immutableArchives[path],sha,path);
+ assert.deepEqual(Object.keys(releaseMergeCiPacket.immutableArchives).sort(),[...Object.keys(prior.immutableArchives),path,'tests/helpers/release-pc-split-source.json.gz'].sort());
+ for(const path of ['src/lua/abyss_combat.lua','src/lua/abyss_combat_enemy_setup.lua']){
+  const source=physicalReadFileSync(path,'utf8');
+  assert.equal(releasePcCiSource(path,source),source,'general CI routing leaves production raw');
+  assert.equal(releasePcSplitPriorSource(path,source),preSplitSourceEpoch.proof.current[path].source);
+  assert.throws(()=>assertReleasePcCiCurrent((p,e)=>p===path?preSplitSourceEpoch.proof.current[path].source:physicalReadFileSync(p,e)),/fresh complete integration source/,'old 119-owner bytes cannot pass as current');
+  for(const value of [null,source+'\n',new Error('missing split owner')]){
+   const read=(p,e)=>{if(p!==path)return physicalReadFileSync(p,e);if(value instanceof Error)throw value;return value;};
+   assert.throws(()=>sourceEpoch.preCombinedSource('config/architecture.json',physicalReadFileSync('config/architecture.json','utf8'),{target:'develop',readSource:p=>read(p,'utf8')}),/linked owner/);
+  }
+ }
+});
+
 test('actual Release merge CI trust packet rejects truncated isolated copies',async()=>{
  const leaf=physicalReadFileSync('tests/helpers/release-bootstrap-merge-ci-source.mjs','utf8');
- const bytes=physicalReadFileSync('tests/helpers/release-bootstrap-merge-ci-source.json.gz');
- const marker="const bytes=readFileSync(new URL('./release-bootstrap-merge-ci-source.json.gz',import.meta.url));";
+  const bytes=physicalReadFileSync('tests/helpers/release-pc-split-ci-source.json.gz');
+  const marker="const bytes=readFileSync(new URL('./release-pc-split-ci-source.json.gz',import.meta.url));";
  assert.equal(leaf.split(marker).length,2);
  const broken=leaf.replace(marker,`const bytes=Buffer.from(${JSON.stringify(bytes.subarray(0,bytes.length-1).toString('base64'))},'base64');`);
  await assert.rejects(import('data:text/javascript;base64,'+Buffer.from(broken).toString('base64')),/complete actual Release merge CI composition/);

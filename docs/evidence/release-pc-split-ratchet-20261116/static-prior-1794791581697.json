@@ -1,0 +1,25 @@
+{
+  "files": [
+    "src/lua/abyss_combat.lua",
+    "src/lua/abyss_combat_enemy_setup.lua"
+  ],
+  "status": 1,
+  "actual": [
+    {
+      "file": "src/lua/abyss_combat_enemy_setup.lua",
+      "line": 86,
+      "column": 33,
+      "code": "W431",
+      "message": "shadowing upvalue 'index' on line 10"
+    }
+  ],
+  "unexpected": [
+    {
+      "file": "src/lua/abyss_combat_enemy_setup.lua",
+      "line": 86,
+      "column": 33,
+      "code": "W431",
+      "message": "shadowing upvalue 'index' on line 10"
+    }
+  ]
+}

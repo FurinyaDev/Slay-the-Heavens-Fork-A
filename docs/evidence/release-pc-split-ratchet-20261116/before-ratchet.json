@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "base": "1cc5479b713edab6fd26db4e20f8eb22b7401cb2",
+  "head": "6c45778c47788c2e69a68d3a48ec7a5a5ba3455b",
+  "changedLua": [
+    "src/lua/abyss_battle_card_bindings.lua",
+    "src/lua/abyss_battle_card_gestures.lua",
+    "src/lua/abyss_battle_render_actors.lua",
+    "src/lua/abyss_battle_unit_view.lua",
+    "src/lua/abyss_combat.lua",
+    "src/lua/abyss_game_ui.lua",
+    "src/lua/abyss_game_ui_view.lua",
+    "src/lua/abyss_map_ui.lua",
+    "src/lua/abyss_node_ui_lifecycle.lua",
+    "src/lua/abyss_page_reveal.lua"
+  ],
+  "status": "blocked",
+  "errors": [
+    {
+      "file": "src/lua/abyss_combat.lua",
+      "line": 1,
+      "message": "Module length 2295 -> 2302 exceeds 2295; extract a cohesive owner"
+    },
+    {
+      "file": "src/lua/abyss_combat.lua",
+      "line": 234,
+      "message": "splitEnemy: CC 14 -> 17 exceeds 15"
+    }
+  ],
+  "sccBefore": [
+    67,
+    11,
+    2
+  ],
+  "sccAfter": [
+    67,
+    11,
+    2
+  ]
+}

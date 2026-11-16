@@ -28,6 +28,12 @@ export const releasePcHelperCopies=[
  {path:'tests/helpers/release-pc-source.json.gz',before:null,after:'007271848a37da024ef7e25d6e2c7719b2c1d3aeffd36fa157b18e26895253ee'}
 ];
 for(const row of releasePcHelperCopies){assert.equal(files[row.path]??null,row.before,'exact release PC helper-copy predecessor: '+row.path);files[row.path]=row.after;}
+const splitHelperCopies=[
+ {path:'tests/helpers/closeout-source-epoch.mjs',before:releasePcHelperCopies[0].after,after:'84a9556aef4ab1737b726280f3014c6975bc63bc50ff453131fb98a5d15cb1b2'},
+ {path:'tests/helpers/release-pc-source.mjs',before:releasePcHelperCopies[1].after,after:'a7b7c23646bfb48745d2a8ff59e2b3b61fd28838ff7642f016211fa96abec07d'},
+ {path:'tests/helpers/release-pc-split-source.json.gz',before:null,after:'26580fd476d567246a300c235c41c70dcaeeb826792ce9f79cf0f623072a8399'}
+];
+for(const row of splitHelperCopies){assert.equal(files[row.path]??null,row.before,'exact split helper-copy predecessor: '+row.path);files[row.path]=row.after;}
 const inside=(root,path)=>{const r=relative(root,path);return r!==''&&!isAbsolute(r)&&r!=='..'&&!r.startsWith('../')&&!r.startsWith('..\\');};
 export function copyIntegrationSourceClosure(directory,{sourceRoot=process.cwd()}={}){
  const destination=realpathSync.native(directory);
