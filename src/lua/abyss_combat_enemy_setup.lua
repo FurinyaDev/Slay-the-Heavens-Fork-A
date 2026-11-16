@@ -83,13 +83,13 @@ function M.make(state,id,serial,explicitHp,hpRandom)
  end
  return enemy
 end
-function M.splitPosition(parent,index)
- if parent.ai.splitPositions then return Copy(parent.ai.splitPositions[index])end
+function M.splitPosition(parent,childIndex)
+ if parent.ai.splitPositions then return Copy(parent.ai.splitPositions[childIndex])end
  -- Large slime constructors retain their parent's source origin.
  -- Source takeTurn separates medium children by +/-134 source px;
  -- retain the floor without consuming combat RNG for cosmetic jitter.
  local origin=parent.sourcePosition or {x=0,y=0}
- return {x=origin.x+(index==1 and -134 or 134),y=origin.y}
+ return {x=origin.x+(childIndex==1 and -134 or 134),y=origin.y}
 end
 local function sourceSpec(options)
  if options.sourceEncounter~=nil then
