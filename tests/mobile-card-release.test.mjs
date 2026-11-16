@@ -10,7 +10,7 @@ test('mobile drag release clears invalid selections and preserves desktop target
 test('released pointer identity survives mixed Click metadata without admitting stale or overlapping input',()=>{
  const result=runLua('tests/lua/support/battle_pointer_identity_cases.lua');
  assert.equal(result.status,0,result.stdout+result.stderr);
- assert.match(result.stdout,/BATTLE_POINTER_IDENTITY 22 passed; 0 failed/);
+ assert.match(result.stdout,/BATTLE_POINTER_IDENTITY 26 passed; 0 failed/);
 });
 
 test('coalesced PC and touch release uses the real Down sample and cannot replay its tail',()=>{

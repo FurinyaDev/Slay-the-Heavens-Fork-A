@@ -8,7 +8,7 @@ local function needsTarget(state, instance)
     local _, reason = Combat.canPlay(state, instance.uid, nil)
     return reason == "invalid_target"
 end
-local function allowsAnonymousTarget(token)return token and (token.cardTarget or token.tapAim)end
+local function allowsAnonymousTarget(token)return token and (token.cardTarget or token.tapAim or token.inspectTarget)end
 -- Explicit ports preserve the approved implementation without a shared constructor closure.
 function M.install(owner, ownership, host, dependencies)
     local bound=setmetatable({}, {__mode="k"})
@@ -143,6 +143,7 @@ function M.install(owner, ownership, host, dependencies)
                         input.held = g
                         dependencies.pointerArm(input,g,event,origin)
                         previewEnemy(g,false)
+                        g.inspectTarget=not g.cardTarget and not g.aim
                     end
                 end)
                 if not entryAt() then return end

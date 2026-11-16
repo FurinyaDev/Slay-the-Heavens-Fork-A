@@ -123,8 +123,8 @@ local function takePointer(owner,ownership,input,event,allowHeld,canAnonymous)
     if touch~=nil then
         if not token or token.touch~=touch then return end
     else
-        if canAnonymous and not canAnonymous(token)then return end
         input.released=nil -- blocked Clicks cannot replay after busy/turn recovery
+        if canAnonymous and not canAnonymous(token)then return end
         if not anonymousPointerReady(owner,input,token)then return end
         local ambiguous=eachInput(ownership,function(other)
             return other.active and next(other.active) or other~=input and (other.held or other.released)

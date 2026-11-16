@@ -225,5 +225,55 @@ test('controller blocked field Click and Down cannot revive after recovery',func
     anonymousTap(emit,'playArea',4);unchanged(h.run.combat,2,1)
 end)
 
+test('fully anonymous enemy inspection is one-shot and cannot poison the next card',function()
+    local h,u,_,e=setup();local shown=0
+    u.showStatus=function(_,target)assert(target==1);shown=shown+1 end
+    tap(e,'enemy1',nil)
+    assert(shown==1,'fully anonymous enemy inspection was lost')
+    e('enemy1','click',nil);assert(shown==1,'inspection Click tail replayed')
+    anonymousTap(e,'card1',30)
+    assert(u.selected==h.run.combat.hand[1].uid,'inspection release poisoned the next anonymous card')
+    anonymousTap(e,'playArea',31);unchanged(h.run.combat,2,1)
+end)
+
+test('selected non-targeted cards still allow mixed-ID enemy inspection without a command',function()
+    local h,u,_,e=setup();selected(u,e);local uid=u.selected;local shown=0
+    u.showStatus=function(_,target)assert(target==1);shown=shown+1 end
+    anonymousTap(e,'enemy1',32)
+    assert(shown==1 and u.selected==uid,'non-targeted selection lost enemy inspection or changed selection')
+    unchanged(h.run.combat)
+    anonymousTap(e,'playArea',33);unchanged(h.run.combat,2,1)
+end)
+
+test('overlapping inspection and card pointers remain rejected then recover on a fresh tap',function()
+    local h,u,_,e=setup();local shown=0
+    u.showStatus=function()shown=shown+1 end
+    e('enemy1','down',34);e('card1','down',35)
+    e('enemy1','up',34);e('enemy1','click',nil)
+    e('card1','up',35);e('card1','click',nil)
+    assert(shown==0 and not u.selected,'ambiguous inspection or card was admitted')
+    anonymousTap(e,'card1',36)
+    assert(u.selected==h.run.combat.hand[1].uid,'rejected inspection left a released pointer behind')
+    unchanged(h.run.combat)
+end)
+
+test('a rejected anonymous role consumes only its release before a different card tap',function()
+    local Input=require('abyss_battle_input_state')
+    local owner={run={phase='combat',combat={turn=1}}}
+    local input,card={},{}
+    local ownership={cardInputs={card},enemyInputs={input},potionInputs={},actionInputs={}}
+    local deps=Input.install(owner,ownership,{stage={},platform={},options={}}, {})
+    local function release(target,touch)
+        local event={touchId=touch};local state=deps.pointerBegin(target,event)
+        local token={touch=touch};target.held=token;deps.pointerArm(target,token,event,state)
+        deps.pointerEnd(target,event);target.held=nil;target.released=token;return token
+    end
+    release(input,37)
+    assert(deps.pointerTake(input,{},true,function()return false end)==nil)
+    assert(input.released==nil,'rejected anonymous role retained a released pointer')
+    local token=release(card,38)
+    assert(deps.pointerTake(card,{})==token,'rejected role poisoned a different card input')
+end)
+
 print('BATTLE_POINTER_IDENTITY '..passed..' passed; '..failed..' failed')
 assert(failed==0,'battle pointer identity failures: '..failed)
