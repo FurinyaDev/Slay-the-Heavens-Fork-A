@@ -24,9 +24,25 @@ for(const [path,row]of Object.entries(repair.files)){
  }
  files[path]={...originalPacket.files[path],current:row.current};
 }
+// Preserve both prior packets; bind the matcher continuation to its exact source.
+const matcherBytes=readFileSync(new URL('./potion-post697-ci-matcher-repair.json.gz',import.meta.url));
+assert.equal(hash(matcherBytes),'b93106ecdc798c4b9e266af10886b651ece625cdc477006c22253bb5b6703fcc','complete post697 CI matcher repair');
+const matcher=JSON.parse(gunzipSync(matcherBytes));
+assert.equal(matcher.schemaVersion,1);assert.equal(matcher.baseCommit,'93b94277b26d7ea54399e296bbd6596d345f037f');
+assert.equal(matcher.currentTreeCommitted,false,'matcher capture is separate from committed product');
+assert.deepEqual(Object.keys(matcher.files),['tests/integrated-ci-source.cases.mjs']);
+for(const [path,row]of Object.entries(matcher.files)){
+ assert.deepEqual(row.before,files[path].current,'exact pre-matcher source: '+path);
+ for(const item of [row.before,row.current]){
+  assert.equal(item.source,norm(item.source));assert.equal(hash(item.source),item.sha256,path);
+  assert.equal(createHash('sha1').update(`blob ${Buffer.byteLength(item.source)}\0`).update(item.source).digest('hex'),item.gitBlob,path);
+ }
+ files[path]={...files[path],current:row.current};
+}
 const packet={...originalPacket,files,immutableArchives:{...originalPacket.immutableArchives,
  'tests/helpers/potion-post697-ci-source.json.gz':hash(bytes),
- 'tests/helpers/potion-post697-ci-reader-repair.json.gz':hash(repairBytes)}};
+ 'tests/helpers/potion-post697-ci-reader-repair.json.gz':hash(repairBytes),
+ 'tests/helpers/potion-post697-ci-matcher-repair.json.gz':hash(matcherBytes)}};
 assert.equal(packet.schemaVersion,1);assert.equal(packet.currentTreeCommitted,false);
 assert.deepEqual(packet.viewCommits,{potion:'3e96a1589435f8b06645db095775a789f24b1350',selection:'33d71575c5f186a1b54f7bf3e4f1826c145aa1d9'});
 assert.equal(packet.productCommit,'a9df9dff11779cb1d850dc97b715c711881cf9c6');

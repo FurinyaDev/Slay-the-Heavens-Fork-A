@@ -36,11 +36,17 @@ test('integration validates complete raw sources and leaves every foreign byte a
   for(const input of [source+'\n',source.slice(1),source.slice(0,-1),null,{},17])assert.equal(integratedSource(path,input,target),input);
   for(const foreign of ['__proto__','constructor','foreign/'+path])assert.equal(integratedSource(foreign,source,target),source);
  }
- for(const path of ['.gitattributes','docs/legal/assets.json','tests/helpers/closeout-source-epoch.mjs','tests/helpers/run-hud-ci-source.mjs','tests/helpers/integrated-ci-source.mjs'])
+ for(const [path,layer]of [
+  ['.gitattributes','integration'],
+  ['docs/legal/assets.json','integration'],
+  ['tests/helpers/closeout-source-epoch.mjs','post697'],
+  ['tests/helpers/run-hud-ci-source.mjs','integration'],
+  ['tests/helpers/integrated-ci-source.mjs','post697'],
+ ])
   assert.throws(()=>assertIntegratedCurrent((p,e)=>{
    const value=actualPost697ReadFileSync(p,e);
    return p!==path?value:typeof value==='string'?value+'\n':Buffer.concat([value,Buffer.from('\n')]);
-  }),error=>{assert.match(error.message,/fresh complete integration source/);assert(error.message.includes(path),'the intended after owner must reject');return true;});
+  }),error=>{assert.equal(error.message.split('\n')[0],`fresh complete ${layer} source: ${path}`,'the intended first rejecting owner must match exactly');return true;});
  assert.equal(raw('tests/helpers/integrated-ci-binding.mjs'),renderIntegratedCiBinding(hash(readFileSync('tests/helpers/integrated-ci-source.json.gz'))));
  assert.equal(hash(readFileSync('tests/helpers/menu-red-before-integration-production-source.json.gz')),'ee888fd1686beaeffc2e439164619ecedee9ac00d2ca00a2711bd74c63e28cae');
 });
