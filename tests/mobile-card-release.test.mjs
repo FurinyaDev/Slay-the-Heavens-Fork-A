@@ -6,3 +6,9 @@ test('mobile drag release clears invalid selections and preserves desktop target
  assert.equal(result.status,0,result.stdout+result.stderr);
  assert.match(result.stdout,/MOBILE_CARD_RELEASE 7 passed; 0 failed/);
 });
+
+test('released pointer identity survives mixed Click metadata without admitting stale or overlapping input',()=>{
+ const result=runLua('tests/lua/support/battle_pointer_identity_cases.lua');
+ assert.equal(result.status,0,result.stdout+result.stderr);
+ assert.match(result.stdout,/BATTLE_POINTER_IDENTITY 22 passed; 0 failed/);
+});
