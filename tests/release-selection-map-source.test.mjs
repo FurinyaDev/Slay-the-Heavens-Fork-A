@@ -1,4 +1,7 @@
 import test from 'node:test';
+import {inspectionBeforeRead,inspectionCiSource,assertInspectionCiCurrent,inspectionCiPacket} from './helpers/battle-pointer-inspection-ci-source.mjs';
+import {battlePointerInspectionSourcePacket,extendBattlePointerInspectionSource} from './helpers/battle-pointer-inspection-source.mjs';
+import {integratedSource,integratedRead,integratedCiProof} from './helpers/integrated-ci-source.mjs';
 import assert from 'node:assert/strict';
 import {readFileSync as actualReadFileSync,readdirSync,mkdtempSync,mkdirSync,rmSync,existsSync,writeFileSync,unlinkSync} from 'node:fs';
 import {join} from 'node:path';
@@ -8,7 +11,7 @@ import {copyIntegrationSourceClosure} from './helpers/copy-integration-source-cl
 import {createHash} from 'node:crypto';
 import {gunzipSync} from 'node:zlib';
 import {discoverJs} from '../scripts/ci-shards.mjs';
-import {sourceEpoch as finalSourceEpoch,preBattlePointerSparseSourceEpoch as currentSourceEpoch,preBattlePointerSourceEpoch as sourceEpoch,preReleaseSelectionMapSourceEpoch} from './helpers/closeout-source-epoch.mjs';
+import {sourceEpoch as inspectionSourceEpoch,preBattlePointerInspectionSourceEpoch as finalSourceEpoch,preBattlePointerSparseSourceEpoch as currentSourceEpoch,preBattlePointerSourceEpoch as sourceEpoch,preReleaseSelectionMapSourceEpoch} from './helpers/closeout-source-epoch.mjs';
 import {battlePointerSparseSourcePacket,extendBattlePointerSparseSource} from './helpers/battle-pointer-sparse-source.mjs';
 import {battlePointerSparseCiPacket,battlePointerSparseCiSource,battlePointerSparseCiRead,battlePointerSparseCiValidationRead,assertBattlePointerSparseCiCurrent,assertBattlePointerSparseRawInventory} from './helpers/battle-pointer-sparse-ci-source.mjs';
 import {battlePointerSourcePacket,extendBattlePointerSource} from './helpers/battle-pointer-source.mjs';
@@ -16,14 +19,25 @@ import {battlePointerCiPacket,battlePointerCiSource,battlePointerCiRead,assertBa
 import {releaseSelectionMapSourcePacket,extendReleaseSelectionMapSource} from './helpers/release-selection-map-source.mjs';
 import {releaseSelectionMapCiPacket,releaseSelectionMapCiSource,releaseSelectionMapPriorInventory,assertReleaseSelectionMapRawInventory,assertReleaseSelectionMapCiCurrent,assertReleaseSelectionMapExecutionGuards} from './helpers/release-selection-map-ci-source.mjs';
 // The complete 2bc pointer contracts retain their independently authenticated view.
-const sparseBeforeCiRead=battlePointerSparseCiRead(actualReadFileSync);
+// These fixtures select the complete frozen 5a inputs explicitly; they are not
+// current-to-history authorization. The inspection tests below use raw disk.
+const inspectionCheckpointRead=(path,encoding)=>{
+ const before=Object.hasOwn(inspectionCiPacket.files,path)?inspectionCiPacket.files[path].before:null;
+ if(!before)return actualReadFileSync(path,encoding);
+ const bytes=Buffer.from(before.source);return encoding?bytes.toString(encoding):bytes;
+};
+const sparseBeforeCiRead=battlePointerSparseCiRead(inspectionCheckpointRead);
 // The original CI packet validates its explicit complete predecessor bindings.
-const pointerCiValidationRead=battlePointerSparseCiValidationRead(actualReadFileSync);
-const finalSource=path=>actualReadFileSync(path,'utf8');
+const pointerCiValidationRead=battlePointerSparseCiValidationRead(inspectionCheckpointRead);
+const actualSource=path=>actualReadFileSync(path,'utf8');
+const inspectionBeforeCiRead=inspectionBeforeRead(actualReadFileSync);
+// Explicit complete 82b fixture for its unchanged historical tests. Live
+// inspection authorization is exercised separately below against raw disk.
+const finalSource=path=>battlePointerInspectionSourcePacket.before[path]?.source??actualSource(path).replaceAll('\r\n','\n');
 function rawReadFileSync(path,encoding){
  const raw=sparseBeforeCiRead(path,encoding);
  if(!path.startsWith('src/'))return raw;
- const text=typeof raw==='string'?raw:raw.toString('utf8');
+ const text=finalSource(path);
  const prior=finalSourceEpoch.preCombinedSource(path,text,{target:'battlePointerSparsePrior',readSource:finalSource});
  return typeof raw==='string'?prior:prior===text?raw:Buffer.from(prior);
 }
@@ -33,11 +47,89 @@ const pointerBeforeCiRead=battlePointerCiRead(rawReadFileSync);
 function readFileSync(path,encoding){
  const raw=path.startsWith('src/')?actualReadFileSync(path,encoding):pointerBeforeCiRead(path,encoding);
  if(!path.startsWith('src/'))return raw;
- const text=typeof raw==='string'?raw:raw.toString('utf8');
+ const text=finalSource(path);
  const prior=finalSourceEpoch.preCombinedSource(path,text,{target:'battlePointerPrior',readSource:finalSource});
  return typeof raw==='string'?prior:prior===text?raw:Buffer.from(prior);
 }
 const hash=b=>createHash('sha256').update(b).digest('hex'),norm=s=>s.replaceAll('\r\n','\n');
+
+test('inspection continuation preserves 67 complete targets and exact two-owner committed producer',()=>{
+ const p=inspectionSourceEpoch.proof,prior=finalSourceEpoch.proof,packet=battlePointerInspectionSourcePacket;
+ assert.equal(p.currentCommit,'b01cdd5858924cc9caf84cc3134fa52e5958add7');assert.equal(p.currentTreeCommitted,true);
+ assert.equal(Object.keys(p.current).length,352);assert.equal(p.owners.length,121);assert.equal(Object.keys(p.targets).length,68);
+ for(const [name,target]of Object.entries(prior.targets))assert.deepEqual(p.targets[name],target,name);
+ assert.deepEqual(p.targets.battlePointerInspectionPrior,{commit:packet.baseCommit,files:prior.current});
+ for(const [path,row]of Object.entries(p.current))if(row)assert.equal(norm(actualSource(path)),row.source,path);
+ for(const [path,row]of Object.entries(packet.current)){
+  assert.deepEqual(packet.before[path],prior.current[path]);assert.deepEqual(row,p.current[path]);
+  assert.deepEqual(packet.producers[path],{commit:packet.currentCommit,parents:[packet.captureBase]});
+ }
+ for(const path of Object.keys(prior.current))if(!Object.hasOwn(packet.current,path))assert.deepEqual(p.current[path],prior.current[path],path);
+ for(const mutate of [v=>{delete v.current[Object.keys(v.current)[0]];},v=>{v.before[Object.keys(v.before)[0]].source+='\n';},v=>{v.currentCommit='f'.repeat(40);},v=>{v.producers[Object.keys(v.producers)[0]].parents=[];}]){
+  const bad=structuredClone(packet);mutate(bad);assert.throws(()=>extendBattlePointerInspectionSource(finalSourceEpoch,bad));
+ }
+});
+
+test('inspection public source authenticates every raw owner and never caches authorization',()=>{
+ const p=inspectionSourceEpoch.proof,path=Object.keys(battlePointerInspectionSourcePacket.current)[0],source=actualSource(path),before=finalSourceEpoch.proof.current[path].source;
+ let drift=null;const read=owner=>actualSource(owner)+(owner===drift?'\n':'');
+ const project=()=>inspectionSourceEpoch.preCombinedSource(path,source,{target:'battlePointerInspectionPrior',readSource:read});
+ assert.equal(project(),before);
+ for(const owner of p.owners){drift=owner;assert.throws(project,/linked owner/,owner);drift=null;assert.equal(project(),before);}
+ for(const foreign of [source+'\n',source.slice(1),source.replaceAll('\n','\r\r\n'),Buffer.from(source),null,17]){
+  let reads=0;assert.equal(inspectionSourceEpoch.preCombinedSource(path,foreign,{target:'battlePointerInspectionPrior',readSource:()=>{reads++;throw Error('foreign');}}),foreign);assert.equal(reads,0);
+ }
+});
+
+test('inspection CI validates fresh raw sources archives and reused public readers without projecting production',()=>{
+ assertInspectionCiCurrent();
+ const path='tests/helpers/closeout-source-epoch.mjs',row=inspectionCiPacket.files[path],source=actualSource(path);
+ let drift=null;const read=(p,e)=>{const raw=actualReadFileSync(p,e);return p===drift?typeof raw==='string'?raw+'\n':Buffer.concat([raw,Buffer.from('\n')]):raw;};
+ const reader=inspectionBeforeRead(read);
+ assert.equal(reader(path,'utf8'),row.before.source);
+ for(const owner of inspectionSourceEpoch.proof.owners){
+  drift=owner;assert.throws(()=>reader(path,'utf8'),/linked owner/,owner);drift=null;
+ }
+ assert.equal(reader(path,'utf8'),row.before.source);
+ for(const [p,r]of Object.entries(inspectionCiPacket.files)){
+  const raw=actualSource(p);assert.equal(hash(norm(raw)),r.current.sha256,p);
+  if(p.startsWith('src/'))assert.equal(inspectionCiSource(p,raw,read),raw,p);
+  drift=p;assert.throws(()=>assertInspectionCiCurrent(read),error=>{assert(error.message.includes(p));return true;});drift=null;
+ }
+ for(const [p,sha]of Object.entries(inspectionCiPacket.immutableArchives)){
+  assert.equal(hash(actualReadFileSync(p)),sha,p);drift=p;assert.throws(()=>reader(path,'utf8'),/immutable sparse battle pointer predecessor/,p);drift=null;
+ }
+ for(const foreign of [source+'\n',source.slice(1),source.replaceAll('\n','\r\r\n'),null,{},17])assert.equal(inspectionCiSource(path,foreign),foreign);
+ for(const p of ['__proto__','constructor','foreign/'+path])assert.equal(inspectionCiSource(p,source),source);
+ assert.equal(reader(path,'utf8'),row.before.source);
+});
+
+test('inspection guards direct old text and binary projections through reused readers',()=>{
+ const textPath='tests/ci-complete-calibration.test.mjs',binaryPath='tests/helpers/menu-red-production-source.json.gz';
+ const text=actualSource(textPath),binary=actualReadFileSync(binaryPath);
+ assert(!Object.hasOwn(inspectionCiPacket.files,textPath),'exercise the old layer outside the new continuation');
+ let drift=null;const read=(p,e)=>{const raw=actualReadFileSync(p,e);return p===drift?typeof raw==='string'?raw+'\n':Buffer.concat([raw,Buffer.from('\n')]):raw;};
+ const binaryReader=integratedRead('menu',{read});
+ assert.equal(integratedSource(textPath,text,'native',read),integratedCiProof.files[textPath].views.native.source);
+ assert.notEqual(hash(binaryReader(binaryPath)),hash(binary));
+ for(const [path,target]of [[textPath,'release'],['tests/helpers/release-selection-map-ci-source.mjs','native'],['tests/integrated-ci-source.cases.mjs','native']]){
+  const raw=actualSource(path),expected=integratedSource(path,raw,target,read);assert.notEqual(expected,raw,path+' old-layer early return converts');
+  drift='src/lua/abyss_battle_input_state.lua';assert.throws(()=>integratedSource(path,raw,target,read),/linked owner/,path);drift=null;
+  assert.equal(integratedSource(path,raw,target,read),expected,path+' recovers');
+ }
+ drift='src/lua/abyss_battle_input_state.lua';
+ assert.throws(()=>releaseSelectionMapPriorInventory(discoverJs(),'js',read),/linked owner/,'raw inventory projector retains its caller reader');
+ drift=null;assert.deepEqual(releaseSelectionMapPriorInventory(discoverJs(),'js',read),releaseSelectionMapCiPacket.priorInventory.js);
+ for(const owner of inspectionSourceEpoch.proof.owners){
+  drift=owner;assert.throws(()=>integratedSource(textPath,text,'native',read),/linked owner/,owner);assert.throws(()=>binaryReader(binaryPath),/linked owner/,owner);drift=null;
+ }
+ for(const path of ['tests/helpers/battle-pointer-source.json.gz','tests/helpers/battle-pointer-sparse-source.json.gz']){
+  drift=path;assert.throws(()=>integratedSource(textPath,text,'native',read),/immutable sparse battle pointer predecessor/);assert.throws(()=>binaryReader(binaryPath),/immutable sparse battle pointer predecessor/);drift=null;
+ }
+ assert.equal(integratedSource(textPath,text,'native',read),integratedCiProof.files[textPath].views.native.source);
+ assert.notEqual(hash(binaryReader(binaryPath)),hash(binary));
+ for(const foreign of [text+'\n',text.slice(1),null,{},17]){let reads=0;assert.equal(integratedSource(textPath,foreign,'native',()=>{reads++;throw Error('foreign');}),foreign);assert.equal(reads,0);}
+});
 
 test('actual merged Release authenticates every unchanged Lua and architecture predecessor without advancing the product epoch',()=>{
  const bytes=readFileSync('tests/helpers/release-selection-map-base-source.json.gz');
@@ -154,7 +246,7 @@ test('release selection map isolated production copy includes exact helper and p
  for(const file of ['release-selection-map-source.mjs','release-selection-map-source.json.gz'])assert(existsSync(join(directory,'tests/helpers',file)));
  assert(!existsSync(join(directory,'tests/helpers/release-selection-map-ci-source.mjs')));
  const copied=await import(pathToFileURL(join(directory,'tests/helpers/closeout-source-epoch.mjs')).href);
- assert.deepEqual(copied.sourceEpoch.proof,finalSourceEpoch.proof);
+ assert.deepEqual(copied.sourceEpoch.proof,inspectionSourceEpoch.proof);
  const sourceRoot=join(directory,'drift');mkdirSync(sourceRoot);
  // The original closure copier authenticates dependencies from a distinct root.
  copyIntegrationSourceClosure(sourceRoot,{sourceRoot:directory});
@@ -237,7 +329,7 @@ test('battle pointer isolated production closure includes both exact new depende
  copyIntegrationSourceClosure(directory);
  for(const file of ['battle-pointer-source.mjs','battle-pointer-source.json.gz'])assert(existsSync(join(directory,'tests/helpers',file)));
  for(const file of ['battle-pointer-ci-source.mjs','battle-pointer-ci-source.json.gz'])assert(!existsSync(join(directory,'tests/helpers',file)));
- const copied=await import(pathToFileURL(join(directory,'tests/helpers/closeout-source-epoch.mjs')).href);assert.deepEqual(copied.sourceEpoch.proof,finalSourceEpoch.proof);
+ const copied=await import(pathToFileURL(join(directory,'tests/helpers/closeout-source-epoch.mjs')).href);assert.deepEqual(copied.sourceEpoch.proof,inspectionSourceEpoch.proof);
  const destination=join(directory,'next');mkdirSync(destination);
  for(const file of ['battle-pointer-source.mjs','battle-pointer-source.json.gz']){
   const path=join(directory,'tests/helpers',file),bytes=rawReadFileSync(path),changed=Buffer.from(bytes);changed[changed.length-1]^=1;
@@ -272,7 +364,7 @@ test('sparse battle pointer production advances only the committed card-binding 
  for(const owner of Object.keys(prior.current).filter(owner=>owner!==path))assert.deepEqual(p.current[owner],prior.current[owner],owner+' unchanged');
  const files=['config/architecture.json',...readdirSync('src/lua').filter(n=>n.endsWith('.lua')).map(n=>'src/lua/'+n)].sort();
  assert.deepEqual(files,Object.keys(p.current).filter(path=>p.current[path]!==null).sort());
- for(const owner of files)assert.equal(norm(actualReadFileSync(owner,'utf8')),p.current[owner].source,owner);
+ for(const owner of files)assert.equal(norm(finalSource(owner)),p.current[owner].source,owner);
 });
 
 test('sparse battle pointer source freshly rejects each missing changed or malformed owner and partial packets',()=>{
@@ -301,7 +393,7 @@ test('sparse battle pointer CI preserves every old archive, complete inventory a
   for(const bad of [[],paths.slice(1),[...paths,paths[0]],[...paths,`tests/${kind==='lua'?'lua/':''}foreign.${kind==='lua'?'lua':'test.mjs'}`]])assert.throws(()=>assertBattlePointerSparseRawInventory(bad,kind),/raw discovery inventory/);
  }
  for(const [path,row]of Object.entries(battlePointerSparseCiPacket.files)){
-  const source=norm(actualReadFileSync(path,'utf8')),production=path.startsWith('src/');
+  const source=norm(inspectionBeforeRead(actualReadFileSync,{production:true})(path,'utf8')),production=path.startsWith('src/');
   assert.equal(hash(source),row.current.sha256,path);assert.equal(battlePointerSparseCiSource(path,source),production?source:row.before?.source??source,path);
   for(const foreign of [source+'\n',source.slice(1),source.replaceAll('\n','\r\r\n'),null,{},17])assert.equal(battlePointerSparseCiSource(path,foreign),foreign,path);
   for(const foreignPath of ['__proto__','constructor','foreign/'+path])assert.equal(battlePointerSparseCiSource(foreignPath,source),source);
@@ -321,7 +413,7 @@ test('sparse battle pointer isolated production copy retains new dependencies an
  const directory=mkdtempSync(join(tmpdir(),'sparse-battle-pointer-copy-'));t.after(()=>rmSync(directory,{recursive:true,force:true}));copyIntegrationSourceClosure(directory);
  for(const file of ['battle-pointer-sparse-source.mjs','battle-pointer-sparse-source.json.gz'])assert(existsSync(join(directory,'tests/helpers',file)));
  for(const file of ['battle-pointer-sparse-ci-source.mjs','battle-pointer-sparse-ci-source.json.gz'])assert(!existsSync(join(directory,'tests/helpers',file)));
- const copied=await import(pathToFileURL(join(directory,'tests/helpers/closeout-source-epoch.mjs')).href);assert.deepEqual(copied.sourceEpoch.proof,finalSourceEpoch.proof);
+ const copied=await import(pathToFileURL(join(directory,'tests/helpers/closeout-source-epoch.mjs')).href);assert.deepEqual(copied.sourceEpoch.proof,inspectionSourceEpoch.proof);
  const destination=join(directory,'next');mkdirSync(destination);
  for(const file of ['battle-pointer-sparse-source.mjs','battle-pointer-sparse-source.json.gz']){
   const path=join(directory,'tests/helpers',file),bytes=actualReadFileSync(path),changed=Buffer.from(bytes);changed[changed.length-1]^=1;
@@ -333,7 +425,7 @@ test('sparse battle pointer isolated production copy retains new dependencies an
 });
 
 test('sparse battle pointer CI trust leaf rejects changed and incomplete packets',async()=>{
- const leaf=actualReadFileSync('tests/helpers/battle-pointer-sparse-ci-source.mjs','utf8'),bytes=actualReadFileSync('tests/helpers/battle-pointer-sparse-ci-source.json.gz');
+ const leaf=inspectionBeforeCiRead('tests/helpers/battle-pointer-sparse-ci-source.mjs','utf8'),bytes=actualReadFileSync('tests/helpers/battle-pointer-sparse-ci-source.json.gz');
  const marker="const bytes=readFileSync(new URL('./battle-pointer-sparse-ci-source.json.gz',import.meta.url));";assert.equal(leaf.split(marker).length,2);
  const changed=Buffer.from(bytes);changed[changed.length-1]^=1;
  for(const bad of [bytes.subarray(0,bytes.length-1),changed]){

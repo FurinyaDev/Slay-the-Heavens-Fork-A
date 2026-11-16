@@ -25,12 +25,12 @@ export function battlePointerCiCheckedSource(path,source,before){
  if(before&&row.before.sha256!==before.sha256)return source;
  return hash(norm(source))===row.current.sha256?row.before.source:source;
 }
-export function battlePointerCiSource(path,source,before){
+export function battlePointerCiSource(path,source,before,read=readFileSync){
  if(path.startsWith('src/')||path==='config/architecture.json')return source;
- return battlePointerCiCheckedSource(path,battlePointerSparseCiSource(path,source),before);
+ return battlePointerCiCheckedSource(path,battlePointerSparseCiSource(path,source,undefined,read),before);
 }
 export function battlePointerCiRead(read=readFileSync){return(path,encoding)=>{
- const raw=read(path,encoding),text=typeof raw==='string'?raw:raw.toString('utf8'),prior=battlePointerCiSource(path,text);
+ const raw=read(path,encoding),text=typeof raw==='string'?raw:raw.toString('utf8'),prior=battlePointerCiSource(path,text,undefined,read);
  return typeof raw==='string'?prior:prior===text?raw:Buffer.from(prior);
 };}
 export function assertBattlePointerRawInventory(paths,kind='js'){

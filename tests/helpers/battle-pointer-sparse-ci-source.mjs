@@ -1,5 +1,6 @@
 // CI-only outer continuation. Production projectors never import this trust leaf.
 import assert from 'node:assert/strict';
+import {inspectionCiSource,inspectionBeforeRead,assertInspectionCiCurrent} from './battle-pointer-inspection-ci-source.mjs';
 import {readFileSync} from 'node:fs';
 import {createHash} from 'node:crypto';
 import {gunzipSync} from 'node:zlib';
@@ -24,20 +25,21 @@ export function battlePointerSparseCiCheckedSource(path,source,before){
  if(before&&row.before.sha256!==before.sha256)return source;
  return hash(norm(source))===row.current.sha256?row.before.source:source;
 }
-export function battlePointerSparseCiSource(path,source,before){
+export function battlePointerSparseCiSource(path,source,before,read=readFileSync){
  if(path.startsWith('src/')||path==='config/architecture.json')return source;
- return battlePointerSparseCiCheckedSource(path,source,before);
+ return battlePointerSparseCiCheckedSource(path,inspectionCiSource(path,source,read),before);
 }
 export function battlePointerSparseCiRead(read=readFileSync){return(path,encoding)=>{
  const raw=read(path,encoding);
  if(!Object.hasOwn(packet.files,path)||!packet.files[path].before)return raw;
- const text=typeof raw==='string'?raw:raw.toString('utf8'),prior=battlePointerSparseCiSource(path,text);
+ const text=typeof raw==='string'?raw:raw.toString('utf8'),prior=battlePointerSparseCiSource(path,text,undefined,read);
  return typeof raw==='string'?prior:prior===text?raw:Buffer.from(prior);
 };}
 export function assertBattlePointerSparseRawInventory(paths,kind='js'){
  assert(['js','lua'].includes(kind));assert.deepEqual([...paths].sort(),packet.currentInventory[kind],'complete sparse battle pointer raw discovery inventory');
 }
 export function assertBattlePointerSparseCiCurrent(read=readFileSync){
+ assertInspectionCiCurrent(read);read=inspectionBeforeRead(read,{production:true,authenticate:false});
  for(const [path,row]of Object.entries(packet.files))
   assert.equal(hash(norm(read(path,'utf8'))),row.current.sha256,'fresh complete integration source: sparse battle pointer '+path);
  for(const [path,sha]of Object.entries(packet.immutableArchives))
@@ -45,7 +47,7 @@ export function assertBattlePointerSparseCiCurrent(read=readFileSync){
 }
 
 // Only complete-CI validation uses explicit production predecessor bindings.
-export function battlePointerSparseCiValidationRead(read=readFileSync){return(path,encoding)=>{
+export function battlePointerSparseCiValidationRead(read=readFileSync){read=inspectionBeforeRead(read,{production:true});return(path,encoding)=>{
  const raw=read(path,encoding);
  if(!Object.hasOwn(packet.files,path)||!packet.files[path].before)return raw;
  const text=typeof raw==='string'?raw:raw.toString('utf8'),prior=battlePointerSparseCiCheckedSource(path,text);
