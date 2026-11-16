@@ -45,7 +45,9 @@ import assert from 'node:assert/strict';
 import {readFileSync as rawReleaseReadFileSync,readdirSync} from 'node:fs';
 import {releaseSelectionMapCiRead,releaseSelectionMapPriorInventory,assertReleaseSelectionMapCiCurrent,releaseSelectionMapCiPacket,assertReleaseSelectionMapExecutionGuards} from './helpers/release-selection-map-ci-source.mjs';
 import {releaseBootstrapCiRead,assertReleaseBootstrapCiCurrent,assertReleaseBootstrapRawInventory} from './helpers/release-bootstrap-ci-source.mjs';
-const rawBootstrapReadFileSync=releaseSelectionMapCiRead(rawReleaseReadFileSync);
+import {battlePointerCiRead,assertBattlePointerCiCurrent,assertBattlePointerRawInventory} from './helpers/battle-pointer-ci-source.mjs';
+const preBattlePointerReadFileSync=battlePointerCiRead(rawReleaseReadFileSync);
+const rawBootstrapReadFileSync=releaseSelectionMapCiRead(preBattlePointerReadFileSync);
 const liveDiskReadFileSync=releaseBootstrapCiRead(rawBootstrapReadFileSync);
 import {preJoustCiSource,joustCiProof} from './helpers/joust-ci-source-inverse.mjs';
 import {sourceEpoch as joustEpoch} from './helpers/combined-epoch/source-epoch.mjs';
@@ -2000,7 +2002,8 @@ test('menu current complete JS and Lua workload retains Full budgets and every a
 });
 
 test('release selection map raw Full inventory retains all tests, diagnostic forecasts and actual execution guards',t=>{
- assertReleaseSelectionMapCiCurrent(rawReleaseReadFileSync);
+ assertBattlePointerCiCurrent(rawReleaseReadFileSync);
+ assertReleaseSelectionMapCiCurrent(preBattlePointerReadFileSync);
  assertReleaseSelectionMapExecutionGuards(rawReleaseReadFileSync('.github/workflows/quality.yml','utf8'));
  const js=rawReleaseDiscoverJs(),lua=rawReleaseLua(),p=releaseSelectionMapCiPacket;
  assert.deepEqual(js,p.currentInventory.js);assert.deepEqual(lua,p.currentInventory.lua);
@@ -2064,4 +2067,9 @@ test('Release bootstrap raw Full retains complete discovery costs and physical g
   const forecast=Math.max(...combined)+60000;
   t.diagnostic(`${platform}: raw ${js.length} JS / ${lua.length} Lua; forecast ${forecast}ms; target ${target}ms; overrun ${Math.max(0,forecast-target)}ms; physical execution guard ${guard}ms; prediction is not admission`);
  }
+});
+
+test('battle pointer raw Full retains every existing JS and Lua discovery input',()=>{
+ assertBattlePointerCiCurrent(rawReleaseReadFileSync);
+ assertBattlePointerRawInventory(rawReleaseDiscoverJs(),'js');assertBattlePointerRawInventory(rawReleaseLua(),'lua');
 });

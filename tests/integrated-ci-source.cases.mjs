@@ -7,7 +7,8 @@ import {createHash} from 'node:crypto';
 import {discoverJs} from '../scripts/ci-shards.mjs';
 import {integratedCiProof as proof,integratedSource,assertIntegratedCurrent,renderIntegratedCiBinding,extendIntegratedHelperClosure} from './helpers/integrated-ci-source.mjs';
 const raw=p=>readFileSync(p,'utf8').replaceAll('\r\n','\n'),hash=s=>createHash('sha256').update(s).digest('hex');
-const pickerBeforeRead=releaseSelectionMapCiRead(rawReadFileSync);
+import {battlePointerCiRead} from './helpers/battle-pointer-ci-source.mjs';
+const pickerBeforeRead=releaseSelectionMapCiRead(battlePointerCiRead(rawReadFileSync));
 const readFileSync=releaseBootstrapCiRead(pickerBeforeRead);
 
 test('integration validates complete raw sources and leaves every foreign byte and production owner visible',()=>{

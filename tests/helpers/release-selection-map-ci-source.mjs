@@ -1,5 +1,6 @@
 // CI-only trust leaf; production and isolated production copies never import it.
 import assert from 'node:assert/strict';
+import {battlePointerCiSource} from './battle-pointer-ci-source.mjs';
 import {readFileSync} from 'node:fs';
 import {createHash} from 'node:crypto';
 import {gunzipSync} from 'node:zlib';
@@ -56,7 +57,7 @@ export function releaseSelectionMapPriorInventory(paths,kind='js',read=readFileS
  if(!current.some(path=>!before.includes(path)&&sorted.includes(path)))return [...paths];
  assert.deepEqual(sorted,current,'complete release selection map raw '+(kind==='lua'?'Lua discovery':'JS')+' inventory');
  for(const path of current.filter(p=>!before.includes(p)))
-  assert.equal(hash(norm(read(path,'utf8'))),packet.files[path].current.sha256,'fresh release selection map added inventory source: '+path);
+  assert.equal(hash(norm(battlePointerCiSource(path,read(path,'utf8')))),packet.files[path].current.sha256,'fresh release selection map added inventory source: '+path);
  return [...before];
 }
 export function assertReleaseSelectionMapRawInventory(paths,kind='js'){

@@ -28,6 +28,24 @@ export const releaseSelectionMapHelperCopies=[
  {path:'tests/helpers/release-selection-map-source.json.gz',before:null,after:'0c056c020ad655d5a2a901a6f196350582eaf0709afa736f363a0d68509daf62'}
 ];
 for(const row of releaseSelectionMapHelperCopies){assert.equal(files[row.path]??null,row.before,'exact release selection map helper-copy predecessor: '+row.path);files[row.path]=row.after;}
+export const battlePointerHelperCopies=[
+ {
+  "path": "tests/helpers/closeout-source-epoch.mjs",
+  "before": "9bc2594f88cd780a31a429f5a493568f076d039ab92f55b952631b586ce335c1",
+  "after": "00240dea8c750c8726eab9d12e49d79ec102ac57612f55b2bb97cc232d122097"
+ },
+ {
+  "path": "tests/helpers/battle-pointer-source.mjs",
+  "before": null,
+  "after": "b8e4d236b50f7f4770fb839772daa3607b678d82dfdae5c80cb39f4e932c3643"
+ },
+ {
+  "path": "tests/helpers/battle-pointer-source.json.gz",
+  "before": null,
+  "after": "c6ed821e15ab4e79de278db32122712c07716360166c995a6bf0f7a70c11639a"
+ }
+];
+for(const row of battlePointerHelperCopies){assert.equal(files[row.path]??null,row.before,'exact battle pointer helper-copy predecessor: '+row.path);files[row.path]=row.after;}
 const inside=(root,path)=>{const r=relative(root,path);return r!==''&&!isAbsolute(r)&&r!=='..'&&!r.startsWith('../')&&!r.startsWith('..\\');};
 export function copyIntegrationSourceClosure(directory,{sourceRoot=process.cwd()}={}){
  const destination=realpathSync.native(directory);
