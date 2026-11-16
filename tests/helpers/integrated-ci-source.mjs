@@ -5,6 +5,7 @@ import {readFileSync} from 'node:fs';
 import {createHash} from 'node:crypto';
 import {gunzipSync} from 'node:zlib';
 import {battlePointerCiSource,battlePointerCiCheckedSource,assertBattlePointerCiCurrent} from './battle-pointer-ci-source.mjs';
+import {battlePointerSparseCiValidationRead,assertBattlePointerSparseCiCurrent} from './battle-pointer-sparse-ci-source.mjs';
 import {integratedCiBytes} from './integrated-ci-binding.mjs';
 import {releaseSelectionMapCiSource,releaseSelectionMapCiCheckedSource,releaseSelectionMapPriorInventory,releaseSelectionMapCiPacket,assertReleaseSelectionMapCiCurrent} from './release-selection-map-ci-source.mjs';
 import {releaseBootstrapCiSource,releaseBootstrapCiCheckedSource,assertReleaseBootstrapCiCurrent} from './release-bootstrap-ci-source.mjs';
@@ -37,6 +38,7 @@ export function integratedRead(target,{read=readFileSync}={}){return(path,encodi
  return typeof raw==='string'?prior:prior===text?raw:Buffer.from(prior);
 };}
 export function assertIntegratedCurrent(read=readFileSync){
+ assertBattlePointerSparseCiCurrent(read);read=battlePointerSparseCiValidationRead(read);
  assertBattlePointerCiCurrent(read);
  const originalRead=read;read=(path,encoding)=>{const raw=originalRead(path,encoding),text=typeof raw==='string'?raw:raw.toString('utf8'),prior=battlePointerCiCheckedSource(path,text);return typeof raw==='string'?prior:prior===text?raw:Buffer.from(prior);};
  assertReleaseSelectionMapCiCurrent(read);

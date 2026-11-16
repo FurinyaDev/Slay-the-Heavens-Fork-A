@@ -13,6 +13,7 @@ import {extendReleaseSourceEpoch} from './release-source-epoch.mjs';
 import {extendSessionMenuEpoch} from './session-menu-source-epoch.mjs';
 import {extendReleaseSelectionMapSource} from './release-selection-map-source.mjs';
 import {extendBattlePointerSource} from './battle-pointer-source.mjs';
+import {extendBattlePointerSparseSource} from './battle-pointer-sparse-source.mjs';
 const hash=value=>createHash('sha256').update(value).digest('hex');
 const bytes=readFileSync(new URL('./closeout-source-epoch.json.gz',import.meta.url));
 assert.equal(hash(bytes),'36aba7fc07f732a191a750d437eefd27e9b9567221811747abf13c97a9ac237a');
@@ -53,7 +54,8 @@ export const menuPresentationEpoch=extendMenuPresentationEpoch(menuRedEpoch);
 export const releaseSourceEpoch=extendReleaseSourceEpoch(menuPresentationEpoch);
 export const preReleaseSelectionMapSourceEpoch=extendSessionMenuEpoch(releaseSourceEpoch);
 export const preBattlePointerSourceEpoch=extendReleaseSelectionMapSource(preReleaseSelectionMapSourceEpoch);
-export const sourceEpoch=extendBattlePointerSource(preBattlePointerSourceEpoch);
+export const preBattlePointerSparseSourceEpoch=extendBattlePointerSource(preBattlePointerSourceEpoch);
+export const sourceEpoch=extendBattlePointerSparseSource(preBattlePointerSparseSourceEpoch);
 const proof=sourceEpoch.proof;
 // Snapshot consumers must first authenticate every live current owner. This is
 // per invocation; neither live reads nor authorization are cached.

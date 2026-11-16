@@ -1,5 +1,6 @@
 // CI-only outer continuation. Production projectors never import this trust leaf.
 import assert from 'node:assert/strict';
+import {battlePointerSparseCiSource} from './battle-pointer-sparse-ci-source.mjs';
 import {readFileSync} from 'node:fs';
 import {createHash} from 'node:crypto';
 import {gunzipSync} from 'node:zlib';
@@ -26,7 +27,7 @@ export function battlePointerCiCheckedSource(path,source,before){
 }
 export function battlePointerCiSource(path,source,before){
  if(path.startsWith('src/')||path==='config/architecture.json')return source;
- return battlePointerCiCheckedSource(path,source,before);
+ return battlePointerCiCheckedSource(path,battlePointerSparseCiSource(path,source),before);
 }
 export function battlePointerCiRead(read=readFileSync){return(path,encoding)=>{
  const raw=read(path,encoding),text=typeof raw==='string'?raw:raw.toString('utf8'),prior=battlePointerCiSource(path,text);

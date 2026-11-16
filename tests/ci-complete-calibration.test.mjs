@@ -45,6 +45,7 @@ import assert from 'node:assert/strict';
 import {readFileSync as rawReleaseReadFileSync,readdirSync} from 'node:fs';
 import {releaseSelectionMapCiRead,releaseSelectionMapPriorInventory,assertReleaseSelectionMapCiCurrent,releaseSelectionMapCiPacket,assertReleaseSelectionMapExecutionGuards} from './helpers/release-selection-map-ci-source.mjs';
 import {releaseBootstrapCiRead,assertReleaseBootstrapCiCurrent,assertReleaseBootstrapRawInventory} from './helpers/release-bootstrap-ci-source.mjs';
+import {assertBattlePointerSparseCiCurrent,battlePointerSparseCiValidationRead,assertBattlePointerSparseRawInventory} from './helpers/battle-pointer-sparse-ci-source.mjs';
 import {battlePointerCiRead,assertBattlePointerCiCurrent,assertBattlePointerRawInventory} from './helpers/battle-pointer-ci-source.mjs';
 const preBattlePointerReadFileSync=battlePointerCiRead(rawReleaseReadFileSync);
 const rawBootstrapReadFileSync=releaseSelectionMapCiRead(preBattlePointerReadFileSync);
@@ -2002,7 +2003,8 @@ test('menu current complete JS and Lua workload retains Full budgets and every a
 });
 
 test('release selection map raw Full inventory retains all tests, diagnostic forecasts and actual execution guards',t=>{
- assertBattlePointerCiCurrent(rawReleaseReadFileSync);
+ assertBattlePointerSparseCiCurrent(rawReleaseReadFileSync);
+ assertBattlePointerCiCurrent(battlePointerSparseCiValidationRead(rawReleaseReadFileSync));
  assertReleaseSelectionMapCiCurrent(preBattlePointerReadFileSync);
  assertReleaseSelectionMapExecutionGuards(rawReleaseReadFileSync('.github/workflows/quality.yml','utf8'));
  const js=rawReleaseDiscoverJs(),lua=rawReleaseLua(),p=releaseSelectionMapCiPacket;
@@ -2070,6 +2072,12 @@ test('Release bootstrap raw Full retains complete discovery costs and physical g
 });
 
 test('battle pointer raw Full retains every existing JS and Lua discovery input',()=>{
- assertBattlePointerCiCurrent(rawReleaseReadFileSync);
+ assertBattlePointerSparseCiCurrent(rawReleaseReadFileSync);
+ assertBattlePointerCiCurrent(battlePointerSparseCiValidationRead(rawReleaseReadFileSync));
  assertBattlePointerRawInventory(rawReleaseDiscoverJs(),'js');assertBattlePointerRawInventory(rawReleaseLua(),'lua');
+});
+
+test('sparse battle pointer raw Full retains every existing discovery input',()=>{
+ assertBattlePointerSparseCiCurrent(rawReleaseReadFileSync);
+ assertBattlePointerSparseRawInventory(rawReleaseDiscoverJs(),'js');assertBattlePointerSparseRawInventory(rawReleaseLua(),'lua');
 });

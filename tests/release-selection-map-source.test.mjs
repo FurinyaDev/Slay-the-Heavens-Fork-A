@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {readFileSync as rawReadFileSync,readdirSync,mkdtempSync,mkdirSync,rmSync,existsSync,writeFileSync,unlinkSync} from 'node:fs';
+import {readFileSync as actualReadFileSync,readdirSync,mkdtempSync,mkdirSync,rmSync,existsSync,writeFileSync,unlinkSync} from 'node:fs';
 import {join} from 'node:path';
 import {tmpdir} from 'node:os';
 import {pathToFileURL} from 'node:url';
@@ -8,20 +8,33 @@ import {copyIntegrationSourceClosure} from './helpers/copy-integration-source-cl
 import {createHash} from 'node:crypto';
 import {gunzipSync} from 'node:zlib';
 import {discoverJs} from '../scripts/ci-shards.mjs';
-import {sourceEpoch as currentSourceEpoch,preBattlePointerSourceEpoch as sourceEpoch,preReleaseSelectionMapSourceEpoch} from './helpers/closeout-source-epoch.mjs';
+import {sourceEpoch as finalSourceEpoch,preBattlePointerSparseSourceEpoch as currentSourceEpoch,preBattlePointerSourceEpoch as sourceEpoch,preReleaseSelectionMapSourceEpoch} from './helpers/closeout-source-epoch.mjs';
+import {battlePointerSparseSourcePacket,extendBattlePointerSparseSource} from './helpers/battle-pointer-sparse-source.mjs';
+import {battlePointerSparseCiPacket,battlePointerSparseCiSource,battlePointerSparseCiRead,battlePointerSparseCiValidationRead,assertBattlePointerSparseCiCurrent,assertBattlePointerSparseRawInventory} from './helpers/battle-pointer-sparse-ci-source.mjs';
 import {battlePointerSourcePacket,extendBattlePointerSource} from './helpers/battle-pointer-source.mjs';
 import {battlePointerCiPacket,battlePointerCiSource,battlePointerCiRead,assertBattlePointerCiCurrent,assertBattlePointerRawInventory} from './helpers/battle-pointer-ci-source.mjs';
 import {releaseSelectionMapSourcePacket,extendReleaseSelectionMapSource} from './helpers/release-selection-map-source.mjs';
 import {releaseSelectionMapCiPacket,releaseSelectionMapCiSource,releaseSelectionMapPriorInventory,assertReleaseSelectionMapRawInventory,assertReleaseSelectionMapCiCurrent,assertReleaseSelectionMapExecutionGuards} from './helpers/release-selection-map-ci-source.mjs';
+// The complete 2bc pointer contracts retain their independently authenticated view.
+const sparseBeforeCiRead=battlePointerSparseCiRead(actualReadFileSync);
+// The original CI packet validates its explicit complete predecessor bindings.
+const pointerCiValidationRead=battlePointerSparseCiValidationRead(actualReadFileSync);
+const finalSource=path=>actualReadFileSync(path,'utf8');
+function rawReadFileSync(path,encoding){
+ const raw=sparseBeforeCiRead(path,encoding);
+ if(!path.startsWith('src/'))return raw;
+ const text=typeof raw==='string'?raw:raw.toString('utf8');
+ const prior=finalSourceEpoch.preCombinedSource(path,text,{target:'battlePointerSparsePrior',readSource:finalSource});
+ return typeof raw==='string'?prior:prior===text?raw:Buffer.from(prior);
+}
 // The original selection-map contracts retain their complete pre-pointer view.
 // Production history is projected only after fresh authentication of all current owners.
 const pointerBeforeCiRead=battlePointerCiRead(rawReadFileSync);
-const liveSource=path=>rawReadFileSync(path,'utf8');
 function readFileSync(path,encoding){
- const raw=pointerBeforeCiRead(path,encoding);
+ const raw=path.startsWith('src/')?actualReadFileSync(path,encoding):pointerBeforeCiRead(path,encoding);
  if(!path.startsWith('src/'))return raw;
  const text=typeof raw==='string'?raw:raw.toString('utf8');
- const prior=currentSourceEpoch.preCombinedSource(path,text,{target:'battlePointerPrior',readSource:liveSource});
+ const prior=finalSourceEpoch.preCombinedSource(path,text,{target:'battlePointerPrior',readSource:finalSource});
  return typeof raw==='string'?prior:prior===text?raw:Buffer.from(prior);
 }
 const hash=b=>createHash('sha256').update(b).digest('hex'),norm=s=>s.replaceAll('\r\n','\n');
@@ -141,7 +154,7 @@ test('release selection map isolated production copy includes exact helper and p
  for(const file of ['release-selection-map-source.mjs','release-selection-map-source.json.gz'])assert(existsSync(join(directory,'tests/helpers',file)));
  assert(!existsSync(join(directory,'tests/helpers/release-selection-map-ci-source.mjs')));
  const copied=await import(pathToFileURL(join(directory,'tests/helpers/closeout-source-epoch.mjs')).href);
- assert.deepEqual(copied.sourceEpoch.proof,currentSourceEpoch.proof);
+ assert.deepEqual(copied.sourceEpoch.proof,finalSourceEpoch.proof);
  const sourceRoot=join(directory,'drift');mkdirSync(sourceRoot);
  // The original closure copier authenticates dependencies from a distinct root.
  copyIntegrationSourceClosure(sourceRoot,{sourceRoot:directory});
@@ -191,20 +204,20 @@ test('battle pointer source rejects every stale missing or malformed linked owne
 });
 
 test('battle pointer CI authenticates every current source while foreign bytes and production authorization stay visible',()=>{
- assertBattlePointerCiCurrent();
+ assertBattlePointerCiCurrent(pointerCiValidationRead);
  for(const [path,row]of Object.entries(battlePointerCiPacket.files)){
-  const source=norm(rawReadFileSync(path,'utf8'));assert.equal(hash(source),row.current.sha256,path);
+  const source=norm(pointerCiValidationRead(path,'utf8'));assert.equal(hash(source),row.current.sha256,path);
   const production=path.startsWith('src/')||path==='config/architecture.json';
   assert.equal(battlePointerCiSource(path,source),production?source:row.before?.source??source,path);
   for(const foreign of [source+'\n',source.slice(1),source.replaceAll('\n','\r\r\n'),null,{},17])assert.equal(battlePointerCiSource(path,foreign),foreign,path);
   for(const foreignPath of ['__proto__','constructor','foreign/'+path])assert.equal(battlePointerCiSource(foreignPath,source),source);
   for(const mode of ['changed','missing'])assert.throws(()=>assertBattlePointerCiCurrent((p,e)=>{
-   if(p!==path)return rawReadFileSync(p,e);if(mode==='missing')throw Error('missing '+p);const value=rawReadFileSync(p,e);return typeof value==='string'?value+'\n':Buffer.concat([value,Buffer.from('\n')]);
+   if(p!==path)return pointerCiValidationRead(p,e);if(mode==='missing')throw Error('missing '+p);const value=pointerCiValidationRead(p,e);return typeof value==='string'?value+'\n':Buffer.concat([value,Buffer.from('\n')]);
   }),error=>{assert(error.message.includes(path));return true;});
  }
  for(const [path,sha]of Object.entries(battlePointerCiPacket.immutableArchives)){
-  assert.equal(hash(rawReadFileSync(path)),sha,path);
-  assert.throws(()=>assertBattlePointerCiCurrent((p,e)=>p===path?rawReadFileSync(p).subarray(1):rawReadFileSync(p,e)),/retained complete immutable battle pointer predecessor/);
+  assert.equal(hash(pointerCiValidationRead(path)),sha,path);
+  assert.throws(()=>assertBattlePointerCiCurrent((p,e)=>p===path?pointerCiValidationRead(p).subarray(1):pointerCiValidationRead(p,e)),/retained complete immutable battle pointer predecessor/);
  }
 });
 
@@ -224,7 +237,7 @@ test('battle pointer isolated production closure includes both exact new depende
  copyIntegrationSourceClosure(directory);
  for(const file of ['battle-pointer-source.mjs','battle-pointer-source.json.gz'])assert(existsSync(join(directory,'tests/helpers',file)));
  for(const file of ['battle-pointer-ci-source.mjs','battle-pointer-ci-source.json.gz'])assert(!existsSync(join(directory,'tests/helpers',file)));
- const copied=await import(pathToFileURL(join(directory,'tests/helpers/closeout-source-epoch.mjs')).href);assert.deepEqual(copied.sourceEpoch.proof,currentSourceEpoch.proof);
+ const copied=await import(pathToFileURL(join(directory,'tests/helpers/closeout-source-epoch.mjs')).href);assert.deepEqual(copied.sourceEpoch.proof,finalSourceEpoch.proof);
  const destination=join(directory,'next');mkdirSync(destination);
  for(const file of ['battle-pointer-source.mjs','battle-pointer-source.json.gz']){
   const path=join(directory,'tests/helpers',file),bytes=rawReadFileSync(path),changed=Buffer.from(bytes);changed[changed.length-1]^=1;
@@ -244,5 +257,87 @@ test('battle pointer CI trust leaf rejects an incomplete or changed complete arc
  for(const bad of [bytes.subarray(0,bytes.length-1),changed]){
   const broken=leaf.replace(marker,`const bytes=Buffer.from(${JSON.stringify(bad.toString('base64'))},'base64');`);
   await assert.rejects(import('data:text/javascript;base64,'+Buffer.from(broken).toString('base64')),/complete battle pointer CI continuation/);
+ }
+});
+
+test('sparse battle pointer production advances only the committed card-binding owner and retains all 66 prior targets',()=>{
+ const p=finalSourceEpoch.proof,prior=currentSourceEpoch.proof,packet=battlePointerSparseSourcePacket,path='src/lua/abyss_battle_card_bindings.lua';
+ assert.deepEqual(Object.keys(packet.current),[path]);assert.equal(packet.baseCommit,'2bc0d126e74d518664b6719274448624a1c67121');
+ assert.equal(packet.currentCommit,'82b1a114ca486140ae913cca6a0834cab52417cb');assert.equal(p.currentCommit,packet.currentCommit);assert.equal(p.currentTreeCommitted,true);
+ assert.deepEqual(packet.producers[path],{commit:packet.currentCommit,parents:['01c2e763f60eadff72c07325dbe671cd2267d0a4']});
+ assert.deepEqual(packet.before[path],prior.current[path]);assert.deepEqual(packet.current[path],p.current[path]);
+ assert.equal(Object.keys(prior.targets).length,66);assert.equal(Object.keys(p.targets).length,67);assert.equal(p.owners.length,121);
+ for(const [name,target]of Object.entries(prior.targets))assert.deepEqual(p.targets[name],target,name);
+ assert.deepEqual(p.targets.battlePointerSparsePrior,{commit:packet.baseCommit,files:prior.current});
+ for(const owner of Object.keys(prior.current).filter(owner=>owner!==path))assert.deepEqual(p.current[owner],prior.current[owner],owner+' unchanged');
+ const files=['config/architecture.json',...readdirSync('src/lua').filter(n=>n.endsWith('.lua')).map(n=>'src/lua/'+n)].sort();
+ assert.deepEqual(files,Object.keys(p.current).filter(path=>p.current[path]!==null).sort());
+ for(const owner of files)assert.equal(norm(actualReadFileSync(owner,'utf8')),p.current[owner].source,owner);
+});
+
+test('sparse battle pointer source freshly rejects each missing changed or malformed owner and partial packets',()=>{
+ const epoch=finalSourceEpoch,p=epoch.proof,anchor='src/lua/abyss_battle_card_bindings.lua',source=finalSource(anchor),expected=currentSourceEpoch.proof.current[anchor].source;
+ for(const input of [source,source.replaceAll('\n','\r\n')]){
+  const seen=[];assert.equal(epoch.preCombinedSource(anchor,input,{target:'battlePointerSparsePrior',readSource:path=>{seen.push(path);return finalSource(path);}}),expected);assert.deepEqual(seen,p.owners);
+ }
+ for(const owner of p.owners)for(const mode of ['changed','missing','buffer','throw']){
+  const read=path=>{if(path!==owner)return finalSource(path);if(mode==='throw')throw Error('missing');if(mode==='missing')return null;if(mode==='buffer')return Buffer.from(finalSource(path));return finalSource(path)+'\n';};
+  assert.throws(()=>epoch.preCombinedSource(anchor,source,{target:'battlePointerSparsePrior',readSource:read}),/linked owner/,owner+' '+mode);
+ }
+ for(const input of [source+'\n',source.slice(1),source.replaceAll('\n','\r\r\n'),Buffer.from(source),null,17]){
+  let reads=0;assert.equal(epoch.preCombinedSource(anchor,input,{target:'battlePointerSparsePrior',readSource:()=>{reads++;throw Error('foreign');}}),input);assert.equal(reads,0);
+ }
+ for(const mutate of [v=>{v.before[anchor].source+='\n';},v=>{delete v.current[anchor];},v=>{v.currentCommit='f'.repeat(40);},v=>{v.producers[anchor].parents=[];}]){
+  const bad=structuredClone(battlePointerSparseSourcePacket);mutate(bad);assert.throws(()=>extendBattlePointerSparseSource(currentSourceEpoch,bad));
+ }
+});
+
+test('sparse battle pointer CI preserves every old archive, complete inventory and foreign-byte rejection',()=>{
+ assertBattlePointerSparseCiCurrent();
+ assert.deepEqual(battlePointerSparseCiPacket.priorInventory,battlePointerCiPacket.currentInventory);
+ assert.deepEqual(battlePointerSparseCiPacket.currentInventory,battlePointerCiPacket.currentInventory);
+ for(const [kind,paths]of Object.entries({js:discoverJs(),lua:readdirSync('tests/lua').filter(n=>n.endsWith('.lua')).map(n=>'tests/lua/'+n).sort()})){
+  assertBattlePointerSparseRawInventory(paths,kind);
+  for(const bad of [[],paths.slice(1),[...paths,paths[0]],[...paths,`tests/${kind==='lua'?'lua/':''}foreign.${kind==='lua'?'lua':'test.mjs'}`]])assert.throws(()=>assertBattlePointerSparseRawInventory(bad,kind),/raw discovery inventory/);
+ }
+ for(const [path,row]of Object.entries(battlePointerSparseCiPacket.files)){
+  const source=norm(actualReadFileSync(path,'utf8')),production=path.startsWith('src/');
+  assert.equal(hash(source),row.current.sha256,path);assert.equal(battlePointerSparseCiSource(path,source),production?source:row.before?.source??source,path);
+  for(const foreign of [source+'\n',source.slice(1),source.replaceAll('\n','\r\r\n'),null,{},17])assert.equal(battlePointerSparseCiSource(path,foreign),foreign,path);
+  for(const foreignPath of ['__proto__','constructor','foreign/'+path])assert.equal(battlePointerSparseCiSource(foreignPath,source),source);
+  for(const mode of ['changed','missing'])assert.throws(()=>assertBattlePointerSparseCiCurrent((p,e)=>{
+   if(p!==path)return actualReadFileSync(p,e);if(mode==='missing')throw Error('missing '+p);return actualReadFileSync(p,e)+'\n';
+  }),error=>{assert(error.message.includes(path));return true;});
+ }
+ for(const [path,sha]of Object.entries(battlePointerSparseCiPacket.immutableArchives)){
+  assert.equal(hash(actualReadFileSync(path)),sha,path);
+  assert.throws(()=>assertBattlePointerSparseCiCurrent((p,e)=>p===path?actualReadFileSync(p).subarray(1):actualReadFileSync(p,e)),/immutable sparse battle pointer predecessor/);
+ }
+ assert.equal(hash(actualReadFileSync('tests/helpers/battle-pointer-source.json.gz')),'c6ed821e15ab4e79de278db32122712c07716360166c995a6bf0f7a70c11639a');
+ assert.equal(hash(actualReadFileSync('tests/helpers/battle-pointer-ci-source.json.gz')),'c5a93b3780fe741cec5393eabf5fe4c0d684952eb2bcf3b50e6b62fcbc0983ea');
+});
+
+test('sparse battle pointer isolated production copy retains new dependencies and rejects changed or deleted bytes',async t=>{
+ const directory=mkdtempSync(join(tmpdir(),'sparse-battle-pointer-copy-'));t.after(()=>rmSync(directory,{recursive:true,force:true}));copyIntegrationSourceClosure(directory);
+ for(const file of ['battle-pointer-sparse-source.mjs','battle-pointer-sparse-source.json.gz'])assert(existsSync(join(directory,'tests/helpers',file)));
+ for(const file of ['battle-pointer-sparse-ci-source.mjs','battle-pointer-sparse-ci-source.json.gz'])assert(!existsSync(join(directory,'tests/helpers',file)));
+ const copied=await import(pathToFileURL(join(directory,'tests/helpers/closeout-source-epoch.mjs')).href);assert.deepEqual(copied.sourceEpoch.proof,finalSourceEpoch.proof);
+ const destination=join(directory,'next');mkdirSync(destination);
+ for(const file of ['battle-pointer-sparse-source.mjs','battle-pointer-sparse-source.json.gz']){
+  const path=join(directory,'tests/helpers',file),bytes=actualReadFileSync(path),changed=Buffer.from(bytes);changed[changed.length-1]^=1;
+  writeFileSync(path,changed);assert.throws(()=>copyIntegrationSourceClosure(destination,{sourceRoot:directory}),/fresh helper copy identity/);
+  if(file.endsWith('.gz'))await assert.rejects(import(pathToFileURL(join(directory,'tests/helpers/battle-pointer-sparse-source.mjs')).href+'?corrupt-packet'),/complete sparse battle pointer production packet/);
+  unlinkSync(path);assert.throws(()=>copyIntegrationSourceClosure(destination,{sourceRoot:directory}),/ENOENT/);writeFileSync(path,bytes);
+ }
+ copyIntegrationSourceClosure(destination,{sourceRoot:directory});
+});
+
+test('sparse battle pointer CI trust leaf rejects changed and incomplete packets',async()=>{
+ const leaf=actualReadFileSync('tests/helpers/battle-pointer-sparse-ci-source.mjs','utf8'),bytes=actualReadFileSync('tests/helpers/battle-pointer-sparse-ci-source.json.gz');
+ const marker="const bytes=readFileSync(new URL('./battle-pointer-sparse-ci-source.json.gz',import.meta.url));";assert.equal(leaf.split(marker).length,2);
+ const changed=Buffer.from(bytes);changed[changed.length-1]^=1;
+ for(const bad of [bytes.subarray(0,bytes.length-1),changed]){
+  const broken=leaf.replace(marker,`const bytes=Buffer.from(${JSON.stringify(bad.toString('base64'))},'base64');`);
+  await assert.rejects(import('data:text/javascript;base64,'+Buffer.from(broken).toString('base64')),/complete sparse battle pointer CI continuation/);
  }
 });
