@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {readFileSync as actualPotionRegressionReadFileSync,readdirSync} from 'node:fs';
+import {readFileSync as actualPotionClickReadFileSync,readdirSync} from 'node:fs';
+import {potionClickHistoricalRead,potionClickCiSource,potionClickCiPacket,assertPotionClickCiCurrent,assertPotionClickRawInventory} from './helpers/potion-click-ci-source.mjs';
+const actualPotionRegressionReadFileSync=potionClickHistoricalRead(actualPotionClickReadFileSync);
 import {potionRegressionHistoricalRead,potionRegressionCiRead,potionRegressionCiPacket,potionRegressionCiSource,potionRegressionPriorInventory,assertPotionRegressionCiCurrent,assertPotionRegressionRawInventory} from './helpers/potion-regression-ci-source.mjs';
 const actualDiskReadFileSync=potionRegressionHistoricalRead(actualPotionRegressionReadFileSync);
 import {releaseBootstrapCiPacket,releaseBootstrapCiSource,releaseBootstrapWorkflowBefore,assertReleaseBootstrapCiCurrent,assertReleaseBootstrapRawInventory} from './helpers/release-bootstrap-ci-source.mjs';
@@ -32,7 +34,7 @@ test('integration validates complete raw sources and leaves every foreign byte a
  }
  for(const path of ['.gitattributes','docs/legal/assets.json','tests/helpers/closeout-source-epoch.mjs','tests/helpers/run-hud-ci-source.mjs','tests/helpers/integrated-ci-source.mjs'])
   assert.throws(()=>assertIntegratedCurrent((p,e)=>{
-   const value=actualPotionRegressionReadFileSync(p,e);
+   const value=actualPotionClickReadFileSync(p,e);
    return p!==path?value:typeof value==='string'?value+'\n':Buffer.concat([value,Buffer.from('\n')]);
   }),error=>{assert.match(error.message,/fresh complete integration source/);assert(error.message.includes(path),'the intended after owner must reject');return true;});
  assert.equal(raw('tests/helpers/integrated-ci-binding.mjs'),renderIntegratedCiBinding(hash(readFileSync('tests/helpers/integrated-ci-source.json.gz'))));
@@ -179,7 +181,7 @@ test('Release bootstrap exact sources retain every old byte and reject missing d
 });
 
 test('potion regression composition production sources retain original owners and reject partial fresh authorizations',async()=>{
- const {sourceEpoch,prePotionRegressionSourceEpoch}=await import('./helpers/closeout-source-epoch.mjs');
+ const {prePotionClickSourceEpoch:sourceEpoch,prePotionRegressionSourceEpoch}=await import('./helpers/closeout-source-epoch.mjs');
  const {potionRegressionSourcePacket:p,extendPotionRegressionSource}=await import('./helpers/potion-regression-source.mjs');
  const prior=prePotionRegressionSourceEpoch.proof,current=sourceEpoch.proof;
  for(const [name,target]of Object.entries(prior.targets))assert.deepEqual(current.targets[name],target,name);
@@ -235,4 +237,49 @@ test('potion regression composition raw JS and Lua inventory rejects missing dup
    const value=actualPotionRegressionReadFileSync(p,e);return p!==path?value:typeof value==='string'?value+'\n':Buffer.concat([value,Buffer.from('\n')]);
   }),/fresh potion regression added inventory source/);
  }
+});
+
+test('potion click production closure authenticates new bytes and retains every complete predecessor',async()=>{
+ const {sourceEpoch,prePotionClickSourceEpoch}=await import('./helpers/closeout-source-epoch.mjs');
+ const {potionClickSourcePacket:p,extendPotionClickSource}=await import('./helpers/potion-click-source.mjs');
+ const prior=prePotionClickSourceEpoch.proof,current=sourceEpoch.proof;
+ assert.equal(current.currentCommit,'94af046c80b1dd4f020d6f54406520f5a658a051');assert.equal(current.currentTreeCommitted,true);
+ assert.deepEqual(current.owners,prior.owners,'117 owners; no newly owned path');
+ for(const [name,target]of Object.entries(prior.targets))assert.deepEqual(current.targets[name],target,name);
+ assert.deepEqual(current.targets.potionClickPrior,{commit:p.baseCommit,files:prior.current});
+ const files=['config/architecture.json',...readdirSync('src/lua').filter(n=>n.endsWith('.lua')).map(n=>'src/lua/'+n)].sort();
+ assert.deepEqual(files,Object.keys(current.current).filter(path=>current.current[path]!==null).sort());
+ for(const path of files)assert.equal(actualPotionClickReadFileSync(path,'utf8').replaceAll('\r\n','\n'),current.current[path].source,path);
+ for(const bad of [{...p,current:{}},{...p,before:{}},{...p,producers:{}},{...p,currentTreeCommitted:false},{...p,currentCommit:'0'.repeat(40)},{...p,prerequisites:[]},{...p,inheritedSources:{}},{...p,combinedProducers:{}}])
+  assert.throws(()=>extendPotionClickSource(prePotionClickSourceEpoch,bad));
+ const path=Object.keys(p.current)[0],source=p.current[path].source;
+ const read=p=>{try{return actualPotionClickReadFileSync(p,'utf8');}catch(e){if(e.code==='ENOENT')return null;throw e;}};
+ for(const owner of current.owners){
+  assert.equal(sourceEpoch.preCombinedSource(path,source,{target:'potionClickPrior',readSource:read}),prior.current[path].source);
+  for(const missing of [false,true])assert.throws(()=>sourceEpoch.preCombinedSource(path,source,{target:'potionClickPrior',readSource:p=>p===owner?missing?null:read(p)+'\n':read(p)}),/linked owner identity/);
+ }
+});
+
+test('potion click CI authenticates new bytes and rejects drift missing packets and incomplete discovery',async()=>{
+ assertPotionClickCiCurrent(actualPotionClickReadFileSync);
+ const inventories={js:actualPotionRegressionDiscoverJs(),lua:readdirSync('tests/lua').filter(n=>n.endsWith('.lua')).map(n=>'tests/lua/'+n).sort()};
+ for(const [kind,paths]of Object.entries(inventories)){
+  assertPotionClickRawInventory(paths,kind);
+  for(const bad of [paths.slice(1),[...paths,paths[0]],[...paths,`tests/foreign.${kind}`]])assert.throws(()=>assertPotionClickRawInventory(bad,kind),/raw discovery inventory/);
+ }
+ for(const [path,row]of Object.entries(potionClickCiPacket.files)){
+  const source=actualPotionClickReadFileSync(path,'utf8').replaceAll('\r\n','\n');
+  assert.equal(potionClickCiSource(path,source),path.startsWith('src/')?source:row.before?.source??source,path);
+  for(const foreign of [source+'\n',source.slice(1),source.slice(0,-1),null,{},17])assert.equal(potionClickCiSource(path,foreign),foreign);
+  for(const key of ['__proto__','constructor','foreign/'+path])assert.equal(potionClickCiSource(key,source),source);
+  assert.throws(()=>assertPotionClickCiCurrent((p,e)=>p===path?source+'\n':actualPotionClickReadFileSync(p,e)),error=>error.message.includes(path));
+  assert.throws(()=>assertPotionClickCiCurrent((p,e)=>{if(p===path)throw Error('missing '+p);return actualPotionClickReadFileSync(p,e);}),/missing/);
+ }
+ const archive=Object.keys(potionClickCiPacket.immutableArchives)[0];
+ assert.throws(()=>assertPotionClickCiCurrent((p,e)=>p===archive?Buffer.from('foreign'):actualPotionClickReadFileSync(p,e)),/immutable click predecessor/);
+ const bytes=actualPotionClickReadFileSync('tests/helpers/potion-click-ci-source.json.gz');
+ const leaf=actualPotionClickReadFileSync('tests/helpers/potion-click-ci-source.mjs','utf8');
+ const marker="const bytes=readFileSync(new URL('./potion-click-ci-source.json.gz',import.meta.url));";assert.equal(leaf.split(marker).length,2);
+ const broken=leaf.replace(marker,`const bytes=Buffer.from(${JSON.stringify(bytes.subarray(0,bytes.length-1).toString('base64'))},'base64');`);
+ await assert.rejects(import('data:text/javascript;base64,'+Buffer.from(broken).toString('base64')),/complete potion click CI continuation/);
 });

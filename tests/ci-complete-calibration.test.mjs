@@ -42,7 +42,9 @@ import {preWatcherPlanningSource,watcherPlanningKey,watcherPlanningFloor} from '
 import {preClassPotionPlanningSource,classPotionPlanningKey,classPotionPlanningFloor} from './helpers/class-potion-planning-source-inverse.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {readFileSync as actualPotionRegressionReadFileSync,readdirSync} from 'node:fs';
+import {readFileSync as actualPotionClickReadFileSync,readdirSync} from 'node:fs';
+import {potionClickHistoricalRead,assertPotionClickCiCurrent,assertPotionClickRawInventory} from './helpers/potion-click-ci-source.mjs';
+const actualPotionRegressionReadFileSync=potionClickHistoricalRead(actualPotionClickReadFileSync);
 import {potionRegressionHistoricalRead,potionRegressionCiPacket,potionRegressionPriorInventory,assertPotionRegressionCiCurrent,assertPotionRegressionRawInventory} from './helpers/potion-regression-ci-source.mjs';
 // Preserve the exact before-potion regression potion corpus for all existing frozen contracts.
 const rawMobilePotionReadFileSync=potionRegressionHistoricalRead(actualPotionRegressionReadFileSync);
@@ -2136,4 +2138,16 @@ test('potion regression composition raw Full retains complete discovery costs an
   const forecast=Math.max(...combined)+60000;
   t.diagnostic(`${platform}: raw ${js.length} JS / ${lua.length} Lua; forecast ${forecast}ms; target ${target}ms; overrun ${Math.max(0,forecast-target)}ms; physical guard ${guard}ms; prediction is not admission`);
  }
+});
+
+test('potion click raw Full keeps real discovery and execution guards',()=>{
+ assertPotionClickCiCurrent(actualPotionClickReadFileSync);
+ assertPotionClickRawInventory(actualPotionRegressionDiscoverJs(),'js');
+ assertPotionClickRawInventory(readdirSync('tests/lua').filter(n=>n.endsWith('.lua')).map(n=>'tests/lua/'+n).sort(),'lua');
+ const physical=actualPotionClickReadFileSync('.github/workflows/quality.yml','utf8').replaceAll('\r\n','\n');
+ const job=name=>physical.match(new RegExp(`^  ${name}:\\n[\\s\\S]*?(?=^  [\\w-]+:|(?![\\s\\S]))`,'m'))[0];
+ assert.match(job('rules'),/timeout-minutes: \$\{\{ inputs.runner_pool == 'local-special' && 75 \|\| 45 \}\}/);
+ assert.match(job('engineering-posix-shards'),/runs-on: ubuntu-24.04\n    timeout-minutes: 30/);
+ assert.equal(rawCurrentTimings.unknownJsMs,10000);assert.equal(rawCurrentTimings.unknownLuaMs,10000);
+ assert.deepEqual(currentQualityShardMatrices,{windows:Array.from({length:18},(_,i)=>i+1),posix:Array.from({length:15},(_,i)=>i+1)});
 });

@@ -34,6 +34,12 @@ export const potionRegressionHelperCopies=[
  {path:'tests/helpers/potion-regression-source.json.gz',before:null,after:'fff211fab47d021bb4d6cd936a719bba03afcec03f7078aa49d3b165de5b8b2d'}
 ];
 for(const row of potionRegressionHelperCopies){assert.equal(files[row.path]??null,row.before,'exact potion regression helper-copy predecessor: '+row.path);files[row.path]=row.after;}
+export const potionClickHelperCopies=[
+ {path:'tests/helpers/closeout-source-epoch.mjs',before:'c094647f798d6ca9c98c49b646cbd0ba034d90bd107d07e060c9d24396ec4a28',after:'b0260eb43becd74e52a8b5ed04e1909f52741d8cc9813c42ec5bc109f3c5723c'},
+ {path:'tests/helpers/potion-click-source.mjs',before:null,after:'af8107cddca5654556fd8a512341ecc658b20552ca91c1bc2bc33fb4fdb32561'},
+ {path:'tests/helpers/potion-click-source.json.gz',before:null,after:'2742b7d724213f7764d9603ea2276ffd9d85a910ab2b8b263d5a896ba94fe26e'}
+];
+for(const row of potionClickHelperCopies){assert.equal(files[row.path]??null,row.before,'exact potion click helper-copy predecessor: '+row.path);files[row.path]=row.after;}
 const inside=(root,path)=>{const r=relative(root,path);return r!==''&&!isAbsolute(r)&&r!=='..'&&!r.startsWith('../')&&!r.startsWith('..\\');};
 export function copyIntegrationSourceClosure(directory,{sourceRoot=process.cwd()}={}){
  const destination=realpathSync.native(directory);

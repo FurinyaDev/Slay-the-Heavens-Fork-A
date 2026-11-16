@@ -38,3 +38,29 @@
 ## 交付边界
 
 source/CI 接续在产品提交后按既有 collector 追加独立 packet，历史 packet 不改写；最终身份与合同结果在本附件后续节记录。没有 Full、Hosted 轮询、GUI、GIL、官方导入/ready、容量或 iPhone14Pro 实测。离线 C 档行为通过不代表官方手机验收；本地提交交父 agent 独审，未推原 PR、未恢复 Ready 或授权合并。
+
+## 当前 source / CI 闭合
+
+产品 checkpoint 为 `94af046c80b1dd4f020d6f54406520f5a658a051`。在本树 `.artifacts/click-source/capture.py` 按现成 potion-regression collector 的相同 schema 收集 Git before/current/producer 与 sparse CI 字节，接入既有 `createSourceEpochProjector`、copy closure 和 CI historical reader；没有改通用 projector 或旧 packet/叶子。
+
+- 新生产包 `tests/helpers/potion-click-source.json.gz`：15503B，SHA256 `2742b7d724213f7764d9603ea2276ffd9d85a910ab2b8b263d5a896ba94fe26e`。唯一 changed owner 为 battle_ui；gestures 与 popup 的真实 producer/parents 作为继承来源保持。whole-current 的 committed 声明仅指94af产品输入，不将之后的测试适配说成同一已提交 tree。
+- 新 CI 包 `tests/helpers/potion-click-ci-source.json.gz`：139692B，SHA256 `e72587157ebe36bf1eda61ed23087a5bd5138f5e9f1defd09c76f0c9fa3f9336`。11项完整 before/current 绑定、99项归档 guard（98旧包+新生产包）；辅助适配另标 `currentTreeCommitted=false`，CI trust leaf 按惯例排除自身。
+- owner **117→117**，新增 owner `[]`；raw **877 JS / 1424 Lua**，增量均0。增加的是原 targeting 入口内真实 C 档五场景，不是新文件或伪造指针。
+- `.artifacts/click-source/audit.mjs` 对98个旧归档逐个与89df Git内容/LFS OID、size及SHA256比对，验证完整源码集合、新包字节、三条实际producer及parents；`audit.json` 记录 PASS。无需补全本树旧 LFS（restore 检查为0项）。首次辅助审计超过 Node 默认 Git 输出缓冲，ENOBUFS 未计成功；仅修正该一次性审计的输出缓冲后重新完成，没有改变任何测试预算、断言或timeout。
+
+定向 source/CI 验证全部通过，0 skipped：
+
+```powershell
+node --test --test-concurrency=1 --test-name-pattern='potion click|potion regression composition|integration validates complete raw sources|integration copy closure requires' tests/integrated-ci-source.cases.mjs tests/integration-source-epoch.test.mjs tests/ci-complete-calibration.test.mjs
+# 11/11 PASS，57570ms；包含新字节/旧epoch/缺失漂移/暖copy删除负控。
+node --test --test-concurrency=1 --test-name-pattern='current raw production retains|current UI facade authenticates|menu source continuation retains|release additions remain in raw Full|real style source retains|feedback real current source' tests/defect-final-source-epoch.test.mjs tests/encounter-formation-source-epoch.test.mjs tests/session-menu-navigation.test.mjs tests/sts-style-source-epoch.test.mjs
+# 6/6 PASS，36237ms；原117-owner与完整历史目标合同。
+npm run check:syntax
+# 最终辅助代码 PASS。
+```
+
+本轮 TEMP/TMP 在新树 `.artifacts/click-source`。Full成本预测仅沿原测试输出（win1756907ms/linux1190295ms），不是Hosted实测或准入结果；原45/30分钟物理时限、18/15分片、unknown成本与完整发现保持。
+
+收口仅统一两个辅助文件的缩进并重新采集当前 CI 字节；定向重验 `potion click CI authenticates` 1/1 PASS（406ms），再次运行审计 PASS。其余17项已测语义及全部产品 blob 不变，不重复整套。
+
+`npm run test:related -- --base 89dfc774b1c6bb146b91e6064039f4d648db0d33 --plan` 因未建模文档输入返回full=true；遵守本轮明确“不Full”，执行上述有界相关合同和源码门禁，不宣称完整 check 或 Required 已通过。最终 metadata 提交保持94af运行时与已测产品夹具逐blob不变，交父 agent 对本地精确HEAD独审后决定原679集成。
