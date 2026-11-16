@@ -3,6 +3,7 @@ local Combat = require("abyss_combat")
 local Run = require("abyss_run")
 local Theme = require("abyss_theme")
 local CardInput = require("abyss_card_input")
+local Intent = require("abyss_battle_card_gestures").Intent
 local RewardOwner = require("abyss_battle_reward_owner")
 local Controller = require("abyss_controller")
 local M = {}
@@ -29,6 +30,8 @@ function M.install(owner, ownership, host, dependencies)
         g.grabDx, g.grabDy = o and o[1]-x or 0, o and o[2]-y or 0
         g.vx, g.vy, g.t = 0, 0, os.clock()
         CardInput.begin(g, Theme.canvas.base[2], host.platform.touchScreen and host.platform.touchScreen(), Theme.canvas.base[1])
+        -- Native motion may arrive only on Up; the real Down still owns its origin and time.
+        Intent.sample(g,x,y)
         g.handCancelY = L.hand.y + Theme.motion.hoverLift
         owner.hover, owner.handHover = nil, nil
         owner.carry = nil
@@ -50,6 +53,7 @@ function M.install(owner, ownership, host, dependencies)
             dependencies.listen(hit,function() owner:playSlot(slot) end,input)
             if owner.dragEnabled then
                 hit:AddCursorEventListener(host.cursor.CursorDown,function(event)
+                    local origin=dependencies.pointerBegin(input,event)
                     ownership.pointerObserved = true
                     dependencies.retireInterruptedPress(event)
                     if owner.gesture then return end
@@ -59,6 +63,7 @@ function M.install(owner, ownership, host, dependencies)
                     local g, instance, battle = cardToken(slot, input, event)
                     if not g then return end
                     input.held = g
+                    dependencies.pointerArm(input,g,event,origin)
                     dependencies.cancelPotionAim("已取消药水瞄准。")
                     owner:queueHelp(owner:cardHelpSpec(slot),hit,true,event and event.touchId,g)
                     beginCardDrag(g, instance, battle, event)
