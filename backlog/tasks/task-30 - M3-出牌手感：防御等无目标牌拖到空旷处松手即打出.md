@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - Furinya
 created_date: '2026-10-23 00:59'
-updated_date: '2026-11-16 10:48'
+updated_date: '2026-11-16 10:51'
 labels:
   - ui
   - combat
@@ -169,4 +169,6 @@ PR327手机反馈来源增量（基于20a74da的历史观察；不认证6795160�
 Owner再次明确要求持续修复出牌P0直至完成。本轮已从最新Release33d建立独立fix/battle-pointer-continuity-20261116，实际实施共享、有限指针归属证明，覆盖卡牌/区域/目标确认的缺ID Click；保留busy、多指/旧回调与结算顺序，不新增预输入或键盘功能。原#686仅目标消费者，不复制第二套tracker；新实现将用同一小型归属服务接四类binding，并以现有真实Host反例与连续出牌验证。未修前不称P0完成，官方/设备未测仍未验。
 
 2026-11-16本轮已实际修复8个既有输入模块，冻结82b1a114；来源合同6b12af8f。混合ID序列旧0/5→新5/5；正常输入的全状态/RNG、反馈26步及受监测控件写入数不变；原7+新增22+稀疏2当前源码及新GIL实际解码Lua均通过。完整engineering通过，独立产品/Source复审无遗留。新候选build ca1130db、SHA159e4ef2，15961609离线字节，公共夹具非正式RC；严格audit保留UI_MISMATCH/GRAPH_COUNT，官方MB、import/ready及PC/手机性能UNVERIFIED。旧候选不作本轮设备证据，所有新设备AC不勾。完整证据docs/evidence/battle-pointer-p0-20261116/README.md。
+
+独立修复PR #711：https://github.com/FurinyaWorks/Slay-the-Heavens/pull/711，目标release/v2.0.0，产品82b1a114，独立产品/Source/报告审查PASS。#686归属切片交由该PR统一服务接续，不再引入第二套tracker；#684仅复用三行Down采样，其余PC范围不变。保持In Progress及未验AC；不自行合并、发版或操作窗口。
 <!-- SECTION:NOTES:END -->
