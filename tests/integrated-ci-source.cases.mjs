@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {readFileSync as actualPotionClickReadFileSync,readdirSync} from 'node:fs';
+import {readFileSync as actualPost697ReadFileSync,readdirSync} from 'node:fs';
+import {potionPost697HistoricalRead,potionPost697PriorInventory} from './helpers/potion-post697-ci-source.mjs';
+const actualPotionClickReadFileSync=potionPost697HistoricalRead('potion',actualPost697ReadFileSync);
 import {potionClickHistoricalRead,potionClickCiSource,potionClickCiPacket,assertPotionClickCiCurrent,assertPotionClickRawInventory} from './helpers/potion-click-ci-source.mjs';
 const actualPotionRegressionReadFileSync=potionClickHistoricalRead(actualPotionClickReadFileSync);
 import {potionRegressionHistoricalRead,potionRegressionCiRead,potionRegressionCiPacket,potionRegressionCiSource,potionRegressionPriorInventory,assertPotionRegressionCiCurrent,assertPotionRegressionRawInventory} from './helpers/potion-regression-ci-source.mjs';
@@ -11,9 +13,11 @@ const rawReadFileSync=potionBootstrapHistoricalRead('potion',actualDiskReadFileS
 const rawBootstrapReadFileSync=potionBootstrapHistoricalRead('bootstrap',actualDiskReadFileSync);
 import {mobilePotionCiRead,mobilePotionPriorInventory,mobilePotionCiPacket,mobilePotionCiSource,assertMobilePotionCiCurrent,assertMobilePotionRawInventory} from './helpers/mobile-potion-ci-source.mjs';
 import {createHash} from 'node:crypto';
-import {discoverJs as actualPotionRegressionDiscoverJs} from '../scripts/ci-shards.mjs';
+import {discoverJs as actualPost697DiscoverJs} from '../scripts/ci-shards.mjs';
+const actualPotionRegressionDiscoverJs=()=>potionPost697PriorInventory(actualPost697DiscoverJs(),'js',actualPost697ReadFileSync);
+const potionLegacyLua=()=>potionPost697PriorInventory(readdirSync('tests/lua').filter(n=>n.endsWith('.lua')).map(n=>'tests/lua/'+n).sort(),'lua',actualPost697ReadFileSync);
 const discoverJs=()=>potionRegressionPriorInventory(actualPotionRegressionDiscoverJs(),'js',actualPotionRegressionReadFileSync);
-const beforePotionRegressionLua=()=>potionRegressionPriorInventory(readdirSync('tests/lua').filter(n=>n.endsWith('.lua')).map(n=>'tests/lua/'+n).sort(),'lua',actualPotionRegressionReadFileSync);
+const beforePotionRegressionLua=()=>potionRegressionPriorInventory(potionLegacyLua(),'lua',actualPotionRegressionReadFileSync);
 import {integratedCiProof as proof,integratedSource,assertIntegratedCurrent,renderIntegratedCiBinding,extendIntegratedHelperClosure} from './helpers/integrated-ci-source.mjs';
 const raw=p=>readFileSync(p,'utf8').replaceAll('\r\n','\n'),hash=s=>createHash('sha256').update(s).digest('hex');
 // Keep every original complete predecessor assertion; new raw after contracts follow.
@@ -34,7 +38,7 @@ test('integration validates complete raw sources and leaves every foreign byte a
  }
  for(const path of ['.gitattributes','docs/legal/assets.json','tests/helpers/closeout-source-epoch.mjs','tests/helpers/run-hud-ci-source.mjs','tests/helpers/integrated-ci-source.mjs'])
   assert.throws(()=>assertIntegratedCurrent((p,e)=>{
-   const value=actualPotionClickReadFileSync(p,e);
+   const value=actualPost697ReadFileSync(p,e);
    return p!==path?value:typeof value==='string'?value+'\n':Buffer.concat([value,Buffer.from('\n')]);
   }),error=>{assert.match(error.message,/fresh complete integration source/);assert(error.message.includes(path),'the intended after owner must reject');return true;});
  assert.equal(raw('tests/helpers/integrated-ci-binding.mjs'),renderIntegratedCiBinding(hash(readFileSync('tests/helpers/integrated-ci-source.json.gz'))));
@@ -224,7 +228,7 @@ test('potion regression composition CI keeps the bootstrap packet and rejects mi
 });
 
 test('potion regression composition raw JS and Lua inventory rejects missing duplicate foreign and source drift',()=>{
- const inventories={js:actualPotionRegressionDiscoverJs(),lua:readdirSync('tests/lua').filter(n=>n.endsWith('.lua')).map(n=>'tests/lua/'+n).sort()};
+ const inventories={js:actualPotionRegressionDiscoverJs(),lua:potionLegacyLua()};
  for(const [kind,paths]of Object.entries(inventories)){
   assertPotionRegressionRawInventory(paths,kind);
   assert.deepEqual(potionRegressionPriorInventory(paths,kind,actualPotionRegressionReadFileSync),potionRegressionCiPacket.priorInventory[kind]);
@@ -239,8 +243,8 @@ test('potion regression composition raw JS and Lua inventory rejects missing dup
  }
 });
 
-test('potion click production closure authenticates new bytes and retains every complete predecessor',async()=>{
- const {sourceEpoch,prePotionClickSourceEpoch}=await import('./helpers/closeout-source-epoch.mjs');
+test('legacy 3e potion click production closure authenticates new bytes and retains every complete predecessor',async()=>{
+ const {prePotionPost697SourceEpoch:sourceEpoch,prePotionClickSourceEpoch}=await import('./helpers/closeout-source-epoch.mjs');
  const {potionClickSourcePacket:p,extendPotionClickSource}=await import('./helpers/potion-click-source.mjs');
  const prior=prePotionClickSourceEpoch.proof,current=sourceEpoch.proof;
  assert.equal(current.currentCommit,'c126877c31b37396b6148e1101a8dba555d03feb');assert.equal(current.currentTreeCommitted,true);
@@ -253,7 +257,7 @@ test('potion click production closure authenticates new bytes and retains every 
  for(const bad of [{...p,current:{}},{...p,before:{}},{...p,producers:{}},{...p,currentTreeCommitted:false},{...p,currentCommit:'0'.repeat(40)},{...p,prerequisites:[]},{...p,inheritedSources:{}},{...p,combinedProducers:{}}])
   assert.throws(()=>extendPotionClickSource(prePotionClickSourceEpoch,bad));
  const path=Object.keys(p.current)[0],source=p.current[path].source;
- const read=p=>{try{return actualPotionClickReadFileSync(p,'utf8');}catch(e){if(e.code==='ENOENT')return null;throw e;}};
+ const read=path=>current.current[path]?.source??null; // Explicit immutable 3e projector domain; not live-current authorization.
  for(const owner of current.owners){
   assert.equal(sourceEpoch.preCombinedSource(path,source,{target:'potionClickPrior',readSource:read}),prior.current[path].source);
   for(const missing of [false,true])assert.throws(()=>sourceEpoch.preCombinedSource(path,source,{target:'potionClickPrior',readSource:p=>p===owner?missing?null:read(p)+'\n':read(p)}),/linked owner identity/);
@@ -262,7 +266,7 @@ test('potion click production closure authenticates new bytes and retains every 
 
 test('potion click CI authenticates new bytes and rejects drift missing packets and incomplete discovery',async()=>{
  assertPotionClickCiCurrent(actualPotionClickReadFileSync);
- const inventories={js:actualPotionRegressionDiscoverJs(),lua:readdirSync('tests/lua').filter(n=>n.endsWith('.lua')).map(n=>'tests/lua/'+n).sort()};
+ const inventories={js:actualPotionRegressionDiscoverJs(),lua:potionLegacyLua()};
  for(const [kind,paths]of Object.entries(inventories)){
   assertPotionClickRawInventory(paths,kind);
   for(const bad of [paths.slice(1),[...paths,paths[0]],[...paths,`tests/foreign.${kind}`]])assert.throws(()=>assertPotionClickRawInventory(bad,kind),/raw discovery inventory/);
@@ -311,4 +315,177 @@ test('potion click historical entry authenticates complete current bindings befo
  const reads=[];const tracked=potionClickHistoricalRead((p,e)=>{reads.push(p);return actualPotionClickReadFileSync(p,e);});
  assert.equal(tracked(path,'utf8'),expected);
  for(const required of [...Object.keys(potionClickCiPacket.files),...Object.keys(potionClickCiPacket.immutableArchives)])assert(reads.includes(required),'fresh complete read '+required);
+});
+
+test('post697 union historical CI reader reauthenticates every current binding and archive after warm success',()=>{
+ const anchor='tests/helpers/closeout-source-epoch.mjs',expected=potionPost697CiPacket.files[anchor].views.potion.source;
+ const other='src/lua/abyss_game_ui_input.lua';let fault;
+ const read=(path,encoding)=>{
+  if(path===fault?.path){
+   if(fault.kind==='missing')throw Error('missing '+path);
+   if(fault.kind==='null')return null;
+   const raw=actualPost697ReadFileSync(path,encoding);
+   return typeof raw==='string'?raw+'\n':Buffer.concat([raw,Buffer.from('\n')]);
+  }
+  return actualPost697ReadFileSync(path,encoding);
+ };
+ const reader=potionPost697CiRead(read);
+ assert.equal(reader(anchor,'utf8'),expected);
+ // The exact old implementation exposes the historical anchor without ever
+ // consulting this independent missing owner. Keep this first as the RED.
+ fault={path:other,kind:'missing'};
+ assert.throws(()=>reader(anchor,'utf8'),undefined,'the entire declared corpus must authenticate before history');
+ fault=undefined;assert.equal(reader(anchor,'utf8'),expected);
+ for(const path of Object.keys(potionPost697CiPacket.files).filter(path=>path!==anchor)){
+  for(const kind of ['missing','null','drift']){
+   fault={path,kind};assert.throws(()=>reader(anchor,'utf8'),undefined,path+' '+kind);
+   fault=undefined;assert.equal(reader(anchor,'utf8'),expected);
+  }
+ }
+ for(const path of Object.keys(potionPost697CiPacket.immutableArchives)){
+  for(const kind of ['missing','null','drift']){
+   fault={path,kind};assert.throws(()=>reader(anchor,'utf8'),undefined,path+' '+kind);
+   fault=undefined;assert.equal(reader(anchor,'utf8'),expected);
+  }
+ }
+ // The selected anchor must itself be exact; null and foreign data are raw,
+ // never authenticated historical output. Errors still propagate unchanged.
+ fault={path:anchor,kind:'missing'};assert.throws(()=>reader(anchor,'utf8'),/missing/);
+ fault={path:anchor,kind:'null'};assert.equal(reader(anchor,'utf8'),null);
+ fault={path:anchor,kind:'drift'};assert.equal(reader(anchor,'utf8'),actualPost697ReadFileSync(anchor,'utf8')+'\n');
+ fault=undefined;const binary=reader(anchor);assert(Buffer.isBuffer(binary));assert.equal(binary.toString('utf8'),expected);
+ const production='src/lua/abyss_game_ui_input.lua';fault={path:anchor,kind:'missing'};
+ assert.equal(potionPost697CiRead((p,e)=>p===production?actualPost697ReadFileSync(p,e):read(p,e))(production,'utf8'),actualPost697ReadFileSync(production,'utf8'),'CI reader never projects production');
+ fault=undefined;
+ const unknown=potionPost697CiRead(()=>null);assert.equal(unknown('foreign/source','utf8'),null);
+ const historical=potionPost697CiRead((p,e)=>p===anchor?(e?expected:Buffer.from(expected)):read(p,e));
+ fault={path:other,kind:'missing'};assert.equal(historical(anchor,'utf8'),expected,'already historical bytes stay raw and gain no fresh authorization');
+ fault=undefined;
+ const seen=[],tracked=potionPost697CiRead((p,e)=>{seen.push(p);return actualPost697ReadFileSync(p,e);});
+ assert.equal(tracked(anchor,'utf8'),expected);
+ for(const path of [...Object.keys(potionPost697CiPacket.files),...Object.keys(potionPost697CiPacket.immutableArchives)])assert(seen.includes(path),path+' checked before replay');
+});
+
+test('post697 union public CI source authenticates the same raw reader before every historical conversion',()=>{
+ const anchor='tests/helpers/closeout-source-epoch.mjs',source=actualPost697ReadFileSync(anchor,'utf8');
+ const expected=potionPost697CiPacket.files[anchor].views.potion.source;let fault;
+ const read=(path,encoding)=>{
+  if(path===fault?.path){
+   if(fault.kind==='missing')throw Error('missing '+path);
+   if(fault.kind==='null')return null;
+   const raw=actualPost697ReadFileSync(path,encoding);
+   return typeof raw==='string'?raw+'\n':Buffer.concat([raw,Buffer.from('\n')]);
+  }
+  return actualPost697ReadFileSync(path,encoding);
+ };
+ const project=()=>potionPost697CiSource(anchor,source,undefined,read);
+ assert.equal(project(),expected);
+ for(const path of [...Object.keys(potionPost697CiPacket.files),...Object.keys(potionPost697CiPacket.immutableArchives)]){
+  for(const kind of ['missing','null','drift']){
+   fault={path,kind};assert.throws(project,undefined,path+' '+kind);
+   fault=undefined;assert.equal(project(),expected);
+  }
+ }
+ const noRead=()=>{throw Error('foreign input cannot authorize a historical view');};
+ for(const value of [source+'\n',source.slice(1),null,{},17,expected])assert.equal(potionPost697CiSource(anchor,value,undefined,noRead),value);
+ assert.equal(potionPost697CiSource('foreign/source',source,undefined,noRead),source);
+ const production='src/lua/abyss_game_ui_input.lua',raw=actualPost697ReadFileSync(production,'utf8');
+ assert.equal(potionPost697CiSource(production,raw,undefined,noRead),raw);
+ assert.equal(potionPost697CiSource(anchor,source,{sha256:'0'.repeat(64)},noRead),source);
+});
+
+test('post697 union current inventory authenticates the complete corpus before entering prior inventory',()=>{
+ const inventories={js:actualPost697DiscoverJs(),lua:readdirSync('tests/lua').filter(n=>n.endsWith('.lua')).map(n=>'tests/lua/'+n).sort()};let fault;
+ const read=(path,encoding)=>{
+  if(path===fault?.path){
+   if(fault.kind==='missing')throw Error('missing '+path);
+   if(fault.kind==='null')return null;
+   const raw=actualPost697ReadFileSync(path,encoding);
+   return typeof raw==='string'?raw+'\n':Buffer.concat([raw,Buffer.from('\n')]);
+  }
+  return actualPost697ReadFileSync(path,encoding);
+ };
+ for(const [kind,paths]of Object.entries(inventories))assert.deepEqual(potionPost697PriorInventory(paths,kind,read),potionPost697CiPacket.viewInventories.potion[kind]);
+ // Both kinds share the same corpus gate. Exercise all declared faults once,
+ // and retain separate positive JS/Lua and already-prior boundaries.
+ for(const path of [...Object.keys(potionPost697CiPacket.files),...Object.keys(potionPost697CiPacket.immutableArchives)]){
+  for(const kind of ['missing','null','drift']){
+   fault={path,kind};assert.throws(()=>potionPost697PriorInventory(inventories.js,'js',read),undefined,path+' '+kind);
+   fault=undefined;assert.deepEqual(potionPost697PriorInventory(inventories.js,'js',read),potionPost697CiPacket.viewInventories.potion.js);
+  }
+ }
+ fault={path:'src/lua/abyss_game_ui_input.lua',kind:'missing'};
+ for(const kind of ['js','lua'])assert.deepEqual(potionPost697PriorInventory(potionPost697CiPacket.viewInventories.potion[kind],kind,read),potionPost697CiPacket.viewInventories.potion[kind]);
+});
+
+test('post697 union integrated reader and source forward the same raw reader before historical output',async()=>{
+ const {integratedRead}=await import('./helpers/integrated-ci-source.mjs');
+ const anchor='tests/helpers/closeout-source-epoch.mjs',other='src/lua/abyss_game_ui_input.lua';
+ const raw=actualPost697ReadFileSync(anchor,'utf8');let fault;const seen=[];
+ const read=(path,encoding)=>{
+  seen.push(path);
+  if(path===other&&fault){
+   if(fault==='missing')throw Error('missing '+path);
+   if(fault==='null')return null;
+   const bytes=actualPost697ReadFileSync(path,encoding);
+   return typeof bytes==='string'?bytes+'\n':Buffer.concat([bytes,Buffer.from('\n')]);
+  }
+  return actualPost697ReadFileSync(path,encoding);
+ };
+ assertPotionPost697CiCurrent(actualPost697ReadFileSync);
+ const reader=integratedRead('menu',{read}),expected=reader(anchor,'utf8');assert.notEqual(expected,raw,'the test must actually expose an older view');
+ for(const invoke of [()=>reader(anchor,'utf8'),()=>integratedSource(anchor,raw,'menu',read)]){
+  assert.equal(invoke(),expected);
+  for(const kind of ['missing','null','drift']){
+   fault=kind;assert.throws(invoke,undefined,'the integrated boundary must use the injected raw owner '+kind);
+   fault=undefined;assert.equal(invoke(),expected);
+  }
+ }
+ assert(seen.includes(other),'current owner must be read through this invocation reader');
+ const binary=reader(anchor);assert(Buffer.isBuffer(binary));assert.equal(binary.toString('utf8'),expected);
+});
+
+import {potionPost697CiRead,potionPost697CiPacket,potionPost697CiSource,assertPotionPost697CiCurrent,assertPotionPost697RawInventory} from './helpers/potion-post697-ci-source.mjs';
+
+test('post697 union production retains both complete real inputs and authenticates every current owner',async()=>{
+ const {sourceEpoch,prePotionPost697SourceEpoch,releaseSelectionMapLegacyEpoch}=await import('./helpers/closeout-source-epoch.mjs');
+ const {potionPost697SourcePacket:p,extendPotionPost697Source}=await import('./helpers/potion-post697-source.mjs');
+ const current=sourceEpoch.proof,prior=prePotionPost697SourceEpoch.proof,legacy=releaseSelectionMapLegacyEpoch.proof;
+ assert.equal(current.currentCommit,'a9df9dff11779cb1d850dc97b715c711881cf9c6');assert.equal(current.currentTreeCommitted,true);
+ assert.deepEqual(current.owners,prior.owners);assert.equal(current.owners.length,117);assert.equal(legacy.owners.length,116);
+ for(const [name,target]of Object.entries(prior.targets))assert.deepEqual(current.targets[name],target,name);
+ assert.deepEqual(current.targets.selectionMapLanded,{commit:p.selectionCommit,files:legacy.current});
+ assert.deepEqual(current.targets.potionBeforeSelection,{commit:p.baseCommit,files:prior.current});
+ for(const [path,row]of Object.entries(current.current))if(row!==null)assert.equal(actualPost697ReadFileSync(path,'utf8').replaceAll('\r\n','\n'),row.source,path);
+ for(const bad of [{...p,current:{}},{...p,before:{}},{...p,producers:{}},{...p,inheritedPotion:{}},{...p,currentTreeCommitted:false},{...p,currentCommit:'0'.repeat(40)},{...p,inputs:[]}])assert.throws(()=>extendPotionPost697Source(prePotionPost697SourceEpoch,releaseSelectionMapLegacyEpoch,bad));
+ const anchor=Object.keys(p.current)[0],source=current.current[anchor].source,expected=prior.current[anchor].source;
+ for(const crlf of [false,true]){
+  let fault;const seen=[];
+  const read=path=>{seen.push(path);if(path===fault?.path&&fault.missing)return null;const text=actualPost697ReadFileSync(path,'utf8').replaceAll('\r\n','\n');return path===fault?.path?text+'\n':crlf?text.replaceAll('\n','\r\n'):text;};
+  for(const path of current.owners){
+   seen.length=0;assert.equal(sourceEpoch.preCombinedSource(anchor,source,{target:'potionBeforeSelection',readSource:read}),expected);assert.deepEqual(seen,current.owners);
+   for(const missing of [false,true]){fault={path,missing};assert.throws(()=>sourceEpoch.preCombinedSource(anchor,source,{target:'potionBeforeSelection',readSource:read}),/linked owner identity/);}
+   fault=undefined;assert.equal(sourceEpoch.preCombinedSource(anchor,source,{target:'potionBeforeSelection',readSource:read}),expected);
+  }
+ }
+});
+
+test('post697 union both explicit histories reject warm cross-input faults and preserve unchanged before bytes',()=>{
+ const anchor='tests/helpers/closeout-source-epoch.mjs',other='src/lua/abyss_battle_ui.lua';let fault;
+ const read=(path,encoding)=>{if(path===other&&fault){if(fault==='missing')throw Error('missing '+path);if(fault==='null')return null;const b=actualPost697ReadFileSync(path,encoding);return typeof b==='string'?b+'\n':Buffer.concat([b,Buffer.from('\n')]);}return actualPost697ReadFileSync(path,encoding);};
+ for(const target of ['potion','selection']){
+  const reader=potionPost697HistoricalRead(target,read),expected=potionPost697CiPacket.files[anchor].views[target].source;
+  assert.equal(reader(anchor,'utf8'),expected);
+  for(const kind of ['missing','null','drift']){fault=kind;assert.throws(()=>reader(anchor,'utf8'));fault=undefined;assert.equal(reader(anchor,'utf8'),expected);}
+  for(const [kind,paths]of Object.entries(potionPost697CiPacket.currentInventory))assert.deepEqual(potionPost697PriorInventory(paths,kind,read,target),potionPost697CiPacket.viewInventories[target][kind]);
+  const untouched=Object.entries(potionPost697CiPacket.files).find(([,row])=>row.views[target]?.sha256===row.current.sha256);
+  assert(untouched);const [path,row]=untouched,bytes=row.current.source.replaceAll('\n','\r\n'),seen=[];
+  const same=potionPost697HistoricalRead(target,(p,e)=>{seen.push(p);assert.equal(p,path,'unchanged/already-before must not cause blanket authentication');return e?bytes:Buffer.from(bytes);});
+  assert.equal(same(path,'utf8'),bytes);assert.deepEqual(seen,[path]);
+ }
+ const binary=Buffer.from([255,0,128]);assert.equal(potionPost697CiRead(()=>binary)('unknown/binary'),binary);
+ for(const kind of ['js','lua']){
+  const paths=potionPost697CiPacket.currentInventory[kind];assertPotionPost697RawInventory(paths,kind);
+  for(const bad of [paths.slice(1),[...paths,paths[0]],[...paths,'foreign']])assert.throws(()=>assertPotionPost697RawInventory(bad,kind));
+ }
 });
