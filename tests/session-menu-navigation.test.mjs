@@ -32,18 +32,21 @@ test('deck notification continuation preserves immutable menu sources and authen
  const changed=structuredClone(menu),owner=Object.keys(changed.current)[0];
  changed.current[owner].source+='\n';
  assert.throws(()=>assertOriginalSessionMenuWitness(changed),/immutable original session menu source witness/);
- const proof=preMobilePotionSourceEpoch.proof,read=p=>readFileSync(p,'utf8').replaceAll('\r\n','\n');
+ const proof=preMobilePotionSourceEpoch.proof,rawRead=p=>readFileSync(p,'utf8').replaceAll('\r\n','\n');
+ // Reconstruct the exact original menu epoch only after authenticating the
+ // complete current production closure against the same fresh raw reader.
+ const read=p=>sourceEpoch.preCombinedSource(p,rawRead(p),{target:'mobilePotionPrior',readSource:rawRead});
  assert.equal(proof.currentCommit,neowRetirementStaticContinuation.currentCommit);
  assert.equal(proof.owners.length,116);assert.equal(Object.keys(proof.current).length,352);
  for(const p of Object.keys(continuation.current)){
   assert.deepEqual(proof.targets.sessionMenuReviewed.files[p],menu.current[p]);
   assert.deepEqual(continuation.before[p],menu.current[p]);
   assert.equal(proof.current[p].source,read(p));
-  assert.equal(sourceEpoch.preCombinedSource(p,read(p),{target:'sessionMenuReviewed',readSource:read}),menu.current[p].source);
+  assert.equal(preMobilePotionSourceEpoch.preCombinedSource(p,read(p),{target:'sessionMenuReviewed',readSource:read}),menu.current[p].source);
   for(const owner of Object.keys(continuation.current))for(const replacement of [null,read(owner)+'\n'])
-   assert.throws(()=>sourceEpoch.preCombinedSource(p,read(p),{target:'sessionMenuReviewed',readSource:q=>q===owner?replacement:read(q)}),/linked owner identity/);
+   assert.throws(()=>preMobilePotionSourceEpoch.preCombinedSource(p,read(p),{target:'sessionMenuReviewed',readSource:q=>q===owner?replacement:read(q)}),/linked owner identity/);
   const foreign=read(p)+'\n';let reads=0;
-  assert.equal(sourceEpoch.preCombinedSource(p,foreign,{target:'sessionMenuReviewed',readSource:()=>{reads++;return null;}}),foreign);
+  assert.equal(preMobilePotionSourceEpoch.preCombinedSource(p,foreign,{target:'sessionMenuReviewed',readSource:()=>{reads++;return null;}}),foreign);
   assert.equal(reads,0);
  }
 });

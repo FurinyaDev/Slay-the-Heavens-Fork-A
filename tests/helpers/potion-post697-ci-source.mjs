@@ -6,7 +6,27 @@ import {gunzipSync} from 'node:zlib';
 const hash=b=>createHash('sha256').update(b).digest('hex'),norm=s=>s.replaceAll('\r\n','\n');
 const bytes=readFileSync(new URL('./potion-post697-ci-source.json.gz',import.meta.url));
 assert.equal(hash(bytes),'d420bd70be20294eb58edc4b87f61b83c4117e3a444b0c9d1546534e325d9ce7','complete potion post697 CI packet');
-const packet=JSON.parse(gunzipSync(bytes));
+const originalPacket=JSON.parse(gunzipSync(bytes));
+// Preserve the complete original packet and extend only the two authentic CI
+// consumers whose readers mixed current and historical production generations.
+const repairBytes=readFileSync(new URL('./potion-post697-ci-reader-repair.json.gz',import.meta.url));
+assert.equal(hash(repairBytes),'305056f42d38fc13913304ed356475dbf464e53c9b8e2fec8a79339e2993fe27','complete post697 CI reader repair');
+const repair=JSON.parse(gunzipSync(repairBytes));
+assert.equal(repair.schemaVersion,1);assert.equal(repair.baseCommit,'10cfd7ac965c6aa2f640cdfac35c1149ac42c5c0');
+assert.equal(repair.currentTreeCommitted,false,'reader repair capture is separate from committed product');
+assert.deepEqual(Object.keys(repair.files),['tests/ci-complete-calibration.test.mjs','tests/session-menu-navigation.test.mjs']);
+const files={...originalPacket.files};
+for(const [path,row]of Object.entries(repair.files)){
+ assert.deepEqual(row.before,originalPacket.files[path].current,'exact original post697 CI reader: '+path);
+ for(const item of [row.before,row.current]){
+  assert.equal(item.source,norm(item.source));assert.equal(hash(item.source),item.sha256,path);
+  assert.equal(createHash('sha1').update(`blob ${Buffer.byteLength(item.source)}\0`).update(item.source).digest('hex'),item.gitBlob,path);
+ }
+ files[path]={...originalPacket.files[path],current:row.current};
+}
+const packet={...originalPacket,files,immutableArchives:{...originalPacket.immutableArchives,
+ 'tests/helpers/potion-post697-ci-source.json.gz':hash(bytes),
+ 'tests/helpers/potion-post697-ci-reader-repair.json.gz':hash(repairBytes)}};
 assert.equal(packet.schemaVersion,1);assert.equal(packet.currentTreeCommitted,false);
 assert.deepEqual(packet.viewCommits,{potion:'3e96a1589435f8b06645db095775a789f24b1350',selection:'33d71575c5f186a1b54f7bf3e4f1826c145aa1d9'});
 assert.equal(packet.productCommit,'a9df9dff11779cb1d850dc97b715c711881cf9c6');

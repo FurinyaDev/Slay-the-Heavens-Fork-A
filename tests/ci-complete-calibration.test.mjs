@@ -53,7 +53,11 @@ const rawMobilePotionReadFileSync=potionRegressionHistoricalRead(actualPotionReg
 import {mobilePotionCiRead,mobilePotionPriorInventory,assertMobilePotionCiCurrent,mobilePotionCiPacket} from './helpers/mobile-potion-ci-source.mjs';
 import {releaseBootstrapCiRead,assertReleaseBootstrapCiCurrent,assertReleaseBootstrapRawInventory} from './helpers/release-bootstrap-ci-source.mjs';
 import {potionBootstrapCiRead,potionBootstrapHistoricalRead,potionBootstrapCiPacket,assertPotionBootstrapCiCurrent,assertPotionBootstrapRawInventory} from './helpers/potion-bootstrap-ci-source.mjs';
-const liveDiskReadFileSync=releaseBootstrapCiRead(potionBootstrapCiRead(rawMobilePotionReadFileSync));
+const historicalCiReadFileSync=releaseBootstrapCiRead(potionBootstrapCiRead(rawMobilePotionReadFileSync));
+// Historical CI receipts retain their own files; production owners must enter
+// sourceSlice in the final current epoch before its complete fresh authentication.
+const liveDiskReadFileSync=(path,encoding)=>(path.startsWith('src/')||path==='config/architecture.json'
+ ?actualPost697ReadFileSync:historicalCiReadFileSync)(path,encoding);
 const rawBootstrapReadFileSync=potionBootstrapHistoricalRead('bootstrap',rawMobilePotionReadFileSync);
 import {preJoustCiSource,joustCiProof} from './helpers/joust-ci-source-inverse.mjs';
 import {sourceEpoch as joustEpoch} from './helpers/combined-epoch/source-epoch.mjs';
