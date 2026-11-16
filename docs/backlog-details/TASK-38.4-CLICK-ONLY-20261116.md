@@ -84,3 +84,29 @@ npm run check:syntax
 ### R679-2：历史转换前完整认证
 
 新增历史入口回归先在旧实现 RED：缺失 closeout-source 时 reader 仍返回历史UI，报 `Missing expected exception: complete current must authenticate other binding missing`（1 FAIL，369ms）。修正为命中当前完整binding且将实际转换时，先对原始 reader 执行完整 `assertPotionClickCiCurrent(read)`，覆盖所有当前绑定与归档；每次转换重新执行，不缓存授权。未知或已经历史化的 bytes 仍原值透传，不借回退赋予身份。最终新字节重绑与本项 GREEN 在后续 metadata 记录。
+
+R679-2 最终 GREEN：新增 historical-entry 回归通过（258ms）。同一个 reader 暖成功后注入其他绑定的 missing/null/drift，以及归档 missing/drift，均在回放前拒绝；恢复输入后正常回放。读取轨迹另断言全部12项 current 绑定及99项归档均被重新读取。
+
+仅运行新增/受影响 source 名称，共 **7/7 PASS、0 skipped**：
+
+```powershell
+node --test --test-concurrency=1 --test-name-pattern='potion click historical entry|potion click production closure|potion click CI authenticates|potion click copy closure' tests/integrated-ci-source.cases.mjs tests/integration-source-epoch.test.mjs
+# 4/4，19082ms；含R679-2 GREEN、新产品来源与copy负控。
+node --test --test-concurrency=1 --test-name-pattern='integration validates complete raw sources|potion regression composition CI keeps|potion click raw Full' tests/integrated-ci-source.cases.mjs tests/ci-complete-calibration.test.mjs
+# 3/3，43070ms；仅既有guard合同，不是执行Full。
+npm run check:syntax
+# PASS。
+```
+
+### 修正后的 active 来源身份
+
+产品 checkpoint 正常提交为 `c126877c31b37396b6148e1101a8dba555d03feb`，父为原作者 `1d825a2`，原94af/1d的提交与包字节均可从Git恢复；没有amend或新包层。使用同一collector以89df为历史基准，**原位更新本轮两个active包**，不动旧98归档：
+
+| active包 | bytes | SHA256 |
+| --- | ---: | --- |
+| potion-click-source.json.gz | 15508 | 823ccaff8ee4d2d6e48fb94c758f9ae11a001c73872fef2a890109de0c8e0dbf |
+| potion-click-ci-source.json.gz | 140902 | f4f85ac76b7d5682dcede88f5cb3215206327e4176221d67c7e31296b803760f |
+
+更新生产/CI叶子的精确currentCommit与包hash、copy中相同依赖的hash、唯一引用旧currentCommit的来源断言；通用projector及原98归档/旧叶子不改。CI只有新增support夹具这一项完整绑定，**11→12**；raw仍877JS/1424Lua（support不伪作独立发现入口），owner117无新增，archive guard99不增。完整产品源码、实际producer/parents与98旧归档Git/OID/size/SHA审计再次PASS，记录在本树 `.artifacts/click-source/audit.json`。
+
+本轮没有重跑原11Lua或整个targeting入口，没有Full/Hosted轮询/GUI/候选/设备操作；原request_changes记录保留，修正HEAD仍交父agent独审，不以作者GREEN越过评审或合并准入。
