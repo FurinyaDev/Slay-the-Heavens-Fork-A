@@ -22,6 +22,7 @@ assert.equal(hash(bytes),'800fcc9efd889f482259d0e1e9f1501f0e9597ac05552622ede00d
 const currentBytes=readFileSync(new URL('./closeout-source-closure.json',import.meta.url));
 assert.equal(hash(currentBytes),'031c42758ec5b37d1782c5fdb70542358d4b2631a5ee9b486b6bb5faccc988b5','complete closeout source helper closure');
 const files={...extendIntegratedHelperClosure(extendFeedbackHelperClosure(JSON.parse(currentBytes),feedbackCiPatch.helperClosure))};
+const commonReleaseCopies={...files};
 export const releasePcHelperCopies=[
  {path:'tests/helpers/closeout-source-epoch.mjs',before:'163f0f84fcd4f9b4bcb982b250891a9c5156df556699d8a65ec0cf1b354d25f7',after:'05043cc9ebf2b318f8f2291b0b5f4a35976c97a6316531607c8fad06daee324e'},
  {path:'tests/helpers/release-pc-source.mjs',before:null,after:'445a19e6d1e57fd00d8def9a790c149eef277636fd92c8dcc03085947ab5e94f'},
@@ -34,6 +35,14 @@ const splitHelperCopies=[
  {path:'tests/helpers/release-pc-split-source.json.gz',before:null,after:'26580fd476d567246a300c235c41c70dcaeeb826792ce9f79cf0f623072a8399'}
 ];
 for(const row of splitHelperCopies){assert.equal(files[row.path]??null,row.before,'exact split helper-copy predecessor: '+row.path);files[row.path]=row.after;}
+export const releaseSelectionMapHelperCopies=[
+ {path:'tests/helpers/closeout-source-epoch.mjs',before:'163f0f84fcd4f9b4bcb982b250891a9c5156df556699d8a65ec0cf1b354d25f7',after:'9bc2594f88cd780a31a429f5a493568f076d039ab92f55b952631b586ce335c1'},
+ {path:'tests/helpers/release-selection-map-source.mjs',before:null,after:'920fd01fa07dad36ed7e9b70ace199246000d87ad20c258221a2aca4a8e0ee52'},
+ {path:'tests/helpers/release-selection-map-source.json.gz',before:null,after:'0c056c020ad655d5a2a901a6f196350582eaf0709afa736f363a0d68509daf62'}
+];
+for(const row of releaseSelectionMapHelperCopies){assert.equal(commonReleaseCopies[row.path]??null,row.before,'exact standalone Map helper-copy predecessor: '+row.path);if(row.path!=='tests/helpers/closeout-source-epoch.mjs')files[row.path]=row.after;}
+files['tests/helpers/closeout-source-epoch.mjs']='52817deac1c45d82188b2846c2484495aa9b027cacc37998160543c9d90de5fa';
+files['tests/helpers/pc-map-merged-view.json']='840440266b2a19cd93b8268b4fb9fba8a03cbb16c6df9b1bef4cd931f9b23324';
 const inside=(root,path)=>{const r=relative(root,path);return r!==''&&!isAbsolute(r)&&r!=='..'&&!r.startsWith('../')&&!r.startsWith('..\\');};
 export function copyIntegrationSourceClosure(directory,{sourceRoot=process.cwd()}={}){
  const destination=realpathSync.native(directory);

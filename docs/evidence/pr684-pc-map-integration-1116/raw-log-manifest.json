@@ -1,0 +1,82 @@
+[
+  {
+    "file": "684-build-data.log.gz",
+    "rawBytes": 34,
+    "rawSha256": "795fb7fb8bc4b08a404b8264a87d3ad9625090c8d5d92668a11f15d90ed687a5"
+  },
+  {
+    "file": "684-build-ui.log.gz",
+    "rawBytes": 53,
+    "rawSha256": "0d69c17c4ec2190832766c94be6842d45295ab03bb8138faca3b3f62e2711dc2"
+  },
+  {
+    "file": "684-calibration-initial.log.gz",
+    "rawBytes": 2751,
+    "rawSha256": "415b5ecc63fdfac28f98bf7270960ee64b5f616b8b227fafb82e0aa9f31e554f"
+  },
+  {
+    "file": "684-epoch-initial.log.gz",
+    "rawBytes": 77,
+    "rawSha256": "d24db5fb81facd5fd7e2a3597ed0fe0a792a42844eefb8443a67a8da1ebe5126"
+  },
+  {
+    "file": "684-inventory-corrected.log.gz",
+    "rawBytes": 404,
+    "rawSha256": "f8574559e768797f71c4217b32a5915d1716c1b86d6a3c61e97ca9e5fa5f7f8a"
+  },
+  {
+    "file": "684-inventory-final.log.gz",
+    "rawBytes": 1423,
+    "rawSha256": "32f548c485e9e7d9e09f48b6a4ffee1c38a14590121e64672ff008a0610d9a09"
+  },
+  {
+    "file": "684-joint-current.log.gz",
+    "rawBytes": 1051,
+    "rawSha256": "1b26acee6178cf202b806bee54090786fd384fd2f672d5c71bb59f24d39870cf"
+  },
+  {
+    "file": "684-joint-initial.log.gz",
+    "rawBytes": 8757,
+    "rawSha256": "cff620ba36d4a8aaf054c53d53b4278433243e2341211adb64d9e5f63eef236e"
+  },
+  {
+    "file": "684-legacy-initial.log.gz",
+    "rawBytes": 22897,
+    "rawSha256": "77f028bc61007221434103cd5b219f6c2b5c65493e3aa3decb6215a4373760f1"
+  },
+  {
+    "file": "684-product-initial.log.gz",
+    "rawBytes": 6214,
+    "rawSha256": "c3d51813506dfb038c30355d8dfe1cfe9a91c585688ea6dfe2eaaf9bcedc93ec"
+  },
+  {
+    "file": "684-source-corrected.log.gz",
+    "rawBytes": 1921,
+    "rawSha256": "1e701fde61f8a1e8d9d77daa1be08e1e6792a9c2fbc7651ab3af5f497225f128"
+  },
+  {
+    "file": "684-source-initial.log.gz",
+    "rawBytes": 8593,
+    "rawSha256": "2ac588a6bf6055466fceafb6dc32887bfab40f029ed18c6060abca8176063abc"
+  },
+  {
+    "file": "684-sts-corrected.log.gz",
+    "rawBytes": 1751,
+    "rawSha256": "9c602487c5394f0411a15803c98b72286b8768fe0d35a547d29ef5e9ff370209"
+  },
+  {
+    "file": "684-view-selector.log.gz",
+    "rawBytes": 34,
+    "rawSha256": "8225a3bfbaa1d341b2f81afe902c4c961bdb67a605286a16f1d12a60cec9a220"
+  },
+  {
+    "file": "task-preservation.json.gz",
+    "rawBytes": 152399,
+    "rawSha256": "c554fd3d9da04286943d725efa30227a7ea8deb2028b2b490f076717422befb2"
+  },
+  {
+    "file": "684-current-final.log.gz",
+    "rawBytes": 1074,
+    "rawSha256": "0cb88e91865da3434366e41b1227e6bd642b5879ebed22d3744d3a69bc525eea"
+  }
+]

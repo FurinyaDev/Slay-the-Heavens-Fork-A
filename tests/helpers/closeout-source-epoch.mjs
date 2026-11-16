@@ -12,6 +12,7 @@ import {extendMenuRedSourceEpoch,extendMenuPresentationEpoch} from './menu-red-s
 import {extendReleaseSourceEpoch} from './release-source-epoch.mjs';
 import {extendSessionMenuEpoch} from './session-menu-source-epoch.mjs';
 import {extendReleasePcSource,extendSplitReleasePcSource} from './release-pc-source.mjs';
+import {extendReleaseSelectionMapSource} from './release-selection-map-source.mjs';
 const hash=value=>createHash('sha256').update(value).digest('hex');
 const bytes=readFileSync(new URL('./closeout-source-epoch.json.gz',import.meta.url));
 assert.equal(hash(bytes),'36aba7fc07f732a191a750d437eefd27e9b9567221811747abf13c97a9ac237a');
@@ -51,8 +52,45 @@ export const menuRedEpoch=extendMenuRedSourceEpoch(menuRedPriorEpoch);
 export const menuPresentationEpoch=extendMenuPresentationEpoch(menuRedEpoch);
 export const releaseSourceEpoch=extendReleaseSourceEpoch(menuPresentationEpoch);
 export const preReleasePcSourceEpoch=extendSessionMenuEpoch(releaseSourceEpoch);
+export const preReleaseSelectionMapSourceEpoch=preReleasePcSourceEpoch;
 export const preSplitSourceEpoch=extendReleasePcSource(preReleasePcSourceEpoch);
-export const sourceEpoch=extendSplitReleasePcSource(preSplitSourceEpoch);
+export const releasePcSourceEpoch=extendSplitReleasePcSource(preSplitSourceEpoch);
+export const releaseSelectionMapSourceEpoch=extendReleaseSelectionMapSource(preReleaseSelectionMapSourceEpoch);
+const joinedInputBytes=readFileSync(new URL('./pc-map-merged-view.json',import.meta.url),'utf8').replaceAll('\r\n','\n');
+assert.equal(hash(joinedInputBytes),'840440266b2a19cd93b8268b4fb9fba8a03cbb16c6df9b1bef4cd931f9b23324','exact three-way PC/map view binding');
+const joinedInput=JSON.parse(joinedInputBytes);
+assert.deepEqual(joinedInput.heads,['5fe72de406f42ebbf406ac386d4c03a3a903373b','33d71575c5f186a1b54f7bf3e4f1826c145aa1d9']);
+assert.equal(joinedInput.path,'src/lua/abyss_game_ui_view.lua');
+assert.equal(joinedInput.currentTreeCommitted,false);
+// Join disjoint approved owners against their exact common predecessor. Both
+// standalone corpora and every original target retain their original identity.
+function joinReleaseSources(){
+const base=preReleasePcSourceEpoch.proof;
+const navigation=releasePcSourceEpoch.proof,selection=releaseSelectionMapSourceEpoch.proof;
+const current={...base.current},targets={...base.targets};
+for(const side of [navigation,selection]){
+ for(const [path,row]of Object.entries(side.current))if(row?.sha256!==base.current[path]?.sha256){
+  if(current[path]?.sha256!==base.current[path]?.sha256){
+   assert.equal(path,joinedInput.path,'only the declared three-way owner overlaps');
+   assert.deepEqual(joinedInput.before,[current[path],row],'complete exact two standalone input bindings');
+   current[path]=joinedInput.current;
+  }else current[path]=row;
+ }
+ for(const [name,target]of Object.entries(side.targets)){
+  if(Object.hasOwn(targets,name))assert.deepEqual(targets[name],target,'unchanged common Release target: '+name);
+  else targets[name]=target;
+ }
+}
+targets.releasePcReviewed={commit:navigation.currentCommit,files:navigation.current};
+targets.releaseSelectionMapReviewed={commit:selection.currentCommit,files:selection.current};
+const owners=Object.keys(current).sort().filter(path=>Object.values(targets).some(target=>target.files[path]?.sha256!==current[path]?.sha256));
+return createSourceEpochProjector(freeze({...base,current,targets,owners,
+ currentTreeCommitted:false,currentCommit:'5fe72de406f42ebbf406ac386d4c03a3a903373b',
+ currentCommitRole:'integration worktree capture; standalone committed product producers are retained separately',
+ releasePcProducers:navigation.releasePcProducers,
+ releaseSelectionMapProducers:selection.releaseSelectionMapProducers}),{allowConfigLayout:true,reuseFrozenInput:true});
+}
+export const sourceEpoch=joinReleaseSources();
 const proof=sourceEpoch.proof;
 // Snapshot consumers must first authenticate every live current owner. This is
 // per invocation; neither live reads nor authorization are cached.

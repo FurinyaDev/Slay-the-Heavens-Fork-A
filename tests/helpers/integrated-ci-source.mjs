@@ -1,3 +1,4 @@
+import {pcDomainSource,pcDomainRead,pcValidationRead,pcMapPriorInventory,pcMapPacket,assertPcMapCurrent} from './pc-map-integration.mjs';
 // Explicit immutable source views for the reviewed integration inputs.
 // Production projectors never import this CI-only archive.
 import assert from 'node:assert/strict';
@@ -17,11 +18,11 @@ for(const [path,row]of Object.entries(integratedCiProof.files))for(const binding
  assert.equal(binding.source,norm(binding.source));assert.equal(hash(binding.source),binding.sha256,path+' complete source');
  assert.equal(createHash('sha1').update(`blob ${Buffer.byteLength(binding.source)}\0`).update(binding.source).digest('hex'),binding.gitBlob);
 }
-export function integratedSource(path,source,target){
+export function integratedSource(path,source,target,read=readFileSync){
  assert(Object.hasOwn(integratedCiProof.sources,target),'known integration input');
  if(path.startsWith('src/')||path==='config/architecture.json')return source;
  const row=Object.hasOwn(integratedCiProof.files,path)?integratedCiProof.files[path]:null;
- source=releaseMergeSource(path,source,'slicePrior');
+ source=pcDomainSource(path,source,'slicePrior',read);
  source=releasePcCiSource(path,source,row?.current);
  source=releaseBootstrapCiSource(path,source,row?.current);
  if(!row?.views[target]||typeof source!=='string'||source.includes('\r\r\n')||hash(norm(source))!==row.current.sha256)return source;
@@ -34,17 +35,18 @@ export function integratedRead(target,{read=readFileSync}={}){return(path,encodi
  if(Buffer.isBuffer(raw)&&binary?.views[target]&&hash(raw)===binary.current){
   const saved=binary.views[target],bytes=read(saved.path);assert.equal(hash(bytes),saved.sha256,'complete immutable integration binary predecessor');return bytes;
  }
- const text=typeof raw==='string'?raw:raw.toString('utf8'),prior=integratedSource(path,text,target);
+ const text=typeof raw==='string'?raw:raw.toString('utf8'),prior=integratedSource(path,text,target,read);
  return typeof raw==='string'?prior:prior===text?raw:Buffer.from(prior);
 };}
 export function assertIntegratedCurrent(read=readFileSync){
- assertReleaseMergeCurrent(read);
- assertReleaseBootstrapCiCurrent(releaseMergeRead('bootstrapView',read));
- assertReleasePcCiCurrent(releaseMergeRead('slicePrior',read));
- for(const [path,row]of Object.entries(integratedCiProof.files))assert.equal(hash(norm(releasePcCiCheckedSource(path,releaseMergeRead('slicePrior',read)(path,'utf8'),row.current))),row.current.sha256,'fresh complete integration source: '+path);
- for(const [path,row]of Object.entries(integratedCiProof.closure))assert.equal(hash(path.endsWith('.gz')?read(path):norm(releasePcCiSource(path,releaseMergeRead('slicePrior',read)(path,'utf8'),integratedCiProof.files[path]?.current))),row.after,'fresh integration copy owner: '+path);
+ assertPcMapCurrent(read);
+ assertReleaseMergeCurrent(pcValidationRead(read));
+ assertReleaseBootstrapCiCurrent(pcDomainRead('bootstrapView',read));
+ assertReleasePcCiCurrent(pcDomainRead('slicePrior',read));
+ for(const [path,row]of Object.entries(integratedCiProof.files))assert.equal(hash(norm(releasePcCiCheckedSource(path,pcDomainRead('slicePrior',read)(path,'utf8'),row.current))),row.current.sha256,'fresh complete integration source: '+path);
+ for(const [path,row]of Object.entries(integratedCiProof.closure))assert.equal(hash(path.endsWith('.gz')?read(path):norm(releasePcCiSource(path,pcDomainRead('slicePrior',read)(path,'utf8'),integratedCiProof.files[path]?.current))),row.after,'fresh integration copy owner: '+path);
 }
-export function integratedCurrentInventory(kind='js'){assert(['js','lua'].includes(kind));return [...releasePcCiPacket.currentInventory[kind]];}
+export function integratedCurrentInventory(kind='js'){assert(['js','lua'].includes(kind));return [...pcMapPacket.inventories.joint[kind]];}
 export function extendIntegratedHelperClosure(original){
  const current={...original},patch=integratedCiProof.closure;
  assert.deepEqual(Object.keys(patch).sort(),['tests/helpers/closeout-source-epoch.mjs','tests/helpers/combined-epoch/source-epoch-runtime.mjs','tests/helpers/menu-presentation-source.json.gz','tests/helpers/menu-red-production-source.json.gz','tests/helpers/menu-red-source-epoch.mjs','tests/helpers/release-source-epoch.json.gz','tests/helpers/release-source-epoch.mjs','tests/helpers/session-menu-source-epoch.json.gz','tests/helpers/session-menu-source-epoch.mjs']);
@@ -56,7 +58,8 @@ export function integratedPriorInventory(paths,target,kind='js',read=readFileSyn
  const current=kind==='js'?integratedCiProof.inventory:integratedCiProof.luaInventory;
  const prior=integratedCiProof.inventories[target]?.[kind];
  assert(prior,'known integration inventory');
- paths=releasePcPriorInventory(paths,kind,releaseMergeRead('slicePrior',read));
+ paths=pcMapPriorInventory(paths,'pc',kind);
+ paths=releasePcPriorInventory(paths,kind,pcDomainRead('slicePrior',read));
  // New standalone reviewed views consume raw discovery. Older chained views
  // retain their existing idempotent prior-inventory contract.
  if(target==='selection'||target==='release')assert.deepEqual([...paths].sort(),current,'complete reviewed raw '+kind+' inventory');
@@ -70,7 +73,7 @@ export function integratedPriorInventory(paths,target,kind='js',read=readFileSyn
  assert.deepEqual([...paths].sort(),current,kind==='lua'?'complete integration Lua discovery inventory':'complete integration js inventory');
  for(const path of added){
   const row=integratedCiProof.files[path];assert(row,'complete added inventory source: '+path);
-  assert.equal(hash(norm(releasePcCiSource(path,releaseMergeRead('slicePrior',read)(path,'utf8'),row.current))),row.current.sha256,'fresh added inventory source: '+path);
+  assert.equal(hash(norm(releasePcCiSource(path,pcDomainRead('slicePrior',read)(path,'utf8'),row.current))),row.current.sha256,'fresh added inventory source: '+path);
  }
  return [...prior];
 }

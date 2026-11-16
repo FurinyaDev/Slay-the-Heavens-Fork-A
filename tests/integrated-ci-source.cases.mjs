@@ -1,13 +1,15 @@
+import {pcMapPriorInventory} from './helpers/pc-map-integration.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync as physicalReadFileSync,readdirSync} from 'node:fs';
-import {releaseMergeRead,assertReleaseMergeCurrent} from './helpers/release-bootstrap-merge-ci-source.mjs';
+import {releaseMergeRead,assertReleaseMergeCurrent} from './helpers/pc-map-legacy-domains.mjs';
 const rawReadFileSync=releaseMergeRead('slicePrior',physicalReadFileSync);
 const bootstrapReadFileSync=releaseMergeRead('bootstrapView',physicalReadFileSync);
 import {releaseBootstrapCiRead,releaseBootstrapCiPacket,releaseBootstrapCiSource,releaseBootstrapWorkflowBefore,assertReleaseBootstrapCiCurrent,assertReleaseBootstrapRawInventory} from './helpers/release-bootstrap-ci-source.mjs';
 import {releasePcCiRead,releasePcPriorInventory} from './helpers/release-pc-ci-source.mjs';
 import {createHash} from 'node:crypto';
-import {discoverJs} from '../scripts/ci-shards.mjs';
+import {discoverJs as actualJointDiscoverJs} from '../scripts/ci-shards.mjs';
+const discoverJs=()=>pcMapPriorInventory(actualJointDiscoverJs(),'pc');
 import {integratedCiProof as proof,integratedSource,assertIntegratedCurrent,renderIntegratedCiBinding,extendIntegratedHelperClosure} from './helpers/integrated-ci-source.mjs';
 const raw=p=>readFileSync(p,'utf8').replaceAll('\r\n','\n'),hash=s=>createHash('sha256').update(s).digest('hex');
 // Original assertions keep their complete authenticated release predecessor.

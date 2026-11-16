@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - Furinya
 created_date: '2026-11-10 11:46'
-updated_date: '2026-11-15 21:00'
+updated_date: '2026-11-16 11:15'
 labels:
   - 待验
   - delivery-verify
@@ -13,6 +13,8 @@ milestone: m-8
 dependencies: []
 references:
   - docs/backlog-details/PC-QA-20261115.md
+  - docs/evidence/release-selection-map-admission-1116/README.md
+  - docs/evidence/release-selection-map-release1cc-1116/README.md
 parent_task_id: TASK-103
 priority: medium
 ordinal: 169000
@@ -74,4 +76,8 @@ Full43473829313失败后已用原入口暂停授权并续修。真实冷列表�
 2026-11-15 Release PC台账：PC08/PC14/PC19/PC24/PC29/PC30由本任务主责；逐字依据、修复提交/PR和未验缺口见 docs/backlog-details/PC-QA-20261115.md。仅文本核对和源码/离线回归不能勾官方或设备AC；本轮不新增重复任务、不改变原已验AC。
 
 2026-11-16 本轮追加：共同前置#692已合，实际Release新base为1cc5479b713edab6fd26db4e20f8eb22b7401cb2；PR684代码独审HEAD ff2d28d0aeaa09d364db948d0b57f95a89406d5c限定通过，Source/CI9/9、raw硬guard4/4、copy/corpus3/3，原独审报告和同reviewer支持bundle见docs/evidence/release-closeout-bootstrap-1116/independent-review.json及manifest。本轮仅归档和CLI附记；Source约53.6秒、每正投影145读约33MB是重复fresh成本限制，不是性能PASS。当前Hosted Full、同候选官方导入/ready/PC手机/容量仍未验；保留旧notes、所有已勾与未勾AC（含#676），status保持In Progress，不授合并或发布许可。
+
+PC08 Release36最小产品70664a69/证据e7fa已选择性组合至74a598；共享最终选角四态旗帜，保留旧命令、触点和焦点许可。11定向与独立对抗probe通过，PC04+PC08组合5/5通过；565cb735来源接续有独立复审，21项代码/合同加1项可执行证据逐blob核对。PC08像素/正式ready/PC手机与容量未验；PC19仅已有bcca切片的controlled golden_wing option3 leave held Continue已验证可复用，golden_idol双步无heldfooter，不代表私图05或所有事件已修。仍In Progress，不勾新AC。
+
+#692已实际合入Release1cc，PC04/08旧9b703分支保留history合流；代码eafcaeee/绑定80e1d3ec新base独立增审通过。352生产Git等价、26CI before/after+10bootstrap/96档案保全，产品8路径/旧production producer原样。原合流6pass3CI fail完整保留，来源10/10与两侧raw2/2通过，当前23代码/合同输入及原1可执行证据逐blob追踪。官方像素、PC04批准HUD backing位置、新ready/PC手机/容量及当前Hosted Full仍未验，不因#692合入勾AC。
 <!-- SECTION:NOTES:END -->

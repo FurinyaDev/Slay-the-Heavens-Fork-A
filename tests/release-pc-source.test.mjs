@@ -1,12 +1,20 @@
+import {pcMapProductionRead,pcDomainRead,pcMapPriorInventory} from './helpers/pc-map-integration.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {readFileSync as physicalReadFileSync,readdirSync} from 'node:fs';
-import {releaseMergeRead,releaseMergeSource,releaseMergeCiPacket,assertReleaseMergeCurrent,assertReleaseMergeGitProvenance,releaseMergeArchivedGitRead} from './helpers/release-bootstrap-merge-ci-source.mjs';
+import {readFileSync as actualReadFileSync,readdirSync as actualReaddirSync} from 'node:fs';
+import {releaseMergeRead as originalMergeRead,releaseMergeSource as originalMergeSource,releaseMergeCiPacket,assertReleaseMergeCurrent as originalMergeCurrent,assertReleaseMergeGitProvenance,releaseMergeArchivedGitRead} from './helpers/release-bootstrap-merge-ci-source.mjs';
+const physicalReadFileSync=pcMapProductionRead('pc',actualReadFileSync);
+const releaseMergeRead=(target,read=physicalReadFileSync)=>originalMergeRead(target,read);
+const releaseMergeSource=(path,source,target,read=physicalReadFileSync)=>originalMergeSource(path,source,target,read);
+const assertReleaseMergeCurrent=(read=physicalReadFileSync)=>originalMergeCurrent(read);
 const readFileSync=releaseMergeRead('slicePrior',physicalReadFileSync);
+const ciReadFileSync=pcDomainRead('slicePrior',actualReadFileSync);
+const readdirSync=p=>p==='tests/lua'?pcMapPriorInventory(actualReaddirSync(p).filter(n=>n.endsWith('.lua')).map(n=>'tests/lua/'+n),'pc','lua').map(p=>p.slice(10)):actualReaddirSync(p);
 import {createHash} from 'node:crypto';
 import {gunzipSync} from 'node:zlib';
-import {discoverJs} from '../scripts/ci-shards.mjs';
-import {sourceEpoch,preReleasePcSourceEpoch,preSplitSourceEpoch} from './helpers/closeout-source-epoch.mjs';
+import {discoverJs as actualDiscoverJs} from '../scripts/ci-shards.mjs';
+const discoverJs=()=>pcMapPriorInventory(actualDiscoverJs(),'pc');
+import {releasePcSourceEpoch as sourceEpoch,preReleasePcSourceEpoch,preSplitSourceEpoch} from './helpers/closeout-source-epoch.mjs';
 import {releasePcSourcePacket,releasePcSplitSourcePacket,extendReleasePcSource} from './helpers/release-pc-source.mjs';
 import {releasePcCiPacket,releasePcCiSource,releasePcPriorInventory,assertReleasePcRawInventory,assertReleasePcCiCurrent,releasePcSplitPriorSource} from './helpers/release-pc-ci-source.mjs';
 const hash=b=>createHash('sha256').update(b).digest('hex'),norm=s=>s.replaceAll('\r\n','\n');
@@ -29,7 +37,7 @@ test('release PC production preserves every complete prior target and freshly au
 });
 
 test('release PC CI validates complete live bindings while unknown or changed bytes stay visible',()=>{
- assertReleasePcCiCurrent(readFileSync);
+ assertReleasePcCiCurrent(ciReadFileSync);
  for(const [path,row]of Object.entries(releasePcCiPacket.files)){
    const source=norm(releasePcSplitPriorSource(path,readFileSync(path,'utf8')));assert.equal(hash(source),row.current.sha256,path);
   const production=path.startsWith('src/')||path==='config/architecture.json';
@@ -37,7 +45,7 @@ test('release PC CI validates complete live bindings while unknown or changed by
   for(const foreign of [source+'\n',source.slice(1),null,{},17])assert.equal(releasePcCiSource(path,foreign),foreign,path);
   for(const foreignPath of ['__proto__','constructor','foreign/'+path])assert.equal(releasePcCiSource(foreignPath,source),source);
   assert.throws(()=>assertReleasePcCiCurrent((p,encoding)=>{
-   const raw=readFileSync(p,encoding);return p===path?typeof raw==='string'?raw+'\n':Buffer.concat([raw,Buffer.from('\n')]):raw;
+   const raw=ciReadFileSync(p,encoding);return p===path?typeof raw==='string'?raw+'\n':Buffer.concat([raw,Buffer.from('\n')]):raw;
   }),/fresh complete integration source/);
  }
  for(const path of Object.keys(releasePcSourcePacket.current))assert.equal(releasePcCiSource(path,sourceEpoch.proof.current[path].source),sourceEpoch.proof.current[path].source,'CI does not intercept production authorization');
@@ -152,7 +160,7 @@ test('split continuation retains the exact 119-owner predecessor and every prior
   const source=physicalReadFileSync(path,'utf8');
   assert.equal(releasePcCiSource(path,source),source,'general CI routing leaves production raw');
   assert.equal(releasePcSplitPriorSource(path,source),preSplitSourceEpoch.proof.current[path].source);
-  assert.throws(()=>assertReleasePcCiCurrent((p,e)=>p===path?preSplitSourceEpoch.proof.current[path].source:physicalReadFileSync(p,e)),/fresh complete integration source/,'old 119-owner bytes cannot pass as current');
+  assert.throws(()=>assertReleasePcCiCurrent((p,e)=>p===path?preSplitSourceEpoch.proof.current[path].source:ciReadFileSync(p,e)),/fresh complete integration source/,'old 119-owner bytes cannot pass as current');
   for(const value of [null,source+'\n',new Error('missing split owner')]){
    const read=(p,e)=>{if(p!==path)return physicalReadFileSync(p,e);if(value instanceof Error)throw value;return value;};
    assert.throws(()=>sourceEpoch.preCombinedSource('config/architecture.json',physicalReadFileSync('config/architecture.json','utf8'),{target:'develop',readSource:p=>read(p,'utf8')}),/linked owner/);
