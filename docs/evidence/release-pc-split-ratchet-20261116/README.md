@@ -20,6 +20,7 @@
 | 旧实现特征锁定 | 在改生产前，扩展后酸夹具及同一夹具 `SPLIT_FAMILY=spike` 各17/17；等价整理不制造玩法 RED |
 | 新产品 `1cc → 53e` ratchet GREEN | 11 changed Lua；0新违规；combat2295行、splitEnemy CC13；setup203行、新 helper CC5 |
 | 原酸/棘刺/布局回归 | 酸17组、共享棘刺17组、独立棘刺18组、Act1 Boss21组、酸/棘刺UI、原生敌人画像/召唤：7次入口调用全退出0；原各夹具预算保持 |
+| 原独立分裂布局入口 | 补齐 `slime-split-positions.test.mjs`：1/1、0 skip（4,334ms），实际执行 `slime_split_positions.lua` 的酸/棘刺 source/native/nonoverlap 断言；不是仅画像回归。原始输出与执行脚本追加在 `layout-check.*.gz`，绑定已提交aa387检查点；源码/来源字节未再变化 |
 | 完整状态配对 | 精确6c原件与53e：酸/棘刺/Boss × 缺省/零/非零父坐标 × legacy/源AI和HP流，共18场景；按家族各6场景逐字节相等，含完整catalog、状态、HP、事件帧和RNG；19,929,042字节相等 |
 | 合同敏感性 | 去掉±134、抹掉y、取消显式位置深拷贝三个单变量负控均被既有扩展夹具拒绝；真实源码未被负控覆盖 |
 | 定向静态 | 两个实际Lua文件0诊断；初次新增形参 `index` 的 W431 已通过 `childIndex` 最小修正消除，未改基线 |
