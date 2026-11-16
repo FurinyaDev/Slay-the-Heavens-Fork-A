@@ -1,5 +1,6 @@
 // One exact current production closure; original slices and archives stay immutable.
 import assert from 'node:assert/strict';
+import {extendPotionPointerUnion} from './potion-pointer-source.mjs';
 import {readFileSync} from 'node:fs';
 import {createHash} from 'node:crypto';
 import {gunzipSync} from 'node:zlib';
@@ -16,6 +17,9 @@ import {extendPotionRegressionSource} from './potion-regression-source.mjs';
 import {extendPotionClickSource} from './potion-click-source.mjs';
 import {extendReleaseSelectionMapSource} from './release-selection-map-source.mjs';
 import {extendPotionPost697Source} from './potion-post697-source.mjs';
+import {extendBattlePointerSource} from './battle-pointer-source.mjs';
+import {extendBattlePointerSparseSource} from './battle-pointer-sparse-source.mjs';
+import {extendBattlePointerInspectionSource} from './battle-pointer-inspection-source.mjs';
 const hash=value=>createHash('sha256').update(value).digest('hex');
 const bytes=readFileSync(new URL('./closeout-source-epoch.json.gz',import.meta.url));
 assert.equal(hash(bytes),'36aba7fc07f732a191a750d437eefd27e9b9567221811747abf13c97a9ac237a');
@@ -60,7 +64,12 @@ export const prePotionClickSourceEpoch=extendPotionRegressionSource(prePotionReg
 export const prePotionPost697SourceEpoch=extendPotionClickSource(prePotionClickSourceEpoch);
 export const preReleaseSelectionMapSourceEpoch=preMobilePotionSourceEpoch;
 export const releaseSelectionMapLegacyEpoch=extendReleaseSelectionMapSource(preReleaseSelectionMapSourceEpoch);
-export const sourceEpoch=extendPotionPost697Source(prePotionPost697SourceEpoch,releaseSelectionMapLegacyEpoch);
+export const potionBeforePointerEpoch=extendPotionPost697Source(prePotionPost697SourceEpoch,releaseSelectionMapLegacyEpoch);
+export const preBattlePointerSourceEpoch=extendReleaseSelectionMapSource(preReleaseSelectionMapSourceEpoch);
+export const preBattlePointerSparseSourceEpoch=extendBattlePointerSource(preBattlePointerSourceEpoch);
+export const preBattlePointerInspectionSourceEpoch=extendBattlePointerSparseSource(preBattlePointerSparseSourceEpoch);
+export const pointerBeforePotionEpoch=extendBattlePointerInspectionSource(preBattlePointerInspectionSourceEpoch);
+export const sourceEpoch=extendPotionPointerUnion(potionBeforePointerEpoch,pointerBeforePotionEpoch,releaseSelectionMapLegacyEpoch);
 const proof=sourceEpoch.proof;
 // Snapshot consumers must first authenticate every live current owner. This is
 // per invocation; neither live reads nor authorization are cached.
