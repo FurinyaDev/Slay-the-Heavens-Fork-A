@@ -66,6 +66,37 @@ test('action-time remaining HP becomes both children HP without attacking',funct
     eq(count(s,'slimed'),0);eq(s.phase,'player');eq(s.turn,2)
 end)
 
+test('split positions preserve absent zero and nonzero parent origins without aliasing',function()
+    for _,origin in ipairs({false,{x=0,y=0},{x=281,y=-37}}) do
+        local s=battle();local parent=lower(s,23)
+        parent.sourcePosition=origin or nil
+        assert(C.endTurn(s))
+        local left,right=s.enemies[1],s.enemies[3]
+        local x,y=origin and origin.x or 0,origin and origin.y or 0
+        eq(left.sourcePosition.x,x-134);eq(right.sourcePosition.x,x+134)
+        eq(left.sourcePosition.y,y);eq(right.sourcePosition.y,y)
+        assert(left.sourcePosition~=right.sourcePosition and left.sourcePosition~=origin and right.sourcePosition~=origin)
+        eq(parent.sourcePosition,origin or nil)
+        left.sourcePosition.y=999;eq(right.sourcePosition.y,y)
+        if origin then eq(origin.x,x);eq(origin.y,y) end
+    end
+end)
+
+test('explicit split positions override origin and are independently deep copied',function()
+    local s=battle();local parent=lower(s,23)
+    local shared={x=-385,y=20,tag={value=7}}
+    local positions={shared,shared};parent.ai.splitPositions=positions
+    parent.sourcePosition={x=281,y=-37}
+    assert(C.endTurn(s))
+    local left,right=s.enemies[1].sourcePosition,s.enemies[3].sourcePosition
+    eq(left.x,-385);eq(right.x,-385);eq(left.y,20);eq(right.y,20)
+    assert(left~=right and left~=shared and right~=shared)
+    assert(left.tag~=right.tag and left.tag~=shared.tag and right.tag~=shared.tag)
+    left.x=999;left.tag.value=99
+    eq(right.x,-385);eq(right.tag.value,7);eq(shared.x,-385);eq(shared.tag.value,7)
+    eq(parent.ai.splitPositions,positions);eq(parent.sourcePosition.x,281);eq(parent.sourcePosition.y,-37)
+end)
+
 test('only child init requests for Acid; Spike retains its distinct parent roll',function()
     local s=battle();local parent=lower(s,30)
     observe(function(trace)
