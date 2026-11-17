@@ -1,4 +1,5 @@
 import test from 'node:test';
+import {integrationPriorInventory} from './helpers/release-card-contact-integration.mjs';
 import assert from 'node:assert/strict';
 import {readFileSync as rawReadFileSync,readdirSync} from 'node:fs';
 import {releaseBootstrapCiRead,releaseBootstrapCiPacket,releaseBootstrapCiSource,releaseBootstrapWorkflowBefore,assertReleaseBootstrapCiCurrent,assertReleaseBootstrapRawInventory} from './helpers/release-bootstrap-ci-source.mjs';
@@ -12,7 +13,7 @@ const pickerBeforeRead=releaseSelectionMapCiRead(battlePointerCiRead(rawReadFile
 const readFileSync=releaseBootstrapCiRead(pickerBeforeRead);
 
 test('integration validates complete raw sources and leaves every foreign byte and production owner visible',()=>{
- assertIntegratedCurrent();assert.deepEqual(releaseSelectionMapPriorInventory(discoverJs(),'js',rawReadFileSync),proof.inventory);assert.equal(new Set(proof.inventory).size,proof.inventory.length);
+ assertIntegratedCurrent();assert.deepEqual(releaseSelectionMapPriorInventory(integrationPriorInventory(discoverJs(),'selection'),'js',rawReadFileSync),proof.inventory);assert.equal(new Set(proof.inventory).size,proof.inventory.length);
  for(const [path,row]of Object.entries(proof.files))for(const target of Object.keys(proof.sources)){
   const source=raw(path),production=path.startsWith('src/')||path==='config/architecture.json';
   const expected=production?source:row.views[target]?.source??source;

@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {createHash} from 'node:crypto';
 import {gunzipSync} from 'node:zlib';
-import {sourceEpoch} from './closeout-source-epoch.mjs';
+import {pointerSourceEpoch as sourceEpoch} from './closeout-source-epoch.mjs';
+import {assertPointerB9Current,pointerB9Read} from './pointer-b9-integration.mjs';
 import {assertDismissCiCurrent,dismissPriorSource,dismissBeforeRead} from './battle-pointer-dismiss-ci-source.mjs';
 const hash=b=>createHash('sha256').update(b).digest('hex'),norm=s=>s.replaceAll('\r\n','\n');
 const bytes=readFileSync(new URL('./battle-pointer-inspection-ci-source.json.gz',import.meta.url));
@@ -21,8 +22,10 @@ for(const [path,row]of Object.entries(packet.files))for(const binding of [row.be
 const freeze=v=>{if(v&&typeof v==='object'&&!Object.isFrozen(v)){Object.values(v).forEach(freeze);Object.freeze(v);}return v;};
 export const inspectionCiPacket=freeze(packet);
 export function assertInspectionCiCurrent(read=readFileSync){
+ assertPointerB9Current(read);
+ const parent=pointerB9Read('pointer',read,{production:true,authenticate:false});
  for(const path of sourceEpoch.proof.owners){
-  const source=read(path,'utf8');assert.equal(typeof source,'string','fresh linked owner: '+path);
+  const source=parent(path,'utf8');assert.equal(typeof source,'string','fresh linked owner: '+path);
   assert.equal(hash(norm(source)),sourceEpoch.proof.current[path].sha256,'fresh linked owner: '+path);
  }
  assertDismissCiCurrent(read);

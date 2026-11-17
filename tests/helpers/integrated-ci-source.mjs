@@ -1,6 +1,8 @@
 // Explicit immutable source views for the reviewed integration inputs.
 // Production projectors never import this CI-only archive.
 import assert from 'node:assert/strict';
+import {integrationPriorInventory,integrationInventory,assertReleaseIntegrationCurrent} from './release-card-contact-integration.mjs';
+import {assertPointerB9Current,pointerB9Read} from './pointer-b9-integration.mjs';
 import {inspectionCiSource,inspectionBeforeRead,assertInspectionCiCurrent} from './battle-pointer-inspection-ci-source.mjs';
 import {readFileSync} from 'node:fs';
 import {createHash} from 'node:crypto';
@@ -42,6 +44,7 @@ export function integratedRead(target,{read=readFileSync}={}){return(path,encodi
  return typeof raw==='string'?prior:prior===text?raw:Buffer.from(prior);
 };}
 export function assertIntegratedCurrent(read=readFileSync){
+ assertReleaseIntegrationCurrent(read);
  assertBattlePointerSparseCiCurrent(read);
  // Only this synchronous validation scope has just authenticated the entire
  // raw current closure. Public and reused readers retain fresh authorization.
@@ -53,7 +56,7 @@ export function assertIntegratedCurrent(read=readFileSync){
  for(const [path,row]of Object.entries(integratedCiProof.files))assert.equal(hash(norm(releaseBootstrapCiCheckedSource(path,releaseSelectionMapCiCheckedSource(path,read(path,'utf8')),row.current))),row.current.sha256,'fresh complete integration source: '+path);
  for(const [path,row]of Object.entries(integratedCiProof.closure))assert.equal(hash(path.endsWith('.gz')?read(path):norm(releaseBootstrapCiSource(path,releaseSelectionMapCiSource(path,battlePointerCiSource(path,read(path,'utf8'))),integratedCiProof.files[path]?.current))),row.after,'fresh integration copy owner: '+path);
 }
-export function integratedCurrentInventory(kind='js'){assert(['js','lua'].includes(kind));return [...releaseSelectionMapCiPacket.currentInventory[kind]];}
+export function integratedCurrentInventory(kind='js'){assert(['js','lua'].includes(kind));return integrationInventory(kind);}
 export function extendIntegratedHelperClosure(original){
  const current={...original},patch=integratedCiProof.closure;
  assert.deepEqual(Object.keys(patch).sort(),['tests/helpers/closeout-source-epoch.mjs','tests/helpers/combined-epoch/source-epoch-runtime.mjs','tests/helpers/menu-presentation-source.json.gz','tests/helpers/menu-red-production-source.json.gz','tests/helpers/menu-red-source-epoch.mjs','tests/helpers/release-source-epoch.json.gz','tests/helpers/release-source-epoch.mjs','tests/helpers/session-menu-source-epoch.json.gz','tests/helpers/session-menu-source-epoch.mjs']);
@@ -62,6 +65,8 @@ export function extendIntegratedHelperClosure(original){
 }
 // Exact complete inventories for historical receipts; raw Full discovery remains live.
 export function integratedPriorInventory(paths,target,kind='js',read=readFileSync){
+ assertPointerB9Current(read);
+ paths=integrationPriorInventory(paths,'selection',kind,pointerB9Read('cardContact',read,{authenticate:false}));
  read=inspectionBeforeRead(read);
  const current=kind==='js'?integratedCiProof.inventory:integratedCiProof.luaInventory;
  const prior=integratedCiProof.inventories[target]?.[kind];

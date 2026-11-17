@@ -100,6 +100,14 @@ export const battlePointerDismissHelperCopies=[
   }
 ];
 for(const row of battlePointerDismissHelperCopies){assert.equal(files[row.path]??null,row.before,'exact dismiss helper-copy predecessor: '+row.path);files[row.path]=row.after;}
+export const releasePc22BasicFeedbackHelperCopies=[
+ {path:'tests/helpers/closeout-source-epoch.mjs',before:'163f0f84fcd4f9b4bcb982b250891a9c5156df556699d8a65ec0cf1b354d25f7',after:'0c7ff98c42c47a1a48ad83537d1d7c37a6cc23aed55ada9c763122d4ea102d07'},
+ {path:'tests/helpers/release-pc22-basic-feedback-source.mjs',before:null,after:'395e3810c67852768340eb868ee7397bb9ed0b232ff112efa93fb4b520e80b96'},
+ {path:'tests/helpers/release-pc22-basic-feedback-source.json.gz',before:null,after:'1cb0fddfea365de7be5331dc169bd438f2cde36b372c4c15bf9c8ac8a2eed157'}
+];
+for(const row of releasePc22BasicFeedbackHelperCopies)if(row.path!=='tests/helpers/closeout-source-epoch.mjs'){assert.equal(files[row.path]??null,row.before,'exact B9 production helper predecessor: '+row.path);files[row.path]=row.after;}
+assert.equal(files['tests/helpers/closeout-source-epoch.mjs'],'2cc9da456afc3a7c62ed1e3b35df03d759536f84bdea5aacca8406612b24eda4','exact pointer helper before B9 join');
+files['tests/helpers/closeout-source-epoch.mjs']='d79c667b3a0b2cebf6d248805cd3add5446ce95c62da969a2bdbd21e707e099b';
 const inside=(root,path)=>{const r=relative(root,path);return r!==''&&!isAbsolute(r)&&r!=='..'&&!r.startsWith('../')&&!r.startsWith('..\\');};
 export function copyIntegrationSourceClosure(directory,{sourceRoot=process.cwd()}={}){
  const destination=realpathSync.native(directory);

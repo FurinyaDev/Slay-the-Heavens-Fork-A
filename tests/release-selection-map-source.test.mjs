@@ -1,19 +1,23 @@
 import test from 'node:test';
+import {pointerB9Read} from './helpers/pointer-b9-integration.mjs';
+import {integrationPriorInventory} from './helpers/release-card-contact-integration.mjs';
 import {battlePointerDismissSourcePacket,extendBattlePointerDismissSource} from './helpers/battle-pointer-dismiss-source.mjs';
 import {dismissCiPacket,dismissBeforeRead,assertDismissCiCurrent} from './helpers/battle-pointer-dismiss-ci-source.mjs';
 import {inspectionBeforeRead,inspectionCiSource,assertInspectionCiCurrent,inspectionCiPacket} from './helpers/battle-pointer-inspection-ci-source.mjs';
 import {battlePointerInspectionSourcePacket,extendBattlePointerInspectionSource} from './helpers/battle-pointer-inspection-source.mjs';
 import {integratedSource,integratedRead,integratedCiProof} from './helpers/integrated-ci-source.mjs';
 import assert from 'node:assert/strict';
-import {readFileSync as actualReadFileSync,readdirSync,mkdtempSync,mkdirSync,rmSync,existsSync,writeFileSync,unlinkSync} from 'node:fs';
+import {readFileSync as actualReadFileSync,readdirSync as actualReaddirSync,mkdtempSync,mkdirSync,rmSync,existsSync,writeFileSync,unlinkSync} from 'node:fs';
 import {join} from 'node:path';
 import {tmpdir} from 'node:os';
 import {pathToFileURL} from 'node:url';
 import {copyIntegrationSourceClosure} from './helpers/copy-integration-source-closure.mjs';
 import {createHash} from 'node:crypto';
 import {gunzipSync} from 'node:zlib';
-import {discoverJs} from '../scripts/ci-shards.mjs';
-import {sourceEpoch as dismissSourceEpoch,preBattlePointerDismissSourceEpoch as inspectionSourceEpoch,preBattlePointerInspectionSourceEpoch as finalSourceEpoch,preBattlePointerSparseSourceEpoch as currentSourceEpoch,preBattlePointerSourceEpoch as sourceEpoch,preReleaseSelectionMapSourceEpoch} from './helpers/closeout-source-epoch.mjs';
+import {discoverJs as jointDiscoverJs} from '../scripts/ci-shards.mjs';
+const discoverJs=()=>integrationPriorInventory(jointDiscoverJs(),'selection');
+const readdirSync=path=>path==='tests/lua'?integrationPriorInventory(actualReaddirSync(path).filter(p=>p.endsWith('.lua')).map(p=>'tests/lua/'+p),'selection','lua').map(p=>p.slice(10)):actualReaddirSync(path);
+import {sourceEpoch as jointSourceEpoch,pointerSourceEpoch as dismissSourceEpoch,preBattlePointerDismissSourceEpoch as inspectionSourceEpoch,preBattlePointerInspectionSourceEpoch as finalSourceEpoch,preBattlePointerSparseSourceEpoch as currentSourceEpoch,preBattlePointerSourceEpoch as sourceEpoch,preReleaseSelectionMapSourceEpoch} from './helpers/closeout-source-epoch.mjs';
 import {battlePointerSparseSourcePacket,extendBattlePointerSparseSource} from './helpers/battle-pointer-sparse-source.mjs';
 import {battlePointerSparseCiPacket,battlePointerSparseCiSource,battlePointerSparseCiRead,battlePointerSparseCiValidationRead,assertBattlePointerSparseCiCurrent,assertBattlePointerSparseRawInventory} from './helpers/battle-pointer-sparse-ci-source.mjs';
 import {battlePointerSourcePacket,extendBattlePointerSource} from './helpers/battle-pointer-source.mjs';
@@ -26,13 +30,13 @@ import {releaseSelectionMapCiPacket,releaseSelectionMapCiSource,releaseSelection
 const inspectionCheckpointRead=(path,encoding)=>{
  const before=Object.hasOwn(inspectionCiPacket.files,path)?inspectionCiPacket.files[path].before:null;
  const checkpoint=before??dismissCiPacket.files[path]?.before;
- if(!checkpoint)return actualReadFileSync(path,encoding);
+ if(!checkpoint)return pointerB9Read('pointer',actualReadFileSync,{production:true,authenticate:false})(path,encoding);
  const bytes=Buffer.from(checkpoint.source);return encoding?bytes.toString(encoding):bytes;
 };
 const sparseBeforeCiRead=battlePointerSparseCiRead(inspectionCheckpointRead);
 // The original CI packet validates its explicit complete predecessor bindings.
 const pointerCiValidationRead=battlePointerSparseCiValidationRead(inspectionCheckpointRead);
-const actualSource=path=>actualReadFileSync(path,'utf8');
+const actualSource=path=>pointerB9Read('pointer',actualReadFileSync,{production:true,authenticate:false})(path,'utf8');
 // Original inspection contracts explicitly retain their complete ad6 checkpoint.
 const ad6Source=path=>dismissCiPacket.files[path]?.before.source??actualSource(path);
 const inspectionBeforeCiRead=inspectionBeforeRead(actualReadFileSync);
@@ -251,7 +255,7 @@ test('release selection map isolated production copy includes exact helper and p
  for(const file of ['release-selection-map-source.mjs','release-selection-map-source.json.gz'])assert(existsSync(join(directory,'tests/helpers',file)));
  assert(!existsSync(join(directory,'tests/helpers/release-selection-map-ci-source.mjs')));
  const copied=await import(pathToFileURL(join(directory,'tests/helpers/closeout-source-epoch.mjs')).href);
- assert.deepEqual(copied.sourceEpoch.proof,dismissSourceEpoch.proof);
+ assert.deepEqual(copied.sourceEpoch.proof,jointSourceEpoch.proof);
  const sourceRoot=join(directory,'drift');mkdirSync(sourceRoot);
  // The original closure copier authenticates dependencies from a distinct root.
  copyIntegrationSourceClosure(sourceRoot,{sourceRoot:directory});
@@ -334,7 +338,7 @@ test('battle pointer isolated production closure includes both exact new depende
  copyIntegrationSourceClosure(directory);
  for(const file of ['battle-pointer-source.mjs','battle-pointer-source.json.gz'])assert(existsSync(join(directory,'tests/helpers',file)));
  for(const file of ['battle-pointer-ci-source.mjs','battle-pointer-ci-source.json.gz'])assert(!existsSync(join(directory,'tests/helpers',file)));
- const copied=await import(pathToFileURL(join(directory,'tests/helpers/closeout-source-epoch.mjs')).href);assert.deepEqual(copied.sourceEpoch.proof,dismissSourceEpoch.proof);
+ const copied=await import(pathToFileURL(join(directory,'tests/helpers/closeout-source-epoch.mjs')).href);assert.deepEqual(copied.sourceEpoch.proof,jointSourceEpoch.proof);
  const destination=join(directory,'next');mkdirSync(destination);
  for(const file of ['battle-pointer-source.mjs','battle-pointer-source.json.gz']){
   const path=join(directory,'tests/helpers',file),bytes=rawReadFileSync(path),changed=Buffer.from(bytes);changed[changed.length-1]^=1;
@@ -418,7 +422,7 @@ test('sparse battle pointer isolated production copy retains new dependencies an
  const directory=mkdtempSync(join(tmpdir(),'sparse-battle-pointer-copy-'));t.after(()=>rmSync(directory,{recursive:true,force:true}));copyIntegrationSourceClosure(directory);
  for(const file of ['battle-pointer-sparse-source.mjs','battle-pointer-sparse-source.json.gz'])assert(existsSync(join(directory,'tests/helpers',file)));
  for(const file of ['battle-pointer-sparse-ci-source.mjs','battle-pointer-sparse-ci-source.json.gz'])assert(!existsSync(join(directory,'tests/helpers',file)));
- const copied=await import(pathToFileURL(join(directory,'tests/helpers/closeout-source-epoch.mjs')).href);assert.deepEqual(copied.sourceEpoch.proof,dismissSourceEpoch.proof);
+ const copied=await import(pathToFileURL(join(directory,'tests/helpers/closeout-source-epoch.mjs')).href);assert.deepEqual(copied.sourceEpoch.proof,jointSourceEpoch.proof);
  const destination=join(directory,'next');mkdirSync(destination);
  for(const file of ['battle-pointer-sparse-source.mjs','battle-pointer-sparse-source.json.gz']){
   const path=join(directory,'tests/helpers',file),bytes=actualReadFileSync(path),changed=Buffer.from(bytes);changed[changed.length-1]^=1;

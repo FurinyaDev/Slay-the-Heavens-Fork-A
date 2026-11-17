@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {createHash} from 'node:crypto';
 import {gunzipSync} from 'node:zlib';
-import {sourceEpoch} from './closeout-source-epoch.mjs';
+import {pointerSourceEpoch as sourceEpoch} from './closeout-source-epoch.mjs';
+import {assertPointerB9Current,pointerB9Source,pointerB9Read} from './pointer-b9-integration.mjs';
 const hash=b=>createHash('sha256').update(b).digest('hex'),norm=s=>s.replaceAll('\r\n','\n');
 const bytes=readFileSync(new URL('./battle-pointer-dismiss-ci-source.json.gz',import.meta.url));
 assert.equal(hash(bytes),'8ff30eb8c4027230a7fb58359cd48648b151aec8ae132653fd01f31cf05cbe71','complete dismiss battle pointer CI continuation');
@@ -18,6 +19,7 @@ for(const [path,row]of Object.entries(packet.files))for(const binding of [row.be
 const freeze=v=>{if(v&&typeof v==='object'&&!Object.isFrozen(v)){Object.values(v).forEach(freeze);Object.freeze(v);}return v;};
 export const dismissCiPacket=freeze(packet);
 export function assertDismissCiCurrent(read=readFileSync){
+ assertPointerB9Current(read);read=pointerB9Read('pointer',read,{production:true,authenticate:false});
  for(const path of sourceEpoch.proof.owners){
   const source=read(path,'utf8');assert.equal(typeof source,'string','fresh linked owner: '+path);
   assert.equal(hash(norm(source)),sourceEpoch.proof.current[path].sha256,'fresh linked owner: '+path);
@@ -29,6 +31,7 @@ export function assertDismissCiCurrent(read=readFileSync){
 }
 export function dismissPriorSource(path,source,{read=readFileSync,production=false,authenticate=true}={}){
  if(!production&&(path.startsWith('src/')||path==='config/architecture.json'))return source;
+ source=pointerB9Source(path,source,'pointer',{read,production,authenticate});
  const row=Object.hasOwn(packet.files,path)?packet.files[path]:null;
  if(!row||typeof source!=='string'||source.includes('\r\r\n')||hash(norm(source))!==row.current.sha256||row.before.sha256===row.current.sha256)return source;
  if(authenticate)assertDismissCiCurrent(read);
