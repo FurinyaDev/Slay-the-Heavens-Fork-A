@@ -1,0 +1,12 @@
+import assert from'node:assert/strict';import{readFileSync}from'node:fs';
+const s=readFileSync('tests/ci-complete-calibration.test.mjs','utf8');const start=s.indexOf('function sliceTools(view){'),end=s.indexOf('\n}',start)+2;const fn=s.slice(start,end);
+let calibrationScope,reads=0,discovery=0,revision=0;
+const timings={js:{win32:{},linux:{}},unknownJsMs:1,jsPlanning:{localLowerBounds:{}},initialMs:{win32:[0],linux:[0]}};
+const closeoutRead=(view,read)=>(p,e)=>{reads++;return JSON.stringify(timings);};const closeoutInventory=(arr,view)=>arr.map(x=>view+':'+x);const nativeCloseoutRead=()=>{};const nativeCloseoutDiscover=()=>{discovery++;return ['a'+revision,'b'+revision];};const partition=()=>{};
+const memoLine=s.split('\n').find(x=>x.startsWith('const memoHistorical='));const memoHistorical=eval(memoLine.replace('const memoHistorical=','').replace(/;$/,''));
+const sliceTools=eval('('+fn+')');let n=0;
+calibrationScope={memo:new Map()};const a=sliceTools('pr614'),b=sliceTools('pr615');const first=a.inventory();first[0]='tampered';assert.equal(a.inventory()[0],'pr614:a0');assert.equal(discovery,1);n++;
+assert.equal(b.inventory()[0],'pr615:a0');assert.equal(discovery,2);n++;
+calibrationScope.memo.clear();calibrationScope=undefined;revision=1;assert.equal(a.inventory()[0],'pr614:a1');assert.equal(discovery,3);n++;a.inventory();assert.equal(discovery,4);n++;
+calibrationScope={memo:new Map()};assert.equal(a.inventory()[0],'pr614:a1');assert.equal(discovery,5);n++;calibrationScope.memo.clear();calibrationScope=undefined;
+console.log('Independent extracted slice inventory PASS',n,'checks: clone isolation, distinct view key, uncached outside scope, fresh next scope.');

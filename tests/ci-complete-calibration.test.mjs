@@ -40,25 +40,35 @@ import {preEnemyIntegrationPlanningSource,enemyOnlyPlanningSource,enemyIntegrati
 import {enemyAiPlanningKey,enemyAiPlanningFloor,enemyAiPlanningProof,preEnemyAiPlanningSource} from './helpers/enemy-ai-planning-source-inverse.mjs';
 import {preWatcherPlanningSource,watcherPlanningKey,watcherPlanningFloor} from './helpers/watcher-planning-source-inverse.mjs';
 import {preClassPotionPlanningSource,classPotionPlanningKey,classPotionPlanningFloor} from './helpers/class-potion-planning-source-inverse.mjs';
-import test from 'node:test';
+import nodeTest from 'node:test';
+import {withPotionPointerCiUnionValidation,potionPointerCiUnionRead} from './helpers/potion-pointer-ci-union.mjs';
+// Each synchronous test owns a new authenticated capture. Module initialization
+// and every call outside that scope retain fresh public validation.
+let calibrationScope;
+const publicPotionRead=potionPointerCiUnionRead('potion',actualUnionReadFileSync,{production:true});
+const actualPost697ReadFileSync=(...args)=>(calibrationScope?.read??publicPotionRead)(...args);
+const withCalibration=fn=>{let result;withPotionPointerCiUnionValidation('potion',actualUnionReadFileSync,(read,current)=>{try{calibrationScope={read,current,memo:new Map()};result=fn();}finally{calibrationScope.memo.clear();calibrationScope=undefined;}});return result;};
+const test=(name,fn)=>nodeTest(name,t=>withCalibration(()=>fn(t)));
+// Cache only immutable historical bytes within one fully authenticated synchronous scope.
+const memoHistorical=(name,read)=>(path,encoding)=>{const scope=calibrationScope;if(!scope)return read(path,encoding);const key=JSON.stringify([name,path,encoding??null]);if(!scope.memo.has(key)){const value=read(path,encoding);scope.memo.set(key,Buffer.isBuffer(value)?Buffer.from(value):value);}const value=scope.memo.get(key);return Buffer.isBuffer(value)?Buffer.from(value):value;};
 import assert from 'node:assert/strict';
-import {readFileSync as actualPost697ReadFileSync,readdirSync} from 'node:fs';
+import {readFileSync as actualUnionReadFileSync,readdirSync} from 'node:fs';
 import {potionPost697HistoricalRead,potionPost697PriorInventory} from './helpers/potion-post697-ci-source.mjs';
-const actualPotionClickReadFileSync=potionPost697HistoricalRead('potion',actualPost697ReadFileSync);
+const actualPotionClickReadFileSync=memoHistorical('actualPotionClickReadFileSync',potionPost697HistoricalRead('potion',actualPost697ReadFileSync));
 import {potionClickHistoricalRead,assertPotionClickCiCurrent,assertPotionClickRawInventory} from './helpers/potion-click-ci-source.mjs';
-const actualPotionRegressionReadFileSync=potionClickHistoricalRead(actualPotionClickReadFileSync);
+const actualPotionRegressionReadFileSync=memoHistorical('actualPotionRegressionReadFileSync',potionClickHistoricalRead(actualPotionClickReadFileSync));
 import {potionRegressionHistoricalRead,potionRegressionCiPacket,potionRegressionPriorInventory,assertPotionRegressionCiCurrent,assertPotionRegressionRawInventory} from './helpers/potion-regression-ci-source.mjs';
 // Preserve the exact before-potion regression potion corpus for all existing frozen contracts.
-const rawMobilePotionReadFileSync=potionRegressionHistoricalRead(actualPotionRegressionReadFileSync);
+const rawMobilePotionReadFileSync=memoHistorical('rawMobilePotionReadFileSync',potionRegressionHistoricalRead(actualPotionRegressionReadFileSync));
 import {mobilePotionCiRead,mobilePotionPriorInventory,assertMobilePotionCiCurrent,mobilePotionCiPacket} from './helpers/mobile-potion-ci-source.mjs';
 import {releaseBootstrapCiRead,assertReleaseBootstrapCiCurrent,assertReleaseBootstrapRawInventory} from './helpers/release-bootstrap-ci-source.mjs';
 import {potionBootstrapCiRead,potionBootstrapHistoricalRead,potionBootstrapCiPacket,assertPotionBootstrapCiCurrent,assertPotionBootstrapRawInventory} from './helpers/potion-bootstrap-ci-source.mjs';
-const historicalCiReadFileSync=releaseBootstrapCiRead(potionBootstrapCiRead(rawMobilePotionReadFileSync));
+const historicalCiReadFileSync=memoHistorical('historicalCiReadFileSync',releaseBootstrapCiRead(potionBootstrapCiRead(rawMobilePotionReadFileSync)));
 // Historical CI receipts retain their own files; production owners must enter
 // sourceSlice in the final current epoch before its complete fresh authentication.
 const liveDiskReadFileSync=(path,encoding)=>(path.startsWith('src/')||path==='config/architecture.json'
- ?actualPost697ReadFileSync:historicalCiReadFileSync)(path,encoding);
-const rawBootstrapReadFileSync=potionBootstrapHistoricalRead('bootstrap',rawMobilePotionReadFileSync);
+ ?(calibrationScope?.current??actualUnionReadFileSync):historicalCiReadFileSync)(path,encoding);
+const rawBootstrapReadFileSync=memoHistorical('rawBootstrapReadFileSync',potionBootstrapHistoricalRead('bootstrap',rawMobilePotionReadFileSync));
 import {preJoustCiSource,joustCiProof} from './helpers/joust-ci-source-inverse.mjs';
 import {sourceEpoch as joustEpoch} from './helpers/combined-epoch/source-epoch.mjs';
 const currentReadFileSync=liveDiskReadFileSync;
@@ -81,18 +91,19 @@ const discoverJs=()=>closeoutInventory(liveDiscoverJs(),'pr620');
 import {shardLuaScripts} from '../scripts/test-lua.mjs';
 // Preserve every pre-Actor assertion in its exact authenticated source/inventory
 // epoch. The appended Actor contracts separately exercise raw current Full work.
-const diskReadFileSync=closeoutRead('pr620',liveDiskReadFileSync);
-const actualCurrentTimings=JSON.parse(diskReadFileSync('scripts/ci-test-timings.json','utf8'));
+const diskReadFileSync=memoHistorical('diskReadFileSync',closeoutRead('pr620',liveDiskReadFileSync));
+const actualCurrentTimings=withCalibration(()=>JSON.parse(diskReadFileSync('scripts/ci-test-timings.json','utf8')));
 const currentJsPlanningWeights=(files,platform)=>Object.fromEntries(files.map(file=>[file,Math.max(actualCurrentTimings.js[platform][file]??actualCurrentTimings.unknownJsMs,actualCurrentTimings.jsPlanning.localLowerBounds[file]?.durationMs??0)]));
 const currentJsShard=(files,value,platform)=>partition(files,value,currentJsPlanningWeights(files,platform),actualCurrentTimings.unknownJsMs,Array.from({length:Number(value.split('/')[1])},(_,i)=>i===0?actualCurrentTimings.initialMs[platform][0]:0));
 // This named predecessor keeps the original 854-file closeout assertions exact.
 // The appended HUD contract separately validates raw current discovery and bytes.
 const nativeCloseoutRead=runHudPriorRead(liveDiskReadFileSync),nativeCloseoutDiscover=()=>runHudPriorInventory(liveDiscoverJs()),nativeCloseoutJointInventory=jointCiInventoryAt;
 function sliceTools(view){
- const read=closeoutRead(view,nativeCloseoutRead),timings=JSON.parse(read('scripts/ci-test-timings.json','utf8'));
+ const read=memoHistorical('sliceTools:'+view,closeoutRead(view,nativeCloseoutRead)),timings=JSON.parse(read('scripts/ci-test-timings.json','utf8'));
  const weights=(files,platform)=>Object.fromEntries(files.map(file=>[file,Math.max(timings.js[platform][file]??timings.unknownJsMs,timings.jsPlanning.localLowerBounds[file]?.durationMs??0)]));
  const shard=(files,value,platform)=>partition(files,value,weights(files,platform),timings.unknownJsMs,Array.from({length:Number(value.split('/')[1])},(_,i)=>i===0?timings.initialMs[platform][0]:0));
- return {read,timings,weights,shard,inventory:()=>closeoutInventory(nativeCloseoutDiscover(),view)};
+ const inventory=()=>closeoutInventory(nativeCloseoutDiscover(),view);
+ return {read,timings,weights,shard,inventory:()=>{const scope=calibrationScope;if(!scope)return inventory();const key='historical-inventory:'+view;if(!scope.memo.has(key))scope.memo.set(key,[...inventory()]);return [...scope.memo.get(key)];}};
 }
 
 import {preGoldenIdolCurrentCiSource,preGoldenIdolCurrentCiInventory,goldenIdolCurrentCiProof,goldenIdolCurrentJs,goldenIdolCurrentPlanningFloors} from './helpers/golden-idol-current-ci-source-inverse.mjs';
@@ -120,7 +131,7 @@ const firstReceiptRead=(f,e)=>receiptRead('officialFirstReceipt',f,e,(p,enc)=>{c
 const flowReceiptRead=(f,e)=>receiptRead('officialFlowReceipt',f,e,jointFlowRead);
 const currentTimings=actualCurrentTimings;
 // Frozen 17/13 contracts retain their original complete shape and job identity.
-const frozenShapeSource=prePosix14ShapeSource('scripts/ci-quality-shape.mjs',read('scripts/ci-quality-shape.mjs'));
+const frozenShapeSource=withCalibration(()=>prePosix14ShapeSource('scripts/ci-quality-shape.mjs',read('scripts/ci-quality-shape.mjs')));
 const {qualityShardMatrices:frozenQualityShardMatrices,qualityShardJobs:frozenQualityShardJobs}=await import('data:text/javascript,'+encodeURIComponent(frozenShapeSource));
 const frozenFullQualityJobs=['check','presentation','engineering-posix',...frozenQualityShardJobs,'impact','fast'];
 const path='scripts/ci-test-timings.json',binding=proof.files[path],before=JSON.parse(binding.beforeSource),after=JSON.parse(binding.afterSource),e=proof.evidence;
@@ -134,9 +145,9 @@ const {qualityShardMatrices,qualityShardJobs}=await import('data:text/javascript
 const historicalFullQualityJobs=['check','presentation','engineering-posix',...qualityShardJobs,'impact','fast'];
 const jsPlanningWeights=(files,platform)=>Object.fromEntries(files.map(file=>[file,Math.max(timings.js[platform][file]??timings.unknownJsMs,timings.jsPlanning?.localLowerBounds?.[file]?.durationMs??0)]));
 const jsShard=(files,value,platform)=>partition(files,value,jsPlanningWeights(files,platform),timings.unknownJsMs,Array.from({length:Number(value.split('/')[1])},(_,i)=>i===0?timings.initialMs[platform][0]:0));
-const placementPath='docs/evidence/pr521-ci-placement-20261106.json',placementBytes=read(placementPath),placement=JSON.parse(placementBytes);
-const floorPath='docs/evidence/pr521-run-max-planning-floor-20261106.json',floorBytes=read(floorPath),floorReceipt=JSON.parse(floorBytes),floorKey='tests/run-max-hp-config-inverse.test.mjs';
-const localFloorPath='docs/evidence/power-shop-planning-20261107.json',localFloorBytes=read(localFloorPath),localFloorReceipt=JSON.parse(localFloorBytes),localFloorKey='tests/power-shop-boundaries.test.mjs';
+const placementPath='docs/evidence/pr521-ci-placement-20261106.json',placementBytes=withCalibration(()=>read(placementPath)),placement=JSON.parse(placementBytes);
+const floorPath='docs/evidence/pr521-run-max-planning-floor-20261106.json',floorBytes=withCalibration(()=>read(floorPath)),floorReceipt=JSON.parse(floorBytes),floorKey='tests/run-max-hp-config-inverse.test.mjs';
+const localFloorPath='docs/evidence/power-shop-planning-20261107.json',localFloorBytes=withCalibration(()=>read(localFloorPath)),localFloorReceipt=JSON.parse(localFloorBytes),localFloorKey='tests/power-shop-boundaries.test.mjs';
 // Added after the frozen #521 placement receipts. Never use these files to
 // reconstruct historical shard assignments or invent historical measurements.
 const encounterFormationJs=["tests/encounter-formation-responsibilities.test.mjs","tests/encounter-formation-complexity.test.mjs","tests/encounter-formation-source-epoch.test.mjs"];

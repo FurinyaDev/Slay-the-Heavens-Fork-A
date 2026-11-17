@@ -1,0 +1,37 @@
+ℹ Windows pre-V25 forecast 1794163 ms; target 1800000 ms; overrun 0 ms; actual Full pass not claimed
+ℹ Windows current forecast 1726045 ms; target 1800000 ms; overrun 0 ms; actual Full pass not claimed
+ℹ POSIX pre-V25 forecast 1128812 ms; target 1200000 ms; overrun 0 ms; actual Full pass not claimed
+ℹ POSIX current forecast 1159466 ms; target 1200000 ms; overrun 0 ms; actual Full pass not claimed
+✖ joint historical inventory rejects missing duplicate and unknown files while current discovery remains complete (3233.356034ms)
+✖ ratchet current inventory preserves raw Full coverage and refuses source drift after a warm projection (2345.220329ms)
+ℹ win32 complete Golden Idol836 forecast 1724338 ms; budget 1800000 ms; actual Full pass not claimed
+ℹ linux complete Golden Idol836 forecast 1157536 ms; budget 1200000 ms; actual Full pass not claimed
+ℹ win32 complete current Actor forecast 1724775 ms; unchanged budget 1800000 ms; no hosted Full pass claimed
+ℹ linux complete current Actor forecast 1158040 ms; unchanged budget 1200000 ms; no hosted Full pass claimed
+✖ combined closeout validates raw current sources and complete Full discovery independently of immutable slice views (3904.550701ms)
+ℹ win32 final 854JS/1416Lua forecast 1739506ms < 1800000ms; actual hosted completion remains separate
+ℹ linux final 854JS/1416Lua forecast 1174962ms < 1200000ms; actual hosted completion remains separate
+✖ noncombat immutable added inventory keeps its full source and unknown-cost rejection checks (2168.304374ms)
+✖ run HUD continuation authenticates complete current sources and raw Full inventory without rewriting historical receipts (3057.144668ms)
+✖ menu current complete JS and Lua workload retains Full budgets and every added Lua byte (194.666667ms)
+ℹ win32: raw 877 JS / 1424 Lua; forecast 1756907ms; target 1800000ms; overrun 0ms; unchanged execution guard 2700000ms; not hosted completion
+ℹ linux: raw 877 JS / 1424 Lua; forecast 1190295ms; target 1200000ms; overrun 0ms; unchanged execution guard 1800000ms; not hosted completion
+ℹ win32: raw 876 JS / 1423 Lua; forecast 1755640ms; target 1800000ms; overrun 0ms; physical execution guard 2700000ms; prediction is not admission
+ℹ linux: raw 876 JS / 1423 Lua; forecast 1189630ms; target 1200000ms; overrun 0ms; physical execution guard 1800000ms; prediction is not admission
+ℹ win32: raw 877 JS / 1424 Lua; forecast 1756907ms; target 1800000ms; overrun 0ms; physical guard 2700000ms; prediction is not admission
+ℹ linux: raw 877 JS / 1424 Lua; forecast 1190295ms; target 1200000ms; overrun 0ms; physical guard 1800000ms; prediction is not admission
+ℹ tests 78
+ℹ suites 0
+ℹ pass 72
+ℹ fail 6
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 199485.773096
+✖ failing tests:
+✖ joint historical inventory rejects missing duplicate and unknown files while current discovery remains complete (3233.356034ms)
+✖ ratchet current inventory preserves raw Full coverage and refuses source drift after a warm projection (2345.220329ms)
+✖ combined closeout validates raw current sources and complete Full discovery independently of immutable slice views (3904.550701ms)
+✖ noncombat immutable added inventory keeps its full source and unknown-cost rejection checks (2168.304374ms)
+✖ run HUD continuation authenticates complete current sources and raw Full inventory without rewriting historical receipts (3057.144668ms)
+✖ menu current complete JS and Lua workload retains Full budgets and every added Lua byte (194.666667ms)
