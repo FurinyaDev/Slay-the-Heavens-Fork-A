@@ -30,10 +30,21 @@ end
 -- Explicit ports preserve the approved implementation without a shared constructor closure.
 function M.install(owner, ownership, _host, dependencies)
     local R = L.rewardPick
-    local function pruneInputs(inputs, ready)
+    local pointerFields={'held','released'}
+    local function pruneInputs(inputs, ready, dismissInfo)
         for _, input in ipairs(inputs) do
-            if input.held and not ready(input.held) then input.held = nil end
-            if input.released and not ready(input.released) then input.released = nil end
+            if input.dismiss and input.dismiss.info~=dismissInfo then input.dismiss=nil end
+            for _,name in ipairs(pointerFields)do
+                local token=input[name]
+                if token and not ready(token) then
+                    -- Opening details still revokes the command. Retain only the
+                    -- original named event's one-shot right to close these details.
+                    if dismissInfo and token.touch~=nil and token.originState then
+                        input.dismiss={token=token,info=dismissInfo}
+                    end
+                    input[name]=nil
+                end
+            end
         end
     end
     local function prepareRenderInputs(view, presentationOnly)
@@ -53,7 +64,8 @@ function M.install(owner, ownership, _host, dependencies)
         pruneInputs(ownership.cardInputs, dependencies.cardReady)
         pruneInputs(ownership.potionInputs, dependencies.potionReady)
         pruneInputs(ownership.actionInputs, dependencies.actionReady)
-        pruneInputs(ownership.enemyInputs, dependencies.enemyReady)
+        local dismissInfo=view.active and not view.busy and not view.gesture and view.info
+        pruneInputs(ownership.enemyInputs, dependencies.enemyReady, dismissInfo)
         return run
     end
     local function renderFeedbackReady(run)

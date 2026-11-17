@@ -21,6 +21,8 @@ function M.install(owner, ownership, host, dependencies)
         control:AddCursorEventListener(host.clickEvent,function(event)
             local released
             if input and ownership.pointerObserved then
+                if owner.swallow and event and event.touchId~=nil
+                    and event.touchId==owner.swallow.touch then owner.swallow=nil;return end
                 released=dependencies.pointerTake(input,event)
                 if not released then return end
             end
