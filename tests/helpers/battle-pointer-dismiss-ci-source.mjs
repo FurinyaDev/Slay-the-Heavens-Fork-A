@@ -23,8 +23,8 @@ export function assertDismissCiCurrent(read=readFileSync){
   assert.equal(hash(norm(source)),sourceEpoch.proof.current[path].sha256,'fresh linked owner: '+path);
  }
  for(const [path,row]of Object.entries(packet.files)){
-  const source=read(path,'utf8');assert.equal(typeof source,'string',(path.startsWith('src/')?'fresh linked owner: ':'fresh dismiss source: ')+path);
-  assert.equal(hash(norm(source)),row.current.sha256,(path.startsWith('src/')?'fresh linked owner: ':'fresh dismiss source: ')+path);
+  const source=read(path,'utf8');assert.equal(typeof source,'string',(path.startsWith('src/')?'fresh linked owner: ':'fresh complete integration source: dismiss ')+path);
+  assert.equal(hash(norm(source)),row.current.sha256,(path.startsWith('src/')?'fresh linked owner: ':'fresh complete integration source: dismiss ')+path);
  }
 }
 export function dismissPriorSource(path,source,{read=readFileSync,production=false,authenticate=true}={}){
