@@ -105,3 +105,51 @@ export function copyIntegrationSourceClosure(directory,{sourceRoot=process.cwd()
   writeFileSync(target,content);
  }
 }
+
+// CI preparation closure is separate from the historical product-only API above.
+// Its fixed leaf excludes this entry point and the union packet/reader, avoiding
+// a hash cycle. Those exact bytes are captured from this trusted loaded module's
+// own directory; the entry point additionally binds to the union's current row.
+import {lstatSync} from 'node:fs';
+import {potionPointerCiUnionPacket} from './potion-pointer-ci-union.mjs';
+const ciManifestPath='tests/helpers/potion-pointer-ci-copy-closure.json';
+const ciManifestBytes=readFileSync(new URL('./potion-pointer-ci-copy-closure.json',import.meta.url));
+assert.equal(hash(ciManifestBytes),'fb1c1fe424be631d9662adcd09fe06966dbe9d3c8c2c1a5edb11f8e1bd3ea9a2','exact CI helper-copy manifest');
+const ciManifest=JSON.parse(ciManifestBytes);
+assert.equal(ciManifest.schemaVersion,1);
+assert.equal(ciManifest.predecessorCommit,'0e1eae89f1240572a35f34af5cb07dd0c3816a92');
+const ciTrustedCopies=new Map([
+ ['tests/helpers/copy-integration-source-closure.mjs',readFileSync(new URL('./copy-integration-source-closure.mjs',import.meta.url))],
+ ['tests/helpers/potion-pointer-ci-union.mjs',readFileSync(new URL('./potion-pointer-ci-union.mjs',import.meta.url))],
+ ['tests/helpers/potion-pointer-ci-union.json.gz',readFileSync(new URL('./potion-pointer-ci-union.json.gz',import.meta.url))],
+ [ciManifestPath,ciManifestBytes]
+]);
+assert.equal(hash(integrationClosureBytes('tests/helpers/copy-integration-source-closure.mjs',ciTrustedCopies.get('tests/helpers/copy-integration-source-closure.mjs'))),potionPointerCiUnionPacket.files['tests/helpers/copy-integration-source-closure.mjs'].current.sha256,'current union CI copier identity');
+export function copyIntegrationCiClosure(directory,{sourceRoot=process.cwd()}={}){
+ const destination=realpathSync.native(directory),origin=realpathSync.native(sourceRoot);
+ assert.notEqual(destination,origin,'isolated CI helper copy destination');
+ const expected={...ciManifest.files};
+ for(const [path,bytes]of ciTrustedCopies){assert(!Object.hasOwn(expected,path),'noncyclic CI copy identity');expected[path]=hash(integrationClosureBytes(path,bytes));}
+ const captured=new Map();
+ // Validate the complete source before writing any file. No live-tree fallback.
+ for(const [path,sha]of Object.entries(expected)){
+  assert((path.startsWith('tests/helpers/')||path.startsWith('tests/fixtures/'))&&!path.split('/').includes('..'),'fixed CI helper path');
+  const source=join(origin,path);assert(inside(origin,realpathSync.native(source)),'CI helper source escaped');
+  assert(!lstatSync(source).isSymbolicLink(),'CI helper source is symlink');
+  const content=integrationClosureBytes(path,readFileSync(source));assert.equal(hash(content),sha,'fresh CI helper copy identity: '+path);captured.set(path,content);
+ }
+ for(const [path,content]of captured){
+  const source=join(origin,path),target=join(destination,path);
+  for(let parent=dirname(target);parent!==destination;parent=dirname(parent))if(existsSync(parent))assert(!lstatSync(parent).isSymbolicLink(),'CI helper destination parent is symlink');
+  mkdirSync(dirname(target),{recursive:true});
+  assert(inside(destination,realpathSync.native(dirname(target))),'CI helper destination parent escaped');
+  let stat;try{stat=lstatSync(target);}catch(error){if(error.code!=='ENOENT')throw error;}
+  if(stat){
+   assert(!stat.isSymbolicLink(),'CI helper destination is symlink');
+   assert(stat.isFile()&&stat.nlink===1,'CI helper destination must be single-link regular file');
+   assert(inside(destination,realpathSync.native(target))&&realpathSync.native(target)!==realpathSync.native(source),'CI helper destination aliases source');
+  }
+ }
+ for(const [path,content]of captured)writeFileSync(join(destination,path),content);
+ return captured.size;
+}

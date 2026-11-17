@@ -4,11 +4,22 @@ import {readFileSync} from 'node:fs';
 import {createHash} from 'node:crypto';
 import {gunzipSync} from 'node:zlib';
 import {sourceEpoch} from './closeout-source-epoch.mjs';
-const PACKET_SHA='0347d209241d64516606376302ecdd8d0c90d13237628eb3b9f702ec9c51dc79';
+const PACKET_SHA='c3b5c1472a46517f1dd3c636cb9a639737829782a4b8651faeb1f12523193345';
 const hash=b=>createHash('sha256').update(b).digest('hex'),norm=s=>s.replaceAll('\r\n','\n');
 const bytes=readFileSync(new URL('./potion-pointer-ci-union.json.gz',import.meta.url));
 assert.equal(hash(bytes),PACKET_SHA,'immutable potion-pointer CI union');
 const packet=JSON.parse(gunzipSync(bytes));
+const copyPriorPath='tests/helpers/potion-pointer-ci-before-copy.json.gz';
+const copyPriorSha='0347d209241d64516606376302ecdd8d0c90d13237628eb3b9f702ec9c51dc79';
+const copyPriorBytes=readFileSync(new URL('./potion-pointer-ci-before-copy.json.gz',import.meta.url));
+assert.equal(hash(copyPriorBytes),copyPriorSha,'exact pre-copy union');
+assert.equal(packet.copyPredecessorCommit,'0e1eae89f1240572a35f34af5cb07dd0c3816a92');
+assert.equal(packet.copyPredecessorSha256,copyPriorSha);
+const copyPrior=JSON.parse(gunzipSync(copyPriorBytes));
+const addedCopyPaths=['tests/helpers/potion-pointer-ci-copy-closure.json'];
+const copyChanges=['tests/helpers/copy-integration-source-closure.mjs',...addedCopyPaths];
+assert.deepEqual(Object.keys(packet.files),[...Object.keys(copyPrior.files),...addedCopyPaths].sort());
+for(const [path,row]of Object.entries(packet.files))if(!copyChanges.includes(path))assert.deepEqual(row,copyPrior.files[path],'unchanged pre-copy input '+path);
 const readersPriorPath='tests/helpers/potion-pointer-ci-before-readers.json.gz';
 const readersPriorSha='2550d7de0c1b491e342b2a50d453fd4553593f524da152181da6cff0fcdd0435';
 const readersPriorBytes=readFileSync(new URL('./potion-pointer-ci-before-readers.json.gz',import.meta.url));
@@ -18,8 +29,8 @@ assert.equal(packet.readersPredecessorSha256,readersPriorSha);
 const readersPrior=JSON.parse(gunzipSync(readersPriorBytes));
 const addedReaderPaths=['tests/helpers/joint-ui-ci-source-inverse.mjs','tests/helpers/closeout-ci-source.mjs','tests/helpers/run-hud-ci-source.mjs','tests/helpers/sts-style-ci-source.mjs','tests/helpers/menu-red-ci-source.mjs'];
 const readerChanges=['tests/ci-complete-calibration.test.mjs','tests/integrated-ci-source.cases.mjs', 'tests/helpers/integrated-ci-source.mjs', 'tests/helpers/joint-ui-ci-source-inverse.mjs', 'tests/helpers/closeout-ci-source.mjs', 'tests/helpers/run-hud-ci-source.mjs', 'tests/helpers/sts-style-ci-source.mjs', 'tests/helpers/menu-red-ci-source.mjs'];
-assert.deepEqual(Object.keys(packet.files),[...Object.keys(readersPrior.files),...addedReaderPaths].sort());
-for(const [path,row]of Object.entries(packet.files))if(!readerChanges.includes(path))assert.deepEqual(row,readersPrior.files[path],'unchanged pre-readers input '+path);
+assert.deepEqual(Object.keys(packet.files),[...Object.keys(readersPrior.files),...addedReaderPaths,...addedCopyPaths].sort());
+for(const [path,row]of Object.entries(packet.files))if(![...readerChanges,...copyChanges].includes(path))assert.deepEqual(row,readersPrior.files[path],'unchanged pre-readers input '+path);
 const calibrationPriorPath='tests/helpers/potion-pointer-ci-before-calibration.json.gz';
 const calibrationPriorSha='7b049aac614a17f37f3c272e11c45df127c43f83d5109567018ea548ac921081';
 const calibrationPriorBytes=readFileSync(new URL('./potion-pointer-ci-before-calibration.json.gz',import.meta.url));
@@ -27,16 +38,16 @@ assert.equal(hash(calibrationPriorBytes),calibrationPriorSha,'exact pre-calibrat
 assert.equal(packet.calibrationPredecessorCommit,'d2a8fa6d3d0beba9774b07083589a867497efba2');
 assert.equal(packet.calibrationPredecessorSha256,calibrationPriorSha);
 const calibrationPrior=JSON.parse(gunzipSync(calibrationPriorBytes));
-assert.deepEqual(Object.keys(packet.files).filter(path=>!addedReaderPaths.includes(path)),Object.keys(calibrationPrior.files));
-for(const [path,row]of Object.entries(packet.files))if(!readerChanges.includes(path))assert.deepEqual(row,calibrationPrior.files[path],'unchanged pre-calibration input '+path);
+assert.deepEqual(Object.keys(packet.files).filter(path=>![...addedReaderPaths,...addedCopyPaths].includes(path)),Object.keys(calibrationPrior.files));
+for(const [path,row]of Object.entries(packet.files))if(![...readerChanges,...copyChanges].includes(path))assert.deepEqual(row,calibrationPrior.files[path],'unchanged pre-calibration input '+path);
 const integratedPriorBytes=readFileSync(new URL('./potion-pointer-ci-before-integrated.json.gz',import.meta.url));
 const integratedPriorSha='4e21ceac3bdf6bf34a7f4c3d9426c8b26a3c6f7eee600b3688f79154fcc0b22b';
 assert.equal(hash(integratedPriorBytes),integratedPriorSha,'exact pre-integrated union');
 assert.equal(packet.integratedPredecessorCommit,'324d2a2797201725cb104097567d69da681b84a8');
 assert.equal(packet.integratedPredecessorSha256,integratedPriorSha);
 const integratedPrior=JSON.parse(gunzipSync(integratedPriorBytes));
-assert.deepEqual(Object.keys(packet.files).filter(path=>!addedReaderPaths.includes(path)),Object.keys(integratedPrior.files));
-for(const [path,row]of Object.entries(packet.files))if(!['tests/integrated-ci-source.cases.mjs',...readerChanges].includes(path))assert.deepEqual(row,integratedPrior.files[path],'unchanged previous consumer binding '+path);
+assert.deepEqual(Object.keys(packet.files).filter(path=>![...addedReaderPaths,...addedCopyPaths].includes(path)),Object.keys(integratedPrior.files));
+for(const [path,row]of Object.entries(packet.files))if(!['tests/integrated-ci-source.cases.mjs',...readerChanges,...copyChanges].includes(path))assert.deepEqual(row,integratedPrior.files[path],'unchanged previous consumer binding '+path);
 const priorPacketPath='tests/helpers/potion-pointer-ci-before-selection.json.gz';
 const priorPacketSha='ed0dd1a847de736030747f4b1b2a051e42930830a885046ffc96c11270098ccb';
 const priorBytes=readFileSync(new URL('./potion-pointer-ci-before-selection.json.gz',import.meta.url));
@@ -44,16 +55,16 @@ assert.equal(hash(priorBytes),priorPacketSha,'immutable pre-selection CI union')
 assert.equal(packet.predecessorCommit,'7d02a6ae3be107730b7c1c128720e22c8431cbbe');
 assert.equal(packet.predecessorPacketSha256,priorPacketSha);
 const previous=JSON.parse(gunzipSync(priorBytes));
-assert.deepEqual(Object.keys(packet.files).filter(path=>!addedReaderPaths.includes(path)),Object.keys(previous.files),'complete predecessor CI input set');
+assert.deepEqual(Object.keys(packet.files).filter(path=>![...addedReaderPaths,...addedCopyPaths].includes(path)),Object.keys(previous.files),'complete predecessor CI input set');
 for(const [path,row]of Object.entries(packet.files)){
- if(addedReaderPaths.includes(path))continue;
+ if([...addedReaderPaths,...addedCopyPaths].includes(path))continue;
  assert.deepEqual(Object.keys(row.views),Object.keys(previous.files[path].views),'unchanged parent domains '+path);
  for(const [target,view]of Object.entries(row.views)){
   const before=previous.files[path].views[target];
   assert.equal(view.sha256,before.sha256,'unchanged original parent identity '+path);
   if(before.source!==undefined)assert.equal(view.source,before.source,'unchanged complete original parent source '+path);
  }
- if(!['tests/release-selection-map-source.test.mjs','tests/integrated-ci-source.cases.mjs',...readerChanges].includes(path))assert.deepEqual(row.current,previous.files[path].current,'unchanged other union input '+path);
+ if(!['tests/release-selection-map-source.test.mjs','tests/integrated-ci-source.cases.mjs',...readerChanges,...copyChanges].includes(path))assert.deepEqual(row.current,previous.files[path].current,'unchanged other union input '+path);
 }
 assert.equal(packet.schemaVersion,1);assert.equal(packet.normalization,'LF');
 assert.equal(packet.baseCommit,'29ae8d2cb2a5b729c348191ee56910b1aa77386c');
@@ -65,6 +76,7 @@ export const potionPointerCiUnionPacket=freeze(packet);
 const authenticatedSnapshots=new WeakSet();
 export function assertPotionPointerCiUnionCurrent(read=readFileSync){
  if(authenticatedSnapshots.has(read))return;
+ assert.equal(hash(read(copyPriorPath)),copyPriorSha,'fresh pre-copy union');
  assert.equal(hash(read(readersPriorPath)),readersPriorSha,'fresh pre-readers union');
  assert.equal(hash(read(calibrationPriorPath)),calibrationPriorSha,'fresh pre-calibration union');
  assert.equal(hash(read('tests/helpers/potion-pointer-ci-before-integrated.json.gz')),integratedPriorSha,'fresh pre-integrated union');
@@ -103,7 +115,7 @@ export function potionPointerCiUnionRead(target='potion',read=readFileSync,{prod
 export function withPotionPointerCiUnionValidation(target,read,validate){
  assert(Object.hasOwn(packet.viewCommits,target));
  const captured=new Map();
- for(const path of new Set([...Object.keys(sourceEpoch.proof.current),...Object.keys(packet.files),'tests/helpers/potion-pointer-ci-union.json.gz',priorPacketPath,calibrationPriorPath,readersPriorPath,'tests/helpers/potion-pointer-ci-before-integrated.json.gz'])){
+ for(const path of new Set([...Object.keys(sourceEpoch.proof.current),...Object.keys(packet.files),'tests/helpers/potion-pointer-ci-union.json.gz',priorPacketPath,calibrationPriorPath,readersPriorPath,copyPriorPath,'tests/helpers/potion-pointer-ci-before-integrated.json.gz'])){
   if(sourceEpoch.proof.current[path]===null&&!Object.hasOwn(packet.files,path))continue;
   const bytes=read(path);assert(Buffer.isBuffer(bytes),'validation capture bytes '+path);captured.set(path,Buffer.from(bytes));
  }

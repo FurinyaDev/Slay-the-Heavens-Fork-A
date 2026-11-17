@@ -1,0 +1,1 @@
+Independent CI-copy PASS 11 checks: full fixed copy, captured trust-root drift, post-warm helper drift, no partial writes on bad source, source/destination escape, hardlink alias with CRLF preservation, same-root and copy-from-copy.

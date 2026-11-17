@@ -1,0 +1,1 @@
+Independent structure PASS: prior product copier prefix unchanged; exact prior packet; 191 untouched rows and all prior views; 193 bound inputs; 246 fixed + 4 trust roots; all declared root-import/static-data edges covered: 91 edges, 69 reachable files; all current helper/fixture inputs included; consumers/products unchanged.
