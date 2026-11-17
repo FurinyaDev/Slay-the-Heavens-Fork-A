@@ -6,7 +6,7 @@ import {gunzipSync} from 'node:zlib';
 import {sourceEpoch} from './closeout-source-epoch.mjs';
 const hash=b=>createHash('sha256').update(b).digest('hex'),norm=s=>s.replaceAll('\r\n','\n');
 const bytes=readFileSync(new URL('./pointer-b9-integration.json.gz',import.meta.url));
-assert.equal(hash(bytes),'01f79a6ed76adcb4f87f0d8be8065e3ac169128032e1e5d98269737de445c88d','complete actual pointer B9 integration');
+assert.equal(hash(bytes),'cab3f5bc8e4d1693c805b4d768c9d265cd54f625076cc17b745e94093ac10d80','complete actual pointer B9 integration');
 const packet=JSON.parse(gunzipSync(bytes));
 assert.deepEqual(packet.parents,{pointer:'4d74cd79836e18c70a244e04f6150f9ad36d6f6a',cardContact:'b9bca884ed9b9831965b409885d78f719b9a567a'});
 for(const [path,row]of Object.entries(packet.files))for(const b of [row.current,...Object.values(row.before)].filter(Boolean)){

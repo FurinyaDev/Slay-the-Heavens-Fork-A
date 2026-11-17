@@ -1,3 +1,4 @@
+import {integratedPriorInventory,integratedCiProof} from './helpers/integrated-ci-source.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync as jointRawReadFileSync,readdirSync} from 'node:fs';
@@ -134,4 +135,15 @@ test('both public B9 side readers freshly authenticate unchanged delta paths bef
   assert.equal(reader(path,'utf8'),expected);
   calls=0;const foreign=source+'# foreign';assert.equal(integrationCiSource(path,foreign,side,()=>{calls++;throw Error('foreign read');}),foreign);assert.equal(calls,0);
  }
+});
+
+
+test('actual pointer B9 default historical inventories authenticate the original raw reader through every source stage',()=>{
+ const inventories={js:discoverJs(),lua:readdirSync('tests/lua').filter(p=>p.endsWith('.lua')).map(p=>'tests/lua/'+p).sort()};
+ for(const target of Object.keys(integratedCiProof.sources))for(const [kind,paths]of Object.entries(inventories))assert.deepEqual(integratedPriorInventory(paths,target,kind),integratedCiProof.inventories[target][kind],target+':'+kind);
+ for(const path of ['tests/ci-complete-calibration.test.mjs','src/lua/abyss_battle_target_bindings.lua'])for(const missing of [false,true]){
+  const read=(p,e)=>{const raw=jointRawReadFileSync(p,e);if(p!==path)return raw;if(missing)throw Error('missing '+p);return typeof raw==='string'?raw+'\n':Buffer.concat([raw,Buffer.from('\n')]);};
+  assert.throws(()=>integratedPriorInventory(inventories.js,'native','js',read));
+ }
+ assert.deepEqual(integratedPriorInventory(inventories.js,'native'),integratedCiProof.inventories.native.js);
 });

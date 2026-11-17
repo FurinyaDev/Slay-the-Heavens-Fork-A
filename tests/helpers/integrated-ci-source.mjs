@@ -66,8 +66,10 @@ export function extendIntegratedHelperClosure(original){
 // Exact complete inventories for historical receipts; raw Full discovery remains live.
 export function integratedPriorInventory(paths,target,kind='js',read=readFileSync){
  assertPointerB9Current(read);
- paths=integrationPriorInventory(paths,'selection',kind,pointerB9Read('cardContact',read,{authenticate:false}));
- read=inspectionBeforeRead(read);
+ paths=integrationPriorInventory(paths,'selection',kind,read);
+ // Reuse the complete-CI validation's exact sparse -> pointer -> selection view.
+ const pointerRead=battlePointerSparseCiValidationRead(inspectionBeforeRead(read,{production:true,authenticate:false}));
+ read=(path,encoding)=>{const raw=pointerRead(path,encoding),text=typeof raw==='string'?raw:raw.toString('utf8'),prior=battlePointerCiCheckedSource(path,text);return typeof raw==='string'?prior:prior===text?raw:Buffer.from(prior);};
  const current=kind==='js'?integratedCiProof.inventory:integratedCiProof.luaInventory;
  const prior=integratedCiProof.inventories[target]?.[kind];
  assert(prior,'known integration inventory');
