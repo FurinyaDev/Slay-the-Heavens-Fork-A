@@ -1,0 +1,27 @@
+✔ integration validates complete raw sources and leaves every foreign byte and production owner visible (88438.118386ms)
+✔ integration copy closure requires its complete exact predecessor and current dependency bytes (794.323266ms)
+✔ mobile potion production packet retains all old views and rejects partial or stale owner bindings (692.918096ms)
+✔ mobile potion CI bindings authenticate complete fresh after sources and unchanged archives (2049.064077ms)
+✔ potion bootstrap combination authenticates raw union before either historical view and rejects fresh drift (4075.373209ms)
+✔ mobile potion raw inventories retain every new test and reject missing duplicate foreign or changed additions (131.063886ms)
+✔ Release bootstrap exact sources retain every old byte and reject missing drift and partial packets (2130.515457ms)
+✔ potion regression composition production sources retain original owners and reject partial fresh authorizations (803.197972ms)
+✔ potion regression composition CI keeps the bootstrap packet and rejects missing drift and incomplete after bytes (1531.862517ms)
+✔ potion regression composition raw JS and Lua inventory rejects missing duplicate foreign and source drift (107.614879ms)
+✔ legacy 3e potion click production closure authenticates new bytes and retains every complete predecessor (153.741786ms)
+✔ potion click CI authenticates new bytes and rejects drift missing packets and incomplete discovery (924.072535ms)
+✔ potion click historical entry authenticates complete current bindings before replay and after warm success (817.475063ms)
+✔ post697 union historical CI reader reauthenticates every current binding and archive after warm success (18176.978741ms)
+✔ post697 union public CI source authenticates the same raw reader before every historical conversion (17724.793718ms)
+✔ post697 union current inventory authenticates the complete corpus before entering prior inventory (19082.62199ms)
+✔ post697 union integrated reader and source forward the same raw reader before historical output (5176.267951ms)
+✔ post697 union production retains both complete real inputs and authenticates every current owner (2406.45137ms)
+✔ post697 union both explicit histories reject warm cross-input faults and preserve unchanged before bytes (352.936714ms)
+ℹ tests 19
+ℹ suites 0
+ℹ pass 19
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 167434.523367
