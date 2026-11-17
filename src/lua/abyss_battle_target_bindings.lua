@@ -111,6 +111,7 @@ function M.install(owner, ownership, host, dependencies)
             end)
             if not entryAt() then return end
             control:AddCursorEventListener(host.clickEvent, function(event)
+                if dependencies.swallowed(event,true)then return end
                 local released
                 if ownership.enemyPointerObserved then
                     released=dependencies.pointerTake(input,event,true,allowsAnonymousTarget)

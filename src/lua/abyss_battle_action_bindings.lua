@@ -19,6 +19,7 @@ function M.install(owner, ownership, host, dependencies)
                 function()return owner.active and not owner.busy end)
         end
         control:AddCursorEventListener(host.clickEvent,function(event)
+            if dependencies.swallowed(event,true)then return end
             local released
             if input and ownership.pointerObserved then
                 released=dependencies.pointerTake(input,event)
@@ -67,6 +68,7 @@ function M.install(owner, ownership, host, dependencies)
             return false
         end,name=="endTurn" and 90 or 50)
         control:AddCursorEventListener(host.clickEvent, function(event)
+            if dependencies.swallowed(event,true)then return end
             local released
             if name == "playArea" and ownership.fieldPointerObserved or name ~= "playArea" and ownership.actionPointerObserved then
                 released=dependencies.pointerTake(input,event)

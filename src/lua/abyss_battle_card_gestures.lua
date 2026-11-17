@@ -112,9 +112,14 @@ function M.install(owner, ownership, host, dependencies)
         owner:render()
         return true
     end
-    local function swallowed(event)
+    local function swallowed(event, tailOnly)
         local swallow = owner.swallow
-        if swallow and swallow.touch == (event and event.touchId) then owner.swallow = nil return true end
+        if swallow and swallow.touch == (event and event.touchId) then
+            owner.swallow = nil
+            dependencies.pointerRetire(event)
+            return true
+        end
+        if tailOnly then return false end
         local closed,automaticCard=dependencies.closeInfo()
         if not closed or automaticCard then return false end -- automatic card hover preserves this click
         owner:render()

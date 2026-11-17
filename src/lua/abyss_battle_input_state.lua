@@ -304,6 +304,10 @@ function M.install(owner, ownership, host, _dependencies)
     end
     return {
         pointerBegin=function(input,event)return beginPointer(owner,ownership,input,event)end,
+        pointerRetire=function(event)
+            local origin=touchKey(event)
+            eachInput(ownership,function(input)retireOrigin(owner,input,origin)end)
+        end,
         pointerArm=function(input,token,event,state)
             armPointer(input,token,event,state)
             if Controller.pointerBlocked(host.controller)then token.anonymousSafe=false end
