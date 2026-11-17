@@ -1,6 +1,7 @@
 // Explicit immutable source views for the reviewed integration inputs.
 // Production projectors never import this CI-only archive.
 import assert from 'node:assert/strict';
+import {assertPotionPointerCiUnionCurrent,potionPointerCiUnionSource,potionPointerCiUnionRead,withPotionPointerCiUnionValidation} from './potion-pointer-ci-union.mjs';
 import {readFileSync} from 'node:fs';
 import {createHash} from 'node:crypto';
 import {gunzipSync} from 'node:zlib';
@@ -26,6 +27,8 @@ export function integratedSource(path,source,target,read=readFileSync){
  assert(Object.hasOwn(integratedCiProof.sources,target),'known integration input');
  if(path.startsWith('src/')||path==='config/architecture.json')return source;
  const row=Object.hasOwn(integratedCiProof.files,path)?integratedCiProof.files[path]:null;
+ const rawRead=read;source=potionPointerCiUnionSource(path,source,'potion',rawRead);
+ read=potionPointerCiUnionRead('potion',rawRead,{production:true});
  source=priorCiSource(path,source,row?.current,read);
  if(!row?.views[target]||typeof source!=='string'||source.includes('\r\r\n')||hash(norm(source))!==row.current.sha256)return source;
  if(row.views[target].sha256===row.current.sha256)return source;
@@ -35,12 +38,14 @@ export function integratedRead(target,{read=readFileSync}={}){return(path,encodi
  const raw=read(path,encoding);
  const binary=Object.hasOwn(integratedCiProof.binaryViews,path)?integratedCiProof.binaryViews[path]:null;
  if(Buffer.isBuffer(raw)&&binary?.views[target]&&hash(raw)===binary.current){
+  assertPotionPointerCiUnionCurrent(read);
   const saved=binary.views[target],bytes=read(saved.path);assert.equal(hash(bytes),saved.sha256,'complete immutable integration binary predecessor');return bytes;
  }
  const text=typeof raw==='string'?raw:raw.toString('utf8'),prior=integratedSource(path,text,target,read);
  return typeof raw==='string'?prior:prior===text?raw:Buffer.from(prior);
 };}
 export function assertIntegratedCurrent(read=readFileSync){
+ withPotionPointerCiUnionValidation('potion',read,read=>{
  assertPotionPost697CiCurrent(read);
  const potionRead=potionPost697HistoricalRead('potion',read);
  assertPotionClickCiCurrent(potionRead);
@@ -52,6 +57,7 @@ export function assertIntegratedCurrent(read=readFileSync){
  assertMobilePotionCiCurrent(potionBootstrapHistoricalRead('potion',priorRead));
  for(const [path,row]of Object.entries(integratedCiProof.files))assert.equal(hash(norm(priorCiCheckedSource(path,read(path,'utf8'),row.current))),row.current.sha256,'fresh complete integration source: '+path);
  for(const [path,row]of Object.entries(integratedCiProof.closure))assert.equal(hash(path.endsWith('.gz')?read(path):norm(priorCiSource(path,read(path,'utf8'),integratedCiProof.files[path]?.current,read))),row.after,'fresh integration copy owner: '+path);
+ });
 }
 export function extendIntegratedHelperClosure(original){
  const current={...original},patch=integratedCiProof.closure;
@@ -61,6 +67,8 @@ export function extendIntegratedHelperClosure(original){
 }
 // Exact complete inventories for historical receipts; raw Full discovery remains live.
 export function integratedPriorInventory(paths,target,kind='js',read=readFileSync){
+ assertPotionPointerCiUnionCurrent(read);
+ read=potionPointerCiUnionRead('potion',read,{production:true});
  const current=kind==='js'?integratedCiProof.inventory:integratedCiProof.luaInventory;
  const prior=integratedCiProof.inventories[target]?.[kind];
  assert(prior,'known integration inventory');
