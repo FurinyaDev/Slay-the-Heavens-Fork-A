@@ -1,19 +1,19 @@
 import test from 'node:test';
+import {integrationPriorInventory} from './helpers/release-card-contact-integration.mjs';
 import assert from 'node:assert/strict';
 import {readFileSync as rawReadFileSync,readdirSync} from 'node:fs';
 import {releaseBootstrapCiRead,releaseBootstrapCiPacket,releaseBootstrapCiSource,releaseBootstrapWorkflowBefore,assertReleaseBootstrapCiCurrent,assertReleaseBootstrapRawInventory} from './helpers/release-bootstrap-ci-source.mjs';
-import {releasePc22BasicFeedbackCiRead,releasePc22BasicFeedbackPriorInventory} from './helpers/release-pc22-basic-feedback-ci-source.mjs';
-import {integrationRead,integrationPriorInventory} from './helpers/release-card-contact-integration.mjs';
+import {releaseSelectionMapCiRead,releaseSelectionMapPriorInventory} from './helpers/release-selection-map-ci-source.mjs';
 import {createHash} from 'node:crypto';
 import {discoverJs} from '../scripts/ci-shards.mjs';
 import {integratedCiProof as proof,integratedSource,assertIntegratedCurrent,renderIntegratedCiBinding,extendIntegratedHelperClosure} from './helpers/integrated-ci-source.mjs';
 const raw=p=>readFileSync(p,'utf8').replaceAll('\r\n','\n'),hash=s=>createHash('sha256').update(s).digest('hex');
-const sideRead=integrationRead('pc22',rawReadFileSync);
-const pickerBeforeRead=releasePc22BasicFeedbackCiRead(sideRead);
+import {battlePointerCiRead} from './helpers/battle-pointer-ci-source.mjs';
+const pickerBeforeRead=releaseSelectionMapCiRead(battlePointerCiRead(rawReadFileSync));
 const readFileSync=releaseBootstrapCiRead(pickerBeforeRead);
 
 test('integration validates complete raw sources and leaves every foreign byte and production owner visible',()=>{
- assertIntegratedCurrent();assert.deepEqual(releasePc22BasicFeedbackPriorInventory(integrationPriorInventory(discoverJs(),'pc22'),'js',sideRead),proof.inventory);assert.equal(new Set(proof.inventory).size,proof.inventory.length);
+ assertIntegratedCurrent();assert.deepEqual(releaseSelectionMapPriorInventory(integrationPriorInventory(discoverJs(),'selection'),'js',rawReadFileSync),proof.inventory);assert.equal(new Set(proof.inventory).size,proof.inventory.length);
  for(const [path,row]of Object.entries(proof.files))for(const target of Object.keys(proof.sources)){
   const source=raw(path),production=path.startsWith('src/')||path==='config/architecture.json';
   const expected=production?source:row.views[target]?.source??source;
@@ -64,7 +64,7 @@ test('Release bootstrap exact sources retain every old byte and reject missing d
  }
  const archive=Object.keys(releaseBootstrapCiPacket.immutableArchives)[0];
  assert.throws(()=>assertReleaseBootstrapCiCurrent((p,e)=>p===archive?pickerBeforeRead(p).subarray(1):pickerBeforeRead(p,e)),/immutable bootstrap predecessor/);
- const inventories={js:releasePc22BasicFeedbackPriorInventory(integrationPriorInventory(discoverJs(),'pc22'),'js',sideRead),lua:releasePc22BasicFeedbackPriorInventory(integrationPriorInventory(readdirSync('tests/lua').filter(n=>n.endsWith('.lua')).map(n=>'tests/lua/'+n).sort(),'pc22','lua'),'lua',sideRead)};
+ const inventories={js:releaseSelectionMapPriorInventory(discoverJs(),'js',rawReadFileSync),lua:readdirSync('tests/lua').filter(n=>n.endsWith('.lua')).map(n=>'tests/lua/'+n).sort()};
  for(const [kind,paths]of Object.entries(inventories)){
   assertReleaseBootstrapRawInventory(paths,kind);
   for(const bad of [[],paths.slice(1),[...paths,paths[0]],[...paths,`tests/${kind==='lua'?'lua/':''}foreign.${kind==='lua'?'lua':'test.mjs'}`]])

@@ -22,21 +22,92 @@ assert.equal(hash(bytes),'800fcc9efd889f482259d0e1e9f1501f0e9597ac05552622ede00d
 const currentBytes=readFileSync(new URL('./closeout-source-closure.json',import.meta.url));
 assert.equal(hash(currentBytes),'031c42758ec5b37d1782c5fdb70542358d4b2631a5ee9b486b6bb5faccc988b5','complete closeout source helper closure');
 const files={...extendIntegratedHelperClosure(extendFeedbackHelperClosure(JSON.parse(currentBytes),feedbackCiPatch.helperClosure))};
-export const releasePc22BasicFeedbackHelperCopies=[
- {path:'tests/helpers/closeout-source-epoch.mjs',before:'163f0f84fcd4f9b4bcb982b250891a9c5156df556699d8a65ec0cf1b354d25f7',after:'0c7ff98c42c47a1a48ad83537d1d7c37a6cc23aed55ada9c763122d4ea102d07'},
- {path:'tests/helpers/release-pc22-basic-feedback-source.mjs',before:null,after:'395e3810c67852768340eb868ee7397bb9ed0b232ff112efa93fb4b520e80b96'},
- {path:'tests/helpers/release-pc22-basic-feedback-source.json.gz',before:null,after:'1cb0fddfea365de7be5331dc169bd438f2cde36b372c4c15bf9c8ac8a2eed157'}
-];
 export const releaseSelectionMapHelperCopies=[
  {path:'tests/helpers/closeout-source-epoch.mjs',before:'163f0f84fcd4f9b4bcb982b250891a9c5156df556699d8a65ec0cf1b354d25f7',after:'9bc2594f88cd780a31a429f5a493568f076d039ab92f55b952631b586ce335c1'},
  {path:'tests/helpers/release-selection-map-source.mjs',before:null,after:'920fd01fa07dad36ed7e9b70ace199246000d87ad20c258221a2aca4a8e0ee52'},
  {path:'tests/helpers/release-selection-map-source.json.gz',before:null,after:'0c056c020ad655d5a2a901a6f196350582eaf0709afa736f363a0d68509daf62'}
 ];
-for(const rows of [releasePc22BasicFeedbackHelperCopies,releaseSelectionMapHelperCopies])for(const row of rows){
- assert.equal(files[row.path]??null,row.before,'exact standalone Release helper-copy predecessor: '+row.path);
- if(row.path!=='tests/helpers/closeout-source-epoch.mjs')files[row.path]=row.after;
-}
-files['tests/helpers/closeout-source-epoch.mjs']='3101ebf6deee9f081fad6e3c8d4617b6db4bf17ee01453c82fc8d8a3fb742215';
+for(const row of releaseSelectionMapHelperCopies){assert.equal(files[row.path]??null,row.before,'exact release selection map helper-copy predecessor: '+row.path);files[row.path]=row.after;}
+export const battlePointerHelperCopies=[
+ {
+  "path": "tests/helpers/closeout-source-epoch.mjs",
+  "before": "9bc2594f88cd780a31a429f5a493568f076d039ab92f55b952631b586ce335c1",
+  "after": "00240dea8c750c8726eab9d12e49d79ec102ac57612f55b2bb97cc232d122097"
+ },
+ {
+  "path": "tests/helpers/battle-pointer-source.mjs",
+  "before": null,
+  "after": "b8e4d236b50f7f4770fb839772daa3607b678d82dfdae5c80cb39f4e932c3643"
+ },
+ {
+  "path": "tests/helpers/battle-pointer-source.json.gz",
+  "before": null,
+  "after": "c6ed821e15ab4e79de278db32122712c07716360166c995a6bf0f7a70c11639a"
+ }
+];
+for(const row of battlePointerHelperCopies){assert.equal(files[row.path]??null,row.before,'exact battle pointer helper-copy predecessor: '+row.path);files[row.path]=row.after;}
+export const battlePointerSparseHelperCopies=[
+ {
+  "path": "tests/helpers/closeout-source-epoch.mjs",
+  "before": "00240dea8c750c8726eab9d12e49d79ec102ac57612f55b2bb97cc232d122097",
+  "after": "60c35fcb13cb9bc6ee8c4b9212af65f5c50ca43412afa9544a781628dc41167d"
+ },
+ {
+  "path": "tests/helpers/battle-pointer-sparse-source.mjs",
+  "before": null,
+  "after": "d942cd6fc3f9cbc4a75165ae4f5fb68ffb4acee3855631ca799fddfe3208d704"
+ },
+ {
+  "path": "tests/helpers/battle-pointer-sparse-source.json.gz",
+  "before": null,
+  "after": "789e74619b3ce005e0e9ebe75885fb2d8a71799dae5b98acc70a31ba87284518"
+ }
+];
+for(const row of battlePointerSparseHelperCopies){assert.equal(files[row.path]??null,row.before,'exact sparse battle pointer helper-copy predecessor: '+row.path);files[row.path]=row.after;}
+export const battlePointerInspectionHelperCopies=[
+ {
+  "path": "tests/helpers/closeout-source-epoch.mjs",
+  "before": "60c35fcb13cb9bc6ee8c4b9212af65f5c50ca43412afa9544a781628dc41167d",
+  "after": "6d7e34b712195df0d8d4d3e6915dcb1d6cc13d9fc9b2da86b3727740ff5a9c1d"
+ },
+ {
+  "path": "tests/helpers/battle-pointer-inspection-source.mjs",
+  "before": null,
+  "after": "cbc3c05473bc514f2642ead74a3ce879ab9af6d40a19062f188195b7af3a2a23"
+ },
+ {
+  "path": "tests/helpers/battle-pointer-inspection-source.json.gz",
+  "before": null,
+  "after": "647685ce68d914a68ea5308308cebe8c0f6ceeefbca2a3698db04e4640dd48f6"
+ }
+];
+for(const row of battlePointerInspectionHelperCopies){assert.equal(files[row.path]??null,row.before,'exact inspection helper-copy predecessor: '+row.path);files[row.path]=row.after;}
+export const battlePointerDismissHelperCopies=[
+  {
+    "path": "tests/helpers/closeout-source-epoch.mjs",
+    "before": "6d7e34b712195df0d8d4d3e6915dcb1d6cc13d9fc9b2da86b3727740ff5a9c1d",
+    "after": "2cc9da456afc3a7c62ed1e3b35df03d759536f84bdea5aacca8406612b24eda4"
+  },
+  {
+    "path": "tests/helpers/battle-pointer-dismiss-source.mjs",
+    "before": null,
+    "after": "8d8c1fc28ee373a0758e4a4d8998800da75fb1def75c03a7fba1b89b21ed496e"
+  },
+  {
+    "path": "tests/helpers/battle-pointer-dismiss-source.json.gz",
+    "before": null,
+    "after": "6f96a2ad90170ab7571bc900109537d3097d027c4a39310894176e5b641ea13c"
+  }
+];
+for(const row of battlePointerDismissHelperCopies){assert.equal(files[row.path]??null,row.before,'exact dismiss helper-copy predecessor: '+row.path);files[row.path]=row.after;}
+export const releasePc22BasicFeedbackHelperCopies=[
+ {path:'tests/helpers/closeout-source-epoch.mjs',before:'163f0f84fcd4f9b4bcb982b250891a9c5156df556699d8a65ec0cf1b354d25f7',after:'0c7ff98c42c47a1a48ad83537d1d7c37a6cc23aed55ada9c763122d4ea102d07'},
+ {path:'tests/helpers/release-pc22-basic-feedback-source.mjs',before:null,after:'395e3810c67852768340eb868ee7397bb9ed0b232ff112efa93fb4b520e80b96'},
+ {path:'tests/helpers/release-pc22-basic-feedback-source.json.gz',before:null,after:'1cb0fddfea365de7be5331dc169bd438f2cde36b372c4c15bf9c8ac8a2eed157'}
+];
+for(const row of releasePc22BasicFeedbackHelperCopies)if(row.path!=='tests/helpers/closeout-source-epoch.mjs'){assert.equal(files[row.path]??null,row.before,'exact B9 production helper predecessor: '+row.path);files[row.path]=row.after;}
+assert.equal(files['tests/helpers/closeout-source-epoch.mjs'],'2cc9da456afc3a7c62ed1e3b35df03d759536f84bdea5aacca8406612b24eda4','exact pointer helper before B9 join');
+files['tests/helpers/closeout-source-epoch.mjs']='d79c667b3a0b2cebf6d248805cd3add5446ce95c62da969a2bdbd21e707e099b';
 const inside=(root,path)=>{const r=relative(root,path);return r!==''&&!isAbsolute(r)&&r!=='..'&&!r.startsWith('../')&&!r.startsWith('..\\');};
 export function copyIntegrationSourceClosure(directory,{sourceRoot=process.cwd()}={}){
  const destination=realpathSync.native(directory);

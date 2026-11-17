@@ -1,3 +1,4 @@
+const {releasePc22BasicFeedbackSourceEpoch:pc22FixtureEpoch}=await import('./helpers/closeout-source-epoch.mjs');
 import {sourceSlice,closeoutPriorEpoch,ciRepairSourceEpoch,stsStyleEpoch,menuRedEpoch,preReleasePc22BasicFeedbackSourceEpoch} from './helpers/closeout-source-epoch.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -187,6 +188,8 @@ test('frozen pre-PC22 production retains the exact power-view owner and complete
 });
 
 test('current PC22 raw production retains the exact power-view owner and complete 117-owner release continuation',()=>{
+ // Retain the exact PC22 producer's 117-owner contract; current122 is checked separately.
+ const currentEpoch=pc22FixtureEpoch,diskReadFileSync=path=>pc22FixtureEpoch.proof.current[path]?.source??null;
  const current=currentEpoch.proof,prior=preReleasePc22BasicFeedbackSourceEpoch.proof,file='config/architecture.json',source=diskReadFileSync(file,'utf8'),owner='src/lua/abyss_monster_power_view.lua';
  assert.equal(prior.owners.length,116);
  assert.deepEqual(current.owners,[...prior.owners,'src/lua/abyss_card_flow.lua'].sort());

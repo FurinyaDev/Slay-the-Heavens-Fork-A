@@ -1,3 +1,4 @@
+const {releasePc22BasicFeedbackSourceEpoch:pc22FixtureEpoch}=await import('./helpers/closeout-source-epoch.mjs');
 import {preDefectActorSource} from './helpers/defect-actor-source-epoch.mjs';
 import test from 'node:test';
 import {officialUiRepairProof,preOfficialUiRepairSource} from './helpers/official-ui-repair-source-epoch.mjs';
@@ -235,6 +236,8 @@ test('frozen pre-PC22 UI facade authenticates all 116 owners once in order and r
 });
 
 test('current PC22 UI facade authenticates all 117 disk owners once in order and rejects every warm drift or removal',()=>{
+ // Retain the exact PC22 producer's 117-owner contract; current122 is checked separately.
+ const currentSourceEpoch=pc22FixtureEpoch,diskReadFileSync=path=>pc22FixtureEpoch.proof.current[path]?.source??null;
  const current=currentSourceEpoch.proof,prior=preReleasePc22BasicFeedbackSourceEpoch.proof,file='config/architecture.json',input=diskReadFileSync(file,'utf8'),target='develop';
  assert.equal(prior.owners.length,116);
  assert.deepEqual(current.owners,[...prior.owners,'src/lua/abyss_card_flow.lua'].sort());
