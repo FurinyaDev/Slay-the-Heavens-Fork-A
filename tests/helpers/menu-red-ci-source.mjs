@@ -25,8 +25,8 @@ export function menuRedPriorRead(read=readFileSync){return(path,encoding)=>{
  const raw=read(path,encoding),text=typeof raw==='string'?raw:raw.toString('utf8'),prior=preMenuRedCiSource(path,text);
  return typeof raw==='string'?prior:prior===text?raw:Buffer.from(prior);
 };}
-export function menuRedPriorLua(paths,read=readFileSync){
- paths=integratedPriorInventory(paths,'menu','lua',read);
+export function menuRedPriorLua(paths,read=readFileSync,currentRead=read){
+ paths=integratedPriorInventory(paths,'menu','lua',read,currentRead);
  assert.deepEqual([...paths].sort(),menuRedCiProof.afterLua,'complete current menu Lua discovery');
  for(const [path,row]of Object.entries(menuRedCiProof.addedLua))assert.equal(hash(norm(read(path,'utf8'))),row.sha256,'complete added menu Lua source: '+path);
  return [...menuRedCiProof.beforeLua];

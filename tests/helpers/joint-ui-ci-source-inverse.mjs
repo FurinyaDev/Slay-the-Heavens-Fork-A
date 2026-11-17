@@ -63,8 +63,8 @@ const ratchetSourceBindings=Object.freeze({
  'tests/ci-complete-calibration.test.mjs':Object.freeze({beforeSha256:'8c5046164021603181e3816d8c1b3facd14d1ea926dc5d95a84b1f153c2bf4ec',afterSha256:'aaa4e166215b8af571f74ce1475b24e36550473b0ed7bb74225577d48afe7286'}),
 });
 for(const [file,row]of Object.entries(ratchetSourceBindings))assert.equal(proof.files[file]?.sha256,row.beforeSha256,'ratchet exact predecessor');
-export function preRatchetInventory(paths,readSource=readFileSync){
- paths=closeoutInventory(paths,'pr616',readSource);
+export function preRatchetInventory(paths,readSource=readFileSync,currentRead=readSource){
+ paths=closeoutInventory(paths,'pr616',readSource,currentRead);
  readSource=closeoutRead('pr616',readSource);
  assert.equal(typeof readSource,'function','inventory source reader');
  assert.deepEqual([...paths].sort(),[...proof.currentInventory,ratchetInventoryFile].sort(),'complete ratchet inventory');
@@ -95,10 +95,10 @@ export function jointCiSourceAt(path,source,target){
  const row=Object.hasOwn(proof.files,path)?proof.files[path]:null;
  return row&&Object.hasOwn(row.targets,target)&&sourceMatches(path,source,row)?row.targets[target]:original;
 }
-export function jointCiInventoryAt(paths,target,readSource=readFileSync,sourceView='pr620'){
- paths=closeoutInventory(paths,sourceView,readSource);
+export function jointCiInventoryAt(paths,target,readSource=readFileSync,sourceView='pr620',currentRead=readSource){
+ paths=closeoutInventory(paths,sourceView,readSource,currentRead);
  readSource=closeoutRead(sourceView,readSource);
- if(sourceView==='pr616')paths=preRatchetInventory(paths,readSource);
+ if(sourceView==='pr616')paths=preRatchetInventory(paths,readSource,currentRead);
  else if(sourceView==='pr621')paths=preBattleQueueCiInventory(paths);
  else if(sourceView==='pr623')paths=noncombatPriorInventory(paths);
  else if(sourceView==='pr618')paths=preDefectActorCiInventory(paths);

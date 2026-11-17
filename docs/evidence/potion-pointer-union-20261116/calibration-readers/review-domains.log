@@ -1,0 +1,1 @@
+Independent explicit reader-domain PASS 31 checks: seven entry points propagate supplied raw-current, omitted raw retains caller, noncaller drift, historical mutation, binary archive freshness, recovery and array isolation.

@@ -1,0 +1,18 @@
+✔ joint historical inventory rejects missing duplicate and unknown files while current discovery remains complete (3149.363174ms)
+✔ ratchet current inventory preserves raw Full coverage and refuses source drift after a warm projection (1291.246561ms)
+✔ combined closeout validates raw current sources and complete Full discovery independently of immutable slice views (3206.372697ms)
+ℹ win32 final 854JS/1416Lua forecast 1739506ms < 1800000ms; actual hosted completion remains separate
+ℹ linux final 854JS/1416Lua forecast 1174962ms < 1200000ms; actual hosted completion remains separate
+✔ noncombat immutable added inventory keeps its full source and unknown-cost rejection checks (1221.223704ms)
+✔ run HUD continuation authenticates complete current sources and raw Full inventory without rewriting historical receipts (2013.679535ms)
+✔ menu current complete JS and Lua workload retains Full budgets and every added Lua byte (407.086309ms)
+ℹ win32: 876 JS / 1423 Lua, forecast 1755640ms < 1800000ms
+ℹ linux: 876 JS / 1423 Lua, forecast 1189630ms < 1200000ms
+ℹ tests 6
+ℹ suites 0
+ℹ pass 6
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 26539.459024

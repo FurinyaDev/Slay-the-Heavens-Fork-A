@@ -1,0 +1,1 @@
+Independent extracted calibration wrapper PASS 11 checks: context, byte isolation, exception cleanup, post-await fresh reads, bad-source rejection/recovery.

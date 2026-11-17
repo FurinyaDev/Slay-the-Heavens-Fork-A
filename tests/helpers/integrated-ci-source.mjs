@@ -34,14 +34,14 @@ export function integratedSource(path,source,target,read=readFileSync){
  if(row.views[target].sha256===row.current.sha256)return source;
  return row.views[target].source;
 }
-export function integratedRead(target,{read=readFileSync}={}){return(path,encoding)=>{
+export function integratedRead(target,{read=readFileSync,currentRead=read}={}){return(path,encoding)=>{
  const raw=read(path,encoding);
  const binary=Object.hasOwn(integratedCiProof.binaryViews,path)?integratedCiProof.binaryViews[path]:null;
  if(Buffer.isBuffer(raw)&&binary?.views[target]&&hash(raw)===binary.current){
-  assertPotionPointerCiUnionCurrent(read);
+  assertPotionPointerCiUnionCurrent(currentRead);
   const saved=binary.views[target],bytes=read(saved.path);assert.equal(hash(bytes),saved.sha256,'complete immutable integration binary predecessor');return bytes;
  }
- const text=typeof raw==='string'?raw:raw.toString('utf8'),prior=integratedSource(path,text,target,read);
+ const text=typeof raw==='string'?raw:raw.toString('utf8'),prior=integratedSource(path,text,target,currentRead);
  return typeof raw==='string'?prior:prior===text?raw:Buffer.from(prior);
 };}
 export function assertIntegratedCurrent(read=readFileSync){
@@ -66,9 +66,11 @@ export function extendIntegratedHelperClosure(original){
  return freeze(current);
 }
 // Exact complete inventories for historical receipts; raw Full discovery remains live.
-export function integratedPriorInventory(paths,target,kind='js',read=readFileSync){
- assertPotionPointerCiUnionCurrent(read);
- read=potionPointerCiUnionRead('potion',read,{production:true});
+export function integratedPriorInventory(paths,target,kind='js',read=readFileSync,currentRead=read){
+ // Legacy callers still authenticate their supplied reader. Historical callers
+ // must explicitly supply the independent current reader; neither is discarded.
+ assertPotionPointerCiUnionCurrent(currentRead);
+ if(read===currentRead)read=potionPointerCiUnionRead('potion',read,{production:true});
  const current=kind==='js'?integratedCiProof.inventory:integratedCiProof.luaInventory;
  const prior=integratedCiProof.inventories[target]?.[kind];
  assert(prior,'known integration inventory');

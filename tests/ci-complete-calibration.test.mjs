@@ -1,11 +1,11 @@
-import {closeoutRead,closeoutInventory,preCloseoutCiSource,closeoutCiProof} from './helpers/closeout-ci-source.mjs';
-import {menuRedPriorRead,menuRedPriorLua,menuRedCiProof} from './helpers/menu-red-ci-source.mjs';
+import {closeoutRead,closeoutInventory as rawCloseoutInventory,preCloseoutCiSource,closeoutCiProof} from './helpers/closeout-ci-source.mjs';
+import {menuRedPriorRead,menuRedPriorLua as rawMenuRedPriorLua,menuRedCiProof} from './helpers/menu-red-ci-source.mjs';
 import {integratedCiProof} from './helpers/integrated-ci-source.mjs';
-import {runHudPriorRead,runHudPriorInventory,preRunHudCiSource,runHudCiProof,runHudBeforeCiRepairProof} from './helpers/run-hud-ci-source.mjs';
-import {stsStylePriorRead,stsStylePriorInventory} from './helpers/sts-style-ci-source.mjs';
+import {runHudPriorRead,runHudPriorInventory as rawRunHudPriorInventory,preRunHudCiSource,runHudCiProof,runHudBeforeCiRepairProof} from './helpers/run-hud-ci-source.mjs';
+import {stsStylePriorRead,stsStylePriorInventory as rawStsStylePriorInventory} from './helpers/sts-style-ci-source.mjs';
 import {receiptToolingSource,toolingProof} from './helpers/integration-1111-tooling.mjs';
 import {cursesPlanningFloors,cursesGateProof,preCursesGateSource} from './helpers/curses-ci-planning.mjs';
-import {jointCiSourceAt,jointCiInventoryAt,jointCiMatches,preCurrentPlanningSource,preRatchetInventory,ratchetInventoryFile} from './helpers/joint-ui-ci-source-inverse.mjs';
+import {jointCiSourceAt,jointCiInventoryAt as rawJointCiInventoryAt,jointCiMatches,preCurrentPlanningSource,preRatchetInventory as rawPreRatchetInventory,ratchetInventoryFile} from './helpers/joint-ui-ci-source-inverse.mjs';
 
 import {battleQueueCiProof,preBattleQueueCiInventory,preBattleQueueCiSource} from './helpers/battle-queue-ci-source-epoch.mjs';
 import {noncombatAddedTests,noncombatPriorInventory} from './helpers/noncombat-ci-source-inverse.mjs';
@@ -51,6 +51,14 @@ const withCalibration=fn=>{let result;withPotionPointerCiUnionValidation('potion
 const test=(name,fn)=>nodeTest(name,t=>withCalibration(()=>fn(t)));
 // Cache only immutable historical bytes within one fully authenticated synchronous scope.
 const memoHistorical=(name,read)=>(path,encoding)=>{const scope=calibrationScope;if(!scope)return read(path,encoding);const key=JSON.stringify([name,path,encoding??null]);if(!scope.memo.has(key)){const value=read(path,encoding);scope.memo.set(key,Buffer.isBuffer(value)?Buffer.from(value):value);}const value=scope.memo.get(key);return Buffer.isBuffer(value)?Buffer.from(value):value;};
+// Explicitly separate current authentication from immutable historical receipts.
+const calibrationCurrentRead=()=>calibrationScope?.current??actualUnionReadFileSync;
+const closeoutInventory=(paths,view,read)=>{const current=calibrationCurrentRead();return rawCloseoutInventory(paths,view,read??current,current);};
+const menuRedPriorLua=(paths,read)=>{const current=calibrationCurrentRead();return rawMenuRedPriorLua(paths,read??current,current);};
+const runHudPriorInventory=(paths,read)=>{const current=calibrationCurrentRead();return rawRunHudPriorInventory(paths,read??current,current);};
+const stsStylePriorInventory=(paths,read)=>{const current=calibrationCurrentRead();return rawStsStylePriorInventory(paths,read??current,current);};
+const preRatchetInventory=(paths,read)=>{const current=calibrationCurrentRead();return rawPreRatchetInventory(paths,read??current,current);};
+const jointCiInventoryAt=(paths,target,read,view='pr620')=>{const current=calibrationCurrentRead();return rawJointCiInventoryAt(paths,target,read??current,view,current);};
 import assert from 'node:assert/strict';
 import {readFileSync as actualUnionReadFileSync,readdirSync} from 'node:fs';
 import {potionPost697HistoricalRead,potionPost697PriorInventory} from './helpers/potion-post697-ci-source.mjs';
@@ -1948,7 +1956,7 @@ test('combined closeout validates raw current sources and complete Full discover
   const added=files.find(path=>!closeoutCiProof.targets[view].inventory.includes(path));
   if(added){
    assert.throws(()=>closeoutInventory(files.filter(path=>path!==added),view),/inventory/);
-   assert.throws(()=>closeoutInventory(files,view,(path,encoding)=>nativeCloseoutRead(path,encoding)+(path===added?'\n':'')),/added inventory source/);
+   assert.throws(()=>closeoutInventory(files,view,(path,encoding)=>path===added?nativeCloseoutRead(path,encoding)+'\n':nativeCloseoutRead(path,encoding)),/added inventory source/);
   }
  }
 });
@@ -1987,7 +1995,7 @@ test('run HUD continuation authenticates complete current sources and raw Full i
   assert(files.includes(path));
   assert.throws(()=>runHudPriorInventory([...files,path]),/inventory/);
   assert.throws(()=>runHudPriorInventory([...files,'tests/foreign.test.mjs']),/inventory/);
-  assert.throws(()=>runHudPriorInventory(files,(p,e)=>liveDiskReadFileSync(p,e)+(p===path?'\n':'')),/added inventory source/);
+  assert.throws(()=>runHudPriorInventory(files,(p,e)=>p===path?liveDiskReadFileSync(p,e)+'\n':liveDiskReadFileSync(p,e)),/added inventory source/);
   for(const platform of ['win32','linux']){
    assert.equal(rawCurrentTimings.js[platform][path],undefined,'new regression has no historical hosted timing');
    assert(rawCurrentJsPlanningWeights([path],platform)[path]>=rawCurrentTimings.unknownJsMs);
@@ -2002,7 +2010,7 @@ test('menu current complete JS and Lua workload retains Full budgets and every a
  for(const [path,row]of Object.entries(menuRedCiProof.addedLua)){
   assert.equal(liveDiskReadFileSync(path,'utf8').replaceAll('\r\n','\n'),row.source);
   assert.equal(hash(row.source),row.sha256);
-  assert.throws(()=>menuRedPriorLua(lua,(p,e)=>liveDiskReadFileSync(p,e)+(p===path?'\n':'')),/added menu Lua source/);
+  assert.throws(()=>menuRedPriorLua(lua,(p,e)=>p===path?liveDiskReadFileSync(p,e)+'\n':liveDiskReadFileSync(p,e)),/added menu Lua source/);
  }
  for(const paths of [lua.slice(1),[...lua,lua[0]],[...lua,'tests/lua/foreign.lua']])assert.throws(()=>menuRedPriorLua(paths),/Lua discovery/);
  for(const [platform,count,budget]of [['win32',18,1800000],['linux',15,1200000]]){

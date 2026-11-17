@@ -55,7 +55,7 @@ test('integration validates complete raw sources and leaves every foreign byte a
   ['.gitattributes','integration'],
   ['docs/legal/assets.json','integration'],
   ['tests/helpers/closeout-source-epoch.mjs','post697'],
-  ['tests/helpers/run-hud-ci-source.mjs','integration'],
+  ['tests/helpers/run-hud-ci-source.mjs','post697'],
   ['tests/helpers/integrated-ci-source.mjs','post697'],
  ])
   assert.throws(()=>assertIntegratedCurrent((p,e)=>{
