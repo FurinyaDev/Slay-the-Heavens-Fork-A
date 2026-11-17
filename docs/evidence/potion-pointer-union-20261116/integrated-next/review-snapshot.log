@@ -1,0 +1,1 @@
+Independent scoped-snapshot PASS 13 checks; no escaped reader, Buffer alias, async capability or custom-reader bypass.

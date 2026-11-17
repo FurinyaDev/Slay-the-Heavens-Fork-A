@@ -1,0 +1,9 @@
+{
+  "tests/helpers/potion-pointer-ci-union.mjs": "02a18279b5cf1468bcece8cd2f55954d486ad0f64cb858910e4bc82301ea821d",
+  "tests/helpers/potion-pointer-ci-union.json.gz": "d5654ff207845a19b5a3221b9e7e8ec27319d865a556c525f40972c1e0d99255",
+  "tests/helpers/copy-integration-source-closure.mjs": "a4611339f7b8e10ec75c3f4ee105e19410dba4e36f151a5045aee50eff23831f",
+  "tests/helpers/potion-pointer-ci-copy-closure.json": "6c9b6a3c082dd21a44477d12ec3d87e805467b45f4f4592cad7c5e1bbb246902",
+  "tests/mobile-card-release.test.mjs": "97acc71a229f7dd7fa6f217596e61292abe8d65c7072ba1e659d95078ceff817",
+  "tests/lua/support/battle_pointer_identity_cases.lua": "7eef06a49befd99f4ae4dbfd13d2a327bd45fd972e3eafed63fc6da9a036c77e",
+  "tests/lua/support/battle_sparse_pointer_cases.lua": "8e83f30ef58a3e00bbf7002df5e1ba76ac02278e99fb912ef5adad1e1ddd8dc3"
+}

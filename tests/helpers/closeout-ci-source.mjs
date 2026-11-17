@@ -35,10 +35,10 @@ export function preCloseoutCiSource(path,source,view){
  const prior=before.files[path];
  return prior?packed.records[prior]:source;
 }
-export function closeoutInventory(paths,view,readSource=readFileSync){
+export function closeoutInventory(paths,view,readSource=readFileSync,currentRead=readSource){
  const before=target(view);
  assert.notEqual(before.scope,'workflow-only','workflow-only views cannot project test inventories');
- paths=runHudPriorInventory(paths,readSource);readSource=runHudPriorRead(readSource);
+ paths=runHudPriorInventory(paths,readSource,currentRead);readSource=runHudPriorRead(readSource);
  const sorted=[...paths].sort();
  if(JSON.stringify(sorted)===JSON.stringify(before.inventory))return [...paths];
  assert.deepEqual(sorted,packed.inventory,'complete raw closeout inventory');

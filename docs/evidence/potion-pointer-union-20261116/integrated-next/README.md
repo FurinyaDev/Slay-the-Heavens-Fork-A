@@ -1,0 +1,19 @@
+# Integrated CI historical consumer continuation (PARTIAL)
+
+Prepared base `324d2a2797201725cb104097567d69da681b84a8`; original input heads remain potion `eabff9b0bf2cce17ae05913c0e5d47366d0ff173` and pointer `ad6fe84dbcc11e28e8a82258f889a6841b46c8c6`. This does not claim integration onto the later current Release base. Product files are unchanged.
+
+The existing integrated CI consumer contains 19 potion-history test groups. All 19 failed on the prepared union because its raw reader and current epoch still assumed the pre-pointer potion input. Their assertions and original expected hashes are retained. The reader now explicitly enters the authenticated potion predecessor. The one production-proof import names `potionBeforePointerEpoch` instead of mislabeling the active combined epoch. Five public-current drift controls use the actual raw union reader; two changed helper owners now assert the exact union rejection path, while three unchanged integration owners retain their exact old message.
+
+Known dynamic imports are hoisted into static module namespaces. Each test receives a synchronous, complete current authentication and bounded snapshot. The wrapper stores a returned Promise outside that scope; `finally` disables the scope before any await continuation. After await, reads use the fresh public reader, not a cached authorization. AsyncLocalStorage isolates concurrent contexts. Immutable historical fixture bytes alone are memoized inside the synchronous scope, Buffer returns are copied, and the memo is cleared on exit.
+
+The current snapshot reader is a second explicit callback argument. It is registered in a private WeakSet only after complete authentication, avoiding duplicate union authentication in the source matrix. Every read checks the active lifetime; `finally` deletes the mark and clears captured bytes. Ordinary/custom/public readers are never registered and remain freshly authenticated. The original synchronous helper still rejects thenables. No asynchronous authorization scope was added.
+
+The original pre-selection and pre-integrated packets are retained byte-for-byte with their immutable hashes. The new successor names exact `324d2a2` and permits only this consumer's current binding to advance; all other previous current bindings and all parent view hashes/source bytes remain unchanged. `capture.py` reconstructs both historical packets from exact Git objects and validates existing LFS payload identities.
+
+## Evidence and limits
+
+`baseline-red.log.gz` preserves 19 failures. Initial public-reader-only attempts were terminated (exit 130), not reported as passes; no test budget increased. `v4-red.log.gz` shows 18/19 passing in 127.2 seconds, with the remaining first-case failure being an overly broad expected rejection-prefix assumption, not a product defect. Final complete suite passed **19/19**, zero skipped, in 167434.523367 ms (`focused.log`); the earlier selection consumer regression is separately recorded as 7/7 in `selection-regression.log`. Independent scope/async tests are recorded separately.
+
+Remaining: `ci-complete-calibration.test.mjs`, #711's additional pointer CI assertions/helpers and mobile-release cases, full isolated CI-helper-copy closure, current Release rebasing, hosted CI and official/device acceptance. The #711 version of this integrated consumer has three shared contract groups with different reader wiring; it is not claimed that all of #711's new tests have been incorporated. No Full or product change was performed. Backlog CLI remains unavailable; no manual Backlog edits.
+
+Final generator rerun produced identical helper and packet hashes before and after. Independent checks: scope 13/13, actual async wrapper 6/6, freshness/rollback 20/20. The original 19 test names and assertion-method counts remain; other 186 input rows and the previous selection consumer are unchanged. See `REVIEW.md` and independent logs.

@@ -213,3 +213,68 @@ test('round3 retirement rejects live hardlinks and live source roots',async()=>{
  const root=mkdtempSync(join(sandbox,'retirement-hardlink-')),path='src/lua/abyss_combat_catalog.lua';mkdirSync(dirname(join(root,path)),{recursive:true});
  linkSync(join(sandbox,path),join(root,path));try{assert.throws(()=>prepare(root,{sourceRoot:sandbox}),/single link|inode/);}finally{unlinkSync(join(root,path));}
 });
+
+// Preserve the original 0780 contracts in their explicit independent parent domain.
+{
+
+test('mobile potion copy closure retains fresh packet dependencies and rejects drift or missing bytes after warm success',async()=>{
+ const {copyIntegrationSourceClosure,mobilePotionHelperCopies}=await import('./helpers/copy-integration-source-closure.mjs');
+ const temp=tmpdir(),source=mkdtempSync(join(temp,'mobile-potion-source-')),target=mkdtempSync(join(temp,'mobile-potion-copy-'));
+ try{
+  copyIntegrationSourceClosure(source);copyIntegrationSourceClosure(target,{sourceRoot:source});
+  for(const {path}of mobilePotionHelperCopies){
+   const file=join(source,path),bytes=readFileSync(file);
+   assert.deepEqual(readFileSync(join(target,path)),bytes);
+   writeFileSync(file,Buffer.concat([bytes,Buffer.from('\n')]));
+   assert.throws(()=>copyIntegrationSourceClosure(target,{sourceRoot:source}),/fresh helper copy identity/);
+   writeFileSync(file,bytes);unlinkSync(file);
+   assert.throws(()=>copyIntegrationSourceClosure(target,{sourceRoot:source}),/ENOENT/);
+   writeFileSync(file,bytes);copyIntegrationSourceClosure(target,{sourceRoot:source});
+  }
+ }finally{for(const directory of [source,target]){
+  const {realpathSync}=await import('node:fs');const {relative,isAbsolute}=await import('node:path');
+  const within=relative(realpathSync.native(temp),realpathSync.native(directory));
+  assert(!isAbsolute(within)&&within.startsWith('mobile-potion-')&&!within.startsWith('..'));
+  rmSync(directory,{recursive:true,force:true});
+ }}
+});
+test('potion regression composition copy closure freshly rejects packet dependency drift and deletion after warm success',async()=>{
+ const {copyIntegrationSourceClosure,potionRegressionHelperCopies}=await import('./helpers/copy-integration-source-closure.mjs');
+ const temp=tmpdir(),source=mkdtempSync(join(temp,'potion regression-copy-source-')),target=mkdtempSync(join(temp,'potion regression-copy-target-'));
+ try{
+  copyIntegrationSourceClosure(source);copyIntegrationSourceClosure(target,{sourceRoot:source});
+  for(const {path}of potionRegressionHelperCopies){
+   const file=join(source,path),bytes=readFileSync(file);assert.deepEqual(readFileSync(join(target,path)),bytes);
+   writeFileSync(file,Buffer.concat([bytes,Buffer.from('\n')]));
+   assert.throws(()=>copyIntegrationSourceClosure(target,{sourceRoot:source}),/fresh helper copy identity/);
+   writeFileSync(file,bytes);unlinkSync(file);
+   assert.throws(()=>copyIntegrationSourceClosure(target,{sourceRoot:source}),/ENOENT/);
+   writeFileSync(file,bytes);copyIntegrationSourceClosure(target,{sourceRoot:source});
+  }
+ }finally{for(const directory of [source,target]){
+  const {realpathSync}=await import('node:fs');const {relative,isAbsolute}=await import('node:path');
+  const within=relative(realpathSync.native(temp),realpathSync.native(directory));assert(!isAbsolute(within)&&within.startsWith('potion regression-copy-')&&!within.startsWith('..'));
+  rmSync(directory,{recursive:true,force:true});
+ }}
+});
+
+test('potion click copy closure freshly rejects packet dependency drift and deletion after warm success',async()=>{
+ const {copyIntegrationSourceClosure,potionClickHelperCopies}=await import('./helpers/copy-integration-source-closure.mjs');
+ const temp=tmpdir(),source=mkdtempSync(join(temp,'potion-click-source-')),target=mkdtempSync(join(temp,'potion-click-target-'));
+ try{
+  copyIntegrationSourceClosure(source);copyIntegrationSourceClosure(target,{sourceRoot:source});
+  for(const {path}of potionClickHelperCopies){
+   const file=join(source,path),bytes=readFileSync(file);assert.deepEqual(readFileSync(join(target,path)),bytes);
+   writeFileSync(file,Buffer.concat([bytes,Buffer.from('\n')]));
+   assert.throws(()=>copyIntegrationSourceClosure(target,{sourceRoot:source}),/fresh helper copy identity/);
+   writeFileSync(file,bytes);unlinkSync(file);
+   assert.throws(()=>copyIntegrationSourceClosure(target,{sourceRoot:source}),/ENOENT/);
+   writeFileSync(file,bytes);copyIntegrationSourceClosure(target,{sourceRoot:source});
+  }
+ }finally{for(const directory of [source,target]){
+  const {realpathSync}=await import('node:fs');const {relative,isAbsolute}=await import('node:path');
+  const within=relative(realpathSync.native(temp),realpathSync.native(directory));assert(!isAbsolute(within)&&within.startsWith('potion-click-')&&!within.startsWith('..'));
+  rmSync(directory,{recursive:true,force:true});
+ }}
+});
+}

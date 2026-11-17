@@ -1,0 +1,11 @@
+✔ mobile drag release clears invalid selections and preserves desktop target carry (9395.84211ms)
+✔ released pointer identity survives mixed Click metadata without admitting stale or overlapping input (28484.503712ms)
+✔ coalesced PC and touch release uses the real Down sample and cannot replay its tail (4272.038804ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 3
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 42336.384183

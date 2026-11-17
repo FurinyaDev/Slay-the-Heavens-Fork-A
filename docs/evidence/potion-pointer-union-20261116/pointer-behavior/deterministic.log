@@ -1,0 +1,5 @@
+bound 195 inputs; helper closure 251 files; packet d5654ff207845a19b5a3221b9e7e8ec27319d865a556c525f40972c1e0d99255
+tests/helpers/potion-pointer-ci-union.mjs: OK
+tests/helpers/potion-pointer-ci-union.json.gz: OK
+tests/helpers/potion-pointer-ci-copy-closure.json: OK
+tests/helpers/copy-integration-source-closure.mjs: OK

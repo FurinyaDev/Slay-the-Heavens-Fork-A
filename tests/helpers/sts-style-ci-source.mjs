@@ -31,9 +31,9 @@ export function stsStylePriorRead(read=readFileSync){return(path,encoding)=>{
  const raw=read(path,encoding),text=typeof raw==='string'?raw:raw.toString('utf8'),prior=preStsStyleCiSource(path,text);
  return typeof raw==='string'?prior:prior===text?raw:Buffer.from(prior);
 };}
-export function stsStylePriorInventory(paths,read=readFileSync){
- paths=integratedPriorInventory(paths,'sts','js',read);
- read=integratedRead('sts',{read});
+export function stsStylePriorInventory(paths,read=readFileSync,currentRead=read){
+ paths=integratedPriorInventory(paths,'sts','js',read,currentRead);
+ read=integratedRead('sts',{read,currentRead});
  const proof=stsStyleCiProof;if(!proof.addedTests.some(path=>paths.includes(path)))return [...paths];
  assert.deepEqual([...paths].sort(),proof.afterInventory,'complete StS Full inventory');
  for(const p of proof.addedTests)assert.equal(hash(norm(read(p,'utf8'))),proof.files[p].after.sha256,'StS added inventory source: '+p);

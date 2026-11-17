@@ -1,0 +1,1 @@
+export async function load(url,context,next){const r=await next(url,context);if(url.endsWith('/tests/ci-complete-calibration.test.mjs')){return {...r,source:r.source.toString().replace('t=>withCalibration(()=>fn(t))',"t=>{console.error('START',name,Date.now());const r=withCalibration(()=>fn(t));console.error('END',name,Date.now());return r;}")};}return r;}

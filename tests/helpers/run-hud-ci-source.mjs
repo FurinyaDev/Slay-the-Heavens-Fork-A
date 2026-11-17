@@ -46,8 +46,8 @@ export function runHudPriorRead(read=readFileSync){return(path,encoding)=>{
  const prior=preRunHudCiSource(path,text);
  return typeof raw==='string'?prior:prior===text?raw:Buffer.from(prior);
 };}
-export function runHudPriorInventory(paths,read=readFileSync){
- paths=stsStylePriorInventory(paths,read);read=stsStylePriorRead(read);
+export function runHudPriorInventory(paths,read=readFileSync,currentRead=read){
+ paths=stsStylePriorInventory(paths,read,currentRead);read=stsStylePriorRead(read);
  const sorted=[...paths].sort(),p=runHudCiProof;
  if(!p.addedTests.some(path=>sorted.includes(path)))return [...paths];
  assert.deepEqual(sorted,p.afterInventory,'complete run HUD inventory');

@@ -1,3 +1,4 @@
+const awaitPc22=await import('./helpers/closeout-source-epoch.mjs');
 import {preDefectActorSource} from './helpers/defect-actor-source-epoch.mjs';
 import test from 'node:test';
 import {officialUiRepairProof,preOfficialUiRepairSource} from './helpers/official-ui-repair-source-epoch.mjs';
@@ -235,6 +236,9 @@ test('frozen pre-PC22 UI facade authenticates all 116 owners once in order and r
 });
 
 test('current PC22 UI facade authenticates all 117 disk owners once in order and rejects every warm drift or removal',()=>{
+ // This independently retained PC22 contract selects its exact 117-owner producer.
+ const {releasePc22BasicFeedbackSourceEpoch:currentSourceEpoch}=awaitPc22;
+ const diskReadFileSync=path=>currentSourceEpoch.proof.current[path]?.source??null;
  const current=currentSourceEpoch.proof,prior=preReleasePc22BasicFeedbackSourceEpoch.proof,file='config/architecture.json',input=diskReadFileSync(file,'utf8'),target='develop';
  assert.equal(prior.owners.length,116);
  assert.deepEqual(current.owners,[...prior.owners,'src/lua/abyss_card_flow.lua'].sort());
@@ -252,3 +256,33 @@ test('current PC22 UI facade authenticates all 117 disk owners once in order and
   reads.length=0;assert.equal(currentSourceEpoch.preCombinedSource(file,'foreign source',{target,readSource:live}),'foreign source');assert.deepEqual(reads,[]);
  }
 });
+
+// Preserve the original 0780 contracts in their explicit independent parent domain.
+{
+const {preMobilePotionSourceEpoch,potionBeforePointerEpoch:currentSourceEpoch}=await import('./helpers/closeout-source-epoch.mjs');
+const diskReadFileSync=path=>currentSourceEpoch.proof.current[path]?.source??null;
+
+test('current UI facade authenticates all 117 disk owners once in order and rejects every warm drift or removal',()=>{
+ const current=currentSourceEpoch.proof,file='config/architecture.json',input=diskReadFileSync(file,'utf8'),target='develop';
+ const pad=files=>Object.fromEntries(Object.keys(current.current).map(path=>[path,files[path]??null]));
+ assert.deepEqual(current.targets.stsFeedbackPrior.files,pad(stsStyleEpoch.proof.current),'complete 104-owner predecessor remains available, new modules have no invented source');
+ assert.deepEqual(menuRedEpoch.proof.owners,[...stsStyleEpoch.proof.owners,'src/lua/abyss_monster_power_view.lua'].sort());
+ assert.equal(menuRedEpoch.proof.owners.length,105);
+ const additions=['character_select','game_ui_navigation','game_ui_navigation_view','lowcost_art','merchant_pages','node_ui_reward_detail','node_ui_shop','node_ui_treasure','node_ui_treasure_list','prologue','treasure_ui'].map(name=>'src/lua/abyss_'+name+'.lua');
+ assert.deepEqual(preMobilePotionSourceEpoch.proof.owners,[...menuRedEpoch.proof.owners,...additions].sort());
+ assert.equal(preMobilePotionSourceEpoch.proof.owners.length,116);
+ assert.deepEqual(current.owners,[...preMobilePotionSourceEpoch.proof.owners,'src/lua/abyss_battle_potion_popup.lua'].sort());
+ assert.equal(current.owners.length,117);
+ const expected=current.targets[target].files[file].source;
+ for(const crlf of [false,true]){
+  const reads=[];let bad=null,missing=false;
+  const live=owner=>{reads.push(owner);if(owner===bad&&missing)return null;const bytes=diskReadFileSync(owner,'utf8').replaceAll('\r\n','\n');return owner===bad?bytes+'\n':crlf?bytes.replaceAll('\n','\r\n'):bytes;};
+  for(let repeat=0;repeat<2;repeat++){reads.length=0;assert.equal(currentSourceEpoch.preCombinedSource(file,input,{target,readSource:live}),expected);assert.deepEqual(reads,current.owners);}
+  for(const owner of current.owners){
+   for(const absent of [false,true]){bad=owner;missing=absent;reads.length=0;assert.throws(()=>currentSourceEpoch.preCombinedSource(file,input,{target,readSource:live}),/linked owner identity/,owner);assert.deepEqual(reads,current.owners.slice(0,current.owners.indexOf(owner)+1));}
+   bad=null;reads.length=0;assert.equal(currentSourceEpoch.preCombinedSource(file,input,{target,readSource:live}),expected);assert.deepEqual(reads,current.owners);
+  }
+  reads.length=0;assert.equal(currentSourceEpoch.preCombinedSource(file,'foreign source',{target,readSource:live}),'foreign source');assert.deepEqual(reads,[]);
+ }
+});
+}

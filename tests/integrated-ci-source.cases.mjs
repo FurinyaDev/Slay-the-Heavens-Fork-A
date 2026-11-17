@@ -1,19 +1,20 @@
 import test from 'node:test';
+import {potionPointerB9PriorInventory} from './helpers/potion-pointer-b9-integration.mjs';
+import {integrationPriorInventory} from './helpers/release-card-contact-integration.mjs';
 import assert from 'node:assert/strict';
 import {readFileSync as rawReadFileSync,readdirSync} from 'node:fs';
 import {releaseBootstrapCiRead,releaseBootstrapCiPacket,releaseBootstrapCiSource,releaseBootstrapWorkflowBefore,assertReleaseBootstrapCiCurrent,assertReleaseBootstrapRawInventory} from './helpers/release-bootstrap-ci-source.mjs';
-import {releasePc22BasicFeedbackCiRead,releasePc22BasicFeedbackPriorInventory} from './helpers/release-pc22-basic-feedback-ci-source.mjs';
-import {integrationRead,integrationPriorInventory} from './helpers/release-card-contact-integration.mjs';
+import {releaseSelectionMapCiRead,releaseSelectionMapPriorInventory} from './helpers/release-selection-map-ci-source.mjs';
 import {createHash} from 'node:crypto';
 import {discoverJs} from '../scripts/ci-shards.mjs';
 import {integratedCiProof as proof,integratedSource,assertIntegratedCurrent,renderIntegratedCiBinding,extendIntegratedHelperClosure} from './helpers/integrated-ci-source.mjs';
 const raw=p=>readFileSync(p,'utf8').replaceAll('\r\n','\n'),hash=s=>createHash('sha256').update(s).digest('hex');
-const sideRead=integrationRead('pc22',rawReadFileSync);
-const pickerBeforeRead=releasePc22BasicFeedbackCiRead(sideRead);
+import {battlePointerCiRead} from './helpers/battle-pointer-ci-source.mjs';
+const pickerBeforeRead=releaseSelectionMapCiRead(battlePointerCiRead(rawReadFileSync));
 const readFileSync=releaseBootstrapCiRead(pickerBeforeRead);
 
 test('integration validates complete raw sources and leaves every foreign byte and production owner visible',()=>{
- assertIntegratedCurrent();assert.deepEqual(releasePc22BasicFeedbackPriorInventory(integrationPriorInventory(discoverJs(),'pc22'),'js',sideRead),proof.inventory);assert.equal(new Set(proof.inventory).size,proof.inventory.length);
+ assertIntegratedCurrent();assert.deepEqual(releaseSelectionMapPriorInventory(integrationPriorInventory(potionPointerB9PriorInventory(discoverJs(),'pointer711'),'selection'),'js',rawReadFileSync),proof.inventory);assert.equal(new Set(proof.inventory).size,proof.inventory.length);
  for(const [path,row]of Object.entries(proof.files))for(const target of Object.keys(proof.sources)){
   const source=raw(path),production=path.startsWith('src/')||path==='config/architecture.json';
   const expected=production?source:row.views[target]?.source??source;
@@ -64,7 +65,7 @@ test('Release bootstrap exact sources retain every old byte and reject missing d
  }
  const archive=Object.keys(releaseBootstrapCiPacket.immutableArchives)[0];
  assert.throws(()=>assertReleaseBootstrapCiCurrent((p,e)=>p===archive?pickerBeforeRead(p).subarray(1):pickerBeforeRead(p,e)),/immutable bootstrap predecessor/);
- const inventories={js:releasePc22BasicFeedbackPriorInventory(integrationPriorInventory(discoverJs(),'pc22'),'js',sideRead),lua:releasePc22BasicFeedbackPriorInventory(integrationPriorInventory(readdirSync('tests/lua').filter(n=>n.endsWith('.lua')).map(n=>'tests/lua/'+n).sort(),'pc22','lua'),'lua',sideRead)};
+ const inventories={js:releaseSelectionMapPriorInventory(discoverJs(),'js',rawReadFileSync),lua:readdirSync('tests/lua').filter(n=>n.endsWith('.lua')).map(n=>'tests/lua/'+n).sort()};
  for(const [kind,paths]of Object.entries(inventories)){
   assertReleaseBootstrapRawInventory(paths,kind);
   for(const bad of [[],paths.slice(1),[...paths,paths[0]],[...paths,`tests/${kind==='lua'?'lua/':''}foreign.${kind==='lua'?'lua':'test.mjs'}`]])
@@ -77,3 +78,449 @@ test('Release bootstrap exact sources retain every old byte and reject missing d
  const broken=leaf.replace(marker,`const bytes=Buffer.from(${JSON.stringify(bytes.subarray(0,bytes.length-1).toString('base64'))},'base64');`);
  await assert.rejects(import('data:text/javascript;base64,'+Buffer.from(broken).toString('base64')),/complete Release bootstrap CI continuation/);
 });
+
+// Preserve the original 0780 contracts in their explicit independent parent domain.
+{
+const {potionPointerB9PriorInventory}=await import('./helpers/potion-pointer-b9-integration.mjs');
+const loadedEpoch0=await import('./helpers/closeout-source-epoch.mjs');
+const loadedEpoch1=await import('./helpers/mobile-potion-source.mjs');
+const loadedEpoch2=await import('./helpers/potion-regression-source.mjs');
+const loadedEpoch3=await import('./helpers/potion-click-source.mjs');
+const loadedEpoch4=await import('./helpers/potion-pointer-legacy-integrated-ci-source.mjs');
+const loadedEpoch5=await import('./helpers/potion-post697-source.mjs');
+const {default:nodeTest}=await import('node:test');
+const {AsyncLocalStorage}=await import('node:async_hooks');
+const {withPotionPointerCiUnionValidation,potionPointerCiUnionRead}=await import('./helpers/potion-pointer-ci-union.mjs');
+const historicalScope=new AsyncLocalStorage();
+const publicPotionRead=(...args)=>potionPointerCiUnionRead('potion',actualUnionReadFileSync,{production:true})(...args);
+const actualPost697ReadFileSync=(...args)=>{const scope=historicalScope.getStore();return(scope?.active?scope.read:publicPotionRead)(...args);};
+const test=(name,fn)=>nodeTest(name,()=>{let pending;withPotionPointerCiUnionValidation('potion',actualUnionReadFileSync,(read,current)=>{const state={read,current,active:true,memo:new Map()};try{historicalScope.run(state,()=>{pending=fn();});}finally{state.active=false;state.memo.clear();}});return pending;});
+// Memoize only immutable historical fixture bytes inside this single synchronous test scope.
+const memoHistorical=(name,read)=>(path,encoding)=>{const scope=historicalScope.getStore();if(!scope?.active)return read(path,encoding);const key=JSON.stringify([name,path,encoding??null]);if(!scope.memo.has(key)){const value=read(path,encoding);scope.memo.set(key,Buffer.isBuffer(value)?Buffer.from(value):value);}const value=scope.memo.get(key);return Buffer.isBuffer(value)?Buffer.from(value):value;};
+const {default:assert}=await import('node:assert/strict');
+const {readFileSync : actualUnionReadFileSync,readdirSync}=await import('node:fs');
+const {potionPost697HistoricalRead,potionPost697PriorInventory,potionPost697CiRead,potionPost697CiPacket,potionPost697CiSource,assertPotionPost697CiCurrent,assertPotionPost697RawInventory}=await import('./helpers/potion-post697-ci-source.mjs');
+const actualPotionClickReadFileSync=memoHistorical('actualPotionClickReadFileSync',potionPost697HistoricalRead('potion',actualPost697ReadFileSync));
+const {potionClickHistoricalRead,potionClickCiSource,potionClickCiPacket,assertPotionClickCiCurrent,assertPotionClickRawInventory}=await import('./helpers/potion-click-ci-source.mjs');
+const actualPotionRegressionReadFileSync=memoHistorical('actualPotionRegressionReadFileSync',potionClickHistoricalRead(actualPotionClickReadFileSync));
+const {potionRegressionHistoricalRead,potionRegressionCiRead,potionRegressionCiPacket,potionRegressionCiSource,potionRegressionPriorInventory,assertPotionRegressionCiCurrent,assertPotionRegressionRawInventory}=await import('./helpers/potion-regression-ci-source.mjs');
+const actualDiskReadFileSync=memoHistorical('actualDiskReadFileSync',potionRegressionHistoricalRead(actualPotionRegressionReadFileSync));
+const {releaseBootstrapCiPacket,releaseBootstrapCiSource,releaseBootstrapWorkflowBefore,assertReleaseBootstrapCiCurrent,assertReleaseBootstrapRawInventory}=await import('./helpers/release-bootstrap-ci-source.mjs');
+const {potionBootstrapCiPacket,potionBootstrapCiSource,potionBootstrapHistoricalRead,assertPotionBootstrapCiCurrent,assertPotionBootstrapRawInventory}=await import('./helpers/potion-bootstrap-ci-source.mjs');
+const rawReadFileSync=memoHistorical('rawReadFileSync',potionBootstrapHistoricalRead('potion',actualDiskReadFileSync));
+const rawBootstrapReadFileSync=memoHistorical('rawBootstrapReadFileSync',potionBootstrapHistoricalRead('bootstrap',actualDiskReadFileSync));
+const {mobilePotionCiRead,mobilePotionPriorInventory,mobilePotionCiPacket,mobilePotionCiSource,assertMobilePotionCiCurrent,assertMobilePotionRawInventory}=await import('./helpers/mobile-potion-ci-source.mjs');
+const {createHash}=await import('node:crypto');
+const {discoverJs : jointPreparationDiscoverJs}=await import('../scripts/ci-shards.mjs');
+const actualPost697DiscoverJs=()=>potionPointerB9PriorInventory(jointPreparationDiscoverJs(),'legacy');
+const actualPotionRegressionDiscoverJs=()=>potionPost697PriorInventory(actualPost697DiscoverJs(),'js',actualPost697ReadFileSync);
+const potionLegacyLua=()=>potionPost697PriorInventory(potionPointerB9PriorInventory(readdirSync('tests/lua').filter(n=>n.endsWith('.lua')).map(n=>'tests/lua/'+n).sort(),'legacy','lua'),'lua',actualPost697ReadFileSync);
+const discoverJs=()=>potionRegressionPriorInventory(actualPotionRegressionDiscoverJs(),'js',actualPotionRegressionReadFileSync);
+const beforePotionRegressionLua=()=>potionRegressionPriorInventory(potionLegacyLua(),'lua',actualPotionRegressionReadFileSync);
+const {integratedCiProof : proof,integratedSource : liveIntegratedSource,assertIntegratedCurrent,renderIntegratedCiBinding,extendIntegratedHelperClosure}=await import('./helpers/potion-pointer-legacy-integrated-ci-source.mjs');
+const raw=p=>readFileSync(p,'utf8').replaceAll('\r\n','\n'),hash=s=>createHash('sha256').update(s).digest('hex');
+const integratedSource=(path,source,target,read)=>{const scope=historicalScope.getStore();return liveIntegratedSource(path,source,target,read??(scope?.active?scope.current:actualUnionReadFileSync));};
+// Keep every original complete predecessor assertion; new raw after contracts follow.
+const readFileSync=memoHistorical('readFileSync',mobilePotionCiRead(rawReadFileSync));
+
+
+test('mobile potion production packet retains all old views and rejects partial or stale owner bindings',async()=>{
+ const {prePotionRegressionSourceEpoch:sourceEpoch,preMobilePotionSourceEpoch}=loadedEpoch0;
+ const {mobilePotionSourcePacket:p,extendMobilePotionSource}=loadedEpoch1;
+ const prior=preMobilePotionSourceEpoch.proof,current=sourceEpoch.proof;
+ for(const [name,target]of Object.entries(prior.targets))assert.deepEqual(current.targets[name],target,name);
+ assert.deepEqual(current.targets.mobilePotionPrior.files,prior.current);
+ assert.equal(current.currentCommit,'551677b7966437e07a95fc3b08ef8747d48a1a10');
+ assert.equal(current.currentTreeCommitted,true,'only the unchanged committed product corpus is claimed committed');
+ const files=['config/architecture.json',...readdirSync('src/lua').filter(n=>n.endsWith('.lua')).map(n=>'src/lua/'+n)].sort();
+ assert.deepEqual(files,Object.keys(current.current).filter(path=>current.current[path]!==null).sort());
+ for(const path of files)assert.equal(rawReadFileSync(path,'utf8').replaceAll('\r\n','\n'),current.current[path].source,path);
+ for(const bad of [{...p,current:{}},{...p,before:{}},{...p,producers:{}},{...p,currentTreeCommitted:false},{...p,currentCommit:'0'.repeat(40)}])
+  assert.throws(()=>extendMobilePotionSource(preMobilePotionSourceEpoch,bad));
+ const path=Object.keys(p.current)[0],source=current.current[path].source;
+ for(const owner of Object.keys(p.current)){
+  const read=p=>current.current[p]?.source??null;
+  assert.equal(sourceEpoch.preCombinedSource(path,source,{target:'mobilePotionPrior',readSource:read}),prior.current[path].source);
+  assert.throws(()=>sourceEpoch.preCombinedSource(path,source,{target:'mobilePotionPrior',readSource:p=>p===owner?read(p)+'\n':read(p)}),/linked owner identity/);
+  assert.throws(()=>sourceEpoch.preCombinedSource(path,source,{target:'mobilePotionPrior',readSource:p=>p===owner?null:read(p)}),/linked owner identity/);
+ }
+});
+
+test('mobile potion CI bindings authenticate complete fresh after sources and unchanged archives',async()=>{
+ assertMobilePotionCiCurrent(rawReadFileSync);
+ assert.equal(mobilePotionCiPacket.currentTreeCommitted,false,'auxiliary after bindings have a separate uncommitted capture identity');
+ for(const [path,row]of Object.entries(mobilePotionCiPacket.files)){
+  const source=rawReadFileSync(path,'utf8').replaceAll('\r\n','\n');
+  assert.equal(hash(source),row.current.sha256,path);
+  const production=path.startsWith('src/')||path==='config/architecture.json';
+  assert.equal(mobilePotionCiSource(path,source),production?source:row.before?.source??source,path);
+  for(const foreign of [source+'\n',source.slice(1),source.slice(0,-1),null,{},17])assert.equal(mobilePotionCiSource(path,foreign),foreign);
+  assert.throws(()=>assertMobilePotionCiCurrent((p,e)=>{
+   const value=rawReadFileSync(p,e);return p===path?typeof value==='string'?value.slice(1):value.subarray(1):value;
+  }),/fresh complete integration source/);
+  assert.throws(()=>assertMobilePotionCiCurrent((p,e)=>{if(p===path)throw Object.assign(Error('missing '+p),{code:'ENOENT'});return rawReadFileSync(p,e);}),/missing/);
+ }
+ const archive=Object.keys(mobilePotionCiPacket.immutableArchives)[0];
+ assert.throws(()=>assertMobilePotionCiCurrent((p,e)=>p===archive?rawReadFileSync(p).subarray(1):rawReadFileSync(p,e)),/immutable.*predecessor/);
+ const leaf=rawReadFileSync('tests/helpers/mobile-potion-ci-source.mjs','utf8');
+ const bytes=rawReadFileSync('tests/helpers/mobile-potion-ci-source.json.gz');
+ const marker="const bytes=readFileSync(new URL('./mobile-potion-ci-source.json.gz',import.meta.url));";
+ assert.equal(leaf.split(marker).length,2,'one complete packet trust leaf');
+ const broken=leaf.replace(marker,`const bytes=Buffer.from(${JSON.stringify(bytes.subarray(0,bytes.length-1).toString('base64'))},'base64');`);
+ await assert.rejects(import('data:text/javascript;base64,'+Buffer.from(broken).toString('base64')),/complete mobile potion CI continuation/);
+});
+
+test('potion bootstrap combination authenticates raw union before either historical view and rejects fresh drift',async()=>{
+ assertPotionBootstrapCiCurrent(actualDiskReadFileSync);
+ assertReleaseBootstrapCiCurrent(rawBootstrapReadFileSync);
+ assertMobilePotionCiCurrent(rawReadFileSync);
+ for(const [path,row]of Object.entries(potionBootstrapCiPacket.files)){
+  const source=actualDiskReadFileSync(path,'utf8').replaceAll('\r\n','\n');
+  assert.equal(hash(source),row.current.sha256,path);
+  const production=path.startsWith('src/')||path==='config/architecture.json';
+  assert.equal(potionBootstrapCiSource(path,source),production?source:row.before?.source??source,path);
+  for(const foreign of [source+'\n',source.slice(1),source.slice(0,-1),null,{},17])assert.equal(potionBootstrapCiSource(path,foreign),foreign);
+  for(const foreignPath of ['__proto__','constructor','foreign/'+path])assert.equal(potionBootstrapCiSource(foreignPath,source),source);
+  assert.equal(potionBootstrapCiSource(path,source,{sha256:'0'.repeat(64)}),source,'wrong predecessor stays visible');
+  assert.throws(()=>assertPotionBootstrapCiCurrent((p,e)=>{
+   const value=actualDiskReadFileSync(p,e);return p!==path?value:typeof value==='string'?value.slice(1):value.subarray(1);
+  }),error=>{assert(error.message.includes(path),'the exact raw current owner rejects');return true;});
+  assert.throws(()=>assertPotionBootstrapCiCurrent((p,e)=>{if(p===path)throw Error('missing '+p);return actualDiskReadFileSync(p,e);}),/missing/);
+ }
+ for(const path of Object.keys(potionBootstrapCiPacket.immutableArchives))
+  assert.throws(()=>assertPotionBootstrapCiCurrent((p,e)=>p===path?actualDiskReadFileSync(p).subarray(1):actualDiskReadFileSync(p,e)),/immutable.*predecessor/);
+ const inventories={js:discoverJs(),lua:beforePotionRegressionLua()};
+ for(const [kind,paths]of Object.entries(inventories)){
+  assertPotionBootstrapRawInventory(paths,kind);
+  for(const bad of [[],paths.slice(1),[...paths,paths[0]],[...paths,`tests/${kind==='lua'?'lua/':''}foreign.${kind==='lua'?'lua':'test.mjs'}`]])
+   assert.throws(()=>assertPotionBootstrapRawInventory(bad,kind),/raw discovery inventory/);
+ }
+ const leaf=actualDiskReadFileSync('tests/helpers/potion-bootstrap-ci-source.mjs','utf8'),bytes=actualDiskReadFileSync('tests/helpers/potion-bootstrap-ci-source.json.gz');
+ const marker="const bytes=readFileSync(new URL('./potion-bootstrap-ci-source.json.gz',import.meta.url));";
+ assert.equal(leaf.split(marker).length,2);
+ const broken=leaf.replace(marker,`const bytes=Buffer.from(${JSON.stringify(bytes.subarray(0,-1).toString('base64'))},'base64');`);
+ await assert.rejects(import('data:text/javascript;base64,'+Buffer.from(broken).toString('base64')),/complete potion bootstrap CI continuation/);
+});
+
+test('mobile potion raw inventories retain every new test and reject missing duplicate foreign or changed additions',()=>{
+ const all={js:discoverJs(),lua:beforePotionRegressionLua()};
+ for(const [kind,paths]of Object.entries(all)){
+  assertMobilePotionRawInventory(paths,kind);
+  assert.deepEqual(mobilePotionPriorInventory(paths,kind),mobilePotionCiPacket.priorInventory[kind]);
+  const before=paths.filter(p=>mobilePotionCiPacket.priorInventory[kind].includes(p));
+  assert.throws(()=>assertMobilePotionRawInventory(before,kind),/raw discovery inventory/);
+  for(const bad of [paths.slice(1),[...paths,paths[0]],[...paths,`tests/${kind==='lua'?'lua/':''}foreign.${kind==='lua'?'lua':'test.mjs'}`]])
+   assert.throws(()=>mobilePotionPriorInventory(bad,kind),/raw .* inventory/);
+  for(const path of paths.filter(p=>!before.includes(p))){
+   for(const drift of ['\n','cut'])assert.throws(()=>mobilePotionPriorInventory(paths,kind,(p,e)=>{
+    const value=rawReadFileSync(p,e);return p===path?drift==='cut'?value.slice(1):value+'\n':value;
+   }),/fresh mobile potion added inventory source/);
+  }
+ }
+});
+test('potion regression composition production sources retain original owners and reject partial fresh authorizations',async()=>{
+ const {prePotionClickSourceEpoch:sourceEpoch,prePotionRegressionSourceEpoch}=loadedEpoch0;
+ const {potionRegressionSourcePacket:p,extendPotionRegressionSource}=loadedEpoch2;
+ const prior=prePotionRegressionSourceEpoch.proof,current=sourceEpoch.proof;
+ for(const [name,target]of Object.entries(prior.targets))assert.deepEqual(current.targets[name],target,name);
+ assert.deepEqual(current.targets.potionRegressionPrior.files,prior.current);
+ assert.equal(current.currentCommit,'567f259158e592491bd1fc44fb82ffb78c47789f');assert.equal(current.currentTreeCommitted,true);
+ assert.equal(Object.keys(p.combinedProducers).length,3);
+ for(const [path,row]of Object.entries(p.inheritedSources))assert.equal(actualPotionRegressionReadFileSync(path,'utf8').replaceAll('\r\n','\n'),row.source,path);
+ for(const [path,row]of Object.entries(p.current))assert.equal(actualPotionRegressionReadFileSync(path,'utf8').replaceAll('\r\n','\n'),row.source,path);
+ for(const bad of [{...p,current:{}},{...p,before:{}},{...p,producers:{}},{...p,currentTreeCommitted:false},{...p,currentCommit:'0'.repeat(40)},{...p,prerequisites:[]},{...p,inheritedSources:{}},{...p,combinedProducers:{}}])
+  assert.throws(()=>extendPotionRegressionSource(prePotionRegressionSourceEpoch,bad));
+ const path=Object.keys(p.current)[0],source=p.current[path].source;
+ const read=p=>{try{return actualPotionRegressionReadFileSync(p,'utf8');}catch(e){if(e.code==='ENOENT')return null;throw e;}};
+ for(const owner of [...Object.keys(p.current),...Object.keys(p.inheritedSources)]){
+  assert.equal(sourceEpoch.preCombinedSource(path,source,{target:'potionRegressionPrior',readSource:read}),prior.current[path].source);
+  for(const missing of [false,true])assert.throws(()=>sourceEpoch.preCombinedSource(path,source,{target:'potionRegressionPrior',readSource:p=>p===owner?missing?null:read(p)+'\n':read(p)}),/linked owner identity/);
+ }
+});
+
+test('potion regression composition CI keeps the bootstrap packet and rejects missing drift and incomplete after bytes',async()=>{
+ assertPotionRegressionCiCurrent(actualPotionRegressionReadFileSync);
+ assert.equal(potionRegressionCiPacket.currentTreeCommitted,false);
+ assert.equal(potionRegressionCiPacket.baseCommit,'f564aea6a3c517b71a85534a81be5e2e36278baf');
+ assert.equal(hash(actualPotionRegressionReadFileSync('tests/helpers/release-bootstrap-ci-source.json.gz')),'868f4e717b4ebe7af6a77b8bf6239748629d6d11b6de6e15af9f0e668a3971d6');
+ for(const [path,row]of Object.entries(potionRegressionCiPacket.files)){
+  const source=actualPotionRegressionReadFileSync(path,'utf8').replaceAll('\r\n','\n');
+  const production=path.startsWith('src/')||path==='config/architecture.json';
+  assert.equal(potionRegressionCiSource(path,source),production?source:row.before?.source??source,path);
+  for(const foreign of [source+'\n',source.slice(1),source.slice(0,-1),null,{},17])assert.equal(potionRegressionCiSource(path,foreign),foreign);
+  for(const key of ['__proto__','constructor','foreign/'+path])assert.equal(potionRegressionCiSource(key,source),source);
+  assert.throws(()=>assertPotionRegressionCiCurrent((p,e)=>{
+   const value=actualPotionRegressionReadFileSync(p,e);return p!==path?value:typeof value==='string'?value.slice(1):value.subarray(1);
+  }),error=>{assert(error.message.includes(path));return true;});
+  assert.throws(()=>assertPotionRegressionCiCurrent((p,e)=>{if(p===path)throw Error('missing '+p);return actualPotionRegressionReadFileSync(p,e);}),/missing/);
+ }
+ const bytes=actualPotionRegressionReadFileSync('tests/helpers/potion-regression-ci-source.json.gz');
+ const leaf=actualPotionRegressionReadFileSync('tests/helpers/potion-regression-ci-source.mjs','utf8');
+ const marker="const bytes=readFileSync(new URL('./potion-regression-ci-source.json.gz',import.meta.url));";assert.equal(leaf.split(marker).length,2);
+ const broken=leaf.replace(marker,`const bytes=Buffer.from(${JSON.stringify(bytes.subarray(0,bytes.length-1).toString('base64'))},'base64');`);
+ await assert.rejects(import('data:text/javascript;base64,'+Buffer.from(broken).toString('base64')),/complete potion regression CI continuation/);
+});
+
+test('potion regression composition raw JS and Lua inventory rejects missing duplicate foreign and source drift',()=>{
+ const inventories={js:actualPotionRegressionDiscoverJs(),lua:potionLegacyLua()};
+ for(const [kind,paths]of Object.entries(inventories)){
+  assertPotionRegressionRawInventory(paths,kind);
+  assert.deepEqual(potionRegressionPriorInventory(paths,kind,actualPotionRegressionReadFileSync),potionRegressionCiPacket.priorInventory[kind]);
+  const noAdded=paths.filter(p=>potionRegressionCiPacket.priorInventory[kind].includes(p));
+  if(noAdded.length===paths.length)assertPotionRegressionRawInventory(noAdded,kind);
+  else assert.throws(()=>assertPotionRegressionRawInventory(noAdded,kind),/raw discovery inventory/);
+  for(const bad of [paths.slice(1),[...paths,paths[0]],[...paths,`tests/${kind==='lua'?'lua/':''}foreign.${kind==='lua'?'lua':'test.mjs'}`]])
+   assert.throws(()=>assertPotionRegressionRawInventory(bad,kind),/raw discovery inventory/);
+  for(const path of paths.filter(p=>!noAdded.includes(p)))assert.throws(()=>potionRegressionPriorInventory(paths,kind,(p,e)=>{
+   const value=actualPotionRegressionReadFileSync(p,e);return p!==path?value:typeof value==='string'?value+'\n':Buffer.concat([value,Buffer.from('\n')]);
+  }),/fresh potion regression added inventory source/);
+ }
+});
+
+test('legacy 3e potion click production closure authenticates new bytes and retains every complete predecessor',async()=>{
+ const {prePotionPost697SourceEpoch:sourceEpoch,prePotionClickSourceEpoch}=loadedEpoch0;
+ const {potionClickSourcePacket:p,extendPotionClickSource}=loadedEpoch3;
+ const prior=prePotionClickSourceEpoch.proof,current=sourceEpoch.proof;
+ assert.equal(current.currentCommit,'c126877c31b37396b6148e1101a8dba555d03feb');assert.equal(current.currentTreeCommitted,true);
+ assert.deepEqual(current.owners,prior.owners,'117 owners; no newly owned path');
+ for(const [name,target]of Object.entries(prior.targets))assert.deepEqual(current.targets[name],target,name);
+ assert.deepEqual(current.targets.potionClickPrior,{commit:p.baseCommit,files:prior.current});
+ const files=['config/architecture.json',...readdirSync('src/lua').filter(n=>n.endsWith('.lua')).map(n=>'src/lua/'+n)].sort();
+ assert.deepEqual(files,Object.keys(current.current).filter(path=>current.current[path]!==null).sort());
+ for(const path of files)assert.equal(actualPotionClickReadFileSync(path,'utf8').replaceAll('\r\n','\n'),current.current[path].source,path);
+ for(const bad of [{...p,current:{}},{...p,before:{}},{...p,producers:{}},{...p,currentTreeCommitted:false},{...p,currentCommit:'0'.repeat(40)},{...p,prerequisites:[]},{...p,inheritedSources:{}},{...p,combinedProducers:{}}])
+  assert.throws(()=>extendPotionClickSource(prePotionClickSourceEpoch,bad));
+ const path=Object.keys(p.current)[0],source=p.current[path].source;
+ const read=path=>current.current[path]?.source??null; // Explicit immutable 3e projector domain; not live-current authorization.
+ for(const owner of current.owners){
+  assert.equal(sourceEpoch.preCombinedSource(path,source,{target:'potionClickPrior',readSource:read}),prior.current[path].source);
+  for(const missing of [false,true])assert.throws(()=>sourceEpoch.preCombinedSource(path,source,{target:'potionClickPrior',readSource:p=>p===owner?missing?null:read(p)+'\n':read(p)}),/linked owner identity/);
+ }
+});
+
+test('potion click CI authenticates new bytes and rejects drift missing packets and incomplete discovery',async()=>{
+ assertPotionClickCiCurrent(actualPotionClickReadFileSync);
+ const inventories={js:actualPotionRegressionDiscoverJs(),lua:potionLegacyLua()};
+ for(const [kind,paths]of Object.entries(inventories)){
+  assertPotionClickRawInventory(paths,kind);
+  for(const bad of [paths.slice(1),[...paths,paths[0]],[...paths,`tests/foreign.${kind}`]])assert.throws(()=>assertPotionClickRawInventory(bad,kind),/raw discovery inventory/);
+ }
+ for(const [path,row]of Object.entries(potionClickCiPacket.files)){
+  const source=actualPotionClickReadFileSync(path,'utf8').replaceAll('\r\n','\n');
+  assert.equal(potionClickCiSource(path,source),path.startsWith('src/')?source:row.before?.source??source,path);
+  for(const foreign of [source+'\n',source.slice(1),source.slice(0,-1),null,{},17])assert.equal(potionClickCiSource(path,foreign),foreign);
+  for(const key of ['__proto__','constructor','foreign/'+path])assert.equal(potionClickCiSource(key,source),source);
+  assert.throws(()=>assertPotionClickCiCurrent((p,e)=>p===path?source+'\n':actualPotionClickReadFileSync(p,e)),error=>error.message.includes(path));
+  assert.throws(()=>assertPotionClickCiCurrent((p,e)=>{if(p===path)throw Error('missing '+p);return actualPotionClickReadFileSync(p,e);}),/missing/);
+ }
+ const archive=Object.keys(potionClickCiPacket.immutableArchives)[0];
+ assert.throws(()=>assertPotionClickCiCurrent((p,e)=>p===archive?Buffer.from('foreign'):actualPotionClickReadFileSync(p,e)),/immutable click predecessor/);
+ const bytes=actualPotionClickReadFileSync('tests/helpers/potion-click-ci-source.json.gz');
+ const leaf=actualPotionClickReadFileSync('tests/helpers/potion-click-ci-source.mjs','utf8');
+ const marker="const bytes=readFileSync(new URL('./potion-click-ci-source.json.gz',import.meta.url));";assert.equal(leaf.split(marker).length,2);
+ const broken=leaf.replace(marker,`const bytes=Buffer.from(${JSON.stringify(bytes.subarray(0,bytes.length-1).toString('base64'))},'base64');`);
+ await assert.rejects(import('data:text/javascript;base64,'+Buffer.from(broken).toString('base64')),/complete potion click CI continuation/);
+});
+
+test('potion click historical entry authenticates complete current bindings before replay and after warm success',()=>{
+ const path='src/lua/abyss_battle_ui.lua',expected=potionClickCiPacket.files[path].before.source;
+ const other='tests/helpers/closeout-source-epoch.mjs';let fault;
+ const read=(p,e)=>{
+  if(p===fault?.path){
+   if(fault.kind==='missing')throw Error('missing '+p);
+   if(fault.kind==='null')return null;
+   const raw=actualPotionClickReadFileSync(p,e);
+   return typeof raw==='string'?raw+'\n':Buffer.concat([raw,Buffer.from('\n')]);
+  }
+  return actualPotionClickReadFileSync(p,e);
+ };
+ const historical=potionClickHistoricalRead(read);
+ assert.equal(historical(path,'utf8'),expected);
+ for(const missing of ['missing','null','drift']){
+  fault={path:other,kind:missing};
+  assert.throws(()=>historical(path,'utf8'),undefined,'complete current must authenticate other binding '+missing);
+  fault=undefined;assert.equal(historical(path,'utf8'),expected);
+ }
+ const archive=Object.keys(potionClickCiPacket.immutableArchives)[0];
+ for(const kind of ['missing','drift']){
+  fault={path:archive,kind};assert.throws(()=>historical(path,'utf8'),undefined,'archive must authenticate before replay '+kind);
+  fault=undefined;assert.equal(historical(path,'utf8'),expected);
+ }
+ const reads=[];const tracked=potionClickHistoricalRead((p,e)=>{reads.push(p);return actualPotionClickReadFileSync(p,e);});
+ assert.equal(tracked(path,'utf8'),expected);
+ for(const required of [...Object.keys(potionClickCiPacket.files),...Object.keys(potionClickCiPacket.immutableArchives)])assert(reads.includes(required),'fresh complete read '+required);
+});
+
+test('post697 union historical CI reader reauthenticates every current binding and archive after warm success',()=>{
+ const anchor='tests/helpers/closeout-source-epoch.mjs',expected=potionPost697CiPacket.files[anchor].views.potion.source;
+ const other='src/lua/abyss_game_ui_input.lua';let fault;
+ const read=(path,encoding)=>{
+  if(path===fault?.path){
+   if(fault.kind==='missing')throw Error('missing '+path);
+   if(fault.kind==='null')return null;
+   const raw=actualPost697ReadFileSync(path,encoding);
+   return typeof raw==='string'?raw+'\n':Buffer.concat([raw,Buffer.from('\n')]);
+  }
+  return actualPost697ReadFileSync(path,encoding);
+ };
+ const reader=potionPost697CiRead(read);
+ assert.equal(reader(anchor,'utf8'),expected);
+ // The exact old implementation exposes the historical anchor without ever
+ // consulting this independent missing owner. Keep this first as the RED.
+ fault={path:other,kind:'missing'};
+ assert.throws(()=>reader(anchor,'utf8'),undefined,'the entire declared corpus must authenticate before history');
+ fault=undefined;assert.equal(reader(anchor,'utf8'),expected);
+ for(const path of Object.keys(potionPost697CiPacket.files).filter(path=>path!==anchor)){
+  for(const kind of ['missing','null','drift']){
+   fault={path,kind};assert.throws(()=>reader(anchor,'utf8'),undefined,path+' '+kind);
+   fault=undefined;assert.equal(reader(anchor,'utf8'),expected);
+  }
+ }
+ for(const path of Object.keys(potionPost697CiPacket.immutableArchives)){
+  for(const kind of ['missing','null','drift']){
+   fault={path,kind};assert.throws(()=>reader(anchor,'utf8'),undefined,path+' '+kind);
+   fault=undefined;assert.equal(reader(anchor,'utf8'),expected);
+  }
+ }
+ // The selected anchor must itself be exact; null and foreign data are raw,
+ // never authenticated historical output. Errors still propagate unchanged.
+ fault={path:anchor,kind:'missing'};assert.throws(()=>reader(anchor,'utf8'),/missing/);
+ fault={path:anchor,kind:'null'};assert.equal(reader(anchor,'utf8'),null);
+ fault={path:anchor,kind:'drift'};assert.equal(reader(anchor,'utf8'),actualPost697ReadFileSync(anchor,'utf8')+'\n');
+ fault=undefined;const binary=reader(anchor);assert(Buffer.isBuffer(binary));assert.equal(binary.toString('utf8'),expected);
+ const production='src/lua/abyss_game_ui_input.lua';fault={path:anchor,kind:'missing'};
+ assert.equal(potionPost697CiRead((p,e)=>p===production?actualPost697ReadFileSync(p,e):read(p,e))(production,'utf8'),actualPost697ReadFileSync(production,'utf8'),'CI reader never projects production');
+ fault=undefined;
+ const unknown=potionPost697CiRead(()=>null);assert.equal(unknown('foreign/source','utf8'),null);
+ const historical=potionPost697CiRead((p,e)=>p===anchor?(e?expected:Buffer.from(expected)):read(p,e));
+ fault={path:other,kind:'missing'};assert.equal(historical(anchor,'utf8'),expected,'already historical bytes stay raw and gain no fresh authorization');
+ fault=undefined;
+ const seen=[],tracked=potionPost697CiRead((p,e)=>{seen.push(p);return actualPost697ReadFileSync(p,e);});
+ assert.equal(tracked(anchor,'utf8'),expected);
+ for(const path of [...Object.keys(potionPost697CiPacket.files),...Object.keys(potionPost697CiPacket.immutableArchives)])assert(seen.includes(path),path+' checked before replay');
+});
+
+test('post697 union public CI source authenticates the same raw reader before every historical conversion',()=>{
+ const anchor='tests/helpers/closeout-source-epoch.mjs',source=actualPost697ReadFileSync(anchor,'utf8');
+ const expected=potionPost697CiPacket.files[anchor].views.potion.source;let fault;
+ const read=(path,encoding)=>{
+  if(path===fault?.path){
+   if(fault.kind==='missing')throw Error('missing '+path);
+   if(fault.kind==='null')return null;
+   const raw=actualPost697ReadFileSync(path,encoding);
+   return typeof raw==='string'?raw+'\n':Buffer.concat([raw,Buffer.from('\n')]);
+  }
+  return actualPost697ReadFileSync(path,encoding);
+ };
+ const project=()=>potionPost697CiSource(anchor,source,undefined,read);
+ assert.equal(project(),expected);
+ for(const path of [...Object.keys(potionPost697CiPacket.files),...Object.keys(potionPost697CiPacket.immutableArchives)]){
+  for(const kind of ['missing','null','drift']){
+   fault={path,kind};assert.throws(project,undefined,path+' '+kind);
+   fault=undefined;assert.equal(project(),expected);
+  }
+ }
+ const noRead=()=>{throw Error('foreign input cannot authorize a historical view');};
+ for(const value of [source+'\n',source.slice(1),null,{},17,expected])assert.equal(potionPost697CiSource(anchor,value,undefined,noRead),value);
+ assert.equal(potionPost697CiSource('foreign/source',source,undefined,noRead),source);
+ const production='src/lua/abyss_game_ui_input.lua',raw=actualPost697ReadFileSync(production,'utf8');
+ assert.equal(potionPost697CiSource(production,raw,undefined,noRead),raw);
+ assert.equal(potionPost697CiSource(anchor,source,{sha256:'0'.repeat(64)},noRead),source);
+});
+
+test('post697 union current inventory authenticates the complete corpus before entering prior inventory',()=>{
+ const inventories={js:actualPost697DiscoverJs(),lua:potionPointerB9PriorInventory(readdirSync('tests/lua').filter(n=>n.endsWith('.lua')).map(n=>'tests/lua/'+n).sort(),'legacy','lua')};let fault;
+ const read=(path,encoding)=>{
+  if(path===fault?.path){
+   if(fault.kind==='missing')throw Error('missing '+path);
+   if(fault.kind==='null')return null;
+   const raw=actualPost697ReadFileSync(path,encoding);
+   return typeof raw==='string'?raw+'\n':Buffer.concat([raw,Buffer.from('\n')]);
+  }
+  return actualPost697ReadFileSync(path,encoding);
+ };
+ for(const [kind,paths]of Object.entries(inventories))assert.deepEqual(potionPost697PriorInventory(paths,kind,read),potionPost697CiPacket.viewInventories.potion[kind]);
+ // Both kinds share the same corpus gate. Exercise all declared faults once,
+ // and retain separate positive JS/Lua and already-prior boundaries.
+ for(const path of [...Object.keys(potionPost697CiPacket.files),...Object.keys(potionPost697CiPacket.immutableArchives)]){
+  for(const kind of ['missing','null','drift']){
+   fault={path,kind};assert.throws(()=>potionPost697PriorInventory(inventories.js,'js',read),undefined,path+' '+kind);
+   fault=undefined;assert.deepEqual(potionPost697PriorInventory(inventories.js,'js',read),potionPost697CiPacket.viewInventories.potion.js);
+  }
+ }
+ fault={path:'src/lua/abyss_game_ui_input.lua',kind:'missing'};
+ for(const kind of ['js','lua'])assert.deepEqual(potionPost697PriorInventory(potionPost697CiPacket.viewInventories.potion[kind],kind,read),potionPost697CiPacket.viewInventories.potion[kind]);
+});
+
+test('post697 union integrated reader and source forward the same raw reader before historical output',async()=>{
+ const {integratedRead}=loadedEpoch4;
+ const anchor='tests/helpers/closeout-source-epoch.mjs',other='src/lua/abyss_game_ui_input.lua';
+ const raw=actualPost697ReadFileSync(anchor,'utf8');let fault;const seen=[];
+ const read=(path,encoding)=>{
+  seen.push(path);
+  if(path===other&&fault){
+   if(fault==='missing')throw Error('missing '+path);
+   if(fault==='null')return null;
+   const bytes=actualPost697ReadFileSync(path,encoding);
+   return typeof bytes==='string'?bytes+'\n':Buffer.concat([bytes,Buffer.from('\n')]);
+  }
+  return actualPost697ReadFileSync(path,encoding);
+ };
+ assertPotionPost697CiCurrent(actualPost697ReadFileSync);
+ const reader=integratedRead('menu',{read}),expected=reader(anchor,'utf8');assert.notEqual(expected,raw,'the test must actually expose an older view');
+ for(const invoke of [()=>reader(anchor,'utf8'),()=>integratedSource(anchor,raw,'menu',read)]){
+  assert.equal(invoke(),expected);
+  for(const kind of ['missing','null','drift']){
+   fault=kind;assert.throws(invoke,undefined,'the integrated boundary must use the injected raw owner '+kind);
+   fault=undefined;assert.equal(invoke(),expected);
+  }
+ }
+ assert(seen.includes(other),'current owner must be read through this invocation reader');
+ const binary=reader(anchor);assert(Buffer.isBuffer(binary));assert.equal(binary.toString('utf8'),expected);
+});
+
+
+
+test('post697 union production retains both complete real inputs and authenticates every current owner',async()=>{
+ const {potionBeforePointerEpoch:sourceEpoch,prePotionPost697SourceEpoch,releaseSelectionMapLegacyEpoch}=loadedEpoch0;
+ const {potionPost697SourcePacket:p,extendPotionPost697Source}=loadedEpoch5;
+ const current=sourceEpoch.proof,prior=prePotionPost697SourceEpoch.proof,legacy=releaseSelectionMapLegacyEpoch.proof;
+ assert.equal(current.currentCommit,'a9df9dff11779cb1d850dc97b715c711881cf9c6');assert.equal(current.currentTreeCommitted,true);
+ assert.deepEqual(current.owners,prior.owners);assert.equal(current.owners.length,117);assert.equal(legacy.owners.length,116);
+ for(const [name,target]of Object.entries(prior.targets))assert.deepEqual(current.targets[name],target,name);
+ assert.deepEqual(current.targets.selectionMapLanded,{commit:p.selectionCommit,files:legacy.current});
+ assert.deepEqual(current.targets.potionBeforeSelection,{commit:p.baseCommit,files:prior.current});
+ for(const [path,row]of Object.entries(current.current))if(row!==null)assert.equal(actualPost697ReadFileSync(path,'utf8').replaceAll('\r\n','\n'),row.source,path);
+ for(const bad of [{...p,current:{}},{...p,before:{}},{...p,producers:{}},{...p,inheritedPotion:{}},{...p,currentTreeCommitted:false},{...p,currentCommit:'0'.repeat(40)},{...p,inputs:[]}])assert.throws(()=>extendPotionPost697Source(prePotionPost697SourceEpoch,releaseSelectionMapLegacyEpoch,bad));
+ const anchor=Object.keys(p.current)[0],source=current.current[anchor].source,expected=prior.current[anchor].source;
+ for(const crlf of [false,true]){
+  let fault;const seen=[];
+  const read=path=>{seen.push(path);if(path===fault?.path&&fault.missing)return null;const text=actualPost697ReadFileSync(path,'utf8').replaceAll('\r\n','\n');return path===fault?.path?text+'\n':crlf?text.replaceAll('\n','\r\n'):text;};
+  for(const path of current.owners){
+   seen.length=0;assert.equal(sourceEpoch.preCombinedSource(anchor,source,{target:'potionBeforeSelection',readSource:read}),expected);assert.deepEqual(seen,current.owners);
+   for(const missing of [false,true]){fault={path,missing};assert.throws(()=>sourceEpoch.preCombinedSource(anchor,source,{target:'potionBeforeSelection',readSource:read}),/linked owner identity/);}
+   fault=undefined;assert.equal(sourceEpoch.preCombinedSource(anchor,source,{target:'potionBeforeSelection',readSource:read}),expected);
+  }
+ }
+});
+
+test('post697 union both explicit histories reject warm cross-input faults and preserve unchanged before bytes',()=>{
+ const anchor='tests/helpers/closeout-source-epoch.mjs',other='src/lua/abyss_battle_ui.lua';let fault;
+ const read=(path,encoding)=>{if(path===other&&fault){if(fault==='missing')throw Error('missing '+path);if(fault==='null')return null;const b=actualPost697ReadFileSync(path,encoding);return typeof b==='string'?b+'\n':Buffer.concat([b,Buffer.from('\n')]);}return actualPost697ReadFileSync(path,encoding);};
+ for(const target of ['potion','selection']){
+  const reader=potionPost697HistoricalRead(target,read),expected=potionPost697CiPacket.files[anchor].views[target].source;
+  assert.equal(reader(anchor,'utf8'),expected);
+  for(const kind of ['missing','null','drift']){fault=kind;assert.throws(()=>reader(anchor,'utf8'));fault=undefined;assert.equal(reader(anchor,'utf8'),expected);}
+  for(const [kind,paths]of Object.entries(potionPost697CiPacket.currentInventory))assert.deepEqual(potionPost697PriorInventory(paths,kind,read,target),potionPost697CiPacket.viewInventories[target][kind]);
+  const untouched=Object.entries(potionPost697CiPacket.files).find(([,row])=>row.views[target]?.sha256===row.current.sha256);
+  assert(untouched);const [path,row]=untouched,bytes=row.current.source.replaceAll('\n','\r\n'),seen=[];
+  const same=potionPost697HistoricalRead(target,(p,e)=>{seen.push(p);assert.equal(p,path,'unchanged/already-before must not cause blanket authentication');return e?bytes:Buffer.from(bytes);});
+  assert.equal(same(path,'utf8'),bytes);assert.deepEqual(seen,[path]);
+ }
+ const binary=Buffer.from([255,0,128]);assert.equal(potionPost697CiRead(()=>binary)('unknown/binary'),binary);
+ for(const kind of ['js','lua']){
+  const paths=potionPost697CiPacket.currentInventory[kind];assertPotionPost697RawInventory(paths,kind);
+  for(const bad of [paths.slice(1),[...paths,paths[0]],[...paths,'foreign']])assert.throws(()=>assertPotionPost697RawInventory(bad,kind));
+ }
+});
+}

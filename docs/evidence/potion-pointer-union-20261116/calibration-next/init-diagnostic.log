@@ -1,0 +1,24 @@
+(node:13) ExperimentalWarning: `--experimental-loader` may be removed in the future; instead use `register()`:
+--import 'data:text/javascript,import { register } from "node:module"; import { pathToFileURL } from "node:url"; register("/tmp/cal-diagnostic-loader.mjs", pathToFileURL("./")); register("/tmp/cal-diagnostic-loader.mjs", pathToFileURL("./"));'
+(Use `node --trace-warnings ...` to show where the warning was created)
+INIT actualCurrentTimings 1794892873030
+INIT actualCurrentTimings 1794892873031
+INIT frozenShapeSource 1794892873130
+INIT frozenShapeSource 1794892873131
+INIT placementPath 1794892873251
+INIT placementPath 1794892873251
+INIT floorPath 1794892873339
+INIT floorPath 1794892873340
+INIT localFloorPath 1794892873419
+INIT localFloorPath 1794892873419
+REGISTER START 1794892873498
+REGISTER START 1794892873498
+✔ tests/ci-complete-calibration.test.mjs (13318.231529ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 13326.531329

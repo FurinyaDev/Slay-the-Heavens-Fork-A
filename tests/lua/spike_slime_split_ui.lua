@@ -105,6 +105,53 @@ statusCase('opening details invalidates an older target even when another touch 
     tt('hero',13);assert(not pp:GetChild('statusInfo').visible)
     ee('enemy2','up',11);ee('enemy2','click',11)
 end)
+-- Dismissal keeps only the interrupted named event, never a command token.
+for _,touch in ipairs({false,99}) do
+    statusCase('unowned '..(touch and 'foreign' or 'anonymous')..' click cannot dismiss another pointer detail',function(hh,uu,pp,ee,tt)
+        ee('enemy2','down',11);tt('hero',12)
+        local opened=uu.info;assert(opened)
+        ee('enemy2','up',11);ee('enemy2','click',touch or nil)
+        assert(uu.info==opened,'unowned Click dismissed current details')
+        tt('hero',13);assert(not uu.info)
+        ee('enemy2','click',11)
+    end)
+end
+statusCase('a consumed dismiss event cannot close newly opened details',function(hh,uu,pp,ee,tt)
+    ee('enemy2','down',11);tt('hero',12)
+    ee('enemy2','click',11);assert(not uu.info,'matching event must dismiss only')
+    tt('hero',13);local opened=uu.info;assert(opened)
+    ee('enemy2','up',11);ee('enemy2','click',11)
+    assert(uu.info==opened,'consumed event closed a later detail')
+    tt('hero',14)
+end)
+statusCase('a replaced detail rejects the interrupted event',function(hh,uu,pp,ee,tt)
+    ee('enemy2','down',11);tt('hero',12)
+    local original=uu.info;assert(original)
+    assert(uu:showStatus(1));local replacement=uu.info;assert(replacement and replacement~=original)
+    ee('enemy2','up',11);ee('enemy2','click',11)
+    assert(uu.info==replacement,'interrupted event closed a replacement detail')
+    tt('hero',13)
+end)
+statusCase('an actor replacement rejects the interrupted event',function(hh,uu,pp,ee,tt)
+    local battle=hh.run.combat;local old=battle.enemies[2]
+    ee('enemy2','down',11);tt('hero',12);local opened=uu.info
+    local replacement=C.copy(old);replacement.id=old.id..'_replacement';battle.enemies[2]=replacement
+    ee('enemy2','up',11);ee('enemy2','click',11)
+    assert(uu.info==opened,'stale actor event closed details')
+    battle.enemies[2]=old;tt('hero',13)
+end)
+statusCase('an unknown terminal retires the interrupted dismissal',function(hh,uu,pp,ee,tt)
+    ee('enemy2','down',11);tt('hero',12);local opened=uu.info
+    ee('enemy2','up',nil);ee('enemy2','click',11)
+    assert(uu.info==opened,'unknown terminal left a usable dismissal')
+    tt('hero',13)
+end)
+statusCase('a moved interrupted pointer cannot dismiss details',function(hh,uu,pp,ee,tt)
+    ee('enemy2','down',11);tt('hero',12);local opened=uu.info
+    ee('enemy2','drag',11);ee('enemy2','up',11);ee('enemy2','click',11)
+    assert(uu.info==opened,'dragged stale target dismissed details')
+    tt('hero',13)
+end)
 finish()
 print=originalPrint
 print('SPIKE_SPLIT_UI_PASS visible-intent/details/identity-frames/child-target/stale-parent-pointer')

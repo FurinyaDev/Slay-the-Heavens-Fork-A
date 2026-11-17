@@ -95,17 +95,31 @@ function M.install(owner, ownership, host, dependencies)
         if g.moving then host.cardView.renderDrag() end
         return true
     end
-    local function down(event)
-        if owner.potionAim and owner.potionAim.moving and owner.potionAim.touch~=(event and event.touchId) then return true end
-        retireInterruptedPress(event)
-        ownership.pointerObserved = true
-        owner.help=nil
+    local function reclaimPointer(event)
         if owner.active and not owner.busy and not owner.gesture and event and event.touchId == ownership.releasedDragTouch then
             ownership.releasedDragTouch = nil -- a new physical sequence owns this touch again
         end
         if not owner.gesture then owner.suppressClick = false end
+    end
+    local function down(event)
+        -- The popup owns dismissal as well as Use/Discard. A lower native
+        -- callback must not close it before its own action receives this Down.
+        if owner.potionMenu then return true end
+        if owner.potionAim and owner.potionAim.moving and owner.potionAim.touch~=(event and event.touchId) then return true end
+        retireInterruptedPress(event)
+        ownership.pointerObserved = true
+        owner.help=nil
+        reclaimPointer(event)
         owner.swallow = nil
         if owner.gesture then return false end
+        -- Retire a changed potion context before the target captures a token.
+        -- This press only cancels; a refreshed actor must need a new Down.
+        if owner.active and not owner.busy and owner.potionAim and not dependencies.aimReady(owner.potionAim) then
+            dependencies.cancelPotionAim("药水瞄准已失效，已取消；请重新选择药水。")
+            owner.swallow = {touch = event and event.touchId}
+            owner:render()
+            return true
+        end
         local closed,automaticCard=dependencies.closeInfo()
         if not closed or automaticCard then return false end
         owner.swallow = {touch = event and event.touchId}
@@ -113,6 +127,7 @@ function M.install(owner, ownership, host, dependencies)
         return true
     end
     local function swallowed(event)
+        if owner.potionMenu then return true end
         local swallow = owner.swallow
         if swallow and swallow.touch == (event and event.touchId) then owner.swallow = nil return true end
         local closed,automaticCard=dependencies.closeInfo()
@@ -275,7 +290,13 @@ function M.install(owner, ownership, host, dependencies)
         owner.suppressClick,owner.selected = g,action ~= 'cancel' and g.uid or nil
         finishReleaseAction(action,target)
     end
+    local function endPointer(event,input,ended)
+        local gesture=owner.gesture or owner.potionAim
+        local source=input or gesture and gesture.input
+        if source then dependencies.pointerEnd(source,event,ended)end
+    end
     local function release(event, input, ended)
+        endPointer(event,input,ended)
         if owner.potionAim and owner.potionAim.moving and dependencies.releasePotionDrag then return dependencies.releasePotionDrag(event,input) end
         local g = owner.gesture
         local touch = event and event.touchId
@@ -300,7 +321,7 @@ function M.install(owner, ownership, host, dependencies)
         local aim=owner.potionAim
         if aim and aim.moving then ownership.releasedDragTouch=aim.touch end
         dependencies.cancelCardInputs();dependencies.cancelActionInputs();dependencies.cancelPotionInputs()
-        for _,input in ipairs(ownership.enemyInputs)do input.held,input.released=nil,nil end
+        for _,input in ipairs(ownership.enemyInputs)do dependencies.pointerClear(input) end
     end
     local function controllerReady()
         return owner.active and not owner.busy and not owner.gesture and not owner.potionMenu and owner.run
