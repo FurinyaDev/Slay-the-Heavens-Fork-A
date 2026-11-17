@@ -82,6 +82,24 @@ export const battlePointerInspectionHelperCopies=[
  }
 ];
 for(const row of battlePointerInspectionHelperCopies){assert.equal(files[row.path]??null,row.before,'exact inspection helper-copy predecessor: '+row.path);files[row.path]=row.after;}
+export const battlePointerDismissHelperCopies=[
+  {
+    "path": "tests/helpers/closeout-source-epoch.mjs",
+    "before": "6d7e34b712195df0d8d4d3e6915dcb1d6cc13d9fc9b2da86b3727740ff5a9c1d",
+    "after": "2cc9da456afc3a7c62ed1e3b35df03d759536f84bdea5aacca8406612b24eda4"
+  },
+  {
+    "path": "tests/helpers/battle-pointer-dismiss-source.mjs",
+    "before": null,
+    "after": "8d8c1fc28ee373a0758e4a4d8998800da75fb1def75c03a7fba1b89b21ed496e"
+  },
+  {
+    "path": "tests/helpers/battle-pointer-dismiss-source.json.gz",
+    "before": null,
+    "after": "6f96a2ad90170ab7571bc900109537d3097d027c4a39310894176e5b641ea13c"
+  }
+];
+for(const row of battlePointerDismissHelperCopies){assert.equal(files[row.path]??null,row.before,'exact dismiss helper-copy predecessor: '+row.path);files[row.path]=row.after;}
 const inside=(root,path)=>{const r=relative(root,path);return r!==''&&!isAbsolute(r)&&r!=='..'&&!r.startsWith('../')&&!r.startsWith('..\\');};
 export function copyIntegrationSourceClosure(directory,{sourceRoot=process.cwd()}={}){
  const destination=realpathSync.native(directory);

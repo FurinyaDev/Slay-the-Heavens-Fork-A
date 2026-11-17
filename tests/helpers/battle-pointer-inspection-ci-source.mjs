@@ -4,6 +4,7 @@ import {readFileSync} from 'node:fs';
 import {createHash} from 'node:crypto';
 import {gunzipSync} from 'node:zlib';
 import {sourceEpoch} from './closeout-source-epoch.mjs';
+import {assertDismissCiCurrent,dismissPriorSource,dismissBeforeRead} from './battle-pointer-dismiss-ci-source.mjs';
 const hash=b=>createHash('sha256').update(b).digest('hex'),norm=s=>s.replaceAll('\r\n','\n');
 const bytes=readFileSync(new URL('./battle-pointer-inspection-ci-source.json.gz',import.meta.url));
 assert.equal(hash(bytes),'eabdb32e61788967dd4377fa5d0f62039b3e37331ec54edb64f604b1feb60e4c','complete inspection battle pointer CI continuation');
@@ -24,11 +25,14 @@ export function assertInspectionCiCurrent(read=readFileSync){
   const source=read(path,'utf8');assert.equal(typeof source,'string','fresh linked owner: '+path);
   assert.equal(hash(norm(source)),sourceEpoch.proof.current[path].sha256,'fresh linked owner: '+path);
  }
- for(const [path,row]of Object.entries(packet.files))assert.equal(hash(norm(read(path,'utf8'))),row.current.sha256,'fresh complete integration source: inspection '+path);
+ assertDismissCiCurrent(read);
+ const prior=dismissBeforeRead(read,{production:true,authenticate:false});
+ for(const [path,row]of Object.entries(packet.files))assert.equal(hash(norm(prior(path,'utf8'))),row.current.sha256,'fresh complete integration source: inspection '+path);
  for(const [path,sha]of Object.entries(packet.immutableArchives))assert.equal(hash(read(path)),sha,'retained complete immutable sparse battle pointer predecessor: '+path);
 }
 function priorSource(path,source,{production=false,read=readFileSync,authenticate=true}={}){
  if(!production&&(path.startsWith('src/')||path==='config/architecture.json'))return source;
+ source=dismissPriorSource(path,source,{read,production,authenticate});
  const row=Object.hasOwn(packet.files,path)?packet.files[path]:null;
  if(!row?.before||typeof source!=='string'||source.includes('\r\r\n')||hash(norm(source))!==row.current.sha256||row.before.sha256===row.current.sha256)return source;
  if(authenticate)assertInspectionCiCurrent(read);
