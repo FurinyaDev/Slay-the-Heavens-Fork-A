@@ -4,11 +4,28 @@ import {readFileSync} from 'node:fs';
 import {createHash} from 'node:crypto';
 import {gunzipSync} from 'node:zlib';
 import {sourceEpoch} from './closeout-source-epoch.mjs';
-const PACKET_SHA='ed0dd1a847de736030747f4b1b2a051e42930830a885046ffc96c11270098ccb';
+const PACKET_SHA='4e21ceac3bdf6bf34a7f4c3d9426c8b26a3c6f7eee600b3688f79154fcc0b22b';
 const hash=b=>createHash('sha256').update(b).digest('hex'),norm=s=>s.replaceAll('\r\n','\n');
 const bytes=readFileSync(new URL('./potion-pointer-ci-union.json.gz',import.meta.url));
 assert.equal(hash(bytes),PACKET_SHA,'immutable potion-pointer CI union');
 const packet=JSON.parse(gunzipSync(bytes));
+const priorPacketPath='tests/helpers/potion-pointer-ci-before-selection.json.gz';
+const priorPacketSha='ed0dd1a847de736030747f4b1b2a051e42930830a885046ffc96c11270098ccb';
+const priorBytes=readFileSync(new URL('./potion-pointer-ci-before-selection.json.gz',import.meta.url));
+assert.equal(hash(priorBytes),priorPacketSha,'immutable pre-selection CI union');
+assert.equal(packet.predecessorCommit,'7d02a6ae3be107730b7c1c128720e22c8431cbbe');
+assert.equal(packet.predecessorPacketSha256,priorPacketSha);
+const previous=JSON.parse(gunzipSync(priorBytes));
+assert.deepEqual(Object.keys(packet.files),Object.keys(previous.files),'complete predecessor CI input set');
+for(const [path,row]of Object.entries(packet.files)){
+ assert.deepEqual(Object.keys(row.views),Object.keys(previous.files[path].views),'unchanged parent domains '+path);
+ for(const [target,view]of Object.entries(row.views)){
+  const before=previous.files[path].views[target];
+  assert.equal(view.sha256,before.sha256,'unchanged original parent identity '+path);
+  if(before.source!==undefined)assert.equal(view.source,before.source,'unchanged complete original parent source '+path);
+ }
+ if(path!=='tests/release-selection-map-source.test.mjs')assert.deepEqual(row.current,previous.files[path].current,'unchanged other union input '+path);
+}
 assert.equal(packet.schemaVersion,1);assert.equal(packet.normalization,'LF');
 assert.equal(packet.baseCommit,'29ae8d2cb2a5b729c348191ee56910b1aa77386c');
 assert.deepEqual(packet.viewCommits,{potion:'eabff9b0bf2cce17ae05913c0e5d47366d0ff173',pointer:'ad6fe84dbcc11e28e8a82258f889a6841b46c8c6'});
@@ -17,6 +34,7 @@ for(const row of Object.values(packet.files))for(const target of Object.keys(row
 const freeze=v=>{if(v&&typeof v==='object'&&!Object.isFrozen(v)){Object.values(v).forEach(freeze);Object.freeze(v);}return v;};
 export const potionPointerCiUnionPacket=freeze(packet);
 export function assertPotionPointerCiUnionCurrent(read=readFileSync){
+ assert.equal(hash(read(priorPacketPath)),priorPacketSha,'fresh immutable pre-selection CI union');
  assert.equal(hash(read('tests/helpers/potion-pointer-ci-union.json.gz')),PACKET_SHA,'fresh immutable potion-pointer CI union');
  // Authenticate every product source, not merely the changed/previously-owned slice.
  for(const [path,row]of Object.entries(sourceEpoch.proof.current))if(row){
@@ -51,7 +69,7 @@ export function potionPointerCiUnionRead(target='potion',read=readFileSync,{prod
 export function withPotionPointerCiUnionValidation(target,read,validate){
  assert(Object.hasOwn(packet.viewCommits,target));
  const captured=new Map();
- for(const path of new Set([...Object.keys(sourceEpoch.proof.current),...Object.keys(packet.files),'tests/helpers/potion-pointer-ci-union.json.gz'])){
+ for(const path of new Set([...Object.keys(sourceEpoch.proof.current),...Object.keys(packet.files),'tests/helpers/potion-pointer-ci-union.json.gz',priorPacketPath])){
   if(sourceEpoch.proof.current[path]===null&&!Object.hasOwn(packet.files,path))continue;
   const bytes=read(path);assert(Buffer.isBuffer(bytes),'validation capture bytes '+path);captured.set(path,Buffer.from(bytes));
  }

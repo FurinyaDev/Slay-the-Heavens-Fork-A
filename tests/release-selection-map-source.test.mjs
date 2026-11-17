@@ -1,6 +1,14 @@
-import test from 'node:test';
+import nodeTest from 'node:test';
 import assert from 'node:assert/strict';
-import {readFileSync as actualPost697ReadFileSync,readdirSync,mkdtempSync,mkdirSync,rmSync,existsSync,writeFileSync} from 'node:fs';
+import {readFileSync as actualUnionReadFileSync,readdirSync,mkdtempSync,mkdirSync,rmSync,existsSync,writeFileSync} from 'node:fs';
+import {potionPointerCiUnionRead,withPotionPointerCiUnionValidation} from './helpers/potion-pointer-ci-union.mjs';
+const publicPotionRead=potionPointerCiUnionRead('potion',actualUnionReadFileSync,{production:true});
+let scopedPotionRead=null;
+const actualPost697ReadFileSync=(...args)=>(scopedPotionRead??publicPotionRead)(...args);
+// Original historical assertions run only inside a freshly authenticated synchronous snapshot.
+const test=(name,fn)=>nodeTest(name,()=>withPotionPointerCiUnionValidation('potion',actualUnionReadFileSync,read=>{
+ scopedPotionRead=read;try{return fn();}finally{scopedPotionRead=null;}
+}));
 import {potionPost697HistoricalRead,potionPost697PriorInventory} from './helpers/potion-post697-ci-source.mjs';
 const readFileSync=potionPost697HistoricalRead('selection',actualPost697ReadFileSync);
 import {join} from 'node:path';
@@ -125,7 +133,7 @@ test('legacy landed697 release selection map production requires fresh complete 
  }
 });
 
-test('legacy landed697 release selection map isolated production copy includes exact helper and packet without CI trust leaf',async t=>{
+nodeTest('legacy landed697 release selection map isolated production copy includes exact helper and packet without CI trust leaf',async t=>{
  const directory=mkdtempSync(join(tmpdir(),'release-selection-map-copy-'));
  t.after(()=>rmSync(directory,{recursive:true,force:true}));
  copyIntegrationSourceClosure(directory);

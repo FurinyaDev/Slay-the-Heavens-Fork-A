@@ -1,0 +1,14 @@
+PASS 1 current complete identity
+PASS 2 CRLF consumer
+PASS 3 drift consumer rejected
+PASS 4 missing consumer rejected
+PASS 5 null consumer rejected
+PASS 6 empty consumer rejected
+PASS 7 rollback consumer rejected
+PASS 8 predecessor packet drift rejected
+PASS 9 scope returns original parent consumer
+PASS 10 reader expires after return
+PASS 11 reader expires after exception
+PASS 12 async callback rejected
+PASS 13 current restored
+TOTAL 13 passed

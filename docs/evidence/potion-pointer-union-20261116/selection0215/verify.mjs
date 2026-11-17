@@ -1,0 +1,21 @@
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {assertPotionPointerCiUnionCurrent,withPotionPointerCiUnionValidation,potionPointerCiUnionPacket as packet} from '../../../../tests/helpers/potion-pointer-ci-union.mjs';
+let passed=0;const check=(name,fn)=>{fn();console.log('PASS '+(++passed)+' '+name);};
+const consumer='tests/release-selection-map-source.test.mjs';
+const altered=(change)=>(p,e)=>p===consumer?change(readFileSync(p,e),e):readFileSync(p,e);
+check('current complete identity',()=>assertPotionPointerCiUnionCurrent());
+check('CRLF consumer',()=>assertPotionPointerCiUnionCurrent(altered((v,e)=>e?v.replaceAll('\n','\r\n'):Buffer.from(v.toString().replaceAll('\n','\r\n')))));
+for(const mode of ['drift','missing','null','empty','rollback'])check(mode+' consumer rejected',()=>assert.throws(()=>assertPotionPointerCiUnionCurrent(altered((v,e)=>{
+ if(mode==='missing')throw Object.assign(Error('missing consumer'),{code:'ENOENT'});
+ if(mode==='null')return null;
+ const text=mode==='rollback'?packet.files[consumer].views.potion.source:mode==='empty'?'':v.toString()+'\n';return e?text:Buffer.from(text);
+}))));
+check('predecessor packet drift rejected',()=>assert.throws(()=>assertPotionPointerCiUnionCurrent((p,e)=>p.endsWith('potion-pointer-ci-before-selection.json.gz')?Buffer.from('foreign'):readFileSync(p,e))));
+let escaped;
+check('scope returns original parent consumer',()=>withPotionPointerCiUnionValidation('potion',readFileSync,read=>{escaped=read;assert.equal(read(consumer,'utf8'),packet.files[consumer].views.potion.source);}));
+check('reader expires after return',()=>assert.throws(()=>escaped(consumer,'utf8'),/escaped synchronous scope/));
+check('reader expires after exception',()=>{assert.throws(()=>withPotionPointerCiUnionValidation('potion',readFileSync,read=>{escaped=read;throw Error('test exception');}),/test exception/);assert.throws(()=>escaped(consumer,'utf8'),/escaped synchronous scope/);});
+check('async callback rejected',()=>assert.throws(()=>withPotionPointerCiUnionValidation('potion',readFileSync,()=>Promise.resolve()),/must be synchronous/));
+check('current restored',()=>assertPotionPointerCiUnionCurrent());
+console.log('TOTAL '+passed+' passed');
