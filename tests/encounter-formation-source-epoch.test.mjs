@@ -234,7 +234,7 @@ test('frozen pre-PC 116-owner continuation: current UI facade authenticates all 
  }
 });
 
-test('current PC 120-owner continuation: current UI facade authenticates all disk owners once in order and rejects every warm drift or removal',()=>{
+test('current PC B9 121-owner continuation: current UI facade authenticates all disk owners once in order and rejects every warm drift or removal',()=>{
  const current=currentSourceEpoch.proof,file='config/architecture.json',input=diskReadFileSync(file,'utf8'),target='develop';
  const pad=files=>Object.fromEntries(Object.keys(current.current).map(path=>[path,files[path]??null]));
  assert.deepEqual(current.targets.stsFeedbackPrior.files,pad(stsStyleEpoch.proof.current),'complete 104-owner predecessor remains available, new modules have no invented source');
@@ -244,8 +244,32 @@ test('current PC 120-owner continuation: current UI facade authenticates all dis
  assert.deepEqual(preReleasePcSourceEpoch.proof.owners,[...menuRedEpoch.proof.owners,...additions].sort());
  assert.equal(preReleasePcSourceEpoch.proof.owners.length,116);
  assert.deepEqual(current.targets.releasePcPrior.files,preReleasePcSourceEpoch.proof.current);
- assert.deepEqual(current.owners,[...preReleasePcSourceEpoch.proof.owners,...['battle_card_bindings','battle_unit_view','combat','combat_enemy_setup'].map(name=>'src/lua/abyss_'+name+'.lua')].sort());
- assert.equal(current.owners.length,120);
+ assert.deepEqual(current.owners,[...preReleasePcSourceEpoch.proof.owners,...['battle_card_bindings','battle_unit_view','combat','combat_enemy_setup','card_flow'].map(name=>'src/lua/abyss_'+name+'.lua')].sort());
+ assert.equal(current.owners.length,121);
+ const expected=current.targets[target].files[file].source;
+ for(const crlf of [false,true]){
+  const reads=[];let bad=null,missing=false;
+  const live=owner=>{reads.push(owner);if(owner===bad&&missing)return null;const bytes=diskReadFileSync(owner,'utf8').replaceAll('\r\n','\n');return owner===bad?bytes+'\n':crlf?bytes.replaceAll('\n','\r\n'):bytes;};
+  for(let repeat=0;repeat<2;repeat++){reads.length=0;assert.equal(currentSourceEpoch.preCombinedSource(file,input,{target,readSource:live}),expected);assert.deepEqual(reads,current.owners);}
+  for(const owner of current.owners){
+   for(const absent of [false,true]){bad=owner;missing=absent;reads.length=0;assert.throws(()=>currentSourceEpoch.preCombinedSource(file,input,{target,readSource:live}),/linked owner identity/,owner);assert.deepEqual(reads,current.owners.slice(0,current.owners.indexOf(owner)+1));}
+   bad=null;reads.length=0;assert.equal(currentSourceEpoch.preCombinedSource(file,input,{target,readSource:live}),expected);assert.deepEqual(reads,current.owners);
+  }
+  reads.length=0;assert.equal(currentSourceEpoch.preCombinedSource(file,'foreign source',{target,readSource:live}),'foreign source');assert.deepEqual(reads,[]);
+ }
+});
+
+import {releaseCardContactSourceEpoch,preReleasePc22BasicFeedbackSourceEpoch} from './helpers/closeout-source-epoch.mjs';
+import {assertPcB9Current} from './helpers/pc-map-integration.mjs';
+test('current PC22 UI facade authenticates all 117 disk owners once in order and rejects every warm drift or removal',()=>{
+ // This is the complete immutable B9 parent contract; actual 121-owner raw admission remains separately tested.
+ assertPcB9Current();
+ const currentSourceEpoch=releaseCardContactSourceEpoch,diskReadFileSync=path=>currentSourceEpoch.proof.current[path]?.source??null;
+ const current=currentSourceEpoch.proof,prior=preReleasePc22BasicFeedbackSourceEpoch.proof,file='config/architecture.json',input=diskReadFileSync(file,'utf8'),target='develop';
+ assert.equal(prior.owners.length,116);
+ assert.deepEqual(current.owners,[...prior.owners,'src/lua/abyss_card_flow.lua'].sort());
+ assert.equal(current.owners.length,117);
+ assert.deepEqual(current.targets.releasePc22BasicFeedbackPrior.files,prior.current);
  const expected=current.targets[target].files[file].source;
  for(const crlf of [false,true]){
   const reads=[];let bad=null,missing=false;

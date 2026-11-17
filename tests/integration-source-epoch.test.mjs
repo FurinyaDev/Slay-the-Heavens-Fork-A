@@ -64,6 +64,9 @@ test('shop/deck continuation retains the complete closeout predecessor and every
  assert.deepEqual(Object.keys(frozen.current),Object.keys(closeoutPriorEpoch.proof.current));
  const {preReleasePcSourceEpoch}=await import('./helpers/closeout-source-epoch.mjs');
  assert.equal(preReleasePcSourceEpoch.proof.currentTreeCommitted,false,'working source hashes do not invent a committed corpus');
+ const {preReleasePc22BasicFeedbackSourceEpoch,preReleaseSelectionMapSourceEpoch}=await import('./helpers/closeout-source-epoch.mjs');
+ assert.equal(preReleasePc22BasicFeedbackSourceEpoch.proof.currentTreeCommitted,false,'working source hashes do not invent a committed corpus');
+ assert.equal(preReleaseSelectionMapSourceEpoch.proof.currentTreeCommitted,false,'working source hashes do not invent a committed corpus');
  for(const path of Object.keys(frozen.current))if(!shopDeckPaths.includes(path))assert.deepEqual(frozen.current[path],closeoutPriorEpoch.proof.current[path],path);
  for(const path of shopDeckPaths){
   assert.equal(readFileSync(path,'utf8').replaceAll('\r\n','\n'),raw(path),path);

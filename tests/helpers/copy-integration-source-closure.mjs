@@ -41,8 +41,10 @@ export const releaseSelectionMapHelperCopies=[
  {path:'tests/helpers/release-selection-map-source.json.gz',before:null,after:'0c056c020ad655d5a2a901a6f196350582eaf0709afa736f363a0d68509daf62'}
 ];
 for(const row of releaseSelectionMapHelperCopies){assert.equal(commonReleaseCopies[row.path]??null,row.before,'exact standalone Map helper-copy predecessor: '+row.path);if(row.path!=='tests/helpers/closeout-source-epoch.mjs')files[row.path]=row.after;}
-files['tests/helpers/closeout-source-epoch.mjs']='52817deac1c45d82188b2846c2484495aa9b027cacc37998160543c9d90de5fa';
+files['tests/helpers/closeout-source-epoch.mjs']='485db0d928e7cf4d13f55b3a15df6272af3acb6adb31a1b4d140297871c73133';
 files['tests/helpers/pc-map-merged-view.json']='840440266b2a19cd93b8268b4fb9fba8a03cbb16c6df9b1bef4cd931f9b23324';
+files['tests/helpers/release-pc22-basic-feedback-source.mjs']='395e3810c67852768340eb868ee7397bb9ed0b232ff112efa93fb4b520e80b96';
+files['tests/helpers/release-pc22-basic-feedback-source.json.gz']='1cb0fddfea365de7be5331dc169bd438f2cde36b372c4c15bf9c8ac8a2eed157';
 const inside=(root,path)=>{const r=relative(root,path);return r!==''&&!isAbsolute(r)&&r!=='..'&&!r.startsWith('../')&&!r.startsWith('..\\');};
 export function copyIntegrationSourceClosure(directory,{sourceRoot=process.cwd()}={}){
  const destination=realpathSync.native(directory);

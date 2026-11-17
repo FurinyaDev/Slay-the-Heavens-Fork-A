@@ -1,4 +1,4 @@
-import {pcDomainSource,pcDomainRead,pcValidationRead,pcMapPriorInventory,pcMapPacket,assertPcMapCurrent} from './pc-map-integration.mjs';
+import {pcDomainSource,pcDomainRead,pcValidationRead,pcMapPriorInventory,pcMapPacket,pcB9Packet,assertPcMapCurrent} from './pc-map-integration.mjs';
 // Explicit immutable source views for the reviewed integration inputs.
 // Production projectors never import this CI-only archive.
 import assert from 'node:assert/strict';
@@ -46,7 +46,7 @@ export function assertIntegratedCurrent(read=readFileSync){
  for(const [path,row]of Object.entries(integratedCiProof.files))assert.equal(hash(norm(releasePcCiCheckedSource(path,pcDomainRead('slicePrior',read)(path,'utf8'),row.current))),row.current.sha256,'fresh complete integration source: '+path);
  for(const [path,row]of Object.entries(integratedCiProof.closure))assert.equal(hash(path.endsWith('.gz')?read(path):norm(releasePcCiSource(path,pcDomainRead('slicePrior',read)(path,'utf8'),integratedCiProof.files[path]?.current))),row.after,'fresh integration copy owner: '+path);
 }
-export function integratedCurrentInventory(kind='js'){assert(['js','lua'].includes(kind));return [...pcMapPacket.inventories.joint[kind]];}
+export function integratedCurrentInventory(kind='js'){assert(['js','lua'].includes(kind));return [...pcB9Packet.inventory[kind]];}
 export function extendIntegratedHelperClosure(original){
  const current={...original},patch=integratedCiProof.closure;
  assert.deepEqual(Object.keys(patch).sort(),['tests/helpers/closeout-source-epoch.mjs','tests/helpers/combined-epoch/source-epoch-runtime.mjs','tests/helpers/menu-presentation-source.json.gz','tests/helpers/menu-red-production-source.json.gz','tests/helpers/menu-red-source-epoch.mjs','tests/helpers/release-source-epoch.json.gz','tests/helpers/release-source-epoch.mjs','tests/helpers/session-menu-source-epoch.json.gz','tests/helpers/session-menu-source-epoch.mjs']);
@@ -58,7 +58,7 @@ export function integratedPriorInventory(paths,target,kind='js',read=readFileSyn
  const current=kind==='js'?integratedCiProof.inventory:integratedCiProof.luaInventory;
  const prior=integratedCiProof.inventories[target]?.[kind];
  assert(prior,'known integration inventory');
- paths=pcMapPriorInventory(paths,'pc',kind);
+ paths=pcMapPriorInventory(paths,'pc',kind,read);
  paths=releasePcPriorInventory(paths,kind,pcDomainRead('slicePrior',read));
  // New standalone reviewed views consume raw discovery. Older chained views
  // retain their existing idempotent prior-inventory contract.

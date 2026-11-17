@@ -37,7 +37,71 @@ for(const row of Object.values(pcMapPacket.files)){
  for(const id of Object.values(row.views))assert(id===null||Object.hasOwn(pcMapPacket.sources,id),'complete standalone source reference');
 }
 freeze(pcMapPacket);
-export function pcMapSource(path,source,side='pc'){
+// Exact B9 continuation over the complete PC/map and card-contact parent views.
+// This private leaf adds no producer, tracker, unchecked public reader or authorization cache.
+const b9Bytes=norm(readFileSync(new URL('./release-card-contact-integration.json',import.meta.url),'utf8'));
+assert.equal(hash(b9Bytes),'374e9f3ab0117d08ec202c406d9be466f7f94644b86daf8a3095a3e3a298c171');
+const b9Parent=JSON.parse(b9Bytes);
+const b9JoinBytes=readFileSync(new URL('./pc-b9-ci-source.json.gz',import.meta.url));
+assert.equal(hash(b9JoinBytes),'58c183274762f9653a31811fcccb28bc929498cca67a01c6308f8ecc04281680','complete PC B9 continuation');
+export const pcB9Packet=freeze(JSON.parse(gunzipSync(b9JoinBytes)));
+assert.deepEqual(pcB9Packet.parents,['10d7ef9658872ec7d118b585fbc81e3da585c552','b9bca884ed9b9831965b409885d78f719b9a567a']);
+assert.equal(pcB9Packet.schemaVersion,1);assert.equal(pcB9Packet.normalization,'LF');
+for(const [path,row]of Object.entries(pcB9Packet.files))for(const binding of Object.values(row.before).filter(Boolean)){
+ assert.equal(hash(binding.source),binding.sha256,path+' complete PC/B9 predecessor');
+ assert.equal(createHash('sha1').update(`blob ${Buffer.byteLength(binding.source)}\0`).update(binding.source).digest('hex'),binding.gitBlob,path);
+}
+function pcB9Before(path,source,side){
+ assert(['pc','b9'].includes(side),'known PC B9 parent domain');
+ if(path.startsWith('src/')||path==='config/architecture.json')return source;
+ const row=Object.hasOwn(pcB9Packet.files,path)?pcB9Packet.files[path]:null,before=row?.before[side];
+ if(!before||typeof source!=='string'||source.includes('\r\r\n')||hash(norm(source))!==row.currentSha256||before.sha256===row.currentSha256)return source;
+ return before.source;
+}
+export function assertPcB9Current(read=readFileSync){
+ const packet=read('tests/helpers/pc-b9-ci-source.json.gz');
+ assert(Buffer.isBuffer(packet),'fresh complete integration source: PC B9 packet tests/helpers/pc-b9-ci-source.json.gz');
+ assert.equal(hash(packet),hash(b9JoinBytes),'fresh complete integration source: PC B9 packet tests/helpers/pc-b9-ci-source.json.gz');
+ for(const [path,row]of Object.entries(pcB9Packet.files)){
+  const source=read(path,'utf8');assert.equal(typeof source,'string','fresh complete integration source: PC B9 '+path);
+  assert(!source.includes('\r\r\n'),'fresh complete integration source: PC B9 '+path);
+  assert.equal(hash(norm(source)),row.currentSha256,'fresh complete integration source: PC B9 '+path);
+ }
+ for(const [path,sha]of Object.entries(pcB9Packet.archives))assert.equal(hash(read(path)),sha,'immutable pc/map predecessor / retained complete immutable Release join predecessor: '+path);
+ for(const path of sourceEpoch.proof.owners){
+  const source=read(path,'utf8');assert.equal(typeof source,'string','linked owner identity: '+path);
+  assert.equal(hash(norm(source)),sourceEpoch.proof.current[path].sha256,'linked owner identity: '+path);
+ }
+}
+export function pcB9Source(path,source,side='pc',read=readFileSync){
+ const before=pcB9Before(path,source,side);if(before!==source)assertPcB9Current(read);return before;
+}
+export function pcB9Read(side='pc',read=readFileSync){
+ assert(['pc','b9'].includes(side),'known PC B9 parent domain');
+ return(path,encoding)=>{
+ const raw=read(path,encoding);if(typeof raw==='string')return pcB9Source(path,raw,side,read);
+ if(encoding||!Buffer.isBuffer(raw)||!Object.hasOwn(pcB9Packet.files,path))return raw;
+ const text=raw.toString('utf8'),before=pcB9Source(path,text,side,read);return before===text?raw:Buffer.from(before);
+};}
+export function pcB9ProductionRead(side='pc',read=readFileSync){
+ assert(['pc','b9'].includes(side),'known PC B9 parent domain');
+ const ci=pcB9Read(side,read);return(path,encoding)=>{
+  if(!path.startsWith('src/')&&path!=='config/architecture.json')return ci(path,encoding);
+  const raw=read(path,encoding);if(typeof raw!=='string')return raw;
+  const before=sourceEpoch.preCombinedSource(path,raw,{target:side==='pc'?'releasePcMapReviewed':'releaseCardContactReviewed',readSource:p=>read(p,'utf8')});
+  if(before!==raw)assertPcB9Current(read);return before;
+ };
+}
+export function pcB9PriorInventory(paths,side='pc',kind='js',read=readFileSync){
+ assert(['pc','b9'].includes(side));assert(['js','lua'].includes(kind));
+ const current=pcB9Packet.inventory[kind],prior=side==='pc'?pcMapPacket.inventories.joint[kind]:pcB9Packet.priorB9Inventory[kind];
+ const added=current.filter(p=>!prior.includes(p)),sorted=[...paths].sort();
+ if(!added.some(p=>paths.includes(p)))return [...paths];
+ assert.deepEqual(sorted,current,'complete PC B9 raw inventory');assertPcB9Current(read);return [...prior];
+}
+
+export function pcMapSource(path,source,side='pc',read=readFileSync){
+ source=pcB9Source(path,source,'pc',read);
  assert(['pc','selection'].includes(side),'known pc/map standalone view');
  if(path.startsWith('src/')||path==='config/architecture.json')return source;
  const row=Object.hasOwn(pcMapPacket.files,path)?pcMapPacket.files[path]:null;
@@ -45,7 +109,7 @@ export function pcMapSource(path,source,side='pc'){
  const id=row.views[side];return id===null?source:pcMapPacket.sources[id];
 }
 export function pcMapRead(side='pc',read=readFileSync){return(path,encoding)=>{
- const raw=read(path,encoding);return typeof raw==='string'?pcMapSource(path,raw,side):raw;
+ const raw=read(path,encoding);return typeof raw==='string'?pcMapSource(path,raw,side,read):raw;
 };}
 export function pcMapProductionRead(side='pc',read=readFileSync){
  assert(['pc','selection'].includes(side),'known PC/map standalone production view');
@@ -74,7 +138,8 @@ export function pcValidationRead(read=readFileSync){
   return row&&hash(norm(raw))===row.sha256?p.targets.releasePcReviewed.files[path]?.source??raw:raw;
  };
 }
-export function pcMapPriorInventory(paths,side='pc',kind='js'){
+export function pcMapPriorInventory(paths,side='pc',kind='js',read=readFileSync){
+ paths=pcB9PriorInventory(paths,'pc',kind,read);
  assert(['pc','selection'].includes(side));assert(['js','lua'].includes(kind));
  const sorted=[...paths].sort(),current=pcMapPacket.inventories.joint[kind],prior=pcMapPacket.inventories[side][kind];
  if(JSON.stringify(sorted)===JSON.stringify(prior))return [...paths];
@@ -86,14 +151,15 @@ export function assertPcMapRawInventory(paths,kind='js'){
  assert(['js','lua'].includes(kind));assert.deepEqual([...paths].sort(),pcMapPacket.inventories.joint[kind],'complete pc/map raw inventory');
 }
 export function assertPcMapCurrent(read=readFileSync){
+ assertPcB9Current(read);
  for(const [path,row]of Object.entries(pcMapPacket.files)){
-  const s=read(path,'utf8');assert.equal(typeof s,'string','fresh pc/map source: '+path);
+  const s=pcB9Before(path,read(path,'utf8'),'pc');assert.equal(typeof s,'string','fresh pc/map source: '+path);
   assert.equal(hash(norm(s)),row.current,'fresh complete integration source: pc/map '+path);
  }
  for(const [path,id]of Object.entries(pcMapPacket.archives))assert.equal(hash(read(path)),id,'immutable pc/map predecessor: '+path);
 }
 export function pcDomainSource(path,source,target,read=readFileSync){
- const current=pcMapSource(path,source,'pc');
+ const current=pcMapSource(path,source,'pc',read);
  if(path.startsWith('src/')||path==='config/architecture.json')return source;
  const row=Object.hasOwn(releaseMergeCiPacket.files,path)?releaseMergeCiPacket.files[path]:null;
  if(row?.[target]&&typeof current==='string'&&!current.includes('\r\r\n')&&hash(norm(current))===row.current.sha256)

@@ -5,6 +5,7 @@ const driftRead=selected=>(path,encoding)=>{
  const raw=readFileSync(path,encoding);return path!==selected?raw:typeof raw==='string'?raw+'\n':Buffer.concat([raw,Buffer.from('\n')]);
 };
 const currentDriftGuard=(path,legacy)=>error=>{
+ if(error?.code==='ERR_ASSERTION'&&error.message.startsWith('fresh complete integration source: PC B9 '+path+'\n'))return true;
  if(Object.hasOwn(pcMapPacket.files,path))return error?.code==='ERR_ASSERTION'&&[
   'fresh pc/map source: ','fresh complete integration source: pc/map ',
  ].some(prefix=>error.message.startsWith(prefix+path+'\n'));
@@ -12,7 +13,7 @@ const currentDriftGuard=(path,legacy)=>error=>{
 };
 const inventoryDriftGuard=path=>error=>error?.code==='ERR_ASSERTION'&&[
  'fresh added inventory source: ','fresh release PC added inventory source: ',
- 'fresh pc/map source: ','fresh complete integration source: pc/map ',
+ 'fresh pc/map source: ','fresh complete integration source: pc/map ','fresh complete integration source: PC B9 ',
 ].some(prefix=>error.message.startsWith(prefix+path+'\n'));
 import test from 'node:test';
 import {integratedRead,integratedCiProof,integratedPriorInventory,assertIntegratedCurrent} from './helpers/integrated-ci-source.mjs';

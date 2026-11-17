@@ -33,7 +33,13 @@ assert(host:closePotions() and not cover.visible)
 heldPage='potionPanel';held=true;assert(host:openPotions())
 assert(cover.visible and veil.size[1]==F.Theme.layout.modal.size[1] and veil.size[2]==F.Theme.layout.modal.size[2])
 assert(host:closePotions() and not cover.visible);held=false;heldPage='deckPanel'
-root:GetChild('battlePanel'):GetChild('topBar'):GetChild('battleRoute'):GetChild('hit').click()
+local official=F.Theme.presentationProfile=='official-assets-first'
+if official then
+ root:GetChild('battlePanel'):GetChild('topBar'):GetChild('battleRoute'):GetChild('hit').click()
+else
+ assert(host:openMenu(),'battle must admit its existing run menu')
+ assert(root:GetChild('runMenu'):GetChild('map'):GetChild('hit').click(),'run menu map must admit route preview')
+end
 assert(host.routeOpen and cover.visible,'a whole-page route preview must retain its full publication boundary')
 assert(veil.size[1]==F.Theme.canvas.base[1] and veil.size[2]==F.Theme.canvas.base[2],'route map incorrectly borrowed a battle-local loading frame')
 assert(host:closeExit());settle()
@@ -48,9 +54,15 @@ for _=1,5 do tick();assert(cover.visible and host.pageReveal:covered())end
 assert(host:closeDeck())
 assert(not cover.visible and not host.pageReveal:covered(),'closing pending modal immediately restores its ready base');held=false
 assert(host:openDeck('draw'));assert(not host.pageReveal:covered() and not cover.visible,'warm synchronous modal publishes in the same paint')
+-- Default exposes sorting on the permanent deck browser, not pile previews.
+if not official then
+ assert(host:closeDeck() and not cover.visible)
+ assert(host:openDeck() and not host.pageReveal:covered() and not cover.visible)
+end
 local geometryWrites=0;local setSize=veil.SetSizeDelta
 veil.SetSizeDelta=function(self,...)geometryWrites=geometryWrites+1;return setSize(self,...)end
-for i=1,100 do assert(host.deckUI:setPileSort(i%2==0 and 'name' or 'cost'))end
+local sort=official and host.deckUI.setPileSort or host.deckUI.setSort
+for i=1,100 do assert(sort(host.deckUI,i%2==0 and (official and 'name' or 'type') or 'cost'))end
 assert(not cover.visible,'sorting must not flash the global veil')
 assert(geometryWrites==0,'ready sorting redundantly rewrote cover geometry')
 veil.SetSizeDelta=setSize
