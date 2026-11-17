@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {createHash} from 'node:crypto';
 import {gunzipSync} from 'node:zlib';
-import {sourceEpoch} from './closeout-source-epoch.mjs';
+import {legacyPotionPointerSourceEpoch as sourceEpoch} from './closeout-source-epoch.mjs';
+import {potionPointerB9Packet,assertPotionPointerB9Current,potionPointerB9Source,potionPointerB9Read} from './potion-pointer-b9-integration.mjs';
 const PACKET_SHA='d5654ff207845a19b5a3221b9e7e8ec27319d865a556c525f40972c1e0d99255';
 const hash=b=>createHash('sha256').update(b).digest('hex'),norm=s=>s.replaceAll('\r\n','\n');
 const bytes=readFileSync(new URL('./potion-pointer-ci-union.json.gz',import.meta.url));
@@ -94,6 +95,7 @@ export const potionPointerCiUnionPacket=freeze(packet);
 const authenticatedSnapshots=new WeakSet();
 export function assertPotionPointerCiUnionCurrent(read=readFileSync){
  if(authenticatedSnapshots.has(read))return;
+ assertPotionPointerB9Current(read);read=potionPointerB9Read('legacy',read,{production:true,authenticate:false});
  assert.equal(hash(read(behaviorPriorPath)),behaviorPriorSha,'fresh pre-behavior union');
  assert.equal(hash(read(copyPriorPath)),copyPriorSha,'fresh pre-copy union');
  assert.equal(hash(read(readersPriorPath)),readersPriorSha,'fresh pre-readers union');
@@ -116,6 +118,7 @@ export function assertPotionPointerCiUnionCurrent(read=readFileSync){
 export function potionPointerCiUnionSource(path,source,target='potion',read=readFileSync,{production=false}={}){
  assert(Object.hasOwn(packet.viewCommits,target),'explicit potion-pointer predecessor');
  if(!production&&(path.startsWith('src/')||path==='config/architecture.json'))return source;
+ source=potionPointerB9Source(path,source,'legacy',{read,production});
  const row=Object.hasOwn(packet.files,path)?packet.files[path]:null;
  if(!row?.views[target]||row.current.encoding!=='utf8'||typeof source!=='string'||source.includes('\r\r\n')||hash(norm(source))!==row.current.sha256)return source;
  const prior=saved(row,target);if(row.views[target].sha256===row.current.sha256)return source;
@@ -134,7 +137,7 @@ export function potionPointerCiUnionRead(target='potion',read=readFileSync,{prod
 export function withPotionPointerCiUnionValidation(target,read,validate){
  assert(Object.hasOwn(packet.viewCommits,target));
  const captured=new Map();
- for(const path of new Set([...Object.keys(sourceEpoch.proof.current),...Object.keys(packet.files),'tests/helpers/potion-pointer-ci-union.json.gz',priorPacketPath,calibrationPriorPath,readersPriorPath,copyPriorPath,behaviorPriorPath,'tests/helpers/potion-pointer-ci-before-integrated.json.gz'])){
+ for(const path of new Set([...Object.keys(sourceEpoch.proof.current),...Object.keys(packet.files),...Object.keys(potionPointerB9Packet.files),...Object.keys(potionPointerB9Packet.archives),'tests/helpers/potion-pointer-b9-integration.json.gz','tests/helpers/potion-pointer-ci-union.json.gz',priorPacketPath,calibrationPriorPath,readersPriorPath,copyPriorPath,behaviorPriorPath,'tests/helpers/potion-pointer-ci-before-integrated.json.gz'])){
   if(sourceEpoch.proof.current[path]===null&&!Object.hasOwn(packet.files,path))continue;
   const bytes=read(path);assert(Buffer.isBuffer(bytes),'validation capture bytes '+path);captured.set(path,Buffer.from(bytes));
  }
@@ -142,9 +145,11 @@ export function withPotionPointerCiUnionValidation(target,read,validate){
  const snapshot=(path,encoding)=>{assert(active,'CI union current snapshot escaped synchronous scope');const value=captured.has(path)?Buffer.from(captured.get(path)):read(path);return encoding?value.toString(encoding):value;};
  assertPotionPointerCiUnionCurrent(snapshot);
  authenticatedSnapshots.add(snapshot);
+ // The validated raw capture stays independent from the exact 0780 parent.
+ const legacySnapshot=potionPointerB9Read('legacy',snapshot,{production:true,authenticate:false});
  const prior=(path,encoding)=>{
   assert(active,'CI union validation reader escaped synchronous scope');
-  const raw=snapshot(path,encoding),row=Object.hasOwn(packet.files,path)?packet.files[path]:null;
+  const raw=legacySnapshot(path,encoding),row=Object.hasOwn(packet.files,path)?packet.files[path]:null;
   if(!row?.views[target]||row.views[target].sha256===row.current.sha256)return raw;
   const value=saved(row,target);return encoding?Buffer.isBuffer(value)?value.toString(encoding):value:Buffer.isBuffer(value)?Buffer.from(value):Buffer.from(value);
  };

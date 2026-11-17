@@ -10,8 +10,8 @@ import {extendFeedbackSourceEpoch,extendFeedbackCiProof,extendFeedbackHelperClos
 import {gunzipSync} from 'node:zlib';
 import {readFileSync,readdirSync} from 'node:fs';
 import {discoverJs,jsPlanningWeights,timings} from '../scripts/ci-shards.mjs';
-import {mobilePotionPriorInventory,assertMobilePotionRawInventory} from './helpers/mobile-potion-ci-source.mjs';
-import {potionPost697PriorInventory,assertPotionPost697RawInventory} from './helpers/potion-post697-ci-source.mjs';
+import {releasePc22BasicFeedbackPriorInventory} from './helpers/release-pc22-basic-feedback-ci-source.mjs';
+import {integrationRead,integrationPriorInventory} from './helpers/release-card-contact-integration.mjs';
 const hash=source=>createHash('sha256').update(source).digest('hex');
 const bind=source=>({source,sha256:hash(source)}),commit='c'.repeat(40);
 function fixture(){
@@ -27,21 +27,12 @@ function fixture(){
 
 test('release additions remain in raw Full and exact historical inventories reject gaps and source drift',()=>{
  assertIntegratedCurrent();
- const rawJs=discoverJs(),rawLua=readdirSync('tests/lua').filter(p=>p.endsWith('.lua')).map(p=>'tests/lua/'+p).sort();
- const historical={};
- for(const [kind,combined]of [['js',rawJs],['lua',rawLua]]){
-  assertPotionPost697RawInventory(combined,kind);
-  const raw=potionPost697PriorInventory(combined,kind,readFileSync);
-  assertMobilePotionRawInventory(raw,kind);
-  historical[kind]=mobilePotionPriorInventory(raw,kind);
-  for(const path of raw.filter(p=>!historical[kind].includes(p))){
-   assert.throws(()=>assertMobilePotionRawInventory(raw.filter(p=>p!==path),kind),/inventory/);
-   for(const value of [null,readFileSync(path,'utf8')+'\n'])assert.throws(()=>mobilePotionPriorInventory(raw,kind,
-    (p,e)=>p===path?value:readFileSync(p,e)),/added inventory source|replaceAll/);
-  }
- }
- assert.deepEqual(historical.js,integratedCiProof.inventory);assert.deepEqual(historical.lua,integratedCiProof.luaInventory);
- for(const [kind,current]of Object.entries(historical))for(const target of Object.keys(integratedCiProof.sources)){
+ // Keep the complete original receipt input; the PC22 basic feedback raw Full contract
+ // independently hard-checks every current test and the unchanged budgets.
+ const sideRead=integrationRead('pc22');
+ const rawJs=releasePc22BasicFeedbackPriorInventory(integrationPriorInventory(discoverJs(),'pc22'),'js',sideRead),rawLua=releasePc22BasicFeedbackPriorInventory(integrationPriorInventory(readdirSync('tests/lua').filter(p=>p.endsWith('.lua')).map(p=>'tests/lua/'+p).sort(),'pc22','lua'),'lua',sideRead);
+ assert.deepEqual(rawJs,integratedCiProof.inventory);assert.deepEqual(rawLua,integratedCiProof.luaInventory);
+ for(const [kind,current]of [['js',rawJs],['lua',rawLua]])for(const target of Object.keys(integratedCiProof.sources)){
   const prior=integratedCiProof.inventories[target][kind],added=current.filter(path=>!prior.includes(path));
   if(target==='release'&&kind==='js'&&added.length===0){
    assert.deepEqual(current,prior,'source-only continuation retains the complete identical JS inventory');

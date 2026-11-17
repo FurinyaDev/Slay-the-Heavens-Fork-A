@@ -219,4 +219,20 @@ test("stationary release cannot select a shifted or missing hand slot",function(
         assert(#battle.hand == 0 and battle.energy == 2 and battle.player.block == 5)
     end
 end)
+test("browsing back to the same card cannot become a long hold",function()
+    local ui,panel,event=setup()
+    for _=1,80 do ui:update(1/60)end
+    local card=panel:GetChild('card1');local x,y=card.x,card.y
+    event('card1','down',x,y);event('card1','drag',x+100,y)
+    assert(ui.gesture and ui.gesture.browsed and not ui.gesture.moving)
+    event('card1','drag',x,y);ui:update(0.45)
+    assert(not ui.info,'browsing then returning must not become stationary long hold')
+end)
+test("a fresh stationary long hold still opens deliberate details",function()
+    local ui,panel,event=setup()
+    for _=1,80 do ui:update(1/60)end
+    local card=panel:GetChild('card1');event('card1','down',card.x,card.y)
+    ui:update(0.45)
+    assert(ui.info and not ui.info.transient,'fresh stationary hold remains deliberate reader')
+end)
 print("LUA_DRAG_BOUNDARIES_PASS "..count)

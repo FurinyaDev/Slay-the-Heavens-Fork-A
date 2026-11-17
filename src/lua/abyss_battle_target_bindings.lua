@@ -12,10 +12,23 @@ local function allowsAnonymousTarget(token)return token and (token.cardTarget or
 -- Explicit ports preserve the approved implementation without a shared constructor closure.
 function M.install(owner, ownership, host, dependencies)
     local bound=setmetatable({}, {__mode="k"})
+    local function retireDismiss(input,event,ended)
+        local touch=event and event.touchId
+        if input.dismiss and (touch==nil or ended and input.dismiss.token.touch==touch)then input.dismiss=nil end
+    end
+    local function dismissContextReady(token)
+        local run=owner.run
+        return owner.active and not owner.busy and not owner.gesture and run==token.run
+            and run and run.phase=='combat' and run.combat==token.battle
+            and token.battle.turn==token.turn and token.battle.phase=='player'
+            and owner.selected==token.uid and owner.selectionEpoch==token.selectionEpoch
+            and owner.potionAim==token.aim
+    end
     local function bindPointerDrag(control,input)
         if not host.cursor.CursorDrag then return end
         control:AddCursorEventListener(host.cursor.CursorDrag,function(event)
             local touch=event and event.touchId
+            retireDismiss(input,event,true)
             for _,name in ipairs({'held','released'})do
                 local token=input[name]
                 if token and (touch==nil or token.touch==touch)then token.anonymousSafe=false end
@@ -110,7 +123,25 @@ function M.install(owner, ownership, host, dependencies)
                 end
             end)
             if not entryAt() then return end
+            local function dismissInterrupted(event)
+                local dismissal=input.dismiss
+                if not dismissal then return false end
+                local token=dismissal.token
+                local entry=entryAt()
+                if owner.info~=dismissal.info or not dismissContextReady(token)
+                    or not entry or entry.actor~=token.actor or token.battle.enemies[token.slot]~=token.actor
+                    or not Actors.isActive(token.actor) then
+                    input.dismiss=nil;return false
+                end
+                local touch=event and event.touchId
+                if touch==nil or touch~=token.touch or Controller.pointerBlocked(host.controller)then return false end
+                input.dismiss=nil
+                if input.active then input.active[touch]=nil end
+                dependencies.swallowed(event)
+                return true
+            end
             control:AddCursorEventListener(host.clickEvent, function(event)
+                if dismissInterrupted(event) then return end
                 local released
                 if ownership.enemyPointerObserved then
                     released=dependencies.pointerTake(input,event,true,allowsAnonymousTarget)
@@ -126,6 +157,7 @@ function M.install(owner, ownership, host, dependencies)
             if owner.dragEnabled then
                 control:AddCursorEventListener(host.cursor.CursorDown, function(event)
                     if not entryAt() then return false end
+                    input.dismiss=nil
                     local origin=dependencies.pointerBegin(input,event)
                     ownership.enemyPointerObserved = true
                     local dismissed = dependencies.down(event)
@@ -151,6 +183,7 @@ function M.install(owner, ownership, host, dependencies)
                     if owner.cardAim==token then owner.cardAim=nil;owner:render() end
                 end
                 local function releaseEnemy(event, ended)
+                    retireDismiss(input,event,ended)
                     dependencies.pointerEnd(input,event,ended)
                     if not entryAt() then return false end
                     ownership.enemyPointerObserved = true
@@ -170,6 +203,7 @@ function M.install(owner, ownership, host, dependencies)
                 end
                 if host.cursor.CursorExit then
                     control:AddCursorEventListener(host.cursor.CursorExit,function(event)
+                        retireDismiss(input,event,true)
                         dependencies.pointerEnd(input,event,true)
                         local aim=owner.cardAim
                         if aim and aim.touch==(event and event.touchId) and (aim==input.held or aim==input.released) then
