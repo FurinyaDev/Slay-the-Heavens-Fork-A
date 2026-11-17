@@ -42,6 +42,56 @@ export const potionClickHelperCopies=[
 for(const row of potionClickHelperCopies){assert.equal(files[row.path]??null,row.before,'exact potion click helper-copy predecessor: '+row.path);files[row.path]=row.after;}
 export const potionPost697HelperCopies=[{"path":"tests/helpers/closeout-source-epoch.mjs","before":"b0260eb43becd74e52a8b5ed04e1909f52741d8cc9813c42ec5bc109f3c5723c","after":"217f68beb3e466b842b8be13c71a9172960f8c07d0f3fc87ee0a8c9e41b33829"},{"path":"tests/helpers/release-selection-map-source.mjs","before":null,"after":"920fd01fa07dad36ed7e9b70ace199246000d87ad20c258221a2aca4a8e0ee52"},{"path":"tests/helpers/release-selection-map-source.json.gz","before":null,"after":"0c056c020ad655d5a2a901a6f196350582eaf0709afa736f363a0d68509daf62"},{"path":"tests/helpers/potion-post697-source.mjs","before":null,"after":"adf79a31356f5568a0c7d061ed0f82fcee8fa70966d152359ec74bd24f14b66d"},{"path":"tests/helpers/potion-post697-source.json.gz","before":null,"after":"af71c0335451f4729681a86aea723526b151d5d1732d6885d1a7a0d50cc79304"}];
 for(const row of potionPost697HelperCopies){assert.equal(files[row.path]??null,row.before,'exact post697 helper-copy predecessor: '+row.path);files[row.path]=row.after;}
+// Product-only union copy closure. Original potion predecessors stay pinned above.
+// These are exact e887877 helper identities, not CI or device acceptance.
+export const potionPointerUnionHelperCopies=[
+ {
+  "path": "tests/helpers/closeout-source-epoch.mjs",
+  "before": "217f68beb3e466b842b8be13c71a9172960f8c07d0f3fc87ee0a8c9e41b33829",
+  "after": "1dd29a292fd94386539ca5be29551649ab45611cf6843c8b9714aad28fe45b4b"
+ },
+ {
+  "path": "tests/helpers/battle-pointer-source.mjs",
+  "before": null,
+  "after": "b8e4d236b50f7f4770fb839772daa3607b678d82dfdae5c80cb39f4e932c3643"
+ },
+ {
+  "path": "tests/helpers/battle-pointer-source.json.gz",
+  "before": null,
+  "after": "c6ed821e15ab4e79de278db32122712c07716360166c995a6bf0f7a70c11639a"
+ },
+ {
+  "path": "tests/helpers/battle-pointer-sparse-source.mjs",
+  "before": null,
+  "after": "d942cd6fc3f9cbc4a75165ae4f5fb68ffb4acee3855631ca799fddfe3208d704"
+ },
+ {
+  "path": "tests/helpers/battle-pointer-sparse-source.json.gz",
+  "before": null,
+  "after": "789e74619b3ce005e0e9ebe75885fb2d8a71799dae5b98acc70a31ba87284518"
+ },
+ {
+  "path": "tests/helpers/battle-pointer-inspection-source.mjs",
+  "before": null,
+  "after": "cbc3c05473bc514f2642ead74a3ce879ab9af6d40a19062f188195b7af3a2a23"
+ },
+ {
+  "path": "tests/helpers/battle-pointer-inspection-source.json.gz",
+  "before": null,
+  "after": "647685ce68d914a68ea5308308cebe8c0f6ceeefbca2a3698db04e4640dd48f6"
+ },
+ {
+  "path": "tests/helpers/potion-pointer-source.mjs",
+  "before": null,
+  "after": "76cada4c61d964c5ceae82e1b5150d12864bfa04f5cb4f17dec9c24438f7f793"
+ },
+ {
+  "path": "tests/helpers/potion-pointer-product-bindings.json",
+  "before": null,
+  "after": "016c3f5095a8556c00b940e72c2f44472dbf481ab0f9dd32511342781c29390e"
+ }
+];
+for(const row of potionPointerUnionHelperCopies){assert.equal(files[row.path]??null,row.before,'exact potion pointer union helper-copy predecessor: '+row.path);files[row.path]=row.after;}
 const inside=(root,path)=>{const r=relative(root,path);return r!==''&&!isAbsolute(r)&&r!=='..'&&!r.startsWith('../')&&!r.startsWith('..\\');};
 export function copyIntegrationSourceClosure(directory,{sourceRoot=process.cwd()}={}){
  const destination=realpathSync.native(directory);
