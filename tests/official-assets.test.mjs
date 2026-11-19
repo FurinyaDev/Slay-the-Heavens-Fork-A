@@ -419,6 +419,24 @@ test('official selection information board and exit share the live layout withou
  }
 });
 
+test('official run pages use one three-step floor marker just after the potion slots',()=>{
+ const layout=gameLayout(),theme=officialAssetsTheme(nativeTheme);
+ applyOfficialAssets([layout],theme);
+ const battle=child(layout,'battlePanel'),map=child(layout,'mapPanel'),node=child(layout,'nodePanel');
+ const marks=[child(battle,'topBar'),child(map,'officialRunBar'),child(node,'officialRunBar')]
+  .map(bar=>child(bar,'officialStairs'));
+ const [stairs]=marks;
+ assert(stairs,'shared floor indicator');
+ assert.deepEqual(marks,[stairs,stairs,stairs]);
+ assert.equal(children(stairs).length,3);
+ assert.deepEqual(children(stairs).map(step=>step.size),[[7,18],[7,12],[7,6]]);
+ assert(children(stairs).every(step=>step.image===theme.image.rect));
+ assert(stairs.position[0]>child(battle,'potion3').position[0]);
+ assert.equal(child(battle,'title').text.content,'');
+ assert.equal(child(battle,'title').text.align,'left');
+ assert.deepEqual(child(node,'title').position,child(battle,'title').position);
+});
+
 test('ordinary readiness overlay uses the same Liyue crest and seven elements',()=>{
  const layout=gameLayout(),theme=officialAssetsTheme(nativeTheme);
  const cover=child(layout,'pageReveal'),blocker=child(cover,'blocker'),cancel=child(cover,'cancel');

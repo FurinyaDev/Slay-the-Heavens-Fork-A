@@ -1,3 +1,4 @@
+import {beforeV2UiHudSource,v2UiHudSourcePaths} from './v2-ui-hud-source.mjs';
 import {beforeLumineSource,luminePortraitSourcePath} from './lumine-portrait-source.mjs';
 import {beforeSelectorSource,selectorSourcePair} from './character-selector-source.mjs';
 import {beforePotionTextSource,potionTextSourcePair} from './potion-text-source.mjs';
@@ -32,6 +33,7 @@ export function assertCharacterPreparationSources(read = readRaw) {
 // The old timing/production receipts continue to replay their exact source view.
 // Unknown bytes are left visible and both current owners are checked on every projection.
 export function beforeCharacterPreparationSource(path, source, read = readRaw) {
+  source = beforeV2UiHudSource(path, source, read);
   if (!Object.hasOwn(packet.production, path)) {
     source = beforePotionTextSource(path, beforeSelectorSource(path, source, read), read);
     source = beforeLumineSource(path, source, read);
@@ -45,7 +47,7 @@ export function beforeCharacterPreparationSource(path, source, read = readRaw) {
 }
 
 const currentContinuationOwners = new Set([
-  ...characterPreparationOwners, selectorSourcePair.path, potionTextSourcePair.path,
+  ...characterPreparationOwners, ...v2UiHudSourcePaths, selectorSourcePair.path, potionTextSourcePair.path,
   fatalBgmPair.path, endingTerminalSourcePath, luminePortraitSourcePath,
 ]);
 
