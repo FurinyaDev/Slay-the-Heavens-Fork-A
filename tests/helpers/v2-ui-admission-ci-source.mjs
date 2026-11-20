@@ -35,6 +35,15 @@ for (const row of Object.values(potionPointer)) {
   assert.equal(createHash('sha1').update(`blob ${Buffer.byteLength(row.before)}\0`).update(row.before).digest('hex'),row.beforeGitBlob);
 }
 
+// Bind only exact changed test/helper bytes back to the landed predecessor.
+const tinyHouseCiBytes = readFileSync(new URL('../fixtures/tiny-house-ui-ci-source.json.gz', import.meta.url));
+assert.equal(sha256(tinyHouseCiBytes),'bcb862d90db46235ab5124633799067cd1684ac920bf8dec7a0414d7ed10f2ad','Tiny House CI source predecessor identities');
+const tinyHouseCi = JSON.parse(gunzipSync(tinyHouseCiBytes));
+for (const row of Object.values(tinyHouseCi)) {
+  assert.equal(sha256(row.before),row.beforeSha256);
+  assert.equal(createHash('sha1').update(`blob ${Buffer.byteLength(row.before)}\0`).update(row.before).digest('hex'),row.beforeGitBlob);
+}
+
 function project(source, row) {
   if (!row || typeof source!=='string' || source.includes('\r\r\n') ||
       sha256(source.replaceAll('\r\n','\n'))!==row.sha256) return source;
@@ -97,7 +106,14 @@ function beforeExtractionWitness(path,source) {
   return source.includes('\r\n') ? prior.replaceAll('\n','\r\n') : prior;
 }
 
+export function beforeTinyHouseCiSource(path, source) {
+  if (!Object.hasOwn(tinyHouseCi,path)) return source;
+  const row = tinyHouseCi[path];
+  return project(source,{sha256:row.afterSha256,before:row.before});
+}
+
 export function beforeV2UiEvidence(path, source) {
+  source = beforeTinyHouseCiSource(path,source);
   source = beforeExtractionWitness(path,source);
   source = beforeRunHudReadabilityAdapter(path,source);
   source = beforeOfficialBattleWitness(path,source);
