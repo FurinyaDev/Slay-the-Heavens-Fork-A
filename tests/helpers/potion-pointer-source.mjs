@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import {readFileSync} from 'node:fs';
 import {gunzipSync} from 'node:zlib';
+import {beforeStsUiCloseoutSource} from './sts-ui-closeout-source.mjs';
 import {exactSourceContinuation} from './exact-source-continuation.mjs';
 import {beforeAuthenticatedReleaseUiRestore,beforeReleaseUiRestore} from './release-ui-restore-source.mjs';
 
@@ -25,6 +26,8 @@ export function authorizePotionPointerSource(path,source,binding,samples,read){
 export function beforePotionPointerSource(path,source,read){
  const continuation=continuations.get(path);
  if(!continuation)return source;
- source=beforeAuthenticatedReleaseUiRestore(path,source,read);
- return continuation.predecessor(path,source,owner=>beforeReleaseUiRestore(owner,read(owner)));
+ source=beforeStsUiCloseoutSource(path,source);
+ const readSts=owner=>beforeStsUiCloseoutSource(owner,read(owner));
+ source=beforeAuthenticatedReleaseUiRestore(path,source,readSts);
+ return continuation.predecessor(path,source,owner=>beforeReleaseUiRestore(owner,readSts(owner)));
 }

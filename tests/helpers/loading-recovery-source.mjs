@@ -1,3 +1,4 @@
+import {beforeStsSelectionFade} from './sts-selection-fade-source.mjs';
 // Exact full-file continuation for historical receipts; live product tests use current code.
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
@@ -65,6 +66,7 @@ const releaseHashes={
   },
 };
 export function beforeLoadingRecoverySource(path,source){
+  source=beforeStsSelectionFade(path,source);
   const row=Object.hasOwn(sources,path)?sources[path]:null;
   if(!row||typeof source!=='string'||source.includes('\r\r\n'))return source;
   let prior=source.replaceAll('\r\n','\n');

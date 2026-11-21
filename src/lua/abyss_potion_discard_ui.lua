@@ -47,7 +47,41 @@ function M.refreshEntry(hit,run,platform,mapSlots)
         end
     end
 end
+local function popupText(run,item)
+    local text=require('abyss_potion_text')
+    local definition=find(run.data.potions.potions,item.id)
+    local effect=text.special(item,run,true) or text.describe(run,item.id)
+    if effect=='' and definition then effect=definition.description or '' end
+    if item.reason=='potion_event_restricted' then
+        return effect..'\n此事件中不能使用或丢弃药水。'
+    end
+    return effect
+end
+local function localPopup(root,clickEvent,platform,allowed,onChange)
+    local state={}
+    local function command(action)
+        return function(slot,run)
+            local ok,reason=action(run,slot)
+            onChange()
+            return ok,reason
+        end
+    end
+    local popup=require('abyss_battle_potion_popup').new(root,state,platform,clickEvent,{
+        allowed=function(run)return allowed(run) and run.phase~='combat'end,
+        item=function(slot)return Run.potionSlotView(state.run,slot)end,
+        text=function(item)return popupText(state.run,item)end,
+        use=command(Run.usePotion),discard=command(Run.discardPotion),changed=onChange,
+    })
+    local open=popup.open
+    function popup:open(run,slot)
+        if not allowed(run) or run.phase=='combat' or type(slot)~='number' then return false end
+        state.run=run
+        return open(self,slot)
+    end
+    return popup
+end
 function M.new(root,clickEvent,platform,allowed,onChange,onClose)
+    if root:GetChild('dismiss') then return localPopup(root,clickEvent,platform,allowed,onChange) end
     local self={root=root,visible=false,generation=0}
     local function child(name)return assert(root:GetChild(name),'missing potion control '..name)end
     local function caption(name,value)

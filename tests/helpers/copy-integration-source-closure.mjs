@@ -141,9 +141,9 @@ const integratedReleaseFiles=Object.freeze({
 });
 const reconciledReleaseFiles=Object.freeze({
  ...integratedReleaseFiles,
- 'tests/helpers/rebased-release-source.mjs':'742e5cefbf42a2e8f7065b2ad81a2a586ffc5accd2ea07d740e60259ab124b80',
- 'tests/helpers/rebased-release-source.json.gz':'fe8413ab7e9f5bd2e9df6c0a976ae4afbe7f2b683f6a4138f45735ed7b63d027',
- 'tests/helpers/loading-recovery-source.mjs':'0c177f516b3bb09fb24bb39076b2bf649d15ded75b5d2f0ec4aba36db11e4d7b',
+ 'tests/helpers/rebased-release-source.mjs':'6b0f6e0a135800e22e9d7acf6fa9a2ad8307f152bbe7accb9fc5936f7990ee0e',
+ 'tests/helpers/rebased-release-source.json.gz':'9ae910d679bdc8386063c58043a43e496ee34b7c6f22fc1a27cbaeca7b27222d',
+ 'tests/helpers/loading-recovery-source.mjs':'f3d9531862c3301feef906b0833bc19a80744273fb927bd9f2d9255c33de67b3',
  'tests/helpers/pc13-reward-cover-source.mjs':'e8d58b2f3484855a9e986c945b6add861436ca754fb24ef8be71f0777ef46b9b',
  [runtime]:'d25494ab5a1d269568c321fe3e9c1a2494239f3916d46bd93331a5328fff549b',
  'tests/helpers/potion-pointer-source.mjs':'ba6547de02ef3188b9658764452283cd671e3324f19cf0775bce3221db53cdab',
@@ -166,12 +166,26 @@ const reconciledReleaseFiles=Object.freeze({
  'tests/helpers/recording-0401-source.json.gz':'9af199338e44fb660599900c5474624853f02be24aa5590029f37cee2a551e24',
  'tests/helpers/release-integration-source.mjs':'5efadc152e80395a3b60300468600ad21e054244277f199528589ffca0f298d0',
  'tests/fixtures/release-integration-source.json.gz':'0ba3c551c50c35dfb4e27a0601063451693fba48d3ad9942dd34f6c2aec7d087',
+ });
+assert.equal(loadingRecoveryFiles['tests/helpers/loading-recovery-source.mjs'],'873915500ae2b1a02abebb78a932a8cdfa5e56044ad5dcb34a4d51fd1fc02f5f','STS fade exact loading helper predecessor');
+const stsFadeFiles=Object.freeze({...reconciledReleaseFiles,...{
+  "tests/helpers/loading-recovery-source.mjs": "f3d9531862c3301feef906b0833bc19a80744273fb927bd9f2d9255c33de67b3",
+  "tests/helpers/sts-selection-fade-source.mjs": "73b46c3cebe908ea332c56264b1300937d9e67de678225b5ac213b16ef245adf",
+  "tests/fixtures/sts-selection-fade-source.json": "aa738acfea89d0c38209c903dca0b0a573e217ce11c0542a022cf18e0b784717"
+}});
+assert.equal(stsFadeFiles['tests/helpers/sts-selection-fade-source.mjs'],'73b46c3cebe908ea332c56264b1300937d9e67de678225b5ac213b16ef245adf','STS UI exact fade helper predecessor');
+const stsCloseoutFiles=Object.freeze({
+ ...stsFadeFiles,
+ 'tests/helpers/potion-pointer-source.mjs':'4dd975ca7ca30f3b5781d24567e38dfd5c384b6ae185f8e6a584a55337aae1f9',
+ 'tests/helpers/sts-selection-fade-source.mjs':'d6e692e05653c6377d27551c40be5e7f6f0a2dfb5c65a9e1f1f0f04dc2f044e9',
+ 'tests/helpers/sts-ui-closeout-source.mjs':'9303fe7c8dc88f40b552cdc8f291ec22932d6ee28e1e7f7463191a2f1ffa32a9',
+ 'tests/fixtures/sts-ui-closeout-source.json':'6d3859741054bc3da48bd31b5a520ce559da6a06a866a9232741c82a175e891d',
 });
 const inside=(root,path)=>{const r=relative(root,path);return r!==''&&!isAbsolute(r)&&r!=='..'&&!r.startsWith('../')&&!r.startsWith('..\\');};
 export function copyIntegrationSourceClosure(directory,{sourceRoot=process.cwd()}={}){
  const destination=realpathSync.native(directory);
  assert.notEqual(destination,realpathSync.native(sourceRoot),'isolated helper copy destination');
- for(const [path,sha]of Object.entries(reconciledReleaseFiles)){
+ for(const [path,sha]of Object.entries(stsCloseoutFiles)){
   assert((path.startsWith('tests/helpers/')||path.startsWith('tests/fixtures/'))&&!path.split('/').includes('..'),'fixed helper path');
   const source=join(sourceRoot,path),content=integrationClosureBytes(path,readFileSync(source));assert.equal(hash(content),sha,'fresh helper copy identity: '+path);
   const target=join(directory,path);mkdirSync(dirname(target),{recursive:true});

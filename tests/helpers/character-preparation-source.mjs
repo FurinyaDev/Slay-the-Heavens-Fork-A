@@ -1,3 +1,4 @@
+import {beforeStsSelectionFade,beforeAuthenticatedStsSelectionFade} from './sts-selection-fade-source.mjs';
 import {authorizeRebasedDevelop,beforeRebasedCi,rebasedDevelopOwns} from './rebased-release-source.mjs';
 import {authorizeCardFeedbackOwners,beforeCardFeedbackOwner,cardFeedbackOwnerPaths} from './card-feedback-owner-source.mjs';
 import {authorizeSts1MapSource,beforeSts1MapSource,sts1MapSourcePaths} from './sts1-map-source.mjs';
@@ -120,6 +121,8 @@ export function beforeCharacterPreparationSource(path, source, read = readRaw) {
   source=rebound;
   const readRebased=read;
   read=owner=>beforeRebasedCi(owner,readRebased(owner));
+  source=beforeAuthenticatedStsSelectionFade(path,source,read);
+  const fadeRead=read;read=owner=>beforeStsSelectionFade(owner,fadeRead(owner));
   source = beforeSlimeSplitReceipt(path,source,read);
   const cardPrior = beforeCardFeedbackOwner(path,source);
   if (cardPrior !== source) authorizeCardFeedbackOwners([[path,source]],read);
@@ -196,6 +199,7 @@ export function beforeCurrentProductionSource(path, source, read = readRaw) {
 }
 
 export function beforeCharacterPreparationCiSource(path, source) {
+  source=beforeStsSelectionFade(path,source);
   if (!Object.hasOwn(packet.suite, path) || typeof source !== 'string' || source.includes('\r\r\n')) return source;
   const row = packet.suite[path];
   const sha = digest(normalize(source));

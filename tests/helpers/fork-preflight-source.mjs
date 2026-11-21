@@ -1,6 +1,8 @@
+import {beforeStsUiCloseoutSource} from './sts-ui-closeout-source.mjs';
+import {beforeStsFadeCi} from './sts-fade-ci-source.mjs';
+import {beforeIntegratedStsInventory} from './sts-selection-fade-source.mjs';
 import {beforeRebasedCi,beforeRebasedRelease,historicalReleaseCopier} from './rebased-release-source.mjs';
 import {beforeTinyHouseIntegratedSource} from './tiny-house-integrated-source.mjs';
-import {m05HistoricalDiscovery} from './m05-shop-ci-source.mjs';
 import {assertReleaseCapacityCohort,beforeReleaseCapacitySource} from './release-integration-source.mjs';
 import {beforeM05BackflowInventory} from './m05-shop-ci-source.mjs';
 import {beforeReleaseShopEntry,shopEntryPriorRead} from './release-ui-restore-source.mjs';
@@ -118,10 +120,10 @@ function beforeIntegratedReleaseCopier(path,source){
 function beforeRebasedCopier(path,source){
  if(path!=='tests/helpers/copy-integration-source-closure.mjs'||typeof source!=='string'||source.includes('\r\r\n'))return source;
  const lf=normalize(source);
- if(hash(lf)!=='09f118ee2700d8f03277c72de8a3ac23a906c2129158fb3c3c9b5959c61eddb7')return source;
+ if(hash(lf)!=='0d7325144169030f64ec5675be9c9e82cc9f8d4bd2a5dbcbaadbf667dd6bb6d9')return source;
  const limit=lf.indexOf('const releaseUiFiles='),end=lf.indexOf('const inside=',limit);
  assert(limit>=0&&end>limit,'exact reconciled copy closure');
- const prior=(lf.slice(0,limit)+lf.slice(end)).replace('Object.entries(reconciledReleaseFiles))','Object.entries(powerMembershipFiles))');
+ const prior=(lf.slice(0,limit)+lf.slice(end)).replace('Object.entries(stsCloseoutFiles))','Object.entries(powerMembershipFiles))');
  assert.equal(hash(prior),'fbc236306831104020bf6d83133ab8b978ad9ffd5d6dae1bde13ee12176651e2','exact final develop copier predecessor');
  return source.includes('\r\n')?prior.replaceAll('\n','\r\n'):prior;
 }
@@ -263,6 +265,7 @@ function beforePowerMembershipConfig(path,source){
  return source.includes('\r\n')?prior.replaceAll('\n','\r\n'):prior;
 }
 function beforeCoopCiSource(path,source){
+ source=beforeStsFadeCi(path,source);
  source=beforeReleaseUiBuildSource(path,beforeRebasedCi(path,beforeRebasedCopier(path,source)));
  source=beforePowerMembershipConfig(path,beforePowerMembershipHelper(path,source));
  source=beforeFieldConfirmation(path,beforeRewardScreenCiSource(path,beforeCardFeedbackCiSource(path,beforeRelicCrystal(path,beforeMapCiSource(path,source)))));
@@ -308,6 +311,7 @@ export function beforeReleaseAdditionalInventory(paths,kind,read=readFileSync){
  return paths.filter(path=>!Object.hasOwn(newerTests[kind],path));
 }
 export function beforeShopEntryInventory(paths,kind,read=readFileSync){
+ if(kind==='js')paths=beforeIntegratedStsInventory(paths,read);
  paths=beforeReleaseAdditionalInventory(paths,kind,read);
  const [path,sha]=shopEntryTests[kind];
  const position=paths.indexOf(path);
@@ -403,11 +407,12 @@ export function assertIntegrationSuccessorsCurrent(read=readFileSync){
   assert(typeof source==='string'&&!source.includes('\r\r\n')&&hash(normalize(source))===row.afterSha,'fresh complete integration source: '+path);
  }
  for(const [path,sha] of Object.entries(sourceSuccessors)){
-  const source=beforeV2UiAdmission(path,beforeCoopCiSource(path,read(path,'utf8')));
+  const source=beforeV2UiAdmission(path,beforeCoopCiSource(path,beforeStsUiCloseoutSource(path,read(path,'utf8'))));
   assert(typeof source==='string'&&!source.includes('\r\r\n')&&hash(normalize(source))===sha,'fresh complete integration source: '+path);
  }
 }
 export function beforePreflightSource(path,source,view='prior'){
+ source=beforeStsUiCloseoutSource(path,source);
  source=beforeCharacterPreparationCiSource(path,beforeV2UiAdmission(path,beforeCoopCiSource(path,source)));
  source=beforeIntegrationSuccessor(path,source);
  // Only the exact flag-registry successor enters the earlier Release witness.
