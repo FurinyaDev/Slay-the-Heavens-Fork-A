@@ -12,6 +12,7 @@ import {extendMenuRedSourceEpoch,extendMenuPresentationEpoch} from './menu-red-s
 import {extendReleaseSourceEpoch} from './release-source-epoch.mjs';
 import {extendSessionMenuEpoch} from './session-menu-source-epoch.mjs';
 import {extendV2RunMenuEpoch} from './v2-run-menu-source-epoch.mjs';
+import {extendPowerMembershipEpoch} from './power-membership-source.mjs';
 import {beforeRewardTransitionSource,beforePc13RewardCover,authorizePc13RewardCover} from './pc13-reward-cover-source.mjs';
 import {projectPotionPointerSource,authorizePotionPointerSource} from './potion-pointer-source.mjs';
 const hash=value=>createHash('sha256').update(value).digest('hex');
@@ -53,7 +54,8 @@ export const menuRedEpoch=extendMenuRedSourceEpoch(menuRedPriorEpoch);
 export const menuPresentationEpoch=extendMenuPresentationEpoch(menuRedEpoch);
 export const releaseSourceEpoch=extendReleaseSourceEpoch(menuPresentationEpoch);
 export const sessionMenuSourceEpoch=extendSessionMenuEpoch(releaseSourceEpoch);
-export const sourceEpoch=extendV2RunMenuEpoch(sessionMenuSourceEpoch);
+export const prePowerMembershipEpoch=extendV2RunMenuEpoch(sessionMenuSourceEpoch);
+export const sourceEpoch=extendPowerMembershipEpoch(prePowerMembershipEpoch);
 const proof=sourceEpoch.proof;
 // Snapshot consumers must first authenticate every live current owner. This is
 // per invocation; neither live reads nor authorization are cached.

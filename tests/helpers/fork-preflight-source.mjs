@@ -80,6 +80,34 @@ function beforeMapCiSource(path,source){
  if(!row||typeof source!=='string'||source.includes('\r\r\n')||hash(normalize(source))!==row.afterSha)return source;
  return source.includes('\r\n')?row.before.replaceAll('\n','\r\n'):row.before;
 }
+// Preserve the exact helper sources required by older CI contracts.
+const powerMembershipHelpers=Object.freeze({
+ "tests/helpers/closeout-source-epoch.mjs": {
+  "after": "564a22d425038c24b65fed7d5b1a6c6cc847b71b6f32702d3ed257c3ee18d0d6",
+  "before": "4d3e6c160de2c6b69e661d5c57229c7b6e0c3f76d1c8eff30df51b23ef305650"
+ },
+ "tests/helpers/copy-integration-source-closure.mjs": {
+  "after": "fbc236306831104020bf6d83133ab8b978ad9ffd5d6dae1bde13ee12176651e2",
+  "before": "03d22319354b6a19c6ac462cb9c25c3bd69ff94a65ece1bce458da857b1966dc"
+ }
+});
+function beforePowerMembershipHelper(path,source){
+ const row=Object.hasOwn(powerMembershipHelpers,path)?powerMembershipHelpers[path]:null;
+ if(!row||typeof source!=='string'||source.includes('\r\r\n'))return source;
+ const lf=normalize(source);
+ if(hash(lf)!==row.after)return source;
+ let prior;
+ if(path.endsWith('closeout-source-epoch.mjs')){
+  prior=lf.replace("import {extendPowerMembershipEpoch} from './power-membership-source.mjs';\n",'')
+   .replace('export const prePowerMembershipEpoch=extendV2RunMenuEpoch(sessionMenuSourceEpoch);\nexport const sourceEpoch=extendPowerMembershipEpoch(prePowerMembershipEpoch);',
+    'export const sourceEpoch=extendV2RunMenuEpoch(sessionMenuSourceEpoch);');
+ }else{
+  prior=lf.replace(/^const powerMembershipFiles=Object\.freeze\(\{[\s\S]*?^\}\);\n/m,'')
+   .replace('Object.entries(powerMembershipFiles))','Object.entries(mapFiles))');
+ }
+ assert.equal(hash(prior),row.before,'exact Power membership helper predecessor: '+path);
+ return source.includes('\r\n')?prior.replaceAll('\n','\r\n'):prior;
+}
 function beforeTinyHouseCopier(path,source){
  if(path!=='tests/helpers/copy-integration-source-closure.mjs'||typeof source!=='string'||source.includes('\r\r\n'))return source;
  const lf=normalize(source);
@@ -93,7 +121,7 @@ function beforeTinyHouseCopier(path,source){
 // Preserve the reviewed copier bytes when replaying older CI observations.
 export function beforeLoadingRecoveryCopier(path,source){
  if(path!=='tests/helpers/copy-integration-source-closure.mjs'||typeof source!=='string'||source.includes('\r\r\n'))return source;
- source=beforeRewardScreenCiSource(path,beforeMapCiSource(path,source));
+ source=beforeRewardScreenCiSource(path,beforeMapCiSource(path,beforePowerMembershipHelper(path,source)));
  source=beforeTinyHouseIntegratedSource(path,beforeTinyHouseCopier(path,source));
  const lf=normalize(source);
  if(hash(lf)!=='e597f60ccc438815137de26a0ca6526952c713e3ba52b05db81b0bf5b1eb2288')return source;
@@ -118,7 +146,7 @@ function assertDevelopCapacityCohort(read){
 }
 export function beforeDevelopCapacityBuildSource(path,source){
  const row=Object.hasOwn(capacityBuildSource,path)?capacityBuildSource[path]:null;
- if(row)source=beforeRewardScreenCiSource(path,beforeMapCiSource(path,source));
+ if(row)source=beforeRewardScreenCiSource(path,beforeMapCiSource(path,beforePowerMembershipHelper(path,source)));
  if(!row||!exactCapacityBuild(source,row.after))return source;
  let lf=normalize(source);
  for(const [current,prior]of row.hunks){
@@ -139,7 +167,17 @@ function beforeCardFeedbackCiSource(path,source){
  if(!row||typeof source!=='string'||source.includes('\r\r\n')||hash(normalize(source))!==row.afterSha)return source;
  return source.includes('\r\n')?row.before.replaceAll('\n','\r\n'):row.before;
 }
+function beforePowerMembershipConfig(path,source){
+ if(path!=='config/architecture.json'||typeof source!=='string'||source.includes('\r\r\n'))return source;
+ const lf=normalize(source);
+ if(hash(lf)!=='a76b6562ebae6be09aa67356be7bf9c5a4c8e0a8f11f0458acf1025a069b6e0e')return source;
+ const prior=lf.replace("    \"abyss_power_membership\": \"core\",\n",'').replace("        \"abyss_power_membership\",\n",'').replace("    {\n      \"id\": \"power-membership-independence\",\n      \"from\": [\"abyss_power_membership\"],\n      \"forbiddenTargets\": [\"abyss_power_order\", \"abyss_power_schedule\"],\n      \"reason\": \"Display membership owns list edits. Its callers own application and hook dispatch.\"\n    },\n    {\n      \"id\": \"power-schedule-independence\",\n      \"from\": [\"abyss_power_schedule\"],\n      \"forbiddenTargets\": [\"abyss_power_order\"],\n      \"reason\": \"Hook removal uses the shared display membership operations without loading their coordinator.\"\n    },\n",'')
+  .replace("    {\n      \"from\": \"abyss_focus\"","    {\n      \"from\": \"abyss_power_schedule\",\n      \"to\": \"abyss_power_order\",\n      \"reason\": \"Original monster Power list bookkeeping runs only inside initialized constructor/action/removal calls; no module-load execution.\"\n    },\n"+"    {\n      \"from\": \"abyss_focus\"");
+ assert.equal(hash(prior),'7d0b25ebcbd323e633fad7bcf8e618966450c60dde9671185226f1e6cef8fbd1','exact Power membership architecture predecessor');
+ return source.includes('\r\n')?prior.replaceAll('\n','\r\n'):prior;
+}
 function beforeCoopCiSource(path,source){
+ source=beforePowerMembershipConfig(path,beforePowerMembershipHelper(path,source));
  source=beforeFieldConfirmation(path,beforeRewardScreenCiSource(path,beforeCardFeedbackCiSource(path,beforeRelicCrystal(path,beforeMapCiSource(path,source)))));
  source=beforeDevelopCapacityBuildSource(path,beforeTinyHouseIntegratedSource(path,source));
  source=beforeV2UiEvidence(path,beforeLoadingRecoveryCopier(path,source));
