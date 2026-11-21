@@ -1,12 +1,15 @@
 import assert from 'node:assert/strict';
 import {beforePc13RewardCover} from './pc13-reward-cover-source.mjs';
-import {beforeReleaseRightClick,releaseUiRestoreArchive} from './release-ui-restore-source.mjs';
+import {beforeReleaseControlsGuideRemoval,beforeReleaseRightClick,releaseUiRestoreArchive} from './release-ui-restore-source.mjs';
 import {createHash} from 'node:crypto';
 import {readFileSync} from 'node:fs';
 import {gunzipSync} from 'node:zlib';
 import {beforeTinyHouseCiSource,beforeV2UiEvidence as beforePriorEvidence} from './v2-ui-admission-ci-source.mjs';
 
 const sha256 = value => createHash('sha256').update(value).digest('hex');
+const {project:beforeReleaseControlsGuideRemovalCi}=releaseUiRestoreArchive(
+  readFileSync(new URL('./release-controls-guide-removal-ci-source.json.gz',import.meta.url)),
+  'cb2f6afc7a5b4c78ac7248c84e1092801d6ca4a31a7562134e6739edefb9d2d9','db8bca6ad226bc816de7e6919a320d9d41fe9a78');
 const {project:beforeReleaseUiRestoreCi}=releaseUiRestoreArchive(
   readFileSync(new URL('./release-ui-restore-ci-source.json.gz',import.meta.url)),
   '2efd379b5ff0f87497082f422b395a3bed55b6243ed8af1d03be6f48e3993a3b');
@@ -49,7 +52,8 @@ function beforeFieldConfirmation(path, source) {
 }
 
 export function beforeV2UiEvidence(path, source) {
-  source = beforeReleaseRightClick(path,source);
+  source = beforeReleaseControlsGuideRemovalCi(path,source);
+  source = beforeReleaseRightClick(path,beforeReleaseControlsGuideRemoval(path,source));
   source = beforeFieldConfirmation(path,source);
   source = beforeReleaseUiRestoreCi(path,source);
   source = beforePc13RewardCover(path,source);
