@@ -1,3 +1,4 @@
+import './sts1-menu-native.cases.mjs';
 import {nativeAudioBuildArgs,buildNativeAudioGame} from '../scripts/build-native-audio-game.mjs';
 import test from 'node:test';
 import {cardFaceChildren} from '../scripts/card-face.mjs';
@@ -43,12 +44,13 @@ test('official art is opt-in and preserves both legacy CLI presets and strict ca
  assert.equal(validateOfficialAssets({officialAssets:true}),true);
  assert.deepEqual(officialAssetsArgs(['map.gil','--official-assets']),{args:['map.gil'],officialAssets:true});
  for(const args of [['--official-assets=false'],['--official-assets','--official-assets']])assert.throws(()=>officialAssetsArgs(args));
- for(const patch of [{officialAssets:1},{releaseCandidate:true},{lightweight2d:true},{v25BattleChrome:true},{v25CardAssets:'private'},{v25UiMasks:'private'},
+ assert.equal(validateOfficialAssets({officialAssets:true,releaseCandidate:true}),true);
+ for(const patch of [{officialAssets:1},{lightweight2d:true},{v25BattleChrome:true},{v25CardAssets:'private'},{v25UiMasks:'private'},
   {nativeCardArt:{count:0}},{performanceArt:true},{readyCardArt:true},{componentWidgets:{}},{prepare(){}},{artFeatures:{cards:true}},
   {artFeatures:{selectionAvatar:false}},{artFeatures:{battlePortrait:false}},{artFeatures:{menuBackground:true}}]){
   assert.throws(()=>validateOfficialAssets({officialAssets:true,...patch}));
  }
- await assert.rejects(buildNativeCandidate({officialAssets:true,prepare(){}}),/separate non-release/);
+ await assert.rejects(buildNativeCandidate({officialAssets:true,prepare(){}}),/separate candidate/);
  assert.deepEqual(gameBuildArgs(['base.gil','--art-version=official']),['base.gil','--official-assets','--native-page-lifecycle']);
  for(const version of ['legacy','enhanced'])assert(!gameBuildArgs(['base.gil','--art-version='+version]).includes('--official-assets'));
 });
@@ -292,7 +294,8 @@ test('approved pages keep live input identities while unrelated pages retain the
     assert.equal(field.text.fontSize,Math.max(14,theme.font.minimum,tokens.typography[key]));
    }
    assert.deepEqual(child(card,'stsReferenceBack').children,material.children.filter(n=>['body','portraits'].includes(n.name)));
-   assert.deepEqual(child(card,'stsReferenceChrome').children,material.children.filter(n=>!['body','portraits'].includes(n.name)));
+   assert.deepEqual(child(card,'stsReferenceChrome').children,material.children.filter(n=>!['body','portraits','costMaterial'].includes(n.name)));
+   assert.deepEqual(child(card,'stsReferenceCost').children,material.children.filter(n=>n.name==='costMaterial'));
    assert.deepEqual(child(card,'roundBody').children,[],'retired square paper must not leak through reference corners');
    assert.equal(child(card,'nameBand').visible,false);
    for(const role of ['nativeRibbon','nativeCostOrb','skin']){
@@ -358,7 +361,7 @@ test('official selection keeps its approved 1600 background while battle and opt
  assert(child(child(battle,'card1'),'stsReferenceChrome'),'official battle card must mount the shared reference chrome');
  assert(child(child(battle,'hero'),'officialFigure'));
  const portrait=readFileSync(join(dir,'abyss_traveler_portrait_assets.lua'),'utf8');
- assert.match(portrait,/battle133=/);assert.match(portrait,/avatar96=/);
+ assert.doesNotMatch(portrait,/battle133=/);assert.match(portrait,/avatar96=/);
  assert.match(portrait,/battlePixel=/);
  const inventory=portraitInventory(officialAssetFlags,{officialAssets:true});
  assert.equal(inventory.assets.some(a=>a.asset==='temporary-pixel-traveler'),false);
@@ -451,10 +454,9 @@ test('approved native title and button artwork preserve the official menu hit su
   const receiver=child(child(menu,'start'),'hit');
   applyOfficialNoncombatLayout(layout,theme);
   assert.strictEqual(child(child(menu,'start'),'hit'),receiver);
-  const logo=child(child(menu,'v25MainMenu'),'approvedTitleLogo');
-  assert(logo && child(logo,'subtitlePlate'));
-  assert(children(logo).filter(part=>part.name.startsWith('lettering')).every(part=>
-    children(part).length>0 && children(part).length<=48));
+  const logo=child(child(menu,'v25MainMenu'),'sts1TitleLogo');
+  assert(logo && children(logo).length>0);
+  assert(children(logo).every(part=>children(part).length>0 && children(part).length<=60));
   for(const [name,frame,text] of [
     ['start',theme.menuPresentation.start,'开始游戏'],
     ['titleQuit',theme.menuPresentation.quit,'退出游戏'],
@@ -463,12 +465,13 @@ test('approved native title and button artwork preserve the official menu hit su
     assert.deepEqual(button.position,frame.slice(0,2));
     assert.deepEqual(hit.size,frame.slice(2));
     assert.equal(hit.kind,'cursorArea');
-    assert.equal(child(button,'label').text.align,'centre');
+    assert.equal(child(button,'label').text.align,'left');
     assert.equal(child(button,'label').text.content,text);
     const faces=children(child(button,'v25MenuFace'));
     assert.deepEqual(faces.map(part=>part.name),['normal','hover','pressed','disabled']);
-    assert(faces.every(face=>children(child(face,'rim')).length===2 && children(child(face,'fill')).length===2));
-    assert.notDeepEqual(child(faces[0],'fill'),child(faces[1],'fill'));
+    assert.equal(children(faces[0]).length,0,'STS1 resting text has no plate');
+    assert(faces.slice(1).every(face=>children(face).length===24));
+    assert.notDeepEqual(children(faces[1]),children(faces[2]));
     assert.equal(child(button,'menuAccent'),undefined);
   }
 });

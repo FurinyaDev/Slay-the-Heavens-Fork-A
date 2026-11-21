@@ -55,18 +55,6 @@ local browseFilters={{id='all',control='All'},{id='attack',control='Attack'},
 local browseSorts={'original','type','cost'}
 local sortNames={original='获得顺序',cost='耗能',type='类型',name='名称'}
 
--- Observe native click metadata only; leave drag handlers and scroll offsets
--- to the native Grid rather than synthesizing scrolling. Click-only C-mode works.
-local function scrollClick(event)
-    if not event then return false end
-    if event.dragging then return true end
-    if not event.GetPressUIPos or not event.GetUIPos then return false end
-    local x,y=event:GetUIPos()
-    local startX,startY=event:GetPressUIPos()
-    if type(x)~='number' or type(y)~='number' or type(startX)~='number' or type(startY)~='number' then return false end
-    return (x-startX)^2+(y-startY)^2>=Theme.layout.cardDrag.threshold^2
-end
-
 local function frozenEye(run)
     for _, relic in ipairs(run.relics or {}) do if relic=="frozen_eye" then return true end end
     return false
@@ -136,9 +124,16 @@ function M.new(root, presentation, clickEvent, platform, onClose)
     end
     local function paintPileSort()
         if self.browserShell then for _,mode in ipairs({'original','type','cost','name'})do
-            local label=root:GetChild('pileTools'):GetChild(mode):GetChild('label')
-            label.text=(mode=='original' and '默认' or mode=='cost' and '费用' or sortNames[mode])..(self.sortMode==mode and not self.sortAscending and ' ▾' or ' ▴')
-            if platform.color then label.fontColor=self.sortMode==mode and platform.color(228,211,94,255) or platform.color(233,230,220,255)end
+            local box=root:GetChild('pileTools'):GetChild(mode)
+            local label,arrow=box:GetChild('label'),box:GetChild('direction')
+            label.text=mode=='original' and '默认' or mode=='cost' and '费用' or sortNames[mode]
+            arrow:SetVisible(true)
+            local descending=self.sortMode==mode and not self.sortAscending
+            arrow.localRotationZ=descending and 180 or 0
+            if platform.color then
+                local ink=self.sortMode==mode and platform.color(228,211,94,255) or platform.color(233,230,220,255)
+                label.fontColor=ink;arrow.imageColor=ink
+            end
         end end
     end
     local function paintBrowseSort(active)
@@ -266,6 +261,7 @@ function M.new(root, presentation, clickEvent, platform, onClose)
     -- existing deck-open gate (battle input, map paths, rewards) stays read-only.
     function self.inspectRelics(_,run,view,index)
         if self.visible or not view then return false end
+        self.openSession=self.openSession+1
         self.visible,self.run,self.detailOnly,self.relicView=true,run,'relics',view
         self.generation=self.generation+1;root:SetVisible(false)
         if not view:open(run,index)then self.visible,self.run,self.detailOnly,self.relicView=false,nil,nil,nil;return false end
@@ -281,46 +277,7 @@ function M.new(root, presentation, clickEvent, platform, onClose)
     local function colour(value) return platform.color(value.r, value.g, value.b, value.a) end
     local function picture(control,id) control:SetImage(platform.imageSource,id) end
     local function tint(control, value) control.imageColor = colour(value) end
-    local function fill(control, instance, catalog)
-        require('abyss_page_reveal').registerSource(platform,'deckPanel')
-        local battle=(self.choiceToken or self.pileKind) and self.battle
-        local definition = Combat.cardDefinition(battle or {catalog=catalog}, instance)
-        local display = assert(presentation[instance.cardId], "missing deck presentation " .. instance.cardId)
-        local face = control:GetChild("face")
-        if self.browserShell then
-            -- Reuse the native template and its current official card face;
-            -- read-only browsing has no choice-feedback line below the card.
-            face:SetAnchoredPosition(0,0)
-            control:GetChild('hit'):SetAnchoredPosition(0,0)
-            control:GetChild('uid'):SetVisible(false)
-        end
-        CardDisplay.writeTitle(face:GetChild("name"),display.name,instance.upgraded,
-            definition.repeatable and (instance.upgrades or 1) or nil,face:GetChild("type"),typeNames[definition.type] or definition.type)
-        face:GetChild("name").fontColor = colour(Theme.cardSkin.text.title)
-        -- Permanent cards carry no combat modifiers: fill live tokens with their own values.
-        local text=battle and CardDisplay.combatText(display,definition,instance,Combat.cardPreview(battle,instance),battle)
-            or CardDisplay.permanentText(display,definition,instance)
-        CardDisplay.writeBody(face:GetChild("label"),text,face)
-        if Theme.cardSkin.text.body then face:GetChild('label').fontColor=colour(Theme.cardSkin.text.body)end
-        face:GetChild("cost").text = definition.cost == -2 and "" or definition.costMode == "all_energy" and "X" or tostring(definition.cost)
-        tint(face:GetChild("border"), Theme.color.rarity[definition.rarity] or Theme.color.line)
-        tint(face:GetChild("nameBand"), Theme.color.rarityBand[definition.rarity] or Theme.color.rarityBand.basic)
-        tint(face:GetChild("nameRule"), Theme.color.rarity[definition.rarity] or Theme.color.line)
-        tint(face:GetChild("artPlate"), Theme.color.cardType[definition.type] or Theme.color.panelRaised)
-        CardDisplay.writeArt(face:GetChild("art"), definition, picture,face);CardDisplay.writeNativeArt(face,definition,display.nativeArt,platform,face:GetChild('art'),instance.uid)
-        local printed=catalog.cards[instance.cardId]
-        local base=instance.upgraded and printed.upgrade and printed.upgrade.cost or printed.cost
-        local selected=false
-        for _,uid in ipairs(self.choiceSelected or {}) do if uid==instance.uid then selected=true end end
-        CardSkin.apply(face,definition,platform,{cost=definition.cost,baseCost=base,selected=selected,surfaceScope=self.pileView and 'battle' or 'deck'})
-        if self.browserShell then
-            face:GetChild('nativePlayableRim'):SetVisible(false)
-            face:GetChild('glow'):SetVisible(false)
-            face:GetChild('costHalo'):SetVisible(false)
-        end
-        control:GetChild("uid").text = selected and '已选择' or ''
-        local hit=control:GetChild('hit')
-        hit:SetVisible(true)
+    local function bindCard(control,hit,instance)
         if not self.bindings[control] then
             -- Keep the hit handle: GetChild is invalid once native Grid retires its item.
             self.bindings[control]={hit=hit}
@@ -338,7 +295,7 @@ function M.new(root, presentation, clickEvent, platform, onClose)
                 if callback then callback(token,uid) end
             end
             hit:AddCursorEventListener(clickEvent,function(event)
-                if Controller.pointerBlocked(platform.controller) or scrollClick(event) then return false end
+                if Controller.pointerBlocked(platform.controller) or Controller.pointerDragged(event, Theme.layout.cardDrag.threshold) then return false end
                 return pick()
             end)
             Controller.bind(platform.controller,hit,'deck',pick,function()
@@ -348,6 +305,52 @@ function M.new(root, presentation, clickEvent, platform, onClose)
         end
         self.bindings[control].generation,self.bindings[control].uid=self.generation,instance.uid
         self.bindings[control].instance=Combat.copy(instance)
+    end
+    local function paintCardText(face,instance,display,definition,battle)
+        CardDisplay.writeTitle(face:GetChild("name"),display.name,instance.upgraded,
+            definition.repeatable and (instance.upgrades or 1) or nil,face:GetChild("type"),typeNames[definition.type] or definition.type)
+        face:GetChild("name").fontColor = colour(Theme.cardSkin.text.title)
+        -- Permanent cards carry no combat modifiers: fill live tokens with their own values.
+        local text=battle and CardDisplay.combatText(display,definition,instance,Combat.cardPreview(battle,instance),battle)
+            or CardDisplay.permanentText(display,definition,instance)
+        CardDisplay.writeBody(face:GetChild("label"),text,face)
+        if Theme.cardSkin.text.body then face:GetChild('label').fontColor=colour(Theme.cardSkin.text.body)end
+        face:GetChild("cost").text = definition.cost == -2 and "" or definition.costMode == "all_energy" and "X" or tostring(definition.cost)
+    end
+    local function fill(control, instance, catalog)
+        require('abyss_page_reveal').registerSource(platform,'deckPanel')
+        local battle=(self.choiceToken or self.pileKind) and self.battle
+        local definition = Combat.cardDefinition(battle or {catalog=catalog}, instance)
+        local display = assert(presentation[instance.cardId], "missing deck presentation " .. instance.cardId)
+        local face = control:GetChild("face")
+        if self.browserShell then
+            -- Reuse the native template and its current official card face;
+            -- read-only browsing has no choice-feedback line below the card.
+            face:SetAnchoredPosition(0,0)
+            control:GetChild('hit'):SetAnchoredPosition(0,0)
+            control:GetChild('uid'):SetVisible(false)
+        end
+        paintCardText(face,instance,display,definition,battle)
+        tint(face:GetChild("border"), Theme.color.rarity[definition.rarity] or Theme.color.line)
+        tint(face:GetChild("nameBand"), Theme.color.rarityBand[definition.rarity] or Theme.color.rarityBand.basic)
+        tint(face:GetChild("nameRule"), Theme.color.rarity[definition.rarity] or Theme.color.line)
+        tint(face:GetChild("artPlate"), Theme.color.cardType[definition.type] or Theme.color.panelRaised)
+        CardDisplay.writeArt(face:GetChild("art"), definition, picture,face);CardDisplay.writeNativeArt(face,definition,display.nativeArt,platform,face:GetChild('art'),instance.uid)
+        local printed=catalog.cards[instance.cardId]
+        local base=instance.upgraded and printed.upgrade and printed.upgrade.cost or printed.cost
+        local selected=false
+        for _,uid in ipairs(self.choiceSelected or {}) do if uid==instance.uid then selected=true end end
+        CardSkin.apply(face,definition,platform,{cost=definition.cost,baseCost=base,selected=selected,
+            surfaceScope=self.pileView and 'battle' or 'deck',templateKind=self.browserShell and 'attack' or nil})
+        if self.browserShell then
+            face:GetChild('nativePlayableRim'):SetVisible(false)
+            face:GetChild('glow'):SetVisible(false)
+            face:GetChild('costHalo'):SetVisible(false)
+        end
+        control:GetChild("uid").text = selected and '已选择' or ''
+        local hit=control:GetChild('hit')
+        hit:SetVisible(true)
+        bindCard(control,hit,instance)
         control:SetVisible(true)
     end
     -- Pure presentation projection. The permanent deck and the three combat
@@ -364,7 +367,14 @@ function M.new(root, presentation, clickEvent, platform, onClose)
         if entry.definition.costMode=='all_energy' then cost=-1 end
         return tostring(cost)..name
     end
-    local function projectCards()
+    local function orderedCards()
+        -- Acquisition order needs no definitions or comparison sort. Resolve
+        -- card faces only when the native scroller asks for a cell.
+        if self.typeFilter=='all' and self.sortMode=='original' and self.sortAscending then
+            local cards={}
+            for i,card in ipairs(self.allCards) do cards[i]=card end
+            return cards
+        end
         local entries={}
         for i,card in ipairs(self.allCards or {})do
             local definition=Combat.cardDefinition(self.battle or {catalog=self.catalog},card)
@@ -381,8 +391,12 @@ function M.new(root, presentation, clickEvent, platform, onClose)
                 return x>y
             end)
         end
-        self.cards={}
-        for _,entry in ipairs(entries)do self.cards[#self.cards+1]=entry.card end
+        local cards={}
+        for _,entry in ipairs(entries)do cards[#cards+1]=entry.card end
+        return cards
+    end
+    local function projectCards()
+        self.cards=orderedCards()
         local total=#(self.allCards or {})
         local amount=self.typeFilter=='all' and tostring(total) or #self.cards..'/'..total
         self.listTitle=browserHeading(self.pileKind)..' · '..amount..' 张'
@@ -412,7 +426,10 @@ function M.new(root, presentation, clickEvent, platform, onClose)
             if not self.visible or self.generation~=generation or not self.calibrating then return end
             self.indexBase,self.pending=index,true
             indexBases[grid]=index
-            fill(control,cards[1],catalog)
+            -- The official reveal waits for the real viewport. Painting the
+            -- calibration cell can allocate a card face that is never shown.
+            if self.browserShell then control:SetVisible(false)
+            else fill(control,cards[1],catalog) end
         end)
         liveFaces()
     end

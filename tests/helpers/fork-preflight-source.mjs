@@ -1,7 +1,14 @@
+import {beforeRebasedCi,beforeRebasedRelease,historicalReleaseCopier} from './rebased-release-source.mjs';
 import {beforeTinyHouseIntegratedSource} from './tiny-house-integrated-source.mjs';
 import {m05HistoricalDiscovery} from './m05-shop-ci-source.mjs';
+import {assertReleaseCapacityCohort,beforeReleaseCapacitySource} from './release-integration-source.mjs';
+import {beforeM05BackflowInventory} from './m05-shop-ci-source.mjs';
+import {beforeReleaseShopEntry,shopEntryPriorRead} from './release-ui-restore-source.mjs';
+import {beforeCombatVisualSource,combatVisualPriorRead} from './combat-visual-source.mjs';
+import {beforeSts1MenuCiSource} from './sts1-menu-ci-source.mjs';
+import {assertRefinedReleaseSourcesCurrent,beforeRefinedReleaseCiSource,beforeRefinedReleaseJsInventory,refinedReleaseHistoricalInput} from './refined-release-source.mjs';
 import {beforeV2UiAdmission} from './v2-ui-admission-ci-source.mjs';
-import {beforeV2UiEvidence,beforeFieldConfirmation,beforeRelicCrystal} from './v2-p1-ci-source.mjs';
+import {beforeV2UiEvidence,beforeV2UiPreTinyHouseSource,beforeFieldConfirmation,beforeRelicCrystal} from './v2-p1-ci-source.mjs';
 import {beforeCharacterPreparationCiSource} from './character-preparation-source.mjs';
 import {integratedCiBytes} from './integrated-ci-binding.mjs';
 import {stsStylePriorRuntime} from './sts-style-prior-runtime.mjs';
@@ -64,6 +71,85 @@ function beforeRewardScreenCiSource(path,source){
  if(!row||typeof source!=='string'||source.includes('\r\r\n')||hash(normalize(source))!==row.after)return source;
  return source.includes('\r\n')?row.before.source.replaceAll('\n','\r\n'):row.before.source;
 }
+// Keep earlier CI observations bound to the Release baseline while current
+// tests execute the approved default and frozen candidate paths.
+const releaseUiBuildBytes=readFileSync(new URL('./release-ui-build-ci-source.json.gz',import.meta.url));
+assert.equal(hash(releaseUiBuildBytes),'e7a41ad3a06b8fa264aaad151a8b12e9c399f78a35183a35d9ed3f655abae044');
+const releaseUiBuild=JSON.parse(gunzipSync(releaseUiBuildBytes));
+assert.equal(releaseUiBuild.base,'ff6af63d9bf93056dd772347d10dc749e7fa8d34');
+const blob=source=>createHash('sha1').update(`blob ${Buffer.byteLength(source)}\0${source}`).digest('hex');
+for(const {before,after} of Object.values(releaseUiBuild.files)){
+ assert.equal(hash(before.source),before.sha256);
+ assert.equal(blob(before.source),before.gitBlob);
+ assert.match(after.sha256,/^[a-f0-9]{64}$/);
+ assert.match(after.gitBlob,/^[a-f0-9]{40}$/);
+}
+// Authenticate the current copier before giving old CI receipts its exact predecessor.
+function beforeRefinedReleaseCopier(path,source){
+ if(path!=="tests/helpers/copy-integration-source-closure.mjs"||typeof source!=='string'||source.includes('\r\r\n'))return source;
+ const lf=normalize(source);
+ if(hash(lf)!=="7aa6c9e75928548fced7107e38ef05b787e4a63c661fa4ab124dd1a8ce06314b")return source;
+ const prior=lf.replace("// Refined enemy art extends only the existing historical helper closure.\nconst refinedReleaseFiles=Object.freeze({\n ...releaseUiFiles,\n 'tests/helpers/release-ui-restore-source.mjs':'26d8b8099e6b8f6fb30869479dcbcac90ff8c77ea04bc80ab4f8ad25c8bc8be3',\n 'tests/helpers/release-forge-source.json.gz':'8557c9daa0943c815ca11e0c135d081c08081f040bbef85b3cd799f7a586c564',\n 'tests/helpers/refined-release-source.mjs':'154f5464849177b48426db7d816f4ddf87d9d26abd6bfcfb543162b4f26450d9',\n 'tests/helpers/refined-release-source.json.gz':'6b9e66890ecfeac7f0b581ece462edaf41095f6d2937896cf6032e9e8ee9a9a3',\n});\n",'').replace("Object.entries(refinedReleaseFiles))","Object.entries(releaseUiFiles))");
+ assert.equal(hash(prior),"810c7ddebb21d62e26730d225ba218c33aa009656fee38929ee2881821ea813b",'exact refined Release helper copy predecessor');
+ return source.includes('\r\n')?prior.replaceAll('\n','\r\n'):prior;
+}
+// Restore the previous exact copy contract before its own historical projection.
+function beforeShopEntryCopier(path,source){
+ if(path!=='tests/helpers/copy-integration-source-closure.mjs'||typeof source!=='string'||source.includes('\r\r\n'))return source;
+ const lf=normalize(source);
+ if(hash(lf)!=='42a2fae24acaca0ff0214e5e0e592b2ff4cfd7f1e506578ba36faf327d17ae87')return source;
+ const prior=lf.replace(" 'tests/helpers/release-shop-entry-source.json.gz':'d3c114b39aa8affa1ae5c2b3ee54117640dcacce750efc24d78312792d8d2ff7',\n",'').replace(" 'tests/helpers/release-ui-restore-source.mjs':'37410ec175d07b09c8dd8062ac2e19d212dc8eeaebc32f38dbf99e7b32d8b7dd',"," 'tests/helpers/release-ui-restore-source.mjs':'26d8b8099e6b8f6fb30869479dcbcac90ff8c77ea04bc80ab4f8ad25c8bc8be3',");
+ assert.equal(hash(prior),'6da6f0f4defe5d10ec161a626d020ecd22d6f651d0e35c2ba941907f579337a6','exact shop entry helper copy predecessor');
+ return source.includes('\r\n')?prior.replaceAll('\n','\r\n'):prior;
+}
+function shopEntryPreflightRead(read){
+ const prior=shopEntryPriorRead(read);
+ return (path,...args)=>beforeShopEntryCopier(path,prior(path,...args));
+}
+function beforeIntegratedReleaseCopier(path,source){
+ if(path!=='tests/helpers/copy-integration-source-closure.mjs'||typeof source!=='string'||source.includes('\r\r\n'))return source;
+ const lf=normalize(source);
+ if(hash(lf)!=='a6b953bc1a4c2dd514b6c15237d467a3e288fa101a28818848d7fe5247872362')return source;
+ const prior=lf.replace(/^const integratedReleaseFiles=Object\.freeze\(\{\n[\s\S]*?^\}\);\n/m,'')
+  .replace('Object.entries(integratedReleaseFiles))','Object.entries(refinedReleaseFiles))');
+ assert.equal(hash(prior),'42a2fae24acaca0ff0214e5e0e592b2ff4cfd7f1e506578ba36faf327d17ae87','exact frozen Release copy predecessor');
+ return source.includes('\r\n')?prior.replaceAll('\n','\r\n'):prior;
+}
+function beforeRebasedCopier(path,source){
+ if(path!=='tests/helpers/copy-integration-source-closure.mjs'||typeof source!=='string'||source.includes('\r\r\n'))return source;
+ const lf=normalize(source);
+ if(hash(lf)!=='783aa88908e78fbe48f8f1fdc56621dba5f09af68b9d752073bc86c5bc655362')return source;
+ const limit=lf.indexOf('const releaseUiFiles='),end=lf.indexOf('const inside=',limit);
+ assert(limit>=0&&end>limit,'exact reconciled copy closure');
+ const prior=(lf.slice(0,limit)+lf.slice(end)).replace('Object.entries(reconciledReleaseFiles))','Object.entries(powerMembershipFiles))');
+ assert.equal(hash(prior),'fbc236306831104020bf6d83133ab8b978ad9ffd5d6dae1bde13ee12176651e2','exact final develop copier predecessor');
+ return source.includes('\r\n')?prior.replaceAll('\n','\r\n'):prior;
+}
+function beforeReleaseUiBuildSource(path,source,read=readFileSync){
+ source=beforeIntegratedReleaseCopier(path,source);
+ source=beforeShopEntryCopier(path,beforeReleaseShopEntry(path,source));
+ source=beforeCombatVisualSource(path,source,shopEntryPreflightRead(owner=>beforeIntegratedReleaseCopier(owner,read(owner,'utf8'))));
+ source=beforeSts1MenuCiSource(path,source);
+ source=beforeRefinedReleaseCiSource(path,beforeRefinedReleaseCopier(path,beforeReleaseCapacitySource(path,source)));
+ if(!Object.hasOwn(releaseUiBuild.files,path)||typeof source!=='string'||source.includes('\r\r\n'))return source;
+ const text=normalize(source),{before,after}=releaseUiBuild.files[path];
+ if(hash(text)!==after.sha256||blob(text)!==after.gitBlob)return source;
+ return source.includes('\r\n')?before.source.replaceAll('\n','\r\n'):before.source;
+}
+function releaseHistoricalInput(path,source){
+ return beforeRebasedCopier(path,source)!==source?historicalReleaseCopier(source):beforeRebasedRelease(path,source);
+}
+export function beforeReleaseTinyHouseSource(path,source,read=readFileSync){
+ const releaseRead=(owner,encoding)=>releaseHistoricalInput(owner,read(owner,encoding));
+ return beforeV2UiPreTinyHouseSource(path,beforeReleaseUiBuildSource(path,releaseHistoricalInput(path,source),releaseRead));
+}
+export function historicalReleaseBuildInput(path,read){
+ const releaseRead=(owner,encoding)=>releaseHistoricalInput(owner,read(owner,encoding));
+ if(!Object.hasOwn(releaseUiBuild.files,path))return refinedReleaseHistoricalInput(path,(owner,encoding)=>beforeReleaseCapacitySource(owner,releaseRead(owner,encoding)));
+ const source=releaseRead(path,'utf8'),prior=beforeReleaseUiBuildSource(path,source,releaseRead);
+ assert.notEqual(prior,source,'fresh approved build source: '+path);
+ return prior;
+}
 const coopLabCiBytes=readFileSync(new URL('./coop-lab-ci-predecessors.json.gz',import.meta.url));
 assert.equal(hash(coopLabCiBytes),'e55c26c3dbc7cde22ae4e47de876f205b47bdbfc30dc469830fe0ae9255285dc','complete co-op lab CI predecessors');
 const coopLabCi=JSON.parse(gunzipSync(coopLabCiBytes));
@@ -121,7 +207,7 @@ function beforeTinyHouseCopier(path,source){
 // Preserve the reviewed copier bytes when replaying older CI observations.
 export function beforeLoadingRecoveryCopier(path,source){
  if(path!=='tests/helpers/copy-integration-source-closure.mjs'||typeof source!=='string'||source.includes('\r\r\n'))return source;
- source=beforeRewardScreenCiSource(path,beforeMapCiSource(path,beforePowerMembershipHelper(path,source)));
+ source=beforeRewardScreenCiSource(path,beforeMapCiSource(path,beforePowerMembershipHelper(path,beforeRebasedCopier(path,source))));
  source=beforeTinyHouseIntegratedSource(path,beforeTinyHouseCopier(path,source));
  const lf=normalize(source);
  if(hash(lf)!=='e597f60ccc438815137de26a0ca6526952c713e3ba52b05db81b0bf5b1eb2288')return source;
@@ -146,7 +232,7 @@ function assertDevelopCapacityCohort(read){
 }
 export function beforeDevelopCapacityBuildSource(path,source){
  const row=Object.hasOwn(capacityBuildSource,path)?capacityBuildSource[path]:null;
- if(row)source=beforeRewardScreenCiSource(path,beforeMapCiSource(path,beforePowerMembershipHelper(path,source)));
+ if(row)source=beforeRewardScreenCiSource(path,beforeMapCiSource(path,beforePowerMembershipHelper(path,beforeRebasedCopier(path,source))));
  if(!row||!exactCapacityBuild(source,row.after))return source;
  let lf=normalize(source);
  for(const [current,prior]of row.hunks){
@@ -177,6 +263,7 @@ function beforePowerMembershipConfig(path,source){
  return source.includes('\r\n')?prior.replaceAll('\n','\r\n'):prior;
 }
 function beforeCoopCiSource(path,source){
+ source=beforeReleaseUiBuildSource(path,beforeRebasedCi(path,beforeRebasedCopier(path,source)));
  source=beforePowerMembershipConfig(path,beforePowerMembershipHelper(path,source));
  source=beforeFieldConfirmation(path,beforeRewardScreenCiSource(path,beforeCardFeedbackCiSource(path,beforeRelicCrystal(path,beforeMapCiSource(path,source)))));
  source=beforeDevelopCapacityBuildSource(path,beforeTinyHouseIntegratedSource(path,source));
@@ -187,17 +274,57 @@ function beforeCoopCiSource(path,source){
 }
 const coopLabTest='tests/coop-primitive-lab.test.mjs';
 const coopLabTestSha='93a22f446fec66df1339fc135071c929a3cc07d0c2473424510842af689d18dc';
-export function assertCurrentJsInventory(paths,preceding,read=readFileSync){
+function assertCoopJsInventory(paths,preceding,read){
  const current=[...preceding,coopLabTest].sort();
  assert.deepEqual([...paths].sort(),current,'complete current raw discovery inventory');
  const testSource=read(coopLabTest,'utf8');
  assert(typeof testSource==='string'&&!testSource.includes('\r\r\n')&&
   hash(normalize(testSource))===coopLabTestSha,'fresh added inventory source: '+coopLabTest);
 }
+const shopEntryTests={
+ js:['tests/shop-entry.test.mjs','3b687d1afb6ee83dc7103bc4c074e990a748a96ef55c4cba326498a5ed2d1919'],
+ lua:['tests/lua/shop_entry.lua','85547fda98f035ff78a0cebdf56e91ba43899f0579d706c4cb045e13a55f6259'],
+};
+const newerTests={
+ js:{
+  'tests/detail-latency.test.mjs':'310f906435fbbfa45899b30a5344ca83f9de32860d09394b9824de95ee9cffee',
+  'tests/potion-sts-structure.test.mjs':'56b91c313e26d1129a39b7678a39df7df38a71a2252deb060351c5cc115e6118'
+ },
+ lua:{
+  'tests/lua/detail_latency.lua':'8cd646c8d369ffdf1a59d08ee59c336acf2d064757b27c0c658e08c182caf4a0',
+  'tests/lua/potion_management_visual.lua':'4732441f834fa47346ac567392bb4c68758b580b091ef2ce54ab05591d89c5f4',
+  'tests/lua/traveler_power_tooltip.lua':'eacaefc663ef5800d114a4118546a170ee7c93be09800df02108a223285afda0'
+ },
+};
+export function beforeReleaseAdditionalInventory(paths,kind,read=readFileSync){
+ paths=beforeM05BackflowInventory(paths,kind,read);
+ for(const [path,sha] of Object.entries(newerTests[kind])){
+  const count=paths.filter(candidate=>candidate===path).length;
+  if(!count)continue;
+  assert.equal(count,1,'single added Release test: '+path);
+  const source=read(path,'utf8');
+  assert(typeof source==='string'&&!source.includes('\r\r\n')&&hash(normalize(source))===sha,'fresh added inventory source: '+path);
+ }
+ return paths.filter(path=>!Object.hasOwn(newerTests[kind],path));
+}
+export function beforeShopEntryInventory(paths,kind,read=readFileSync){
+ paths=beforeReleaseAdditionalInventory(paths,kind,read);
+ const [path,sha]=shopEntryTests[kind];
+ const position=paths.indexOf(path);
+ if(position===-1)return paths;
+ assert.equal(paths.lastIndexOf(path),position,'duplicate inventory source: '+path);
+ const source=read(path,'utf8');
+ assert(typeof source==='string'&&!source.includes('\r\r\n')&&hash(normalize(source))===sha,'fresh added inventory source: '+path);
+ return paths.filter(test=>test!==path);
+}
+export function assertCurrentJsInventory(paths,preceding,read=readFileSync){
+ paths=beforeRefinedReleaseJsInventory(beforeShopEntryInventory(paths,'js',read),[...preceding,coopLabTest],read,true);
+ assertCoopJsInventory(paths,preceding,read);
+}
 export function beforeCoopJsInventory(paths,preceding,read=readFileSync){
- paths=m05HistoricalDiscovery(paths,'js',read);
+ paths=beforeRefinedReleaseJsInventory(beforeShopEntryInventory(paths,'js',read),[...preceding,coopLabTest],read);
  if(!paths.includes(coopLabTest))return paths;
- assertCurrentJsInventory(paths,preceding,read);
+ assertCoopJsInventory(paths,preceding,read);
  return paths.filter(path=>path!==coopLabTest);
 }
 const closeoutSuccessors=Object.freeze({
@@ -267,9 +394,11 @@ function beforeIntegrationSuccessor(path,source){
  return source.includes('\r\n')?prior.source.replaceAll('\n','\r\n'):prior.source;
 }
 export function assertIntegrationSuccessorsCurrent(read=readFileSync){
- assertDevelopCapacityCohort(read);
+ const releaseRead=(path,encoding)=>beforeRebasedRelease(path,read(path,encoding));
+ assertReleaseCapacityCohort(releaseRead);
+ assertRefinedReleaseSourcesCurrent((path,encoding)=>beforeReleaseCapacitySource(path,shopEntryPreflightRead(releaseRead)(path,encoding)));
  for(const [path,row] of Object.entries(coopLabCi.files)){
-  const input=beforeRelicCrystal(path,beforeMapCiSource(path,read(path,'utf8')));
+  const input=beforeRelicCrystal(path,beforeMapCiSource(path,beforeReleaseUiBuildSource(path,beforeRebasedCi(path,read(path,'utf8')))));
   const source=beforeV2UiEvidence(path,beforeTinyHouseIntegratedSource(path,beforeFieldConfirmation(path,beforeRewardScreenCiSource(path,beforeCardFeedbackCiSource(path,input)))));
   assert(typeof source==='string'&&!source.includes('\r\r\n')&&hash(normalize(source))===row.afterSha,'fresh complete integration source: '+path);
  }

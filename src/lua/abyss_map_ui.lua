@@ -64,6 +64,13 @@ function M.pathWidth(taken, reachable)
     local v = Theme.layout.map.presentation
     return taken and v.takenPathWidth or reachable and Layout.lineWidth or v.lockedPathWidth
 end
+-- Presentation-only curve: monotone Y preserves viewport clipping; endpoints
+-- and the route's narrow corridor stay fixed. Never touch the Run RNG.
+function M.routePoint(x1,y1,x2,y2,t,seed)
+    local bend=(seed%2==0 and 1 or -1)*(5+seed%6)
+    local sway=math.sin(2*math.pi*t)*math.sin(math.pi*t)*(seed%3-1)
+    return x1+(x2-x1)*t+bend*4*t*(1-t)+sway,y1+(y2-y1)*t
+end
 function M.roomInk(node, state, currentFloor)
     local palette = Theme.color.mapCanvas
     if node.type == 'boss' and state == 'locked' then return palette.kind.boss end
@@ -315,19 +322,20 @@ function M.new(root, map, onChoose, clickEvent, options)
         self.scroll = clamp(floorY(self.chapter, current.floor) - Layout.focusY, 0, maxScroll(self.chapter))
         return true
     end
+    local function routeEndpoints(source,target)
+        local x1,y1=position(source)
+        local x2,y2=position(target)
+        -- MapEdge starts short of each room, with a larger radius for the boss.
+        local len=math.sqrt((x2-x1)^2+(y2-y1)^2)
+        local r1=source.type=='boss' and Theme.layout.map.bossNode*Sts.bossRadius or Theme.layout.map.node*Sts.srcRadius
+        local r2=target.type=='boss' and Theme.layout.map.bossNode*Sts.bossRadius or Theme.layout.map.node*Sts.dstRadius
+        if len<=r1+r2 then return end
+        local ux,uy=(x2-x1)/len,(y2-y1)/len
+        return x1+ux*r1,y1+uy*r1,x2-ux*r2,y2-uy*r2
+    end
     local function line(control, source, target, taken, reachable, far)
-        local x1, y1 = position(source)
-        local x2, y2 = position(target)
-        -- MapEdge constructor: dots start ICON_DST_RADIUS (164 for the boss) from the
-        -- destination room and stop ICON_SRC_RADIUS short of the source room.
-        do
-            local len = math.sqrt((x2 - x1) ^ 2 + (y2 - y1) ^ 2)
-            local r1 = source.type == 'boss' and Theme.layout.map.bossNode * Sts.bossRadius or Theme.layout.map.node * Sts.srcRadius
-            local r2 = target.type == "boss" and Theme.layout.map.bossNode * Sts.bossRadius or Theme.layout.map.node * Sts.dstRadius
-            if len <= r1 + r2 then control:SetVisible(false) return end
-            local ux, uy = (x2 - x1) / len, (y2 - y1) / len
-            x1, y1, x2, y2 = x1 + ux * r1, y1 + uy * r1, x2 - ux * r2, y2 - uy * r2
-        end
+        local x1,y1,x2,y2=routeEndpoints(source,target)
+        if not x1 then control:SetVisible(false);return end
         -- Clip real graph segments to viewport, with half-stroke padding.
         -- TASK-4.13: walked > reachable > unreachable stroke weights (STS taken/available/disabled).
         local width = M.pathWidth(taken, reachable)
@@ -345,7 +353,25 @@ function M.new(root, map, onChoose, clickEvent, options)
         control.localRotationZ = math.atan(dy, dx) * 180 / math.pi
         local ink=taken and pathColours.taken or reachable and pathColours.next or far and pathColours.far or pathColours.future
         if control:GetChild('routeInk1') then
-            for i=1,8 do child(control,'routeInk'..i).imageColor=ink end
+            local seed=0
+            local identity=tostring(source.id)..':'..tostring(target.id)
+            for i=1,#identity do seed=(seed*31+identity:byte(i))%997 end
+            local length=math.sqrt(dx*dx+dy*dy)
+            local ux,uy=dx/length,dy/length
+            for i=1,8 do
+                local dash=child(control,'routeInk'..i)
+                local first,last=math.max(a,(i-1)/8),math.min(b,(i-1+.48)/8)
+                dash:SetVisible(last>first)
+                if last>first then
+                    local sx,sy=M.routePoint(x1,y1,x2,y2,first,seed)
+                    local ex,ey=M.routePoint(x1,y1,x2,y2,last,seed)
+                    local cx,cy=(sx+ex-ax-bx)/2,(sy+ey-ay-by)/2
+                    dash:SetAnchoredPosition(cx*ux+cy*uy,-cx*uy+cy*ux)
+                    dash:SetSizeDelta(math.sqrt((ex-sx)^2+(ey-sy)^2),width)
+                    dash.localRotationZ=math.atan(ey-sy,ex-sx)*180/math.pi-control.localRotationZ
+                    dash.imageColor=ink
+                end
+            end
         else control.imageColor=ink end
     end
     function self.render(_)
@@ -572,10 +598,15 @@ function M.new(root, map, onChoose, clickEvent, options)
         if animated then return animateScrollTo(target) end
         return self:setScroll(target)
     end
-    function self.setNavigationEnabled(_, enabled)
+    function self.setNavigationEnabled(_, enabled, retainBackdrop)
         if not self.map then return false, "map_unbound" end
         assert(type(enabled) == "boolean", "navigation enabled must be boolean")
-        if not enabled then cancelDrag() end
+        if not enabled then
+            cancelDrag()
+            -- A covering deck already gates all map input and retains the map's
+            -- drawing. Repaint the navigation state when the map is uncovered.
+            if retainBackdrop and not self.visible then self.navigationEnabled=false;return end
+        end
         -- An explicit coordinator grant acknowledges any external map advance.
         if not chapterFor(self.map) then self:render() return false,"invalid_map_context" end
         local current = mapView(self.map)
@@ -583,13 +614,17 @@ function M.new(root, map, onChoose, clickEvent, options)
         self.observedNodeId, self.observedFloor = current.currentNodeId, current.floor
         self.navigationEnabled = enabled self:render()
     end
-    function self.setVisible(_, visible, retainPage)
+    local function atPaintedPosition()
+        return self.map==self.observedMap and sameContext(self.map,self.observedContext)
+            and self.map.floor==self.observedFloor and self.map.currentNodeId==self.observedNodeId
+    end
+    function self.setVisible(_, visible, retainPage, retainPosition)
         assert(type(visible) == "boolean", "map visibility must be boolean")
         if visible and not self.map then return false, "map_unbound" end
         if not visible then cancelDrag() end
         -- A modal suspends navigation but retains its already mounted backdrop.
         self.visible = visible root:SetVisible(visible or retainPage==true)
-        if visible then self:focusCurrent() end
+        if visible and not (retainPosition and atPaintedPosition()) then self:focusCurrent() end
     end
     function self.choose(_, nodeId)
         if not self.map then return false, "map_unbound" end
