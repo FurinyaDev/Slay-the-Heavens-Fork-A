@@ -92,11 +92,19 @@ const rewardTransitionFiles=Object.freeze({
  'tests/helpers/release-guide-backflow-source.mjs':'b3f38bf200d79d335a0048295b835d4d326ebfc7d52039171984998022b7facf',
  'tests/fixtures/combat-reward-transition-source.json.gz':'08c955924392a2a23a989e08b9bb4e061d06a66871b1cbacd9ad556c0b734476',
 });
+const mapFiles=Object.freeze({
+ ...rewardTransitionFiles,
+ 'tests/helpers/card-feedback-owner-source.json.gz':'0710facff10a22ddca512869df2b0f526189deb5ca3394369e45fba20bd0d4ec',
+ 'tests/helpers/card-feedback-owner-source.mjs':'eceb0be36e5d40f82ef404cbfb1b2b2c2101b5f0b889e1c215ecff2ab15cd857',
+ [runtime]:'b04107e3d9c8f0d923aa3547276f9ee84651915740c909d998a5b657a589d04f',
+ 'tests/helpers/sts1-map-source.mjs':'12710c7f6b4787876c69cec5f6443447252465be9cbbffa0d85f38729823cfeb',
+ 'tests/fixtures/sts1-map-source.json.gz':'a356e09f7fb3a7c2f16c09adbbafaae6290bc615fe3be530a9f02d2c3a6e8d39',
+});
 const inside=(root,path)=>{const r=relative(root,path);return r!==''&&!isAbsolute(r)&&r!=='..'&&!r.startsWith('../')&&!r.startsWith('..\\');};
 export function copyIntegrationSourceClosure(directory,{sourceRoot=process.cwd()}={}){
  const destination=realpathSync.native(directory);
  assert.notEqual(destination,realpathSync.native(sourceRoot),'isolated helper copy destination');
- for(const [path,sha]of Object.entries(rewardTransitionFiles)){
+ for(const [path,sha]of Object.entries(mapFiles)){
   assert((path.startsWith('tests/helpers/')||path.startsWith('tests/fixtures/'))&&!path.split('/').includes('..'),'fixed helper path');
   const source=join(sourceRoot,path),content=integrationClosureBytes(path,readFileSync(source));assert.equal(hash(content),sha,'fresh helper copy identity: '+path);
   const target=join(directory,path);mkdirSync(dirname(target),{recursive:true});
