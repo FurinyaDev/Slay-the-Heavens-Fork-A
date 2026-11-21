@@ -13,6 +13,9 @@ const {project:beforeReleaseControlsGuideRemovalCi}=releaseUiRestoreArchive(
 const {project:beforeReleaseUiRestoreCi}=releaseUiRestoreArchive(
   readFileSync(new URL('./release-ui-restore-ci-source.json.gz',import.meta.url)),
   '2efd379b5ff0f87497082f422b395a3bed55b6243ed8af1d03be6f48e3993a3b');
+const {project:beforeReleaseRelicCrystal}=releaseUiRestoreArchive(
+  readFileSync(new URL('./release-relic-crystal-ci-source.json.gz',import.meta.url)),
+  '39527f12baa379591acfcf9446c100bd6c27cd467ec434eb100939c1a31d10a0', '068e1acbc6f98b591f84bf5cdb35a7620bb4cf17');
 const bytes = readFileSync(new URL('../fixtures/v2-p1-ci-source.json.gz', import.meta.url));
 assert.equal(sha256(bytes),'126bc5faaa880285c3e28b96fa3781ed6d188e9b5ee2889a5a41c0a7c2c30cd4','historical P1 evidence source identities');
 const archive = JSON.parse(gunzipSync(bytes));
@@ -52,6 +55,7 @@ function beforeFieldConfirmation(path, source) {
 }
 
 export function beforeV2UiEvidence(path, source) {
+  source = beforeReleaseRelicCrystal(path,source);
   source = beforeReleaseControlsGuideRemovalCi(path,source);
   source = beforeReleaseRightClick(path,beforeReleaseControlsGuideRemoval(path,source));
   source = beforeFieldConfirmation(path,source);
