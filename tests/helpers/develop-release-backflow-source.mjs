@@ -168,7 +168,7 @@ for(const [path,{before,after}] of Object.entries(roomEntry.files)){
  assert.match(after.gitBlob,/^[a-f0-9]{40}$/);
 }
 const deckPagesArchive=readFileSync(new URL('../fixtures/develop-deck-pages-source.json.gz',import.meta.url));
-assert.equal(hash(deckPagesArchive),'e5e082d9aee7b97a613673cb48597b502cdd47a2df554276682460e705a12549','exact Develop deck-pages predecessor archive');
+assert.equal(hash(deckPagesArchive),'9087397e73f68bef9e2229e7445940e526b450bbfbe1633c8b2da8508fe035b1','exact Develop deck-pages predecessor archive');
 const deckPages=JSON.parse(gunzipSync(deckPagesArchive));
 assert.equal(deckPages.base,'00229683d0d38660c98ced2f4a41e89d84fc5e4e');
 for(const [path,{before,after}] of Object.entries(deckPages.files)){

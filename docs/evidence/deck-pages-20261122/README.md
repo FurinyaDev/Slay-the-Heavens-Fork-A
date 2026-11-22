@@ -49,4 +49,4 @@ npm run check:platform-load
 
 - [首反馈](visual/formal-feedback.png) · [首页](visual/formal-page1.png) · [末页](visual/formal-page2.png)
 - [详情](visual/formal-detail.png) · [筛选空态](visual/formal-empty-filter.png) · [develop 首屏](visual/develop-first-open.png)
-- [像素差异记录](visual/flat-comparison.json) · [分段失败重试日志](segmented-lifecycle.log)
+- [像素差异记录](visual/flat-comparison.json) · [分段失败重试日志](segmented-lifecycle.txt)
