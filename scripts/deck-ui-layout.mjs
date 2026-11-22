@@ -55,7 +55,7 @@ export function deckCardTemplate(theme = nativeTheme) {
     { name: 'face', kind: 'container', position: [0, (size[1] - h) / 2],
       size: [w, h], children: cardFaceChildren(theme, 'deck', false) },
     text('uid', [0, -size[1] / 2 + line / 2, w, line], '', f.small, c.textDim),
-    {name:'hit',kind:'cursorArea',position:[0,(size[1]-h)/2],size:[w,h],focusable:true,visible:false},
+    {name:'hit',kind:'cursorArea',position:[0,(size[1]-h)/2],size:[w,h],visible:false},
   ] };
 }
 
@@ -99,7 +99,7 @@ export function deckControls(theme = nativeTheme) {
     const variants = { normal: [c.panelRaised, c.goldBright, c.goldDim], hover: [c.panelRaised, c.goldBright, c.goldBright],
       pressed: [c.buttonPressedFill, c.text, c.goldBright], disabled: [c.panelSunken, c.textMuted, c.line] };
     return { name, kind: 'container', position: frame.slice(0, 2), size, children: [
-      { name: 'hit', kind: 'presetButton', size, focusable: true,
+      { name: 'hit', kind: 'presetButton', size,
         states: Object.fromEntries(Object.keys(variants).map(state => [state, state])),
         children: Object.entries(variants).map(([state, [background, ink, border]]) => ({
           name: state, kind: 'container', size, scale: state === 'pressed' ? [l.deckView.pressedScale, l.deckView.pressedScale] : [1, 1], children: [
@@ -212,7 +212,7 @@ export function deckControls(theme = nativeTheme) {
       }),
       { ...text('details', l.deckView.viewport, '', f.reading, c.text), visible: false },
       { name: 'detailHit', kind: 'cursorArea', position: l.deckView.viewport.slice(0, 2),
-        size: l.deckView.viewport.slice(2), focusable: true, visible: false },
+        size: l.deckView.viewport.slice(2), visible: false },
       { ...button('upgradePreview', l.deckView.upgradePreview, '升级预览'), visible: false },
       button('close', closeFrame, '关闭'),
       {...battlePileReturn(button('pileReturn',[-550,-237,180,54],'返回'),theme.officialAssets.buttonInk),visible:false},
@@ -221,7 +221,7 @@ export function deckControls(theme = nativeTheme) {
         ...['original','type','cost','name'].map((mode,i)=>({name:mode,kind:'container',position:[(i-1.5)*150,0],size:[150,44],children:[
           text('label',[-9,0,120,40],['默认','类型','费用','名称'][i],18,'#E9E6DC'),
           {name:'direction',kind:'image',position:[46,0],size:[9,7],image:100003,colour:'#E9E6DC',raycastTarget:false},
-          {name:'hit',kind:'cursorArea',size:[150,44],focusable:true},
+          {name:'hit',kind:'cursorArea',size:[150,44]},
         ]})),
       ]},
       { ...button('previous', l.deckView.previous, '上一页'), visible: false },

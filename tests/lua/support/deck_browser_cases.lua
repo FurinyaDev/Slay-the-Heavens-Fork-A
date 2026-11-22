@@ -3,10 +3,7 @@ local Gate=require('abyss_page_reveal')
 local Run=require('abyss_run')
 local root=F.Viewport.apply(F.control({children=F.Layout}),1280,720)
 local cursor={CursorDown='down',CursorUp='up',CursorExit='exit',CursorEndDrag='end'}
-local focus,using,host
-local controller={events={Confirm='confirm',Cancel='cancel'},directions={Left='left',Right='right'},
-    modes={Specified='specified'},getFocus=function()return focus end,setFocus=function(c)focus=c end,
-    isController=function()return using==true end}
+local host
 local factory=F.deckBrowser()
 local nativeCreate,nativeDestroy=factory.create,factory.destroy
 local created,destroyed,chunks,fail=0,0,0,false
@@ -25,7 +22,7 @@ local function readReady(intent)
     return not (deck.pending or deck.pendingGrid or deck.calibrating)
 end
 host=F.GameUI.new(root,F.Data,F.Presentation,'click',{seed=1,imageSource='static',cursorEvents=cursor,
-    controllerApi=controller,deckBrowser=factory,presentationReady=readReady,
+    deckBrowser=factory,presentationReady=readReady,
     keyEvents={KeyboardCraftspersonKey38Down='left',KeyboardCraftspersonKey39Down='right'},
     color=function(r,g,b,a)return {r=r,g=g,b=b,a=a}end})
 local panel=root:GetChild('deckPanel')
@@ -87,24 +84,18 @@ local shown,count=cells()
 assert(count==10 and created==10 and chunks==50)
 local held=shown[1]:GetChild('hit')
 held.listeners.down({touchId=7})
-using=true
-host:syncController()
-assert(host.controller:focus(held))
-local confirm=held.navigationListeners.confirm
 assert(tap(nextHit,8));settle()
 held.listeners.up({touchId=7})
-assert(not held.click({touchId=7}) and not confirm() and not deck.detailPages)
+assert(not held.click({touchId=7}) and not deck.detailPages)
 shown,count=cells()
 assert(count==1 and deck.pageIndex==2 and not nextHit.interactable and not nextHit.raycastTarget)
 local valid=shown[1]:GetChild('hit')
-local detailConfirm=valid.navigationListeners.confirm
-assert(host.controller:focus(valid) and detailConfirm())
+assert(tap(valid,9))
 assert(deck.cardDetail.instance.uid==1011)
 settle();assert(deck:back());settle()
-assert(deck.pageIndex==2 and focus==valid and not detailConfirm())
+assert(deck.pageIndex==2)
 local validPress={touchId=32}
 valid.listeners.down(validPress)
-using=false;host:syncController()
 assert(panel.keyListeners.left());settle()
 valid.listeners.up(validPress)
 assert(not valid.click(validPress) and deck.pageIndex==1)
@@ -126,7 +117,7 @@ assert(host:openDeck('draw'));settle()
 assert(deck.cards[1].uid==1020 and run.combat.draw[1].uid==1001)
 local top=cells()[1]:GetChild('face')
 assert(top:GetChild('cost').text=='0' and not top:GetChild('costHalo').visible)
-assert(deck:controllerStep(1));settle()
+assert(deck:stepPage(1));settle()
 assert(host:closeDeck());settle();assert(host:openDeck('draw') and deck.pageIndex==2)
 settle();assert(host:closeDeck());settle()
 assert(host:openDeck('discard') and deck.pageIndex==1);settle();assert(host:closeDeck());settle()

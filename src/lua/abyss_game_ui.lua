@@ -11,7 +11,6 @@ require("abyss_narrative")
 local Bgm = require("abyss_bgm")
 local CharacterSelect = require("abyss_character_select")
 require("abyss_character_select_view")
-local Controller = require("abyss_controller")
 local MenuView=require("abyss_game_ui_menu_view")
 local Theme = require("abyss_theme")
 local M = {}
@@ -48,13 +47,12 @@ function M.new(root, data, presentation, clickEvent, platform)
     -- never while constructing the title screen or refreshing the UI.
     local self = { root = root, data = data, seed = platform.seed, mode = "menu" }
     local owner = {exitGeneration=0, menuGeneration=0, ready=false}
+    -- Per-host callbacks must stay with their original control tree.
+    platform=setmetatable({},{__index=platform})
     local neowHistory=NeowHistory.new(platform.readNeowHistory)
     local endingHistory=EndingHistory.new({read=platform.readEndingHistory,write=platform.writeEndingHistory})
-    local controller = Controller.new(platform.controllerApi,root)
     -- Read-only Production data service; no navigation or eager catalogue build.
     self.productionCompendium = Overlays.productionCompendium(data,presentation)
-    self.controller = controller
-    platform.controller = controller
     if platform.presentationReady then
         local cover=assert(root:GetChild('pageReveal'),'missing shared page reveal cover')
         self.pageReveal=PageReveal.new(cover,platform.presentationReady,function()
@@ -64,14 +62,13 @@ function M.new(root, data, presentation, clickEvent, platform)
             nodePanel=Theme.layout.nativeNode.backdrop,battlePanel=Theme.layout.rewardPick.stage,
             potionPanel={0,0,Theme.layout.modal.size[1],Theme.layout.modal.size[2]},
             choicePanel=Theme.layout.combatChoice.panel},revealMotion(platform))
-        if controller then
-            controller.blocked=function()
-                local gate=self.pageReveal
-                return gate:covered() and (not self.exitOpen or self.routeOpen)
-                    and not (self.deckUI and self.deckUI.paged and gate.intent and gate.intent.deckPaged
-                        and gate.localFrame and gate.state~='failed')
-            end
+        function self.pointerBlocked()
+            local gate=self.pageReveal
+            return gate:covered() and (not self.exitOpen or self.routeOpen)
+                and not (self.deckUI and self.deckUI.paged and gate.intent and gate.intent.deckPaged
+                    and gate.localFrame and gate.state~='failed')
         end
+        platform.pointerBlocked=self.pointerBlocked
         cover.disableCursorEventPassthrough=true
         cover:GetChild('blocker'):AddCursorEventListener(clickEvent,function()return true end)
         local cancel=cover:GetChild('cancel'):GetChild('hit')
@@ -84,7 +81,6 @@ function M.new(root, data, presentation, clickEvent, platform)
         end
         local function recover()return self:recoverPage()end
         cancel:AddCursorEventListener(clickEvent,recover)
-        Controller.bind(controller,cancel,'pageReveal',recover,canRecover,1)
     end
     local newSeed = platform.newSeed or function() return require("abyss_new_run_seed").next() end
     local bgm = Bgm.new(platform.music)
@@ -109,7 +105,7 @@ function M.new(root, data, presentation, clickEvent, platform)
             onPile=function(kind)return self:openDeck(kind)end })
     self.mapUI = MapUI.new(child("mapPanel"), nil, Navigation.requestNodeEntry(self,platform,changed),
         clickEvent, { embedded = true, color = platform.color, imageSource = platform.imageSource,
-        cursor = platform.cursorEvents, controller = controller,
+        cursor = platform.cursorEvents, pointerBlocked = platform.pointerBlocked,
         inputCovered=inputCovered,
         available=function(map)return Nodes.available(self.run,map)end,
         bossName=function(map)
@@ -121,7 +117,7 @@ function M.new(root, data, presentation, clickEvent, platform)
         presentation, clickEvent, changed, { color = platform.color, imageSource = platform.imageSource,
             imageTypes = platform.imageTypes,
             textAlignments = platform.textAlignments,
-            cursorEvents = platform.cursorEvents, sound = platform.sound, controller = controller, touchScreen = platform.touchScreen,
+            cursorEvents = platform.cursorEvents, sound = platform.sound, pointerBlocked = platform.pointerBlocked, touchScreen = platform.touchScreen,
             enhancedRooms=true,inputCovered=inputCovered,
             onInspectCard=function(definition,upgraded)
                 if not self.run or self.disabled or self.mode~='node' or self.exitOpen
@@ -185,7 +181,6 @@ function M.new(root, data, presentation, clickEvent, platform)
     local menuLoading,characterLoading,originalCharacterHint=false,false,nil
     self.paintArtLoading = View.paintArtLoading(platform,menu,self,menuLoading,characterPanel,characterLoading,originalCharacterHint)
 
-    self.syncController = View.syncController(self,controller,openingCovered)
     local finishRunFlow = View.finishRunFlow(neowHistory,endingHistory,self)
     local selectMode = View.selectMode(self)
     local syncMenuContext = View.syncMenuContext(self,owner)
@@ -224,20 +219,15 @@ function M.new(root, data, presentation, clickEvent, platform)
     self.settle = RunFlow.settle(self,owner)
     owner.requestSettlement = RunFlow.requestSettlement(self,platform,neowHistory,owner)
     self.resize = Lifecycle.resize(self,owner)
-    self.update = Lifecycle.update(self,controller,platform,openingCovered,updateBossEntrance,bgm)
-    self.disable = Lifecycle.disable(self,platform,controller,characterPanel,owner)
-    Input.installUtilities(self,child,clickEvent,controller,inCombat,exitPanel,runMenu)
-    local bindCommand = Input.bindCommand(platform,self,canManagePotions,controller,clickEvent,owner)
+    self.update = Lifecycle.update(self,platform,openingCovered,updateBossEntrance,bgm)
+    self.disable = Lifecycle.disable(self,platform,characterPanel,owner)
+    Input.installUtilities(self,child,clickEvent,platform,inCombat,exitPanel,runMenu)
+    local bindCommand = Input.bindCommand(platform,self,canManagePotions,clickEvent,owner)
     Input.installMenu(self,child,clickEvent,resourceHint,bindCommand,start,settlement,exitEntry,exitPanel)
     Input.installRunMenu(self,bindCommand,runMenu,canViewRoute,child,owner)
-    Input.installCharacters(self,characterPanel,clickEvent,bindCommand,controller)
+    Input.installCharacters(self,characterPanel,clickEvent,bindCommand)
     owner.ready = true
-    if controller then
-        controller.beforeAction=function()self.battleUI:cancelControllerPointers()end
-        controller.onChange=function()self:syncController()end
-    end
     self:refresh()
-    self:syncController()
     return self
 end
 return M

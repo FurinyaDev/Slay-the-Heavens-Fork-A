@@ -10,6 +10,7 @@ import {discoverSources,dependencyCycles} from '../scripts/lua-quality-metrics.m
 import {componentUiSourceEpoch} from './helpers/component-ui-source-epoch.mjs';
 import {sourceEpoch as currentEpoch} from './helpers/combined-epoch/source-epoch.mjs';
 import {ciRepairSourceEpoch} from './helpers/closeout-source-epoch.mjs';
+import {beforeInputRetirementReader,pointerInputPath,retiredControllerPath} from './helpers/input-retirement-source.mjs';
 import {beforeCurrentProductionSource} from './helpers/character-preparation-source.mjs';
 import {actorFocusAdded,deckPagesAdded,beforeDeckPages,assertActorFocusInventory,assertDevelopBackflowCurrent,assertStasisUpgradeAdded,stasisUpgradeAddedPaths} from './helpers/develop-release-backflow-source.mjs';
 const file='src/lua/abyss_watcher_attack_cards.lua';
@@ -61,18 +62,21 @@ test('pre-style Watcher planning retains the complete 346-module SCC contract wi
 test('current Watcher SCC analysis includes exact release additions and every original production module',()=>{
  const raw=discoverSources(),sources=Object.fromEntries(Object.entries(raw).map(([p,s])=>[p.split('/').at(-1).slice(0,-4),s]));
  assertActorFocusInventory(Object.keys(raw),read);
+ const historicalRead=beforeInputRetirementReader(read);
+ const historical={...raw,[retiredControllerPath]:historicalRead(retiredControllerPath)};
+ delete historical[pointerInputPath];
  const prior=Object.keys(ciRepairSourceEpoch.proof.current).filter(p=>p.startsWith('src/lua/')).sort();
- const added=Object.keys(raw).filter(p=>!Object.hasOwn(ciRepairSourceEpoch.proof.current,p)).sort();
+ const added=Object.keys(historical).filter(p=>!Object.hasOwn(ciRepairSourceEpoch.proof.current,p)).sort();
  const uiAdded=['game_ui_navigation','game_ui_navigation_view','lowcost_art','merchant_pages','page_reveal'].map(name=>'src/lua/abyss_'+name+'.lua');
  const coreAdded=['src/lua/abyss_power_membership.lua',...stasisUpgradeAddedPaths,...actorFocusAdded];
  assert.deepEqual(added,[...uiAdded,...coreAdded,...deckPagesAdded].sort());
- assert.deepEqual(Object.keys(raw).filter(p=>!added.includes(p)).sort(),prior,'complete original 346-module corpus retained');
+ assert.deepEqual(Object.keys(historical).filter(p=>!added.includes(p)).sort(),prior,'complete original 346-module corpus retained');
  const recorded=Object.keys(currentEpoch.proof.current).filter(p=>p.startsWith('src/lua/'));
  assert.equal(recorded.length,352,'complete predecessor inventory');
- assert.deepEqual(Object.keys(raw).sort(),[...recorded,...stasisUpgradeAddedPaths,...actorFocusAdded,...deckPagesAdded].sort());
+ assert.deepEqual(Object.keys(historical).sort(),[...recorded,...stasisUpgradeAddedPaths,...actorFocusAdded,...deckPagesAdded].sort());
  assert.equal(Object.keys(raw).length,357,'complete raw current inventory');
- const readPredecessor=path=>beforeDeckPages(path,read(path));
- for(const [path,source]of Object.entries(raw)){
+ const readPredecessor=path=>beforeDeckPages(path,historicalRead(path));
+ for(const [path,source]of Object.entries(historical)){
   if(deckPagesAdded.includes(path))continue; // Authenticated by the exact live inventory above.
   if(actorFocusAdded.includes(path)){
    assertDevelopBackflowCurrent(path,source);
@@ -87,6 +91,8 @@ test('current Watcher SCC analysis includes exact release additions and every or
   assert.equal(beforeCurrentProductionSource(path,beforeDeckPages(path,source),readPredecessor).replaceAll('\r\n','\n'),currentEpoch.proof.current[path].source,path);
  }
  const policy=JSON.parse(read('config/architecture.json'));
+ assert.equal(policy.layers.abyss_pointer_input,'ui');
+ assert(!Object.hasOwn(policy.layers,'abyss_controller'));
  for(const path of uiAdded){
   assert.equal(policy.layers[path.split('/').at(-1).slice(0,-4)],'ui');
   assert.equal(currentEpoch.proof.targets.stsStylePrior.files[path],null,'new source has no invented predecessor');

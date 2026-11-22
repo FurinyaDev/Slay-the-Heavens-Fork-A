@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import {readFileSync} from 'node:fs';
 import {gunzipSync} from 'node:zlib';
+import {authenticateInputRetirement,beforeInputRetirement,beforeInputRetirementReader,assertPointerInputSource,pointerInputPath,retiredControllerPath} from './input-retirement-source.mjs';
 import {authenticateRelicDetail,beforeRelicDetail,relicDetailOwns} from './relic-detail-source.mjs';
 
 const hash=(bytes,algorithm='sha256')=>createHash(algorithm).update(bytes).digest('hex');
@@ -177,7 +178,8 @@ for(const [path,{before,after}] of Object.entries(deckPages.files)){
  assert.match(after.gitBlob,/^[a-f0-9]{40}$/);
 }
 export const deckPagesAdded=Object.keys(deckPages.added);
-export function beforeDeckPages(path,source){return predecessor(deckPages.files,path,source);}
+function deckPagesPrior(path,source){return predecessor(deckPages.files,path,source);}
+export function beforeDeckPages(path,source,options){return deckPagesPrior(path,beforeInputRetirement(path,source,options));}
 function matches(source,expected){
  if(typeof source!=='string'||source.includes('\r\r\n'))return false;
  const lf=source.replaceAll('\r\n','\n');
@@ -195,8 +197,11 @@ export function assertStasisUpgradeAdded(path,source){
  assert(Object.hasOwn(stasis.added,path)&&matches(source,stasis.added[path]),'fresh Stasis upgrade module: '+path);
 }
 export function assertActorFocusInventory(paths,read=path=>readFileSync(path,'utf8')){
- assert.deepEqual([...paths].sort(),[...actorFocus.luaBefore,...actorFocusAdded,...deckPagesAdded].sort(),'complete current Actor/Focus Lua module inventory');
- for(const path of deckPagesAdded)assert(matches(read(path),deckPages.added[path]),'fresh deck browser module: '+path);
+ const expected=[...actorFocus.luaBefore,...actorFocusAdded,...deckPagesAdded];
+ assert(expected.includes(retiredControllerPath),'exact controller predecessor in Actor/Focus Lua inventory');
+ assert.deepEqual([...paths].sort(),[...expected.filter(path=>path!==retiredControllerPath),pointerInputPath].sort(),'complete current Actor/Focus Lua module inventory');
+ assertPointerInputSource(read(pointerInputPath));
+ for(const path of deckPagesAdded)assert(matches(beforeInputRetirement(path,read(path)),deckPages.added[path]),'fresh deck browser module: '+path);
  for(const path of actorFocusOwners)assertDevelopBackflowCurrent(path,read(path));
  for(const path of stasisUpgradeAddedPaths)assertStasisUpgradeAdded(path,read(path));
 }
@@ -241,7 +246,7 @@ function authenticatePriorDevelopBackflow(path,source,read){
 export const configSourceTokens=source=>source.replace(/"(?:\\.|[^"\\])*"|[ \t\r\n]+/g,token=>token.startsWith('"')?token:'');
 export function isSessionRelicSuccessor(path,source,{allowConfigLayout=false}={}){
  if(!Object.hasOwn(sessionRelic.files,path))return false;
- source=predecessor(roomEntry.files,path,beforeDeckPages(path,source));
+ source=predecessor(roomEntry.files,path,beforeDeckPages(path,source,{allowConfigLayout}));
  const expected=sessionRelic.files[path].after;
  if(matches(source,expected))return true;
  if(!allowConfigLayout||!expected.tokensSha256||typeof source!=='string'||source.includes('\r\r\n'))return false;
@@ -254,17 +259,19 @@ function beforeSessionRelic(path,source,options){
  return source.includes('\r\n')?before.replaceAll('\n','\r\n'):before;
 }
 export function beforeDevelopBackflow(path,source,options){
- source=predecessor(roomEntry.files,path,beforeDeckPages(path,source));
+ source=predecessor(roomEntry.files,path,beforeDeckPages(path,source,options));
  source=beforeRelicDetail(path,source);
  return beforePriorDevelopBackflow(path,beforeSessionRelic(path,source,options));
 }
 export function assertCurrentSessionRelicOwner(path,source){
  if(Object.hasOwn(sessionRelic.files,path)){
-  assert(matches(predecessor(roomEntry.files,path,source),current(path).after),'combined linked owner identity: '+path);
+  assert(matches(predecessor(roomEntry.files,path,beforeInputRetirement(path,source)),current(path).after),'combined linked owner identity: '+path);
  }
 }
 export function authenticateDevelopBackflow(path,source,read,options){
- const deckPrior=beforeDeckPages(path,source);
+ source=authenticateInputRetirement(path,source,read,options);
+ read=beforeInputRetirementReader(read);
+ const deckPrior=deckPagesPrior(path,source);
  if(deckPrior!==source){
   let live;
   try{live=read(path);}catch(error){assert.fail('combined linked owner missing: '+path+': '+String(error?.message??error));}
@@ -272,7 +279,7 @@ export function authenticateDevelopBackflow(path,source,read,options){
  }
  source=deckPrior;
  const readDeckPages=read;
- read=owner=>beforeDeckPages(owner,readDeckPages(owner));
+ read=owner=>deckPagesPrior(owner,readDeckPages(owner));
  const roomPrior=predecessor(roomEntry.files,path,source);
  if(roomPrior!==source){
   let live;

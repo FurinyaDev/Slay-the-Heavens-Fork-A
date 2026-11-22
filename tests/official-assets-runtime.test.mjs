@@ -713,7 +713,7 @@ event(strike,'down',77);event(strike,'drag',77,0,50);event('dragLayer','up',77,0
 assert(u.carry and u.carry.aiming and not area.visible,'dragging into aim must retain desktop targeting')
 field('down',78,0,50);field('up',78,0,50);field('click',78,0,50)
 assert(u.carry and u.selected,'empty clicks must preserve established desktop aim')
-assert(u:controllerBack() and not u.selected and not u.carry,'explicit cancel must clear established aim')
+assert(u:cancelAim() and not u.selected and not u.carry,'explicit cancel must clear established aim')
 unchanged(b,before,'aim cancellation changed combat')
 tap(defend,75);tap('playArea',76);drain()
 assert(hit.sizeDeltaX==1200 and hit.sizeDeltaY==272,'restoring field confirmation must restore its original limits')
@@ -1064,13 +1064,12 @@ local function find(entries)for _,entry in ipairs(entries)do
  if entry.name=='deckPanel'then panelSpec=entry end;find(entry.children or {})
 end end
 find(F.Layout)
-local panel,grid,deck;local controller=false
+local panel,grid,deck
 local function resetBrowser()
  panel=F.control(assert(panelSpec));grid=F.legacyPileGrid(panel)
  local ownedDeck
  ownedDeck=require('abyss_deck_ui').new(panel,F.Presentation,'click',{
-  imageSource='static',color=function(r,g,b,a)return {r=r,g=g,b=b,a=a}end,
-  controllerApi={isController=function()return controller end}},function()return ownedDeck:close()end)
+  imageSource='static',color=function(r,g,b,a)return {r=r,g=g,b=b,a=a}end},function()return ownedDeck:close()end)
  deck=ownedDeck
 end
 resetBrowser()
@@ -1131,11 +1130,6 @@ for _,origin in ipairs({0,1})do
    assert(retired.alive==false and not deck.bindings[retired] and not oldHit.click())
    assert(deck.bindings[replacement].uid==206)
    grid.destroyOnRecycle=false
-   controller=true;deck:update()
-   assert(grid.itemCount==10 and panel:GetChild('next').visible,'C-mode must page two five-column rows')
-   assert(deck:controllerStep(1) and grid.itemCount==7 and deck.bindings[grid.items[0]].uid==211)
-   assert(deck:controllerStep(-1) and deck.bindings[grid.items[0]].uid==201)
-   controller=false;deck:update();assert(grid.itemCount==17,'pointer mode did not restore the entire list')
   end
  end
  local late=grid.refreshCallback;local old=grid.items[0]
@@ -1236,11 +1230,9 @@ end
 find(F.Layout)
 local panel=F.control(assert(panelSpec))
 local grid=panel:GetChild('pileGrid')
-local controller=false
 local deck
 deck=require('abyss_deck_ui').new(panel,F.Presentation,'click',{
- imageSource='static',color=function(...)return {...}end,deckBrowser=F.deckBrowser(),
- controllerApi={isController=function()return controller end}},function()return deck:close()end)
+ imageSource='static',color=function(...)return {...}end,deckBrowser=F.deckBrowser()},function()return deck:close()end)
 local function settle()
  for _=1,40 do deck:update(0);if not deck.pendingGrid then assert(not deck.prepareError,deck.prepareError);return end end
  error('browser did not reach ready')
@@ -1277,9 +1269,8 @@ for _,amount in ipairs({1,3,5,6,13})do
  sameColour(face:GetChild('name').fontColor,theme.officialAssets.stsCardReference.rarity.common.ink,'shared title ink')
  sameColour(face:GetChild('cost').fontColor,theme.cardSkin.costText,'shared cost ink')
  if amount==13 then
-  assert(deck:controllerStep(1));settle()
-  controller=true;deck:update(0);controller=false;deck:update(0)
-  assert(deck.pageIndex==2 and visible()==3 and not deck:controllerStep(1))
+  assert(deck:stepPage(1));settle()
+  assert(deck.pageIndex==2 and visible()==3 and not deck:stepPage(1))
  end
  local page=deck.pageIndex
  local _,current=visible()
@@ -1354,7 +1345,7 @@ event2('card1','enter',241);h2:update(.36)
 assert(u2.info and u2.info.transient)
 event2('card1','click',241)
 assert(not u2.info and u2.selected==uid2,'automatic hover swallowed the first click-only card selection')
-assert(u2:controllerBack());assert(not u2.selected)
+assert(u2:cancelAim());assert(not u2.selected)
 unchanged(b2,before2,'click-only hover selection/cancel changed combat resources')
 `, 'TRANSIENT_CARD_SIDE_HELP_PASS');
 });

@@ -108,16 +108,16 @@ test('deck filters fit beside the normal title without covering the native grid 
   assert.ok(Math.min(...buttons.map(c => c.position[1] - c.size[1] / 2)) > grid.position[1] + grid.size[1] / 2);
 });
 
-test('controller overlays isolate nearest-control navigation and deck pages leave the card viewport clear', () => {
+test('overlays avoid navigation metadata and deck pages leave the card viewport clear', () => {
   const layout = gameLayout(undefined, {originalCharacters: true});
   for (const name of ['deckPanel','potionPanel','choicePanel','characterPanel','exitPanel']) {
-    assert.equal(layout.controls.find(c => c.name === name).isolateNavigation, true, name);
+    assert.equal(layout.controls.find(c => c.name === name).isolateNavigation, undefined, name);
   }
   const deck = layout.controls.find(c => c.name === 'deckPanel');
   const grid = deck.children.find(c => c.name === 'grid');
   for (const name of ['previous','next','pageHint']) {
     const control = deck.children.find(c => c.name === name);
-    assert.equal(control.visible, false, 'controller-only paging starts hidden');
+    assert.equal(control.visible, false, 'paging starts hidden until the browser opens');
     assert.ok(control.position[1] + control.size[1] / 2 < grid.position[1] - grid.size[1] / 2);
   }
 });
@@ -128,7 +128,7 @@ test('controller overlays isolate nearest-control navigation and deck pages leav
  const textHit=panel.children.find(c=>c.name==='detailHit');
  assert.equal(toggle.visible,false);
  assert.equal(toggle.children[0].kind,'presetButton');
- assert.equal(toggle.children[0].focusable,true);
+ assert.equal(toggle.children[0].focusable,undefined);
  assert.ok(toggle.size[1]>=48);
  assert.ok(toggle.position[1]+toggle.size[1]/2<textHit.position[1]-textHit.size[1]/2);
  for(const state of toggle.children[0].children)assert.equal(state.children.find(c=>c.name==='label').text.content,'升级预览');

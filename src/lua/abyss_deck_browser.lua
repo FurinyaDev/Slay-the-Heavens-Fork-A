@@ -1,5 +1,5 @@
 -- Read-only card roots belong to the browser, with a lifetime independent of pages.
-local Controller = require('abyss_controller')
+local Pointer = require('abyss_pointer_input')
 local CardDisplay = require('abyss_card_display')
 local Theme = require('abyss_theme')
 local M = {pageSize=10}
@@ -23,18 +23,18 @@ local function current(entry,token,job)
 end
 
 local function bind(pool,entry)
-    local hit,cursor,manager=entry.hit,pool.cursor,pool.controller
+    local hit,cursor=entry.hit,pool.cursor
     local function available()
         return pool.job and pool.job.ready and entry.instance~=nil and entry.root.alive~=false and hit.alive~=false
     end
     local function pick()
         if not available() then return false end
-        return pool.pick(entry.instance,entry.position)
+        return pool.pick(entry.instance)
     end
     if cursor.CursorDown and cursor.CursorUp then
         hit:AddCursorEventListener(cursor.CursorDown,function(event)
             entry.observed=true
-            if not available() or Controller.pointerBlocked(manager) then return end
+            if not available() or Pointer.blocked(pool) then return end
             local touch=event and event.touchId
             if entry.held and entry.held.touch~=touch then return end
             entry.released=nil
@@ -62,10 +62,9 @@ local function bind(pool,entry)
             entry.released=nil
             if not current(entry,token,pool.job) then return false end
         end
-        if Controller.pointerBlocked(manager) or Controller.pointerDragged(event,Theme.layout.cardDrag.threshold) then return false end
+        if Pointer.blocked(pool) or Pointer.dragged(event,Theme.layout.cardDrag.threshold) then return false end
         return pick()
     end)
-    Controller.bind(manager,hit,'deck',pick,available,10)
 end
 
 local function live(pool,job)
@@ -79,7 +78,6 @@ local function entryAlive(entry)
 end
 
 local function remove(pool,entry,engineDestroyed)
-    Controller.unbind(pool.controller,entry.hit,engineDestroyed or entry.root.alive==false)
     return engineDestroyed or entry.root.alive==false or pool.factory.destroy(entry.root)~=false
 end
 
@@ -186,7 +184,6 @@ local function prepare(pool,job)
         assert(pool.container:SetVisible(true)~=false,'deck browser container visibility rejected')
         if not live(pool,job) then return end
         job.ready=true
-        Controller.invalidate(pool.controller)
         return
     end
     local entry=job.slots[i]
@@ -211,13 +208,6 @@ local function prepare(pool,job)
     if entry.position~=i then assert(entry.root:SetAnchoredPosition(x,y)~=false,'deck browser position rejected') end
     if not live(pool,job) then return end
     entry.position,entry.look,entry.instance=i,model.look,job.cards[i]
-    local record=pool.controller and pool.controller.byControl[entry.hit]
-    if record then
-        record.order=10+i
-        if entry.hadBinding then Controller.rebindConfirm(pool.controller,entry.hit) end
-    end
-    entry.hadBinding=true
-    if not live(pool,job) then return end
     entry.hit.raycastTarget=true
     if not live(pool,job) then return end
     assert(entry.hit:SetVisible(true)~=false,'deck browser hit visibility rejected')
@@ -231,7 +221,7 @@ local function prepare(pool,job)
 end
 
 function M.new(container,factory,platform,click,startY,model,paint,pick)
-    local pool={container=container,factory=factory,controller=platform.controller,
+    local pool={container=container,factory=factory,pointerBlocked=platform.pointerBlocked,
         cursor=platform.cursorEvents or {},click=click,startY=startY,model=model,paint=paint,pick=pick,entries={},retired={},revision=0,changing=0}
     function pool:cancel()
         self.revision=self.revision+1
@@ -246,7 +236,6 @@ function M.new(container,factory,platform,click,startY,model,paint,pick)
             end
         end)
         self.changing=self.changing-1
-        Controller.invalidate(self.controller)
         assert(ok,reason)
         return revision
     end
@@ -313,10 +302,6 @@ function M.new(container,factory,platform,click,startY,model,paint,pick)
             end
         until job.ready or clock()-start>=(self.factory.budget or .004)
         self.stepping=false
-    end
-    function pool:focus(position)
-        local entry=self.job and self.job.ready and self.job.slots[position]
-        if entry then return self.controller and self.controller:focus(entry.hit) end
     end
     return pool
 end

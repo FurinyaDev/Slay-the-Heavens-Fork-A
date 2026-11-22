@@ -1,5 +1,7 @@
 # 只读牌库分页和持久卡面
 
+本页记录移除手柄前的牌库候选，含当时的实验和审查。项目现行的输入范围由 [ADR 0003](../../adr/0003-keyboard-and-touch-only.md) 记录。手柄组数据仅用于比较历史实现。[项目移除手柄后的复验](input-retirement.md)
+
 交付基线是 `develop@00229683d0d38660c98ced2f4a41e89d84fc5e4e`。`release/v2.0.0@013bdffb7d4767075d7ebcf0be9eacd275bfbe89` 是研究基线，开始时 Release 已到 `6c1e6644dc3345d4581e173a0f644da64abad5aa`。#811 在 develop；#813、#839 在 Release。保留 develop 的 #868 战斗入口和 #876 地图进房路径。整面外观复用与有界文字拟合从研究版本接续，下面单列相对 develop 的计数。历史 Release 的放大详情和地图返回四态共享在两个分支上有差异。本切片保留当前目标分支的完整详情和返回样式。
 
 ## 复现和候选身份

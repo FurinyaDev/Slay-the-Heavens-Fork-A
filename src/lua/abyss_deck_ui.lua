@@ -5,7 +5,7 @@ local Theme = require("abyss_theme")
 local CardDisplay = require('abyss_card_display')
 local OriginalDisplay = require('abyss_original_v4_display')
 local M = {}
-local Controller = require('abyss_controller')
+local Pointer = require('abyss_pointer_input')
 local Browser = require('abyss_deck_browser')
 local NativeArt = require('abyss_card_art_runtime')
 local typeNames = { attack = "攻击", skill = "技能", power = "能力", status = "状态", curse = "诅咒" }
@@ -125,7 +125,7 @@ function M.new(root, presentation, clickEvent, platform, onClose)
     local pileGrid = root:GetChild('pileGrid')
     local grid = browserGrid
     local cursor=platform.cursorEvents or {}
-    local pool,returnFocus,browserRun
+    local pool,browserRun
     local previousControl,nextControl,pageHint=root:GetChild('previous'),root:GetChild('next'),root:GetChild('pageHint')
     local previousHit,nextHit=previousControl:GetChild('hit'),nextControl:GetChild('hit')
     local legacyEmpty=root:GetChild('browserEmpty')
@@ -141,9 +141,8 @@ function M.new(root, presentation, clickEvent, platform, onClose)
         return pileNames[kind] or '卡组'
     end
     local function liveFaces(fn)
-        for control,binding in pairs(self.bindings)do
+        for control in pairs(self.bindings)do
             if control.alive==false then
-                Controller.unbind(platform.controller,binding.hit,true)
                 self.bindings[control]=nil
             elseif fn then fn(control:GetChild('face')) end
         end
@@ -358,13 +357,9 @@ function M.new(root, presentation, clickEvent, platform, onClose)
                 return pickChoice(control,b,repaint)
             end
             hit:AddCursorEventListener(clickEvent,function(event)
-                if Controller.pointerBlocked(platform.controller) or Controller.pointerDragged(event, Theme.layout.cardDrag.threshold) then return false end
+                if Pointer.blocked(platform) or Pointer.dragged(event, Theme.layout.cardDrag.threshold) then return false end
                 return pick()
             end)
-            Controller.bind(platform.controller,hit,'deck',pick,function()
-                local b=self.bindings[control]
-                return control.alive~=false and self.visible and b~=nil and b.generation==self.generation
-            end,10)
         end
         self.bindings[control].generation,self.bindings[control].uid=self.generation,instance.uid
         -- Browser instances already belong to this read-only snapshot. Details
@@ -485,8 +480,7 @@ function M.new(root, presentation, clickEvent, platform, onClose)
     if pileGrid and platform.deckBrowser then
         local viewport=official and Theme.layout.deckView.pileViewport or Theme.layout.deckView.viewport
         pool=Browser.new(pileGrid,platform.deckBrowser,platform,clickEvent,viewport[4]/2-123,browserModel,paintBrowser,
-            function(instance,position)
-                returnFocus=position
+            function(instance)
                 local picked=self:showCardDetails(instance)
                 if picked and onChanged then onChanged() end
                 return picked
@@ -575,13 +569,6 @@ function M.new(root, presentation, clickEvent, platform, onClose)
         if empty then empty:SetVisible(#cards==0) end
         require('abyss_page_reveal').registerSource(platform,'deckPanel')
         pool:request(cards)
-        local manager=platform.controller
-        if manager and manager.scope=='deck' then
-            local backHit=(pileReturn or root:GetChild('close')):GetChild('hit')
-            local focus=manager.api.getFocus()
-            local record=focus and manager.byControl[focus]
-            if record and not manager:eligible(record) then manager:focus(backHit) end
-        end
         self.pendingGrid=#cards>0
         self.preparedCards,self.prepareError=0,nil
     end
@@ -591,7 +578,6 @@ function M.new(root, presentation, clickEvent, platform, onClose)
         self.generation=self.generation+1
         local generation=self.generation
         local cards,catalog=self.cards,self.catalog
-        self.controllerPage=1
         -- Only the shared official browser publishes a complete same-page list.
         -- Legacy/choice grids retain their calibration-then-update transaction.
         self.indexBase=self.browserShell and indexBases[grid] or nil
@@ -623,7 +609,7 @@ function M.new(root, presentation, clickEvent, platform, onClose)
     end
     local function changeBrowse()
         if not self.paged then self.contentRevision=self.contentRevision+1 end
-        self.pageIndex,returnFocus=1,nil
+        self.pageIndex=1
         projectCards()
         paintBrowse()
         if not self.browserShell then
@@ -734,12 +720,11 @@ function M.new(root, presentation, clickEvent, platform, onClose)
         local entry=self.previewInfo and ('starter:'..self.previewInfo.id) or pileKind or 'deck'
         local saved=self.paged and self.savedPage
         self.entry=entry
-        self.pageIndex,returnFocus=1,nil
+        self.pageIndex=1
         if saved and saved.entry==entry and saved.battle==(pileKind and run.combat or nil) then
             self.pageIndex,self.typeFilter=saved.page,saved.filter
             self.sortMode,self.sortAscending,self.sortDirections=saved.sort,saved.ascending,saved.directions
         end
-        self.controllerPage=1
         self.detailOnly,self.detailPages,self.cardDetail=nil,nil,nil
         upgradePreview:SetVisible(false)
         grid:SetVisible(not self.paged);details:SetVisible(false);detailHit:SetVisible(false)
@@ -805,12 +790,6 @@ function M.new(root, presentation, clickEvent, platform, onClose)
         refreshing=false
         ready()
     end
-    local function controllerModeChanged()
-        local mode=platform.controllerApi and platform.controllerApi.isController() or false
-        if self.controllerMode==mode then return false end
-        self.controllerMode=mode;self.controllerPage=1
-        return not self.calibrating and self.cards and #self.cards>0
-    end
     function self.update(_, dt)
         if self.paged then
             if not self.detailPages and self.pendingGrid then
@@ -823,54 +802,28 @@ function M.new(root, presentation, clickEvent, platform, onClose)
                     if not platform.presentationReady then pageHint.text='卡牌加载失败，返回后可重试' end
                 elseif job and job.ready then
                     self.pendingGrid=false
-                    if returnFocus and pool:focus(returnFocus) then returnFocus=nil end
                 end
             end
-            if returnFocus and not self.detailPages and pool:focus(returnFocus) then returnFocus=nil end
             return
         end
         if not self.visible then liveFaces();return end
-        if controllerModeChanged()then self.generation=self.generation+1;self.pending=true end
-        local mode=self.controllerMode
-        local pageSize=gridColumns()*2
-        local pages=math.max(1,math.ceil(#(self.cards or {})/pageSize))
-        for _,name in ipairs({'previous','next','pageHint'})do
-            local box=root:GetChild(name)
-            if box then
-                box:SetVisible(not self.detailPages and mode and pages>1)
-                if name=='pageHint' then box.text='摇杆导航 · 确认选择 · 返回关闭 · '..(self.controllerPage or 1)..'/'..pages
-                else local hit=box:GetChild('hit');hit.interactable=name=='previous' and (self.controllerPage or 1)>1
-                    or name=='next' and (self.controllerPage or 1)<pages;hit.raycastTarget=hit.interactable end
-            end
-        end
         if self.detailPages then liveFaces();return end
         if self.browserShell then liveFaces()
         else liveFaces(function(face)CardSkin.tick(face,dt or 0)end) end
         if not self.pending then return end
         self.pending, self.calibrating = false, false
         local generation, cards, catalog, base = self.generation, self.cards, self.catalog, self.indexBase
-        if mode then
-            local subset={}
-            for i=((self.controllerPage or 1)-1)*pageSize+1,math.min((self.controllerPage or 1)*pageSize,#cards)do subset[#subset+1]=cards[i]end
-            cards=subset;grid.scrollProgress=0
-        end
         paintGrid(cards,catalog,base,generation)
         liveFaces()
     end
-    function self.controllerStep(_,delta)
-        if self.paged then
-            local page=self.pageIndex+delta
-            if self.detailPages or page<1 or page>self.pageCount then return false end
-            self.pageIndex,returnFocus=page,nil
-            browserRequest()
-            if onChanged then onChanged() end
-            return true
-        end
-        if not self.visible or not self.controllerMode or self.detailPages or self.calibrating then return false end
-        local page=(self.controllerPage or 1)+delta
-        if page<1 or page>math.ceil(#self.cards/(gridColumns()*2))then return false end
-        self.generation=self.generation+1
-        self.controllerPage,self.pending=page,true;self:update();return true
+    function self.stepPage(_,delta)
+        if not self.paged or self.detailPages then return false end
+        local page=self.pageIndex+delta
+        if page<1 or page>self.pageCount then return false end
+        self.pageIndex=page
+        browserRequest()
+        if onChanged then onChanged() end
+        return true
     end
     function self.close(_)
         if not self.visible then return false end
@@ -913,11 +866,9 @@ function M.new(root, presentation, clickEvent, platform, onClose)
     end
     local previewHit=upgradePreview:GetChild('hit')
     previewHit:AddCursorEventListener(clickEvent,function()
-        if Controller.pointerBlocked(platform.controller)then return false end
+        if Pointer.blocked(platform)then return false end
         return self:toggleUpgradePreview()
     end)
-    Controller.bind(platform.controller,previewHit,'deck',function()return self:toggleUpgradePreview()end,
-        function()return self.visible and self.cardDetail~=nil and Combat.canUpgrade(self.cardDetail.state,self.cardDetail.instance)==true end,80)
     root.disableCursorEventPassthrough = true
     local blocker=root:GetChild('blocker')
     local outsideHeld,outsideReleased,outsideObserved
@@ -936,7 +887,7 @@ function M.new(root, presentation, clickEvent, platform, onClose)
     end
     blocker:AddCursorEventListener(clickEvent,function(event)
         local token=outsideReleased;outsideHeld,outsideReleased=nil,nil
-        if Controller.pointerBlocked(platform.controller) or not self.visible or not self.closeOnOutside then return true end
+        if Pointer.blocked(platform) or not self.visible or not self.closeOnOutside then return true end
         if outsideObserved or event and event.touchId~=nil then
             if not token or token.generation~=self.generation or token.touch~=(event and event.touchId) then return true end
         end
@@ -947,10 +898,9 @@ function M.new(root, presentation, clickEvent, platform, onClose)
         self.detailPage=self.detailPage%#self.detailPages+1;detailPage();return true
     end
     detailHit:AddCursorEventListener(clickEvent,function()
-        if Controller.pointerBlocked(platform.controller)then return false end
+        if Pointer.blocked(platform)then return false end
         return nextPage()
     end)
-    Controller.bind(platform.controller,detailHit,'deck',nextPage,nil,1)
     function self.back(_)
         if not self.visible then return false end
         if self.detailPages and not self.detailOnly then
@@ -974,11 +924,10 @@ function M.new(root, presentation, clickEvent, platform, onClose)
     local close=root:GetChild('close'):GetChild('hit')
     close:AddCursorEventListener(clickEvent,function()
         local swallow=self.visible and self.browserShell
-        if Controller.pointerBlocked(platform.controller)then return swallow or false end
+        if Pointer.blocked(platform)then return swallow or false end
         local result=self:back()
         return swallow or result
     end)
-    Controller.bind(platform.controller,close,'deck',function()return self:back()end,nil,100)
     local function bindOfficialBrowser()
         if Theme.presentationProfile~='official-assets-first' then return end
         for _,mode in ipairs({'original','type','cost','name'})do
@@ -988,8 +937,7 @@ function M.new(root, presentation, clickEvent, platform, onClose)
                 if self.pileView then return self:setPileSort(mode)end
                 return self:setSort(mode)
             end
-            hit:AddCursorEventListener(clickEvent,function()if Controller.pointerBlocked(platform.controller)then return true end;return action()end)
-            Controller.bind(platform.controller,hit,'deck',action,function()return self.visible and self.browserShell and not self.detailPages end,80)
+            hit:AddCursorEventListener(clickEvent,function()if Pointer.blocked(platform)then return true end;return action()end)
         end
         local hit=root:GetChild('pileReturn'):GetChild('hit')
         local held,released,observed
@@ -1012,26 +960,24 @@ function M.new(root, presentation, clickEvent, platform, onClose)
             end
         end
         hit:AddCursorEventListener(clickEvent,function(event)
-            if not available() or Controller.pointerBlocked(platform.controller)then return false end
+            if not available() or Pointer.blocked(platform)then return false end
             if observed or cursor.CursorDown and cursor.CursorUp and event and event.touchId~=nil then
                 local token=released;released=nil
                 if not current(token) or token.touch~=(event and event.touchId)then return false end
             end
             return self:back()
         end)
-        Controller.bind(platform.controller,hit,'deck',function()return self:back()end,available,100)
     end
     bindOfficialBrowser()
     for _,name in ipairs({'previous','next'})do
         local box=root:GetChild(name)
         if box then
             local delta=name=='previous' and -1 or 1
-            local action=function()return self:controllerStep(delta)end
+            local action=function()return self:stepPage(delta)end
             box:GetChild('hit'):AddCursorEventListener(clickEvent,function()
-                if Controller.pointerBlocked(platform.controller)then return false end
+                if Pointer.blocked(platform)then return false end
                 return action()
             end)
-            Controller.bind(platform.controller,box:GetChild('hit'),'deck',action,nil,80)
         end
     end
     local keys=platform.keyEvents
@@ -1041,7 +987,7 @@ function M.new(root, presentation, clickEvent, platform, onClose)
             local delta=action[2]
             if event then
                 root:AddKeyEventListener(event,function()
-                    if self.paged and not Controller.pointerBlocked(platform.controller) then return self:controllerStep(delta) end
+                    if self.paged and not Pointer.blocked(platform) then return self:stepPage(delta) end
                     return false
                 end)
             end
@@ -1051,19 +997,17 @@ function M.new(root, presentation, clickEvent, platform, onClose)
         local hit=root:GetChild('filter'..entry.control):GetChild('hit')
         local action=function()return self:setFilter(entry.id)end
         hit:AddCursorEventListener(clickEvent,function()
-            if Controller.pointerBlocked(platform.controller)then return false end
+            if Pointer.blocked(platform)then return false end
             return action()
         end)
-        Controller.bind(platform.controller,hit,'deck',action,canBrowse,65)
     end
     for _,mode in ipairs(browseSorts)do
         local hit=root:GetChild('sort'..mode):GetChild('hit')
         local action=function()return self:setSort(mode)end
         hit:AddCursorEventListener(clickEvent,function()
-            if Controller.pointerBlocked(platform.controller)then return false end
+            if Pointer.blocked(platform)then return false end
             return action()
         end)
-        Controller.bind(platform.controller,hit,'deck',action,function()return canBrowse() and not self.pileKind end,65)
     end
     root:SetVisible(false)
     return self
