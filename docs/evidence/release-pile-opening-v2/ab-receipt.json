@@ -1,0 +1,71 @@
+{
+  "comparisonCommit": "0aa8b8c00fb26d0bbb07612d8799e9e75c8e8839",
+  "comparisonTree": "4c7574c1eabcf315a4c7eda370692f886979717d",
+  "localCandidateCommit": "c6ed8525f39dade396da127b101315586475ec43",
+  "localCandidateTree": "3a45970627c09841ef423f4c951498641aa4bb25",
+  "productionSourcePr": 868,
+  "cardsPerColdPile": 7,
+  "measurement": "offline official generated layout; production Lua in controlled Fengari native API fixture, not elapsed hardware time",
+  "baseline": {
+    "cold": {
+      "draw": {
+        "hostUpdateRounds": 1,
+        "allCardSubtreeGeometryAndVisibilityWrites": 834,
+        "gridRefreshes": 2,
+        "geometryReads": 8,
+        "cardOrder": "1005:strike:false;1004:strike:false;1003:strike:false;1002:strike:false;1001:strike:false;1007:defend:false;1006:defend:false"
+      },
+      "discard": {
+        "hostUpdateRounds": 1,
+        "allCardSubtreeGeometryAndVisibilityWrites": 834,
+        "gridRefreshes": 2,
+        "geometryReads": 8,
+        "cardOrder": "1001:strike:false;1002:strike:false;1003:strike:false;1004:strike:false;1005:strike:false;1006:defend:false;1007:defend:false"
+      },
+      "exhaust": {
+        "hostUpdateRounds": 1,
+        "allCardSubtreeGeometryAndVisibilityWrites": 834,
+        "gridRefreshes": 2,
+        "geometryReads": 8,
+        "cardOrder": "1005:strike:false;1004:strike:false;1003:strike:false;1002:strike:false;1001:strike:false;1007:defend:false;1006:defend:false"
+      }
+    },
+    "v4PlayPreviewCalls": {
+      "draw": 1,
+      "discard": 1,
+      "exhaust": 1
+    },
+    "delayedAndStaleCallbackPassed": true
+  },
+  "candidate": {
+    "cold": {
+      "draw": {
+        "hostUpdateRounds": 0,
+        "allCardSubtreeGeometryAndVisibilityWrites": 642,
+        "gridRefreshes": 2,
+        "geometryReads": 1,
+        "cardOrder": "1005:strike:false;1004:strike:false;1003:strike:false;1002:strike:false;1001:strike:false;1007:defend:false;1006:defend:false"
+      },
+      "discard": {
+        "hostUpdateRounds": 0,
+        "allCardSubtreeGeometryAndVisibilityWrites": 642,
+        "gridRefreshes": 2,
+        "geometryReads": 1,
+        "cardOrder": "1001:strike:false;1002:strike:false;1003:strike:false;1004:strike:false;1005:strike:false;1006:defend:false;1007:defend:false"
+      },
+      "exhaust": {
+        "hostUpdateRounds": 0,
+        "allCardSubtreeGeometryAndVisibilityWrites": 642,
+        "gridRefreshes": 2,
+        "geometryReads": 1,
+        "cardOrder": "1005:strike:false;1004:strike:false;1003:strike:false;1002:strike:false;1001:strike:false;1007:defend:false;1006:defend:false"
+      }
+    },
+    "v4PlayPreviewCalls": {
+      "draw": 0,
+      "discard": 0,
+      "exhaust": 0
+    },
+    "delayedAndStaleCallbackPassed": true
+  }
+}

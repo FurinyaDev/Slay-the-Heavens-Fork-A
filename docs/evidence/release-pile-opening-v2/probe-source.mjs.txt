@@ -1,0 +1,170 @@
+import {mkdtempSync,mkdirSync,readdirSync,rmSync,writeFileSync} from 'node:fs';
+import {resolve,join} from 'node:path';
+import {spawnSync} from 'node:child_process';
+import {createRequire} from 'node:module';
+import {buildLuaData,luaString} from '../scripts/build-lua-data.mjs';
+import {buildUI} from '../scripts/build-ui.mjs';
+const root=resolve('.artifacts/test-tmp');mkdirSync(root,{recursive:true});
+const dir=mkdtempSync(join(root,'868-release-probe-'));
+const log=process.env.PROOF_LUA;
+try {
+ buildLuaData('data',join(dir,'abyss_data.lua'));buildUI(dir,undefined,{officialAssets:true});
+ const preloads=readdirSync(dir).filter(n=>n.endsWith('.lua')).map(n=>
+  `package.preload[${luaString(n.slice(0,-4))}]=assert(loadfile(${luaString(join(dir,n).replaceAll('\\','/'))}))`).join('\n');
+ const code=`package.path='src/lua/?.lua;tests/lua/?.lua;'..package.path
+${preloads}
+local F=dofile('tests/lua/support/game_ui_fixture.lua')
+local G=require('abyss_game_ui');local Make=G.new
+local Art=require('abyss_card_art_runtime');local Gate=require('abyss_page_reveal');local Run=require('abyss_run')
+local host,root
+G.new=function(root,data,presentation,event,p)
+ p.presentationReady=function(intent)
+  return (intent.page~='deckPanel' or not(host.deckUI.pending or host.deckUI.calibrating or host.deckUI.pendingGrid)) and Art.presentationReady(intent.page)
+ end
+ p.presentationPage=function(page)Art.setPresentationPage(page)end
+ return Make(root,data,presentation,event,p)
+end
+local function tick()host:update(1/60);Art.update();host.pageReveal:step(Gate.intent(host));host:refresh()end
+local function settle()
+ for i=0,20 do
+  if not host.pageReveal:covered() then return i end
+  tick()
+ end
+ error('page never visible: '..tostring(host.pageReveal.state))
+end
+local cursor={CursorClick='click',CursorDown='down',CursorUp='up',CursorEnter='enter',CursorExit='exit'}
+local function setup(role)
+ host,root=F.fixture(nil,function()return true end,nil,cursor)
+ settle()
+ if role then assert(F.start(host,role))else assert(host:start());settle();assert(F.confirmStart(host))end
+ settle();assert(Run.startCombat(host.run,'cultist_solo'));host:refresh();settle()
+ local panel=root:GetChild('deckPanel')
+ return host.run,host.deckUI,panel:GetChild('pileGrid'),panel
+end
+local function writes(grid)
+ local count={refreshes=0,geometry=0,frame=0,sizeReads=0};local seen={}
+ local itemSize=grid.GetItemSize
+ grid.GetItemSize=function(self)count.sizeReads=count.sizeReads+1;return itemSize(self)end
+ local names={'SetAnchoredPosition','SetSizeDelta','SetLocalScale','SetLocalRotation','SetVisible'}
+ local function watch(c,frame)
+  if seen[c] then return end
+  seen[c]=true
+  frame=frame or c.name=='stsRef' or c.name=='stsReference' or c.name=='stsCardReference'
+  for _,n in ipairs(names)do
+   if c[n] then
+    local setter=c[n]
+    c[n]=function(self,...)
+     count.geometry=count.geometry+1
+     if frame then count.frame=count.frame+1 end
+     return setter(self,...)
+    end
+   end
+  end
+  for _,child in ipairs(c:GetChildren())do watch(child,frame)end
+ end
+ local refresh=grid.RefreshItems
+ grid.RefreshItems=function(self,n,fn)
+  count.refreshes=count.refreshes+1
+  return refresh(self,n,function(cell,index) watch(cell);return fn(cell,index)end)
+ end
+ return count
+end
+local function pile(run,kind,amount,first)
+ local src=run.deck
+ run.combat[kind]={}
+ for i=1,amount do local x=F.Combat.copy(src[(i-1)%#src+1]);x.uid=first+i;run.combat[kind][i]=x end
+ return run.combat[kind]
+end
+local function fingerprint(cards)
+ local keys={};for i,x in ipairs(cards)do keys[i]=tostring(x.uid)..':'..x.cardId..':'..tostring(x.upgraded)end
+ return table.concat(keys,';')
+end
+local function verifyCells(deck,grid,first,last)
+ for i=first,last do
+  local control=grid.items[i-1];local binding=control and deck.bindings[control]
+  assert(binding and binding.generation==deck.generation and binding.uid==deck.cards[i].uid,
+   'ready cell wrong/missing '..i)
+  assert(control.visible and control:GetChild('face'):GetChild('label').text~='','empty card '..i)
+ end
+end
+for _,kind in ipairs({'draw','discard','exhaust'})do
+ local run,deck,grid,panel=setup();grid.indexBase=kind=='discard' and 1 or 0
+ local raw=pile(run,kind,7,1000);host:refresh();local before=fingerprint(raw);local ctr=writes(grid)
+ assert(F.click(root,'battlePanel',kind..'Icon'))
+ local clickReady=not deck.pendingGrid and not deck.pending and not deck.calibrating
+ local turns=settle()
+ assert(clickReady==(turns==0),'publish and readiness split unexpectedly')
+ assert(deck.indexBase==grid.indexBase and ctr.refreshes==2 and #deck.cards==7)
+ verifyCells(deck,grid,1,7)
+ print('COLD',kind,turns,ctr.geometry,ctr.frame,ctr.refreshes,ctr.sizeReads,fingerprint(deck.cards))
+ assert(fingerprint(raw)==before,'opened pile mutated run')
+ if kind=='draw'then
+  local view=panel:GetChild('cardFocus')
+  local restore=grid.refreshCallback
+  local back=panel:GetChild('pileReturn'):GetChild('hit')
+  assert(grid.items[0]:GetChild('hit').click() and view.visible and not grid.visible and deck.cardDetail)
+  local toggle=panel:GetChild('upgradePreview'):GetChild('hit')
+  assert(toggle.click() and deck.cardDetail.preview and toggle.click() and not deck.cardDetail.preview)
+  assert(grid.refreshCallback==restore and not host.pageReveal:covered())
+  back.listeners.down({touchId=42});back.listeners.up({touchId=42})
+  assert(back.click({touchId=42}) and grid.visible and not view.visible and deck.visible)
+  back.listeners.down({touchId=43});assert(grid.items[0]:GetChild('hit').click() and deck:back())
+  back.listeners.up({touchId=43})
+  assert(not back.click({touchId=43}) and deck.visible and grid.refreshCallback==restore,'stale #865 detail return press')
+  verifyCells(deck,grid,1,7)
+ end
+ assert(host:closeDeck());settle();assert(not deck.visible and root:GetChild('battlePanel').visible)
+ assert(fingerprint(raw)==before)
+end
+do
+ local run,deck,grid,panel=setup();grid.indexBase=0;grid.deferRefresh=true
+ local original=pile(run,'draw',7,2000);assert(host:openDeck('draw'))
+ assert(deck.calibrating and host.pageReveal:covered())
+ local oldProbe=grid.refreshCallback
+ local cell=grid:recycle(0,0)
+ assert(not cell.visible and host.pageReveal:covered(),'probe published provisional face')
+ tick();assert(grid.itemCount==7 and deck.pendingGrid and host.pageReveal:covered())
+ local oldFill=grid.refreshCallback
+ assert(host:closeDeck());settle()
+ local replacement=pile(run,'draw',7,3000)
+ assert(host:openDeck('draw') and not deck.calibrating and deck.pendingGrid and host.pageReveal:covered())
+ local now=grid.refreshCallback
+ oldProbe(cell,0);oldFill(cell,0)
+ assert(grid.refreshCallback==now and deck.pendingGrid and not deck.bindings[cell],'retired generation painted before first actual slot')
+ grid:recycle(0,0);tick()
+ assert(deck.pendingGrid and host.pageReveal:covered(),'one callback certified the whole requested window')
+ grid:flush();settle()
+ verifyCells(deck,grid,1,7)
+ assert(fingerprint(original):find('2001:',1,true) and fingerprint(replacement):find('3001:',1,true))
+ assert(host:closeDeck());settle()
+ print('DELAYED_PASS',grid.indexBase)
+end
+do
+ local run,deck,grid=setup('raiden')
+ local C=F.Combat;local D=require('abyss_card_display')
+ local wrapped=C.cardPreview
+ for i,kind in ipairs({'draw','discard','exhaust'})do
+  local card={cardId='RD2-005',uid=7000+i}
+  run.combat[kind]={card}
+  run.combat.originalV4.musou=i==2 and {uses=1,ends=1} or {uses=0,ends=0}
+  host:refresh()
+  local def=C.cardDefinition(run.combat,card);assert(def.originalV4)
+  local expected=D.combatText(host.nodeUI.presentation[card.cardId],def,card,wrapped(run.combat,card),run.combat)
+  local calls=0
+  C.cardPreview=function(s,c,...) if s==run.combat and c.uid==card.uid then calls=calls+1 end;return wrapped(s,c,...)end
+  assert(host:openDeck(kind));settle();verifyCells(deck,grid,1,1)
+  assert(grid.items[0]:GetChild('face'):GetChild('label').text==expected,'V4 current rules changed: '..kind)
+  assert(host:closeDeck());settle();C.cardPreview=wrapped
+  print('V4',kind,calls)
+ end
+end
+print('RELEASE_868_COMPOSE_PASS')
+`;
+ if(log)writeFileSync(log,code);
+ const require=createRequire(import.meta.url);
+ const result=spawnSync(process.execPath,[require.resolve('fengari-node-cli/src/lua-cli.js'),'-e',code],{encoding:'utf8',timeout:90000,maxBuffer:2*1024*1024});
+ if(result.error)throw result.error;
+ process.stdout.write(result.stdout);
+ process.stderr.write(result.stderr);
+ if(result.status!==0||!result.stdout.includes('RELEASE_868_COMPOSE_PASS'))process.exitCode=1;
+} finally {rmSync(dir,{recursive:true,force:true});}
