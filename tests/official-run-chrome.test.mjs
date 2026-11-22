@@ -9,6 +9,7 @@ import {assertOfficialRunContracts} from '../scripts/official-run-layout.mjs';
 import {deckCardTemplate,battlePileCardTemplate} from '../scripts/deck-ui-layout.mjs';
 import {toLua,luaString} from '../scripts/build-lua-data.mjs';
 import {colourToLua} from '../scripts/build-ui-theme.mjs';
+import {projectRoundedStates} from '../scripts/native-rounded-button.mjs';
 
 const child=(node,name)=>(node?.children??node?.controls??[]).find(part=>part.name===name);
 const all=node=>[node,...(node.children??node.controls??[]).flatMap(all)];
@@ -199,13 +200,19 @@ test('official build adopts the existing paper map without replacing graph or in
  assert.equal(child(back,'hit'),hit);
  assert.deepEqual(back.size,cancel.size);
  assert.deepEqual(face.children.map(n=>n.name),['roundedButtonState']);
- const material=child(child(face,'roundedButtonState'),'v25Flag');
- for(const name of ['normal','hover','pressed','disabled']){
-  const expanded=structuredClone(material);
-  for(const [index,layer] of ['rim','cloth'].entries())for(const part of child(expanded,layer).children)
+ const state=child(face,'roundedButtonState'),material=child(state,'v25Flag');
+ const expandedStates=['normal','hover','pressed','disabled'].map(name=>{
+  const expanded=structuredClone(state);
+  Object.assign(expanded,{name,visible:name==='normal'});
+  const chrome=child(expanded,material.name);
+  for(const [index,layer] of ['rim','cloth'].entries())for(const part of child(chrome,layer).children)
    part.colour=theme.officialAssets.mapReturnPalette[name][index];
-  assert.deepEqual(expanded,child(child(child(cancel,'hit'),name),'v25Flag'));
- }
+  assert.deepEqual(chrome,child(child(child(cancel,'hit'),name),'v25Flag'));
+  return expanded;
+ });
+ assert.deepEqual(projectRoundedStates(expandedStates,material.name).face,state);
+ expandedStates[2].scale=[.9,.9];
+ assert.equal(projectRoundedStates(expandedStates,material.name),null,'a distinct state pose must stay explicit');
 });
 
 test('run headers paint above opaque page backgrounds and below their live resource text',()=>{

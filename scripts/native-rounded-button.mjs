@@ -87,7 +87,7 @@ export function projectRoundedStates(states,materialName){
   for(const name of ['rim','cloth']){
    const layer=child(material,name),reference=child(target,name);
    const colour=layer?.children?.[0]?.colour;
-   if(!reference||typeof colour!=='string'||!/^#[0-9a-f]{6}$/i.test(colour)||
+   if(!Array.isArray(reference?.children)||typeof colour!=='string'||!/^#[0-9a-f]{6}$/i.test(colour)||
     layer.children.some(part=>part.kind!=='image'||part.colour!==colour))return null;
    for(const part of reference.children)part.colour=colour;
    palette[state.name].push(colour);
