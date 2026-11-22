@@ -1,0 +1,259 @@
+diff --git a/tests/fixtures/release-replay-continuations.json.gz b/tests/fixtures/release-replay-continuations.json.gz
+new file mode 100644
+index 0000000000000000000000000000000000000000..65675cdbea140b073c4554ff254566cf6e3f371d
+GIT binary patch
+literal 5347
+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
+Bc2xiX
+
+literal 0
+HcmV?d00001
+
+diff --git a/tests/helpers/combat-visual-source.mjs b/tests/helpers/combat-visual-source.mjs
+index b19d747..78cb9b7 100644
+--- a/tests/helpers/combat-visual-source.mjs
++++ b/tests/helpers/combat-visual-source.mjs
+@@ -1,3 +1,4 @@
++import {beforeEventArtSource,eventArtPriorRead,beforeBattleUiQualitySource} from './release-replay-continuations.mjs';
+ import {beforeReleaseUiCloseoutSource,releaseUiCloseoutPriorRead} from './release-ui-closeout-source.mjs';
+ import {beforeEnergyReferenceSource,energyReferencePriorRead,assertEnergyReferenceCurrent} from './energy-reference-source.mjs';
+ import {beforeMapDeckSource,mapDeckPriorRead} from './release-map-deck-source.mjs';
+@@ -20,10 +21,14 @@ for(const [path,row]of Object.entries(rows)){
+  continuations.set(path,exactSourceContinuation(row));
+ }
+ export function beforeCombatVisualSource(path,source,read=p=>readFileSync(p,'utf8')){
++ source=beforeEventArtSource(path,source,read);
++ read=eventArtPriorRead(read);
+  const closeout=beforeReleaseUiCloseoutSource(path,source,read);
+  read=releaseUiCloseoutPriorRead(read,closeout!==source?path:undefined);
+  source=closeout;
++ const travelerInput=source;
+  source=beforeBattleDetailSource(path,source,read);
++ source=beforeBattleUiQualitySource(path,source,travelerInput,read);
+  read=travelerStatusPriorRead(read);
+  source=beforeMapDeckSource(path,source,read);
+  read=mapDeckPriorRead(read);
+@@ -39,6 +44,8 @@ export function combatVisualPriorRead(read=readFileSync){return(path,encoding)=>
+ };}
+ 
+ export function assertCombatVisualCurrent(path,source,read=p=>readFileSync(p,'utf8')){
++ source=beforeEventArtSource(path,source,read);
++ read=eventArtPriorRead(read);
+  const closeout=beforeReleaseUiCloseoutSource(path,source,read);
+  read=releaseUiCloseoutPriorRead(read,closeout!==source?path:undefined);
+  source=closeout;
+diff --git a/tests/helpers/copy-integration-source-closure.mjs b/tests/helpers/copy-integration-source-closure.mjs
+index 5cd0971..d3a693f 100644
+--- a/tests/helpers/copy-integration-source-closure.mjs
++++ b/tests/helpers/copy-integration-source-closure.mjs
+@@ -104,7 +104,9 @@ const loadingRecoveryFiles=Object.freeze({
+ });
+ const travelerStatusFiles=Object.freeze({
+  ...loadingRecoveryFiles,
+- 'tests/helpers/combat-visual-source.mjs':'f90e9852079ce269b75d69225552b3720fe43fe789f63e2fa09dee15bdff308c',
++ 'tests/helpers/combat-visual-source.mjs':'56a4c47f810f88c3dc1380f2c7f7c5cc8e42085950881f93e0fb10355c308ed6',
++ 'tests/helpers/release-replay-continuations.mjs':'37fababc8fa8b4f9bbd108692b39289b74964eee0a201085a6b756dd8d938d59',
++ 'tests/fixtures/release-replay-continuations.json.gz':'a2abaa3feb21f2f1a2e8f9c9fef3da2af3525073110eebaa394d82b71a095b95',
+  'tests/helpers/traveler-status-source.mjs':'2c853e67bd0148ed6de45a3e6ac0e69fe97dd543f967ecbb492f498c46e3c741',
+  'tests/fixtures/release-battle-detail-source.json.gz':'62be372b9fcdbfee8c06bb68cf3808ec8932ed8097537c85c83fa85310e6ea9f',
+  'tests/fixtures/traveler-status-source.json.gz':'78ea0afbc225eb83cfd79d24cbed5c1af166e21c07f2adfec3588b488a0d0de2',
+diff --git a/tests/helpers/fork-preflight-source.mjs b/tests/helpers/fork-preflight-source.mjs
+index 0f855ed..91710a3 100644
+--- a/tests/helpers/fork-preflight-source.mjs
++++ b/tests/helpers/fork-preflight-source.mjs
+@@ -92,6 +92,10 @@ function beforeTravelerStatusCiSource(path,source){
+  const actorTemplate=path==='tests/native-monster-actor-template.test.mjs';
+  if((!copier&&!regression&&!actorTemplate)||typeof source!=='string'||source.includes('\r\r\n'))return source;
+  let lf=normalize(source);
++ if(copier&&hash(lf)==='0905d3901444316d81a8bcb99b9323fc9728e16401c358d0ba1f79b0d79a68d2'){
++  lf=lf.replace(" 'tests/helpers/combat-visual-source.mjs':'56a4c47f810f88c3dc1380f2c7f7c5cc8e42085950881f93e0fb10355c308ed6',\n 'tests/helpers/release-replay-continuations.mjs':'37fababc8fa8b4f9bbd108692b39289b74964eee0a201085a6b756dd8d938d59',\n 'tests/fixtures/release-replay-continuations.json.gz':'a2abaa3feb21f2f1a2e8f9c9fef3da2af3525073110eebaa394d82b71a095b95',\n"," 'tests/helpers/combat-visual-source.mjs':'f90e9852079ce269b75d69225552b3720fe43fe789f63e2fa09dee15bdff308c',\n");
++  assert.equal(hash(lf),'e9045772fa7bc30c8f12123cfb3ba78996f11f12c9384fe2c781ec296dee4116','exact #829 and #854 helper copy predecessor');
++ }
+  if(copier&&hash(lf)==='e9045772fa7bc30c8f12123cfb3ba78996f11f12c9384fe2c781ec296dee4116'){
+   lf=lf.replace(" 'tests/helpers/energy-reference-source.mjs':'b756c8e44aa38c736bbcdb07ed24a676449ae6184447e18c28cb8b43ab324598',\n 'tests/fixtures/release-reward-companion-source.json.gz':'f793e5dfb1d4c8b9a6f90d06e59a4aa777a820372ac13a70628e24dd5919ba88',\n"," 'tests/helpers/energy-reference-source.mjs':'eda0da3e4206a76c9bfe2b48a040e24c217a9b2f1416a673b728c03c4da4a2b7',\n")
+    .replace(" 'tests/helpers/combat-visual-source.mjs':'f90e9852079ce269b75d69225552b3720fe43fe789f63e2fa09dee15bdff308c',\n 'tests/helpers/traveler-status-source.mjs':'2c853e67bd0148ed6de45a3e6ac0e69fe97dd543f967ecbb492f498c46e3c741',\n 'tests/fixtures/release-battle-detail-source.json.gz':'62be372b9fcdbfee8c06bb68cf3808ec8932ed8097537c85c83fa85310e6ea9f',\n"," 'tests/helpers/combat-visual-source.mjs':'795056833d48bd9a2e5a1944a5d9b56fb5d0f0ce7967fdbac72da5566ae5e35d',\n 'tests/helpers/traveler-status-source.mjs':'41da0aaea833a446033b1fb964d31eebc4c4b5cd22e990a03370636f7afcc5ff',\n");
+diff --git a/tests/helpers/release-replay-continuations.mjs b/tests/helpers/release-replay-continuations.mjs
+new file mode 100644
+index 0000000..b80902d
+--- /dev/null
++++ b/tests/helpers/release-replay-continuations.mjs
+@@ -0,0 +1,77 @@
++import assert from 'node:assert/strict';
++import {hash} from 'node:crypto';
++import {readFileSync} from 'node:fs';
++import {gunzipSync} from 'node:zlib';
++
++const archive = readFileSync(new URL('../fixtures/release-replay-continuations.json.gz', import.meta.url));
++assert.equal(hash('sha256', archive), 'a2abaa3feb21f2f1a2e8f9c9fef3da2af3525073110eebaa394d82b71a095b95', 'exact Release replay continuation archive');
++const {battleQuality, eventArt} = JSON.parse(gunzipSync(archive));
++assert.equal(battleQuality.base, '9a4fa39c5d8d2f928b399eb5680030249a9ca40c');
++assert.equal(battleQuality.successor, '43f0f359cd271cee6cfe8fc2b12d646b33617456');
++assert.equal(eventArt.base, '25d389968670c0812f8b9565157cf32642fb58e2');
++assert.equal(eventArt.successor, 'a67385f3158b6bae26e74ecc5aa155b20bfa3f33');
++
++function normalize(source) {
++  if (typeof source !== 'string') return null;
++  if (!source.includes('\r')) return source;
++  const rest = source.replaceAll('\r\n', '');
++  return /[\r\n]/.test(rest) ? null : source.replaceAll('\r\n', '\n');
++}
++
++function matches(text, binding) {
++  return text !== null && hash('sha256', text) === binding.sha256 &&
++    hash('sha1', `blob ${Buffer.byteLength(text)}\0${text}`) === binding.gitBlob;
++}
++
++function readOwner(read, path) {
++  try { return normalize(read(path, 'utf8')); }
++  catch { assert.fail('combined linked owner missing: ' + path); }
++}
++
++function replaceFragments(path, text, fragments, from, to) {
++  for (const fragment of fragments) {
++    const offset = text.indexOf(fragment[from]);
++    assert(fragment[from].length && offset >= 0 && offset === text.lastIndexOf(fragment[from]),
++      'unique Release replay fragment: ' + path);
++    text = text.replace(fragment[from], () => fragment[to]);
++  }
++  return text;
++}
++
++function predecessor(path, source, text, row) {
++  const prior = replaceFragments(path, text, row.fragments.toReversed(), 1, 0);
++  assert(matches(prior, row.before), 'exact Release replay predecessor: ' + path);
++  assert.equal(replaceFragments(path, prior, row.fragments, 0, 1), text, 'exact Release replay successor: ' + path);
++  return source.includes('\r\n') ? prior.replaceAll('\n', '\r\n') : prior;
++}
++
++export function beforeEventArtSource(path, source, read) {
++  if (!Object.hasOwn(eventArt.files, path)) return source;
++  const text = normalize(source), row = eventArt.files[path];
++  if (!matches(text, row.after)) return source;
++  for (const [owner, {after}] of Object.entries(eventArt.files)) {
++    assert(matches(readOwner(read, owner), after), 'combined linked owner identity: ' + owner + ' during event art validation');
++  }
++  return predecessor(path, source, text, row);
++}
++
++export function eventArtPriorRead(read) {
++  return (path, encoding) => {
++    const raw = read(path, encoding);
++    if (!Object.hasOwn(eventArt.files, path)) return raw;
++    if (typeof raw === 'string') return beforeEventArtSource(path, raw, read);
++    if (!Buffer.isBuffer(raw)) return raw;
++    const source = raw.toString('utf8'), prior = beforeEventArtSource(path, source, read);
++    return source === prior ? raw : Buffer.from(prior);
++  };
++}
++
++export function beforeBattleUiQualitySource(path, source, travelerInput, read) {
++  if (!Object.hasOwn(battleQuality.files, path)) return source;
++  const text = normalize(source), row = battleQuality.files[path];
++  if (!matches(text, row.after)) return source;
++  const input = normalize(travelerInput);
++  assert(input !== null && readOwner(read, path) === input,
++    'combined linked owner identity: ' + path + ' during battle UI quality validation');
++  return predecessor(path, source, text, row);
++}
