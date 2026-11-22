@@ -1,0 +1,128 @@
+diff --git a/tests/capacity-payload.cases.mjs b/tests/capacity-payload.cases.mjs
+index 9330c886..c31366ff 100644
+--- a/tests/capacity-payload.cases.mjs
++++ b/tests/capacity-payload.cases.mjs
+@@ -1,5 +1,6 @@
+ import test from 'node:test';
+ import assert from 'node:assert/strict';
++import {createHash} from 'node:crypto';
+ import {mkdtempSync,readFileSync,writeFileSync,rmSync,mkdirSync} from 'node:fs';
+ import {join} from 'node:path';
+ import {tmpdir} from 'node:os';
+@@ -88,3 +89,33 @@ test('Release capacity history rejects a current source replaced with its predec
+    {message:'fresh complete integration source: '+label+owner});
+  }
+ });
++
++
++test('Release build UI history rejects a stale or changed #854 owner on reread',async()=>{
++ const {assertIntegrationSuccessorsCurrent,beforeBuildUiEventArt,beforePreflightSource}=await import('./helpers/fork-preflight-source.mjs');
++ const path='scripts/build-ui.mjs',raw=readFileSync(path,'utf8').replaceAll('\r\n','\n');
++ const display=JSON.parse(gunzipSync(readFileSync(new URL('./fixtures/release-reward-display-source.json.gz',import.meta.url))));
++ const previous=beforeBuildUiEventArt(raw);
++ assert.equal(createHash('sha256').update(previous).digest('hex'),display.files[path].after.sha256,'exact #840 successor');
++ const fullPrior=beforePreflightSource(path,raw);
++ assert.notEqual(fullPrior,raw);
++ assert.equal(fullPrior,beforePreflightSource(path,display.files[path].before.source),'existing #840 predecessor chain');
++ for(const eol of ['\n','\r\n']){
++  const input=raw.replaceAll('\n',eol);
++  const reader=(file,encoding)=>file===path?input:readFileSync(file,encoding);
++  assert.doesNotThrow(()=>assertIntegrationSuccessorsCurrent(reader));
++  assert.equal(beforeBuildUiEventArt(input),previous.replaceAll('\n',eol));
++  assert.equal(beforePreflightSource(path,input).replaceAll('\r\n','\n'),fullPrior);
++  const stale=previous.replaceAll('\n',eol);
++  for(const altered of [stale,input+eol,raw.replace('\n','\r\n'),null]){
++   let reads=0;
++   assert.throws(()=>assertIntegrationSuccessorsCurrent((file,encoding)=>{
++    if(file!==path)return readFileSync(file,encoding);
++    if(++reads===1)return input;
++    if(altered===null)throw new Error('missing test owner');
++    return altered;
++   }),/Release UI closeout owner (?:identity|missing): scripts\/build-ui\.mjs/);
++   assert.equal(reads,2,'the first observed current source requires a fresh matching reread');
++  }
++ }
++});
+diff --git a/tests/helpers/fork-preflight-source.mjs b/tests/helpers/fork-preflight-source.mjs
+index 9e5a5241..06a8f347 100644
+--- a/tests/helpers/fork-preflight-source.mjs
++++ b/tests/helpers/fork-preflight-source.mjs
+@@ -245,12 +245,59 @@ function beforeReleaseBackflowTest(path,source){
+  assert.equal(hash(prior),'f74b528375f1f487985a4c108687cd62b61fccb2a23070bb5810205fb69cfc2a','exact Release backflow test predecessor');
+  return source.includes('\r\n')?prior.replaceAll('\n','\r\n'):prior;
+ }
++// #854 illustration loading changed only these four build fragments. Preserve
++// the actual #840 parent for the existing reward-display continuation.
++const buildUiPath='scripts/build-ui.mjs';
++const buildUiEventArtFragments=[
++ ["import {writeV25CardBinding,v25CardModule} from './v25-card-binding.mjs';\n\n","import {writeV25CardBinding,v25CardModule} from './v25-card-binding.mjs';\nimport {eventArtRegistry,loadEventArt} from './lowcost-art.mjs';\n\n"],
++ ["  const officialAssets=validateOfficialAssets(options);\n  if(officialAssets)options={...options,artFeatures:{...officialAssetFlagsFor(options)}};\n","  const officialAssets=validateOfficialAssets(options);\n  const eventArt=officialAssets?loadEventArt(eventArtRegistry,\n    JSON.parse(readFileSync('data/release/launch-content.json','utf8')).events.map(event=>event.id)):null;\n  if(eventArt?.unavailable.length)\n    throw Error('Invalid production event artwork: '+eventArt.unavailable.join(', '));\n  if(officialAssets)options={...options,artFeatures:{...officialAssetFlagsFor(options)}};\n"],
++ ["  portraitSources(process.cwd(),flags);\n  rejectInputOutputAliases(outputDirectory, [...(v25Cards?.inputs.map(row=>row.path)??[]),...(v25Masks?.inputs.map(row=>row.path)??[]),...(flags.menuBackground?backgroundInputs:[]),...portraitRuntimeInputs(flags), ...(readyArt?readyArtSourceInputs():[]), ...(art?.inputPaths??[])].map(path=>resolve(path)));\n  // The optional-art identity scan above also protects grass sources before decoding.\n","  portraitSources(process.cwd(),flags);\n  rejectInputOutputAliases(outputDirectory, [...(v25Cards?.inputs.map(row=>row.path)??[]),...(v25Masks?.inputs.map(row=>row.path)??[]),...(flags.menuBackground?backgroundInputs:[]),...portraitRuntimeInputs(flags), ...(readyArt?readyArtSourceInputs():[]), ...(art?.inputPaths??[]),...(eventArt?[eventArtRegistry]:[])].map(path=>resolve(path)));\n  // The optional-art identity scan above also protects grass sources before decoding.\n"],
++ ["  const theme=officialAssets?officialAssetsTheme(sourceTheme):v25BattleChrome?v25Theme(sourceTheme):sourceTheme;\n  const battle = battleLayout(), layout = withViewport(gameLayout(undefined, options), theme);\n","  const theme=officialAssets?officialAssetsTheme(sourceTheme):v25BattleChrome?v25Theme(sourceTheme):sourceTheme;\n  if(eventArt)theme.lowCostArt.event=eventArt;\n  const battle = battleLayout(), layout = withViewport(gameLayout(undefined, options), theme);\n"],
++];
++export function beforeBuildUiEventArt(source){
++ if(typeof source!=='string')return source;
++ const lf=normalize(source);
++ if(lf.includes('\r')||(source.includes('\r\n')&&source.replaceAll('\r\n','').includes('\n'))
++    ||hash(lf)!=='a25f7382a7290bd6aa81ec488d5bf1c1372f6f551cd9ff26697bb21b0c9b3780'||blob(lf)!=='0bbde0456edfd3eadc34739dc68ec30668b7c9e1')return source;
++ let prior=lf;
++ for(const [before,after] of buildUiEventArtFragments.toReversed()){
++  assert.equal(prior.split(after).length,2,'unique #854 build UI inverse fragment');
++  prior=prior.replace(after,()=>before);
++ }
++ assert.equal(hash(prior),'eca95c081a9f65017642f87f874921126edc5bf3c6a1871dc83dfd6c16a1590d','exact #854 build UI predecessor SHA-256');
++ assert.equal(blob(prior),'25d6d5202e4188faf1c26010df44e4268c04ee01','exact #854 build UI predecessor Git blob');
++ let successor=prior;
++ for(const [before,after] of buildUiEventArtFragments){
++  assert.equal(successor.split(before).length,2,'unique #854 build UI forward fragment');
++  successor=successor.replace(before,()=>after);
++ }
++ assert.equal(successor,lf,'exact #854 build UI successor');
++ return source.includes('\r\n')?prior.replaceAll('\n','\r\n'):prior;
++}
++function buildUiEventArtPriorRead(read,current=false){
++ return (path,encoding)=>{
++  const raw=read(path,encoding);
++  if(path!==buildUiPath)return raw;
++  const source=Buffer.isBuffer(raw)?raw.toString('utf8'):raw;
++  const prior=beforeBuildUiEventArt(source);
++  if(prior===source){
++   assert(!current,'fresh #854 build UI source: '+path);
++   return raw;
++  }
++  current=true;
++  return Buffer.isBuffer(raw)?Buffer.from(prior):prior;
++ };
++}
+ function beforeReleaseUiBuildSource(path,source){
++ const eventArt=path===buildUiPath?beforeBuildUiEventArt(source):source;
++ const currentBuildUi=eventArt!==source;
++ source=eventArt;
+  source=beforeReleaseReplayCiSource(path,beforeIllustrationTestSource(path,source),'early');
+  source=beforeShopRoomCiSource(path,beforeReleaseBackflowTest(path,beforeReleaseAssetInventory(path,source)));
+  source=beforeTravelerStatusCiSource(path,source);
+  source=beforeShopEntryCopier(path,beforeReleaseShopEntry(path,beforeLoadingRecoveryCopier(path,source)));
+- const read=shopEntryPreflightRead(owner=>beforeReleaseReplayCiSource(owner,readFileSync(owner,'utf8'),'early'));
++ const live=owner=>beforeReleaseReplayCiSource(owner,readFileSync(owner,'utf8'),'early');
++ const read=shopEntryPreflightRead(currentBuildUi?buildUiEventArtPriorRead(live,true):live);
+  source=beforeCombatVisualSource(path,source,read);
+  const prior=beforeReleaseReplayCiSource(path,source,'late');
+  if(prior!==source){
+@@ -268,7 +315,7 @@ export function beforeReleaseTinyHouseSource(path,source){
+  return beforeV2UiPreTinyHouseSource(path,beforeReleaseUiBuildSource(path,source));
+ }
+ export function historicalReleaseBuildInput(path,read){
+- read=releaseRewardDisplayPriorRead(read);
++ read=releaseRewardDisplayPriorRead(buildUiEventArtPriorRead(read));
+  if(!Object.hasOwn(releaseUiBuild.files,path))return refinedReleaseHistoricalInput(path,beforeCapacityRead(read));
+  const source=read(path,'utf8'),prior=beforeReleaseUiBuildSource(path,source);
+  assert.notEqual(prior,source,'fresh approved build source: '+path);
+@@ -404,7 +451,7 @@ function beforeIntegrationSuccessor(path,source){
+  return source.includes('\r\n')?prior.source.replaceAll('\n','\r\n'):prior.source;
+ }
+ export function assertIntegrationSuccessorsCurrent(read=readFileSync){
+- read=releaseRewardDisplayPriorRead(read);
++ read=releaseRewardDisplayPriorRead(buildUiEventArtPriorRead(read));
+  const requireCurrent=assertCapacitySources(read);
+  read=beforeCapacityRead(shopEntryPreflightRead(read),requireCurrent);
+  assertRefinedReleaseSourcesCurrent(read);
