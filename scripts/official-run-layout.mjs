@@ -74,12 +74,13 @@ function roundRunActions(host,theme){
   runMenu:{resume:primary,map:secondary,abandon:cancel},
   exitPanel:{cancel:secondary,confirm:cancel},
  };
+ const deck=required(host,'deckPanel');
+ for(const [name,frame] of Object.entries(theme.layout.deckView.browser.footer)){
+  const control=required(deck,name);
+  control.position=frame.slice(0,2);control.size=frame.slice(2);
+ }
  for(const [panel,actions] of Object.entries(panels))for(const [name,style] of Object.entries(actions)){
   roundedPresetButton(required(required(required(host,panel),name),'hit'),theme,style);
- }
- const deck=required(host,'deckPanel');
- for(const [i,filter] of ['All','Attack','Skill','Power','Status','Curse'].entries()){
-  required(deck,'filter'+filter).position=[209+i*59,282];
  }
  const grid=required(deck,'pileGrid'),viewport=theme.layout.deckView.pileViewport;
  grid.position=viewport.slice(0,2);grid.size=viewport.slice(2);
