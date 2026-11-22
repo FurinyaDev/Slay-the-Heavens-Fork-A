@@ -168,7 +168,7 @@ for(const [path,{before,after}] of Object.entries(roomEntry.files)){
  assert.match(after.gitBlob,/^[a-f0-9]{40}$/);
 }
 const deckPagesArchive=readFileSync(new URL('../fixtures/develop-deck-pages-source.json.gz',import.meta.url));
-assert.equal(hash(deckPagesArchive),'9087397e73f68bef9e2229e7445940e526b450bbfbe1633c8b2da8508fe035b1','exact Develop deck-pages predecessor archive');
+assert.equal(hash(deckPagesArchive),'d3a6b845870da64358c3ca36307062c02cc39d2e070e21eb875f9e2e42d02036','exact Develop deck-pages predecessor archive');
 const deckPages=JSON.parse(gunzipSync(deckPagesArchive));
 assert.equal(deckPages.base,'00229683d0d38660c98ced2f4a41e89d84fc5e4e');
 for(const [path,{before,after}] of Object.entries(deckPages.files)){
@@ -176,7 +176,8 @@ for(const [path,{before,after}] of Object.entries(deckPages.files)){
  assert.match(after.sha256,/^[a-f0-9]{64}$/);
  assert.match(after.gitBlob,/^[a-f0-9]{40}$/);
 }
-function beforeDeckPages(path,source){return predecessor(deckPages.files,path,source);}
+export const deckPagesAdded=Object.keys(deckPages.added);
+export function beforeDeckPages(path,source){return predecessor(deckPages.files,path,source);}
 function matches(source,expected){
  if(typeof source!=='string'||source.includes('\r\r\n'))return false;
  const lf=source.replaceAll('\r\n','\n');
@@ -194,7 +195,8 @@ export function assertStasisUpgradeAdded(path,source){
  assert(Object.hasOwn(stasis.added,path)&&matches(source,stasis.added[path]),'fresh Stasis upgrade module: '+path);
 }
 export function assertActorFocusInventory(paths,read=path=>readFileSync(path,'utf8')){
- assert.deepEqual([...paths].sort(),[...actorFocus.luaBefore,...actorFocusAdded].sort(),'complete current Actor/Focus Lua module inventory');
+ assert.deepEqual([...paths].sort(),[...actorFocus.luaBefore,...actorFocusAdded,...deckPagesAdded].sort(),'complete current Actor/Focus Lua module inventory');
+ for(const path of deckPagesAdded)assert(matches(read(path),deckPages.added[path]),'fresh deck browser module: '+path);
  for(const path of actorFocusOwners)assertDevelopBackflowCurrent(path,read(path));
  for(const path of stasisUpgradeAddedPaths)assertStasisUpgradeAdded(path,read(path));
 }
