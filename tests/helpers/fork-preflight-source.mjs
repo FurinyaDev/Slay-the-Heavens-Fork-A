@@ -71,7 +71,12 @@ function beforeTravelerStatusCiSource(path,source){
  const copier=path==='tests/helpers/copy-integration-source-closure.mjs';
  const regression=path==='tests/integration-source-epoch.test.mjs';
  if((!copier&&!regression)||typeof source!=='string'||source.includes('\r\r\n'))return source;
- const lf=normalize(source),sha=hash(lf);
+ let lf=normalize(source);
+ if(copier&&hash(lf)==='3910354d5306dd7ff7a86d282e5f5716b7ec8e3982d98e5a29d26d32bddd48d4'){
+  lf=lf.replace(" 'tests/helpers/release-map-deck-source.mjs':'dd02f8976ed65dae8d055f881020f71d6169a4e396c9cd0bc72d6c84c9254e9a',", " 'tests/helpers/release-map-deck-source.mjs':'c661e5dfa5035a09a47935bd7bfbc3e1f37b992d809bc7387d93e757c3df6fd5',");
+  assert.equal(hash(lf),'2c468260f8ca242e3a9e2d3d683616b45cca8ac6ad962388d7e0c5c0ceb2f85a','exact Forethought helper copy predecessor');
+ }
+ const sha=hash(lf);
  let prior,expected;
  if(copier&&sha==='2c468260f8ca242e3a9e2d3d683616b45cca8ac6ad962388d7e0c5c0ceb2f85a'){
   prior=lf.replace(/const travelerStatusFiles=Object\.freeze\(\{[\s\S]*?^\}\);\n/m,'')
