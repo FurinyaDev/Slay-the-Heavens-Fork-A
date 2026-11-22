@@ -1,0 +1,360 @@
+From 1ce05d244768a2fbc68b3a2f9d8d04a101e822dd Mon Sep 17 00:00:00 2001
+From: Codex <codex@openai.com>
+Date: Sun, 22 Nov 2026 13:21:49 +0800
+Subject: [PATCH] test: authenticate seven historical Release integration
+ inputs
+
+---
+ .../release-860-integration-source.json.gz    | Bin 0 -> 10215 bytes
+ .../copy-integration-source-closure.mjs       |   3 +-
+ tests/helpers/fork-preflight-source.mjs       |  39 ++++++++++++++----
+ tests/helpers/integrated-ci-source.mjs        |   2 +-
+ .../helpers/release-replay-continuations.mjs  |  14 +++++++
+ 5 files changed, 48 insertions(+), 10 deletions(-)
+ create mode 100644 tests/fixtures/release-860-integration-source.json.gz
+
+diff --git a/tests/fixtures/release-860-integration-source.json.gz b/tests/fixtures/release-860-integration-source.json.gz
+new file mode 100644
+index 0000000000000000000000000000000000000000..52e234d51e9431cd69aa2993a0f9f34ebb1a47eb
+GIT binary patch
+literal 10215
+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
+
+literal 0
+HcmV?d00001
+
+diff --git a/tests/helpers/copy-integration-source-closure.mjs b/tests/helpers/copy-integration-source-closure.mjs
+index 690e2cb1..c62c51c2 100644
+--- a/tests/helpers/copy-integration-source-closure.mjs
++++ b/tests/helpers/copy-integration-source-closure.mjs
+@@ -105,7 +105,8 @@ const loadingRecoveryFiles=Object.freeze({
+ const travelerStatusFiles=Object.freeze({
+  ...loadingRecoveryFiles,
+  'tests/helpers/combat-visual-source.mjs':'56a4c47f810f88c3dc1380f2c7f7c5cc8e42085950881f93e0fb10355c308ed6',
+- 'tests/helpers/release-replay-continuations.mjs':'693477ca050c9f8eee0817fb308fc5d023bff4b020c4ab147d178b1ebf8fae23',
++ 'tests/helpers/release-replay-continuations.mjs':'16acb3f827fc4dca2dbf2e720d1f32c2bf642708fb7d061553e1589abd28fc53',
++ 'tests/fixtures/release-860-integration-source.json.gz':'ae6be6f07d85bfe5fac889bc5a94bec2823f2dfa41e2b508ff775e6e0011a176',
+  'tests/fixtures/release-replay-continuations.json.gz':'a2abaa3feb21f2f1a2e8f9c9fef3da2af3525073110eebaa394d82b71a095b95',
+  'tests/fixtures/release-deck-lineage-source.json.gz':'a32c93925e562ee1c617bd647e18f131a0c066659eb653ba67afe3beb75454d0',
+  'tests/fixtures/release-replay-final-source.json.gz':'2b3737cb405ce06c42d6dfe5f099a234f452f4b174f97dc481d0e149cb1b23fd',
+diff --git a/tests/helpers/fork-preflight-source.mjs b/tests/helpers/fork-preflight-source.mjs
+index 06a8f347..9068647c 100644
+--- a/tests/helpers/fork-preflight-source.mjs
++++ b/tests/helpers/fork-preflight-source.mjs
+@@ -1,4 +1,4 @@
+-import {beforeIllustrationTestSource,beforeReleaseReplayCiSource} from './release-replay-continuations.mjs';
++import {beforeIllustrationTestSource,beforeReleaseIntegrationSource,beforeReleaseReplayCiSource} from './release-replay-continuations.mjs';
+ import {releaseRewardDisplayPriorRead} from './release-ui-closeout-source.mjs';
+ import {beforeReleaseShopEntry,releaseUiRestoreArchive,shopEntryPriorRead} from './release-ui-restore-source.mjs';
+ import {beforeCombatVisualSource,combatVisualPriorRead} from './combat-visual-source.mjs';
+@@ -93,6 +93,13 @@ function beforeTravelerStatusCiSource(path,source){
+  const actorTemplate=path==='tests/native-monster-actor-template.test.mjs';
+  if((!copier&&!regression&&!actorTemplate)||typeof source!=='string'||source.includes('\r\r\n'))return source;
+  let lf=normalize(source);
++ if(copier&&hash(lf)==='6360f846faaf8281e3693bf33e50fb074e293328ab510e323c2d6930e44a8b5d'&&blob(lf)==='c62c51c2f697b78d56de93fa95e7629445016e61'){
++  const slot=" 'tests/helpers/release-replay-continuations.mjs':'16acb3f827fc4dca2dbf2e720d1f32c2bf642708fb7d061553e1589abd28fc53',\n 'tests/fixtures/release-860-integration-source.json.gz':'ae6be6f07d85bfe5fac889bc5a94bec2823f2dfa41e2b508ff775e6e0011a176',\n";
++  assert.equal(lf.split(slot).length,2,'unique Release integration helper copy fragment');
++  lf=lf.replace(slot,()=>" 'tests/helpers/release-replay-continuations.mjs':'693477ca050c9f8eee0817fb308fc5d023bff4b020c4ab147d178b1ebf8fae23',\n");
++  assert.equal(hash(lf),'b72155ee1af41dfd1300b4f364a1c5de8de666173c95e37cc72fb14bec63afab','exact Release integration helper copy predecessor');
++  assert.equal(blob(lf),'690e2cb1e9e611cc33d1628ae3151d86bf032bf4','exact Release integration helper copy predecessor Git blob');
++ }
+  if(copier&&hash(lf)==='b72155ee1af41dfd1300b4f364a1c5de8de666173c95e37cc72fb14bec63afab'){
+   lf=lf.replace(" 'tests/helpers/release-ui-restore-source.mjs':'12525d81e0e26d39b823b398e4f438e3a005dd6e2a10f91f71eec00adf007586',\n"," 'tests/helpers/release-ui-restore-source.mjs':'f80f891d9f7bf72b098efa22b02b8cdcd83b02cd6be90cfb9003ac83cb9eeaed',\n")
+    .replace(" 'tests/helpers/release-replay-continuations.mjs':'693477ca050c9f8eee0817fb308fc5d023bff4b020c4ab147d178b1ebf8fae23',\n"," 'tests/helpers/release-replay-continuations.mjs':'a01c34b0ae81fb75aa761577db7f05dbc3afd7c24ee4eab6c44c47ceef8fa264',\n")
+@@ -288,10 +295,25 @@ function buildUiEventArtPriorRead(read,current=false){
+   return Buffer.isBuffer(raw)?Buffer.from(prior):prior;
+  };
+ }
+-function beforeReleaseUiBuildSource(path,source){
++function beforeIntegrationInventoryReader(path,source){
++ if(path!=='tests/helpers/integrated-ci-source.mjs'||typeof source!=='string')return source;
++ const lf=normalize(source);
++ if(lf.includes('\r')||(source.includes('\r\n')&&source.replaceAll('\r\n','').includes('\n'))
++    ||hash(lf)!=='9d894ca6f99bf255464ed32235d285639a3bab94ed5338f472755041128faad3'||blob(lf)!=='8f6de374ab7f167993637cb9e8d04108635f2e6f')return source;
++ const current="beforePreflightSource(path,read(path,'utf8'),'prior',read),row.current",previous="beforePreflightSource(path,read(path,'utf8')),row.current";
++ assert.equal(lf.split(current).length,2,'unique current integration inventory reader');
++ const prior=lf.replace(current,()=>previous);
++ assert.equal(hash(prior),'179207678a818066e28f9867d197e3b39c95568fdac16d590fed6bbeeb97efac','exact integration inventory reader predecessor');
++ assert.equal(blob(prior),'a191206e710368b4a5ad5adc68c704462a246405','exact integration inventory reader predecessor Git blob');
++ assert.equal(prior.split(previous).length,2,'unique previous integration inventory reader');
++ assert.equal(prior.replace(previous,()=>current),lf,'exact integration inventory reader successor');
++ return source.includes('\r\n')?prior.replaceAll('\n','\r\n'):prior;
++}
++function beforeReleaseUiBuildSource(path,source,readCurrent=readFileSync){
++ const observed=source;
+  const eventArt=path===buildUiPath?beforeBuildUiEventArt(source):source;
+  const currentBuildUi=eventArt!==source;
+- source=eventArt;
++ source=beforeReleaseIntegrationSource(path,beforeIntegrationInventoryReader(path,eventArt),'early',observed,readCurrent);
+  source=beforeReleaseReplayCiSource(path,beforeIllustrationTestSource(path,source),'early');
+  source=beforeShopRoomCiSource(path,beforeReleaseBackflowTest(path,beforeReleaseAssetInventory(path,source)));
+  source=beforeTravelerStatusCiSource(path,source);
+@@ -299,6 +321,7 @@ function beforeReleaseUiBuildSource(path,source){
+  const live=owner=>beforeReleaseReplayCiSource(owner,readFileSync(owner,'utf8'),'early');
+  const read=shopEntryPreflightRead(currentBuildUi?buildUiEventArtPriorRead(live,true):live);
+  source=beforeCombatVisualSource(path,source,read);
++ source=beforeReleaseIntegrationSource(path,source,'late',observed,readCurrent);
+  const prior=beforeReleaseReplayCiSource(path,source,'late');
+  if(prior!==source){
+   const readPrior=owner=>beforeReleaseReplayCiSource(owner,beforeCombatVisualSource(owner,read(owner),read),'late');
+@@ -326,8 +349,8 @@ assert.equal(hash(coopLabCiBytes),'e55c26c3dbc7cde22ae4e47de876f205b47bdbfc30dc4
+ const coopLabCi=JSON.parse(gunzipSync(coopLabCiBytes));
+ assert.equal(coopLabCi.base,'ecf54a29a54228e058238fbbc8716a665a3021d6');
+ for(const row of Object.values(coopLabCi.files))assert.equal(hash(row.before),row.beforeSha);
+-function beforeCoopCiSource(path,source){
+- source=beforeV2UiEvidence(path,beforeReleaseUiBuildSource(path,source));
++function beforeCoopCiSource(path,source,readCurrent){
++ source=beforeV2UiEvidence(path,beforeReleaseUiBuildSource(path,source,readCurrent));
+  const row=Object.hasOwn(coopLabCi.files,path)?coopLabCi.files[path]:null;
+  if(!row || typeof source!=='string' || source.includes('\r\r\n') || hash(normalize(source))!==row.afterSha)return source;
+  return source.includes('\r\n')?row.before.replaceAll('\n','\r\n'):row.before;
+@@ -465,8 +488,8 @@ export function assertIntegrationSuccessorsCurrent(read=readFileSync){
+   assert(typeof source==='string'&&!source.includes('\r\r\n')&&hash(normalize(source))===sha,'fresh complete integration source: '+path);
+  }
+ }
+-export function beforePreflightSource(path,source,view='prior'){
+- source=beforeCharacterPreparationCiSource(path,beforeV2UiAdmission(path,beforeCoopCiSource(path,source)));
++export function beforePreflightSource(path,source,view='prior',readCurrent=readFileSync){
++ source=beforeCharacterPreparationCiSource(path,beforeV2UiAdmission(path,beforeCoopCiSource(path,source,readCurrent)));
+  source=beforeIntegrationSuccessor(path,source);
+  // Only the exact flag-registry successor enters the earlier Release witness.
+  if(view==='release-bootstrap'&&path==='scripts/ui-profile.mjs'&&typeof source==='string'&&!source.includes('\r\r\n')
+@@ -489,6 +512,6 @@ export function beforePreflightSource(path,source,view='prior'){
+ }
+ export function preflightPriorRead(read=readFileSync,view='prior'){return(path,encoding)=>{
+  const raw=read(path,encoding);if(typeof raw!=='string'&&!Buffer.isBuffer(raw))return raw;
+- const text=typeof raw==='string'?raw:raw.toString('utf8'),prior=beforePreflightSource(path,text,view);
++ const text=typeof raw==='string'?raw:raw.toString('utf8'),prior=beforePreflightSource(path,text,view,read);
+  return typeof raw==='string'?prior:prior===text?raw:Buffer.from(prior);
+ };}
+diff --git a/tests/helpers/integrated-ci-source.mjs b/tests/helpers/integrated-ci-source.mjs
+index a191206e..8f6de374 100644
+--- a/tests/helpers/integrated-ci-source.mjs
++++ b/tests/helpers/integrated-ci-source.mjs
+@@ -67,7 +67,7 @@ export function integratedPriorInventory(paths,target,kind='js',read=readFileSyn
+  assert.deepEqual([...paths].sort(),current,kind==='lua'?'complete integration Lua discovery inventory':'complete integration js inventory');
+  for(const path of added){
+   const row=integratedCiProof.files[path];assert(row,'complete added inventory source: '+path);
+-  assert.equal(hash(norm(releaseBootstrapCiSource(path,beforePreflightSource(path,read(path,'utf8')),row.current))),row.current.sha256,'fresh added inventory source: '+path);
++  assert.equal(hash(norm(releaseBootstrapCiSource(path,beforePreflightSource(path,read(path,'utf8'),'prior',read),row.current))),row.current.sha256,'fresh added inventory source: '+path);
+  }
+  return [...prior];
+ }
+diff --git a/tests/helpers/release-replay-continuations.mjs b/tests/helpers/release-replay-continuations.mjs
+index cc216932..0f2fbdfa 100644
+--- a/tests/helpers/release-replay-continuations.mjs
++++ b/tests/helpers/release-replay-continuations.mjs
+@@ -190,3 +190,17 @@ export function beforeReleaseReplayCiSource(path, source, stage) {
+   }
+   return source;
+ }
++
++const integrationArchive = readFileSync(new URL('../fixtures/release-860-integration-source.json.gz', import.meta.url));
++assert.equal(hash('sha256', integrationArchive), 'ae6be6f07d85bfe5fac889bc5a94bec2823f2dfa41e2b508ff775e6e0011a176', 'exact Release integration continuation archive');
++const integrationRows = JSON.parse(gunzipSync(integrationArchive));
++
++export function beforeReleaseIntegrationSource(path, source, stage, observed, read) {
++  if (!Object.hasOwn(integrationRows, path)) return source;
++  const row = integrationRows[path];
++  const text = normalize(source);
++  if (row.stage !== stage || !matches(text, row.after)) return source;
++  assert(normalize(observed) !== null && readOwner(read, path) === normalize(observed),
++    'fresh Release integration continuation source: ' + path);
++  return predecessor(path, source, text, row);
++}
