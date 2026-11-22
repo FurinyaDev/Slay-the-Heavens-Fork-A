@@ -13,7 +13,16 @@ This is evidence only. Apply the binary-capable Git patch after the existing `86
 - An injected deletion on reread was rejected in the selection, menu, and native inventory views.
 - Four of five focused Node regressions passed. The historical Lua discovery inventory assertion in `tests/sts-style-source-epoch.test.mjs` still reports four new entries before its later checks: `detail_latency.lua`, `potion_management_visual.lua`, `shop_entry.lua`, and `traveler_power_tooltip.lua`.
 
-## Release advances
+## Compatibility with the newer Release base
 
-- Overlaying the changed native files from `39ade2db20f879d1c069ae9f2193dc9e6ff90273` failed at the fresh Release capacity source check for `scripts/build-native-candidate.mjs`. The source receipt sweep also reported `scripts/audit-native-candidate.mjs`. Release then advanced again to `d0399a4473c1f5ba8a2ccf9d080b71fb0efaf152`, whose additional changes were outside this seven-file patch.
-- This patch is blocked for #860. Hosted Full was not dispatched and #860 was not updated for this follow-up.
+[The Git comparison](https://github.com/FurinyaWorks/Slay-the-Heavens/compare/369d77e8fedf184532cd9af763458043821c175d...d0399a4473c1f5ba8a2ccf9d080b71fb0efaf152) covers the two commits added after the tested base.
+
+- [#861](https://github.com/FurinyaWorks/Slay-the-Heavens/pull/861), `39ade2db20f879d1c069ae9f2193dc9e6ff90273`. A local overlay of the five modified native files first failed at the fresh Release capacity source check for `scripts/build-native-candidate.mjs`. The integration receipt sweep identified the two mismatches below.
+- [#862](https://github.com/FurinyaWorks/Slay-the-Heavens/pull/862), `d0399a4473c1f5ba8a2ccf9d080b71fb0efaf152`. The Git delta adds changes to `src/lua/abyss_game_ui_input.lua` and `tests/official-assets-runtime.test.mjs`. Neither overlaps the evidence patch's paths. Compatibility at this tip remains unverified because no combined test run was performed.
+
+| #861 integration input | Observed LF SHA-256 | Frozen LF SHA-256 |
+| --- | --- | --- |
+| `scripts/build-native-candidate.mjs` | `49aebe0b04f9f97e0d3da3f27534e0e1505f2304cfc636bba66ce27c9d1ecb0d` | `89765d7f50b3eb91333a59d2ada471bb1c818297a784c4e8f3e9ec96832b962d` |
+| `scripts/audit-native-candidate.mjs` | `89e15d085db8ed59ee852638a22cf0c3203500bf502feb066450c300d3adc21c` | `ab01c2defc016c05fb83429bb566c40c34ea29c90cbf731904c7c5114ca33438` |
+
+#860 remains at `5424fe7da66171c26138b6cc07a06c0ec9d8f833` with its existing CI against the old base. No rebase, push to #860, or separate Full dispatch was performed.
