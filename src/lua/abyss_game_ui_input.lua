@@ -53,11 +53,11 @@ function M.dismissFromOutside(controller,self)
         end
 end
 
-local function bindV25Hover(box,hit,cursor,available,routeReturn)
+local function bindV25Hover(box,hit,cursor,available,routeReturn,color)
     local officialMenu=Theme.presentationProfile=='official-assets-first' and (box:GetChild('v25MenuFace') or routeReturn and box:GetChild('v25Face'))
     if (Theme.presentationProfile~='v25-reference' and not officialMenu) or not cursor.CursorEnter then return end
     if not box:GetChild('v25Face') and not box:GetChild('v25MenuFace')then return end
-    hit:AddCursorEventListener(cursor.CursorEnter,function()V25View.pointer(box,'enter',available())end)
+    hit:AddCursorEventListener(cursor.CursorEnter,function()V25View.pointer(box,'enter',available(),color)end)
 end
 
 local function battleRouteAvailable(self,enabled,mode)
@@ -159,11 +159,11 @@ function M.bindCommand(platform,self,canManagePotions,controller,clickEvent,owne
                     and (not mapContext or currentMapReturn(token))
             end
             local function touch(event) return event and event.touchId end
-            bindV25Hover(box,hit,cursor,available,kind=='routeClose')
+            bindV25Hover(box,hit,cursor,available,kind=='routeClose',platform.color)
             if kind=='routeClose' and Theme.presentationProfile=='official-assets-first' and box:GetChild('v25Face') then
                 local previousFocus=onFocus
                 onFocus=function()
-                    V25View.pointer(box,'enter',available())
+                    V25View.pointer(box,'enter',available(),platform.color)
                     if previousFocus then return previousFocus() end
                 end
             end
@@ -178,13 +178,13 @@ function M.bindCommand(platform,self,canManagePotions,controller,clickEvent,owne
                         pending=self.run and self.run.pendingCombatRewards,rewardGeneration=self.rewardReturnGeneration,
                         potion=potionPointer(self.run,potionSlot),
                         mapReturn=mapContext and mapReturnIdentity(self) or nil} end
-                    V25View.pointer(box,'down',held~=nil)
+                    V25View.pointer(box,'down',held~=nil,platform.color)
                 end)
                 hit:AddCursorEventListener(cursor.CursorUp, function(event)
                     if not held or held.touch ~= touch(event) then return end
                     released = current(held) and held or nil
                     held = nil
-                    V25View.pointer(box,'up',available())
+                    V25View.pointer(box,'up',available(),platform.color)
                 end)
                 for _, event in pairs({cursor.CursorExit, cursor.CursorEndDrag}) do
                     if event then hit:AddCursorEventListener(event, function(pointer)
@@ -192,7 +192,7 @@ function M.bindCommand(platform,self,canManagePotions,controller,clickEvent,owne
                         if not pointer or pointerOwner and pointerOwner.touch == touch(pointer) then
                             held,released=nil,nil
                         end
-                        if not pointerOwner or not pointer or pointerOwner.touch==touch(pointer)then V25View.pointer(box,'exit',available())end
+                        if not pointerOwner or not pointer or pointerOwner.touch==touch(pointer)then V25View.pointer(box,'exit',available(),platform.color)end
                     end) end
                 end
             end

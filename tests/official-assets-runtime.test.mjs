@@ -606,9 +606,14 @@ route.listeners.down({touchId=1});route.listeners.up({touchId=1})
 assert(route.click({touchId=1})and host.routeOpen)
 local back=root:GetChild('mapPanel'):GetChild('previewBack')
 local label,hit,face=back:GetChild('label'),back:GetChild('hit'),assert(back:GetChild('v25Face'))
+local material=assert(face:GetChild('roundedButtonState')):GetChild('v25Flag')
+local palette=require('abyss_theme').officialAssets.mapReturnPalette
 local function state(expected)
- for _,name in ipairs({'normal','hover','pressed','disabled'})do
-  assert(face:GetChild(name).visible==(name==expected),'map return state '..name)
+ assert(#face:GetChildren()==1,'one map button material')
+ for i,layer in ipairs({'rim','cloth'})do
+  for _,part in ipairs(material:GetChild(layer):GetChildren())do
+   sameColour(part.imageColor,palette[expected][i],'map return state '..expected)
+  end
  end
 end
 assert(label.text=='返回战斗');state('normal')

@@ -1,3 +1,5 @@
+import {projectRoundedStates} from './native-rounded-button.mjs';
+
 // Borrow the final adopted character cancel material. Keep the GameUI's flat
 // command, hit and live caption handles; its existing V25 writer owns states.
 const parts=n=>n?.children??n?.controls??[];
@@ -10,7 +12,10 @@ export function applyOfficialMapReturnControls(map,character,theme){
  back.size=[...source.size];hit.size=[...source.size];
  back.position[0]=Math.max(back.position[0],-theme.canvas.base[0]/2+theme.canvas.safe.x+back.size[0]/2);
  Object.assign(label,{position:[...reference.position],size:[...reference.size],text:{...reference.text,content:caption}});
+ const variants=states.map(state=>({name:state.name,kind:'container',size:[...state.size],scale:[...state.scale],
+  visible:state.name==='normal',children:[structuredClone(child(state,'v25Flag'))]}));
+ const projection=projectRoundedStates(variants,'v25Flag');
+ if(projection)theme.officialAssets.mapReturnPalette=projection.palette;
  back.children.splice(back.children.indexOf(label),0,{name:'v25Face',kind:'container',size:[...source.size],
-  children:states.map(state=>({name:state.name,kind:'container',size:[...state.size],scale:[...state.scale],
-   visible:state.name==='normal',children:[structuredClone(child(state,'v25Flag'))]}))});
+  children:projection?[projection.face]:variants});
 }
