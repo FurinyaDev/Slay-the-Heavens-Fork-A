@@ -41,7 +41,13 @@ const cardDisplay=JSON.parse(gunzipSync(cardDisplayArchive));
 assert.equal(cardDisplay.base,'8a59d03c26ec54360c4e6953958522dc8d2e8d07');
 assert.deepEqual(Object.keys(cardDisplay.files),["src/lua/abyss_watcher_flow_cards.lua"]);
 for(const path of Object.keys(cardDisplay.files))assert(![mapRender.files,files,shop].some(layer=>Object.hasOwn(layer,path)),'distinct Develop cardDisplay source owner: '+path);
-const layers=[cardDisplay.files,mapRender.files,files,shop];
+const portraitLifecycleArchive=readFileSync(new URL('../fixtures/develop-native-portrait-lifecycle-source.json.gz',import.meta.url));
+assert.equal(hash(portraitLifecycleArchive),'1e0d7cf24e2bd08938383e862161fe5d70c9a5ae29a216a8890c1768b8c57422','exact Develop native-portrait-lifecycle predecessor archive');
+const portraitLifecycle=JSON.parse(gunzipSync(portraitLifecycleArchive));
+assert.equal(portraitLifecycle.base,'8a59d03c26ec54360c4e6953958522dc8d2e8d07');
+assert.deepEqual(Object.keys(portraitLifecycle.files),["src/lua/abyss_traveler_portraits.lua"]);
+for(const path of Object.keys(portraitLifecycle.files))assert(![cardDisplay.files,mapRender.files,files,shop].some(layer=>Object.hasOwn(layer,path)),'distinct Develop portraitLifecycle source owner: '+path);
+const layers=[portraitLifecycle.files,cardDisplay.files,mapRender.files,files,shop];
 for(const {before,after} of layers.flatMap(layer=>Object.values(layer))){
  assert.equal(hash(before.source),before.sha256);
  assert.equal(blob(before.source),before.gitBlob);
