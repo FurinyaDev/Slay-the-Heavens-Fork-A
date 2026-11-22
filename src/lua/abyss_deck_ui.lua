@@ -271,7 +271,9 @@ function M.new(root, presentation, clickEvent, platform, onClose)
             local box=deckSort:GetChild(mode)
             local label,arrow=box:GetChild('label'),box:GetChild('direction')
             local selected=self.sortMode==mode
-            arrow.localRotationZ=self.sortDirections[mode] and 0 or 180
+            local ascending=self.sortDirections[mode]
+            if selected then ascending=self.sortAscending end
+            arrow.localRotationZ=ascending and 0 or 180
             local tone=selected and Theme.color.goldBright or Theme.color.text
             local ink=platform.color(tone.r,tone.g,tone.b,tone.a)
             label.fontColor,arrow.imageColor=ink,ink
