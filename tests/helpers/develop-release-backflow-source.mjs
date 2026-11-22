@@ -7,10 +7,17 @@ import {gunzipSync} from 'node:zlib';
 const hash=(bytes,algorithm='sha256')=>createHash(algorithm).update(bytes).digest('hex');
 const blob=source=>hash(`blob ${Buffer.byteLength(source)}\0${source}`,'sha1');
 const archive=readFileSync(new URL('../fixtures/develop-release-backflow-source.json.gz',import.meta.url));
-assert.equal(hash(archive),'c92d7559ea1ba351da90cee3296a9f05ab1eb55b0aa18b76ffbfd885f73a62dd','exact Develop Release-backflow source archive');
-const {base,files,shopBase,shop}=JSON.parse(gunzipSync(archive));
+assert.equal(hash(archive),'c50d048f5daaa4ecc7ffa110ca9a4dc144cb4393e51fb8666c572b16347bede4','exact Develop Release-backflow source archive');
+const {base,files:releaseFiles,shopBase,shop}=JSON.parse(gunzipSync(archive));
 assert.equal(base,'742a540ffc999e91acdface3d8fc7f753731f0a8');
 assert.equal(shopBase,'82ba375397ffd7f8f8175a7a1fd18a973450ecc6');
+const travelerArchive=readFileSync(new URL('../fixtures/develop-traveler-touch-source.json.gz',import.meta.url));
+assert.equal(hash(travelerArchive),'58bed3fd2bfe7a20e5e9d2b9760b5f7dd165bde92201dd49fa90e36bb17168c9','exact Develop Traveler touch source archive');
+const traveler=JSON.parse(gunzipSync(travelerArchive));
+assert.equal(traveler.base,shopBase);
+assert.deepEqual(Object.keys(traveler.files),['src/lua/abyss_battle_detail_bindings.lua','tests/lua/traveler_power_tooltip.lua']);
+for(const path of Object.keys(traveler.files))assert(!Object.hasOwn(releaseFiles,path)&&!Object.hasOwn(shop,path),'distinct Develop backflow source owner: '+path);
+const files={...releaseFiles,...traveler.files};
 for(const {before,after} of [...Object.values(files),...Object.values(shop)]){
  assert.equal(hash(before.source),before.sha256);
  assert.equal(blob(before.source),before.gitBlob);
@@ -35,12 +42,17 @@ function predecessor(layer,path,source){
 export function beforeDevelopBackflow(path,source){
  return predecessor(shop,path,predecessor(files,path,source));
 }
+const forethoughtOwners=['src/lua/abyss_deck_ui.lua','scripts/deck-ui-layout.mjs'];
 export function authenticateDevelopBackflow(path,source,read){
  const prior=beforeDevelopBackflow(path,source);
  if(prior===source)return source;
- let live;
- try{live=read(path);}catch(error){assert.fail('combined linked owner missing: '+path+': '+String(error?.message??error));}
  const row=matches(source,current(path).after)?current(path):shop[path];
- assert(matches(live,row.after),'combined linked owner identity: '+path+' changed during Develop backflow validation');
+ const owners=forethoughtOwners.includes(path)?forethoughtOwners:[path];
+ for(const owner of owners){
+  let live;
+  try{live=read(owner);}catch(error){assert.fail('combined linked owner missing: '+owner+': '+String(error?.message??error));}
+  const expected=owner===path?row:current(owner);
+  assert(matches(live,expected.after),'combined linked owner identity: '+owner+' changed during Develop backflow validation');
+ }
  return prior;
 }

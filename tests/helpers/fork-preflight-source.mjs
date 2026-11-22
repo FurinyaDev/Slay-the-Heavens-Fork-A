@@ -121,7 +121,7 @@ function beforeIntegratedReleaseCopier(path,source){
 function beforeDevelopBackflowCopier(path,source){
  if(path!=='tests/helpers/copy-integration-source-closure.mjs'||typeof source!=='string'||source.includes('\r\r\n'))return source;
  const lf=normalize(source);
- if(hash(lf)!=='cff33becf383cb7d46b24ed3293f606b063401f5f32286921875f3218c08e876')return source;
+ if(hash(lf)!=='287ddbb54bfec7eadf72bceea09c77c8029410c8ef03465d88a0fba6b023413b')return source;
  const prior=lf.replace(/const developBackflowFiles=Object\.freeze\(\{[\s\S]*?^\}\);\n/m,'')
    .replace('Object.entries(developBackflowFiles))','Object.entries(stsCloseoutFiles))');
  assert.equal(hash(prior),'e519059be59df7fefda9b852a0b02aac9b03b819406a08e0a7a11c4aca4d2fbc','exact Develop backflow copier predecessor');
@@ -326,7 +326,7 @@ export function beforeReleaseAdditionalInventory(paths,kind,read=readFileSync){
   const count=paths.filter(candidate=>candidate===path).length;
   if(!count)continue;
   assert.equal(count,1,'single added Release test: '+path);
-  const source=read(path,'utf8');
+  const source=beforeDevelopBackflow(path,read(path,'utf8'));
   assert(typeof source==='string'&&!source.includes('\r\r\n')&&hash(normalize(source))===sha,'fresh added inventory source: '+path);
  }
  return paths.filter(path=>!Object.hasOwn(newerTests[kind],path));

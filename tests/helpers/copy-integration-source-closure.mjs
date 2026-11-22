@@ -183,11 +183,13 @@ const stsCloseoutFiles=Object.freeze({
 });
 const developBackflowFiles=Object.freeze({
  ...stsCloseoutFiles,
- 'tests/helpers/develop-release-backflow-source.mjs':'3e5dc9428ccd21185344d0f4a4e4daed19e9f029fe45100bb4cfa86c72c28909',
- 'tests/fixtures/develop-release-backflow-source.json.gz':'c92d7559ea1ba351da90cee3296a9f05ab1eb55b0aa18b76ffbfd885f73a62dd',
+ 'tests/fixtures/develop-traveler-touch-source.json.gz':'58bed3fd2bfe7a20e5e9d2b9760b5f7dd165bde92201dd49fa90e36bb17168c9',
+ 'tests/helpers/release-map-deck-source.mjs':'87a1f219bfca2f4ae049896248efd8217c76e90010aee0a1567e51b0e6fc0aa1',
+ 'tests/helpers/develop-release-backflow-source.mjs':'70df2b48d5d0573d959be2dd80cf7799722c7cafa5e7b09701eac0d15b644036',
+ 'tests/fixtures/develop-release-backflow-source.json.gz':'c50d048f5daaa4ecc7ffa110ca9a4dc144cb4393e51fb8666c572b16347bede4',
  'tests/helpers/character-preparation-source.mjs':'1adaca46c085f2daaf7450e8421ec4f38bb6b0e30e726f92cc716abef0330fdb',
  'tests/helpers/combined-epoch/source-epoch-runtime.mjs':'4e615ebe00db432f4454613cebc88c3ade5ca1053e6a1bc7ac80fe3c067a5ee3',
- 'tests/helpers/sts-selection-fade-source.mjs':'18fe99cc5af9f83d6efb565c63db404923f6efe690d9f47e9338b4bb85dad0ef',
+ 'tests/helpers/sts-selection-fade-source.mjs':'08f3f5786f05014ef56e18ff612c910855bfb1887de50ab8e8c0c86dda65c4cc',
 });
 const inside=(root,path)=>{const r=relative(root,path);return r!==''&&!isAbsolute(r)&&r!=='..'&&!r.startsWith('../')&&!r.startsWith('..\\');};
 export function copyIntegrationSourceClosure(directory,{sourceRoot=process.cwd()}={}){
