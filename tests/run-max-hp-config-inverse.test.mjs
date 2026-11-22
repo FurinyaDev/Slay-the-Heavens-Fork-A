@@ -1,4 +1,5 @@
 import {currentProductionRereads} from './helpers/current-production-source-reads.mjs';
+import {beforeInputRetirementReader,pointerInputPath,retiredControllerPath} from './helpers/input-retirement-source.mjs';
 import test,{after} from 'node:test';
 import {historicalTest,createHistoricalBaseline,historicalInputPath} from './helpers/historical-baseline-inputs.mjs';
 import assert from 'node:assert/strict';
@@ -170,7 +171,7 @@ test('original Run and Nodes config closure rejects relabeled, missing and chang
 test('current Run architecture admission uses its declared target and rereads every raw owner on each call',async()=>{
  const {sourceEpoch}=await import('./helpers/combined-epoch/source-epoch.mjs');
  const raw=readFileSync(path,'utf8').replaceAll('\r\n','\n'),owners=sourceEpoch.proof.owners;
- const admittedReads=[...owners,...currentProductionRereads];
+ const priorReadOrder=[...owners,...currentProductionRereads];
  // Independent complete Git config at the declared develop target d8a57cae,
  // not a hash obtained from the projector's own return value or current proof.
  const targetHash='0e75d9e1f08cfb7738215b9a31cce141f03cc2469077bce0db3376fe1f446a9c';
@@ -185,24 +186,46 @@ test('current Run architecture admission uses its declared target and rereads ev
  const project=source=>sourceEpoch.preCombinedSource(path,source,{target:'develop',readSource:reader});
  const accepted=project(raw);assert.equal(hash(accepted),targetHash);assert.notEqual(accepted,raw);
  assert.notEqual(hash(accepted),expected.combined,'current develop target is not the ancient Run target');
- assert.deepEqual(reads,admittedReads,'complete fresh raw closure in admission order');
+ // The exact current trace includes the nested Actor/Stasis and MapRoom
+ // checks, plus the original direct and continuation reads in their order.
+ const admittedReads=[...reads];
+ assert.equal(admittedReads.length,417,'complete fresh raw closure size');
+ assert.equal(hash(JSON.stringify(admittedReads)),'05131aa3de86e8f88d0e82bca23e667bba10e3921cf029de891ec4e8b06c3a67',
+  'complete fresh raw closure in admission order on the current Develop sources');
+ let retainedPosition=-1;
+ const retainedReadPositions=priorReadOrder.map(owner=>{
+  retainedPosition=admittedReads.indexOf(owner,retainedPosition+1);
+  assert.notEqual(retainedPosition,-1,'retained original admission read: '+owner);
+  return retainedPosition;
+ });
  const layers=JSON.parse(raw).layers;
  for(const name of [...run,...nodes,'abyss_max_hp_relics'])assert.equal(layers[name],'core','current registration: '+name);
  for(const name of battle)assert.equal(layers[name],'ui','current registration: '+name);
  for(const source of [raw,raw.replaceAll('\n','\r\n')]){
   reads=[];assert.equal(project(source),accepted);assert.deepEqual(reads,admittedReads,'warm calls still read the complete raw owner closure');
  }
+ assert.throws(()=>readFileSync(retiredControllerPath,'utf8'),{code:'ENOENT'});
+ changed=retiredControllerPath;
+ for(replacement of [null,undefined]){
+  reads=[];assert.equal(project(raw),accepted);assert.deepEqual(reads,admittedReads,'retired Controller still requires every pointer witness');
+ }
+ replacement=beforeInputRetirementReader(path=>readFileSync(path,'utf8'))(retiredControllerPath);
+ reads=[];assert.throws(()=>project(raw),/combined linked owner identity: src\/lua\/abyss_controller\.lua/,'present archived Controller cannot impersonate a retired file');
+ assert.deepEqual(reads,admittedReads.slice(0,admittedReads.indexOf(changed)+1));
  for(const [fault,observe] of [
   ['changed bytes',owner=>readFileSync(owner,'utf8')+'\n'],
   ['absent source',()=>null],
   ['read error',()=>new Error('missing current Run owner')],
  ]){
-  for(const owner of owners){
+  for(const owner of new Set(admittedReads)){
+   if(owner===retiredControllerPath&&fault!=='read error')continue;
    changed=owner;replacement=observe(owner);
    reads=[];assert.throws(()=>project(raw),error=>{
-    assert.ok(error.message.startsWith('combined linked owner '+(replacement instanceof Error?'missing: ':'identity: ')+owner),error.message);return true;
+    const expected=owner===pointerInputPath?'combined linked owner missing: '+retiredControllerPath:
+     'combined linked owner '+(replacement instanceof Error?'missing: ':'identity: ')+owner;
+    assert.ok(error.message.includes(expected),error.message);return true;
    });
-   assert.deepEqual(reads,owners.slice(0,owners.indexOf(owner)+1),'first bad raw owner stops validation: '+owner);
+   assert.deepEqual(reads,admittedReads.slice(0,admittedReads.indexOf(owner)+1),'first bad raw owner stops validation: '+owner);
   }
   changed=undefined;reads=[];
   assert.equal(project(raw),accepted,`valid projection recovers after ${fault}`);
@@ -210,14 +233,18 @@ test('current Run architecture admission uses its declared target and rereads ev
  }
 
  for(const [index,owner] of currentProductionRereads.entries()){
-  changed=owner;
-  mutationOccurrence=admittedReads.slice(0,owners.length+index).filter(file=>file===owner).length;
-  replacement=readFileSync(owner,'utf8')+'\n';
+  const retired=owner===retiredControllerPath;
+  changed=retired?pointerInputPath:owner;
+  const position=retainedReadPositions[owners.length+index]+Number(retired);
+  assert.equal(admittedReads[position],changed);
+  mutationOccurrence=admittedReads.slice(0,position).filter(file=>file===changed).length;
+  replacement=readFileSync(changed,'utf8')+'\n';
   reads=[];
-  assert.throws(()=>project(raw),{
-   message:'combined linked owner identity: '+owner+' changed during owner validation',
+  assert.throws(()=>project(raw),error=>{
+   const expected=(retired?'combined linked owner missing: ':'combined linked owner identity: ')+owner;
+   assert.ok(error.message.includes(expected),error.message);return true;
   });
-  assert.deepEqual(reads,admittedReads.slice(0,owners.length+index+1),'stop when revalidation detects drift');
+  assert.deepEqual(reads,admittedReads.slice(0,position+1),'stop when revalidation detects drift: '+owner);
  }
  changed=undefined;reads=[];
  assert.equal(project(raw),accepted);

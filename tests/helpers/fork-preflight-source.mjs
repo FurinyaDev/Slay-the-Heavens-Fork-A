@@ -1,4 +1,13 @@
+import {beforeInputRetirementTestInventory,readRetiredInputLuaReceipt} from './input-retirement-inventory.mjs';
+import {beforeDeckPagesSuiteSource} from './input-retirement-source.mjs';
+export {beforeInputRetirementTestInventory} from './input-retirement-inventory.mjs';
 import {assertDevelopBackflowCurrent,authenticateDevelopBackflow,beforeDevelopBackflow,developBackflowOwns} from './develop-release-backflow-source.mjs';
+import {beforeCalibrationReplay} from './calibration-replay-sources.mjs';
+import {beforeNativeHostReplay} from './native-host-replay-source.mjs';
+import {assertNativeFixturesCurrent,beforeNativeFixtureReplay} from './native-fixture-replay-source.mjs';
+import {assertNativeFlowFixturesCurrent,beforeNativeFlowFixture} from './native-flow-fixture-source.mjs';
+import {beforeOfficialBackgroundFixture} from './official-background-fixture-source.mjs';
+import {beforeMapRoomReplayCohort,beforeDevelopReplayMerge} from './develop-replay-merge-source.mjs';
 import {beforeStsUiCloseoutSource} from './sts-ui-closeout-source.mjs';
 import {beforeStsFadeCi} from './sts-fade-ci-source.mjs';
 import {beforeIntegratedStsInventory} from './sts-selection-fade-source.mjs';
@@ -6,7 +15,7 @@ import {beforeNativeButtonRepair,beforeRebasedCi,beforeRebasedRelease,historical
 import {beforeTinyHouseIntegratedSource} from './tiny-house-integrated-source.mjs';
 import {assertReleaseCapacityCohort,beforeReleaseCapacitySource} from './release-integration-source.mjs';
 import {beforeM05BackflowInventory} from './m05-shop-ci-source.mjs';
-import {beforeReleaseShopEntry,shopEntryPriorRead} from './release-ui-restore-source.mjs';
+import {beforeReleaseShopEntry,releaseUiRestoreArchive,shopEntryPriorRead} from './release-ui-restore-source.mjs';
 import {beforeCombatVisualSource,combatVisualPriorRead} from './combat-visual-source.mjs';
 import {beforeSts1MenuCiSource} from './sts1-menu-ci-source.mjs';
 import {assertRefinedReleaseSourcesCurrent,beforeRefinedReleaseCiSource,beforeRefinedReleaseJsInventory,refinedReleaseHistoricalInput} from './refined-release-source.mjs';
@@ -24,6 +33,24 @@ import {readFileSync} from 'node:fs';
 import {createHash} from 'node:crypto';
 import {gunzipSync} from 'node:zlib';
 const hash=s=>createHash('sha256').update(s).digest('hex');
+const gitBlob=source=>createHash('sha1').update(`blob ${Buffer.byteLength(source)}\0`).update(source).digest('hex');
+const forkFirstBytes=readFileSync(new URL('./fork-bootstrap-ci-source.json.gz',import.meta.url));
+assert.equal(hash(forkFirstBytes),'50efd38e0342ed1c5e543722d25e4c63cfde11384aaf6854df1ab6419590fbb6','exact Fork-First CI predecessor archive');
+const forkFirst=JSON.parse(gunzipSync(forkFirstBytes));
+assert.equal(forkFirst.schemaVersion,1);
+assert.equal(forkFirst.baseCommit,'62943964d4ff1cd152bd28c0fbc8df98df9d054d');
+for(const [path,{before,after}] of Object.entries(forkFirst.files)){
+ assert.equal(hash(before.source),before.sha256,path+' complete Fork-First CI predecessor');
+ assert.equal(gitBlob(before.source),before.gitBlob,path+' immutable Fork-First CI predecessor blob');
+ assert.match(after.sha256,/^[a-f0-9]{64}$/);
+ assert.match(after.gitBlob,/^[a-f0-9]{40}$/);
+}
+function beforeForkFirstCi(path,source){
+ if(!Object.hasOwn(forkFirst.files,path)||typeof source!=='string'||source.includes('\r\r\n'))return source;
+ const {before,after}=forkFirst.files[path],lf=source.replaceAll('\r\n','\n');
+ if(hash(lf)!==after.sha256||gitBlob(lf)!==after.gitBlob)return source;
+ return source.includes('\r\n')?before.source.replaceAll('\n','\r\n'):before.source;
+}
 const bytes=readFileSync(new URL('./fork-preflight-source.json.gz',import.meta.url));
 assert.equal(hash(bytes),'c6a6e34e8201b22b4c82fa554502785af7dc5f63840189e9c53da7692a55565e');
 const proof=JSON.parse(gunzipSync(bytes));
@@ -213,6 +240,27 @@ function beforeDevelopSessionRelicCopier(path,source){
  return source.includes('\r\n')?prior.replaceAll('\n','\r\n'):prior;
 }
 function beforeDevelopBackflowCopier(path,source){
+ source=beforeDevelopReplayMerge(path,source);
+ source=beforeReplayFingerprintSource(path,source);
+ if(path==='tests/helpers/copy-integration-source-closure.mjs'&&typeof source==='string'&&!source.includes('\r\r\n')){
+  const lf=normalize(source);
+  if(hash(lf)==='abc997d3fc2634171522a086ec687de62ffd6390021e264bb28dd6a03d56e831'&&blob(lf)==='e609e937efa62af330b8d0c57192e2be5f9dc83a'){
+   const prior=lf.replace(/^const developSourceEpochReplayFiles=Object\.freeze\(\{\n[\s\S]*?^\}\);\n/m,'')
+    .replace('Object.entries(developSourceEpochReplayFiles))','Object.entries(developIntegrationReplayFiles))');
+   assert.equal(hash(prior),'0a378223063056063e2903ec3d36c323a55e25b8a1f5ad6ccba71c9e5b70d30a','exact Develop source epoch replay copier predecessor');
+   assert.equal(blob(prior),'fd462c9e87c8563efb8b343405cc8550e52c0f47');
+   source=source.includes('\r\n')?prior.replaceAll('\n','\r\n'):prior;
+  }
+ }
+ if(path==='tests/helpers/copy-integration-source-closure.mjs'&&typeof source==='string'&&!source.includes('\r\r\n')){
+  const lf=normalize(source);
+  if(hash(lf)==='0a378223063056063e2903ec3d36c323a55e25b8a1f5ad6ccba71c9e5b70d30a'&&blob(lf)==='fd462c9e87c8563efb8b343405cc8550e52c0f47'){
+   const prior=lf.replace(/^const developIntegrationReplayFiles=Object\.freeze\(\{\n[\s\S]*?^\}\);\n/m,'')
+    .replace('Object.entries(developIntegrationReplayFiles))','Object.entries(developSessionRelicFiles))');
+   assert.equal(hash(prior),'5130bc86b8e09a85aa7981393335cecec6d76a1b38f2ab2a80ac4810b22fa2d9','exact integration replay copier predecessor');
+   source=source.includes('\r\n')?prior.replaceAll('\n','\r\n'):prior;
+  }
+ }
  if(path==='tests/helpers/copy-integration-source-closure.mjs'&&typeof source==='string'
   &&hash(normalize(source))==='dbb15c5ae00750913e1c44c41c670181ab87bb7ee5cecade9fb2592c65c5556b'
   &&(!source.includes('\r')||!/[\r\n]/.test(source.replaceAll('\r\n','')))){
@@ -403,9 +451,37 @@ function beforePowerMembershipConfig(path,source){
 const luaInventoryTest="tests/sts-style-source-epoch.test.mjs";
 const luaInventoryTestSha='5b02801e4b9837497fa8f9f20388cff207afa78e7f2a7f358b9ac9332e7b1774';
 const luaInventoryTestBlob='b43000381568f9b167c528e5f96f870c9f144d7a';
+function beforeInputRetirementInventoryTest(source){
+ if(hash(source)!=='3b28f64febf618d28d413c7ffb063053a46f048068aa291d9901d216f10e7a99'||
+    blob(source)!=='e561cbe4364a9dc107408ffac4d61b7715b11638')return source;
+ const prior=source.replace('assertCurrentJsInventory,beforeInputRetirementTestInventory,beforeShopEntryInventory',
+  'assertCurrentJsInventory,beforeShopEntryInventory')
+  .replace("  paths=beforeInputRetirementTestInventory(paths,'lua',read,{required:true});\n",'');
+ assert.equal(hash(prior),'54d5d3c02c45616cb282fad68678cd034de2f91fe8d478a1512139504ab7e860','exact live input retirement inventory test predecessor');
+ assert.equal(blob(prior),'97df72579410fd9691412e49ddd14dc86a7f93be');
+ return prior;
+}
+function beforeHistoricalProductionInventoryTest(source){
+ if(hash(source)!=='54d5d3c02c45616cb282fad68678cd034de2f91fe8d478a1512139504ab7e860'||blob(source)!=='97df72579410fd9691412e49ddd14dc86a7f93be')return source;
+ const rewrites=[
+  ["import {actorFocusAdded,assertActorFocusInventory,stasisUpgradeAddedPaths} from './helpers/develop-release-backflow-source.mjs';\n", ""],
+  ["releaseSourceEpoch,prePowerMembershipEpoch}=await", "releaseSourceEpoch}=await"],
+  [" assert.equal(Object.keys(prePowerMembershipEpoch.proof.current).length,352); // Final menu adds navigation and navigation view.\n assert.deepEqual(Object.keys(p.current).sort(),[...Object.keys(prePowerMembershipEpoch.proof.current),'src/lua/abyss_power_membership.lua'].sort());", " assert.equal(Object.keys(p.current).length,352); // Final menu adds navigation and navigation view."],
+  [" assert.deepEqual([...Object.keys(p.current),...stasisUpgradeAddedPaths,...actorFocusAdded].sort(),actual);\n assertActorFocusInventory(actual.filter(path=>path!=='config/architecture.json'),read);", " assert.deepEqual(Object.keys(p.current).sort(),actual);"],
+  ["for(const path of Object.keys(p.current))assert.equal(beforeCharacterPreparationSource", "for(const path of actual)assert.equal(beforeCharacterPreparationSource"]
+ ];
+ let prior=source;
+ for(const [current,before]of rewrites){
+  assert.equal(prior.split(current).length,2,'exact live production inventory test boundary');
+  prior=prior.replace(current,()=>before);
+ }
+ assert.equal(hash(prior),luaInventoryTestSha,'exact live production inventory test predecessor');
+ assert.equal(blob(prior),luaInventoryTestBlob,'exact live production inventory test predecessor blob');
+ return prior;
+}
 function beforeLuaInventoryTest(path,source){
  if(path!==luaInventoryTest||typeof source!=='string'||source.includes('\r\r\n'))return source;
- const current=normalize(source);
+ const current=beforeHistoricalProductionInventoryTest(beforeInputRetirementInventoryTest(normalize(source)));
  if(hash(current)!==luaInventoryTestSha||blob(current)!==luaInventoryTestBlob)return source;
  const start=" assertCurrentJsInventory(rawJs,integratedCiProof.inventory);\n // These five tests remain in current Full discovery.",end=" const newTest=";
  assert.equal(current.split(start).length,2,'exact live Lua test boundary');
@@ -469,7 +545,8 @@ export function beforeReleaseAdditionalInventory(paths,kind,read=readFileSync){
  return paths.filter(path=>!Object.hasOwn(newerTests[kind],path));
 }
 export function beforeShopEntryInventory(paths,kind,read=readFileSync){
- if(kind==='js')paths=beforeIntegratedStsInventory(paths,read);
+ paths=beforeInputRetirementTestInventory(paths,kind,read);
+ if(kind==='js')paths=beforeIntegratedStsInventory(paths,(path,encoding)=>beforeNativeFlowFixture(path,read(path,encoding)));
  paths=beforeReleaseAdditionalInventory(paths,kind,read);
  const [path,...authenticated]=shopEntryTests[kind];
  const position=paths.indexOf(path);
@@ -480,14 +557,16 @@ export function beforeShopEntryInventory(paths,kind,read=readFileSync){
  return paths.filter(test=>test!==path);
 }
 export function assertCurrentJsInventory(paths,preceding,read=readFileSync){
+ paths=beforeInputRetirementTestInventory(paths,'js',read,{required:true});
  paths=beforeRefinedReleaseJsInventory(beforeShopEntryInventory(paths,'js',read),[...preceding,coopLabTest],read,true);
  assertCoopJsInventory(paths,preceding,read);
 }
 export function assertCurrentLuaInventory(paths,preceding,read=readFileSync){
+ paths=beforeInputRetirementTestInventory(paths,'lua',read,{required:true});
  const additions=[...Object.keys(newerTests.lua),shopEntryTests.lua[0],'tests/lua/shop_dismiss.lua'];
  assert.deepEqual([...paths].sort(),[...preceding,...additions].sort(),'complete current raw discovery inventory (Lua)');
  const prior=beforeShopEntryInventory(paths,'lua',(path,encoding)=>{
-  const source=read(path,encoding);
+  const source=beforeForkFirstCi(path,read(path,encoding));
   if(developBackflowOwns(path))assertDevelopBackflowCurrent(path,source);
   return source;
  });
@@ -558,7 +637,125 @@ function closeoutPredecessor(path){
  }
  return closeoutPredecessors.get(path);
 }
+function beforeIntegrationReplayTests(path,source){
+ if(path!=='tests/integration-source-epoch.test.mjs'||typeof source!=='string'||source.includes('\r\r\n'))return source;
+ const current=normalize(source);
+ if(hash(current)!=='54554c11d6514f5bf8b164fb30fe9b5538e39f550e9a22587514461ad9442587'||
+  blob(current)!=='bf77a954913587402aea8992f734cf891d9891bd')return source;
+ const archive=readFileSync(new URL('./integration-replay-test-source.json.gz',import.meta.url));
+ assert.equal(hash(archive),'8b1b39e9d26df59754f64d3771dce43974554c4c9acb67a7fa9f9e921232d3f6','immutable integration replay test predecessor archive');
+ const proof=JSON.parse(gunzipSync(archive));
+ assert.equal(proof.schemaVersion,1);
+ assert.equal(proof.base,'469e80240c5b7c60f75ff434bebac62d73c0bd0c');
+ assert.equal(proof.path,path);
+ assert.equal(proof.after.sha256,hash(current));assert.equal(proof.after.gitBlob,blob(current));
+ const prior=proof.before;
+ assert.equal(prior.sha256,sourceSuccessors[path]);assert.equal(hash(prior.source),prior.sha256);
+ assert.equal(blob(prior.source),prior.gitBlob);
+ return source.includes('\r\n')?prior.source.replaceAll('\n','\r\n'):prior.source;
+}
+const epochReplayRuntimePath='tests/helpers/combined-epoch/source-epoch-runtime.mjs';
+const fingerprintReplayPaths=new Set([epochReplayRuntimePath,'tests/helpers/copy-integration-source-closure.mjs',
+ 'tests/helpers/develop-release-backflow-source.mjs','tests/helpers/rebased-release-source.mjs','tests/helpers/round3-catalog-source-inverse.mjs']);
+let fingerprintReplay;
+function beforeReplayFingerprintSource(path,source){
+ if(!fingerprintReplayPaths.has(path))return source;
+ fingerprintReplay??=releaseUiRestoreArchive(readFileSync(new URL('./replay-fingerprint-predecessor.json.gz',import.meta.url)),
+  '805b120d44180797e8583edf7375a7b1d78250bfd8e9b59284aed534f36ae994','baaf67f273aa99f9d7b69812f7c5b2edd6815ab8');
+ return fingerprintReplay.project(path,source);
+}
+const epochReplayPaths=[epochReplayRuntimePath,'tests/helpers/character-preparation-source.mjs'];
+let epochReplaySources;
+function beforeDevelopEpochReplayRuntime(path,source){
+ if(!epochReplayPaths.includes(path)||typeof source!=='string'||source.includes('\r\r\n'))return source;
+ if(!epochReplaySources){
+  const bytes=readFileSync(new URL('./epoch-replay-runtime-source.json.gz',import.meta.url));
+  assert.equal(hash(bytes),'cf8ad18c6099407d326129c39df4ca6ec33f1ab2559a4f5eae62eff5c9403e94','immutable Develop replay runtime predecessor archive');
+  const proof=JSON.parse(gunzipSync(bytes));
+  assert.equal(proof.schemaVersion,1);
+  assert.equal(proof.base,'796ed39e176f162170b2e19230a39fdb83013b00');
+  assert.deepEqual(Object.keys(proof.files),epochReplayPaths);
+  for(const {before,after} of Object.values(proof.files)){
+   assert.equal(hash(before.source),before.sha256);assert.equal(blob(before.source),before.gitBlob);
+   assert.match(after.sha256,/^[a-f0-9]{64}$/);assert.match(after.gitBlob,/^[a-f0-9]{40}$/);
+  }
+  epochReplaySources=proof.files;
+ }
+ const {before,after}=epochReplaySources[path];
+ const current=normalize(source);
+ if(hash(current)!==after.sha256||blob(current)!==after.gitBlob)return source;
+ return source.includes('\r\n')?before.source.replaceAll('\n','\r\n'):before.source;
+}
+const replayAssetLedger='docs/legal/assets.json';
+const replayStorageSources=Object.freeze({
+ '.gitattributes':['0b385940b40b3e3c37337ce283b8772bb800333d6654675ff3107fd70cca7cf5','11d5e5b797cff39ed75bc0614fb9d02975fbcc24'],
+ 'config/ci-media-lfs.json':['80e6bae0a63426858864d5d13d50b86e7fa2369a4b89715b2f0d264b8068092e','04ad2de599ff5e2a702764f0d07d5bbea41a2d77'],
+ [replayAssetLedger]:['3177b5d318db49ae78255bbcf6deae7413024d0f6c2781b31e633c549e173cc0','2d5d723f3a76e0563dda2e28d9f2dccedadf5b42'],
+ 'scripts/ci-media-lfs.mjs':['a4ca309a0e8257fbdbc135b8272acecca74c846db4c56b48a9fa727c00c56458','22fea391946d3d0438fefd054f5e32e5ceb122ec'],
+ 'tests/ci-reviewed-lfs.test.mjs':['05f1824d4c92aed4a8199f2c5b1d62b73c323c752add998376e75e1d11f519f8','fe0cbb9f737f58051ff2154170bd434e85d463cd'],
+});
+function withoutArchiveRecords(current,first,after){
+ const start=current.indexOf(first),end=current.indexOf(after);
+ assert(start>=0&&end>start,'complete replay archive records');
+ return current.slice(0,start)+current.slice(end);
+}
+function beforeDeckBrowserAssetLedger(source){
+ if(typeof source!=='string'||source.includes('\r\r\n'))return source;
+ let current=normalize(source);
+ if(hash(current)==='5ec27c5274a512ccdf2dfb183f65bd15321c87883e3e4e633e6502f726429353'&&
+    blob(current)==='dcd99bd13cf06653847b5ca8eb76748c229f17a4'){
+  current=withoutArchiveRecords(current,'    "native-event-illustrations": {\n','    "deck-browser-host-evidence": {\n');
+  current=withoutArchiveRecords(current,'    "data/presentation/event-native-controls.json": {\n',
+   '    "docs/evidence/deck-pages-20261122/visual/develop-first-open.png": {\n');
+ }
+ if(hash(current)!=='1d33f53a8ae76990456e0829980be613201a8bde6502593013bb928768a9627c'||
+    blob(current)!=='23e19be19acbca290bdad08d71f2e111b1143f1e')return source;
+ const categories=withoutArchiveRecords(current,'    "deck-browser-host-evidence": {\n','    "opening-statue-simulator-evidence": {\n');
+ const prior=withoutArchiveRecords(categories,'    "docs/evidence/deck-pages-20261122/visual/develop-first-open.png": {\n',
+  '    "docs/evidence/neow-geo-statue-preview.png": {\n');
+ const [sha,id]=replayStorageSources[replayAssetLedger];
+ assert.equal(hash(prior),sha,'immutable deck-browser asset ledger predecessor');
+ assert.equal(blob(prior),id);
+ return source.includes('\r\n')?prior.replaceAll('\n','\r\n'):prior;
+}
+function beforeReplayArchiveStorage(path,source){
+ if(!Object.hasOwn(replayStorageSources,path)||typeof source!=='string'||source.includes('\r\r\n'))return source;
+ const current=normalize(source);
+ const [sha,id]=replayStorageSources[path];
+ if(hash(current)!==sha||blob(current)!==id)return source;
+ let prior,priorSha,priorId;
+ switch(path){
+  case '.gitattributes':
+   prior=withoutArchiveRecords(current,'tests/fixtures/integration-ci-epochs.json.gz filter=lfs','\n# Original bytes of the v2 P1 screenshots');
+   priorSha='f0b3ef1846d96a102b82bdc023fd2e88e39e9f93c679be5134df1f8b095b7ac0';priorId='62cc3f1be7620666b1ee3a8205c9c5674b8007dd';
+   break;
+  case 'config/ci-media-lfs.json': {
+   const {replayArchiveExtension,...manifest}=JSON.parse(current);
+   assert(replayArchiveExtension,'complete replay archive manifest extension');
+   prior=JSON.stringify(manifest,null,2)+'\n';
+   priorSha='a744f84701e638657569cf3211443adbace935c28435b2742ebc28b2a666e89d';priorId='ebb146be32e84e6b6161f1b558056900383ffd6c';
+   break;
+  }
+  case replayAssetLedger:
+   prior=withoutArchiveRecords(current,'    "tests/fixtures/integration-ci-epochs.json.gz": {\n','    "docs/evidence/sts-selection-fade-20261121/after-selection.png": {\n');
+   priorSha='28c8b76109df44c218fc25b226dfec494870b591d56c53fd66cb0b6eb06d0a3c';priorId='719804fae3a3b3ddac4d41b6ee020f7fba03319c';
+   break;
+  default:
+   ({before:prior,beforeSha:priorSha,gitBlob:priorId}=transport.files[path]);
+ }
+ assert.equal(hash(prior),priorSha,'immutable replay archive storage predecessor: '+path);
+ assert.equal(blob(prior),priorId,path);
+ return source.includes('\r\n')?prior.replaceAll('\n','\r\n'):prior;
+}
+export function beforeReviewedBuildInput(path,source,read){
+ const live=owner=>read(owner,'utf8');
+ const production=authenticateDevelopBackflow(path,source,live);
+ const deck=beforeDeckPagesSuiteSource(path,production);
+ const merged=beforeDevelopReplayMerge(path,deck);
+ return beforeForkFirstCi(path,beforeReplayArchiveStorage(path,merged));
+}
 function beforeIntegrationSuccessor(path,source){
+ source=beforeIntegrationReplayTests(path,source);
  if(!Object.hasOwn(sourceSuccessors,path)||typeof source!=='string'||source.includes('\r\r\n')
    ||hash(normalize(source))!==sourceSuccessors[path])return source;
  const prior=archiveFiles[path]?.current??closeoutPredecessor(path);
@@ -566,10 +763,38 @@ function beforeIntegrationSuccessor(path,source){
  return source.includes('\r\n')?prior.source.replaceAll('\n','\r\n'):prior.source;
 }
 export function assertIntegrationSuccessorsCurrent(read=readFileSync){
+ const liveRead=read;
+ assertNativeFixturesCurrent(liveRead);
+ assertNativeFlowFixturesCurrent(liveRead);
+ read=(path,encoding)=>beforeCalibrationReplay(path,liveRead(path,encoding));
+ const readCurrent=(path,encoding)=>{
+  const live=read(path,encoding);
+  let raw=beforeNativeFlowFixture(path,live);
+  if(path===replayAssetLedger){
+   const ledger=beforeDeckBrowserAssetLedger(live);
+   assert.notEqual(live,ledger,'fresh complete integration source: '+path);
+   raw=beforeReplayArchiveStorage(path,ledger);
+   assert.notEqual(ledger,raw,'fresh complete integration source: '+path);
+  }
+  const priorMerge=beforeDevelopReplayMerge(path,raw);
+  if(path==='tests/helpers/copy-integration-source-closure.mjs'||path===epochReplayRuntimePath)
+   assert.notEqual(raw,beforeMapRoomReplayCohort(path,raw),'fresh complete integration source: '+path);
+  const priorFingerprint=beforeReplayFingerprintSource(path,priorMerge);
+  const prior=beforeDevelopEpochReplayRuntime(path,priorFingerprint);
+  if(path===epochReplayRuntimePath)assert(raw!==priorFingerprint&&prior!==priorFingerprint,'fresh complete integration source: '+path);
+  return beforeIntegrationReplayTests(path,beforeForkFirstCi(path,prior));
+ };
  const readBackflow=(path,encoding)=>{
-  const source=read(path,encoding);
-  if(developBackflowOwns(path))assertDevelopBackflowCurrent(path,source);
-  return authenticateDevelopBackflow(path,source,owner=>read(owner,'utf8'));
+  const source=readCurrent(path,encoding);
+  // The merged runtime helper was checked before its exact replay projection.
+  if(path===epochReplayRuntimePath)return beforeDevelopBackflow(path,source);
+  const production=!path.startsWith('tests/')&&developBackflowOwns(path);
+  if(production)assertDevelopBackflowCurrent(path,source);
+  const requireCurrent=path.startsWith('scripts/')||(path!==replayAssetLedger&&Object.hasOwn(sourceSuccessors,path));
+  const input=production?source:beforeDeckPagesSuiteSource(path,source,{requireCurrent});
+  const backflow=authenticateDevelopBackflow(path,input,owner=>readCurrent(owner,'utf8'));
+  const deck=production?beforeDeckPagesSuiteSource(path,backflow):backflow;
+  return beforeNativeFixtureReplay(path,beforeNativeHostReplay(path,deck));
  };
  const releaseRead=(path,encoding)=>beforeRebasedRelease(path,readBackflow(path,encoding));
  assertReleaseCapacityCohort(releaseRead);
@@ -588,7 +813,18 @@ export function assertIntegrationSuccessorsCurrent(read=readFileSync){
  }
 }
 export function beforePreflightSource(path,source,view='prior'){
- source=beforeDevelopBackflow(path,source);
+ source=beforeNativeFlowFixture(path,source);
+ source=beforeOfficialBackgroundFixture(path,source);
+ if(path===replayAssetLedger)source=beforeDeckBrowserAssetLedger(source);
+ source=beforeReplayArchiveStorage(path,source);
+ source=beforeCalibrationReplay(path,source);
+ source=beforeForkFirstCi(path,source);
+ source=beforeDevelopReplayMerge(path,source);
+ source=beforeReplayFingerprintSource(path,source);
+ source=beforeDevelopEpochReplayRuntime(path,source);
+ source=beforeDevelopBackflow(path,beforeDeckPagesSuiteSource(path,source));
+ source=beforeNativeHostReplay(path,source);
+ source=beforeNativeFixtureReplay(path,source);
  source=beforeNativeButtonRepairCopier(path,beforeNativeButtonRepair(path,source));
  source=beforeStsUiCloseoutSource(path,source);
  source=beforeCharacterPreparationCiSource(path,beforeV2UiAdmission(path,beforeCoopCiSource(path,source)));
@@ -612,8 +848,17 @@ export function beforePreflightSource(path,source,view='prior'){
  if(prior===undefined||prior===null)return source;
  const eol=source.includes('\r\n')?'\r\n':'\n';return prior.replaceAll('\n',eol);
 }
+export function readHistoricalPreflightInput(path,encoding,read=readFileSync){
+ try{return read(path,encoding);}catch(error){
+  if(error.code!=='ENOENT'||!Object.hasOwn(archiveFiles,path))throw error;
+  const row=archiveFiles[path].current,source=readRetiredInputLuaReceipt(path,row?.sha256,read,row);
+  if(source===undefined)throw error;
+  return encoding?source:Buffer.from(source);
+ }
+}
 export function preflightPriorRead(read=readFileSync,view='prior'){return(path,encoding)=>{
- const raw=read(path,encoding);if(typeof raw!=='string'&&!Buffer.isBuffer(raw))return raw;
+ const raw=readHistoricalPreflightInput(path,encoding,read);
+ if(typeof raw!=='string'&&!Buffer.isBuffer(raw))return raw;
  const text=typeof raw==='string'?raw:raw.toString('utf8'),prior=beforePreflightSource(path,text,view);
  return typeof raw==='string'?prior:prior===text?raw:Buffer.from(prior);
 };}

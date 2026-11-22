@@ -1,5 +1,7 @@
-import {beforeDevelopBackflow,authenticateDevelopBackflow,configSourceTokens,isSessionRelicSuccessor,assertCurrentSessionRelicOwner,assertCurrentMapRoomOwner} from '../develop-release-backflow-source.mjs';
+import {beforeDevelopBackflow,configSourceTokens,isSessionRelicSuccessor,assertCurrentSessionRelicOwner,bindDevelopBackflow} from '../develop-release-backflow-source.mjs';
+import {beforeInputRetirementReader,retiredControllerPath} from '../input-retirement-source.mjs';
 import {authorizeRebasedDevelop,beforeRebasedCi} from '../rebased-release-source.mjs';
+import {beforeSlimeSplitReceipt,beforeSlimeSplitSource} from '../slime-split-source.mjs';
 import {authorizeCardFeedbackOwners,beforeCardFeedbackOwner} from '../card-feedback-owner-source.mjs';
 import {authorizeSts1MapSource,beforeSts1MapSource} from '../sts1-map-source.mjs';
 import {beforeTinyHouseIntegratedSource} from '../tiny-house-integrated-source.mjs';
@@ -119,10 +121,12 @@ export function createSourceEpochProjector(input,{root=process.cwd(),allowConfig
  const readers=new WeakMap(),readLive=path=>{
   try{return readFileSync(resolve(root,path),'utf8');}catch(error){if(error.code==='ENOENT')return null;throw error;}
  };
+ const liveReaders=new WeakSet([readLive]);
  function requireTarget(target){assert(Object.hasOwn(proof.targets,target),'unknown source target');return proof.targets[target];}
  function rawReader(reader){return readers.get(reader)?.raw??reader;}
  function preCombinedSource(path,source,{target,readSource=readLive}={}){
-  const rawInput=source,backflow=beforeDevelopBackflow(path,source,{allowConfigLayout}),reconciled=beforeRebasedCi(path,backflow),mapPrior=beforeCardFeedbackOwner(path,beforeSts1MapSource(path,reconciled)),guidePrior=beforeReleaseGuideSource(path,mapPrior);
+  const rawInput=source,backflow=beforeDevelopBackflow(path,source,{allowConfigLayout}),rebased=beforeRebasedCi(path,backflow);
+  const reconciled=beforeSlimeSplitSource(path,rebased),mapPrior=beforeCardFeedbackOwner(path,beforeSts1MapSource(path,reconciled)),guidePrior=beforeReleaseGuideSource(path,mapPrior);
   const inputSource=beforePc13RewardCover(path,beforeM05ShopSource(path,beforeTinyHouseIntegratedSource(path,guidePrior)));
   source=inputSource;
   const destination=requireTarget(target),current=proof.current[path],before=destination.files[path];
@@ -131,26 +135,30 @@ export function createSourceEpochProjector(input,{root=process.cwd(),allowConfig
   source=projectLumineSource(path,projectPotionTextSource(path,projectSelectorSource(path,projectFatalBgmSource(path,source,current),current),current),current);
   // New witnesses are retained here; retirement belongs to a separate checked
   // materializer. Unknown/original/foreign bytes never authorize owner reads.
-  if(typeof source!=='string'||!current||!before||(!sessionSuccessor&&current.sha256===before.sha256)||(sourceHash(source)!==current.sha256&&(!allowConfigLayout||path!=='config/architecture.json'||!sameConfigLayout(source))))return rawInput;
+  // A registered Develop successor can still need projection when this target
+  // records the same precursor as the current receipt.
+  if(typeof source!=='string'||!current||!before||(backflow===rawInput&&reconciled===rebased&&current.sha256===before.sha256)||(sourceHash(source)!==current.sha256&&(!allowConfigLayout||path!=='config/architecture.json'||!sameConfigLayout(source))))return rawInput;
   assert.equal(typeof readSource,'function','linked owner reader');
   const readRaw=rawReader(readSource);
-  const readBackflow=owner=>{
-   const raw=readRaw(owner);
-   assertCurrentMapRoomOwner(owner,raw);
-   return raw;
-  };
-  authenticateDevelopBackflow(path,rawInput,readBackflow,{allowConfigLayout});
+  // An exact frozen input can be replayed against its owner cohort. Live
+  // Develop successors and the default live reader require current owners.
+  const historicalOwners=!liveReaders.has(readRaw)&&backflow===rawInput
+   &&(sourceHash(rawInput)===current.sha256||(path==='config/architecture.json'&&sameConfigLayout(rawInput)))?proof.current:undefined;
+  const backflowReader=bindDevelopBackflow(readRaw,historicalOwners);
+  backflowReader.authenticate(path,rawInput,{allowConfigLayout});
   readSource=owner=>{
-   const raw=readBackflow(owner);
+   const raw=backflowReader.readOwner(owner);
    if(sessionSuccessor)assertCurrentSessionRelicOwner(owner,raw);
-   return authenticateDevelopBackflow(owner,raw,readBackflow);
+   return backflowReader.authenticate(owner,raw);
   };
+  const readRebased=owner=>beforeRebasedCi(owner,readSource(owner));
+  beforeSlimeSplitReceipt(path,rebased,readRebased);
   const samples=[],rawSamples=[],mapSamples=[],reconciledSamples=[[path,backflow]];
   let guideProjected=guidePrior!==mapPrior;
   for(const owner of proof.owners){
    let actual;try{actual=readSource(owner);}catch(error){assert.fail('combined linked owner missing: '+owner+': '+String(error?.message??error));}
    reconciledSamples.push([owner,actual]);
-   actual=beforeRebasedCi(owner,actual);
+   actual=beforeSlimeSplitReceipt(owner,beforeRebasedCi(owner,actual),readRebased);
    mapSamples.push([owner,actual]);
    const mapOwner=beforeCardFeedbackOwner(owner,beforeSts1MapSource(owner,actual)),prior=beforeReleaseGuideSource(owner,mapOwner);
    guideProjected ||= prior!==mapOwner;
@@ -161,7 +169,7 @@ export function createSourceEpochProjector(input,{root=process.cwd(),allowConfig
    assert(binding===null?actual===null||actual===undefined:typeof actual==='string'&&sourceHash(actual)===binding.sha256,'combined linked owner identity: '+owner);
   }
   authorizeRebasedDevelop(reconciledSamples,readSource);
-  const readReconciled=owner=>beforeRebasedCi(owner,readSource(owner));
+  const readReconciled=owner=>beforeSlimeSplitReceipt(owner,readRebased(owner),readRebased);
   mapSamples.push([path,reconciled]);
   authorizeSts1MapSource(mapSamples,readReconciled);
   authorizeCardFeedbackOwners(mapSamples,readReconciled);
@@ -187,5 +195,34 @@ export function createSourceEpochProjector(input,{root=process.cwd(),allowConfig
   const raw=rawReader(readSource),reader=path=>preCombinedSource(path,raw(path),{target,readSource:raw});
   readers.set(reader,{raw,target});return reader;
  }
- return Object.freeze({proof,preCombinedSource,combinedReader,readerTarget:reader=>readers.get(reader)?.target});
+ function withCombinedProjection(path,source,{target,readSource=readLive},use){
+  requireTarget(target);assert.equal(typeof readSource,'function','linked owner reader');
+  const readRaw=rawReader(readSource),observed=new Map(),projections=new Map();
+  // Reuse only deterministic projections within this replay. Reread each
+  // requested owner, reject changes to its first observation and check the
+  // entire observed cohort again before returning the projected source.
+  const readFresh=owner=>{
+   let value;
+   try{value=readRaw(owner);}catch(error){
+    if(owner!==retiredControllerPath||error?.code!=='ENOENT')assert.fail('combined linked owner missing: '+owner+': '+String(error?.message??error));
+    value=null;
+   }
+   if(observed.has(owner))assert(value===observed.get(owner),'combined linked owner identity: '+owner+' changed during replay');
+   else observed.set(owner,value);
+   return value;
+  };
+  if(liveReaders.has(readRaw))liveReaders.add(readFresh);
+  const options={target,readSource:readFresh};
+  const projected=preCombinedSource(path,source,options);
+  const historicalInput=beforeInputRetirementReader(readFresh);
+  const readProjection=owner=>{
+   const value=owner===retiredControllerPath?historicalInput(owner):readFresh(owner);
+   if(!projections.has(owner))projections.set(owner,preCombinedSource(owner,value,options));
+   return projections.get(owner);
+  };
+  const result=use(projected,readProjection);
+  for(const owner of observed.keys())readFresh(owner);
+  return result;
+ }
+ return Object.freeze({proof,preCombinedSource,combinedReader,withCombinedProjection,readerTarget:reader=>readers.get(reader)?.target});
 }

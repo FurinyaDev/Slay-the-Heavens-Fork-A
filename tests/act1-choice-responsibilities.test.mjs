@@ -1,4 +1,5 @@
 import {currentProductionRereads} from './helpers/current-production-source-reads.mjs';
+import {beforeInputRetirementReader,pointerInputPath,retiredControllerPath} from './helpers/input-retirement-source.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
@@ -181,7 +182,7 @@ test('Act1 current source enters the unchanged historical chain and rereads ever
  const {preRelicQuerySource,relicQueryReader}=await import('./helpers/relic-query-source-inverse.mjs');
  const {sourceEpoch}=await import('./helpers/combined-epoch/source-epoch.mjs');
  const source=read(file),owners=sourceEpoch.proof.owners;
- const admittedReads=[...owners,...currentProductionRereads];
+ const priorReadOrder=[...owners,...currentProductionRereads];
  // Forty-five belongs to the frozen #562 union, not the evolving live tree.
  const {sevenRefactorEpoch}=await import('./helpers/seven-refactor-source-epoch.mjs');
  const archived=readFileSync('tests/helpers/combined-epoch/source-epoch.json.gz');
@@ -192,18 +193,38 @@ test('Act1 current source enters the unchanged historical chain and rereads ever
  assert.equal(historicalOwners.length,45,'unchanged authenticated #562 owner union');
  assert.deepEqual(historicalOwners.filter(owner=>!owners.includes(owner)),[],'current coverage retains every original owner');
  assert.equal(preRelicQuerySource(file,source),before);
- let changed,reads=[],replacement;
+ let changed,reads=[],replacement,admittedReads;
  const raw=p=>{reads.push(p);return p===changed?replacement:read(p);};
  const wrapped=relicQueryReader(raw);assert.equal(relicQueryReader(wrapped),wrapped);
  for(const readSource of [raw,wrapped]){
-  changed=undefined;reads=[];assert.equal(preRelicQuerySource(file,source,{readSource}),before);assert.deepEqual(reads,admittedReads);
-  for(const owner of owners)for(replacement of [read(owner)+'\n',null,undefined]){
+  changed=undefined;reads=[];assert.equal(preRelicQuerySource(file,source,{readSource}),before);
+  if(!admittedReads){
+   // Keep the complete current trace and the ordered original contract.
+   assert.equal(reads.length,403);
+   assert.equal(createHash('sha256').update(JSON.stringify(reads)).digest('hex'),'6f35ecd12c3f1edbc8ee8e476324bdb4380725eeacf240cc6ec15cd106fc2e3f');
+   let position=-1;
+   for(const owner of priorReadOrder){
+    position=reads.indexOf(owner,position+1);
+    assert.notEqual(position,-1,'retained original Act1 read: '+owner);
+   }
+   admittedReads=[...reads];
+  }
+  assert.deepEqual(reads,admittedReads);
+  for(const owner of owners.filter(owner=>owner!==retiredControllerPath))for(replacement of [read(owner)+'\n',null,undefined]){
    changed=owner;reads=[];assert.throws(()=>preRelicQuerySource(file,source,{readSource}),/combined linked owner identity/);
-   assert.deepEqual(reads,owners.slice(0,owners.indexOf(owner)+1),'fresh reads stop at the actual bad owner');
+   assert.deepEqual(reads,admittedReads.slice(0,admittedReads.indexOf(owner)+1),'fresh reads stop at the actual bad owner: '+owner);
+  }
+  changed=retiredControllerPath;replacement=beforeInputRetirementReader(read)(changed);reads=[];
+  assert.throws(()=>preRelicQuerySource(file,source,{readSource}),/combined linked owner identity: src\/lua\/abyss_controller\.lua/);
+  assert.deepEqual(reads,admittedReads.slice(0,admittedReads.indexOf(changed)+1));
+  changed=pointerInputPath;
+  for(replacement of [read(changed)+'\n',null,undefined]){
+   reads=[];assert.throws(()=>preRelicQuerySource(file,source,{readSource}),/combined linked owner missing: src\/lua\/abyss_controller\.lua/);
+   assert.deepEqual(reads,admittedReads.slice(0,admittedReads.indexOf(changed)+1));
   }
   changed=file;replacement=before;reads=[];
   assert.throws(()=>preRelicQuerySource(file,source,{readSource}),/combined linked owner identity/,'original Act1 bytes cannot authorize a current raw owner');
-  assert.deepEqual(reads,owners.slice(0,owners.indexOf(file)+1));
+  assert.deepEqual(reads,admittedReads.slice(0,admittedReads.indexOf(file)+1));
   // Layout tolerance is for the input argument only, never a real raw owner.
   changed='config/architecture.json';replacement=JSON.stringify(JSON.parse(read(changed)));
   assert.throws(()=>preRelicQuerySource(file,source,{readSource}),/combined linked owner identity: config\/architecture.json/);

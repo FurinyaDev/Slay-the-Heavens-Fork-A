@@ -1,5 +1,6 @@
-import {authenticateInputRetirement,beforeInputRetirementReader,beforeDeckBrowserBackflow,beforePotionBackflow} from './input-retirement-source.mjs';
+import {assertCurrentDevelopUiSource,readRetiredController,retiredControllerPath} from './input-retirement-source.mjs';
 import {assertDevelopBackflowCurrent,authenticateDevelopBackflow,developBackflowOwns} from './develop-release-backflow-source.mjs';
+import {beforeSlimeSplitReceipt,slimeSplitSourcePaths} from './slime-split-source.mjs';
 import {beforeStsSelectionFade,beforeAuthenticatedStsSelectionFade} from './sts-selection-fade-source.mjs';
 import {authorizeRebasedDevelop,beforeRebasedCi,rebasedDevelopOwns} from './rebased-release-source.mjs';
 import {authorizeCardFeedbackOwners,beforeCardFeedbackOwner,cardFeedbackOwnerPaths} from './card-feedback-owner-source.mjs';
@@ -39,41 +40,6 @@ export function assertCharacterPreparationSources(read = readRaw) {
     assert(typeof source === 'string' && !source.includes('\r\r\n') &&
       digest(normalize(source)) === packet.production[path].after, 'fresh character preparation source: '+path);
   }
-}
-
-// Authenticate the develop split fix before restoring an older receipt.
-const slimeSplitSources=Object.freeze({
-  "src/lua/abyss_combat.lua": {
-    "before": "609e75ba6e83da7b2311629adfdc2fd101c8167d3d17dbb1cdc0748baa9b1d1c",
-    "after": "e2722605fad6ba7c56526d878cd6e0d571ef61156a5c5c5e28ad0d6bbc034355",
-    "hunks": [
-      [
-        "        children[i].sourcePosition = EnemySetup.splitPosition(parent, i)\n",
-        "        if ai.splitPositions then children[i].sourcePosition=copy(ai.splitPositions[i]) end\n"
-      ]
-    ]
-  },
-  "src/lua/abyss_combat_enemy_setup.lua": {
-    "before": "76c8aa93a85a272b80ff4ae74645bc26fe33b7f6d18eb733d8c54d904b9331da",
-    "after": "bd4875cf008fd05fa65f90eea11a29165b4b98733c5d30e2210e3f7545dcc725",
-    "hunks": [
-      [
-        "end\nfunction M.splitPosition(parent,childIndex)\n if parent.ai.splitPositions then return Copy(parent.ai.splitPositions[childIndex])end\n -- Large slime takeTurn places medium children +/-134 source pixels from the parent.\n local origin=parent.sourcePosition or {x=0,y=0}\n return {x=origin.x+(childIndex==1 and -134 or 134),y=origin.y}\n",
-        ""
-      ]
-    ]
-  }
-});
-function beforeSlimeSplitReceipt(path,source,read){
-  const row=Object.hasOwn(slimeSplitSources,path)?slimeSplitSources[path]:null;
-  if(!row||typeof source!=='string'||source.includes('\r\r\n')||digest(normalize(source))!==row.after)return source;
-  const live=read(path);
-  assert(typeof live==='string'&&!live.includes('\r\r\n')&&digest(normalize(live))===row.after,
-    'fresh slime split source: '+path);
-  let prior=normalize(source);
-  for(const [current,before] of row.hunks)prior=prior.replace(current,()=>before);
-  assert.equal(digest(prior),row.before,'exact split source predecessor: '+path);
-  return source.includes('\r\n')?prior.replaceAll('\n','\r\n'):prior;
 }
 
 // Only authenticated current admission sources may replay earlier receipts.
@@ -119,8 +85,9 @@ function beforeAdmissionReceipt(path,source,read){
 // Unknown bytes are left visible and both current owners are checked on every projection.
 export function beforeCharacterPreparationSource(path, source, read = readRaw) {
   source=authenticateDevelopBackflow(path,source,read);
-  const readBackflow=beforeInputRetirementReader(read);
-  read=owner=>authenticateDevelopBackflow(owner,readBackflow(owner),readBackflow);
+  const readBackflow=read;
+  read=owner=>authenticateDevelopBackflow(owner,
+    owner===retiredControllerPath?readRetiredController(readBackflow).source:readBackflow(owner),readBackflow);
   const rebound=beforeRebasedCi(path,source);
   if(rebound!==source)authorizeRebasedDevelop([[path,source]],read);
   source=rebound;
@@ -165,18 +132,15 @@ export function beforeCharacterPreparationSource(path, source, read = readRaw) {
 }
 
 const currentContinuationOwners = new Set([
-  ...Object.keys(admissionSources), ...Object.keys(slimeSplitSources),
+  ...Object.keys(admissionSources), ...slimeSplitSourcePaths,
   ...characterPreparationOwners, ...v2UiHudSourcePaths, selectorSourcePair.path, potionTextSourcePair.path,
   fatalBgmPair.path, endingTerminalSourcePath, luminePortraitSourcePath, ...potionPointerSourcePaths, ...tinyHouseUiSourcePaths, ...pc13RewardCoverSourcePaths, ...m05ShopSourcePaths,
 ]);
 
 export function beforeCurrentProductionSource(path, source, read = readRaw) {
-  const rawSource=source;
-  source=authenticateInputRetirement(path,source,read);
-  read=beforeInputRetirementReader(read);
+  assertCurrentDevelopUiSource(path,source,read);
   if(developBackflowOwns(path)){
-    const currentBackflow=beforeDeckBrowserBackflow(path,beforePotionBackflow(path,rawSource));
-    assertDevelopBackflowCurrent(path,currentBackflow!==rawSource?rawSource:source);
+    assertDevelopBackflowCurrent(path,source);
     return beforeCharacterPreparationSource(path,source,read);
   }
   if(rebasedDevelopOwns(path)){

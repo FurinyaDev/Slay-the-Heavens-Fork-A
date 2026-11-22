@@ -239,16 +239,41 @@ const developSessionRelicFiles=Object.freeze({
  'tests/fixtures/develop-session-relic-source.json.gz':'3597ea919d88cd07f5e4e8f2c8918c0558f613f6a3fd3d6fda3a08469276db05',
  'tests/helpers/combined-epoch/source-epoch-runtime.mjs':'10c612b573801aff960786be378827d32af65ac52edbbfd282a7f562155ca683',
 });
-const relicDetailFiles=Object.freeze({
+const developIntegrationReplayFiles=Object.freeze({
  ...developSessionRelicFiles,
- 'tests/helpers/develop-release-backflow-source.mjs':'e0b9fa1cefeb034cad1f971a18f636698a5bf67f765c0b9e560c3913cf717b03',
+ 'tests/helpers/round3-catalog-source-inverse.mjs':'876d284929930e1a5af54febd8db894519b5df96e1726cca3a8a5a9e35feeb96',
+});
+const developSourceEpochReplayFiles=Object.freeze({
+ ...developIntegrationReplayFiles,
+ 'tests/helpers/combined-epoch/source-epoch-runtime.mjs':'374a8859981663781a20dae1cc4d3fd2032d6f74b09f7eaec9945a36e24ebac3',
+ 'tests/helpers/character-preparation-source.mjs':'076768299363a94357c64603a91243577238bdadccf6aa94d0159c8222457720',
+ 'tests/helpers/slime-split-source.mjs':'a0b689346b7912b21d5268fc77d3b76310f39085effb58540a32f5ac9ccaaf2b',
+});
+const developReplayFingerprintFiles=Object.freeze({
+ ...developSourceEpochReplayFiles,
+ 'tests/helpers/combined-epoch/source-epoch-runtime.mjs':'de28a1d3cbef648c5dd12f1c69075d8917916772c85c8f103948392b80206cf4',
+ 'tests/helpers/develop-release-backflow-source.mjs':'5df32d98656b84986286a08ff35c3e20fab316fb8b8a19b2c94e1e832240034b',
+ 'tests/helpers/rebased-release-source.mjs':'187d921a65bee4bfb76f0b1083849139d2dbb4434dfb786df6c1407fda2c1f2d',
+ 'tests/helpers/round3-catalog-source-inverse.mjs':'6fc3ea3a193ac586187ab5749a8c61b3b9e3ec1a87f689b62b545c73ed64ec3e',
+ 'tests/helpers/source-fingerprint.mjs':'dfbee65636a24c4c4ffe755b27fd741e00ea2e81b044638c424a866b97309d8f',
+});
+const developReplayUiFiles=Object.freeze({
+ ...developReplayFingerprintFiles,
+ 'tests/helpers/develop-release-backflow-source.mjs':'f9787f1c456c0201c0d7a592e0d400cc8547b80017b82472aeecfc010abb1755',
  'tests/helpers/relic-detail-source.mjs':'2fd994110473464aa1fad34f720423ddaa4e4ac68b3ca8d2a4020cd4f5eaa4a0',
  'tests/fixtures/relic-detail-source.json.gz':'981b97459ad1d75b79d03e197534dbab883d1f79055c7e2776d9ec32f09a9327',
+ 'tests/fixtures/develop-combat-pile-opening-source.json.gz':'a9e96c6caa44e21e45493a63385bf315ba9eaaf9a30257533bc46ccf9e51f9e6',
 });
 const mapRoomEntryFiles=Object.freeze({
- ...relicDetailFiles,
- "tests/helpers/combined-epoch/source-epoch-runtime.mjs":'1622c962ace1197fb07fc926676ccf99a7381d4138788921d482f58ed6b1d81e',
- 'tests/helpers/develop-release-backflow-source.mjs':'a150c2b6677e6e7befc35c440099418b5a1f3e87e37a7467042064e1a10df519',
+ ...developReplayUiFiles,
+ "tests/helpers/combined-epoch/source-epoch-runtime.mjs":'4df578d1abba64c7c1313d91b49a4531060b8a8c9e55affce77c7b89979ed1d0',
+ 'tests/helpers/develop-release-backflow-source.mjs':'994ecec386c0193de78ff473f94c26270c4c855aee82a97218474983abcb9a37',
+ 'tests/helpers/relic-detail-source.mjs':'d0a38c20119cdf8c951b4fb470ab91910a3474d8972d4c2650de4eed667cbfa4',
+ 'tests/helpers/native-host-replay-source.mjs':'e7755ecdd96304a1355b610493cbe7827f62543dcbf94392e22539fbf6160ea7',
+ 'tests/helpers/native-host-replay-source.json.gz':'979352d3332e2cc708d22055ed69bb3fcc00a954c1cd55f8f807924116360145',
+ 'tests/helpers/native-fixture-replay-source.mjs':'50e75316a6e35c9917207d8a2167f8c30723b663954038457e798fc5411986b9',
+ 'tests/helpers/native-fixture-replay-source.json.gz':'5743ecc4139667a78cea2871f25679aa05d400a9deadccb702d0196ed06bd52a',
+ 'tests/helpers/round3-catalog-source-inverse.mjs':'aa305d8d0185ffec57a7ab85065e9767bb607b2c973b23e035413168def86a03',
  'tests/fixtures/develop-map-room-entry-source.json.gz':'bff89df36b2fbbf1bec727dae075c632dba48d50c6c8c75b8e3f271d7600c160',
 });
 const deckPagesFiles=Object.freeze({
@@ -258,22 +283,34 @@ const deckPagesFiles=Object.freeze({
 });
 const inputRetirementFiles=Object.freeze({
  ...deckPagesFiles,
- 'tests/helpers/develop-release-backflow-source.mjs':'c98ed483a6f206491e3647109f4d2f78511faada0c124df2b8ec8399a682e6e2',
- 'tests/helpers/input-retirement-source.mjs':'c5e451dd18ecb0a1664fc1c5278ee2e27b832b8e688607e69209df748d7f6e5f',
- 'tests/fixtures/develop-potion-popup-source.json.gz':'6c85ba4df16b702a4f6955b50631d1af9533c141d19fb930a51be22224eabf95',
- 'tests/fixtures/develop-deck-browser-backflow-source.json.gz':'9f62aef27e5bc61741311bb2507fa75a58b67544d33136ccbc6a5978edd9f284',
- 'tests/helpers/character-preparation-source.mjs':'2372ccfb620cca7c845b2ec312d1145c75bf44a00b18b5da51b13f91ea7ea732',
- 'tests/helpers/rebased-release-source.mjs':'faa43fceaf4e6e51c71e950213eefe15432428245f1a1df412f22e99c6c614cd',
+ 'tests/helpers/game-ui-extraction-source-inverse.mjs':'53382c07cd63cd010a8aa3c9b2dc12ba3a38ac628d3104cce8eb2ef3c8c33d8c',
+ [runtime]:'4bf2e1c7038d0bbe0bffd85ec5be1c4685811b63bf79653f56756779b5463348',
+ 'tests/helpers/develop-release-backflow-source.mjs':'cf5458eeed5203f9264cfc1c60f1ec0e8c37ec4840cae06668a8002edaf94a7f',
+ 'tests/helpers/input-retirement-source.mjs':'7d849cfad2c62efc07b65bb4c845dfe6b54b2f3bf2d3bca560457a1eed631488',
+ 'tests/fixtures/develop-deck-browser-backflow-source.json.gz':'84b5198436d5858f1630db9d577a188d2033b4e7cb8ce2897e7ecd4378ebf49c',
+ 'tests/fixtures/develop-potion-popup-source.json.gz':'d7e6b6a7b6d603cec23424eedb0ed25fbef3c7fdeae2a4d1ee6fe208ca693690',
+ 'tests/fixtures/develop-combat-events-source.json.gz':'6a25140a8a86554e7c072e94cad465082d5930d20ffb7c4b0837bf0f6aa1b87d',
+ 'tests/helpers/character-preparation-source.mjs':'b9cbb744b5e8915bb30cede2bc27f037346be2fb613e2d189e5e713fa7ed2933',
+ 'tests/helpers/rebased-release-source.mjs':'09cd53484024ec226c747686da16d05ee229b763b41f55533d92d2d1a6cd35a5',
+ 'tests/helpers/native-host-replay-source.mjs':'9a9adcd1ffd1f89db073f735335ccbb51d4112bf8a4ff83de9bf2338f81b19b7',
+ 'tests/helpers/native-host-replay-source.json.gz':'f6e9062262769766edcca6a82898acec6b66a0e7f3b30d26655c2b45eb511da5',
+ 'tests/helpers/native-fixture-replay-source.mjs':'a35bc0a9dd6f574fa5bd373100d2c2566ff6178fc8b52fe931f529b173ff229c',
+ 'tests/helpers/native-fixture-replay-source.json.gz':'d1cbf62cf27c0458efec5a303852cfbf38acad680e77a15fdb902b34a758c1c5',
  'tests/fixtures/develop-input-retirement-source.json.gz':'ed86f17b8f643d4392828e582582859d7b86d0a143de94b1fac4cfab9a5bf912',
  'tests/fixtures/develop-combat-pile-opening-source.json.gz':'a9e96c6caa44e21e45493a63385bf315ba9eaaf9a30257533bc46ccf9e51f9e6',
  'tests/helpers/ending-terminal-source.mjs':'d97a3b655ac591e8b2a95dd4e8e856ce3b472ec5d5f6c34337d63e4899d4f6a6',
  'tests/helpers/character-preparation-source.json.gz':'a3d61ed1e47036e5288cc4bc673388065ee0ace71497cba74da5b669a0a16790',
  'tests/fixtures/architecture-admission-before.json.gz':'93c84b252594eb1362c2bdb5a46cf5c82b7c05129df6d0695dd9e7fd79f2ca42',
  'tests/helpers/sts-feedback-ci.json.gz':'c91fadf0cda8b9b3d8fbe562854aa6c59ae007c13f1b978c6c905448eaf06f59',
+ 'tests/helpers/reward-query-boundary-source-inverse.mjs':'047320dcda1683f7425f09a181dbc9cb71f5984ef13a4cfb7ad9d5a01cca42cf',
+ 'tests/helpers/m7-core-final-source-inverse.mjs':'e54e91f55205207fd832ddad079b3fcf03102c4ca1ebcb045d6507b52feaab6b',
+ 'tests/helpers/native-flow-fixture-source.mjs':'eeec0dfdddc1f0da31340645641134bf314ec57d5db20e533dc7cdb67c6ea49b',
+ 'tests/helpers/native-flow-fixture-source.json.gz':'5709c250f1411a9edbdaa6669bf0d39bfecc824841684b7948eba3297d5aea35',
+ 'tests/helpers/source-fingerprint.mjs':'82873d43045cd012a0ed817a27d88343bd0f092d755d49a04629f98b9bd72612',
 });
 const actionButtonFiles=Object.freeze({
  ...inputRetirementFiles,
- 'tests/helpers/develop-release-backflow-source.mjs':'051f6e2523939a72227e4a674f988d43bffe08f429bdfcca4a601d497381fd3b',
+ 'tests/helpers/develop-release-backflow-source.mjs':'0b94dc40162bd992de8ecff48bbdd5d3d3d391a27bd59268eac309d714bf0752',
  'tests/helpers/action-buttons-source.mjs':'fdb6c73f52cf92fededa3d48fded11f05e21356ec66864a43c54bdf51781d4cd',
  'tests/fixtures/action-buttons-source.json.gz':'86634a756c4085906261d4d318118bb1f7692a642479651526c1ace0fefe4487',
 });

@@ -2,6 +2,8 @@
 export * from './epochs/develop/tests/helpers/round3-catalog-source-inverse.mjs';
 import { preRound3CatalogSource as original } from './epochs/develop/tests/helpers/round3-catalog-source-inverse.mjs';
 import {sourceEpoch} from './combined-epoch/source-epoch.mjs';
+import {authenticateDevelopBackflow} from './develop-release-backflow-source.mjs';
+import {beforeReleaseForgeGridUi} from './release-ui-restore-source.mjs';
 import {readFileSync} from 'node:fs';
 const live=p=>readFileSync(new URL('../../'+p,import.meta.url),'utf8');
 function unusedOriginalFacade(path,source,{readSource=live}={}){
@@ -22,22 +24,23 @@ import {preparePotionCallbackRetirement} from './epochs/potion/tests/helpers/pot
 import {prepareActorPresenceRetirement} from './epochs/actor/tests/helpers/actor-presence-source-inverse.mjs';
 const hash=s=>createHash('sha256').update(s.replaceAll('\r\n','\n')).digest('hex');
 function projectRound3(path,source,{readSource=live}={}){
- source=sourceEpoch.preCombinedSource(path,source,{target:'develop',readSource});
- readSource=sourceEpoch.combinedReader(readSource,'develop');
- source=legacyIntegration(path,source,'base',{readSource});
- source=legacyMonster(path,source,{readSource});
- source=legacyComposition(path,source,'round3');
- const binding=round3CatalogProof.files[path];
- if(!binding||typeof source!=='string'||hash(source)!==binding.afterSha256)return source;
- const added='src/lua/abyss_combat_catalog.lua',linked=readSource(added);
- assert.equal(hash(linked),round3CatalogProof.files[added].afterSha256,'catalog linked module identity');
- if(path===added)return null;
- const lines=source.replaceAll('\r\n','\n').split('\n');
- for(const hunk of [...binding.hunks].reverse()){
-  assert.deepEqual(lines.slice(hunk.at,hunk.at+hunk.after.length),hunk.after,'exact catalog inverse hunk');
-  lines.splice(hunk.at,hunk.after.length,...hunk.before);
- }
- const previous=lines.join('\n');assert.equal(hash(previous),binding.beforeSha256,'complete pre-catalog identity');return previous;
+ return sourceEpoch.withCombinedProjection(path,source,{target:'develop',readSource},(projected,readPast)=>{
+  const read=owner=>beforeReleaseForgeGridUi(owner,readPast(owner));
+  let candidate=legacyIntegration(path,projected,'base',{readSource:read});
+  candidate=legacyMonster(path,candidate,{readSource:read});
+  candidate=legacyComposition(path,candidate,'round3');
+  const binding=round3CatalogProof.files[path];
+  if(!binding||typeof candidate!=='string'||hash(candidate)!==binding.afterSha256)return candidate;
+  const added='src/lua/abyss_combat_catalog.lua',linked=read(added);
+  assert.equal(hash(linked),round3CatalogProof.files[added].afterSha256,'catalog linked module identity');
+  if(path===added)return null;
+  const lines=candidate.replaceAll('\r\n','\n').split('\n');
+  for(const hunk of [...binding.hunks].reverse()){
+   assert.deepEqual(lines.slice(hunk.at,hunk.at+hunk.after.length),hunk.after,'exact catalog inverse hunk');
+   lines.splice(hunk.at,hunk.after.length,...hunk.before);
+  }
+  const previous=lines.join('\n');assert.equal(hash(previous),binding.beforeSha256,'complete pre-catalog identity');return previous;
+ });
 }
 const inside=(root,path)=>{const r=relative(root,path);return r!==''&&!isAbsolute(r)&&r!=='..'&&!r.startsWith('../')&&!r.startsWith('..\\');};
 export function prepareRound3CatalogModuleRetirement(directory,{sourceRoot=process.cwd()}={}){
@@ -59,7 +62,16 @@ export function prepareRound3CatalogModuleRetirement(directory,{sourceRoot=proce
   assert.equal(now.dev,initial.dev);assert.equal(now.ino,initial.ino);assert.equal(now.nlink,1,'retirement requires single link');
   assert(now.dev!==liveStat.dev||now.ino!==liveStat.ino,'retirement inode aliases live source');
   const input=sourceEpoch.preCombinedSource(path,readFileSync(target,'utf8'),{target:'colorless',readSource:raw});
-  const previous=originalColorless(path,input,{readSource:sourceEpoch.combinedReader(raw,'colorless')});
+  const readSource=owner=>{
+   const observed=raw(owner);
+   const projected=sourceEpoch.preCombinedSource(owner,observed,{target:'colorless',readSource:raw});
+   // The frozen target and current receipt have the same Colorless owner hash.
+   // The combined reader keeps raw bytes in that case, so authenticate the
+   // exact Develop successor before passing it to the frozen Colorless inverse.
+   return owner==='src/lua/abyss_colorless_cards.lua'&&projected===observed?
+    authenticateDevelopBackflow(owner,observed,raw):projected;
+  };
+  const previous=originalColorless(path,input,{readSource});
   assert.equal(hash(previous),round3CatalogProof.files[path].afterSha256,'complete retirement catalog identity');
  };
  check();return ()=>{check();retireExtras();rmSync(target);};

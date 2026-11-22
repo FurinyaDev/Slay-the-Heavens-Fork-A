@@ -127,7 +127,46 @@ export function beforeTinyHouseCiSource(path, source) {
   return project(source,{sha256:row.afterSha256,before:row.before});
 }
 
+const act1ReadWitnessPath = 'tests/act1-choice-responsibilities.test.mjs';
+const act1ReadWitnessHunks = [
+  [" const priorReadOrder=[...owners,...currentProductionRereads];\n", " const admittedReads=[...owners,...currentProductionRereads];\n"],
+  [" let changed,reads=[],replacement,admittedReads;\n", " let changed,reads=[],replacement;\n"],
+  ["  changed=undefined;reads=[];assert.equal(preRelicQuerySource(file,source,{readSource}),before);\n  if(!admittedReads){\n   // Keep the complete current trace and the ordered original contract.\n   assert.equal(reads.length,325);\n   assert.equal(createHash('sha256').update(JSON.stringify(reads)).digest('hex'),'cc3d177c9bda6e53ada3edfbbe946c9de901105119ee1f3a751c1084716b6b22');\n   let position=-1;\n   for(const owner of priorReadOrder){\n    position=reads.indexOf(owner,position+1);\n    assert.notEqual(position,-1,'retained original Act1 read: '+owner);\n   }\n   admittedReads=[...reads];\n  }\n  assert.deepEqual(reads,admittedReads);\n", "  changed=undefined;reads=[];assert.equal(preRelicQuerySource(file,source,{readSource}),before);assert.deepEqual(reads,admittedReads);\n"],
+  ["   assert.deepEqual(reads,admittedReads.slice(0,admittedReads.indexOf(owner)+1),'fresh reads stop at the actual bad owner: '+owner);\n", "   assert.deepEqual(reads,owners.slice(0,owners.indexOf(owner)+1),'fresh reads stop at the actual bad owner');\n"],
+  ["  assert.deepEqual(reads,admittedReads.slice(0,admittedReads.indexOf(file)+1));\n", "  assert.deepEqual(reads,owners.slice(0,owners.indexOf(file)+1));\n"]
+];
+const act1PointerReadWitnessHunks = [
+  ["import {beforeInputRetirementReader,pointerInputPath,retiredControllerPath} from './helpers/input-retirement-source.mjs';\n", ""],
+  ["   assert.equal(reads.length,403);\n   assert.equal(createHash('sha256').update(JSON.stringify(reads)).digest('hex'),'6f35ecd12c3f1edbc8ee8e476324bdb4380725eeacf240cc6ec15cd106fc2e3f');\n", "   assert.equal(reads.length,325);\n   assert.equal(createHash('sha256').update(JSON.stringify(reads)).digest('hex'),'cc3d177c9bda6e53ada3edfbbe946c9de901105119ee1f3a751c1084716b6b22');\n"],
+  ["  for(const owner of owners.filter(owner=>owner!==retiredControllerPath))for(replacement of [read(owner)+'\\n',null,undefined]){\n", "  for(const owner of owners)for(replacement of [read(owner)+'\\n',null,undefined]){\n"],
+  ["  }\n  changed=retiredControllerPath;replacement=beforeInputRetirementReader(read)(changed);reads=[];\n  assert.throws(()=>preRelicQuerySource(file,source,{readSource}),/combined linked owner identity: src\\/lua\\/abyss_controller\\.lua/);\n  assert.deepEqual(reads,admittedReads.slice(0,admittedReads.indexOf(changed)+1));\n  changed=pointerInputPath;\n  for(replacement of [read(changed)+'\\n',null,undefined]){\n   reads=[];assert.throws(()=>preRelicQuerySource(file,source,{readSource}),/combined linked owner missing: src\\/lua\\/abyss_controller\\.lua/);\n   assert.deepEqual(reads,admittedReads.slice(0,admittedReads.indexOf(changed)+1));\n", ""]
+];
+function beforeAct1ReadWitness(path,source) {
+  if (path!==act1ReadWitnessPath || typeof source!=='string' || source.includes('\r\r\n')) return source;
+  let current=source.replaceAll('\r\n','\n');
+  const blob=value=>createHash('sha1').update(`blob ${Buffer.byteLength(value)}\0`).update(value).digest('hex');
+  const identity=(value,digest,gitBlob)=>sha256(value)===digest&&blob(value)===gitBlob;
+  const reverse=(value,hunks)=>{
+    for(const [after,before] of hunks){
+      assert.equal(value.split(after).length,2,'unique exact Act1 read witness predecessor hunk');
+      value=value.replace(after,()=>before);
+    }
+    return value;
+  };
+  if(identity(current,'1905ee60a014ae61728e2463717a5cbbdae05ff0d4e66d26184659e89a02ab3c','362895f69f6c5e7d110054d2a0882d46c2c31980')){
+    current=reverse(current,act1PointerReadWitnessHunks);
+    assert(identity(current,'f7b74af3f896e2dbad9621ec31d351e2b59a4b5bf8feb4e54d9e64ba467ed9fa','a84417a320edfb1e9a5639fe8017639aa7c7c5fb'),
+      'exact Act1 predecessor before the Controller retirement');
+  }
+  if (sha256(current)!=='f7b74af3f896e2dbad9621ec31d351e2b59a4b5bf8feb4e54d9e64ba467ed9fa' || blob(current)!=='a84417a320edfb1e9a5639fe8017639aa7c7c5fb') return source;
+  const prior=reverse(current,act1ReadWitnessHunks);
+  assert.equal(sha256(prior),'feb618b1dea267e806283a06fdde16b92fdb489f971a82d71da381d195b797e8','exact Act1 read witness predecessor');
+  assert.equal(blob(prior),'dae64fd5d1ae6a217e4a0d99d710bb04558ba05c','exact Act1 read witness predecessor Git blob');
+  return source.includes('\r\n') ? prior.replaceAll('\n','\r\n') : prior;
+}
+
 export function beforeV2UiEvidence(path, source) {
+  source = beforeAct1ReadWitness(path,source);
   source = beforeTinyHouseCiSource(path,source);
   source = beforeExtractionWitness(path,source);
   source = beforeRunHudReadabilityAdapter(path,source);

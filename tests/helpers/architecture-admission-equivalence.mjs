@@ -72,11 +72,14 @@ test('complete admission responsibility measurements retain the CC15 limits',()=
 test('historical admission receipts use only the exact current successor source',()=>{
  const read=path=>readFileSync(path,'utf8');
  for(const name of ['abyss_map','abyss_treasure_source','abyss_wheel_event','abyss_winding_event']){
-  const path=`src/lua/${name}.lua`,source=current[name];
+  const path=`src/lua/${name}.lua`,source=current[name].replaceAll('\r\n','\n');
   assert.equal(beforeCharacterPreparationSource(path,source,read),before.sources[name]);
   assert.equal(beforeCharacterPreparationSource(path,source.replaceAll('\n','\r\n'),read),before.sources[name]);
   assert.equal(beforeCharacterPreparationSource(path,source+'-- drift',read),source+'-- drift');
-  assert.throws(()=>beforeCharacterPreparationSource(path,source,p=>read(p)+'-- drift'),/fresh admission receipt source/);
+  const message=name==='abyss_map'
+   ?`combined linked owner identity: ${path} changed during Develop backflow validation (map-room validation)`
+   :`fresh admission receipt source: ${path}`;
+  assert.throws(()=>beforeCharacterPreparationSource(path,source,p=>read(p)+'-- drift'),{message});
   assert.equal(beforeCurrentProductionSource(path,source,read),before.sources[name]);
   for(const invalid of [null,before.sources[name],source+'-- drift']){
    assert.throws(()=>beforeCurrentProductionSource(path,invalid,read),/fresh current production owner/);
