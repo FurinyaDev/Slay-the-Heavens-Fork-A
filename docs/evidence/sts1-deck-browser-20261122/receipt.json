@@ -1,0 +1,100 @@
+{
+  "releaseHead": "03d0d6710124b7ac9efaf2b0b4bfa8c0ff3b295f",
+  "simulator": "beyond-simulator-mcp@0.5.2",
+  "scenes": {
+    "permanent": {
+      "sha256": "b53d3f84d915bc08fbd2ffe5dc7cb3a31d04ffa3a93322cb05728a1414e759b1",
+      "width": 1600,
+      "height": 900,
+      "unavailableImageIds": [
+        102012,
+        102014,
+        100161,
+        102024,
+        111046,
+        102018,
+        102049,
+        106056,
+        106059,
+        106095,
+        106057
+      ]
+    },
+    "draw": {
+      "sha256": "d87d73cbc9379b7825f510d69f4dc3817bf55264ab2f7f53d62c3be2ca25ca4b",
+      "width": 1600,
+      "height": 900,
+      "unavailableImageIds": [
+        100161,
+        102014,
+        102012,
+        102024,
+        111046,
+        106056,
+        102049,
+        102018,
+        106059,
+        106095,
+        106057,
+        100149
+      ]
+    },
+    "discard": {
+      "sha256": "1de325646a798bf9bcebebb5d479179f38dfe06f7b8df69b6cdac78ea4c4ca7a",
+      "width": 1600,
+      "height": 900,
+      "unavailableImageIds": [
+        100161,
+        102012,
+        102014,
+        102024,
+        111046,
+        106056,
+        102049,
+        102018,
+        106059,
+        106095,
+        106057,
+        100150
+      ]
+    },
+    "exhaust": {
+      "sha256": "3a116ddbbba66c36e31cf1bd4865555a7693f5bfcc0cfd937f524c103233f99d",
+      "width": 1600,
+      "height": 900,
+      "unavailableImageIds": [
+        100161,
+        102014,
+        102024,
+        102012,
+        111046,
+        106056,
+        102049,
+        102018,
+        106059,
+        106095,
+        106057,
+        100122
+      ]
+    },
+    "draw-frozen-eye": {
+      "sha256": "4238b5753f650b086e55f3e325ee7fa238f3a48dd6a53c5ab19def4ee397514c",
+      "width": 1600,
+      "height": 900,
+      "unavailableImageIds": [
+        100161,
+        102014,
+        102012,
+        102024,
+        100149,
+        111046,
+        106056,
+        102049,
+        102018,
+        106059,
+        106095,
+        106057
+      ]
+    }
+  }
+}
