@@ -7,7 +7,8 @@
         "scripts/official-run-layout.mjs",
         "scripts/sts-reward-row-layout.mjs",
         "scripts/character-selection-composition.mjs",
-        "src/lua/abyss_node_ui_feedback.lua"
+        "src/lua/abyss_node_ui_feedback.lua",
+        "src/lua/abyss_game_ui_menu_view.lua"
       ],
       "targetVersion": "v2.0.0",
       "state": "actionButtons",
@@ -16,7 +17,7 @@
       "backlogTask": "TASK-112",
       "reference": {
         "path": "docs/reviews/TASK-112-ACTION-BUTTONS.md",
-        "sha256": "ce0e8696edd6f954796c527aab5391378ee724452eddea2c1d7de4a4e3226aef"
+        "sha256": "9389faf434ca90e2dd049afd1a431bccb2ed7d1bd2e85a82fd827d5a17943d63"
       },
       "themeKeys": [
         "officialAssets.actionButton"

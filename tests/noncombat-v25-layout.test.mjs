@@ -128,9 +128,9 @@ test('official host uses direct inventory actions, read-only relic details and e
  buildUI(directory,undefined,{officialAssets:true,nativePageLifecycle:true});
  const stage=child(JSON.parse(readFileSync(join(directory,'game-ui.json'),'utf8')),'stage');
  for(const [name,sha] of [
-  ['menuPanel','9e9393ba12aa2838af469363b94de3d7b6763e3e616281b20f5431b3d06aa2dc'],
+  ['menuPanel','0a446fd209492789ac70789eddded2a6c23a8c95441462b580d9d13ce4f7958c'],
   ['exitPanel','2f839c0755387aa4131ff9a9b72f886bf516ab715385a78b937117ab4c0adaf5'],
-  ['runMenu','fd2bcda530aac65fd0ac5bc86e050e7c8cabb783ca2650f243eb2a307211e8e3'],
+  ['runMenu','d18ff3b4edd0af091727ff52ee370c9db1d2628500c3424b02eb246ca53a04d1'],
  ]){
   assert.equal(createHash('sha256').update(JSON.stringify(child(stage,name))).digest('hex'),sha,
    'preserve the complete integrated pile and menu layout: '+name);

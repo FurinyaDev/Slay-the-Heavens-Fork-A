@@ -247,9 +247,9 @@ const relicDetailFiles=Object.freeze({
 });
 const actionButtonFiles=Object.freeze({
  ...relicDetailFiles,
- 'tests/helpers/develop-release-backflow-source.mjs':'50d29c15ec8fc18d50a909029658663366fb981247630432a377ba67d065ca66',
- 'tests/helpers/action-buttons-source.mjs':'18acff792d2fc93375c74ba39f184f58a30bafca78f566fbe476fa5ea53c7131',
- 'tests/fixtures/action-buttons-source.json.gz':'29ccd320bc4e0f14a878435d306defeac7f1dd93341e7877eb7b388ec4eea635',
+ 'tests/helpers/develop-release-backflow-source.mjs':'87df494b403bff6fd2ba1cc38d39696692d86a0a7c0210fbca7930cf3c7b5815',
+ 'tests/helpers/action-buttons-source.mjs':'5813cfd67f5f287dbfd64741a407190783a223ca860bb258a81f6eea02463ad9',
+ 'tests/fixtures/action-buttons-source.json.gz':'d60fe6451b12966b6389f18447cee61782ed19d61f5be8b1bb7448977e550a60',
 });
 const inside=(root,path)=>{const r=relative(root,path);return r!==''&&!isAbsolute(r)&&r!=='..'&&!r.startsWith('../')&&!r.startsWith('..\\');};
 export function copyIntegrationSourceClosure(directory,{sourceRoot=process.cwd()}={}){

@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - Furinya
 created_date: '2026-11-22T05:43:10Z'
-updated_date: '2026-11-22T05:43:20Z'
+updated_date: '2026-11-22T05:59:34Z'
 labels: []
 milestone: m-8
 dependencies: []
@@ -32,8 +32,8 @@ ordinal: 187000
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 地图返回战斗和返回战利品使用统一左下锚点、尺寸和四态，保留各自文案及返回行为。
-- [ ] #2 战斗及奖励、商店和房间、菜单与弹窗的文字操作统一使用共享按钮，审核特种输入和外观。
+- [x] #1 地图返回战斗和返回战利品使用统一左下锚点、尺寸和四态，保留各自文案及返回行为。
+- [x] #2 战斗及奖励、商店和房间、菜单与弹窗的文字操作统一使用共享按钮，审核特种输入和外观。
 - [ ] #3 正式布局、奖励、地图指针/触屏/手柄回归通过，向 Owner 交付产品评审。
 <!-- AC:END -->
 
@@ -42,3 +42,9 @@ ordinal: 187000
 <!-- SECTION:PLAN:BEGIN -->
 从最新 develop 在 Fork A 做单一切片。枚举正式生成控件，归并文字操作圆角与状态色，保持命令绑定、参考布局和已批准的图标及内容热区。离线核对地图、领奖、选牌、房间、弹窗和手柄路径，提交产品评审。
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+develop 基线 d7ae494a。正式精修布局构建通过，12 项 UI 定向通过，独立评审复验了地图两返回、宝箱奖励和首领战败后重开。产品评审及改前改后地图位置对照见 docs/reviews/TASK-112-ACTION-BUTTONS.md。源码与官方设备验收分别记录。
+<!-- SECTION:NOTES:END -->
