@@ -37,7 +37,7 @@ for (const officialAssets of [false, true]) {
 
 test('Forethought source projection keeps exact predecessors and rejects mixed owners', async () => {
   const { createHash } = await import('node:crypto');
-  const { beforeMapDeckSource } = await import('./helpers/release-map-deck-source.mjs');
+  const { beforeMapDeckSource, mapDeckPriorRead } = await import('./helpers/release-map-deck-source.mjs');
   const lua = 'src/lua/abyss_deck_ui.lua';
   const layout = 'scripts/deck-ui-layout.mjs';
   const read = path => readFileSync(path, 'utf8');
@@ -49,6 +49,30 @@ test('Forethought source projection keeps exact predecessors and rejects mixed o
   const crlf = source => source.replaceAll('\n', '\r\n');
   assert.equal(beforeMapDeckSource(lua, crlf(read(lua)), path => crlf(read(path))), crlf(priorLua));
   assert.throws(() => beforeMapDeckSource(lua, read(lua), path => path === layout ? priorLayout : read(path)),
+    /Forethought linked owner identity/);
+  const bufferRead = (path, encoding) => encoding ? read(path) : Buffer.from(read(path));
+  const historicalRead = mapDeckPriorRead(bufferRead);
+  assert.deepEqual(historicalRead(lua), Buffer.from(priorLua));
+  assert.deepEqual(historicalRead(layout), Buffer.from(priorLayout));
+  for (const owner of [lua, layout, 'src/lua/abyss_card_skin.lua',
+    'src/lua/abyss_game_ui_view.lua', 'src/lua/abyss_map_ui.lua']) {
+    for (const change of ['stale', 'missing']) {
+      let altered = false;
+      const reread = mapDeckPriorRead((path, encoding) => {
+        if (!altered || path !== owner) return bufferRead(path, encoding);
+        if (change === 'missing') throw new Error('missing source');
+        return path === lua && !encoding ? Buffer.from(read(path)) : read(path) + '\n';
+      });
+      assert.deepEqual(reread(lua), Buffer.from(priorLua));
+      altered = true;
+      assert.throws(() => reread(lua), /Forethought linked owner (identity|missing)|missing source/);
+    }
+  }
+  const viewPath = 'src/lua/abyss_game_ui_view.lua';
+  const viewNow = read(viewPath);
+  const beforeResource = viewNow.replace("and not self.settlementRequested and not self.settlementBusy,platform.color)", "and not self.settlementRequested and not self.settlementBusy)");
+  assert.equal(hash(beforeResource), 'b63df48495c77a87f7d59cbf1bc7824244af4234dc5d139ef9d8352b2b4ee174', 'exact pre-#879 GameUI view');
+  assert.throws(() => beforeMapDeckSource(lua, read(lua), path => path === viewPath ? beforeResource : read(path)),
     /Forethought linked owner identity/);
   const foreign = read(lua) + '\n';
   assert.equal(beforeMapDeckSource(lua, foreign, () => assert.fail('foreign input read')), foreign);
