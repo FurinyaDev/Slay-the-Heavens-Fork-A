@@ -98,10 +98,9 @@ function roundRunActions(host,theme){
  }
 }
 function roundBattleActions(battle,theme){
- const popup=required(required(battle,'potionHelp'),'potionPopup'),layout=theme.layout.potionPopup;
- const height=Math.max(layout.actionHeight,theme.layout.nativeText.lineHeight);
- roundedPresetButton(required(popup,'use'),theme,'primary',{size:[layout.width/2,height]});
- roundedPresetButton(required(popup,'discard'),theme,'secondary',{size:[layout.width/3-layout.padding,height]});
+ const popup=required(required(battle,'potionHelp'),'potionPopup');
+ roundedPresetButton(required(popup,'use'),theme,'primary');
+ roundedPresetButton(required(popup,'discard'),theme,'danger');
  roundedPresetButton(required(battle,'skip'),theme,'secondary');
  roundedPresetButton(required(battle,'start'),theme,'primary');
  roundedPresetButton(required(battle,'endTurn'),theme,'turn',{name:'v25Chrome'});

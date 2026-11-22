@@ -56,8 +56,23 @@ export function beforeDeckBrowserBackflow(path,source){
  return source.includes('\r\n')?row.before.source.replaceAll('\n','\r\n'):row.before.source;
 }
 
+const potionArchive=readFileSync(new URL('../fixtures/develop-potion-popup-source.json.gz',import.meta.url));
+assert.equal(hash(potionArchive),'6c85ba4df16b702a4f6955b50631d1af9533c141d19fb930a51be22224eabf95','exact Develop potion popup archive');
+const potionBackflow=JSON.parse(gunzipSync(potionArchive));
+assert.equal(potionBackflow.base,'103aa4072bd3801deb6bf090455bd974181a9647');
+for(const [path,row] of Object.entries(potionBackflow.files)){
+ assert(Object.hasOwn(files,path)&&matches(row.before.source,row.before),'exact potion popup predecessor: '+path);
+ assert.match(row.after.sha256,/^[a-f0-9]{64}$/);assert.match(row.after.gitBlob,/^[a-f0-9]{40}$/);
+}
+export function beforePotionBackflow(path,source){
+ const row=Object.hasOwn(potionBackflow.files,path)&&potionBackflow.files[path];
+ if(!row||!matches(source,row.after))return source;
+ return source.includes('\r\n')?row.before.source.replaceAll('\n','\r\n'):row.before.source;
+}
+
 export function beforeInputRetirement(path,source,options){
- const browserPrior=beforeDeckBrowserBackflow(path,source);
+ const potionPrior=beforePotionBackflow(path,source);
+ const browserPrior=beforeDeckBrowserBackflow(path,potionPrior);
  if(browserPrior!==source)source=beforeActionButtons(path,browserPrior);
  if(!Object.hasOwn(files,path))return source;
  const row=files[path];
@@ -91,7 +106,8 @@ export function authenticateInputRetirement(path,source,read,options){
  let live;
  try{live=read(path);}catch(error){assert.fail('combined linked owner missing: '+path+': '+String(error?.message??error));}
  const browserOwner=beforeDeckBrowserBackflow(path,source)!==source;
- const identity=browserOwner?browserBackflow.files[path].after:files[path].after;
+ const potionOwner=beforePotionBackflow(path,source)!==source;
+ const identity=potionOwner?potionBackflow.files[path].after:browserOwner?browserBackflow.files[path].after:files[path].after;
  assert(matches(live,identity),'combined linked owner identity: '+path+' during input retirement validation');
  return prior;
 }
@@ -138,7 +154,7 @@ export function beforeInputRetirementStsSuite(paths,read,trustSuccessors){
   }
   if(![files,suite.deck.files,suite.earlier].some(layer=>Object.hasOwn(layer,path)))return raw;
   const bytes=typeof raw==='string'?raw:raw.toString('utf8');
-  const source=suitePredecessor(path,suitePredecessor(path,suitePredecessor(path,beforeActionButtons(path,beforeDeckBrowserBackflow(path,bytes)),files),suite.deck.files),suite.earlier);
+  const source=suitePredecessor(path,suitePredecessor(path,suitePredecessor(path,beforeActionButtons(path,beforeDeckBrowserBackflow(path,beforePotionBackflow(path,bytes))),files),suite.deck.files),suite.earlier);
   return typeof raw==='string'?source:Buffer.from(source);
  }};
 }
