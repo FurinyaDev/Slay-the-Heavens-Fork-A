@@ -60,6 +60,20 @@ local function bindV25Hover(box,hit,cursor,available)
     hit:AddCursorEventListener(cursor.CursorEnter,function()V25View.pointer(box,'enter',available())end)
 end
 
+local function bindCommandFeedback(box,hit,cursor,controller,available,kind,onFocus)
+    bindV25Hover(box,hit,cursor,available)
+    if Theme.presentationProfile~='official-assets-first' or not box:GetChild('v25Face')
+        or kind~='routeClose' and kind~='combatRewards' then return onFocus end
+    local lostFocus=controller and controller.api.events.LostFocus
+    if lostFocus then
+        hit:AddNavigationEventListener(lostFocus,function()V25View.pointer(box,'exit',available())end)
+    end
+    return function()
+        V25View.pointer(box,'enter',available())
+        if onFocus then return onFocus() end
+    end
+end
+
 local function battleRouteAvailable(self,enabled,mode)
     if self.mode~=mode or self.exitOpen or self.deckUI.visible or self.potionUI.visible
         or self.characterOpen or self.easterEggOpen then return false end
@@ -159,18 +173,7 @@ function M.bindCommand(platform,self,canManagePotions,controller,clickEvent,owne
                     and (not mapContext or currentMapReturn(token))
             end
             local function touch(event) return event and event.touchId end
-            bindV25Hover(box,hit,cursor,available)
-            if (kind=='routeClose' or rewardAction) and Theme.presentationProfile=='official-assets-first' and box:GetChild('v25Face') then
-                local previousFocus=onFocus
-                onFocus=function()
-                    V25View.pointer(box,'enter',available())
-                    if previousFocus then return previousFocus() end
-                end
-                local lostFocus=controller and controller.api.events.LostFocus
-                if lostFocus then
-                    hit:AddNavigationEventListener(lostFocus,function()V25View.pointer(box,'exit',available())end)
-                end
-            end
+            onFocus=bindCommandFeedback(box,hit,cursor,controller,available,kind,onFocus)
             if cursor.CursorDown and cursor.CursorUp then
                 hit:AddCursorEventListener(cursor.CursorDown, function(event)
                     if held and not current(held) then held = nil end
