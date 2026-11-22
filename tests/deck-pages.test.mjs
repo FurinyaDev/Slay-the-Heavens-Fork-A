@@ -21,6 +21,11 @@ test('the production card browser retains ten independent faces and retires inpu
   assert.ok(foot.position[1] + foot.size[1] / 2 < cardBottom, 'footer must clear the second row');
   assert.ok(find('previous').position[0] + find('previous').size[0] / 2 < -find('rarityTip').size[0] / 2);
   assert.ok(find('next').position[0] - find('next').size[0] / 2 > find('rarityTip').size[0] / 2);
+  const theme = JSON.parse(readFileSync(join(generated, 'official-assets-theme.json'), 'utf8'));
+  for (const name of ['previous', 'next']) {
+    const button = find(name);
+    assert.ok(button.position[1] - button.size[1] / 2 >= -theme.canvas.base[1] / 2 + theme.canvas.safe.y);
+  }
   const require = createRequire(import.meta.url);
   const run = spawnSync(process.execPath, [require.resolve('fengari-node-cli/src/lua-cli.js'), '-e',
     "dofile('tests/lua/support/deck_browser_cases.lua')"], {
