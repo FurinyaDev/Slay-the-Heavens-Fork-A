@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - Furinya
 created_date: '2026-11-16T15:08:00Z'
-updated_date: '2026-11-22T03:42:14Z'
+updated_date: '2026-11-22T03:58:26Z'
 labels: []
 dependencies: []
 parent_task_id: TASK-88.1
@@ -70,4 +70,6 @@ Owner本轮明确CI疏通：主仓全部在途运行分页核实，已保存并�
 同轮对账：#849、#850、#851、#852、#855 已在 develop 合入并核对来源。四条遗留主仓重构分支均已清理，这些同仓合入没有作为跨仓队列证据。#853 曾同步到 BASE 571a981d，HEAD f7a43396、合成树 fefaa59b、Review 6009924302；Quality 44978649692、Licenses 44978649716 已触发，develop 继续推进后变为 behind。队列兼容切片 #859 HEAD a5c620f0 / BASE 469e8024 / 树 829c0e18 的 Review 6009947727 已签，原生 squash 自动合并请求已读回，Quality 44979083366、Licenses 44979083407 尚排队。完整跨仓改动保存在 Fork A chore/fork-first-direct-pr；282 项定向回归通过。保留本任务未验 AC，待真正跨仓组合入队、Full 和 squash 的证据。
 
 2026-11-22 跨仓准入读回：#853 当前 HEAD 49ba09497c24bd3830f770ffd9173d05883041bc、BASE 469e80240c5b7c60f75ff434bebac62d73c0bd0c、合成树 4751a15d63f090ee1f33ebcdc8e076b8fe74768b，独审 Review 6010053818 已绑定同一候选。真实 Quality 44980900316 与 Licenses 44980900300 已触发，GitHub 的 run.pull_requests 数组为空。现有 merge:auto 只读资格核验通过，随后原生 SQUASH 自动合并请求已读回。#853 与队列兼容 #859 仍待托管 CI，尚未入队；保持 In Progress，待原生队列 Full 与实际 squash 后收口。
+
+续跑记录：队列兼容 #859 最新 HEAD 7bcb98f9271a49bf9ca7eaf46b6f229335e60e8e、BASE 469e80240c5b7c60f75ff434bebac62d73c0bd0c、合成树 b8c287f33e6186b44af6bcb8f2c9148256a4ecb4、独审 6010198265。修复 14 项基线校准用例与旧回放，Round3 全量原始所有者及结束时漂移负控通过。GitHub 保留 #859 原生 SQUASH，Quality 44982860209、Licenses 44982860196 等待托管运行；#853 同样已挂起原生 SQUASH。无原生入队或合入证据，任务保持 In Progress。
 <!-- SECTION:NOTES:END -->
