@@ -56,3 +56,23 @@ test('large object arity and sparse/nil tables remain valid without a new Lua st
  const safe=packNativeScript('abyss_theme',dynamic,nativeScriptStorageProfile);
  assert.match(run(t,`local a=(function()${safe}end)()assert(a.a==1 and a.b==2)print('DYNAMIC_FALLBACK_PASS')`),/DYNAMIC_FALLBACK_PASS/);
 });
+test('v2 shortens generated decimals without decoding at load or changing Lua number subtypes',t=>{
+ const values='0.500,0.000,-0.000,2.000,2,0.000000000000000001,1.23456789012345670,1e-308,0x1.3p2';
+ const repeated=Array.from({length:80},()=>"{100001,0.500}").join(",");
+ const original=`return {kind="portrait",rows={{${values}},{${values}}},repeated={${repeated}},["end"]="留",[1]="numeric"}\n`;
+ const name='abyss_traveler_portrait_assets';
+ const old=packNativeScript(name,original,'lossless-lua-v1');
+ const packed=packNativeScript(name,original,nativeScriptStorageProfile);
+ assert(Buffer.byteLength(packed)<Buffer.byteLength(old));
+ assert.doesNotMatch(packed,/\b(?:load|tonumber|unpack)\b/);
+ assert.match(packed,/^local [A-H,]+=.*100001/);
+ assert.match(run(t,`local a=(function()${original}end)();local b=(function()${packed}end)()
+ assert(a.kind==b.kind and b["end"]=="留" and b[1]=="numeric")
+ for i,row in ipairs(a.rows)do for j,n in ipairs(row)do
+  local actual=b.rows[i][j];assert(n==actual and math.type(n)==math.type(actual))
+  if n==0 then assert(1/n==1/actual)end
+ end end
+ for i,row in ipairs(b.repeated)do assert(row[1]==a.repeated[i][1] and row[2]==.5 and math.type(row[1])=="integer")end
+ b.repeated[1][1]=2;assert(b.repeated[2][1]==100001)
+ b.rows[1][1]=8;assert(b.rows[2][1]==.5);print('DECIMAL_IDENTITY_PASS')`),/DECIMAL_IDENTITY_PASS/);
+});

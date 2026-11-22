@@ -198,8 +198,13 @@ test('official build adopts the existing paper map without replacing graph or in
  assert.equal(child(back,'label'),label);
  assert.equal(child(back,'hit'),hit);
  assert.deepEqual(back.size,cancel.size);
+ assert.deepEqual(face.children.map(n=>n.name),['roundedButtonState']);
+ const material=child(child(face,'roundedButtonState'),'v25Flag');
  for(const name of ['normal','hover','pressed','disabled']){
-  assert.deepEqual(child(child(face,name),'v25Flag'),child(child(child(cancel,'hit'),name),'v25Flag'));
+  const expanded=structuredClone(material);
+  for(const [index,layer] of ['rim','cloth'].entries())for(const part of child(expanded,layer).children)
+   part.colour=theme.officialAssets.mapReturnPalette[name][index];
+  assert.deepEqual(expanded,child(child(child(cancel,'hit'),name),'v25Flag'));
  }
 });
 

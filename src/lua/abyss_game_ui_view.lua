@@ -497,7 +497,7 @@ function M.refreshForeground(characterPanel,self,platform,exitEntry,exitEntryVis
             back:SetVisible(showBack)
             if hud and back:GetChild('v25Face') then
                 require('abyss_v25_menu_view').button(back,showBack and not self.disabled
-                    and not self.settlementRequested and not self.settlementBusy)
+                    and not self.settlementRequested and not self.settlementBusy,platform.color)
             end
             routeCaption(back)
             if self.routeOpen then
