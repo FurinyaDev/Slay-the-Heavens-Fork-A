@@ -1,0 +1,386 @@
+diff --git a/.gitattributes b/.gitattributes
+index bc9a5d0..b7c5e4f 100644
+--- a/.gitattributes
++++ b/.gitattributes
+@@ -1454,3 +1454,9 @@ docs/evidence/v2-ui-20261119/p1/runtime-shop.png filter=lfs diff=lfs merge=lfs -
+ docs/evidence/v2-ui-20261119/p1/runtime-transition-opening.png filter=lfs diff=lfs merge=lfs -text
+ docs/evidence/v2-ui-20261119/p1/runtime-transition-room.png filter=lfs diff=lfs merge=lfs -text
+ docs/evidence/v2-ui-20261119/p1/runtime-victory.png filter=lfs diff=lfs merge=lfs -text
++
++# Frozen release test archives retain exact original bytes.
++tests/fixtures/integration-ci-epochs.json.gz filter=lfs -diff merge=lfs -text ci-immutable-media
++tests/fixtures/pr323-historical-fixtures.json.gz filter=lfs -diff merge=lfs -text ci-immutable-media
++tests/helpers/integrated-ci-source.json.gz filter=lfs -diff merge=lfs -text ci-immutable-media
++tests/helpers/sts-style-prior-runtime.json.gz filter=lfs -diff merge=lfs -text ci-immutable-media
+diff --git a/config/ci-media-lfs.json b/config/ci-media-lfs.json
+index ebb146b..371138f 100644
+--- a/config/ci-media-lfs.json
++++ b/config/ci-media-lfs.json
+@@ -7477,5 +7477,51 @@
+         "sourceCommit": "dfd45d6ce3f466592700aea94d224b4c660be960"
+       }
+     ]
++  },
++  "releaseTestArchiveExtension": {
++    "sourceCommit": "25d389968670c0812f8b9565157cf32642fb58e2",
++    "maxPayloadBytes": 14988415,
++    "files": [
++      {
++        "path": "tests/fixtures/integration-ci-epochs.json.gz",
++        "sha256": "542755e50f64d062f3d407114a58d9b429add0d8bd667b7430ef2b0fc5cf5532",
++        "bytes": 2436891,
++        "category": "project-test",
++        "oldBinaryGitBlobs": [
++          "03b23f9c08167f93b9fe02e1f7855d2fe5056c67"
++        ],
++        "sourceCommit": "25d389968670c0812f8b9565157cf32642fb58e2"
++      },
++      {
++        "path": "tests/fixtures/pr323-historical-fixtures.json.gz",
++        "sha256": "0016ea0a00171a413c2697329ea87487c19c575b6148a325285e35a24b4e8759",
++        "bytes": 5112323,
++        "category": "project-test",
++        "oldBinaryGitBlobs": [
++          "16ce40fae511b39072f695159a60f8bc6a818bb7"
++        ],
++        "sourceCommit": "25d389968670c0812f8b9565157cf32642fb58e2"
++      },
++      {
++        "path": "tests/helpers/integrated-ci-source.json.gz",
++        "sha256": "f0b7137f7d0462dff36b78e39a39aab8804ba9a097b1b72bdf6686cf10f15c35",
++        "bytes": 3222350,
++        "category": "project-test",
++        "oldBinaryGitBlobs": [
++          "7507dd9dadee24535388a3cf3493313564612a1c"
++        ],
++        "sourceCommit": "25d389968670c0812f8b9565157cf32642fb58e2"
++      },
++      {
++        "path": "tests/helpers/sts-style-prior-runtime.json.gz",
++        "sha256": "10bf3b7d960e4c02ae2d64e26d8d5f16824439b9396949973f08ccec1c9d9330",
++        "bytes": 4216851,
++        "category": "project-test",
++        "oldBinaryGitBlobs": [
++          "d790bd83f77ef44eb682aca5c08617b0b06f9c2c"
++        ],
++        "sourceCommit": "25d389968670c0812f8b9565157cf32642fb58e2"
++      }
++    ]
+   }
+ }
+diff --git a/docs/legal/assets.json b/docs/legal/assets.json
+index 728d2bf..fda612f 100644
+--- a/docs/legal/assets.json
++++ b/docs/legal/assets.json
+@@ -10158,6 +10158,34 @@
+     "docs/evidence/sts1-main-menu-20261121/original-sts1-reference.jpg": {
+       "sha256": "07ba0a65572376c22c687436afba469993376184a58126578aca52ab00fcd39e",
+       "category": "sts1-menu-session-reference"
++    },
++    "tests/fixtures/integration-ci-epochs.json.gz": {
++      "category": "project-test",
++      "sha256": "542755e50f64d062f3d407114a58d9b429add0d8bd667b7430ef2b0fc5cf5532",
++      "bytes": 2436891,
++      "lfs": true,
++      "storage": "ci-media-lfs-v1"
++    },
++    "tests/fixtures/pr323-historical-fixtures.json.gz": {
++      "category": "project-test",
++      "sha256": "0016ea0a00171a413c2697329ea87487c19c575b6148a325285e35a24b4e8759",
++      "bytes": 5112323,
++      "lfs": true,
++      "storage": "ci-media-lfs-v1"
++    },
++    "tests/helpers/integrated-ci-source.json.gz": {
++      "category": "project-test",
++      "sha256": "f0b7137f7d0462dff36b78e39a39aab8804ba9a097b1b72bdf6686cf10f15c35",
++      "bytes": 3222350,
++      "lfs": true,
++      "storage": "ci-media-lfs-v1"
++    },
++    "tests/helpers/sts-style-prior-runtime.json.gz": {
++      "category": "project-test",
++      "sha256": "10bf3b7d960e4c02ae2d64e26d8d5f16824439b9396949973f08ccec1c9d9330",
++      "bytes": 4216851,
++      "lfs": true,
++      "storage": "ci-media-lfs-v1"
+     }
+   }
+ }
+diff --git a/scripts/ci-media-lfs.mjs b/scripts/ci-media-lfs.mjs
+index 75c98d5..4627c52 100644
+--- a/scripts/ci-media-lfs.mjs
++++ b/scripts/ci-media-lfs.mjs
+@@ -8,17 +8,18 @@ import {spawnSync} from 'node:child_process';
+ import {lfsArguments,lfsEnvironment} from './ci-reviewed-lfs.mjs';
+ const hash=bytes=>createHash('sha256').update(bytes).digest('hex');
+ const bytes=readFileSync(new URL('../config/ci-media-lfs.json',import.meta.url));
+-assert.equal(hash(bytes),'a744f84701e638657569cf3211443adbace935c28435b2742ebc28b2a666e89d','exact media and evidence manifest');
++assert.equal(hash(bytes),'b108b3c33826b1df040c6bb0b8cf2df390da6d02bcb915bdb06e6d1153c21ad2','exact media and evidence manifest');
+ const manifest=JSON.parse(bytes);
+ assert.equal(manifest.schemaVersion,1);
+-const original={...manifest};delete original.evidenceExtension;delete original.archiveExtension;delete original.helperExtension;
++const original={...manifest};delete original.evidenceExtension;delete original.archiveExtension;delete original.helperExtension;delete original.releaseTestArchiveExtension;
+ assert.equal(hash(JSON.stringify(original,null,2)+'\n'),'732a8b8b64611a2a3f714bf41a7c2bc1f458b1a6f9dfb86f5d37d0dc0c3a715a','complete original media contract');
+ const freeze=row=>Object.freeze({...row,oldBinaryGitBlobs:Object.freeze(row.oldBinaryGitBlobs)});
+ export const originalMediaFiles=Object.freeze(manifest.files.map(freeze));
+ export const evidenceFiles=Object.freeze(manifest.evidenceExtension.files.map(freeze));
+ export const archiveFiles=Object.freeze(manifest.archiveExtension.files.map(freeze));
+ export const helperArchiveFiles=Object.freeze(manifest.helperExtension.files.map(freeze));
+-export const mediaFiles=Object.freeze([...originalMediaFiles,...evidenceFiles,...archiveFiles,...helperArchiveFiles]);
++export const releaseTestArchiveFiles=Object.freeze(manifest.releaseTestArchiveExtension.files.map(freeze));
++export const mediaFiles=Object.freeze([...originalMediaFiles,...evidenceFiles,...archiveFiles,...helperArchiveFiles,...releaseTestArchiveFiles]);
+ const mediaMap=new Map(mediaFiles.map(row=>[row.path,row]));
+ export const mediaByPath=Object.freeze({size:mediaMap.size,has:path=>mediaMap.has(path),get:path=>mediaMap.get(path)});
+ export const maxMediaPayloadBytes=117369505;
+@@ -35,13 +36,23 @@ assert.deepEqual(archiveFiles.map(row=>row.path),['docs/evidence/m7-reward-query
+ assert.equal(manifest.helperExtension.sourceCommit,'dfd45d6ce3f466592700aea94d224b4c660be960');
+ assert.equal(manifest.helperExtension.maxPayloadBytes,maxHelperArchivePayloadBytes);
+ assert.deepEqual(helperArchiveFiles.map(row=>row.path),['tests/helpers/closeout-ci-source.json.gz','tests/helpers/release-source-epoch.json.gz']);
++export const maxReleaseTestArchivePayloadBytes=14988415;
++assert.equal(manifest.releaseTestArchiveExtension.sourceCommit,'25d389968670c0812f8b9565157cf32642fb58e2');
++assert.equal(manifest.releaseTestArchiveExtension.maxPayloadBytes,maxReleaseTestArchivePayloadBytes);
++assert.deepEqual(releaseTestArchiveFiles.map(row=>row.path),[
++ 'tests/fixtures/integration-ci-epochs.json.gz',
++ 'tests/fixtures/pr323-historical-fixtures.json.gz',
++ 'tests/helpers/integrated-ci-source.json.gz',
++ 'tests/helpers/sts-style-prior-runtime.json.gz',
++]);
+ assert.equal(mediaByPath.size,mediaFiles.length);
+ const unique=new Map();
+ for(const row of mediaFiles){
+  assert(typeof row.path==='string'&&!isAbsolute(row.path)&&!/[\\\s,:*?\[\]\0]/u.test(row.path)&&row.path.split('/').every(p=>p!=='.'&&p!=='..'&&p!==''),'exact safe media path');
+  const scoped=evidenceFiles.includes(row)?/^docs\/evidence\/.+\.json\.gz$/.test(row.path)&&row.sourceCommit===manifest.evidenceExtension.sourceCommit
+   :archiveFiles.includes(row)?row.sourceCommit===manifest.archiveExtension.sourceCommit
+-  :helperArchiveFiles.includes(row)?row.sourceCommit===manifest.helperExtension.sourceCommit:/\.(png|jpe?g|gif)$/i.test(row.path);
++  :helperArchiveFiles.includes(row)?row.sourceCommit===manifest.helperExtension.sourceCommit
++  :releaseTestArchiveFiles.includes(row)?row.sourceCommit===manifest.releaseTestArchiveExtension.sourceCommit:/\.(png|jpe?g|gif)$/i.test(row.path);
+  assert(scoped&&/^[0-9a-f]{64}$/.test(row.sha256)&&Number.isSafeInteger(row.bytes)&&row.bytes>0);
+  assert(row.oldBinaryGitBlobs.length>0&&row.oldBinaryGitBlobs.every(id=>/^[0-9a-f]{40}$/.test(id))&&typeof row.category==='string');
+  if(unique.has(row.sha256))assert.equal(unique.get(row.sha256),row.bytes);unique.set(row.sha256,row.bytes);
+@@ -52,7 +63,8 @@ assert.equal(new Set(evidenceFiles.map(row=>row.sha256)).size,58);
+ assert.equal(payload(evidenceFiles),maxEvidencePayloadBytes,'distinct exact evidence payload');
+ assert.equal(payload(archiveFiles),maxArchivePayloadBytes,'distinct exact existing history payload');
+ assert.equal(payload(helperArchiveFiles),maxHelperArchivePayloadBytes,'distinct exact existing helper history payload');
+-const maxStoragePayloadBytes=maxMediaPayloadBytes+maxEvidencePayloadBytes+maxArchivePayloadBytes+maxHelperArchivePayloadBytes;
++assert.equal(payload(releaseTestArchiveFiles),maxReleaseTestArchivePayloadBytes,'distinct exact release test archives');
++const maxStoragePayloadBytes=maxMediaPayloadBytes+maxEvidencePayloadBytes+maxArchivePayloadBytes+maxHelperArchivePayloadBytes+maxReleaseTestArchivePayloadBytes;
+ assert.equal([...unique.values()].reduce((a,b)=>a+b,0),maxStoragePayloadBytes,'distinct exact storage payload');
+ export const mediaPointer=row=>Buffer.from(`version https://git-lfs.github.com/spec/v1\noid sha256:${row.sha256}\nsize ${row.bytes}\n`);
+ export function validateMediaPointers(pointers){
+diff --git a/tests/ci-reviewed-lfs.test.mjs b/tests/ci-reviewed-lfs.test.mjs
+index 915c372..f19baeb 100644
+--- a/tests/ci-reviewed-lfs.test.mjs
++++ b/tests/ci-reviewed-lfs.test.mjs
+@@ -8,11 +8,12 @@ import { pathToFileURL } from 'node:url';
+ import { spawnSync } from 'node:child_process';
+ import * as lfs from '../scripts/ci-reviewed-lfs.mjs';
+ import { reviewedPngPaths, needsReviewedAssets, verifyReviewedPngs, prepareReviewedAssets, lfsEnvironment, lfsArguments } from '../scripts/ci-reviewed-lfs.mjs';
+-import {mediaFiles,originalMediaFiles,evidenceFiles,archiveFiles,helperArchiveFiles,mediaPointer,maxMediaPayloadBytes,maxEvidencePayloadBytes,maxArchivePayloadBytes,maxHelperArchivePayloadBytes,validateMediaPointers,prepareMediaAssets} from '../scripts/ci-media-lfs.mjs';
++import {mediaFiles,originalMediaFiles,evidenceFiles,archiveFiles,helperArchiveFiles,releaseTestArchiveFiles,mediaPointer,maxMediaPayloadBytes,maxEvidencePayloadBytes,maxArchivePayloadBytes,maxHelperArchivePayloadBytes,maxReleaseTestArchivePayloadBytes,validateMediaPointers,prepareMediaAssets} from '../scripts/ci-media-lfs.mjs';
+ import {checkWhitespace,validateMediaBases} from '../scripts/ci-whitespace.mjs';
+ import {prepareComparisonBlobs,comparisonBlobIds} from '../scripts/ci-comparison-blobs.mjs';
+ import {checkHostedCheckout,checkNetworkPolicy} from '../scripts/check-network-policy.mjs';
+ import {sensitive,checkAssets} from '../scripts/check-license.mjs';
++import {beforeReleasePackStorageSource,releasePackStorageSources} from './helpers/release-pack-storage-source.mjs';
+ 
+ const root = resolve('.');
+ const expectedPaths = ['armaments', 'cleave', 'heavy_blade'].flatMap(id => ['source.png', 'preview-native.png'].map(name => `art/cards/traveler-geo/${id}/${name}`));
+@@ -232,7 +233,7 @@ test('state evidence storage extension freezes all aliases and leaves the origin
+  assert.equal(extension.files.length,76);
+  assert.equal(new Set(extension.files.map(row=>row.sha256)).size,58);
+  assert.equal(extension.files.filter(row=>row.path.includes('/inspection-')).length,18);
+- const original={...manifest};delete original.evidenceExtension;delete original.archiveExtension;delete original.helperExtension;
++ const original={...manifest};delete original.evidenceExtension;delete original.archiveExtension;delete original.helperExtension;delete original.releaseTestArchiveExtension;
+  assert.equal(createHash('sha256').update(JSON.stringify(original,null,2)+'\n').digest('hex'),'732a8b8b64611a2a3f714bf41a7c2bc1f458b1a6f9dfb86f5d37d0dc0c3a715a','all original manifest records, categories, OIDs and budget are byte-preserved');
+  const ids=new Set(extension.files.flatMap(row=>row.oldBinaryGitBlobs));assert.equal(ids.size,58);
+  const ledger=JSON.parse(readFileSync('docs/legal/assets.json','utf8'));
+@@ -254,7 +255,7 @@ test('existing media pointers retain their exact original ledger identities and
+  const pointers=new Map(mediaFiles.map(row=>[row.path,mediaPointer(row)]));
+  assert.equal(originalMediaFiles.length,738);assert.equal(new Set(originalMediaFiles.map(row=>row.sha256)).size,705);
+  assert.equal([...new Map(originalMediaFiles.map(row=>[row.sha256,row.bytes])).values()].reduce((a,b)=>a+b,0),117369505);
+- assert.deepEqual(validateMediaPointers(pointers),{files:819,objects:768,bytes:166884443});
++ assert.deepEqual(validateMediaPointers(pointers),{files:823,objects:772,bytes:166884443+maxReleaseTestArchivePayloadBytes});
+  assert.equal(maxMediaPayloadBytes,117369505);assert.equal(maxEvidencePayloadBytes,37495268);assert.equal(lfs.maxReviewedPngBytes,5983528);
+  for(const row of mediaFiles){const entry=ledger.files[row.path];assert.equal(entry.sha256,row.sha256);assert.equal(entry.bytes,row.bytes);assert.equal(entry.category,row.category);assert.equal(entry.storage,'ci-media-lfs-v1');}
+  const first=mediaFiles[0],wrong=new Map(pointers);wrong.set(first.path,Buffer.from(mediaPointer(first).toString().replace(first.sha256,'0'.repeat(64))));
+@@ -265,7 +266,7 @@ test('existing media pointers retain their exact original ledger identities and
+ });
+ 
+ test('complete existing media are freshly authenticated on a cache hit without a transfer token',()=>{
+- assert.deepEqual(prepareMediaAssets({env:{...process.env,CI_LFS_TOKEN:''}}),{status:'cached',files:819,objects:768,bytes:166884443});
++ assert.deepEqual(prepareMediaAssets({env:{...process.env,CI_LFS_TOKEN:''}}),{status:'cached',files:823,objects:772,bytes:166884443+maxReleaseTestArchivePayloadBytes});
+ });
+ 
+ test('three existing CI archives retain complete bytes and original Git blob identities under exact storage',()=>{
+@@ -297,6 +298,24 @@ test('two frozen helper archives preserve complete historical views under exact
+  assert.equal(sensitive('tests/helpers/foreign-unregistered.json.gz'),false);
+ });
+ 
++test('release pack storage projects only exact original history and retains complete fixture bytes',()=>{
++ for(const [path,previousSha] of Object.entries(releasePackStorageSources)){
++  const current=readFileSync(path,'utf8').replaceAll('\r\n','\n');
++  const previous=beforeReleasePackStorageSource(path,current);
++  assert.notEqual(previous,current);
++  assert.equal(createHash('sha256').update(previous).digest('hex'),previousSha);
++  assert.equal(beforeReleasePackStorageSource(path,current.replaceAll('\n','\r\n')),previous.replaceAll('\n','\r\n'));
++  assert.equal(beforeReleasePackStorageSource(path,current+'\n'),current+'\n');
++ }
++ for(const row of releaseTestArchiveFiles){
++  const source=readFileSync(row.path);
++  assert.equal(source.length,row.bytes);
++  assert.equal(createHash('sha256').update(source).digest('hex'),row.sha256);
++  assert.deepEqual(row.oldBinaryGitBlobs,[createHash('sha1').update(`blob ${source.length}\0`).update(source).digest('hex')]);
++  assert(sensitive(row.path));
++ }
++});
++
+ test('cold partial checkout checks all text and exact media pointers without downloading old binary',async t=>{
+  const directory=mkdtempSync(join(tmpdir(),'media-ws-'));t.after(()=>rmSync(directory,{recursive:true,force:true}));
+  const source=join(directory,'source'),clone=join(directory,'clone');mkdirSync(source);
+@@ -317,7 +336,7 @@ test('cold partial checkout checks all text and exact media pointers without dow
+  assert.equal(originalEvidence.length,evidenceFiles.length);
+  for(const [i,row]of evidenceFiles.entries())assert.deepEqual(row.oldBinaryGitBlobs,[originalEvidence[i]]);
+  run(source,['update-index','--index-info'],evidenceFiles.map((row,i)=>'100644 '+originalEvidence[i]+'\t'+row.path).join('\n')+'\n');
+- const storedArchives=[...archiveFiles,...helperArchiveFiles];
++ const storedArchives=[...archiveFiles,...helperArchiveFiles,...releaseTestArchiveFiles];
+  const originalArchives=run(source,['hash-object','-w','--no-filters','--stdin-paths'],storedArchives.map(row=>JSON.stringify(resolve(root,row.path))).join('\n')+'\n').split('\n');
+  for(const [i,row]of storedArchives.entries())assert(row.oldBinaryGitBlobs.includes(originalArchives[i]));
+  run(source,['update-index','--index-info'],storedArchives.map((row,i)=>'100644 '+originalArchives[i]+'\t'+row.path).join('\n')+'\n');
+diff --git a/tests/fixtures/integration-ci-epochs.json.gz b/tests/fixtures/integration-ci-epochs.json.gz
+index 03b23f9c08167f93b9fe02e1f7855d2fe5056c67..fc8c2b77d9cc635de1a22ecff032a43a4ce77dbd 100644
+GIT binary patch
+literal 132
+zcmWN?!4bkB5CFhGRnUL|jyoXf1~?FAR5F5jSiSCNukxOKykuMJoQG2PzHW~?xBu;v
+zwmhC{o+Ycxh|yWj7J=MB2%e~rt`1o{sFqQCV=z+SJt6FoS#wD2oKGIDE)|llnQ|qv
+OAZGs-320r|jrai(!zXS4
+
+diff --git a/tests/fixtures/pr323-historical-fixtures.json.gz b/tests/fixtures/pr323-historical-fixtures.json.gz
+index 16ce40fae511b39072f695159a60f8bc6a818bb7..b8bf3caf945f4e78331a8478245ba1283c69addd 100644
+GIT binary patch
+literal 132
+zcmWN?OA^8$3;@tQr{Dq>5(uB(CSVk1R65dj;py$$yi>ljkB@HqzRlH`XWwtH$6T)4
+zQI<O1W^Pi=32OAao{f>hYApm|%hwUugR2;FbeM%x^eI-zl_He@KCwf>MB<3i7cVJN
+NR<r*^6977N>JQ^rCJX=o
+
+diff --git a/tests/helpers/fork-preflight-source.mjs b/tests/helpers/fork-preflight-source.mjs
+index 9e5a524..56cdf59 100644
+--- a/tests/helpers/fork-preflight-source.mjs
++++ b/tests/helpers/fork-preflight-source.mjs
+@@ -1,3 +1,4 @@
++import {beforeReleasePackStorageSource,releasePackStoragePriorRead} from './release-pack-storage-source.mjs';
+ import {beforeIllustrationTestSource,beforeReleaseReplayCiSource} from './release-replay-continuations.mjs';
+ import {releaseRewardDisplayPriorRead} from './release-ui-closeout-source.mjs';
+ import {beforeReleaseShopEntry,releaseUiRestoreArchive,shopEntryPriorRead} from './release-ui-restore-source.mjs';
+@@ -404,7 +405,7 @@ function beforeIntegrationSuccessor(path,source){
+  return source.includes('\r\n')?prior.source.replaceAll('\n','\r\n'):prior.source;
+ }
+ export function assertIntegrationSuccessorsCurrent(read=readFileSync){
+- read=releaseRewardDisplayPriorRead(read);
++ read=releaseRewardDisplayPriorRead(releasePackStoragePriorRead(read));
+  const requireCurrent=assertCapacitySources(read);
+  read=beforeCapacityRead(shopEntryPreflightRead(read),requireCurrent);
+  assertRefinedReleaseSourcesCurrent(read);
+@@ -419,6 +420,7 @@ export function assertIntegrationSuccessorsCurrent(read=readFileSync){
+  }
+ }
+ export function beforePreflightSource(path,source,view='prior'){
++ source=beforeReleasePackStorageSource(path,source);
+  source=beforeCharacterPreparationCiSource(path,beforeV2UiAdmission(path,beforeCoopCiSource(path,source)));
+  source=beforeIntegrationSuccessor(path,source);
+  // Only the exact flag-registry successor enters the earlier Release witness.
+diff --git a/tests/helpers/integrated-ci-source.json.gz b/tests/helpers/integrated-ci-source.json.gz
+index 7507dd9dadee24535388a3cf3493313564612a1c..d735d328964efe8ac50f5ae5fffdeb3dd1a234cc 100644
+GIT binary patch
+literal 132
+zcmWN?%MHUI3;@tOQ?NjT!Qqo^g8>($wnT;G(CHiLN$)D((fUW$Igha`^=$L;;<4P<
+zla|!qY8)l0ON-vJ95ov2b_VhqJ^Ku+GnpA3`A~3+w@4wtN^y&@dD7$!Wp*yO#2Q%J
+PgjS69D-w+{XhHk|L4qgv
+
+diff --git a/tests/helpers/release-pack-storage-source.mjs b/tests/helpers/release-pack-storage-source.mjs
+new file mode 100644
+index 0000000..690bfb0
+--- /dev/null
++++ b/tests/helpers/release-pack-storage-source.mjs
+@@ -0,0 +1,73 @@
++// Exact inverse of the Release storage-only change for the historical CI views.
++import assert from 'node:assert/strict';
++import {createHash} from 'node:crypto';
++
++const bindings = {
++  ".gitattributes": {
++    current: '5568456cf3a2215c26433688491880dd00ea5c38a2b4938051e8ffcac1254f59',
++    before: '76aac2c0e18dd930717d81ccff4ffbd52b35dda1afc3097298c929dcabe3d6de',
++    inverse: [
++      [1457, 6, []],
++    ],
++  },
++  "config/ci-media-lfs.json": {
++    current: 'b108b3c33826b1df040c6bb0b8cf2df390da6d02bcb915bdb06e6d1153c21ad2',
++    before: 'a744f84701e638657569cf3211443adbace935c28435b2742ebc28b2a666e89d',
++    inverse: [
++      [7479, 46, []],
++    ],
++  },
++  "docs/legal/assets.json": {
++    current: '929091b946228ae5887ebe4ebc2008d0d7b38943d71b981a16f36d90188e6c45',
++    before: '9dc3e8a2d070fe5e633be6c869b296f672fc1d82782d30a8b1c4037f359c41b1',
++    inverse: [
++      [10160, 28, []],
++    ],
++  },
++  "scripts/ci-media-lfs.mjs": {
++    current: '98f8987f873a6203635f9b163917bf9c1dc46fa53470bbf5e56a40aac3faf2e8',
++    before: '3347a47caac71759c08d999edebededc1da731f1d4dd43e00724a513aaf77629',
++    inverse: [
++      [65, 2, ["const maxStoragePayloadBytes=maxMediaPayloadBytes+maxEvidencePayloadBytes+maxArchivePayloadBytes+maxHelperArchivePayloadBytes;"]],
++      [53, 2, ["  :helperArchiveFiles.includes(row)?row.sourceCommit===manifest.helperExtension.sourceCommit:/\\.(png|jpe?g|gif)$/i.test(row.path);"]],
++      [38, 9, []],
++      [20, 2, ["export const mediaFiles=Object.freeze([...originalMediaFiles,...evidenceFiles,...archiveFiles,...helperArchiveFiles]);"]],
++      [13, 1, ["const original={...manifest};delete original.evidenceExtension;delete original.archiveExtension;delete original.helperExtension;"]],
++      [10, 1, ["assert.equal(hash(bytes),'a744f84701e638657569cf3211443adbace935c28435b2742ebc28b2a666e89d','exact media and evidence manifest');"]],
++    ],
++  },
++  "tests/ci-reviewed-lfs.test.mjs": {
++    current: 'f91b631ed687c2dade811ff1e759585bbb1c0337105ea75b8fa540ee5f977e5a',
++    before: 'ddbcb408f3d7396aadba094a1ca5fd9813494c46f085a447ad5debfd96591f53',
++    inverse: [
++      [338, 1, [" const storedArchives=[...archiveFiles,...helperArchiveFiles];"]],
++      [300, 18, []],
++      [268, 1, [" assert.deepEqual(prepareMediaAssets({env:{...process.env,CI_LFS_TOKEN:''}}),{status:'cached',files:819,objects:768,bytes:166884443});"]],
++      [257, 1, [" assert.deepEqual(validateMediaPointers(pointers),{files:819,objects:768,bytes:166884443});"]],
++      [235, 1, [" const original={...manifest};delete original.evidenceExtension;delete original.archiveExtension;delete original.helperExtension;"]],
++      [15, 1, []],
++      [10, 1, ["import {mediaFiles,originalMediaFiles,evidenceFiles,archiveFiles,helperArchiveFiles,mediaPointer,maxMediaPayloadBytes,maxEvidencePayloadBytes,maxArchivePayloadBytes,maxHelperArchivePayloadBytes,validateMediaPointers,prepareMediaAssets} from '../scripts/ci-media-lfs.mjs';"]],
++    ],
++  },
++};
++const sha = source => createHash('sha256').update(source).digest('hex');
++
++export const releasePackStorageSources = Object.freeze(Object.fromEntries(
++  Object.entries(bindings).map(([path, row]) => [path, row.before]),
++));
++
++export function beforeReleasePackStorageSource(path, source) {
++  if (!Object.hasOwn(bindings, path) || typeof source !== 'string' || source.includes('\r\r\n')) return source;
++  const row = bindings[path];
++  const normalized = source.replaceAll('\r\n', '\n');
++  if (sha(normalized) !== row.current) return source;
++  const lines = normalized.split('\n');
++  for (const [start, count, previous] of row.inverse) lines.splice(start, count, ...previous);
++  const before = lines.join('\n');
++  assert.equal(sha(before), row.before, 'complete pre-storage Release input: ' + path);
++  return source.includes('\r\n') ? before.replaceAll('\n', '\r\n') : before;
++}
++
++export function releasePackStoragePriorRead(read) {
++  return (path, encoding) => beforeReleasePackStorageSource(path, read(path, encoding));
++}
+diff --git a/tests/helpers/sts-style-prior-runtime.json.gz b/tests/helpers/sts-style-prior-runtime.json.gz
+index d790bd83f77ef44eb682aca5c08617b0b06f9c2c..622b6d8dd61d2d01f82316e5e9d99cd33ef94e93 100644
+GIT binary patch
+literal 132
+zcmWN{yAi`63;@ucDOe!pkCC@ALIm!T;ES+}OdnUTc^7@TkB@9~9=s{_?DO%eyxg`k
+zFF4+c4?=YrF?x~Qb{pbmbgnM11)?U8+U{ga^kid6B~%lW_1-}S2N68L>Z(qNga)C2
+Ob6Rl!k@WVS!H7R6lP6RF
+
