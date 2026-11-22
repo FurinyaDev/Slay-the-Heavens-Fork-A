@@ -1,0 +1,163 @@
+diff --git a/tests/fixtures/release-deck-lineage-source.json.gz b/tests/fixtures/release-deck-lineage-source.json.gz
+new file mode 100644
+index 0000000000000000000000000000000000000000..66366bc8b0b7b6cfd1befc2f7a5104df7f2f2dd0
+GIT binary patch
+literal 1385
+zcmV-v1(y0BiwFP!000021MOB@Ya2%t{wsrCRw8R<clI*74l1;1D2395x(yAnW9D*3
+zTD;yBGb7uIaVhk%^zxRsLZABDJ{3~he`AvVi=J6Ywq!dA^razmK&<A>`ObCbn>p=G
+zxtsL1d)CO?^^D)<Vs7oe0(r1MtA;4)g}s{3!PwsR<I|qt7EqfCsUj^@l4%A}np4mz
+zPg$Z>o&uu<69rEq6(iWrqy%eQgD^#NnJSr;kS8Te<CMi&5pkMQ78jfrDbJZ^S%EMC
+zx;5zPv}Y%rW;vo0nwKR&Of#Nq!6T})EGd_Xj&z=6X`~gCQm~At5`<zrr?F%She$~o
+zMSxbvmHVJ>1sanXhoq!=UZ$XPRYW?YkR<?7iJ9dbSRt8$q<0qfxOQMRLWxrhzZ8<H
+zGJy;-F1Vrvhcqd(NR+u&8E7feNJ2rGEDBzvG|@?si>NGx*a(GFh((&JI8Tx|Rw|Nt
+zrs60~q@V>ASy@uZSycK^wBh4JXq@lH;~v4WwMF2hvaV{z#J6p$okBy#+yUte?pzI|
+zYNj(6l0!ZvzS}k=29CK=c0jD-bBj~1w%Vqi4|f}HQ_mXds<t5(YCWtPI|b=JgSwKo
+zzaN@e6CPD?99E5jlfeSwN2M2lqsmqS{kDcQts`ESxCusOz|BlUG_NfXXw)Ti9T#>J
+z@1^^r!11cSkI^j`d>jwa=E#{DbkPKz%m!UpSB#FK0mFSZqbu`U@g38)ZhHsZ!-eO5
+z7ujY;s|>b%UHjhKBJD1re-(D;By6gB^}BPuF1SJ7vF7^7caR7!8nGt075~2zUbz$Y
+z_Rhi!;$=w@OO3Qi1!tVmJd1K&@=RnjgE*1M$y64MUm@Ns=Y<qm&Jtwps3<6Mbs8rb
+z=dy@mmPa`gxhmz&#2XcHfvg&{SR*=8G>eiPxwl}kr`@7JQNnaCa#kh@3ezkRI?=!~
+zVCZv$?K0#xQK%HTS3^V@P^zLbQc!A%44yGbg+|`KnRx%RJK#F;o>poU;1P2(+-|aM
+zoN4P(u(J?g%lxvO84GKxcf0x7*=|#}lGj9-_SnKsYn&aO2Cb>aRm1Bb4BUK*xInhn
+z1sB@bOZO>11k_!rj)Irp|9<}0v%i0Se*XLi@5wrpef{j^H-849w=xP|{PxHBPu~V%
+zgV0fM{^NHqe)-iK-EELw?h6a%2uOnm0Y4JA<^egx9jmzG#M8zdQUk{&g%uzZ-l!TM
+z0|dXsN=&LIt=1Nt?aaB>lflZ`N2XE)kJtnZiaDN=d4m&MJ@tgPfaAX*x$E6_Bt`CS
+z9kvR{acd6jaFzKbXLXoPy$?s&kL3|v9?wqnIyyqVPG{(|8T%;Kl|7AY=w8?yegy7;
+z!Q=GB#}8V&BEO5Jh4eLk7ipY?^HGP{USax!^>y4$#(f!fpGTLPmyY|F>H6OGPX=F&
+zf@XFozyv<1PB_0wxG??7l}GC<ugPO6?VoHd4L+f_`tz-&jVJWI(dQF5gdsi|+nF0m
+zyof%;N)O!xbC|TXdO~-b&f2xsYSTW2=H47UwJ!5SDkA&-M#F~VO-HIJuZ;By3l{A<
+zae6i&s`WMLWTVk;Z((a6=CIqlvBMj;>^pFh--251g$rI>A7}^Tss%?<>7c7w-?azO
+zgtJNwHs1<<ToX(xxBb3SzUHmD=a0oF_$cz%cfTX7P86=P-ynu7(cE414=HRoZL0>a
+z7rYDP0jU18<_=4AIFuJE17DHrjPs`F&T1?*rXD%Cmf;o2T3`a76*q+wVj04~KLdl%
+r8@)_;aIux&vEpAxcs3a$qH`0HH?YlH+ADn0?VbGt>~5<ddk+8rg4>^h
+
+literal 0
+HcmV?d00001
+
+diff --git a/tests/helpers/copy-integration-source-closure.mjs b/tests/helpers/copy-integration-source-closure.mjs
+index d3a693fb..ac296d23 100644
+--- a/tests/helpers/copy-integration-source-closure.mjs
++++ b/tests/helpers/copy-integration-source-closure.mjs
+@@ -75,7 +75,7 @@ const releaseUiFiles=Object.freeze({
+ // Refined enemy art extends only the existing historical helper closure.
+ const refinedReleaseFiles=Object.freeze({
+  ...releaseUiFiles,
+- 'tests/helpers/release-ui-restore-source.mjs':'37410ec175d07b09c8dd8062ac2e19d212dc8eeaebc32f38dbf99e7b32d8b7dd',
++ 'tests/helpers/release-ui-restore-source.mjs':'f80f891d9f7bf72b098efa22b02b8cdcd83b02cd6be90cfb9003ac83cb9eeaed',
+  'tests/helpers/release-shop-entry-source.json.gz':'d3c114b39aa8affa1ae5c2b3ee54117640dcacce750efc24d78312792d8d2ff7',
+  'tests/helpers/release-forge-source.json.gz':'8557c9daa0943c815ca11e0c135d081c08081f040bbef85b3cd799f7a586c564',
+  'tests/helpers/refined-release-source.mjs':'154f5464849177b48426db7d816f4ddf87d9d26abd6bfcfb543162b4f26450d9',
+@@ -105,8 +105,9 @@ const loadingRecoveryFiles=Object.freeze({
+ const travelerStatusFiles=Object.freeze({
+  ...loadingRecoveryFiles,
+  'tests/helpers/combat-visual-source.mjs':'56a4c47f810f88c3dc1380f2c7f7c5cc8e42085950881f93e0fb10355c308ed6',
+- 'tests/helpers/release-replay-continuations.mjs':'37fababc8fa8b4f9bbd108692b39289b74964eee0a201085a6b756dd8d938d59',
++ 'tests/helpers/release-replay-continuations.mjs':'a01c34b0ae81fb75aa761577db7f05dbc3afd7c24ee4eab6c44c47ceef8fa264',
+  'tests/fixtures/release-replay-continuations.json.gz':'a2abaa3feb21f2f1a2e8f9c9fef3da2af3525073110eebaa394d82b71a095b95',
++ 'tests/fixtures/release-deck-lineage-source.json.gz':'a32c93925e562ee1c617bd647e18f131a0c066659eb653ba67afe3beb75454d0',
+  'tests/helpers/traveler-status-source.mjs':'2c853e67bd0148ed6de45a3e6ac0e69fe97dd543f967ecbb492f498c46e3c741',
+  'tests/fixtures/release-battle-detail-source.json.gz':'62be372b9fcdbfee8c06bb68cf3808ec8932ed8097537c85c83fa85310e6ea9f',
+  'tests/fixtures/traveler-status-source.json.gz':'78ea0afbc225eb83cfd79d24cbed5c1af166e21c07f2adfec3588b488a0d0de2',
+diff --git a/tests/helpers/fork-preflight-source.mjs b/tests/helpers/fork-preflight-source.mjs
+index 91710a32..75dea408 100644
+--- a/tests/helpers/fork-preflight-source.mjs
++++ b/tests/helpers/fork-preflight-source.mjs
+@@ -92,6 +92,12 @@ function beforeTravelerStatusCiSource(path,source){
+  const actorTemplate=path==='tests/native-monster-actor-template.test.mjs';
+  if((!copier&&!regression&&!actorTemplate)||typeof source!=='string'||source.includes('\r\r\n'))return source;
+  let lf=normalize(source);
++ if(copier&&hash(lf)==='1637331fc3742191fa287a302c8e19b2dd0e6d5cca4e048e3bafb78b4daffca2'){
++  lf=lf.replace(" 'tests/helpers/release-ui-restore-source.mjs':'f80f891d9f7bf72b098efa22b02b8cdcd83b02cd6be90cfb9003ac83cb9eeaed',\n"," 'tests/helpers/release-ui-restore-source.mjs':'37410ec175d07b09c8dd8062ac2e19d212dc8eeaebc32f38dbf99e7b32d8b7dd',\n")
++   .replace(" 'tests/helpers/release-replay-continuations.mjs':'a01c34b0ae81fb75aa761577db7f05dbc3afd7c24ee4eab6c44c47ceef8fa264',\n"," 'tests/helpers/release-replay-continuations.mjs':'37fababc8fa8b4f9bbd108692b39289b74964eee0a201085a6b756dd8d938d59',\n")
++   .replace(" 'tests/fixtures/release-deck-lineage-source.json.gz':'a32c93925e562ee1c617bd647e18f131a0c066659eb653ba67afe3beb75454d0',\n","");
++  assert.equal(hash(lf),'0905d3901444316d81a8bcb99b9323fc9728e16401c358d0ba1f79b0d79a68d2','exact historical deck helper copy predecessor');
++ }
+  if(copier&&hash(lf)==='0905d3901444316d81a8bcb99b9323fc9728e16401c358d0ba1f79b0d79a68d2'){
+   lf=lf.replace(" 'tests/helpers/combat-visual-source.mjs':'56a4c47f810f88c3dc1380f2c7f7c5cc8e42085950881f93e0fb10355c308ed6',\n 'tests/helpers/release-replay-continuations.mjs':'37fababc8fa8b4f9bbd108692b39289b74964eee0a201085a6b756dd8d938d59',\n 'tests/fixtures/release-replay-continuations.json.gz':'a2abaa3feb21f2f1a2e8f9c9fef3da2af3525073110eebaa394d82b71a095b95',\n"," 'tests/helpers/combat-visual-source.mjs':'f90e9852079ce269b75d69225552b3720fe43fe789f63e2fa09dee15bdff308c',\n");
+   assert.equal(hash(lf),'e9045772fa7bc30c8f12123cfb3ba78996f11f12c9384fe2c781ec296dee4116','exact #829 and #854 helper copy predecessor');
+diff --git a/tests/helpers/isolated-current-source.mjs b/tests/helpers/isolated-current-source.mjs
+index 3db1fff1..2c74f348 100644
+--- a/tests/helpers/isolated-current-source.mjs
++++ b/tests/helpers/isolated-current-source.mjs
+@@ -7,7 +7,9 @@ import {copyIntegrationSourceClosure} from './copy-integration-source-closure.mj
+ export function copyCurrentSourceFixture(directory,{crlf=false}={}){
+  copyIntegrationSourceClosure(directory);
+  const text=source=>crlf?source.replaceAll('\r\n','\n').replaceAll('\n','\r\n'):source;
+- const paths=['config/architecture.json',...readdirSync('src/lua').filter(name=>name.endsWith('.lua')).map(name=>'src/lua/'+name)];
++ // Forethought's deck replay authenticates this linked layout on every read.
++ const paths=['config/architecture.json','scripts/deck-ui-layout.mjs',
++  ...readdirSync('src/lua').filter(name=>name.endsWith('.lua')).map(name=>'src/lua/'+name)];
+  for(const path of paths){
+   mkdirSync(dirname(join(directory,path)),{recursive:true});
+   writeFileSync(join(directory,path),text(readFileSync(path,'utf8')));
+diff --git a/tests/helpers/release-replay-continuations.mjs b/tests/helpers/release-replay-continuations.mjs
+index b80902d9..ca86204f 100644
+--- a/tests/helpers/release-replay-continuations.mjs
++++ b/tests/helpers/release-replay-continuations.mjs
+@@ -75,3 +75,28 @@ export function beforeBattleUiQualitySource(path, source, travelerInput, read) {
+     'combined linked owner identity: ' + path + ' during battle UI quality validation');
+   return predecessor(path, source, text, row);
+ }
++
++const deckArchive = readFileSync(new URL('../fixtures/release-deck-lineage-source.json.gz', import.meta.url));
++assert.equal(hash('sha256', deckArchive), 'a32c93925e562ee1c617bd647e18f131a0c066659eb653ba67afe3beb75454d0', 'exact Release historical deck archive');
++const {path: deckPath, layers: deckLayers} = JSON.parse(gunzipSync(deckArchive));
++assert.equal(deckPath, 'src/lua/abyss_deck_ui.lua');
++assert.deepEqual(deckLayers.map(({base, successor}) => [base, successor]), [
++  ['2bcd0fbd35f7e0462ef4a473fd64e7287b8a30d1', 'd26c4dc59e639741471580a242718a284a67f758'],
++  ['7381cf7152ba7a726506f9a5b525e13cfbd2c87a', '56a8cb56730fb08824734135aac80176067b6d9c'],
++]);
++assert.deepEqual(deckLayers[0].before, deckLayers[1].after, 'exact deck lineage between #794 parent and #790');
++
++export function beforeHistoricalDeckSource(path, source, recordingInput, read) {
++  if (path !== deckPath) return source;
++  const text = normalize(source);
++  const index = deckLayers.findIndex(row => matches(text, row.after));
++  if (index === -1) return source;
++  const input = normalize(recordingInput);
++  assert(input !== null && readOwner(read, path) === input,
++    'combined linked owner identity: ' + path + ' during historical deck validation');
++
++  for (const row of deckLayers.slice(index)) {
++    source = predecessor(path, source, normalize(source), row);
++  }
++  return source;
++}
+diff --git a/tests/helpers/release-ui-restore-source.mjs b/tests/helpers/release-ui-restore-source.mjs
+index 8a80cb63..218e0382 100644
+--- a/tests/helpers/release-ui-restore-source.mjs
++++ b/tests/helpers/release-ui-restore-source.mjs
+@@ -1,3 +1,4 @@
++import {beforeHistoricalDeckSource} from './release-replay-continuations.mjs';
+ import {beforeCombatVisualSource,combatVisualPriorRead} from './combat-visual-source.mjs';
+ import {authorizeRefinedReleaseProduction,beforeRefinedReleaseProduction} from './refined-release-source.mjs';
+ import assert from 'node:assert/strict';
+@@ -54,6 +55,8 @@ export function shopEntryPriorRead(read){
+  return (path,...args)=>beforeReleaseShopEntry(path,read(path,...args));
+ }
+ export const beforeRecordingUi=(path,source)=>recording.project(path,beforeCombatVisualSource(path,source));
++const beforeHistoricalRecordingUi=(path,source,read=readFileSync)=>
++ beforeHistoricalDeckSource(path,beforeRecordingUi(path,source),source,read);
+ export const releaseForgeSourcePaths=Object.freeze(Object.keys(forgeGrid.files).filter(path=>path.startsWith('src/lua/')));
+ export const beforeReleaseForgeGridUi=forgeGrid.project;
+ export const releaseControlsGuideRemovalSourcePaths=Object.freeze(Object.keys(controlsGuideRemoval.files).filter(path=>path.startsWith('src/lua/')));
+@@ -63,7 +66,7 @@ export const beforeReleaseControlsGuideRemoval=controlsGuideRemoval.project;
+ export const releaseRightClickSourcePaths=Object.freeze(Object.keys(rightClick.files));
+ export const releaseUiRestoreSourcePaths=Object.freeze([...new Set([...Object.keys(files),...Object.keys(fieldCancel.files)])]);
+ export const beforeReleaseRightClick=(path,source)=>rightClick.project(path,fieldCancel.project(path,source));
+-export const beforeReleaseUiRestore=(path,source)=>project(path,beforeReleaseRightClick(path,beforeReleaseControlsGuideRemoval(path,beforeReleaseSharedRelicUi(path,beforeReleaseForgeGridUi(path,beforeRefinedReleaseProduction(path,beforeRecordingUi(path,beforeReleaseShopEntry(path,source))))))));
++export const beforeReleaseUiRestore=(path,source)=>project(path,beforeReleaseRightClick(path,beforeReleaseControlsGuideRemoval(path,beforeReleaseSharedRelicUi(path,beforeReleaseForgeGridUi(path,beforeRefinedReleaseProduction(path,beforeHistoricalRecordingUi(path,beforeReleaseShopEntry(path,source),shopEntryPriorRead(readFileSync))))))));
+ const authorizationPaths=[...new Set([...releaseUiRestoreSourcePaths,...releaseRightClickSourcePaths,...releaseControlsGuideRemovalSourcePaths,...releaseSharedRelicSourcePaths,...releaseForgeSourcePaths])];
+ 
+ export function authorizeReleaseUiRestore(samples,read){
+@@ -84,8 +87,8 @@ export function authorizeReleaseUiRestore(samples,read){
+   assert(matches(read(path),expected),'recording UI linked owner changed: '+path);
+  }
+  const rawRead=read;
+- samples=samples.map(([path,input])=>[path,beforeRecordingUi(path,input)]);
+- read=path=>beforeRecordingUi(path,rawRead(path));
++ samples=samples.map(([path,input])=>[path,beforeHistoricalRecordingUi(path,input,rawRead)]);
++ read=path=>beforeHistoricalRecordingUi(path,rawRead(path),rawRead);
+  authorizeRefinedReleaseProduction(samples,read);
+  // A combined replay that contains current menu code must use the same release
+  // version for every sampled menu owner. Older all-historical views still replay.
