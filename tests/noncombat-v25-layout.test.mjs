@@ -140,10 +140,11 @@ test('official host uses direct inventory actions, read-only relic details and e
  buildLuaData('data',join(directory,'abyss_data.lua'));
  buildUI(directory,undefined,{officialAssets:true,nativePageLifecycle:true});
  const stage=child(JSON.parse(readFileSync(join(directory,'game-ui.json'),'utf8')),'stage');
+ // Authored menu layouts from the Release parent (38a2cd87).
  for(const [name,sha,focusPaths] of [
-  ['menuPanel','22ba44505ce84d1a0db1fc106c385c2fd1594d4dafe2703de04e7cb8ba0b4173',
+  ['menuPanel','394af345ebc9bf0067ae6d6486aaf288a63f7cabd37814e81e76d8d8d41752d3',
    [['result','viewEasterEgg','hit'],...['start','continueRun','titleQuit','settle'].map(name=>[name,'hit'])]],
-  ['exitPanel','7823696e5eab9c33d02a0d1f2f575bed9a16927d8476d94f9f32a7769e287888',
+  ['exitPanel','ba602709b57749187026334c3fa23cd958991ea3398b0533b852b6074c3ed79f',
    ['cancel','confirm'].map(name=>[name,'hit'])],
   ['runMenu','0e7ac3c3d114fc0f66ea0e1dd0717dfb08824d1abbbf577cecbda500413cafb0',
    ['resume','map','mainMenu','abandon','quit'].map(name=>[name,'hit'])],

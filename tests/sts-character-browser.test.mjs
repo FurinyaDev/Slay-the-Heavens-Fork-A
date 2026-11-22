@@ -75,9 +75,14 @@ prepared=false;assert(host:openStarterDeck());assert(host.pageReveal:covered() a
 assert(not host.run and created==0 and host.characterSelection.deckOpen and host.deckUI.previewInfo==info)
 local deck=host.deckUI;local deckPanel=root:GetChild('deckPanel')
 assert(deck.browserShell and not deck.pileView and not deck.pileKind and not deck.choiceToken and not deck.battle)
-assert(deck.run.readOnlyPreview and #deck.cards==info.deckSize and deckPanel:GetChild('pileGrid').visible)
-assert(not panel.visible and not panel:GetChild('deckView').visible and #panel:GetChild('deckView'):GetChildren()==0)
-assert(host.pointerBlocked(),'preparation must keep preview input covered')
+assert(deck.run.readOnlyPreview and #deck.cards==info.deckSize,'starter preview lost its read-only projection')
+assert(not panel.visible,'starter preview did not cover character selection')
+local legacyDeck=panel:GetChild('deckView')
+assert(not legacyDeck.visible and #legacyDeck:GetChildren()==0,'starter preview allocated the retired character deck')
+assert(host.pageReveal.localFrame and not host.pointerBlocked(),'local preparation must leave the surrounding controls reachable')
+for _,cell in ipairs(deckPanel:GetChild('pileGrid'):GetChildren())do
+ assert(not cell:GetChild('hit').raycastTarget,'preparation enabled an unready card')
+end
 assert(not host:openStarterDeck(),'covered/reentrant opening must fail')
 for i=1,4 do host:update(1/60);host:refresh()end
 assert(deck.visible and host.pageReveal:covered(),'menu stale-deck rule closed read-only preview')
@@ -91,7 +96,7 @@ for _,cell in ipairs(cards:GetChildren())do
   assert(face:GetChild('name').text~='' and face:GetChild('cost').text~='' and face:GetChild('label').text~='','starter card lost actual name/cost/rules')
  end
 end
-assert(visible==math.min(10,info.deckSize),'starter browser omitted current-page cards')
+assert(cards.visible and visible==math.min(10,info.deckSize),'starter browser omitted current-page cards')
 assert(painted>0,'visible starter cards did not paint')
 assert(deckPanel:GetChild('pileReturn').visible)
 assert(deck:setSort('cost'));settle()

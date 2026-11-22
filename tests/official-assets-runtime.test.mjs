@@ -83,7 +83,7 @@ function runOfficial(t,body,marker,overrides={},official=true,refinedReleaseMons
  assert.deepEqual(pile.children.find(c=>c.name==='hit').size,[150,210]);
  const ordinary=structuredClone(templates.find(c=>c.name==='AbyssDeckCard').children.find(c=>c.name==='face'));
  ordinary.position=[0,0];
- assert.deepEqual(ordinary,expected,'permanent and combat piles share the final hand face');
+ assert.deepEqual(ordinary,readOnly,'permanent and combat piles share the final hand face without idle playable rim layers');
  assert.equal(face.children.find(c=>c.name==='stsReferenceBack').children.find(c=>c.name==='body').children.find(c=>c.name==='paperWell').image,theme.image.rect,
   'the generated production shared face retains its rectangular paper well');
  }else{
