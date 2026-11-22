@@ -6,6 +6,8 @@ import {nativeTheme} from '../scripts/native-ui-theme.mjs';
 import {attachOfficialPortraits} from '../scripts/official-portraits.mjs';
 import {assertNativeUiCapacity} from '../scripts/build-ui.mjs';
 import {applyV25CharacterLayout,v25CharacterReference} from '../scripts/v25-character-layout.mjs';
+import {applyOfficialNoncombatLayout} from '../scripts/noncombat-v25-layout.mjs';
+import {officialAssetsTheme} from '../scripts/official-assets-layout.mjs';
 import {mkdirSync,mkdtempSync,readFileSync,writeFileSync,rmSync,symlinkSync} from 'node:fs';
 import {resolve,join,dirname} from 'node:path';
 import {spawnSync} from 'node:child_process';
@@ -203,4 +205,20 @@ test('missing approved story and image bindings stay explicitly empty and repeat
  const before=structuredClone(layout);applyV25CharacterLayout(layout,missing);assert.deepEqual(layout,before);
  assert.equal(v25CharacterReference.cssSha256,'9a6d137a3297559f638e5323db424506ae394c7942cdf334551936ac0d74d17d');
  assert(v25CharacterReference.unverified.includes('full-resolution-portrait'));
+});
+
+
+test('approved Traveler synopsis reaches both selection profiles',()=>{
+ const approved='失却星辉、与血亲失散的异乡旅人。她与磐岩共鸣，剑势在鏖战中愈发凌厉';
+ const official=officialAssetsTheme(nativeTheme),basicLayout=build(),officialLayout=build();
+ applyV25CharacterLayout(basicLayout,nativeTheme);
+ applyOfficialNoncombatLayout(officialLayout,official);
+ for(const layout of [basicLayout,officialLayout])
+  assert.equal(child(child(panel(layout),'details'),'v25Story').text.content,approved);
+});
+
+test('official Traveler synopsis consumes injected content without an override',()=>{
+ const layout=build(),official=officialAssetsTheme({...nativeTheme,v25Character:{...nativeTheme.v25Character,story:theme().v25Character.story}});
+ applyOfficialNoncombatLayout(layout,official);
+ assert.equal(child(child(panel(layout),'details'),'v25Story').text.content,theme().v25Character.story);
 });
