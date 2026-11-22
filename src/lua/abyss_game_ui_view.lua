@@ -592,11 +592,11 @@ local function paintReveal(self)
         self.root:GetChild('exitPanel'):SetAsLastSibling()
     end
 end
-local function finishReveal(self,platform)
+local function finishReveal(self,platform,roomPainted)
     local intent=PageReveal.intent(self)
     PageReveal.registerSource(platform,intent.page)
     if self.pageReveal then
-        self.pageReveal:finish(intent)
+        self.pageReveal:finish(intent,roomPainted)
         if self.pageReveal.localOnly and self.pageReveal:covered()then
             CharacterView.render(self.root:GetChild('characterPanel'),self.characterSelection,platform,false)
         end
@@ -656,7 +656,7 @@ function M.refresh(self,finishRunFlow,syncOpening,selectMode,syncOfficialBattleS
             if self.easterEgg then self.easterEgg:refresh()end
             syncPortraits()
             CardSkin.endFrame(surfaceFrame,surfaceScopes(self))
-            finishReveal(self,platform)
+            finishReveal(self,platform,self.nodeUI.visible and not self.nodeUI.pendingOwner)
             paintReveal(self)
             openingForeground(covering)
             self:syncController()
