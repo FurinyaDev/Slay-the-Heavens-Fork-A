@@ -239,11 +239,17 @@ const developSessionRelicFiles=Object.freeze({
  'tests/fixtures/develop-session-relic-source.json.gz':'3597ea919d88cd07f5e4e8f2c8918c0558f613f6a3fd3d6fda3a08469276db05',
  'tests/helpers/combined-epoch/source-epoch-runtime.mjs':'10c612b573801aff960786be378827d32af65ac52edbbfd282a7f562155ca683',
 });
+const relicDetailFiles=Object.freeze({
+ ...developSessionRelicFiles,
+ 'tests/helpers/develop-release-backflow-source.mjs':'f4385a3aa4e46a4de46f2d50f95073cac258ff1f612e0436b3dde1c8db539b90',
+ 'tests/helpers/relic-detail-source.mjs':'9c10deb49cb669414319c833c3f30a646fbd9a6885e6acc1389fc80fbda7bfca',
+ 'tests/fixtures/relic-detail-source.json.gz':'981b97459ad1d75b79d03e197534dbab883d1f79055c7e2776d9ec32f09a9327',
+});
 const inside=(root,path)=>{const r=relative(root,path);return r!==''&&!isAbsolute(r)&&r!=='..'&&!r.startsWith('../')&&!r.startsWith('..\\');};
 export function copyIntegrationSourceClosure(directory,{sourceRoot=process.cwd()}={}){
  const destination=realpathSync.native(directory);
  assert.notEqual(destination,realpathSync.native(sourceRoot),'isolated helper copy destination');
- for(const [path,sha]of Object.entries(developSessionRelicFiles)){
+ for(const [path,sha]of Object.entries(relicDetailFiles)){
   assert((path.startsWith('tests/helpers/')||path.startsWith('tests/fixtures/'))&&!path.split('/').includes('..'),'fixed helper path');
   const source=join(sourceRoot,path),content=integrationClosureBytes(path,readFileSync(source));assert.equal(hash(content),sha,'fresh helper copy identity: '+path);
   const target=join(directory,path);mkdirSync(dirname(target),{recursive:true});

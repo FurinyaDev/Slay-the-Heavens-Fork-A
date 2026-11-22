@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import {readFileSync} from 'node:fs';
 import {gunzipSync} from 'node:zlib';
+import {authenticateRelicDetail,beforeRelicDetail} from './relic-detail-source.mjs';
 
 const hash=(bytes,algorithm='sha256')=>createHash(algorithm).update(bytes).digest('hex');
 const blob=source=>hash(`blob ${Buffer.byteLength(source)}\0${source}`,'sha1');
@@ -207,12 +208,14 @@ function beforeSessionRelic(path,source,options){
  return source.includes('\r\n')?before.replaceAll('\n','\r\n'):before;
 }
 export function beforeDevelopBackflow(path,source,options){
+ source=beforeRelicDetail(path,source);
  return beforePriorDevelopBackflow(path,beforeSessionRelic(path,source,options));
 }
 export function assertCurrentSessionRelicOwner(path,source){
  if(Object.hasOwn(sessionRelic.files,path))assert(matches(source,current(path).after),'combined linked owner identity: '+path);
 }
 export function authenticateDevelopBackflow(path,source,read,options){
+ source=authenticateRelicDetail(path,source,read);
  const sessionPrior=beforeSessionRelic(path,source,options);
  const sessionSuccessor=sessionPrior!==source;
  if(sessionSuccessor){
