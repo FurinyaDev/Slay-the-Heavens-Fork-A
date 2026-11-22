@@ -117,26 +117,25 @@ test('current check releases cancelled runs and fails closed on every non-succes
   assert.match(check,/^    if: \$\{\{ !cancelled\(\) && \(github\.event_name != 'pull_request' \|\| github\.event\.pull_request\.draft == false\) \}\}$/m);
   assert.match(check,/^          RULES_RESULT: \$\{\{ needs.rules.result \}\}$/m);
   assert.doesNotMatch(check,/continue-on-error:|\|\| true/);
-  const command=check.match(/^      - name: Require every regression shard\n        env:\n          RULES_RESULT: [^\n]+\n        run: \|\n((?:          .*\n)+)/m)?.[1];
+  const command=check.match(/^      - name: Require every regression shard\n        env:\n(?:          [A-Z_]+: [^\n]+\n)+        run: \|\n((?:          .*\n)+)/m)?.[1];
   assert.ok(command,'execute the actual aggregate gate, not a substitute predicate');
-  const substitutions={'needs.impact.result':'PLAN','needs.impact.outputs.mode':'MODE','needs.fast.result':'FAST'};
-  const shellCommand=command.replace(/\$\{\{ ([^}]+) \}\}/g,(_,name)=>{assert.ok(Object.hasOwn(substitutions,name),name);return '$'+substitutions[name];});
+  assert.doesNotMatch(command,/\$\{\{/);
   const shell=process.platform==='win32'?join(process.env.ProgramFiles,'Git','bin','bash.exe'):'/bin/sh';
   const statuses=[undefined,'','skipped','cancelled','failure','timed_out','success'];
   const execute=values=>{
-    const env={...process.env};for(const name of ['PLAN','MODE','FAST','RULES_RESULT'])delete env[name];
+    const env={...process.env};for(const name of ['IMPACT_RESULT','QUALITY_MODE','FAST_RESULT','RULES_RESULT'])delete env[name];
     for(const [name,value]of Object.entries(values))if(value!==undefined)env[name]=value;
-    const actual=spawnSync(shell,['-e','-c',shellCommand],{env,encoding:'utf8',windowsHide:true,timeout:30000});
+    const actual=spawnSync(shell,['-e','-c',command],{env,encoding:'utf8',windowsHide:true,timeout:30000});
     assert.ifError(actual.error);return actual.status===0;
   };
   for(const mode of ['full','fast'])for(const result of statuses){
-    const selected=mode==='full'?'RULES_RESULT':'FAST',unselected=mode==='full'?'FAST':'RULES_RESULT';
-    assert.equal(execute({PLAN:'success',MODE:mode,[selected]:result,[unselected]:'success'}),result==='success',mode+'/'+String(result));
-    assert.equal(execute({PLAN:'success',MODE:mode,[selected]:'success',[unselected]:result}),true,'unselected '+mode+'/'+String(result));
+    const selected=mode==='full'?'RULES_RESULT':'FAST_RESULT',unselected=mode==='full'?'FAST_RESULT':'RULES_RESULT';
+    assert.equal(execute({IMPACT_RESULT:'success',QUALITY_MODE:mode,[selected]:result,[unselected]:'success'}),result==='success',mode+'/'+String(result));
+    assert.equal(execute({IMPACT_RESULT:'success',QUALITY_MODE:mode,[selected]:'success',[unselected]:result}),true,'unselected '+mode+'/'+String(result));
   }
   for(const result of statuses)for(const mode of ['full','fast'])
-    assert.equal(execute({PLAN:result,MODE:mode,FAST:'success',RULES_RESULT:'success'}),result==='success','impact '+String(result));
-  for(const mode of [undefined,'','unknown'])assert.equal(execute({PLAN:'success',MODE:mode,FAST:'success',RULES_RESULT:'success'}),false,'unknown routing cannot pass');
+    assert.equal(execute({IMPACT_RESULT:result,QUALITY_MODE:mode,FAST_RESULT:'success',RULES_RESULT:'success'}),result==='success','impact '+String(result));
+  for(const mode of [undefined,'','unknown'])assert.equal(execute({IMPACT_RESULT:'success',QUALITY_MODE:mode,FAST_RESULT:'success',RULES_RESULT:'success'}),false,'unknown routing cannot pass');
 });
 
 test('native Node eight-shard selection executes every current JS file name exactly once', t => {

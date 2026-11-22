@@ -4,7 +4,7 @@
 
 1. 读取目标分支准确 BASE，先用已有 `node scripts/test-affected.mjs --plan --base <BASE>` 查看影响。A 优先完整受影响 Quick；共享 CI、未知或零覆盖交给一个 Fork Full，B 优先、A 可互援。
 2. dispatch 前查看 A/B 的运行。相同 HEAD/BASE、模式和覆盖已成功就复用，在途运行交接给现有负责人。核对固定 Fork ID、准确 HEAD/BASE 和对应 attempt，原生成功 rerun 也可复用。
-3. 涉及共享 CI、核心路径或影响未知时，使用适用的 Full 验证。覆盖明确的低风险切片可用定向验证，记录实际命令及结果。适用验证完成后按[任务执行](TASK_EXECUTION.md#fork-first-开发)同步精确候选。主仓 Quality/Licenses 独立执行正式检查。
+3. 涉及共享 CI、核心路径或影响未知时，使用适用的 Full 验证。覆盖明确的低风险切片可用定向验证，记录实际命令及结果。适用验证完成后按[任务执行](TASK_EXECUTION.md#fork-first-开发)从 Fork 为精确候选向主仓 develop 提 PR。主仓 Quality/Licenses 独立执行正式检查。
 4. Fork HEAD 与 PR merge SHA、Merge Queue SHA 分别验收；Fork 成功不替代正式检查。发布冻结 Full 与日常 Release 验证分别见 [CI-FAST](CI-FAST.md)。
 
 ```sh

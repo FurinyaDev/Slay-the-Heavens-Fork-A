@@ -5,6 +5,7 @@ import {readFileSync,mkdtempSync,rmSync} from 'node:fs';
 import {join} from 'node:path';
 import {tmpdir} from 'node:os';
 import {projectRepositoryMatches} from './repository-identity.mjs';
+import {qualityPendingStatusJob,qualityPendingStatusJobErrors} from './pr-quality-evidence.mjs';
 
 const validSha=value=>/^[a-f0-9]{40}$/.test(value??'');
 export const releaseBranch=value=>/^release\/[\w][\w.-]*$/.test(value??'');
@@ -44,7 +45,7 @@ export async function verifyReleaseFull(repo,branch,head,request,readCheckout=lo
  const ids=new Set(),executions=new Set();
  for(const job of jobs) {
   const key=`${job.name}:${job.run_attempt}`;
-  if(!currentFullQualityJobs.includes(job.name)||!Number.isSafeInteger(job.id)||job.id<1||ids.has(job.id)||
+  if((!currentFullQualityJobs.includes(job.name)&&job.name!==qualityPendingStatusJob)||!Number.isSafeInteger(job.id)||job.id<1||ids.has(job.id)||
    executions.has(key)||job.run_id!==run.id||job.head_sha!==head||!Number.isSafeInteger(job.run_attempt)||
    job.run_attempt<1||job.run_attempt>run.run_attempt)throw Error('Unexpected or mismatched Full job');
   ids.add(job.id);executions.add(key);
@@ -54,6 +55,8 @@ export async function verifyReleaseFull(repo,branch,head,request,readCheckout=lo
   const job=jobs.filter(j=>j.name===name).sort((a,b)=>b.run_attempt-a.run_attempt)[0];
   if(job?.status!=='completed'||job.conclusion!==(name==='fast'?'skipped':'success'))throw Error('Incomplete or unsuccessful Full job: '+name);
  }
+ const pendingErrors=qualityPendingStatusJobErrors(jobs,run);
+ if(pendingErrors.length)throw Error(pendingErrors.join('\n'));
  const proof=await readCheckout(repo,run,jobs),checkout=proof?.checkout;
  if(receiptErrors(checkout,proof?.checkoutArtifact,jobs,run,3).length||
   checkout?.tested!==head||checkout.head!==head||checkout.runId!==run.id||

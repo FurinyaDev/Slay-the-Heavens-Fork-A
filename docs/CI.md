@@ -6,7 +6,7 @@
 
 | remote | 仓库 / 固定 ID | 分工 |
 | --- | --- | --- |
-| origin | FurinyaWorks/Slay-the-Heavens / 1429751262 | 正式同仓 PR、Required Checks、Merge Queue 和发布 |
+| origin | FurinyaWorks/Slay-the-Heavens / 1429751262 | 接收跨仓 PR、执行 Required Checks、Merge Queue 和发布 |
 | fork-a | FurinyaDev/Slay-the-Heavens-Fork-A / 1460097312 | 默认开发远端，优先运行既有 Quick feedback 的 Fast 预检 |
 | fork-b | v5g95m7t8m-max/Slay-the-Heavens-Fork-B / 1460133275 | 优先运行既有 Quality 的高风险 Full 预检，按需与 A 互援 |
 
@@ -23,7 +23,7 @@ gh workflow run quality.yml -R v5g95m7t8m-max/Slay-the-Heavens-Fork-B --ref <tas
 
 Fork Quick 手动预检执行完整受影响 JS/Lua 和便宜治理检查，未知或空覆盖明确要求一次必要 Full；本地 fast/advisory 仍保留有界选测和延期报告。两者都不能称为双平台正式准入。Quality 的手动 dispatch 按现有路由执行 Full，仅在相关改动确实需要时分配一次；不以“互援”为由在两 Fork 同时重复跑同一验证。先查看同仓库、准确 HEAD/BASE 与模式的已有运行；保存 run URL、attempt、实际 checkout SHA、选测/延期和失败，不轮询守候。分支移动后旧成功只属于旧 SHA；跨仓库同 SHA 的诊断也不能代替正式目标组合。
 
-切片通过适用预检后，把所测 HEAD 同步到 origin 短分支。同步前复核实时目标基线和 Fork ref，正式 PR 正文记录 Fork 来源及验证结果。后续使用现有同仓 PR、独立 Review 和原生准入。主仓 Required Checks、队列组合及合后验证各自按实际提交执行。重建只接回 develop 仍缺且属于本版的切片，在实际合并树验证。候选的 Full 与官方容量、导入、ready、PC/手机逐项验收。合并后按既有生命周期核对和清理各仓临时 ref。
+切片通过适用预检后，复核实时目标基线和 Fork ref，直接从该 Fork 分支向主仓 `develop` 提 PR。正文记录来源及验证结果。主仓 Required Checks、队列组合及合后验证各自按实际提交执行。重建只接回 develop 仍缺且属于本版的切片，在实际合并树验证。候选的 Full 与官方容量、导入、ready、PC/手机逐项验收。合并后按既有生命周期核对和清理各仓临时 ref。
 
 算力分配复用已有 [Fast 选测](CI-FAST.md)、`scripts/ci-quality-shape.mjs` 的共享矩阵、`ci-shards.mjs` 的平台耗时权重、安全 Lua worker 与 Quality 原 `max-parallel`，不要在 Fork 另维护分片数或删测试。先分配互不重复的任务/准确提交，再让原矩阵自动铺开；以实际 job 排队和执行时间判断资源使用，保留失败成本。GitHub 并发上限按账号/组织套餐和 runner 可用性核对，不假定每个仓库天然拥有固定20/30槽位；沿用标准 hosted，不切付费 larger runner。[官方并发与矩阵说明](https://docs.github.com/en/actions/reference/limits)。
 
@@ -112,7 +112,7 @@ PR 日常受影响 Fast/高风险 Full 路由不变；Fast 不发布 Full succes
 
 暂停使用 `npm run merge:auto -- <PR> --pause`；若已在原生 Merge Queue，命令先调用 dequeue 并读回成员身份消失，再关闭并读回 Auto-merge；不改写独立评审事实或伪造失败状态。不能仅凭 `gh pr merge --disable-auto` 的退出码认定已出队。移除失败、能力未知或重新入队均不报告 paused。仅添加 hold 标签不是已确认取消。改变依赖/授权意图前先暂停，重新审查后再启用；已声明依赖必须是已纳入受审基线的提交，不允许授权未落地依赖。Strict 保留；更新分支形成新 HEAD 后须有新审查状态，不自动强推、自动重基。队列正常前缀推进按上述合同认证，祖先分叉、组身份或原审条件改变不继承旧授权；原生 API 不提供可变正文/标签的原子条件，本流程不作此承诺。
 
-自动入口仅用于同仓库的 develop PR，不改变 master 的 release/hotfix CI。Fork 的只读 token 不能发布新必需状态，其成果须由维护者接续到同仓库短分支后重新审查、验证；不是直接绕过门禁手动合入 fork PR。旧 run/attempt 的 planner 与 aggregate 不得覆盖新运行已写入的 pending/success。
+自动入口适用于主仓 `develop` 的同仓与跨仓 PR。GitHub 对 Fork 的 `pull_request` 运行使用只读令牌。现有 Licenses 写入作业从受保护的 develop BASE 运行，校验主仓 Quality 的完整正式收据、Fork 仓库 ID、来源分支、PR 和合成提交；Fork 的工作流与本地 Action 定义须与受保护基线相同，`merge:auto` 在挂起前也检查该条件。工作流维护沿用受信维护者通道。门禁上传不可变证明后发布 `pr-quality` 与 `independent-review`。队列的写入步骤从受保护的 develop 检出代码，正式 Full 仍测试真实队列组合。发布分支继续沿用各自入口。
 
 ### 异步交接与失败对账
 

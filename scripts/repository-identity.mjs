@@ -5,6 +5,15 @@ export const projectRepositoryId=1429751262;
 const names=['CHNISam/Slay-the-Abyss','FurinyaWorks/Slay-the-Abyss','FurinyaWorks/Slay-the-Heavens'];
 export const projectRepositoryMatches=(resource,name)=>names.includes(name)&&
  resource?.id===projectRepositoryId&&resource.full_name===name;
+export function projectDevelopPullRequest(pr,repo){
+ const source=pr?.head?.repo;
+ return pr?.base?.ref==='develop'&&projectRepositoryMatches(pr.base.repo,repo)&&
+  (projectRepositoryMatches(source,repo)||source?.fork===true&&Number.isSafeInteger(source.id)&&
+   source.id>0&&source.id!==projectRepositoryId&&/^[-\w.]+\/[-\w.]+$/.test(source.full_name??'')&&
+   !names.includes(source.full_name));
+}
+export const samePullRequestSource=(a,b)=>a?.head?.repo?.id===b?.head?.repo?.id&&
+ a?.head?.repo?.full_name===b?.head?.repo?.full_name&&a?.head?.ref===b?.head?.ref&&a?.head?.sha===b?.head?.sha;
 export function currentProjectRepository(query){
  const repository=JSON.parse(query('api','repositories/'+projectRepositoryId));
  if(!projectRepositoryMatches(repository,repository?.full_name))throw Error('Project repository identity is unknown or mismatched');

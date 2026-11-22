@@ -4,12 +4,12 @@ import {join,resolve} from 'node:path';
 import {spawnSync} from 'node:child_process';
 import {pathToFileURL} from 'node:url';
 import {isDeepStrictEqual} from 'node:util';
-import {collectIndependentAiReview,collectCloudGateSource} from './independent-ai-review.mjs';
+import {collectIndependentAiReview,collectCloudGateSource,assertForkWorkflowSources} from './independent-ai-review.mjs';
 import {collectPrDelivery,verifyDelivery} from './verify-delivery.mjs';
 import {autoMergeErrors} from './arm-auto-merge.mjs';
-import {projectRepositoryId,projectRepositoryMatches} from './repository-identity.mjs';
+import {projectRepositoryId,projectRepositoryMatches,projectDevelopPullRequest} from './repository-identity.mjs';
 import {main as fullMain,beginFullQuality} from './publish-full-quality.mjs';
-import {prFastErrors,collectFastCheckout} from './pr-quality-evidence.mjs';
+import {prFastErrors,collectFastCheckout,qualityRunBelongsToPr} from './pr-quality-evidence.mjs';
 
 export const prQualityContext='pr-quality';
 function gh(...args){
@@ -74,23 +74,47 @@ export function main(env=process.env,query=gh,{pending=false,loadCheckout}={}){
  if(errors.length)throw Error(errors.join('\n'));
  return {state,runId,head};
 }
+const qualityCompletion=(run,repo)=>run?.event==='pull_request'&&run.path==='.github/workflows/quality.yml'&&
+ run.conclusion==='success'&&projectRepositoryMatches(run.repository,repo)&&Array.isArray(run.pull_requests);
+
+function workflowPullRequest(eventRun,repo,get,query){
+ const links=eventRun.pull_requests;
+ if(links.length===1&&Number.isSafeInteger(links[0].number)&&links[0].number>0)
+  return get(`repos/${repo}/pulls/${links[0].number}`);
+ if(links.length!==0||eventRun.head_repository?.fork!==true||
+  !/^[-\w.]+\/[-\w.]+$/.test(eventRun.head_repository.full_name??'')||
+  typeof eventRun.head_branch!=='string'||!eventRun.head_branch)return null;
+ const owner=eventRun.head_repository.full_name.split('/')[0];
+ const params=new URLSearchParams({state:'open',base:'develop',head:`${owner}:${eventRun.head_branch}`,per_page:'100'});
+ const pages=JSON.parse(query('api','--paginate','--slurp',`repos/${repo}/pulls?${params}`));
+ if(!Array.isArray(pages)||!pages.length||pages.some(page=>!Array.isArray(page)))throw Error('Incomplete Fork PR lookup');
+ const matches=pages.flat().filter(pr=>qualityRunBelongsToPr(eventRun,pr,repo));
+ if(matches.length>1)throw Error('Ambiguous Fork PR for completed Quality workflow');
+ return matches[0]??null;
+}
+
 // Runs in the existing Licenses workflow. The connector is never a status
 // signer. Shadow runs save evidence but cannot release the required status.
 export function independentReviewGate(env=process.env,query=gh,{release=false,loadCheckout,proofFile='build/native-ai-review-proof.json'}={}){
  const event=JSON.parse(readFileSync(env.GITHUB_EVENT_PATH,'utf8'));
- const repo=env.GITHUB_REPOSITORY,number=Number(env.AI_REVIEW_PR??event.workflow_run?.pull_requests?.[0]?.number);
- const expectedHead=env.AI_REVIEW_HEAD||event.workflow_run?.head_sha;
- if(!Number.isSafeInteger(number)||number<=0)return {state:'not-requested'};
- const mode=env.AI_REVIEW_MODE||'publish',bootstrap=env.AI_REVIEW_BOOTSTRAP==='true';
+ const repo=env.GITHUB_REPOSITORY,completed=env.GITHUB_EVENT_NAME==='workflow_run';
+ if(completed&&!qualityCompletion(event.workflow_run,repo))return {state:'not-requested'};
+ const mode=completed?'publish':env.AI_REVIEW_MODE||'publish',bootstrap=!completed&&env.AI_REVIEW_BOOTSTRAP==='true';
  if(!['shadow','publish'].includes(mode))throw Error('Unknown independent review gate mode');
  const get=path=>JSON.parse(query('api',path));
  const api=path=>get(path),prefix='repos/'+repo;
  const settings=get('repositories/'+projectRepositoryId);
  if(!projectRepositoryMatches(settings,repo)||String(env.GITHUB_REPOSITORY_ID)!==String(projectRepositoryId))throw Error('Independent gate only runs in the fixed main repository');
  if(!['workflow_dispatch','workflow_run'].includes(env.GITHUB_EVENT_NAME))throw Error('Gate only accepts native workflow dispatch/completion events');
- if(env.GITHUB_EVENT_NAME==='workflow_run'&&(event.workflow_run?.event!=='pull_request'||event.workflow_run?.path!=='.github/workflows/quality.yml'||event.workflow_run?.repository?.id!==projectRepositoryId))return {state:'not-requested'};
- const pr=get(prefix+'/pulls/'+number);
- if(pr.state!=='open'||pr.merged||pr.base?.ref!=='develop'||pr.head?.sha!==expectedHead)return {state:'superseded'};
+ const requested=Number(env.AI_REVIEW_PR);
+ const pr=completed?workflowPullRequest(event.workflow_run,repo,get,query):
+  Number.isSafeInteger(requested)&&requested>0?get(prefix+'/pulls/'+requested):null;
+ if(!pr)return {state:'not-requested'};
+ const number=pr.number,expectedHead=completed?event.workflow_run.head_sha:env.AI_REVIEW_HEAD;
+ if(pr.state!=='open'||pr.merged||!projectDevelopPullRequest(pr,repo)||pr.head?.sha!==expectedHead||
+  completed&&!qualityRunBelongsToPr(event.workflow_run,pr,repo))return {state:'superseded'};
+ const fork=!projectRepositoryMatches(pr.head.repo,repo);
+ if(fork&&bootstrap)throw Error('A Fork cannot supply the trusted gate installation source');
  const review=collectIndependentAiReview({api,prNumber:number,expectedHeadSha:expectedHead});
  if(review.conclusion!=='pass')throw Error(review.errors.join('\n'));
  const ruleset=get(prefix+'/rulesets/25870651');
@@ -106,10 +130,11 @@ export function independentReviewGate(env=process.env,query=gh,{release=false,lo
  if(!bootstrap&&env.GITHUB_REF!=='refs/heads/'+settings.default_branch)sourceErrors.push('Cloud gate is not executing the trusted default branch');
  if(sourceErrors.length)throw Error(sourceErrors.join('\n'));
  const legacyReview={repo,prNumber:number,reviewId:review.reviewId,reviewedHeadSha:review.head,reviewedBaseSha:review.base,conclusion:'pass',unresolved:[]};
+ if(fork)assertForkWorkflowSources(get,repo,review.base,review.mergeCommitSha);
  const collected=collectPrDelivery(repo,number,legacyReview,query,loadCheckout);
  const errors=verifyDelivery(collected.evidence);
  if(errors.length||collected.evidence.head!==review.head||collected.evidence.base!==review.base||collected.evidence.sourceTree!==review.tree)throw Error('Exact formal test evidence failed: '+errors.join('; '));
- if(env.GITHUB_EVENT_NAME==='workflow_run'&&(event.workflow_run.id!==collected.evidence.runId||event.workflow_run.run_attempt!==collected.evidence.attempt))return {state:'superseded'};
+ if(completed&&(event.workflow_run.id!==collected.evidence.runId||event.workflow_run.run_attempt!==collected.evidence.attempt))return {state:'superseded'};
  const current=collectIndependentAiReview({api,prNumber:number,expectedHeadSha:review.head,expectedBaseSha:review.base,expectedTreeSha:review.tree});
  const policyNow=get(prefix+'/rulesets/25870651');
  const freshPr=get(prefix+'/pulls/'+number);
@@ -118,19 +143,24 @@ export function independentReviewGate(env=process.env,query=gh,{release=false,lo
  if(!isDeepStrictEqual(pr.labels,freshPr.labels)||pr.changed_files!==freshPr.changed_files||mode==='publish'&&admissionErrors.length)throw Error('PR labels, files or native admission changed during evidence collection');
  if(!isDeepStrictEqual(current,review)||!isDeepStrictEqual(policyNow,ruleset)||settings.default_branch!==settingsNow.default_branch)throw Error('Review or native policy changed during evidence collection');
  const envelope={schemaVersion:1,kind:'native-ai-review-proof',mode,state:mode==='publish'?'pr_passed':'shadow_verified',repo,prNumber:number,head:review.head,base:review.base,nativeReview:review,nativePolicy:ruleset,sourceObservations:source.observations,preflight:collected.evidence,gate:{runId:Number(env.GITHUB_RUN_ID),attempt:Number(env.GITHUB_RUN_ATTEMPT),ref:env.GITHUB_REF,bootstrap},policyErrors};
- if(!release){mkdirSync(resolve(proofFile,'..'),{recursive:true});writeFileSync(proofFile,JSON.stringify(envelope,null,2)+'\n');return {state:envelope.state,policyErrors};}
+ if(!release){mkdirSync(resolve(proofFile,'..'),{recursive:true});writeFileSync(proofFile,JSON.stringify(envelope,null,2)+'\n');return {state:envelope.state,policyErrors,head:review.head,prNumber:number};}
  if(mode!=='publish')return {state:'shadow-no-status'};
  const saved=JSON.parse(readFileSync(proofFile,'utf8'));
  if(!isDeepStrictEqual(saved,envelope))throw Error('Uploaded proof differs from the fresh current gate evidence');
  const artifactId=Number(env.AI_REVIEW_ARTIFACT_ID),runId=Number(env.GITHUB_RUN_ID),attempt=Number(env.GITHUB_RUN_ATTEMPT);
  const artifact=get(prefix+'/actions/artifacts/'+artifactId),run=get(prefix+'/actions/runs/'+runId);
  if(!Number.isSafeInteger(artifactId)||artifact.id!==artifactId||artifact.expired!==false||artifact.name!==`independent-review-${number}-${review.head.slice(0,12)}-${runId}-${attempt}`||artifact.workflow_run?.id!==runId||!/^sha256:[a-f0-9]{64}$/.test(artifact.digest??'')||artifact.workflow_run?.head_sha!==env.GITHUB_SHA||run.id!==runId||run.run_attempt!==attempt||run.event!==env.GITHUB_EVENT_NAME||run.head_sha!==env.GITHUB_SHA||run.status!=='in_progress'||run.path!=='.github/workflows/licenses.yml'||run.repository?.id!==projectRepositoryId)throw Error('Immutable proof artifact or current gate run identity differs');
+ if(fork){
+  const {schemaVersion,runId:qualityId,attempt:qualityAttempt}=collected.evidence;
+  const quality=getStatusWrite(query,repo,review.head,`Exact ${schemaVersion===7?'dual-platform Fast':'Full'} run ${qualityId}, attempt ${qualityAttempt}`,runId,prQualityContext);
+  if(quality.context!==prQualityContext||quality.state!=='success'||quality.creator?.id!==41898282)throw Error('Required Fork PR quality status source/readback differs');
+ }
  const description=`AI review ${review.githubReviewId} [base:${review.base}] [proof:${artifactId}]`;
  const status=getStatusWrite(query,repo,review.head,description,runId);
  if(status.context!=='independent-review'||status.state!=='success'||status.creator?.id!==41898282)throw Error('Required independent-review status source/readback differs');
  return {state:'published',head:review.head,artifactId,reviewId:review.githubReviewId};
 }
-function getStatusWrite(query,repo,head,description,runId){return JSON.parse(query('api','--method','POST',`repos/${repo}/statuses/${head}`,'-f','state=success','-f','context=independent-review','-f','description='+description,'-f',`target_url=https://github.com/${repo}/actions/runs/${runId}`));}
+function getStatusWrite(query,repo,head,description,runId,context='independent-review'){return JSON.parse(query('api','--method','POST',`repos/${repo}/statuses/${head}`,'-f','state=success','-f','context='+context,'-f','description='+description,'-f',`target_url=https://github.com/${repo}/actions/runs/${runId}`));}
 export function independentReviewProofReady(result){
  if(['pr_passed','shadow_verified'].includes(result?.state))return true;
  if(['not-requested','superseded'].includes(result?.state))return false;
@@ -142,7 +172,8 @@ if(process.argv[1]&&import.meta.url===pathToFileURL(resolve(process.argv[1])).hr
    independentReviewGate(process.env,gh,{release:process.argv[2]==='--release-independent-review'}):main(process.env,gh,{pending:process.argv[2]==='--pending'});
   if(process.argv[2]==='--independent-review'){
    const ready=independentReviewProofReady(result);
-   if(process.env.GITHUB_OUTPUT)appendFileSync(process.env.GITHUB_OUTPUT,`proof_ready=${ready}\n`);
+   if(process.env.GITHUB_OUTPUT)appendFileSync(process.env.GITHUB_OUTPUT,`proof_ready=${ready}\n`+
+    (ready?`head=${result.head.slice(0,12)}\npr=${result.prNumber}\n`:''));
   }
   console.log(JSON.stringify(result));
  }

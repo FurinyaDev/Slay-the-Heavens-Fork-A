@@ -1,7 +1,7 @@
 // GitHub proves who submitted a Review; the trusted coordinator verifies the
 // actual, separate AI sessions. A report is not itself proof of AI independence.
 import {isDeepStrictEqual} from 'node:util';
-import {projectRepositoryId,projectRepositoryMatches} from './repository-identity.mjs';
+import {projectRepositoryId,projectRepositoryMatches,projectDevelopPullRequest,samePullRequestSource} from './repository-identity.mjs';
 
 export const INDEPENDENT_AI_REVIEW_MARKER='<!-- independent-ai-review:v1 -->';
 export const TRUSTED_REVIEW_COORDINATOR_IDS=Object.freeze([111138384,337201427]);
@@ -69,6 +69,31 @@ function completeTree(tree,expected){
  return tree.tree.every(row=>text(row?.path)&&!row.path.includes('/')&&!['.','..'].includes(row.path)&&
   !names.has(row.path)&&names.add(row.path)&&sha(row.sha)&&modes[row.mode]===row.type);
 }
+// A Fork can change pull_request workflow definitions. The write path only
+// accepts jobs executed with the protected workflow and local-action trees.
+function workflowTree(get,prefix,commit){
+ const sha=value=>/^[a-f0-9]{40}$/.test(value??'');
+ const metadata=get(`${prefix}/git/commits/${commit}`);
+ if(metadata.sha!==commit||!sha(metadata.tree?.sha))throw Error('Missing immutable workflow commit');
+ const tree=oid=>{
+  const result=get(`${prefix}/git/trees/${oid}`);
+  if(result.sha!==oid||result.truncated!==false||!Array.isArray(result.tree))throw Error('Incomplete immutable workflow tree');
+  return result.tree;
+ };
+ const child=(rows,name,required=true)=>{
+  const matches=rows.filter(row=>row.path===name),entry=matches[0];
+  if(!matches.length&&!required)return null;
+  if(matches.length!==1||entry.type!=='tree'||entry.mode!=='040000'||!sha(entry.sha))throw Error('Invalid '+name+' workflow tree');
+  return entry.sha;
+ };
+ const github=tree(child(tree(metadata.tree.sha),'.github'));
+ return {workflows:child(github,'workflows'),actions:child(github,'actions',false)};
+}
+
+export function assertForkWorkflowSources(api,repo,base,merge){
+ if(!isDeepStrictEqual(workflowTree(api,'repos/'+repo,base),workflowTree(api,'repos/'+repo,merge)))
+  throw Error('Fork formal CI must use the protected workflow and local action definitions');
+}
 function installationErrors(base,installation){
  const {commit,root,scripts}=installation??{},errors=[];
  const entry=Array.isArray(root?.tree)?root.tree.filter(row=>row?.path==='scripts'):[];
@@ -111,9 +136,8 @@ export function independentAiReportErrors(report,{repository,pr,baseSha,sourceCo
  if(!report||Array.isArray(report)||report.schemaVersion!==1||report.kind!=='independent-ai-review')
   return ['Unsupported independent AI review report'];
  if(!projectRepositoryMatches(repository,repo)||!positive(pr?.number)||pr?.state!=='open'||pr?.merged!==false||
-  pr?.draft!==false||pr?.mergeable!==true||pr?.base?.ref!=='develop'||
-  !projectRepositoryMatches(pr?.base?.repo,repo)||!projectRepositoryMatches(pr?.head?.repo,repo))
-  errors.push('Report requires the fixed repository and a ready same-repository develop PR');
+  pr?.draft!==false||pr?.mergeable!==true||!projectDevelopPullRequest(pr,repo))
+  errors.push('Report requires the fixed repository and a ready develop PR');
  if(!sha(head)||!sha(baseSha)||pr?.base?.sha!==baseSha||!sha(pr?.merge_commit_sha)||
   sourceCommit?.sha!==pr?.merge_commit_sha||!sha(tree)||!Array.isArray(sourceCommit?.parents)||
   !isDeepStrictEqual(sourceCommit.parents.map(parent=>parent?.sha),[baseSha,head])||
@@ -144,8 +168,8 @@ export function validateIndependentAiReview({repository,pr,baseSha,sourceCommit,
  const errors=[],repo=repository?.full_name;
  if(!projectRepositoryMatches(repository,repo))errors.push('Unexpected fixed repository identity');
  if(!positive(pr?.number)||pr?.state!=='open'||pr?.merged!==false||pr?.draft!==false||pr?.mergeable!==true||
-  pr?.base?.ref!=='develop'||!projectRepositoryMatches(pr?.base?.repo,repo)||!projectRepositoryMatches(pr?.head?.repo,repo))
-  errors.push('PR must be a ready, mergeable, same-repository develop PR');
+  !projectDevelopPullRequest(pr,repo))
+  errors.push('PR must be a ready, mergeable develop PR');
  const head=pr?.head?.sha,merge=pr?.merge_commit_sha,tree=treeOf(sourceCommit);
  if(!sha(head)||!sha(baseSha)||pr?.base?.sha!==baseSha||!sha(merge)||sourceCommit?.sha!==merge||!sha(tree)||
   !Array.isArray(sourceCommit?.parents)||!isDeepStrictEqual(sourceCommit.parents.map(parent=>parent?.sha),[baseSha,head]))
@@ -203,8 +227,8 @@ export function validateHistoricalIndependentAiReview({repository,preflight,live
   sourceCommit:original?.observations?.sourceCommit,reviews,permissions,
   dependencies:original?.observations?.dependencies});
  if(livePr?.number!==preflight?.prNumber||livePr?.head?.sha!==preflight?.head||livePr?.user?.id!==recorded?.authorId||
-  livePr?.state!=='open'||livePr?.merged!==false||livePr?.draft!==false||livePr?.base?.ref!=='develop'||
-  !projectRepositoryMatches(livePr?.base?.repo,preflight?.repo)||!projectRepositoryMatches(livePr?.head?.repo,preflight?.repo))
+  livePr?.state!=='open'||livePr?.merged!==false||livePr?.draft!==false||
+  !projectDevelopPullRequest(livePr,preflight?.repo)||!samePullRequestSource(livePr,recorded))
   result.errors.push('Live PR identity differs from the originally reviewed candidate');
  if(result.githubReviewId!==original?.githubReviewId||!isDeepStrictEqual(result.report,original?.report)||
   !isDeepStrictEqual(result.coordinator,original?.coordinator))

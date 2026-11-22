@@ -2,7 +2,9 @@ import {isDeepStrictEqual} from 'node:util';
 import {resolveNativePreflight} from './verify-delivery.mjs';
 import {validateHistoricalIndependentAiReview,parseIndependentAiReview,collectIndependentAiReviewRecords,collectReviewModule,parseDependencies,TRUSTED_REVIEW_COORDINATOR_IDS,INDEPENDENT_AI_REVIEW_MARKER} from './independent-ai-review.mjs';
 import {queueRulesFingerprint} from './merge-queue-policy.mjs';
-import {projectRepositoryId,projectRepositoryMatches} from './repository-identity.mjs';
+import {projectRepositoryId,projectRepositoryMatches,projectDevelopPullRequest} from './repository-identity.mjs';
+
+import {qualityRunBelongsToPr} from './pr-quality-evidence.mjs';
 
 const validSha=value=>typeof value==='string'&&/^[a-f0-9]{40}$/.test(value);
 const positive=value=>Number.isSafeInteger(value)&&value>0;
@@ -70,8 +72,7 @@ export function collectQueueAdmission(event,env,query,ruleset){
   const pr=JSON.parse(query('api',`repos/${repo}/pulls/${p.number}`));
   const labels=pr.labels;
   if(pr.number!==p.number||pr.state!=='open'||pr.merged!==false||pr.draft!==false||
-   pr.head?.sha!==p.headRefOid||!projectRepositoryMatches(pr.head?.repo,repo)||
-   pr.base?.ref!=='develop'||!projectRepositoryMatches(pr.base?.repo,repo)||
+   pr.head?.sha!==p.headRefOid||!projectDevelopPullRequest(pr,repo)||
    !Array.isArray(labels)||labels.some(label=>!label||typeof label.name!=='string'||
     ['hold','blocked','do-not-merge','manual-merge','merge:manual','risk:critical'].includes(label.name.toLowerCase())))
    throw Error('Queue PR is held, changed or no longer eligible: '+p.number);
@@ -89,7 +90,7 @@ export function collectQueueAdmission(event,env,query,ruleset){
   }catch(error){throw Error('Queue authorization module policy metadata failed: '+error.message);}
   const hasNewMarker=reviews.some(row=>TRUSTED_REVIEW_COORDINATOR_IDS.includes(row?.user?.id)&&
    typeof row.body==='string'&&row.body.includes(INDEPENDENT_AI_REVIEW_MARKER));
-  const legacy=!hasNewMarker&&!headModule.installed&&!ancestorModule.installed;
+  const legacy=projectRepositoryMatches(pr.head.repo,repo)&&!hasNewMarker&&!headModule.installed&&!ancestorModule.installed;
   const summarize=value=>({installed:value.installed,commit:value.installation.commit.sha,
    root:value.installation.root.sha,scripts:value.installation.scripts.sha});
   const moduleEvidence={head:summarize(headModule),mergeBase:summarize(ancestorModule)};
@@ -176,12 +177,11 @@ export function collectQueueAdmission(event,env,query,ruleset){
    const runs=JSON.parse(query('api','--paginate','--slurp',`repos/${repo}/actions/workflows/quality.yml/runs?event=pull_request&head_sha=${p.headRefOid}&per_page=100`));
    if(!Array.isArray(runs)||!runs.length||runs.some(page=>!Array.isArray(page.workflow_runs)))
     throw Error('Queue PR latest quality inventory cannot be verified: '+p.number);
-   const run=runs.flatMap(page=>page.workflow_runs).filter(r=>r.head_sha===p.headRefOid&&r.event==='pull_request'&&
-    r.pull_requests?.some(pr=>pr.number===p.number)).sort((a,b)=>b.id-a.id)[0];
+   const run=runs.flatMap(page=>page.workflow_runs).filter(r=>qualityRunBelongsToPr(r,pr,repo)).sort((a,b)=>b.id-a.id)[0];
    if(!positive(status?.id)||status.state!=='success'||status.creator?.id!==41898282||
     status.creator?.login!=='github-actions[bot]'||!positive(run?.id)||!positive(run.run_attempt)||
     run.status!=='completed'||run.conclusion!=='success'||run.path!=='.github/workflows/quality.yml'||
-    run.repository?.full_name!==repo||status.target_url!==`https://github.com/${repo}/actions/runs/${run.id}`||
+    run.repository?.full_name!==repo||status.target_url!==`https://github.com/${repo}/actions/runs/${projectRepositoryMatches(pr.head.repo,repo)?run.id:proof?.nativeProof.gateRun.id}`||
     !new RegExp(`^Exact (?:dual-platform Fast|Full) run ${run.id}, attempt ${run.run_attempt}$`).test(status.description??''))
     throw Error('Queue PR latest run/attempt admission is pending, failed or stale: '+p.number);
    if(!legacy&&(proof.runId!==run.id||proof.attempt!==run.run_attempt))

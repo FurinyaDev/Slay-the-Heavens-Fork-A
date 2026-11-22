@@ -240,7 +240,7 @@ function nativeFixture(){
   let value;
   if(args.includes('POST')){
    if(path?.endsWith('/dispatches')){f.dispatched=JSON.parse(readFileSync(args[args.indexOf('--input')+1],'utf8'));return '';}
-   value={state:'success',context:'independent-review',creator:{id:41898282}};
+   value={state:'success',context:args.find(arg=>arg.startsWith('context='))?.slice(8),creator:{id:41898282}};
   }else if(args[1]==='graphql'){
    if(args.some(a=>a.includes('enablePullRequestAutoMerge')))value={data:{enablePullRequestAutoMerge:{pullRequest:{number:712}}}};
    else if(args.some(a=>a.includes('autoMergeAllowed'))){
@@ -293,12 +293,45 @@ test('native enable dispatches the existing gate and records an intent rather th
  const shadow=nativeFixture();shadow.ruleset.rules[0].parameters.required_approving_review_count=0;assert.equal(armAutoMerge(aiRepo,712,100,shadow.query,{shadow:true}).state,'shadow-requested');assert(!shadow.calls.some(a=>a[1]==='graphql'));
  const broken=nativeFixture();broken.run.conclusion='failure';assert.throws(()=>armAutoMerge(aiRepo,712,100,broken.query),/formal Quality/);assert(!broken.calls.some(a=>a.includes('POST')));
 });
-function gateExecute(f,{mode='publish',release=false,mutateEnv=()=>{},saved,proofFile,readProof=true}={}){
- const dir=mkdtempSync(join(tmpdir(),'native-gate-test-')),event=join(dir,'event.json');writeFileSync(event,'{}');
+function gateExecute(f,{mode='publish',release=false,mutateEnv=()=>{},saved,proofFile,readProof=true,eventBody={}}={}){
+ const dir=mkdtempSync(join(tmpdir(),'native-gate-test-')),event=join(dir,'event.json');writeFileSync(event,JSON.stringify(eventBody));
  const file=proofFile??join(dir,'proof.json');if(saved)writeFileSync(file,JSON.stringify(saved));
  const env={GITHUB_EVENT_NAME:'workflow_dispatch',GITHUB_EVENT_PATH:event,GITHUB_REPOSITORY:aiRepo,GITHUB_REPOSITORY_ID:String(projectRepositoryId),GITHUB_SHA:sha('b'),GITHUB_REF:'refs/heads/develop',GITHUB_ACTOR_ID:String(aiRoleId),GITHUB_RUN_ID:'9',GITHUB_RUN_ATTEMPT:'1',AI_REVIEW_PR:'712',AI_REVIEW_HEAD:sha('a'),AI_REVIEW_MODE:mode,AI_REVIEW_ARTIFACT_ID:'99'};mutateEnv(env);
  try{const result=independentReviewGate(env,f.query,{release,loadCheckout:f.loadCheckout,proofFile:file});return {result,proof:readProof?JSON.parse(readFileSync(file,'utf8')):undefined};}finally{rmSync(dir,{recursive:true,force:true});}
 }
+function forkWorkflowFixture({differentWorkflows=false}={}){
+ const f=nativeFixture();
+ f.pr.head.repo={id:1460097312,full_name:'FurinyaDev/Slay-the-Heavens-Fork-A',fork:true};
+ Object.assign(f.run,{repository:f.repository,head_repository:f.pr.head.repo,head_branch:f.pr.head.ref,pull_requests:[]});
+ f.gateRun.event='workflow_run';
+ const original=f.query;
+ f.query=(...args)=>{
+  const path=args.find(arg=>typeof arg==='string'&&arg.startsWith('repos/'));
+  if(path?.includes('/pulls?')&&new URLSearchParams(path.split('?')[1]).get('head')==='FurinyaDev:'+f.pr.head.ref)return JSON.stringify([[f.pr]]);
+  if(path?.endsWith('/git/trees/'+sha('6'))||path?.endsWith('/git/trees/'+sha('e'))){
+   const base=path.endsWith(sha('6'));
+   return JSON.stringify({sha:base?sha('6'):sha('e'),truncated:false,tree:[{path:'.github',mode:'040000',type:'tree',sha:base?sha('3'):sha('4')}]});
+  }
+  if(path?.endsWith('/git/trees/'+sha('3'))||path?.endsWith('/git/trees/'+sha('4'))){
+   const base=path.endsWith(sha('3'));
+   return JSON.stringify({sha:base?sha('3'):sha('4'),truncated:false,tree:[{path:'workflows',mode:'040000',type:'tree',sha:!base&&differentWorkflows?sha('9'):sha('8')}]});
+  }
+  return original(...args);
+ };
+ return f;
+}
+test('protected gate resolves a Fork Quality run with an empty PR link and publishes both existing contexts',()=>{
+ const f=forkWorkflowFixture();
+ const options={mutateEnv:env=>{env.GITHUB_EVENT_NAME='workflow_run';env.AI_REVIEW_PR='';},eventBody:{workflow_run:f.run}};
+ const prepared=gateExecute(f,options);
+ assert.equal(prepared.result.state,'pr_passed');
+ assert.equal(prepared.proof.preflight.pr.head.repo.id,1460097312);
+ assert.equal(gateExecute(f,{...options,release:true,saved:prepared.proof}).result.state,'published');
+ assert.deepEqual(f.calls.filter(args=>args.includes('POST')).map(args=>args.find(arg=>arg.startsWith('context='))),['context=pr-quality','context=independent-review']);
+ const mutated=forkWorkflowFixture({differentWorkflows:true});
+ assert.throws(()=>gateExecute(mutated,{...options,eventBody:{workflow_run:mutated.run}}),/protected workflow and local action definitions/);
+ assert(!mutated.calls.some(args=>args.includes('POST')));
+});
 test('proof handoff reflects real publish, shadow and superseded verifier outcomes',()=>{
  for(const mode of ['publish','shadow'])assert.equal(independentReviewProofReady(gateExecute(nativeFixture(),{mode}).result),true);
  const closed=nativeFixture();closed.pr.state='closed';

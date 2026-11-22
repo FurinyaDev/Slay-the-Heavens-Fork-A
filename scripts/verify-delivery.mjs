@@ -7,8 +7,8 @@ import {isDeepStrictEqual} from 'node:util';
 import { spawnSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
 import {qualityShardJobs} from './ci-quality-shape.mjs';
-import {projectRepositoryId,currentProjectRepository,projectRepositoryMatches,collectIdentityWitness,identityWitnessValid} from './repository-identity.mjs';
-import {prFastErrors,collectFastCheckout} from './pr-quality-evidence.mjs';
+import {projectRepositoryId,currentProjectRepository,projectRepositoryMatches,projectDevelopPullRequest,samePullRequestSource,collectIdentityWitness,identityWitnessValid} from './repository-identity.mjs';
+import {prFastErrors,collectFastCheckout,qualityRunBelongsToPr,qualityPendingStatusJob,qualityPendingStatusJobErrors} from './pr-quality-evidence.mjs';
 import {syncBacklogCloseout} from './backlog-closeout.mjs';
 import {validateIndependentAiReview,cloudGateSourceErrors,collectCloudGateSource} from './independent-ai-review.mjs';
 export {planBacklogCloseout,syncBacklogCloseout} from './backlog-closeout.mjs';
@@ -35,7 +35,7 @@ export function isLowRiskDocumentationChange(files,count) {
       !file.filename.includes('\\')&&!file.filename.split('/').some(segment=>segment==='.'||segment==='..')&&
       ['added','modified'].includes(file.status)&&validSha(file.sha));
 }
-function qualityErrors(jobs,{attempt,runId,head,schemaVersion,allowRunningAggregate=false}) {
+function qualityErrors(jobs,{attempt,runId,head,schemaVersion,allowRunningAggregate=false,run,pr,baseRef}) {
   // Collect filter=all, not one attempt: reruns preserve GITHUB_SHA/GITHUB_REF
   // and only reexecute selected jobs. Never search for the last *successful*
   // execution; a newer failure must supersede an older success.
@@ -48,7 +48,7 @@ function qualityErrors(jobs,{attempt,runId,head,schemaVersion,allowRunningAggreg
   const identities=new Set(),ids=new Set();
   for(const job of jobs) {
     const identity=`${job?.name}:${job?.run_attempt}`;
-    if(!expectedJobs.includes(job?.name)||!positiveId(job?.id)||ids.has(job.id)||identities.has(identity)||
+    if((!expectedJobs.includes(job?.name)&&!(schemaVersion===3&&job?.name===qualityPendingStatusJob))||!positiveId(job?.id)||ids.has(job.id)||identities.has(identity)||
       !positiveId(job?.run_attempt)||job.run_attempt>attempt||job.run_id!==runId||job.head_sha!==head)
       errors.push(`Unexpected, duplicate or mismatched Quality job ${job?.name}`);
     identities.add(identity);ids.add(job?.id);
@@ -62,6 +62,7 @@ function qualityErrors(jobs,{attempt,runId,head,schemaVersion,allowRunningAggreg
     const runningAggregate=allowRunningAggregate&&name==='check'&&job?.status==='in_progress'&&job.conclusion==null&&job.run_attempt===attempt;
     if(!runningAggregate&&(job?.status!=='completed'||job.conclusion!==conclusion))errors.push(`Quality job ${name} is missing, incomplete or does not have required conclusion ${conclusion} on its latest execution`);
   }
+  if(schemaVersion===3)errors.push(...qualityPendingStatusJobErrors(jobs,run,pr,baseRef));
   return errors;
 }
 function latestJob(jobs,name) {
@@ -210,8 +211,13 @@ export function verifyDelivery(e) {
   if(JSON.stringify(e.parents)!==JSON.stringify([e.base,e.head]))errors.push('Tested merge parents do not match current base/head');
   if(e.testedCommit?.sha!==e.tested||JSON.stringify(parentShas(e.testedCommit))!==JSON.stringify(e.parents)||e.testedCommit?.commit?.tree?.sha!==e.sourceTree)errors.push('Tested source commit/tree evidence is missing or mismatched');
   if(JSON.stringify(e.checkout?.parents)!==JSON.stringify(e.parents))errors.push('Checkout merge parents differ from tested commit');
-  if(!Array.isArray(e.run?.pull_requests)||!e.run.pull_requests.some(pr=>pr?.number===e.prNumber))errors.push('Quality run does not belong to this PR');
-  errors.push(...runErrors(e.run,{head:e.head,event:e.event,runId:e.runId,attempt:e.attempt,repo:e.repo}),...qualityErrors(e.jobs,{attempt:e.attempt,runId:e.runId,head:e.head,schemaVersion:e.schemaVersion}));
+  if(e.pr!==undefined){
+    if(e.pr.number!==e.prNumber||e.pr.head?.sha!==e.head||e.pr.base?.sha!==e.base||
+      ![e.run,e.currentRun].every(run=>qualityRunBelongsToPr(run,e.pr,e.repo)))
+      errors.push('Quality run does not belong to this PR');
+  }else if(!Array.isArray(e.run?.pull_requests)||!e.run.pull_requests.some(pr=>pr?.number===e.prNumber))
+    errors.push('Quality run does not belong to this PR');
+  errors.push(...runErrors(e.run,{head:e.head,event:e.event,runId:e.runId,attempt:e.attempt,repo:e.repo}),...qualityErrors(e.jobs,{attempt:e.attempt,runId:e.runId,head:e.head,schemaVersion:e.schemaVersion,run:e.run,pr:e.pr,baseRef:e.baseRef}));
   errors.push(...runErrors(e.currentRun,{head:e.head,event:e.event,runId:e.runId,attempt:e.attempt,repo:e.repo}));
   if(e.review?.disposition==='low-risk-docs') {
     if(e.schemaVersion!==deliverySchemaVersion||e.baseRef!=='develop'||e.review.reviewedHeadSha!==e.head||
@@ -228,9 +234,12 @@ export function verifyMergedDelivery(e) {
   const transferred=identityWitnessValid(e.identityWitness,preflight,e.repo);
   if(e.identityWitness!==undefined&&!transferred)errors.push('Repository transfer witness is invalid or changed');
   if(transferred){
-    const repositories=[e.pr?.head?.repo,e.pr?.base?.repo,e.current?.head?.repo,e.current?.base?.repo,
+    const repositories=[e.pr?.base?.repo,e.current?.base?.repo,
       e.run?.repository,e.currentRun?.repository,...(early?[e.prFull?.run?.repository,e.prFull?.currentRun?.repository]:[])];
-    if(repositories.some(repository=>!projectRepositoryMatches(repository,e.repo)))errors.push('Transferred PR/run repository identity differs from the fixed project');
+    if(repositories.some(repository=>!projectRepositoryMatches(repository,e.repo))||
+      (preflight.baseRef==='develop'?
+        ![e.pr,e.current].every(pr=>projectDevelopPullRequest(pr,e.repo)):
+        ![e.pr,e.current].every(pr=>projectRepositoryMatches(pr?.head?.repo,e.repo))))errors.push('Transferred PR/run repository identity differs from the fixed project');
   }
   if(early)errors.push(...verifyHistoricalAutoFull(e.prFull,preflight,e.identityWitness));
   if(preflight.nativeReview!==undefined){
@@ -244,6 +253,10 @@ export function verifyMergedDelivery(e) {
     errors.push('Post-merge GitHub files differ from the verified low-risk waiver');
   if(e.pr?.number!==preflight.prNumber||!e.pr?.merged||e.pr?.state!=='closed')errors.push('Expected the verified PR to be merged');
   if(e.pr?.head?.sha!==preflight.head||e.pr?.base?.ref!==preflight.baseRef)errors.push('Merged PR head/target differs from preflight');
+  const reviewedPr=preflight.nativeReview?.observations?.prBefore;
+  if(reviewedPr?.head?.repo?.fork===true&&
+    (!projectDevelopPullRequest(e.pr,e.repo)||!samePullRequestSource(reviewedPr,e.pr)||!samePullRequestSource(e.pr,e.current)))
+    errors.push('Merged Fork PR repository or branch differs from the reviewed source');
   if(!validSha(e.commit?.sha)||e.commit?.sha!==e.pr?.merge_commit_sha)errors.push('Actual merged commit does not match merge_commit_sha');
   const native=preflight.nativeReview!==undefined,squashBase=native?e.queueFull?.checkout?.base:preflight.base;
   const testedTree=native?e.queueFull?.commit?.commit?.tree?.sha:preflight.sourceTree;
@@ -254,7 +267,7 @@ export function verifyMergedDelivery(e) {
   if(e.current?.number!==e.pr?.number||e.current?.head?.sha!==e.pr?.head?.sha||e.current?.base?.ref!==e.pr?.base?.ref||!e.current?.merged||e.current?.state!=='closed'||e.current?.merge_commit_sha!==e.pr?.merge_commit_sha)errors.push('Merged PR identity changed during verification');
   errors.push(...runErrors(e.run,{head:e.commit?.sha,event:'push',runId:e.run?.id,attempt:e.run?.run_attempt,branch:preflight.baseRef,repo:e.repo}));
   errors.push(...runErrors(e.currentRun,{head:e.commit?.sha,event:'push',runId:e.run?.id,attempt:e.run?.run_attempt,branch:preflight.baseRef,repo:e.repo}));
-  errors.push(...qualityErrors(e.jobs,{attempt:e.run?.run_attempt,runId:e.run?.id,head:e.commit?.sha,schemaVersion:e.schemaVersion}));
+  errors.push(...qualityErrors(e.jobs,{attempt:e.run?.run_attempt,runId:e.run?.id,head:e.commit?.sha,schemaVersion:e.schemaVersion,run:e.run}));
   errors.push(...receiptErrors(e.checkout,e.checkoutArtifact,e.jobs,e.run,e.schemaVersion));
   for(const [field,value] of Object.entries({event:'push',runId:e.run?.id,tested:e.commit?.sha,head:e.commit?.sha,base:squashBase})) {
     if(value===undefined||e.checkout?.[field]!==value)errors.push(`Merged checkout ${field} is missing, stale or mismatched`);
@@ -275,7 +288,7 @@ export function verifyHistoricalAutoFull(e,arm,identityWitness){
     errors.push('Historical Full repository transfer identity is invalid');
   errors.push(...runErrors(run,{head:arm.head,event:'pull_request',runId:run.id,attempt:run.run_attempt,repo}),
     ...runErrors(e.currentRun,{head:arm.head,event:'pull_request',runId:run.id,attempt:run.run_attempt,repo}),
-    ...qualityErrors(e.jobs,{attempt:run.run_attempt,runId:run.id,head:arm.head,schemaVersion:3}),
+    ...qualityErrors(e.jobs,{attempt:run.run_attempt,runId:run.id,head:arm.head,schemaVersion:3,run,baseRef:arm.baseRef}),
     ...receiptErrors(checkout,e.checkoutArtifact,e.jobs,run,3));
   if(!Array.isArray(run.pull_requests)||run.pull_requests.length>0&&!run.pull_requests.some(p=>p.number===arm.prNumber)||run.id<arm.pendingRun?.id||
     run.id===arm.pendingRun?.id&&run.run_attempt<arm.pendingRun.attempt)
@@ -296,7 +309,7 @@ function verifyQueueFull(e,arm,mergedSha,kind){
   const run=e.run??{},errors=[];
   errors.push(...runErrors(run,{head:mergedSha,event:'merge_group',runId:run.id,attempt:run.run_attempt,repo:arm.repo}),
     ...runErrors(e.currentRun,{head:mergedSha,event:'merge_group',runId:run.id,attempt:run.run_attempt,repo:arm.repo}),
-    ...qualityErrors(e.jobs,{attempt:run.run_attempt,runId:run.id,head:mergedSha,schemaVersion:3}),
+    ...qualityErrors(e.jobs,{attempt:run.run_attempt,runId:run.id,head:mergedSha,schemaVersion:3,run}),
     ...receiptErrors(e.checkout,e.checkoutArtifact,e.jobs,run,3));
   const native=kind==='native-queue-full',queueBase=native?e.commit?.parents?.[0]?.sha:arm.base;
   if(native){
@@ -494,7 +507,7 @@ function lowRiskFiles(query,repo,number,expectedCount) {
   return files;
 }
 export function checkoutReceipt(repo,run,jobs,dir,query=gh,schemaVersion=deliverySchemaVersion,{allowRunningAggregate=false}={}) {
-  const errors=qualityErrors(jobs,{attempt:run.run_attempt,runId:run.id,head:run.head_sha,schemaVersion,allowRunningAggregate});
+  const errors=qualityErrors(jobs,{attempt:run.run_attempt,runId:run.id,head:run.head_sha,schemaVersion,allowRunningAggregate,run});
   if(errors.length)throw new Error(errors.join('\n'));
   const attempt=receiptExecutionAttempt(jobs,schemaVersion);
   if(!positiveId(attempt))throw new Error('Cannot prove first rules shard execution attempt');
@@ -509,11 +522,11 @@ export function checkoutReceipt(repo,run,jobs,dir,query=gh,schemaVersion=deliver
   if(current.id!==artifact.id||current.name!==name||receiptErrors({schemaVersion:1,attempt},current,jobs,run,schemaVersion).length)throw new Error('Checkout artifact changed during download');
   return {checkout:JSON.parse(readFileSync(join(dir,'ci-checkout.json'),'utf8')),checkoutArtifact:artifact};
 }
-function latestQualityRun(query,repo,{event,head,branch,number,allowMissingPrLink=false}) {
+function latestQualityRun(query,repo,{event,head,branch,number,pr,allowMissingPrLink=false}) {
   const runs=pages(query,`repos/${repo}/actions/workflows/quality.yml/runs?event=${event}&head_sha=${head}&per_page=100`,'workflow_runs');
   return runs.filter(run=>run.head_sha===head&&run.event===event&&
     (branch===undefined||run.head_branch===branch)&&
-    (number===undefined||Array.isArray(run.pull_requests)&&(run.pull_requests.some(pr=>pr.number===number)||allowMissingPrLink&&run.pull_requests.length===0)))
+    (pr?qualityRunBelongsToPr(run,pr,repo):number===undefined||Array.isArray(run.pull_requests)&&(run.pull_requests.some(link=>link.number===number)||allowMissingPrLink&&run.pull_requests.length===0)))
     .sort((a,b)=>b.id-a.id)[0];
 }
 function targetHead(query,repo,baseRef) {
@@ -535,14 +548,16 @@ export function collectPrDelivery(repo,number,review,query=gh,loadCheckout) {
   const changedFileCount=waived?pr.changed_files:undefined;
   const changedFiles=waived?lowRiskFiles(query,repo,number,changedFileCount):undefined;
   if(waived)review={disposition:'low-risk-docs',reviewedHeadSha:pr.head.sha,reviewedBaseSha:pr.base.sha};
-  const identity={event:'pull_request',head:pr.head.sha,number};
+  const fork=pr.base.ref==='develop'&&pr.head?.repo?.fork===true;
+  const identity={event:'pull_request',head:pr.head.sha,number,...(fork?{pr}:{})};
   const run=latestQualityRun(query,repo,identity);
   if(!run||run.status!=='completed'||run.conclusion!=='success')throw new Error('Current Quality run is missing or not successful');
   const jobs=pages(query,`repos/${repo}/actions/runs/${run.id}/jobs?filter=all&per_page=100`,'jobs');
   const fast=jobs.some(job=>job.name==='fast (windows-2025)');
   if(!loadCheckout)loadCheckout=(r,j)=>{
-    const dir=join('build/delivery',randomUUID());mkdirSync(dir,{recursive:true});
-    return fast?collectFastCheckout(repo,r,j,dir,query):checkoutReceipt(repo,r,j,dir,query);
+    const dir=mkdtempSync(join(tmpdir(),'quality-pr-receipt-'));
+    try{return fast?collectFastCheckout(repo,r,j,dir,query):checkoutReceipt(repo,r,j,dir,query);}
+    finally{rmSync(dir,{recursive:true,force:true});}
   };
   const {checkout,checkoutArtifact,plan}=loadCheckout(run,jobs);
   if(checkout.tested!==pr.merge_commit_sha)throw new Error('CI did not test the current PR merge combination');
@@ -550,10 +565,14 @@ export function collectPrDelivery(repo,number,review,query=gh,loadCheckout) {
   const evidence={schemaVersion:deliverySchemaVersion,repo,baseRef:pr.base.ref,sourceTree:commit.commit.tree.sha,testedCommit:commit,
     head:pr.head.sha,base:pr.base.sha,tested:checkout.tested,parents:commit.parents.map(p=>p.sha),
     runId:run.id,attempt:run.run_attempt,event:run.event,prNumber:number,run,jobs,checkout,checkoutArtifact,review,targetBeforeSha,
-    ...(waived?{changedFileCount,changedFiles}:{})};
+    ...(waived?{changedFileCount,changedFiles}:{}),...(fork?{pr}:{})};
   if(fast)Object.assign(evidence,{schemaVersion:7,kind:'pr-fast',number,pr,target:targetBeforeSha,commit,plan});
   const current=JSON.parse(query('api',`repos/${repo}/pulls/${number}`));
-  if(fast)evidence.pr=current;
+  if(fork&&(!samePullRequestSource(pr,current)||!projectDevelopPullRequest(current,repo)||
+    current.number!==number||current.state!=='open'||current.merged||current.draft!==false||
+    current.base.sha!==pr.base.sha||current.merge_commit_sha!==pr.merge_commit_sha))
+    throw Error('Fork PR identity changed during formal CI collection');
+  if(fast||fork)evidence.pr=current;
   evidence.currentRun=latestQualityRun(query,repo,identity);
   if(fast)evidence.latestRun=evidence.currentRun;
   evidence.targetAfterSha=targetHead(query,repo,pr.base.ref);

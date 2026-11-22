@@ -4,6 +4,7 @@ import {spawnSync} from 'node:child_process';
 import {resolve,join,sep} from 'node:path';
 import {pathToFileURL} from 'node:url';
 import {currentFullQualityJobs,qualityWorkflowPath,checkoutReceipt,receiptErrors} from './verify-delivery.mjs';
+import {qualityPendingStatusJob,qualityPendingStatusJobErrors} from './pr-quality-evidence.mjs';
 
 export const fullQualityContext='full-quality';
 const currentRun=e=>e.run?.id===e.runId&&e.run.run_attempt===e.attempt&&
@@ -30,7 +31,7 @@ export function fullGateErrors(e,{metadataOnly=false}={}){
  if(!Array.isArray(e.jobs))errors.push('Missing actual Full jobs');
  for(const job of e.jobs??[]){
   const key=job.name+':'+job.run_attempt;
-  if(!currentFullQualityJobs.includes(job.name)||!Number.isSafeInteger(job.id)||job.id<1||ids.has(job.id)||
+  if((!currentFullQualityJobs.includes(job.name)&&job.name!==qualityPendingStatusJob)||!Number.isSafeInteger(job.id)||job.id<1||ids.has(job.id)||
    identities.has(key)||job.run_id!==e.runId||job.head_sha!==e.head||!Number.isSafeInteger(job.run_attempt)||
    job.run_attempt<1||job.run_attempt>e.attempt)errors.push('Invalid Full job identity: '+job.name);
   ids.add(job.id);identities.add(key);
@@ -41,6 +42,7 @@ export function fullGateErrors(e,{metadataOnly=false}={}){
    if(job?.run_attempt!==e.attempt||job.status!=='in_progress'||job.conclusion!=null)errors.push('Not the current check aggregate');
   }else if(job?.status!=='completed'||job.conclusion!==(name==='fast'?'skipped':'success'))errors.push('Incomplete or failed Full job: '+name);
  }
+ errors.push(...qualityPendingStatusJobErrors(e.jobs,e.run,e.pr));
  if(!metadataOnly){
   const c=e.checkout??{};
   errors.push(...receiptErrors(c,e.checkoutArtifact,e.jobs,e.run,3));

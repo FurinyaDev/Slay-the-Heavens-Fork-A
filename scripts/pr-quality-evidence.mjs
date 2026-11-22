@@ -1,9 +1,46 @@
 import {readFileSync} from 'node:fs';
 import {join} from 'node:path';
+import {projectRepositoryMatches} from './repository-identity.mjs';
 
 const workflowPath='.github/workflows/quality.yml';
 const sha=value=>typeof value==='string'&&/^[a-f0-9]{40}$/.test(value);
 const positive=value=>Number.isSafeInteger(value)&&value>0;
+export const qualityPendingStatusJob='status-pending';
+
+// Existing receipts predate the separate publisher. When present, the exact
+// publisher name participates in every job identity check, and its newest
+// execution must match the run's native event and trusted source.
+export function qualityPendingStatusJobErrors(jobs,run,pr,baseRef) {
+ if(!Array.isArray(jobs))return [];
+ const job=jobs.filter(row=>row?.name===qualityPendingStatusJob).sort((a,b)=>b.run_attempt-a.run_attempt)[0];
+ if(!job)return [];
+ let expected=run?.event==='merge_group'?'success':'skipped';
+ if(run?.event==='pull_request') {
+  const headRepository=pr?.head?.repo??run.head_repository;
+  const target=pr?.base?.ref??baseRef??run.pull_requests?.[0]?.base?.ref;
+  if(headRepository?.full_name===run.repository?.full_name&&target==='develop')expected='success';
+  else if(!headRepository?.full_name||!target&&headRepository.full_name===run.repository?.full_name)expected=undefined;
+ }
+ return job.status==='completed'&&(expected===undefined?['success','skipped'].includes(job.conclusion):job.conclusion===expected)?[]:
+  ['Quality status-pending job is incomplete or has the wrong conclusion'];
+}
+
+// GitHub can omit pull_requests for a run sourced from a fork. Match the
+// immutable repository and exact HEAD branch as well as the commit in that
+// case. The candidate receipt separately binds the actual PR number and base.
+export function qualityRunBelongsToPr(run,pr,repo) {
+ const head=pr?.head,source=head?.repo;
+ if(!positive(pr?.number)||!sha(head?.sha)||!Array.isArray(run?.pull_requests)||run?.event!=='pull_request'||
+  run.path!==workflowPath||run.head_sha!==head.sha||run.repository?.full_name!==repo||typeof source?.full_name!=='string')
+  return false;
+ if(source.full_name===repo)return run.pull_requests.some(link=>link?.number===pr.number);
+ return projectRepositoryMatches(run.repository,repo)&&projectRepositoryMatches(pr.base?.repo,repo)&&
+  pr.base.ref==='develop'&&source.fork===true&&positive(source.id)&&source.id!==pr.base.repo.id&&
+  run.head_repository?.id===source.id&&run.head_repository.full_name===source.full_name&&
+  typeof head.ref==='string'&&head.ref.length>0&&run.head_branch===head.ref&&
+  (run.pull_requests.length===0||run.pull_requests.some(link=>link?.number===pr.number));
+}
+
 // GitHub keeps the unexpanded job-name expression when its matrix is skipped.
 // Match those two exact observed identities; do not accept aliases or Full jobs.
 const skippedJobs=new Set([
@@ -17,12 +54,12 @@ export const currentFastQualityJobs=Object.freeze([
 
 // Fast has a separate inventory. A Full-shaped green or a single successful
 // platform is never a substitute for the two complete affected executions.
-export function fastQualityJobErrors(jobs,{attempt,runId,head,allowRunningAggregate=false}) {
+export function fastQualityJobErrors(jobs,{attempt,runId,head,allowRunningAggregate=false,run,pr}) {
  const errors=[],ids=new Set(),identities=new Set();
  if(!Array.isArray(jobs))return ['Missing actual Fast Quality jobs'];
  for(const job of jobs) {
   const key=job?.name+':'+job?.run_attempt;
-  if(!currentFastQualityJobs.includes(job?.name)||!positive(job?.id)||ids.has(job.id)||
+  if((!currentFastQualityJobs.includes(job?.name)&&job?.name!==qualityPendingStatusJob)||!positive(job?.id)||ids.has(job.id)||
    identities.has(key)||job?.run_id!==runId||job?.head_sha!==head||
    !positive(job?.run_attempt)||job.run_attempt>attempt)
    errors.push('Invalid Fast job identity: '+job?.name);
@@ -35,7 +72,7 @@ export function fastQualityJobErrors(jobs,{attempt,runId,head,allowRunningAggreg
   if(!running&&(job?.status!=='completed'||job.conclusion!==(skippedJobs.has(name)?'skipped':'success')))
    errors.push('Incomplete or unsuccessful Fast job: '+name);
  }
- return errors;
+ return [...errors,...qualityPendingStatusJobErrors(jobs,run,pr)];
 }
 
 function artifactErrors(artifact,run) {
@@ -57,18 +94,16 @@ export function prFastErrors(e,{allowRunningAggregate=false,metadataOnly=false}=
  if(!e||typeof e!=='object')return ['Missing Fast PR evidence'];
  const errors=[],run=e.run;
  const running=allowRunningAggregate&&run?.status==='in_progress'&&run.conclusion==null;
+ const pr=e.pr;
  if(typeof e.repo!=='string'||!/^[-\w.]+\/[-\w.]+$/.test(e.repo)||
   !positive(e.runId)||!positive(e.attempt)||run?.id!==e.runId||run?.run_attempt!==e.attempt||
-  run?.head_sha!==e.head||run?.event!=='pull_request'||run?.path!==workflowPath||
-  run?.repository?.full_name!==e.repo||!Array.isArray(run?.pull_requests)||
-  !run.pull_requests.some(p=>p?.number===e.number)||
+  !qualityRunBelongsToPr(run,pr,e.repo)||
   !running&&(run?.status!=='completed'||run?.conclusion!=='success')||
   e.latestRun?.id!==e.runId||e.latestRun?.run_attempt!==e.attempt)
   errors.push('Stale or invalid Fast run/attempt');
- const pr=e.pr;
  if(!sha(e.head)||!sha(e.base)||!sha(e.tested)||!positive(e.number)||
   pr?.number!==e.number||pr?.state!=='open'||pr.merged!==false||pr.draft!==false||
-  pr.head?.sha!==e.head||pr.head.repo?.full_name!==e.repo||
+  pr.head?.sha!==e.head||
   pr.base?.ref!=='develop'||pr.base.sha!==e.base||e.target!==e.base||
   pr.merge_commit_sha!==e.tested||e.commit?.sha!==e.tested||
   JSON.stringify(e.commit?.parents?.map(p=>p?.sha))!==JSON.stringify([e.base,e.head]))
@@ -78,7 +113,7 @@ export function prFastErrors(e,{allowRunningAggregate=false,metadataOnly=false}=
   return typeof name!=='string'||name==='ci:full';
  }))
   errors.push('Fast cannot authorize an explicit Full request or unknown labels');
- errors.push(...fastQualityJobErrors(e.jobs,{attempt:e.attempt,runId:e.runId,head:e.head,allowRunningAggregate}));
+ errors.push(...fastQualityJobErrors(e.jobs,{attempt:e.attempt,runId:e.runId,head:e.head,allowRunningAggregate,run,pr}));
  if(metadataOnly)return errors;
  errors.push(...artifactErrors(e.checkoutArtifact,run));
  const c=e.checkout;
@@ -99,7 +134,7 @@ export function prFastErrors(e,{allowRunningAggregate=false,metadataOnly=false}=
 }
 
 export function collectFastCheckout(repo,run,jobs,dir,query,{allowRunningAggregate=false}={}) {
- const errors=fastQualityJobErrors(jobs,{attempt:run?.run_attempt,runId:run?.id,head:run?.head_sha,allowRunningAggregate});
+ const errors=fastQualityJobErrors(jobs,{attempt:run?.run_attempt,runId:run?.id,head:run?.head_sha,allowRunningAggregate,run});
  if(errors.length)throw Error(errors.join('\n'));
  const pages=JSON.parse(query('api','--paginate','--slurp',`repos/${repo}/actions/runs/${run.id}/artifacts?per_page=100`));
  if(!Array.isArray(pages)||!pages.length||pages.some(page=>!Array.isArray(page?.artifacts)))

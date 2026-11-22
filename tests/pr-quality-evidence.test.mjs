@@ -38,6 +38,24 @@ test('Fast proof accepts two actual platform executions and exact immutable sour
  const e=fixture();e.jobs.reverse();assert.deepEqual(prFastErrors(e),[]);
 });
 
+test('Fork Fast without a native PR link binds the same repository ID, branch, commit and exact PR receipt',()=>{
+ const e=fixture(), fork={id:880,fork:true,full_name:'contributor/Slay-the-Heavens'};
+ Object.assign(e.pr.head,{repo:fork,ref:'fix/candidate'});
+ e.run.repository=e.pr.base.repo={id:projectRepositoryId,full_name:repo};
+ e.run.head_repository={...fork};e.run.head_branch=e.pr.head.ref;e.run.pull_requests=[];
+ const early={...e.jobs[0],id:999,name:'status-pending',status:'completed',conclusion:'skipped'};
+ e.jobs.push(early);
+ assert.deepEqual(prFastErrors(e),[]);
+ assert.deepEqual(prFastErrors({...e,run:{...e.run,pull_requests:[{number:e.number}]}}),[]);
+ for(const mutate of [
+  v=>v.run.pull_requests=[{number:v.number+1}],v=>delete v.run.head_repository,
+  v=>v.run.head_repository.id++,v=>v.run.head_repository.full_name='another/Slay-the-Heavens',
+  v=>v.run.head_branch='fix/different',v=>v.run.repository={...v.run.repository,id:12},
+  v=>v.pr.base.repo={...v.pr.base.repo,id:12},v=>v.pr.head.repo.fork=false,
+  v=>v.checkout.prNumber++,v=>v.jobs.at(-1).conclusion='success',v=>v.jobs.at(-1).head_sha=sha('d'),
+ ]) {const v=structuredClone(e);mutate(v);assert(prFastErrors(v).length,String(mutate));}
+});
+
 test('Fast matches actual GitHub skipped matrix names and refuses short aliases',()=>{
  assert.deepEqual(actualSkippedNames.filter(name=>currentFastQualityJobs.includes(name)),actualSkippedNames);
  const e=fixture();

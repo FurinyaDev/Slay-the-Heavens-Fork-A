@@ -228,14 +228,14 @@ test('actual required gate commands reject every missing, failed, cancelled or s
   const shell = process.platform === 'win32' ? `${process.env.ProgramFiles}/Git/bin/bash.exe` : '/bin/bash';
   for (const job of ['check', 'engineering-posix']) {
     const body = (workflow + '\n  end:\n').match(new RegExp(`^  ${job}:\\n([\\s\\S]*?)(?=^  [\\w-]+:)`, 'm'))[1];
-    const command = body.match(/^        run: \|\n((?:^          .*\n|^\n)*)/m)[1].trim().replaceAll('${{ needs.impact.result }}', '$PLAN').replaceAll('${{ needs.impact.outputs.mode }}', '$MODE').replaceAll('${{ needs.fast.result }}', '$FAST');
+    const command = body.match(/^        run: \|\n((?:^          .*\n|^\n)*)/m)[1].trim().replaceAll('${{ needs.impact.result }}', '$IMPACT_RESULT').replaceAll('${{ needs.impact.outputs.mode }}', '$QUALITY_MODE').replaceAll('${{ needs.fast.result }}', '$FAST_RESULT');
     for (const mode of ['full', 'fast', '']) for (const result of ['success', 'failure', 'cancelled', 'skipped', '']) {
-      const r = spawnSync(shell, ['-e', '-c', command], { env: { ...process.env, PLAN: 'success', MODE: mode, FAST: result, RULES_RESULT: result, ENGINEERING_RESULT: result }, encoding: 'utf8' });
+      const r = spawnSync(shell, ['-e', '-c', command], { env: { ...process.env, IMPACT_RESULT: 'success', QUALITY_MODE: mode, FAST_RESULT: result, RULES_RESULT: result, ENGINEERING_RESULT: result }, encoding: 'utf8' });
       assert.ifError(r.error);
       assert.equal(r.status === 0, mode !== '' && result === 'success', `${job}/${mode}/${result}: ${r.stderr}`);
     }
     for (const status of ['failure', 'cancelled', 'skipped', '']) for (const mode of ['fast', 'full']) {
-      const r = spawnSync(shell, ['-e', '-c', command], { env: { ...process.env, PLAN: status, MODE: mode, FAST: 'success', RULES_RESULT: 'success', ENGINEERING_RESULT: 'success' }, encoding: 'utf8' });
+      const r = spawnSync(shell, ['-e', '-c', command], { env: { ...process.env, IMPACT_RESULT: status, QUALITY_MODE: mode, FAST_RESULT: 'success', RULES_RESULT: 'success', ENGINEERING_RESULT: 'success' }, encoding: 'utf8' });
       assert.ifError(r.error);
       assert.notEqual(r.status, 0, `${job}/${mode} cannot accept ${status || 'missing'} plan`);
     }

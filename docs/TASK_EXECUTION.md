@@ -35,7 +35,7 @@
 | `feature/*`（含 `feat/*`）、`refactor/*`、`experiment/*`、`spike/*` | 必须从 Fork 开发 |
 | `fix/*`、`test/*`、`perf/*`、`docs/*` 及其他日常工作 | 默认从 Fork 开发 |
 | 紧急 Release Hotfix | 走现有[发布通道](PUBLISHING.md) |
-| 正式 PR、Merge Queue 和发布 | 主仓 |
+| 正式 PR、Required Checks、Merge Queue 和发布 | 主仓接收 PR，日常 PR 的 head 在 Fork |
 
 从最新 `origin/develop` 建独立短分支。按[三仓库分流](CI.md#三仓库按需验证)核对并配置远端。切片检查默认选择 Fork A，`--remote fork-b` 可选择 B。持有明确特殊原因的非强制 Fork 工作可以用 `--remote origin --main-reason "<具体原因>"`。把检查输出的 `Fork-First-Exception` 写入既有任务和正式 PR，交给现有独立评审核实。
 
@@ -58,7 +58,14 @@ git -C ../feature-card-upgrade push "$remote" "HEAD:refs/heads/$branch"
 
 开发提交、实验和迭代验证留在 Fork。用 [Fork 预检](CI-PREFLIGHT.md)按风险选择已有测试，记录任务、Fork 仓库及分支、完整 HEAD/BASE、定向结果、适用的 run/attempt 和接续人。同一证据以原记录复用。
 
-成熟候选通过必要验证后，重读主仓 `develop` 和来源 Fork ref。用所测完整 SHA 设置 `base` 和 `head`，核对它们与远端一致，并用 `git merge-base --is-ancestor "$base" "$head"` 验证来源历史。HEAD 或 BASE 移动时先更新候选并重核受影响范围。用 `git push origin "$head:refs/heads/$branch"` 同步已核对的完整候选 SHA，建立同仓 `develop` PR，注明 Fork 来源、验证和已有任务。后续采用现有独立 Review、Required Checks、Merge Queue 与 squash。正式 PR 的修正先回 Fork 验证，成熟后同步新 SHA。
+成熟候选通过必要验证后，重读主仓 `develop` 和来源 Fork ref。用所测完整 SHA 核对远端，并用 `git merge-base --is-ancestor "$base" "$head"` 验证来源历史。HEAD 或 BASE 移动时先更新候选并重核受影响范围。用 Fork 分支直接提主仓 `develop` PR：
+
+```sh
+gh pr create -R FurinyaWorks/Slay-the-Heavens --base develop \
+  --head "FurinyaDev:$branch" --title "<标题>" --body-file "<PR 正文文件>"
+```
+
+Fork B 使用其实际 owner。正文注明适用验证、依赖和已有任务。由主仓执行独立 Review、Required Checks、Merge Queue 与 squash。后续修正直接推同一个 Fork 分支。
 
 ## 小批量集成
 
@@ -72,7 +79,7 @@ git -C ../feature-card-upgrade push "$remote" "HEAD:refs/heads/$branch"
 
 ## PR 生命周期
 
-1. 按 Fork-First 流程完成一个可合并切片及所需验证，再同步候选并提主仓 PR。发起时应已取得该切片需要的明确审批、依赖已实际落地、改动范围稳定且有可审查的源码与验证证据。
+1. 按 Fork-First 流程完成一个可合并切片及所需验证，再从 Fork 向主仓 develop 提 PR。发起时应已取得该切片需要的明确审批、依赖已实际落地、改动范围稳定且有可审查的源码与验证证据。
 2. 正常 PR 用于独立评审、GitHub 必要检查和合并准入，不要求创建前已有该 PR 的 Hosted CI 或独立审查结论。官方/设备验收按切片及既有交付合同判断，不能把尚未验收的产品要求记作完成，也不把正式 RC 专属证据扩为所有普通 PR 的前置。
 3. 任务占位、HOLD、未批准的方向、依赖未落地的实施与长期探索在 Backlog 记录原因、下一步、分支及精确来源。分支可推远端保全；默认不创建 Draft。Owner 明确要求提前协作评审时可建 Draft。
 4. 指向冻结旧 Release 的 PR 按 [2.0 重建交接](versions/V2-RELEASE-HANDOFF.md) 转 Draft、加标签并评论留痕。其他既有不成熟 PR 先将接续信息写回原任务，再关闭 PR，保留有独立工作的分支、提交及必要备份。关闭不代表合并、任务完成或放弃源码；条件满足后沿既有成果继续，核对基线、去重并重新检查，再重开或提正常 PR。不得为减少 PR 数量合入未批准或未验证的改动。

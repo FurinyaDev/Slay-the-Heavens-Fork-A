@@ -4,8 +4,9 @@ import {resolve,join} from 'node:path';
 import {tmpdir} from 'node:os';
 import {pathToFileURL} from 'node:url';
 import {isDeepStrictEqual} from 'node:util';
-import {projectRepositoryId,currentProjectRepository,projectRepositoryMatches} from './repository-identity.mjs';
-import {collectIndependentAiReview,parseIndependentAiReview,independentAiReportErrors,INDEPENDENT_AI_REVIEW_MARKER,TRUSTED_REVIEW_COORDINATOR_IDS} from './independent-ai-review.mjs';
+import {projectRepositoryId,currentProjectRepository,projectRepositoryMatches,projectDevelopPullRequest,samePullRequestSource} from './repository-identity.mjs';
+import {qualityRunBelongsToPr} from './pr-quality-evidence.mjs';
+import {collectIndependentAiReview,parseIndependentAiReview,independentAiReportErrors,assertForkWorkflowSources,INDEPENDENT_AI_REVIEW_MARKER,TRUSTED_REVIEW_COORDINATOR_IDS} from './independent-ai-review.mjs';
 export {parseDependencies} from './independent-ai-review.mjs';
 export const reviewContext='independent-review';
 export const requiredContexts=['check','presentation','engineering-posix','inventory',reviewContext,'pr-quality'];
@@ -28,7 +29,7 @@ export function queueBypassActorsAllowed(ruleset,{allowAdministratorPullRequest=
 // cloud AI report signed by the existing trusted coordinator and dispatches the existing CI gate; it never posts commit statuses.
 export function mergePolicyErrors({repo,settings,pr,ruleset}){
  const errors=[];
- if(!projectRepositoryMatches(settings,repo)||!projectRepositoryMatches(pr?.head?.repo,repo)||!projectRepositoryMatches(pr?.base?.repo,repo))errors.push('Unexpected project repository identity');
+ if(!projectRepositoryMatches(settings,repo)||!projectDevelopPullRequest(pr,repo))errors.push('Unexpected project repository identity');
  if(settings?.allow_auto_merge!==true||settings?.allow_squash_merge!==true)errors.push('Native auto-merge and squash must be enabled');
  if(pr?.state!=='open'||pr.merged||pr.draft||pr.mergeable!==true||pr.base?.ref!=='develop')errors.push('PR must be ready, mergeable and target develop');
  if((pr?.labels??[]).some(l=>['hold','blocked','do-not-merge','manual-merge','merge:manual','risk:critical'].includes((typeof l==='string'?l:l.name)?.toLowerCase())))errors.push('PR has a manual/blocked merge label');
@@ -94,12 +95,16 @@ export function collectEligibility(repo,number,review,query=gh){
  const errors=autoMergeErrors({repo,settings,pr,ruleset,nativeReview});
  const id=typeof review==='number'?review:review?.githubReviewId;
  if(!Number.isSafeInteger(id)||id!==nativeReview.githubReviewId)errors.push('Requested server-side Review ID differs from the verified native approval');
- if(pr.head?.sha!==nativeReview.head||pr.base?.sha!==nativeReview.base||pr.merge_commit_sha!==nativeReview.mergeCommitSha)errors.push('PR changed during native review collection');
+ if(!samePullRequestSource(pr,nativeReview.observations?.prAfter)||pr.base?.sha!==nativeReview.base||pr.merge_commit_sha!==nativeReview.mergeCommitSha)errors.push('PR changed during native review collection');
+ if(!errors.length&&!projectRepositoryMatches(pr.head.repo,repo)){
+  try{assertForkWorkflowSources(api,repo,nativeReview.base,nativeReview.mergeCommitSha);}
+  catch(error){errors.push(error.message);}
+ }
  return {pr,ruleset,nativeReview,errors,headSha:nativeReview.head,baseSha:nativeReview.base,sourceTree:nativeReview.tree,tested:nativeReview.mergeCommitSha,defaultBranch:settings.default_branch};
 }
 function dispatchGate(repo,number,current,query,{shadow=false,bootstrapRef}={}){
  const ref=bootstrapRef??current.defaultBranch;
- if(!ref||ref.startsWith('refs/')||bootstrapRef&&bootstrapRef!==current.pr.head.ref)throw Error('Gate must use the trusted default branch or the exact explicitly approved bootstrap branch');
+ if(!ref||ref.startsWith('refs/')||bootstrapRef&&(!projectRepositoryMatches(current.pr.head.repo,repo)||bootstrapRef!==current.pr.head.ref))throw Error('Gate must use the trusted default branch or the exact explicitly approved bootstrap branch');
  const dir=mkdtempSync(join(tmpdir(),'native-review-dispatch-'));
  try{
   const file=join(dir,'request.json');writeFileSync(file,JSON.stringify({ref,inputs:{ai_review_pr:String(number),ai_review_head:current.headSha,ai_review_mode:shadow?'shadow':'publish',ai_review_bootstrap:!!bootstrapRef}}));
@@ -114,7 +119,7 @@ export function armAutoMerge(repo,number,review,query=gh,{dryRun=false,shadow=fa
  const current=collectEligibility(repo,number,review,query);
  if(blocking(current).length||!isDeepStrictEqual(before,current))throw Error('PR, native Review or policy changed before activation');
  const runs=json(query,'api','--paginate','--slurp',`repos/${repo}/actions/workflows/quality.yml/runs?event=pull_request&head_sha=${current.headSha}&per_page=100`).flatMap(p=>p.workflow_runs)
-  .filter(r=>r.head_sha===current.headSha&&r.path==='.github/workflows/quality.yml'&&r.pull_requests?.some(p=>p.number===number)).sort((a,b)=>b.id-a.id);
+  .filter(r=>qualityRunBelongsToPr(r,current.pr,repo)).sort((a,b)=>b.id-a.id);
  const run=runs[0];
  if(!run||run.status==='completed'&&run.conclusion!=='success')throw Error('Current formal Quality CI is missing, failed or cancelled');
  const jobs=json(query,'api','--paginate','--slurp',`repos/${repo}/actions/runs/${run.id}/jobs?filter=latest&per_page=100`).flatMap(p=>p.jobs);
@@ -137,7 +142,7 @@ export function armAutoMerge(repo,number,review,query=gh,{dryRun=false,shadow=fa
  // An error may arrive after GitHub committed the mutation. Read actual state
  // once; only the exact native intent can convert an uncertain reply to success.
  const after=json(query,'api',`repos/${repo}/pulls/${number}`);
- if(after.head?.sha!==current.headSha||after.base?.ref!=='develop'||after.node_id!==current.pr.node_id)throw Error('PR identity changed after native enable');
+ if(!samePullRequestSource(after,current.pr)||!projectDevelopPullRequest(after,repo)||after.node_id!==current.pr.node_id)throw Error('PR identity changed after native enable');
  let native;
  if(after.merged){
   const commit=json(query,'api',`repos/${repo}/commits/${after.merge_commit_sha}`);
@@ -156,7 +161,7 @@ export function armAutoMerge(repo,number,review,query=gh,{dryRun=false,shadow=fa
   const cleanup=[];
   try{
    const active=json(query,'api',`repos/${repo}/pulls/${number}`);
-   if(active.node_id!==current.pr.node_id||active.number!==number||active.state!=='open'||active.merged||active.base?.ref!=='develop'||!projectRepositoryMatches(active.head?.repo,repo)||!projectRepositoryMatches(active.base?.repo,repo))throw Error('Cannot safely identify an open native request for cleanup');
+   if(active.node_id!==current.pr.node_id||active.number!==number||active.state!=='open'||active.merged||!projectDevelopPullRequest(active,repo))throw Error('Cannot safely identify an open native request for cleanup');
    cancelNativeMerge(repo,number,active,query);
   }catch(failure){cleanup.push('native cancellation uncertain: '+failure.message);}
   persist({state:'activation-failed',proof,error:error.message,cleanup});
@@ -199,7 +204,7 @@ function cancelNativeMerge(repo,number,before,query){
   query('pr','merge',String(number),'--repo',repo,'--disable-auto');
   const after=json(query,'api',`repos/${repo}/pulls/${number}`);
   if(after.number!==number||after.state!=='open'||after.merged||after.auto_merge!==null||after.base?.ref!=='develop'||!validSha(after.head?.sha)||
-    !projectRepositoryMatches(after.head?.repo,repo)||!projectRepositoryMatches(after.base?.repo,repo))
+    !projectDevelopPullRequest(after,repo))
     throw Error('Native auto-merge cancellation was not confirmed; PR may already be merged');
   if(after.node_id!==before.node_id||readNativeQueueState(repo,number,after,query).isInMergeQueue)throw Error('Native queue removal was not confirmed');
   return after;
@@ -207,7 +212,7 @@ function cancelNativeMerge(repo,number,before,query){
 
 export function pauseAutoMerge(repo,number,query=gh){
  const before=json(query,'api',`repos/${repo}/pulls/${number}`);
- if(before.number!==number||before.state!=='open'||before.merged||before.base?.ref!=='develop'||!validSha(before.head?.sha)||!projectRepositoryMatches(before.head?.repo,repo)||!projectRepositoryMatches(before.base?.repo,repo))throw Error('Pause requires the open same-repository develop PR');
+ if(before.number!==number||before.state!=='open'||before.merged||before.base?.ref!=='develop'||!validSha(before.head?.sha)||!projectDevelopPullRequest(before,repo))throw Error('Pause requires the open develop PR');
  const after=cancelNativeMerge(repo,number,before,query);
  return {state:'paused',prNumber:number,head:after.head.sha};
 }
