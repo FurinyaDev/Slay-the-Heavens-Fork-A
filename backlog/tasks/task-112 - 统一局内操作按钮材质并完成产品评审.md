@@ -5,9 +5,8 @@ status: In Progress
 assignee:
   - Furinya
 created_date: '2026-11-22T05:43:10Z'
-updated_date: '2026-11-22T05:59:34Z'
+updated_date: '2026-11-22T06:00:00Z'
 labels: []
-milestone: m-8
 dependencies: []
 priority: medium
 type: enhancement
