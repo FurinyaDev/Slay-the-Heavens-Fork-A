@@ -354,6 +354,8 @@
     "abyss_monster_source_positions": "core",
     "abyss_monster_surfaces": "ui",
     "abyss_monster_actor_binding": "ui",
+    "abyss_deck_browser_binding": "ui",
+    "abyss_deck_browser": "ui",
     "abyss_monster_source_intents": "ui",
     "abyss_monster_power_surfaces": "ui",
     "abyss_monster_power_view": "ui",

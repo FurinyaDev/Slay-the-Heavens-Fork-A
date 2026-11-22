@@ -52,7 +52,10 @@ end
 local function revealScope(self)
     if self.exitOpen and not self.routeOpen then return 'exit' end
     local reveal=self.pageReveal
-    if reveal and reveal:covered() then return reveal.state=='failed' and 'pageReveal' or 'blocked' end
+    if reveal and reveal:covered() then
+        if self.deckUI.paged and reveal.intent and reveal.intent.deckPaged and reveal.state~='failed' then return 'deck' end
+        return reveal.state=='failed' and 'pageReveal' or 'blocked'
+    end
     if self.exitOpen then return 'exit' end
 end
 function M.syncController(self,controller,openingCovered)
@@ -87,6 +90,7 @@ function M.syncController(self,controller,openingCovered)
                 elseif backScope~='blocked' then return self:openMenu() end
                 return false
             end
+            controller.staticDeck=self.deckUI.paged==true
             controller:sync(scope,function()
                 if scope=='easterEgg' then return self.easterEgg:close()
                 elseif scope=='exit' then return self:closeExit()
@@ -655,6 +659,7 @@ function M.refresh(self,finishRunFlow,syncOpening,selectMode,syncOfficialBattleS
     return function(_)
             if self.disabled then return false,"ui_disabled" end
             local run = self.run
+            self.deckUI:syncRun(run)
             finishRunFlow(run)
             local covering = syncOpening(run)
             selectMode(run)

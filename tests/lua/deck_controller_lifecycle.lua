@@ -94,7 +94,7 @@ test('20 pointer-mode open/close cycles release all destroyed registrations imme
     local visits,eligible=0,manager.eligible
     manager.eligible=function(self,record)visits=visits+1;return eligible(self,record)end
     for _=1,300 do manager:sync('map')end
-    assert(visits==baseline*300,'pointer sync retains retired scan work')
+    assert(visits==0,'idle pointer mode must skip record scans')
     print('POINTER_SYNC_300_VISITS '..visits)
 end)
 

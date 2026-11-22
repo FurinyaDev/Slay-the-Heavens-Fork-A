@@ -4,18 +4,15 @@ import { gameLayout } from '../scripts/game-ui-layout.mjs';
 import { deckCardTemplate } from '../scripts/deck-ui-layout.mjs';
 import { nativeTheme as theme } from '../scripts/native-ui-theme.mjs';
 
-test('battle piles reserve one hidden five-column native scroller and a black veil without replacing the browser', () => {
+test('read-only piles reserve an empty native host and retain the separate selection Grid', () => {
   const panel=gameLayout().controls.find(c=>c.name==='deckPanel');
   const grid=panel.children.find(c=>c.name==='pileGrid');
   const veil=panel.children.find(c=>c.name==='pileVeil');
-  assert.equal(grid.kind,'grid');assert.equal(grid.visible,false);
-  assert.equal(grid.grid.columns,5);assert.equal(grid.grid.horizontal,false);
-  assert.equal(grid.grid.scrollbar,true);assert.equal(grid.itemTemplate,deckCardTemplate().name);
-  assert.ok(grid.grid.itemSize[0]>=theme.v25Battle.layout.card.size[0]);
-  assert.equal(grid.grid.padding[2],grid.grid.padding[3]);
-  const [top,bottom,left,right]=grid.grid.padding;
-  assert.ok(left+5*grid.grid.itemSize[0]+4*grid.grid.spacing[0]+right<=grid.size[0]);
-  assert.ok(top+2*grid.grid.itemSize[1]+grid.grid.spacing[1]+bottom<=grid.size[1]);
+  assert.equal(grid.kind,'container');
+  assert.equal(grid.visible,false);
+  assert.equal(grid.grid,undefined);
+  assert.equal(grid.itemTemplate,undefined);
+  assert.deepEqual(grid.children??[],[]);
   assert.equal(veil.colour,'#000000');assert.equal(veil.opacity,.9);assert.equal(veil.visible,false);
   assert.ok(panel.children.indexOf(veil)<panel.children.findIndex(c=>c.name==='blocker'));
   assert.equal(panel.children.find(c=>c.name==='grid').grid.columns,6);

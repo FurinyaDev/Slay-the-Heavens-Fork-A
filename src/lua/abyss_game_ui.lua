@@ -29,6 +29,10 @@ local Lifecycle = require('abyss_game_ui_lifecycle')
 local Input = require('abyss_game_ui_input')
 local Navigation = require('abyss_game_ui_navigation')
 local PageReveal=require('abyss_page_reveal')
+local function browserFrame()
+    local viewport=Theme.layout.deckView.pileViewport or Theme.layout.deckView.viewport
+    return {viewport[1],viewport[2]+viewport[4]/2-241.5,918,452}
+end
 
 local function revealMotion(platform)
     if platform.prologue==true and platform.color then
@@ -56,11 +60,18 @@ function M.new(root, data, presentation, clickEvent, platform)
         self.pageReveal=PageReveal.new(cover,platform.presentationReady,function()
             owner.exitGeneration=owner.exitGeneration+1;owner.menuGeneration=owner.menuGeneration+1
         end,{full={0,0,Theme.canvas.base[1],Theme.canvas.base[2]},
-            deckPanel=Theme.layout.deckView.viewport,deckBrowser=Theme.layout.deckView.pileViewport,
+            deckPanel=Theme.layout.deckView.viewport,deckBrowser=Theme.layout.deckView.pileViewport,deckPaged=browserFrame(),
             nodePanel=Theme.layout.nativeNode.backdrop,battlePanel=Theme.layout.rewardPick.stage,
             potionPanel={0,0,Theme.layout.modal.size[1],Theme.layout.modal.size[2]},
             choicePanel=Theme.layout.combatChoice.panel},revealMotion(platform))
-        if controller then controller.blocked=function()return self.pageReveal:covered() and (not self.exitOpen or self.routeOpen) end end
+        if controller then
+            controller.blocked=function()
+                local gate=self.pageReveal
+                return gate:covered() and (not self.exitOpen or self.routeOpen)
+                    and not (self.deckUI and self.deckUI.paged and gate.intent and gate.intent.deckPaged
+                        and gate.localFrame and gate.state~='failed')
+            end
+        end
         cover.disableCursorEventPassthrough=true
         cover:GetChild('blocker'):AddCursorEventListener(clickEvent,function()return true end)
         local cancel=cover:GetChild('cancel'):GetChild('hit')
@@ -68,6 +79,7 @@ function M.new(root, data, presentation, clickEvent, platform)
         function self.recoverPage(_)
             if not canRecover()then return false end
             if self.routeOpen then return self:closeExit() end
+            if self.deckUI.paged then return self:closeDeck() end
             return self:openMenu()
         end
         local function recover()return self:recoverPage()end

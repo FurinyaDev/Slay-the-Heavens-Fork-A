@@ -32,6 +32,9 @@ function M.new(api,root)
         return false
     end
     function manager:sync(scope,cancel)
+        local using=self.api.isController()
+        local deviceChanged=self.using~=using
+        self.using=using
         local changed=self.scope~=scope
         if changed then
             local previous=self.api.getFocus()
@@ -39,9 +42,15 @@ function M.new(api,root)
             self.scope=scope
         end
         self.cancel=cancel
+        if not using and not deviceChanged then return end
+        if using and scope=='deck' and self.staticDeck and not changed and not deviceChanged and not self.dirty then
+            local focus=self.api.getFocus()
+            if focus==self.lastDeckFocus then return end
+        end
+        self.dirty=false
         local first,groups=nil,{}
         for _,record in ipairs(self.records) do
-            local ok=self:eligible(record)
+            local ok=using and self:eligible(record)
             if record.control.alive~=false and record.control.canControllerFocus~=ok then record.control.canControllerFocus=ok end
             if ok then
                 if not first or record.order<first.order then first=record end
@@ -65,12 +74,12 @@ function M.new(api,root)
         end
         local current=self.api.getFocus()
         local record=current and self.byControl[current]
-        local using=self.api.isController()
         if not using then return end
         if changed or not record or not self:eligible(record) then
             local saved=self.memory[self.scope]
             if not (saved and self:focus(saved)) and first then self.api.setFocus(first.control) end
         end
+        if scope=='deck' then self.lastDeckFocus=self.api.getFocus() end
     end
     function manager:tick()self.consumed=false end
     function manager:disable()
@@ -91,11 +100,13 @@ function M.new(api,root)
     return manager
 end
 -- Remove only one retired native handle; all card/hero records remain intact.
+function M.invalidate(manager) if manager then manager.dirty=true end end
 function M.unbind(manager,control,engineDestroyed)
     if not manager then return false end
     local record=manager.byControl[control]
     if not record then return false end
-    manager.byControl[control]=nil
+    manager.byControl[control]=nil;M.invalidate(manager)
+    if manager.lastDeckFocus==control then manager.lastDeckFocus=nil end
     for i=#manager.records,1,-1 do
         if manager.records[i]==record then table.remove(manager.records,i) end
     end
@@ -125,14 +136,34 @@ function M.pointerBlocked(manager)
     return manager and (manager.blocked and manager.blocked() or manager.consumed and manager.api.isController()) or false
 end
 function M.isController(manager)return manager and manager.api.isController() or false end
+local function bindConfirm(manager,record)
+    local listener
+    listener=function()
+        if record.confirm~=listener then return false end
+        return manager:activate(record.control,record.action,record)
+    end
+    record.confirm=listener
+    record.control:AddNavigationEventListener(manager.api.events.Confirm,listener)
+end
+-- A physical hit can represent a new UID while a prior Confirm is queued.
+-- The native API removes by the exact callback identity.
+function M.rebindConfirm(manager,control)
+    local record=manager and manager.byControl[control]
+    if not record or not control.RemoveNavigationEventListener then return end
+    if record.confirm then
+        assert(control:RemoveNavigationEventListener(manager.api.events.Confirm,record.confirm)~=false,'native Confirm removal rejected')
+        record.confirm=nil
+    end
+    if manager.byControl[control]==record and control.alive~=false then bindConfirm(manager,record) end
+end
 function M.bind(manager,control,scope,action,enabled,order,group,onFocus)
     if not manager then return action end
     assert(not manager.byControl[control],'duplicate controller binding')
-    local record={control=control,scope=scope,enabled=enabled,order=order or 100,group=group}
-    manager.byControl[control]=record;manager.records[#manager.records+1]=record
+    local record={control=control,scope=scope,enabled=enabled,order=order or 100,group=group,action=action}
+    manager.byControl[control]=record;manager.records[#manager.records+1]=record;M.invalidate(manager)
     control.canControllerFocus=false
     if manager.byControl[control]~=record then return action end
-    control:AddNavigationEventListener(manager.api.events.Confirm,function()return manager:activate(control,action,record)end)
+    bindConfirm(manager,record)
     if manager.byControl[control]~=record then return action end
     control:AddNavigationEventListener(manager.api.events.Cancel,function()
         return manager:activate(control,function()if manager.cancel then return manager.cancel()end return false end,record)

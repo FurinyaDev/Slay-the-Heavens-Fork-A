@@ -167,13 +167,23 @@ for(const [path,{before,after}] of Object.entries(roomEntry.files)){
  assert.match(after.sha256,/^[a-f0-9]{64}$/);
  assert.match(after.gitBlob,/^[a-f0-9]{40}$/);
 }
+const deckPagesArchive=readFileSync(new URL('../fixtures/develop-deck-pages-source.json.gz',import.meta.url));
+assert.equal(hash(deckPagesArchive),'e5e082d9aee7b97a613673cb48597b502cdd47a2df554276682460e705a12549','exact Develop deck-pages predecessor archive');
+const deckPages=JSON.parse(gunzipSync(deckPagesArchive));
+assert.equal(deckPages.base,'00229683d0d38660c98ced2f4a41e89d84fc5e4e');
+for(const [path,{before,after}] of Object.entries(deckPages.files)){
+ assert(matches(before.source,before),'exact deck-pages predecessor: '+path);
+ assert.match(after.sha256,/^[a-f0-9]{64}$/);
+ assert.match(after.gitBlob,/^[a-f0-9]{40}$/);
+}
+function beforeDeckPages(path,source){return predecessor(deckPages.files,path,source);}
 function matches(source,expected){
  if(typeof source!=='string'||source.includes('\r\r\n'))return false;
  const lf=source.replaceAll('\r\n','\n');
  return hash(lf)===expected.sha256&&blob(lf)===expected.gitBlob;
 }
 export function assertDevelopBackflowCurrent(path,source){
- source=roomEntryCurrent(path,source);
+ source=roomEntryCurrent(path,beforeDeckPages(path,source));
  if(relicDetailOwns(path)){
   assert.notEqual(beforeRelicDetail(path,source),source,'fresh current production owner: '+path);
   return;
@@ -200,7 +210,7 @@ function roomEntryCurrent(path,source){
 }
 export function assertCurrentMapRoomOwner(path,source){
  if(Object.hasOwn(roomEntry.files,path)){
-  assert(matches(source,roomEntry.files[path].after),'combined linked owner identity: '+path+' during map-room validation');
+  assert(matches(beforeDeckPages(path,source),roomEntry.files[path].after),'combined linked owner identity: '+path+' during map-room validation');
  }
 }
 function beforePriorDevelopBackflow(path,source){
@@ -229,7 +239,7 @@ function authenticatePriorDevelopBackflow(path,source,read){
 export const configSourceTokens=source=>source.replace(/"(?:\\.|[^"\\])*"|[ \t\r\n]+/g,token=>token.startsWith('"')?token:'');
 export function isSessionRelicSuccessor(path,source,{allowConfigLayout=false}={}){
  if(!Object.hasOwn(sessionRelic.files,path))return false;
- source=predecessor(roomEntry.files,path,source);
+ source=predecessor(roomEntry.files,path,beforeDeckPages(path,source));
  const expected=sessionRelic.files[path].after;
  if(matches(source,expected))return true;
  if(!allowConfigLayout||!expected.tokensSha256||typeof source!=='string'||source.includes('\r\r\n'))return false;
@@ -242,7 +252,7 @@ function beforeSessionRelic(path,source,options){
  return source.includes('\r\n')?before.replaceAll('\n','\r\n'):before;
 }
 export function beforeDevelopBackflow(path,source,options){
- source=predecessor(roomEntry.files,path,source);
+ source=predecessor(roomEntry.files,path,beforeDeckPages(path,source));
  source=beforeRelicDetail(path,source);
  return beforePriorDevelopBackflow(path,beforeSessionRelic(path,source,options));
 }
@@ -252,6 +262,15 @@ export function assertCurrentSessionRelicOwner(path,source){
  }
 }
 export function authenticateDevelopBackflow(path,source,read,options){
+ const deckPrior=beforeDeckPages(path,source);
+ if(deckPrior!==source){
+  let live;
+  try{live=read(path);}catch(error){assert.fail('combined linked owner missing: '+path+': '+String(error?.message??error));}
+  assert(matches(live,deckPages.files[path].after),'combined linked owner identity: '+path+' during deck-pages validation');
+ }
+ source=deckPrior;
+ const readDeckPages=read;
+ read=owner=>beforeDeckPages(owner,readDeckPages(owner));
  const roomPrior=predecessor(roomEntry.files,path,source);
  if(roomPrior!==source){
   let live;

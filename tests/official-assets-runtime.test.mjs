@@ -4,6 +4,7 @@ import {mkdtempSync,mkdirSync,readdirSync,rmSync,readFileSync,writeFileSync} fro
 import {resolve,join} from 'node:path';
 import {spawnSync} from 'node:child_process';
 import {createRequire} from 'node:module';
+import {deckBrowserParts} from '../scripts/deck-ui-layout.mjs';
 import {buildUI} from '../scripts/build-ui.mjs';
 import {buildLuaData,luaString,toLua} from '../scripts/build-lua-data.mjs';
 
@@ -43,13 +44,24 @@ function runOfficial(t,body,marker,overrides={},official=true){
  if(official){
  const pileGrid=stage.children.find(c=>c.name==='deckPanel').children.find(c=>c.name==='pileGrid');
  const templates=JSON.parse(readFileSync(join(directory,'game-ui-templates.json'),'utf8'));
- const pile=templates.find(c=>c.name===pileGrid.itemTemplate);
+ assert.equal(pileGrid.kind,'container');
+ const pile=templates.find(c=>c.name==='AbyssBattlePileCard');
  assert.equal(pile.name,'AbyssBattlePileCard');
  const expected=structuredClone(face);
  Object.assign(expected,{name:'face',position:[0,0],scale:[1,1],rotation:0,visible:true});
  expected.children=expected.children.filter(c=>c.name!=='hit');
  for(const name of ['glow','nativePlayableRim','costHalo'])expected.children.find(c=>c.name===name).visible=false;
- assert.deepEqual(pile.children.find(c=>c.name==='face'),expected,'pile must reuse the final official hand face exactly');
+ const assembled=structuredClone(pile);
+ for(const {name,path} of deckBrowserParts){
+  const mount=path.reduce((parent,role)=>parent.children.find(child=>child.name===role),assembled);
+  assert.deepEqual(mount.children,[]);
+  const part=templates.find(t=>t.name===name);
+  assert.deepEqual(part.position,[0,0]);assert.deepEqual(part.size,mount.size);
+  mount.children=part.children;
+ }
+ const readOnly=structuredClone(expected);
+ readOnly.children.find(c=>c.name==='nativePlayableRim').children=[];
+ assert.deepEqual(assembled.children.find(c=>c.name==='face'),readOnly,'pile keeps authored geometry and every visible hand face layer');
  assert.deepEqual(pile.children.find(c=>c.name==='hit').size,[150,210]);
  const ordinary=structuredClone(templates.find(c=>c.name==='AbyssDeckCard').children.find(c=>c.name==='face'));
  ordinary.position=[0,0];
@@ -1046,7 +1058,7 @@ end end
 find(F.Layout)
 local panel,grid,deck;local controller=false
 local function resetBrowser()
- panel=F.control(assert(panelSpec));grid=panel:GetChild('pileGrid')
+ panel=F.control(assert(panelSpec));grid=F.legacyPileGrid(panel)
  local ownedDeck
  ownedDeck=require('abyss_deck_ui').new(panel,F.Presentation,'click',{
   imageSource='static',color=function(r,g,b,a)return {r=r,g=g,b=b,a=a}end,
@@ -1054,7 +1066,7 @@ local function resetBrowser()
  deck=ownedDeck
 end
 resetBrowser()
-local template=require('abyss_ui_templates').AbyssBattlePileCard
+local template=F.Templates.AbyssBattlePileCard
 for _,child in ipairs(template.children)do
  if child.name=='face' or child.name=='hit'then assert(same(child.position,{0,0}),'official template must centre the face and its hit')end
 end

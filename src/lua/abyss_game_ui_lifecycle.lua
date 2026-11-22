@@ -22,6 +22,7 @@ function M.onEngineDestroy(self)
     return function(_)
             self.disabled=true
             abandonReveal(self)
+            self.deckUI:onEngineDestroy()
             local ok,why=pcall(self.battleUI.onEngineDestroy,self.battleUI)
             if self.easterEgg then self.easterEgg:onEngineDestroy()end
             assert(ok,why)
@@ -124,7 +125,7 @@ function M.disable(self,platform,controller,characterPanel,owner)
             self.mapUI:setVisible(false)
             self.nodeUI:setVisible(false)
             if self.choiceUI then self.choiceUI:close() end
-            self.potionUI:close();self.deckUI:close()
+            self.potionUI:close();self.deckUI:close();self.deckUI:releaseBrowser()
             self.battleUI.feedback:cancel()
             local released,reason=pcall(self.battleUI.releaseMonsterSurfaces,self.battleUI)
             self.monsterCleanupPending=not released or nil
