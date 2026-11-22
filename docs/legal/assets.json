@@ -237,6 +237,11 @@
     }
   },
   "files": {
+    "docs/reviews/task-112-button-comparison.png": {
+      "category": "v2-native-menu-layout-evidence",
+      "sha256": "cafccfd7aa0c47a8d4898626e3be9eb981d5052597f19abd530f8d62f7a70ce7",
+      "evidence": "TASK-112 review comparison generated from the project's before and after layout trees, runtime-map.png and rasterized system Noto Sans CJK text."
+    },
     "docs/evidence/neow-geo-statue-preview.png": {
       "sha256": "18cf82689b2a3185d51aaa90979acd0fc40e7150fd744bde5716db95d33aa92d",
       "category": "opening-statue-simulator-evidence"
