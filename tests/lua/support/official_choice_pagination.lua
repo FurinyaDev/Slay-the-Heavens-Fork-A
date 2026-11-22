@@ -1,7 +1,6 @@
 -- The actual official layout and virtual cell callbacks drive the core choices.
 local F=dofile('tests/lua/support/game_ui_fixture.lua')
 local Combat=require('abyss_combat')
-local Controller=require('abyss_controller')
 local Discard=require('abyss_discard')
 local Choice=require('abyss_choice_ui')
 local Gate=require('abyss_page_reveal')
@@ -19,10 +18,8 @@ local function setup(begin,confirm,base,cardId)
  local root=F.control(assert(spec))
  local grid=root:GetChild('cards')
  grid.indexBase=base or 0
- local calls,using,focus=0,false,nil
- local controller=Controller.new({isController=function()return using end,getFocus=function()return focus end,
-  setFocus=function(value)focus=value end,events={Confirm='navConfirm',Cancel='navCancel'}})
- local view=Choice.new(root,F.Presentation,'click',{imageSource='static',controller=controller,
+ local calls=0
+ local view=Choice.new(root,F.Presentation,'click',{imageSource='static',
   cursorEvents={CursorDown='down',CursorUp='up',CursorEndDrag='endDrag'},
   color=function(red,g,blue,a)return {r=red,g=g,b=blue,a=a}end},
   function(kind,uids,token,generation,owner)
@@ -40,8 +37,7 @@ local function setup(begin,confirm,base,cardId)
  local function tap(name,touch)
   touch=touch or 1;event(name,'down',touch);event(name,'up',touch);return event(name,'click',touch)
  end
- local function controllerMode(enabled)using=enabled;controller:tick();view:update();controller:sync('choice');return controller end
- return view,root,grid,battle,run,tap,event,function()return calls end,controllerMode,getHit
+ return view,root,grid,battle,run,tap,event,function()return calls end,getHit
 end
 
 local function discard(battle)
@@ -108,8 +104,8 @@ assert(tap('option2') and tap('confirm') and battle.player.stance=='Calm' and no
 local pile=require('abyss_pile_choice')
 local function seek(b)assert(pile.begin(b,'seek',2,7)=='pause')end
 local function retrieve(b,uids,token,generation)return pile.choose(b,uids,token,generation,Combat)end
-local run,event,calls,controllerMode,hit
-view,root,grid,battle,run,tap,event,calls,controllerMode,hit=setup(seek,retrieve)
+local run,event,calls,hit
+view,root,grid,battle,run,tap,event,calls,hit=setup(seek,retrieve)
 view:update();assert(grid.itemCount>20 and view:presentationReady())
 local coverWrites=0
 local cover={SetVisible=function()coverWrites=coverWrites+1 end,SetAsLastSibling=function()end,GetChild=function()end}
@@ -124,9 +120,9 @@ local retired=hit(1)
 grid.destroyOnRecycle=true;grid:recycle(0,0);grid.destroyOnRecycle=false
 assert(not retired.listeners.click({touchId=5}) and #view.selected==1,'destroyed card executed its queued click')
 view:update()
-local retiredController=controllerMode(true)
-assert(not retiredController.byControl[retired],'destroyed card kept its Controller focus record')
-controllerMode(false)
+event(1,'down',6);event(1,'up',6)
+grid.scrollProgress=.25
+assert(not event(1,'click',6) and #view.selected==1,'scroll position moved but the old gesture survived')
 event(1,'down',3);event(1,'up',3)
 grid.scrollProgress=1
 grid:recycle(0,#view.cards-1)
@@ -136,11 +132,12 @@ assert(not hit(1).listeners.click({touchId=4,dragging=true}),'scroll drag select
 assert(not event(1,'click',4),'second click reused the rejected drag gesture')
 assert(tap(1) and view.selected[1]==first and view.selected[2]==last)
 assert(grid.items[0]:GetChild('uid').text=='已选 2')
-local controller=controllerMode(true)
-assert(root:GetChild('before').visible and not root:GetChild('after'):GetChild('hit').interactable)
-assert(controller:focus(hit('before')) and hit('before').navigationListeners.navConfirm())
-assert(grid.scrollProgress<1 and grid.itemCount==#view.cards)
-controllerMode(false)
+for _,name in ipairs({'before','after'})do
+ local button=root:GetChild(name);local target=button:GetChild('hit')
+ assert(not button.visible and not target.interactable and not target.raycastTarget and not target.click)
+end
+grid.scrollProgress=0
+assert(grid.itemCount==#view.cards)
 grid:recycle(0,1)
 assert(grid.items[0]:GetChild('uid').text=='已选 1','recycled cell did not repaint the ordered selection')
 assert(not gate:step(Gate.intent(owner)) and not gate:covered() and gate.epoch==epoch and coverWrites==writes,

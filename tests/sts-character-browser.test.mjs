@@ -43,25 +43,23 @@ info.deck[1]=false;assert(not Deck.previewContext(info))
 assert(not Deck.previewContext({}));print('CHARACTER_BROWSER_PASS')`);
 });
 
-test('shared five-column browser retains deck owner, controller/back, stale closure and restored presentation',t=>{
+test('shared five-column browser retains deck owner, pointer return, stale closure and restored presentation',t=>{
  const out=temporary(t);buildLuaData('data',join(out,'abyss_data.lua'));buildUI(out,undefined,{officialAssets:true});
  const preloads=readdirSync(out).filter(n=>n.endsWith('.lua')).map(n=>
   `package.preload[${luaString(n.slice(0,-4))}]=assert(loadfile(${luaString(join(out,n).replaceAll('\\','/'))}))`).join('\n');
  lua(out,`package.path='src/lua/?.lua;tests/lua/?.lua;'..package.path
 ${preloads}
-local G=require('abyss_game_ui');local make=G.new;local sourcePage;local prepared=true;local focus;local controllerMode=false;local useGate=true
+local G=require('abyss_game_ui');local make=G.new;local sourcePage;local prepared=true;local useGate=true
 G.new=function(root,data,presentation,event,p)
  if useGate then p.presentationReady=function()return prepared end end
  p.presentationPage=function(page)sourcePage=page;require('abyss_card_art_runtime').setPresentationPage(page)end
- p.controllerApi={events={Confirm='navConfirm',Cancel='navCancel'},directions={Left='left',Right='right'},modes={Specified='specified'},
-  isController=function()return controllerMode end,getFocus=function()return focus end,setFocus=function(v)focus=v end}
  return make(root,data,presentation,event,p)
 end
-local F=dofile('tests/lua/support/game_ui_fixture.lua');local host,root=F.fixture(nil,function()return true end)
+local F=dofile('tests/lua/support/game_ui_fixture.lua');local host,root=F.fixture(nil,function()return true end,nil,nil,nil,nil,nil,nil,F.deckBrowser())
 local Gate=require('abyss_page_reveal');local Run=require('abyss_run');local created=0;local new=Run.new
 Run.new=function(...)created=created+1;return new(...)end
 local function settle()
- for i=1,4 do host:update(1/60);host.pageReveal:step(Gate.intent(host));host:refresh()end
+ for i=1,40 do host:update(1/60);host.pageReveal:step(Gate.intent(host));host:refresh()end
 end
 settle();assert(host:start());settle();assert(host:selectCharacter('traveler'));assert(host:selectElement('ironclad'));settle()
 local info=host.characterSelection.info;local original=F.Combat.copy(info)
@@ -77,19 +75,28 @@ prepared=false;assert(host:openStarterDeck());assert(host.pageReveal:covered() a
 assert(not host.run and created==0 and host.characterSelection.deckOpen and host.deckUI.previewInfo==info)
 local deck=host.deckUI;local deckPanel=root:GetChild('deckPanel')
 assert(deck.browserShell and not deck.pileView and not deck.pileKind and not deck.choiceToken and not deck.battle)
-assert(deck.run.readOnlyPreview and #deck.cards==info.deckSize and deckPanel:GetChild('pileGrid').visible)
-assert(not panel.visible and not panel:GetChild('deckView').visible and #panel:GetChild('deckView'):GetChildren()==0)
-assert(host.controller.scope=='blocked' and require('abyss_controller').pointerBlocked(host.controller),'preparation must keep preview input covered')
+assert(deck.run.readOnlyPreview and #deck.cards==info.deckSize,'starter preview lost its read-only projection')
+assert(not panel.visible,'starter preview did not cover character selection')
+local legacyDeck=panel:GetChild('deckView')
+assert(not legacyDeck.visible and #legacyDeck:GetChildren()==0,'starter preview allocated the retired character deck')
+assert(host.pageReveal.localFrame and not host.pointerBlocked(),'local preparation must leave the surrounding controls reachable')
+for _,cell in ipairs(deckPanel:GetChild('pileGrid'):GetChildren())do
+ assert(not cell:GetChild('hit').raycastTarget,'preparation enabled an unready card')
+end
 assert(not host:openStarterDeck(),'covered/reentrant opening must fail')
 for i=1,4 do host:update(1/60);host:refresh()end
 assert(deck.visible and host.pageReveal:covered(),'menu stale-deck rule closed read-only preview')
-prepared=true;settle();assert(host.controller.scope=='deck' and not host.pageReveal:covered())
-local cards=deckPanel:GetChild('pileGrid');assert(cards.itemCount==info.deckSize,'starter browser omitted cards')
-for index=0,info.deckSize-1 do
- local cell=cards:recycle(0,index+cards.indexBase);local face=cell:GetChild('face')
- assert(face:GetChild('name').text~='' and face:GetChild('cost').text~='' and face:GetChild('label').text~='','starter card lost actual name/cost/rules')
+prepared=true;settle();assert(not host.pointerBlocked() and not host.pageReveal:covered() and painted>0)
+local cards=deckPanel:GetChild('pileGrid')
+local visible=0
+for _,cell in ipairs(cards:GetChildren())do
+ if cell.visible then
+  visible=visible+1
+  local face=cell:GetChild('face')
+  assert(face:GetChild('name').text~='' and face:GetChild('cost').text~='' and face:GetChild('label').text~='','starter card lost actual name/cost/rules')
+ end
 end
-cards:flush()
+assert(cards.visible and visible==math.min(10,info.deckSize),'starter browser omitted current-page cards')
 assert(painted>0,'visible starter cards did not paint')
 assert(deckPanel:GetChild('pileReturn').visible)
 assert(deck:setSort('cost'));settle()
@@ -97,11 +104,10 @@ local previewCard;for _,card in ipairs(deck.cards)do if card.cardId==previewId t
 local face=deck.root:GetChild('cardFocus'):GetChild('face')
 assert(deck:showCardDetails(previewCard));assert(deck.cardDetail and face:GetChild('name').text:find('只读投影专用名',1,true))
 assert(deck:back() and not deck.cardDetail and deck.visible)
-controllerMode=true;host:syncController();assert(host.controller.scope=='deck' and focus)
+settle();assert(not host.pointerBlocked() and deck.visible)
 local back=deckPanel:GetChild('pileReturn'):GetChild('hit')
-assert(host.controller:focus(back));host.controller:tick()
-assert(back.navigationListeners.navConfirm(),'controller cannot reach shared browser return')
-controllerMode=false;settle();assert(not deck.visible and not host.characterSelection.deckOpen and panel.visible)
+assert(back.click(),'pointer cannot reach shared browser return')
+settle();assert(not deck.visible and not host.characterSelection.deckOpen and panel.visible)
 assert(host.characterSelection.info==info and info.deck[1].count==original.deck[1].count and created==0 and not host.run)
 -- Closing preview restores the exact caller display source, not a preview copy.
 Display.writeArt=write

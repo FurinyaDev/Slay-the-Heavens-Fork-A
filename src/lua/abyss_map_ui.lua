@@ -5,7 +5,7 @@ local Map = require("abyss_map")
 local Theme = require("abyss_theme")
 local Layout = require("abyss_map_layout")
 local Acts = require("abyss_acts")
-local Controller = require("abyss_controller")
+local Pointer = require('abyss_pointer_input')
 local M = {}
 -- MapRoomNode.render sizes: glyph 128*scale, MAP_CIRCLE_5 192*(scale*.95+.2).
 -- TASK-4.13: STS breathes reachable glyphs .91..1.25 (up to 2.5x rest), which on
@@ -253,7 +253,6 @@ function M.new(root, map, onChoose, clickEvent, options)
         embedded = embedded, scale = 1, observedMap = map, observedContext = view,
         observedNodeId = view and view.currentNodeId, observedFloor = view and view.floor }
     local drag, released, pointerObserved, scrollAnimation
-    local buttonHover, buttonPress
     local function cancelSelection()
         if drag then drag.selection = nil end
         released = nil
@@ -262,7 +261,7 @@ function M.new(root, map, onChoose, clickEvent, options)
         if drag then self.dragged = true end
         cancelSelection()
         drag = nil
-        scrollAnimation, buttonHover, buttonPress = nil, nil, nil
+        scrollAnimation = nil
         for _,fx in ipairs(self.activeFx or {})do
             if fx.hovered or fx.pressed then
                 fx.hovered,fx.pressed=false,false
@@ -295,51 +294,12 @@ function M.new(root, map, onChoose, clickEvent, options)
         future = pathColour(Theme.color.node.path, visual.futureOpacity),
         far = pathColour(Theme.color.node.path, visual.farFutureOpacity),
     }
-    local function controllerContextReady()
-        return chapterFor(self.map) ~= nil and self.map == self.observedMap
-            and sameContext(self.map,self.observedContext)
-            and self.map.floor == self.observedFloor and self.map.currentNodeId == self.observedNodeId
-    end
     local function bind(name, fn)
         local hit=child(at(name),"hit")
         hit:AddCursorEventListener(clickEvent,function(event)
-            if inputCovered() or Controller.pointerBlocked(options.controller)then return false end
+            if inputCovered() or Pointer.blocked(options)then return false end
             return fn(event)
         end)
-        Controller.bind(options.controller,hit,"map",function()
-            local slot=tonumber(name:match("^node(%d+)$"))
-            if slot then
-                if scrollAnimation then return false,"map_scrolling" end
-                cancelDrag()
-                return self.slots[slot] and self:choose(self.slots[slot])
-            end
-            return fn(nil,true)
-        end,controllerContextReady,name:match("^node") and tonumber(name:match("%d+")) or 100)
-    end
-    local function buttonEnabled(name)
-        return self.visible and chapterFor(self.map) ~= nil and (name == "previous" and self.scroll > 0
-            or name == "next" and self.scroll < Layout.maxScroll)
-    end
-    local function paintButton(name)
-        local box, enabled = at(name), buttonEnabled(name)
-        local pressed = enabled and buttonPress and buttonPress.name == name
-        local hover = enabled and buttonHover == name and not pressed
-        -- Source map uses scrolling and recenters when reopened; controller-only
-        -- paging remains a platform adapter, never a touch/mouse overlay.
-        local controllerVisible = Controller.isController(options.controller)
-        box:SetVisible(controllerVisible)
-        child(box,"hit"):SetVisible(enabled and controllerVisible)
-        child(box,"hit").canControllerFocus = enabled and controllerVisible
-        tint(child(box,"frame"), not enabled and Theme.color.line
-            or (pressed or hover) and Theme.color.goldBright or Theme.color.goldDim)
-        tint(child(box,"body"), pressed and Theme.color.buttonPressedFill
-            or hover and Theme.color.buttonHover or Theme.color.panel)
-        local ink = not enabled and Theme.color.textMuted
-            or pressed and Theme.color.buttonPressedText or Theme.color.text
-        child(box,"label").fontColor = colour(ink.r,ink.g,ink.b,ink.a)
-        local scale = pressed and Theme.layout.nativeNode.buttonStates.pressedScale
-            or Theme.layout.nativeNode.buttonStates.normalScale
-        box:SetLocalScale(scale,scale,1)
     end
     local function position(node)
         return (node.lane - (Layout.lanes + 1) / 2) * Theme.layout.map.columnGap,
@@ -424,7 +384,6 @@ function M.new(root, map, onChoose, clickEvent, options)
             at("notice"):SetVisible(true)
             for i = 1, Layout.maxNodes do at("node" .. i):SetVisible(false) end
             for i = 1, Layout.maxEdges do at("edge" .. i):SetVisible(false) end
-            for _, name in ipairs({"previous","next"}) do paintButton(name) end
             return
         end
         local current, nodes, taken = mapView(self.map), {}, {}
@@ -456,8 +415,6 @@ function M.new(root, map, onChoose, clickEvent, options)
             at('notice').text=prefix..'绿字节点为燃烧精英，胜利可另领绿钥匙'
         end
         at('notice'):SetVisible(at('notice').text~='')
-        buttonHover, buttonPress = nil, nil
-        for _, name in ipairs({"previous","next"}) do paintButton(name) end
         local edge = 0
         for _, node in ipairs(current.nodes) do for _, id in ipairs(node.nextIds) do
             edge = edge + 1
@@ -519,12 +476,10 @@ function M.new(root, map, onChoose, clickEvent, options)
                 local clickable = visible and state == "available" and self.navigationEnabled
                     and not self.choosing and not scrollAnimation
                 hit:SetVisible(clickable)
-                hit.canControllerFocus = clickable
                 if visible then self.slots[i] = node.id end
                 if clickable then self.breathing[#self.breathing + 1] = box end
                 else
                     child(box, 'hit'):SetVisible(false)
-                    child(box, 'hit').canControllerFocus = false
                 end
             end
             box:SetVisible(visible)
@@ -534,7 +489,6 @@ function M.new(root, map, onChoose, clickEvent, options)
     function self.resize(_, width, height)
         if not finite(width) or not finite(height) or width <= 0 or height <= 0 then return false, "invalid_canvas" end
         cancelDrag()
-        for _, name in ipairs({"previous","next"}) do paintButton(name) end
         self.canvasWidth, self.canvasHeight = width, height
         if embedded then self.scale = 1 return true end
         local scale = math.min(width / Theme.canvas.base[1], height / Theme.canvas.base[2])
@@ -546,11 +500,6 @@ function M.new(root, map, onChoose, clickEvent, options)
     function self.update(_, dt)
         if not finite(dt) or dt < 0 then return false, "invalid_delta" end
         if not self.visible then return true end
-        local usingController = Controller.isController(options.controller)
-        if self.usingController ~= usingController then
-            self.usingController = usingController
-            for _, name in ipairs({"previous","next"}) do paintButton(name) end
-        end
         if not chapterFor(self.map) or self.map ~= self.observedMap or not sameContext(self.map,self.observedContext) then
             self:render()
             return true
@@ -850,39 +799,6 @@ function M.new(root, map, onChoose, clickEvent, options)
         if self.slots[slot] then return self:choose(self.slots[slot]) end
         return false, "node_outside_viewport"
     end) draggable(child(at("node" .. slot), "hit"), slot) end
-    local function step(name,delta)
-        if not buttonEnabled(name) then return false,self.visible and "scroll_boundary" or "map_hidden" end
-        -- Queue same-direction steps; an opposite click must reverse what is
-        -- actually displayed, even when many earlier clicks queued a far target.
-        local target = self.scroll
-        if scrollAnimation and (scrollAnimation.target - self.scroll) * delta > 0 then
-            target = scrollAnimation.target
-        end
-        return animateScrollTo(target + delta)
-    end
-    bind("previous", function() return step("previous",-Layout.scrollStep) end)
-    bind("next", function() return step("next",Layout.scrollStep) end)
-    -- Reuse existing faces and documented events; no extra controls or timers.
-    for _, key in ipairs({"previous","next"}) do
-        local name, hit = key, child(at(key),"hit")
-        local function listen(event,callback) if event then hit:AddCursorEventListener(event,callback) end end
-        local function clear(event,terminal)
-            if buttonPress and buttonPress.name == name and (terminal or touch(event) == buttonPress.touch) then buttonPress = nil end
-            if buttonHover == name then buttonHover = nil end
-            paintButton(name)
-        end
-        listen(cursor and cursor.CursorEnter,function(event)
-            if buttonEnabled(name) and touch(event) == nil then buttonHover = name paintButton(name) end
-        end)
-        listen(cursor and cursor.CursorDown,function(event)
-            if buttonEnabled(name) then buttonPress = {name=name,touch=touch(event)} paintButton(name) end
-        end)
-        listen(cursor and cursor.CursorUp,function(event)
-            clear(event)
-        end)
-        listen(cursor and cursor.CursorExit,function(event) clear(event,true) end)
-        listen(cursor and cursor.CursorEndDrag,function(event) clear(event,true) end)
-    end
     self:resize(Theme.canvas.base[1], Theme.canvas.base[2])
     if map then self:focusCurrent() else root:SetVisible(false) end
     return self

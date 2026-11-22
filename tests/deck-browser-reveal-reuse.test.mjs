@@ -246,12 +246,15 @@ local function boot(amount,origin,deferred)
   InstantiateClientUIControl=actors.instantiate,DestroyClientUIControl=actors.destroy}
  script={object=canvas,GetParam=function()return false end,EnableUpdate=function()end}
  G.new=function(root,data,presentation,event,platform)
+  -- Exercise the compatibility Grid contract with no pooled template factory.
+  platform.deckBrowser=nil
+  F.legacyPileGrid(root:GetChild('deckPanel'))
   p=platform;host=create(root,data,presentation,event,platform)
   grid=root:GetChild('deckPanel'):GetChild('pileGrid');grid.indexBase=origin;grid.deferRefresh=deferred~=false
   local refresh=grid.RefreshItems
-  function grid:RefreshItems(amount,callback)
-   submitted[#submitted+1]={amount=amount,visible=host.deckUI.visible}
-   return refresh(self,amount,callback)
+  function grid:RefreshItems(count,callback)
+   submitted[#submitted+1]={amount=count,visible=host.deckUI.visible}
+   return refresh(self,count,callback)
   end
   return host
  end

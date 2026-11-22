@@ -37,59 +37,6 @@ function M.paintArtLoading(platform,menu,self)
         end
 end
 
-local function revealScope(self)
-    if self.exitOpen and not self.routeOpen then return 'exit' end
-    local reveal=self.pageReveal
-    if reveal and reveal:covered() then return reveal.state=='failed' and 'pageReveal' or 'blocked' end
-    if self.exitOpen then return 'exit' end
-end
-function M.syncController(self,controller,openingCovered)
-    return function(_)
-            if not controller then return end
-            local function pageScope()
-                local scope=self.mode
-                if self.choiceUI and self.choiceUI.visible then scope='choice'
-            elseif self.deckUI.visible then scope='deck'
-            elseif self.potionUI.visible then scope='potions'
-            elseif self.mode=='battle' and self.battleUI.potionMenu then scope='battlePotion'
-            elseif self.mode=='battle' and self.battleUI.info
-                and (self.battleUI.info.kind or not self.battleUI.info.transient) then scope='battleInfo'
-            elseif self.mode=='battle' and (self.battleUI.selected or self.battleUI.potionAim) then scope='aim' end
-                return scope
-            end
-            local coverScope=revealScope(self)
-            local scope
-            if self.disabled or self.settlementRequested or self.settlementBusy then scope='blocked'
-            elseif self.easterEggOpen then scope='easterEgg'
-            elseif coverScope then scope=coverScope
-            elseif self.motion.deathReveal then scope='blocked'
-            elseif openingCovered() then scope='blocked'
-            elseif self.characterOpen and not self.deckUI.visible then scope='characters'
-            else scope=pageScope() end
-            local function pageBack(backScope)
-                if backScope=='pageReveal' then return self:recoverPage()
-                elseif backScope=='potions' then return self:closePotions()
-                elseif backScope=='battlePotion' or backScope=='battleInfo' or backScope=='aim' then return self.battleUI:controllerBack()
-                elseif backScope=='node' and self.nodeUI.mode=='picker' then return self.nodeUI:press('back')
-                elseif backScope=='battle' and self.run and self.run.phase=='reward' and self.battleUI.rewardScreen=='cards' then
-                    return self.battleUI:controllerBack()
-                elseif backScope~='blocked' then return self:openMenu() end
-                return false
-            end
-            controller:sync(scope,function()
-                if scope=='easterEgg' then return self.easterEgg:close()
-                elseif scope=='exit' then return self:closeExit()
-                elseif scope=='characters' then return self:closeCharacters()
-                elseif scope=='blocked' and openingCovered() then return false
-                elseif scope=='deck' then
-                    if self.deckUI.choiceToken then return false end
-                    return self.deckUI:back()
-                elseif scope=='choice' then return false -- mandatory core selections cannot be dismissed
-                else return pageBack(scope) end
-            end)
-        end
-end
-
 function M.finishRunFlow(neowHistory,endingHistory,self)
     return function(run)
             if run and (run.phase=='victory' or run.phase=='defeat')then NeowHistory.finish(neowHistory,run,run.phase)end
@@ -595,7 +542,6 @@ function M.refreshSelection(self,platform,syncPortraits)
             if not pending and selectionPageVisible(self,panel) then
                 finishReveal(self,platform)
                 paintReveal(self)
-                self:syncController()
             end
         until not pending or not selectionPageVisible(self,panel)
         painting=false
@@ -617,7 +563,6 @@ function M.deckChanged(self,owner,platform,changed)
         -- a deferred or replaced face still acquires the original input cover.
         finishReveal(self,platform)
         paintReveal(self)
-        self:syncController()
     end
 end
 
@@ -637,13 +582,14 @@ local function beginRefresh(self,platform,refreshForeground)
         -- Keep the recovery menu usable without trying the failing panel again.
         refreshForeground()
     end
-    paintReveal(self);self:syncController();return false
+    paintReveal(self);return false
 end
 
 function M.refresh(self,finishRunFlow,syncOpening,selectMode,syncOfficialBattleScene,syncMenuContext,platform,syncCardChoice,closeStaleDeck,openCardChoice,canManagePotions,overlaysBlocked,syncRewardReturn,refreshUtilities,refreshPageVisibility,renderCurrentPage,bgm,present,refreshForeground,syncPortraits,openingForeground)
     return function(_)
             if self.disabled then return false,"ui_disabled" end
             local run = self.run
+            self.deckUI:syncRun(run)
             finishRunFlow(run)
             local covering = syncOpening(run)
             selectMode(run)
@@ -673,7 +619,6 @@ function M.refresh(self,finishRunFlow,syncOpening,selectMode,syncOfficialBattleS
             finishReveal(self,platform,not blocked and not deckOpen and not potionOpen and not self.nodeUI.pendingOwner)
             paintReveal(self)
             openingForeground(covering)
-            self:syncController()
         end
 end
 
