@@ -50,3 +50,9 @@ npm run check:platform-load
 - [首反馈](visual/formal-feedback.png) · [首页](visual/formal-page1.png) · [末页](visual/formal-page2.png)
 - [详情](visual/formal-detail.png) · [筛选空态](visual/formal-empty-filter.png) · [develop 首屏](visual/develop-first-open.png)
 - [像素差异记录](visual/flat-comparison.json) · [分段失败重试日志](segmented-lifecycle.txt)
+
+## 基线回归边界
+
+本地牌库、布局和候选打包定向组合 89 项通过，原生 UI 合同 7 项通过。两条正式 Host 旧滚动用例已迁移到分页并通过，分别验证 17 张商店牌库的末页详情和恢复商店，以及混合行数战斗牌堆的卡面、排序与详情。工程、容量日检、Git LFS 和证据素材许可清单均已执行。
+
+同一 develop BASE 上复现了商店按钮墨色与路线预览用例、移动商店旧触点与遗物详情用例，以及 Watcher 历史源码身份用例的失败。另一个既有历史 StS 文件摘要失败也在 BASE 重现。保留原断言，正式 CI 不视为已通过。Fork A 的工作流 API 在本环境返回 Forbidden，主仓 PR 已请求 Full CI。
