@@ -272,9 +272,8 @@ export function applyOfficialAssets(trees,theme){
    if(child(node,'roundFrame')&&child(node,'skin')&&child(node,'costDisc')){cardFace(node,theme,handSlots.has(node));cardHosts++;}
    else {buttonFaces(node,theme);pageBackgrounds(node,theme);roomTextFits(node,theme);}
   });
-  const deckPanel=child(child(tree,'stage')??tree,'deckPanel');
-  const tools=child(deckPanel,'pileTools');
-  if(tools)for(const control of children(tools)){
+  const deckSort=child(child(child(tree,'stage')??tree,'deckPanel'),'deckSort');
+  for(const control of children(deckSort)){
    const backing=child(control,'officialButtonBacking');if(backing)backing.visible=false;
   }
   if(treasure)styleTreasure(treasure,theme,{skinButtons:false});
