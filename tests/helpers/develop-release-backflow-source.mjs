@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import {readFileSync} from 'node:fs';
 import {gunzipSync} from 'node:zlib';
-import {authenticateRelicDetail,beforeRelicDetail} from './relic-detail-source.mjs';
+import {authenticateRelicDetail,beforeRelicDetail,relicDetailOwns} from './relic-detail-source.mjs';
 
 const hash=(bytes,algorithm='sha256')=>createHash(algorithm).update(bytes).digest('hex');
 const blob=source=>hash(`blob ${Buffer.byteLength(source)}\0${source}`,'sha1');
@@ -150,13 +150,17 @@ for(const after of [...Object.values(stasis.added),...Object.values(actorFocus.a
 const priorCurrent=path=>layers.find(layer=>Object.hasOwn(layer,path))?.[path]??
  (Object.hasOwn(actorFocus.added,path)?actorFocus.added[path]:undefined);
 const current=path=>Object.hasOwn(sessionRelic.files,path)?sessionRelic.files[path]:priorCurrent(path);
-export const developBackflowOwns=path=>current(path)!==undefined;
+export const developBackflowOwns=path=>relicDetailOwns(path)||current(path)!==undefined;
 function matches(source,expected){
  if(typeof source!=='string'||source.includes('\r\r\n'))return false;
  const lf=source.replaceAll('\r\n','\n');
  return hash(lf)===expected.sha256&&blob(lf)===expected.gitBlob;
 }
 export function assertDevelopBackflowCurrent(path,source){
+ if(relicDetailOwns(path)){
+  assert.notEqual(beforeRelicDetail(path,source),source,'fresh current production owner: '+path);
+  return;
+ }
  assert(matches(source,current(path).after),'fresh current production owner: '+path);
 }
 export function assertStasisUpgradeAdded(path,source){

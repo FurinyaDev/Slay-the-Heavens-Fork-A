@@ -241,8 +241,8 @@ const developSessionRelicFiles=Object.freeze({
 });
 const relicDetailFiles=Object.freeze({
  ...developSessionRelicFiles,
- 'tests/helpers/develop-release-backflow-source.mjs':'f4385a3aa4e46a4de46f2d50f95073cac258ff1f612e0436b3dde1c8db539b90',
- 'tests/helpers/relic-detail-source.mjs':'9c10deb49cb669414319c833c3f30a646fbd9a6885e6acc1389fc80fbda7bfca',
+ 'tests/helpers/develop-release-backflow-source.mjs':'e0b9fa1cefeb034cad1f971a18f636698a5bf67f765c0b9e560c3913cf717b03',
+ 'tests/helpers/relic-detail-source.mjs':'2fd994110473464aa1fad34f720423ddaa4e4ac68b3ca8d2a4020cd4f5eaa4a0',
  'tests/fixtures/relic-detail-source.json.gz':'981b97459ad1d75b79d03e197534dbab883d1f79055c7e2776d9ec32f09a9327',
 });
 const inside=(root,path)=>{const r=relative(root,path);return r!==''&&!isAbsolute(r)&&r!=='..'&&!r.startsWith('../')&&!r.startsWith('..\\');};

@@ -12,8 +12,10 @@ const { base, files } = JSON.parse(gunzipSync(archive));
 assert.equal(base, '469e80240c5b7c60f75ff434bebac62d73c0bd0c');
 for (const row of Object.values(files)) assert.equal(hash(row.before), row.beforeSha);
 
+export const relicDetailOwns = path => Object.hasOwn(files, path);
+
 function matches(path, source) {
-  return Object.hasOwn(files, path) && typeof source === 'string' && !source.includes('\r\r\n')
+  return relicDetailOwns(path) && typeof source === 'string' && !source.includes('\r\r\n')
     && hash(normalize(source)) === files[path].afterSha;
 }
 
