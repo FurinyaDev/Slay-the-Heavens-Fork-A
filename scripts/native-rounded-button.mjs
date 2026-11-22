@@ -53,7 +53,7 @@ export function roundedPresetButton(button,theme,role,{name='roundedButton',size
  for(const state of button.children){
   const label=child(state,'label');
   state.size=[...size];
-  state.scale=state.name==='pressed'?[material.pressedScale,material.pressedScale]:[1,1];
+  if(state.name==='pressed')state.scale=[material.pressedScale,material.pressedScale];
   roundedButtonState(state,size,actionColours(theme,role,state.name),name,{material,images:theme.image});
   if(fontSize)Object.assign(label.text,{fontSize,minFontSize:theme.font.minimum});
   label.text.colour=state.name==='disabled'?theme.color.textMuted:theme.officialAssets.buttonInk;

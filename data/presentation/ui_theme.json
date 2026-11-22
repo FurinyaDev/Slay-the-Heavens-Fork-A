@@ -187,7 +187,7 @@
         "pressed": ["#F5D79A", "#51412B"], "selected": ["#F5D79A", "#353949"]
       },
       "primary": {
-        "normal": ["#A2B4B5", "#477B89"], "hover": ["#C4D4D3", "#508294"],
+        "normal": ["#A2B4B5", "#40717E"], "hover": ["#C4D4D3", "#49798A"],
         "pressed": ["#A2B4B5", "#315462"], "selected": ["#C4D4D3", "#315462"]
       },
       "danger": {

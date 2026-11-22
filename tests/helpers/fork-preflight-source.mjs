@@ -190,6 +190,11 @@ function beforeDevelopSessionRelicCopier(path,source){
  if(path!=='tests/helpers/copy-integration-source-closure.mjs'||typeof source!=='string'||source.includes('\r\r\n'))return source;
  let lf=normalize(source);
  const sessionRelicSha='5130bc86b8e09a85aa7981393335cecec6d76a1b38f2ab2a80ac4810b22fa2d9';
+ if(hash(lf)==='8d025ef90aa44e51ef775a7e98e90f093ec67ba1d7142b20531b92f1f266dea3'){
+  lf=lf.replace(/^const actionButtonFiles=Object\.freeze\(\{\n[\s\S]*?^\}\);\n/m,'')
+   .replace('Object.entries(actionButtonFiles))','Object.entries(relicDetailFiles))');
+  assert.equal(hash(lf),'8f750c5899d830865b07c6802e292041388e1bf15d7a706b00d18da8a6903f32','exact action button copier predecessor');
+ }
  if(hash(lf)==='8f750c5899d830865b07c6802e292041388e1bf15d7a706b00d18da8a6903f32'){
   lf=lf.replace(/^const relicDetailFiles=Object\.freeze\(\{\n[\s\S]*?^\}\);\n/m,'')
    .replace('Object.entries(relicDetailFiles))','Object.entries(developSessionRelicFiles))');

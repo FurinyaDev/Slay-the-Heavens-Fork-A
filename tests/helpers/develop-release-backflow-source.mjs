@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import {readFileSync} from 'node:fs';
 import {gunzipSync} from 'node:zlib';
+import {authenticateActionButtons,beforeActionButtons,actionButtonsOwns} from './action-buttons-source.mjs';
 import {authenticateRelicDetail,beforeRelicDetail,relicDetailOwns} from './relic-detail-source.mjs';
 
 const hash=(bytes,algorithm='sha256')=>createHash(algorithm).update(bytes).digest('hex');
@@ -156,13 +157,17 @@ for(const after of [...Object.values(stasis.added),...Object.values(actorFocus.a
 const priorCurrent=path=>layers.find(layer=>Object.hasOwn(layer,path))?.[path]??
  (Object.hasOwn(actorFocus.added,path)?actorFocus.added[path]:undefined);
 const current=path=>Object.hasOwn(sessionRelic.files,path)?sessionRelic.files[path]:priorCurrent(path);
-export const developBackflowOwns=path=>relicDetailOwns(path)||current(path)!==undefined;
+export const developBackflowOwns=path=>actionButtonsOwns(path)||relicDetailOwns(path)||current(path)!==undefined;
 function matches(source,expected){
  if(typeof source!=='string'||source.includes('\r\r\n'))return false;
  const lf=source.replaceAll('\r\n','\n');
  return hash(lf)===expected.sha256&&blob(lf)===expected.gitBlob;
 }
 export function assertDevelopBackflowCurrent(path,source){
+ if(actionButtonsOwns(path)){
+  assert.notEqual(beforeActionButtons(path,source),source,'fresh current production owner: '+path);
+  return;
+ }
  if(relicDetailOwns(path)){
   assert.notEqual(beforeRelicDetail(path,source),source,'fresh current production owner: '+path);
   return;
@@ -220,13 +225,16 @@ function beforeSessionRelic(path,source,options){
  return source.includes('\r\n')?before.replaceAll('\n','\r\n'):before;
 }
 export function beforeDevelopBackflow(path,source,options){
- source=beforeRelicDetail(path,source);
+ source=beforeRelicDetail(path,beforeActionButtons(path,source));
  return beforePriorDevelopBackflow(path,beforeSessionRelic(path,source,options));
 }
 export function assertCurrentSessionRelicOwner(path,source){
  if(Object.hasOwn(sessionRelic.files,path))assert(matches(source,current(path).after),'combined linked owner identity: '+path);
 }
 export function authenticateDevelopBackflow(path,source,read,options){
+ source=authenticateActionButtons(path,source,read);
+ const liveRead=read;
+ read=owner=>beforeActionButtons(owner,liveRead(owner));
  source=authenticateRelicDetail(path,source,read);
  const sessionPrior=beforeSessionRelic(path,source,options);
  const sessionSuccessor=sessionPrior!==source;

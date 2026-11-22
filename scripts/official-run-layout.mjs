@@ -6,7 +6,7 @@ import {applyV25MapLayout} from './v25-map-layout.mjs';
 import {applyOfficialMapReturnControls} from './official-map-return-controls.mjs';
 import {applyV25RewardLayout,styleMerchant,styleEvent} from './v25-node-layout.mjs';
 import {officialRunChrome} from './official-battle-hud.mjs';
-import {roundedFramedButton,roundedPresetButton} from './native-rounded-button.mjs';
+import {roundedActionStates,roundedFramedButton,roundedPresetButton} from './native-rounded-button.mjs';
 import {monsterActorTierNames,monsterActorTemplateName} from './monster-art.mjs';
 import {applyStsRewardRows} from './sts-reward-row-layout.mjs';
 
@@ -77,12 +77,20 @@ function roundRunActions(host,theme){
  }
  const deck=required(host,'deckPanel'),grid=required(deck,'pileGrid'),viewport=theme.layout.deckView.pileViewport;
  grid.position=viewport.slice(0,2);grid.size=viewport.slice(2);
- const node=required(host,'nodePanel'),menu=required(host,'menuPanel');
- for(const button of [required(node,'back'),required(node,'confirm'),required(required(node,'treasureView'),'take'),
-  required(required(node,'pickerView'),'matchRetry'),required(menu,'settle'),
+ const node=required(host,'nodePanel'),menu=required(host,'menuPanel'),treasure=required(node,'treasureView');
+ const loot=theme.layout.nativeNode.rewardList.rows.map((_,i)=>required(treasure,'rewardItem'+(i+1)));
+ for(const button of [required(node,'back'),required(node,'confirm'),required(treasure,'take'),...loot,
+  required(required(node,'pickerView'),'matchRetry'),
   required(required(menu,'result'),'viewEasterEgg'),required(required(host,'victoryEasterEgg'),'close'),
   required(required(host,'pageReveal'),'cancel')]){
   roundedFramedButton(button,theme);
+ }
+ const settle=required(menu,'settle'),start=required(menu,'start');
+ for(const [button,size,role] of [[settle,settle.size,'primary'],
+  [start,theme.layout.nativeMenu.resultRestart.slice(2),'secondary']]){
+  const face=roundedActionStates(size,theme,role);
+  face.visible=button===settle;
+  button.children.splice(button.children.indexOf(required(button,'label')),0,face);
  }
 }
 function roundBattleActions(battle,theme){

@@ -166,6 +166,10 @@ function M.bindCommand(platform,self,canManagePotions,controller,clickEvent,owne
                     V25View.pointer(box,'enter',available())
                     if previousFocus then return previousFocus() end
                 end
+                local lostFocus=controller and controller.api.events.LostFocus
+                if lostFocus then
+                    hit:AddNavigationEventListener(lostFocus,function()V25View.pointer(box,'exit',available())end)
+                end
             end
             if cursor.CursorDown and cursor.CursorUp then
                 hit:AddCursorEventListener(cursor.CursorDown, function(event)

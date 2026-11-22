@@ -215,6 +215,32 @@ test('official build adopts the existing paper map without replacing graph or in
 
 });
 
+test('the official action palette reaches combat, reward choices, room loot and modal actions',()=>{
+ const {layout,theme}=officialLayout();
+ const at=path=>path.split('/').reduce(child,layout);
+ const action=theme.officialAssets.actionButton;
+ for(const [path,material,role] of [
+  ['battlePanel/endTurn','v25Chrome','turn'],['battlePanel/skip','roundedButton','secondary'],
+  ['battlePanel/continue','v25Flag','primary'],['choicePanel/confirm/hit','roundedButton','primary'],
+  ['exitPanel/confirm/hit','roundedButton','danger'],['menuPanel/settle/v25Face','roundedButton','primary'],
+ ]){
+  const button=at(path);
+  for(const name of ['normal','hover','pressed','disabled']){
+   const state=child(button,name),face=child(state,material);
+   const palette=name==='disabled'?action.disabled:action[role][name];
+   assert.deepEqual(['rim','cloth'].map(layer=>child(child(face,layer),'vertical').colour),palette,path+' '+name);
+  }
+ }
+ const treasure=at('nodePanel/treasureView');
+ for(const path of ['nodePanel/eventView/option1','nodePanel/pickerView/matchRetry','nodePanel/confirm']){
+  const box=at(path);assert(child(box,'roundedButton'),path);assert(child(box,'hit').focusable,path);
+ }
+ for(let i=1;i<=theme.layout.nativeNode.rewardList.rows.length;i++){
+  const row=child(treasure,'rewardItem'+i);
+  assert(child(row,'roundedButton'),'room reward row '+i);assert(child(row,'hit').focusable);
+ }
+});
+
 test('run headers paint above opaque page backgrounds and below their live resource text',()=>{
  const {layout}=officialLayout();
  for(const pageName of ['mapPanel','nodePanel']){

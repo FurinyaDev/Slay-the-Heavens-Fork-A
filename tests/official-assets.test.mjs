@@ -143,17 +143,7 @@ test('approved pages keep live input identities while unrelated pages retain the
    if(menuProjection.has(path)){
     const expected=menuProjection.get(path);
     assert.equal(node.kind,before.kind,path+' existing menu semantic control kind');
-     if(path==='/SlayTheAbyss/combatRewards/label'){
-    assert.equal(node.text.content,before.text.content);
-    assert.deepEqual(node.position,[0,0]);
-    continue;
-   }
-   if(path==='/SlayTheAbyss/combatRewards/hit'){
-    assert.deepEqual(node.size,theme.officialAssets.actionButton.mapReturn.size);
-    assert.equal(node.focusable,before.focusable);
-    continue;
-   }
-  for(const key of ['position','size','visible','scale','rotation','states','focusable','interactable','raycastTarget'])
+    for(const key of ['position','size','visible','scale','rotation','states','focusable','interactable','raycastTarget'])
      assert.deepEqual(node[key],expected[key],path+' approved menu '+key);
     if(node.text){
      const actualText={...node.text},expectedText={...expected.text};
@@ -180,6 +170,16 @@ test('approved pages keep live input identities while unrelated pages retain the
    if(restoredPagePath(path)){
     // Retain the input/state contracts on pages with adopted geometry.
     for(const key of ['kind','states','focusable','interactable','raycastTarget'])assert.deepEqual(node[key],before[key],path+' '+key);
+    continue;
+   }
+   if(path==='/SlayTheAbyss/combatRewards/label'){
+    assert.equal(node.text.content,before.text.content);
+    assert.deepEqual(node.position,[0,0]);
+    continue;
+   }
+   if(path==='/SlayTheAbyss/combatRewards/hit'){
+    assert.deepEqual(node.size,theme.officialAssets.actionButton.mapReturn.size);
+    assert.equal(node.focusable,before.focusable);
     continue;
    }
   for(const key of ['position','size','visible','scale','rotation','states','focusable','interactable','raycastTarget']){
@@ -252,6 +252,9 @@ test('approved pages keep live input identities while unrelated pages retain the
     }
     if(key==='scale'&&/^\/SlayTheAbyss\/potionEntry\/open\/hit\/(?:normal|hover|pressed|disabled)$/.test(path)){
      assert.deepEqual(node.scale,[1,1],path+' battle slot states already own their scale');continue;
+    }
+    if(key==='scale'&&node.name==='pressed'&&child(node,'roundedButton')){
+     assert.deepEqual(node.scale,Array(2).fill(theme.officialAssets.actionButton.pressedScale),path+' common pressed scale');continue;
     }
     const relicSlot=/^\/SlayTheAbyss\/relicBar\/slot(\d+)$/.exec(path);
     if(relicSlot&&key==='position'){
