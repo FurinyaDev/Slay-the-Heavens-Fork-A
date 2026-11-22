@@ -159,7 +159,17 @@ function beforeDevelopRewardUiCopier(path,source){
  assert.equal(hash(prior),'b56f2396efb198ba05a6b28e404f47a303d8ef0f4f2e76c436ff206257ef5076','exact Develop reward UI copier predecessor');
  return source.includes('\r\n')?prior.replaceAll('\n','\r\n'):prior;
 }
+function beforeDevelopBattleFeedbackCopier(path,source){
+ if(path!=='tests/helpers/copy-integration-source-closure.mjs'||typeof source!=='string'||source.includes('\r\r\n'))return source;
+ const lf=normalize(source);
+ if(hash(lf)!=='202a6beb3429f4aa83c1d40d55a69c63e4d3ba38ec8817140bd3c35e6edce846')return source;
+ const prior=lf.replace(/^const developBattleFeedbackFiles=Object\.freeze\(\{\n[\s\S]*?^\}\);\n/m,'')
+  .replace('Object.entries(developBattleFeedbackFiles))','Object.entries(developRewardUiFiles))');
+ assert.equal(hash(prior),'73b067067041e839e431863fa6af053da07e53caa2d36eaa86fefbdaeb8fb149','exact Develop battle feedback copier predecessor');
+ return source.includes('\r\n')?prior.replaceAll('\n','\r\n'):prior;
+}
 function beforeDevelopBackflowCopier(path,source){
+ source=beforeDevelopBattleFeedbackCopier(path,source);
  source=beforeDevelopRewardUiCopier(path,source);
  source=beforeDevelopPortraitLifecycleCopier(path,source);
  source=beforeDevelopCardDisplayCopier(path,source);

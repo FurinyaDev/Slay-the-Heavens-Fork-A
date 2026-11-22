@@ -61,7 +61,17 @@ for(const path of Object.keys(rewardUi.files)){
  const inherited=[portraitLifecycle.files,cardDisplay.files,mapRender.files,shop,...(path===deckPath?[]:[files])];
  assert(!inherited.some(layer=>Object.hasOwn(layer,path)),'distinct Develop reward UI source owner: '+path);
 }
-const layers=[rewardUi.files,portraitLifecycle.files,cardDisplay.files,mapRender.files,files,shop];
+const feedbackPath='src/lua/abyss_feedback.lua';
+const feedbackArchive=readFileSync(new URL('../fixtures/develop-battle-feedback-responsibilities-source.json.gz',import.meta.url));
+assert.equal(hash(feedbackArchive),'c8432495ff7b795025f12f0f931d55e6409505b6347fbbddc46701555f80e791','exact Develop battle-feedback-responsibilities predecessor archive');
+const battleFeedback=JSON.parse(gunzipSync(feedbackArchive));
+assert.equal(battleFeedback.base,'2f9444dcbd33ac71a6507db1775be5b70533e68a');
+assert.equal(battleFeedback.source,'254960fb39b085d72a75fccaa72fc9e393961fd3');
+assert.deepEqual(Object.keys(battleFeedback.files),[feedbackPath]);
+assert(matches(battleFeedback.files[feedbackPath].before.source,files[feedbackPath].after),'battle feedback preserves the exact Develop backflow predecessor');
+assert(matches(battleFeedback.frozenAfter.source,battleFeedback.frozenAfter),'frozen branch feedback identity');
+export const developBattleFeedback=Object.freeze({before:battleFeedback.files[feedbackPath].before.source,frozenAfter:battleFeedback.frozenAfter.source});
+const layers=[battleFeedback.files,rewardUi.files,portraitLifecycle.files,cardDisplay.files,mapRender.files,files,shop];
 for(const {before,after} of layers.flatMap(layer=>Object.values(layer))){
  assert.equal(hash(before.source),before.sha256);
  assert.equal(blob(before.source),before.gitBlob);

@@ -217,11 +217,16 @@ const developRewardUiFiles=Object.freeze({
  'tests/helpers/develop-release-backflow-source.mjs':'898bc55c77a2f021aa77a2b8e162900566daffa09c4262773de46a39f3b567d7',
  'tests/fixtures/develop-reward-ui-responsibilities-source.json.gz':'063a04ed8a26ea941887da6050376f12964baaf63ca62ac63f92a8bc62a4c207',
 });
+const developBattleFeedbackFiles=Object.freeze({
+ ...developRewardUiFiles,
+ 'tests/helpers/develop-release-backflow-source.mjs':'cdd1d43eb8a0cd6e3b829c52954bddbcbc961449089d4a17f787dea391e890bc',
+ 'tests/fixtures/develop-battle-feedback-responsibilities-source.json.gz':'c8432495ff7b795025f12f0f931d55e6409505b6347fbbddc46701555f80e791',
+});
 const inside=(root,path)=>{const r=relative(root,path);return r!==''&&!isAbsolute(r)&&r!=='..'&&!r.startsWith('../')&&!r.startsWith('..\\');};
 export function copyIntegrationSourceClosure(directory,{sourceRoot=process.cwd()}={}){
  const destination=realpathSync.native(directory);
  assert.notEqual(destination,realpathSync.native(sourceRoot),'isolated helper copy destination');
- for(const [path,sha]of Object.entries(developRewardUiFiles)){
+ for(const [path,sha]of Object.entries(developBattleFeedbackFiles)){
   assert((path.startsWith('tests/helpers/')||path.startsWith('tests/fixtures/'))&&!path.split('/').includes('..'),'fixed helper path');
   const source=join(sourceRoot,path),content=integrationClosureBytes(path,readFileSync(source));assert.equal(hash(content),sha,'fresh helper copy identity: '+path);
   const target=join(directory,path);mkdirSync(dirname(target),{recursive:true});
