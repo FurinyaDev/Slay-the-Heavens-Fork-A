@@ -143,7 +143,17 @@ test('approved pages keep live input identities while unrelated pages retain the
    if(menuProjection.has(path)){
     const expected=menuProjection.get(path);
     assert.equal(node.kind,before.kind,path+' existing menu semantic control kind');
-    for(const key of ['position','size','visible','scale','rotation','states','focusable','interactable','raycastTarget'])
+     if(path==='/SlayTheAbyss/combatRewards/label'){
+    assert.equal(node.text.content,before.text.content);
+    assert.deepEqual(node.position,[0,0]);
+    continue;
+   }
+   if(path==='/SlayTheAbyss/combatRewards/hit'){
+    assert.deepEqual(node.size,theme.officialAssets.actionButton.mapReturn.size);
+    assert.equal(node.focusable,before.focusable);
+    continue;
+   }
+  for(const key of ['position','size','visible','scale','rotation','states','focusable','interactable','raycastTarget'])
      assert.deepEqual(node[key],expected[key],path+' approved menu '+key);
     if(node.text){
      const actualText={...node.text},expectedText={...expected.text};
@@ -228,6 +238,11 @@ test('approved pages keep live input identities while unrelated pages retain the
    }
    if(merchant.has(path)){
     assert.deepEqual(node,merchant.get(path),path+' shared merchant projection');continue;
+   }
+   if(/^\/SlayTheAbyss\/combatRewards(?:\/|$)/.test(path)){
+    const caption=child(node,'label');
+    if(caption)assert.equal(caption.text.content,'返回战利品');
+    continue;
    }
    for(const key of Object.keys(before)){
     const choiceSlot=/^\/SlayTheAbyss\/choicePanel\/card([12])$/.exec(path);

@@ -63,33 +63,36 @@ export function finishOfficialComposition(trees){
  for(const tree of trees)composed.add(tree);
 }
 function roundRunActions(host,theme){
- const c=theme.color,secondary=[c.goldDim,c.panelRaised],primary=[c.gold,c.panel];
- const danger=theme.officialAssets.flagButton.cancel;
  const panels={
-  deckPanel:{close:secondary,upgradePreview:secondary,previous:secondary,next:secondary},
-  potionPanel:{cancel:secondary,use:primary,discard:secondary},
-  choicePanel:{confirm:primary},
-  relicPanel:{close:secondary,previous:secondary,next:secondary},
-  runMenu:{resume:primary,map:secondary,abandon:danger},
-  exitPanel:{cancel:secondary,confirm:danger},
+  deckPanel:{close:'secondary',upgradePreview:'secondary',previous:'secondary',next:'secondary',
+   filterAll:'secondary',filterAttack:'secondary',filterSkill:'secondary',filterPower:'secondary',
+   filterStatus:'secondary',filterCurse:'secondary',sortoriginal:'secondary',sorttype:'secondary',sortcost:'secondary'},
+  choicePanel:{before:'secondary',after:'secondary',confirm:'primary'},
+  relicPanel:{close:'secondary',previous:'secondary',next:'secondary'},
+  runMenu:{resume:'primary',map:'secondary',abandon:'danger',quit:'danger'},
+  exitPanel:{cancel:'secondary',confirm:'danger'},
  };
- for(const [panel,actions] of Object.entries(panels))for(const [name,palette] of Object.entries(actions)){
-  roundedPresetButton(required(required(required(host,panel),name),'hit'),theme,palette);
+ for(const [panel,actions] of Object.entries(panels))for(const [name,role] of Object.entries(actions)){
+  roundedPresetButton(required(required(required(host,panel),name),'hit'),theme,role);
  }
- const grid=required(required(host,'deckPanel'),'pileGrid'),viewport=theme.layout.deckView.pileViewport;
+ const deck=required(host,'deckPanel'),grid=required(deck,'pileGrid'),viewport=theme.layout.deckView.pileViewport;
  grid.position=viewport.slice(0,2);grid.size=viewport.slice(2);
- const node=required(host,'nodePanel');
- for(const button of [required(node,'back'),required(node,'confirm'),required(required(node,'treasureView'),'take')]){
+ const node=required(host,'nodePanel'),menu=required(host,'menuPanel');
+ for(const button of [required(node,'back'),required(node,'confirm'),required(required(node,'treasureView'),'take'),
+  required(required(node,'pickerView'),'matchRetry'),required(menu,'settle'),
+  required(required(menu,'result'),'viewEasterEgg'),required(required(host,'victoryEasterEgg'),'close'),
+  required(required(host,'pageReveal'),'cancel')]){
   roundedFramedButton(button,theme);
  }
 }
-function roundPotionActions(battle,theme){
+function roundBattleActions(battle,theme){
  const popup=required(required(battle,'potionHelp'),'potionPopup'),layout=theme.layout.potionPopup;
- const height=Math.max(layout.actionHeight,theme.layout.nativeText.lineHeight),c=theme.color;
- const use=required(popup,'use'),discard=required(popup,'discard');
- use.size=[layout.width/2,height];discard.size=[layout.width/3-layout.padding,height];
- roundedPresetButton(use,theme,[c.gold,'#3B5A54']);
- roundedPresetButton(discard,theme,[c.goldDim,c.panelSunken]);
+ const height=Math.max(layout.actionHeight,theme.layout.nativeText.lineHeight);
+ roundedPresetButton(required(popup,'use'),theme,'primary',{size:[layout.width/2,height]});
+ roundedPresetButton(required(popup,'discard'),theme,'secondary',{size:[layout.width/3-layout.padding,height]});
+ roundedPresetButton(required(battle,'skip'),theme,'secondary');
+ roundedPresetButton(required(battle,'start'),theme,'primary');
+ roundedPresetButton(required(battle,'endTurn'),theme,'turn',{name:'v25Chrome'});
 }
 
 export function composeOfficialRun(tree,theme){
@@ -106,13 +109,13 @@ export function composeOfficialRun(tree,theme){
    required(shop,'price'+(i+1)).position[0]=x;
   });
   applyV25MapLayout(tree,theme);
-  applyOfficialMapReturnControls(child(stage(tree),'mapPanel'),child(stage(tree),'characterPanel'),theme);
+  applyOfficialMapReturnControls(required(stage(tree),'mapPanel'),required(stage(tree),'combatRewards'),theme);
   roundRunActions(stage(tree),theme);
  }
  if(kind!=='template'){
   applyV25RewardLayout(tree,theme);
   applyStsRewardRows(tree,theme);
-  roundPotionActions(kind==='run'?required(stage(tree),'battlePanel'):stage(tree),theme);
+  roundBattleActions(kind==='run'?required(stage(tree),'battlePanel'):stage(tree),theme);
  }
  if(kind==='run')officialRunChrome(tree,theme);
 }
