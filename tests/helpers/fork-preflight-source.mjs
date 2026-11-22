@@ -132,7 +132,17 @@ function beforeDevelopMapRenderCopier(path,source){
  assert.equal(hash(prior),combined?'232a614e663999eb858d1f351dffee89ac821ce75e47c60c33122e42972c3ee4':'287ddbb54bfec7eadf72bceea09c77c8029410c8ef03465d88a0fba6b023413b','exact Develop map render copier predecessor');
  return source.includes('\r\n')?prior.replaceAll('\n','\r\n'):prior;
 }
+function beforeDevelopCardDisplayCopier(path,source){
+ if(path!=='tests/helpers/copy-integration-source-closure.mjs'||typeof source!=='string'||source.includes('\r\r\n'))return source;
+ const lf=normalize(source);
+ if(hash(lf)!=='59f327a993b6c55a04fe03df4be341bed7b7cd19c629f85da91542d9d7bf2861')return source;
+ const prior=lf.replace(/^const developCardDisplayFiles=Object\.freeze\(\{\n[\s\S]*?^\}\);\n/m,'')
+  .replace('Object.entries(developCardDisplayFiles))','Object.entries(developMapRenderFiles))');
+ assert.equal(hash(prior),'5248e173fe16d34ff5cd10780616f300fc09977759c94b0a6be72b8806a80764','exact Develop cardDisplay copier predecessor');
+ return source.includes('\r\n')?prior.replaceAll('\n','\r\n'):prior;
+}
 function beforeDevelopBackflowCopier(path,source){
+ source=beforeDevelopCardDisplayCopier(path,source);
  source=beforeDevelopMapRenderCopier(path,source);
  if(path!=='tests/helpers/copy-integration-source-closure.mjs'||typeof source!=='string'||source.includes('\r\r\n'))return source;
  let lf=normalize(source);
