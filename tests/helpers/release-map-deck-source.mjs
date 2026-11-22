@@ -34,6 +34,38 @@ function current(source,binding){
   return hash(text)===binding.sha256&&blob(text)===binding.gitBlob;
 }
 
+// Project the current five linked owners to the exact #839 epoch, never piecemeal.
+const latestArchive=readFileSync(new URL('../fixtures/release-map-deck-874-source.json.gz',import.meta.url));
+assert.equal(hash(latestArchive),'7082f878062bf26bebd609d98378dbd60b712e340ff7974525306113294526db','exact #874 map deck archive');
+const {base:latestBase,successor:latestHead,files:latestFiles}=JSON.parse(gunzipSync(latestArchive));
+assert.equal(latestBase,'5a972c7371d0217ce4d9806df35ba1464c50f40f');
+assert.equal(latestHead,'8125d64dfe7796b2da957072c023b54d7cc7d740');
+assert.deepEqual(Object.keys(latestFiles).sort(),[...Object.keys(files),'scripts/deck-ui-layout.mjs'].sort());
+for(const [path,{before,after}] of Object.entries(latestFiles)){
+  assert(current(before.source,before),'exact #839 map deck predecessor: '+path);
+  assert.match(after.sha256,/^[a-f0-9]{64}$/);
+  assert.match(after.gitBlob,/^[a-f0-9]{40}$/);
+}
+
+function beforeLatestMapDeck(path,source,read){
+  const row=Object.hasOwn(latestFiles,path)&&latestFiles[path];
+  if(!row||!current(source,row.after))return null;
+  const prior=new Map();
+  const label=Object.hasOwn(forethoughtSources,path)?'Forethought':'map deck';
+  for(const [owner,{before,after}] of Object.entries(latestFiles)){
+    let live;
+    try{live=read(owner,'utf8');}catch{assert.fail(label+' linked owner missing: '+owner);}
+    if(Buffer.isBuffer(live))live=live.toString('utf8');
+    assert(current(live,after),label+' linked owner identity: '+owner+' (#874 cohort)');
+    prior.set(owner,live.includes('\r\n')?before.source.replaceAll('\n','\r\n'):before.source);
+  }
+  const projected=source.includes('\r\n')?row.before.source.replaceAll('\n','\r\n'):row.before.source;
+  return {source:projected,read:(owner,encoding)=>{
+    if(!prior.has(owner))return read(owner,encoding);
+    return encoding?prior.get(owner):Buffer.from(prior.get(owner));
+  }};
+}
+
 const forethoughtSources=Object.freeze({
   "src/lua/abyss_deck_ui.lua": {
     before: {"sha256": "f361dc43c095aa9e4497bda4e758c161a5110978c33b4c0a89792815859aaac2", "gitBlob": "04033812db991fe1e86c8becf1017f4a689033d8"},
@@ -76,6 +108,8 @@ export function beforeMapRoomSource(path,source){
 }
 
 export function beforeMapDeckSource(path,source,read){
+  const latest=beforeLatestMapDeck(path,source,read);
+  if(latest){source=latest.source;read=latest.read;}
   const closeout=beforeReleaseUiCloseoutSource(path,source,read);
   const currentCloseout=closeout!==source;
   const closeoutRead=releaseUiCloseoutPriorRead(read,currentCloseout?path:undefined);

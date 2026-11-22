@@ -93,6 +93,10 @@ function beforeTravelerStatusCiSource(path,source){
  const actorTemplate=path==='tests/native-monster-actor-template.test.mjs';
  if((!copier&&!regression&&!actorTemplate)||typeof source!=='string'||source.includes('\r\r\n'))return source;
  let lf=normalize(source);
+ if(copier&&hash(lf)==='c80aa0806bf2b4afb832675f8f29650689ed12253cd4b8c0653da95acfa608a6'){
+  lf=lf.replace(" 'tests/helpers/release-map-deck-source.mjs':'8c7f1d1457a22b7c31dc18ba04234251b26fd252993b57c0d1fe6245581ea911',\n 'tests/fixtures/release-map-deck-874-source.json.gz':'7082f878062bf26bebd609d98378dbd60b712e340ff7974525306113294526db',\n"," 'tests/helpers/release-map-deck-source.mjs':'d76d9d67c6e696d966fe9608a46e66eea0c0e2739c06dd9672151afd4b1f0973',\n");
+  assert.equal(hash(lf),'03e69836be70d236cce38ad56a0a42589609bab3803fb9b72230abe8b9a60359','exact map deck #874 helper copy predecessor');
+ }
  if(copier&&hash(lf)==='03e69836be70d236cce38ad56a0a42589609bab3803fb9b72230abe8b9a60359'){
   lf=lf.replace(" 'tests/helpers/release-ui-restore-source.mjs':'0a404f50a22153788baa3c8612588c266e4eecc3ac2b97a74ca7fa00a9c7f0a2',\n 'tests/fixtures/release-compound-intent-source.json.gz':'4d1d0ca90bc98c95fef49584283807598edd42f995d230357d28fa41efa14111',\n"," 'tests/helpers/release-ui-restore-source.mjs':'12525d81e0e26d39b823b398e4f438e3a005dd6e2a10f91f71eec00adf007586',\n");
   assert.equal(hash(lf),'b72155ee1af41dfd1300b4f364a1c5de8de666173c95e37cc72fb14bec63afab','exact compound intent helper copy predecessor');
