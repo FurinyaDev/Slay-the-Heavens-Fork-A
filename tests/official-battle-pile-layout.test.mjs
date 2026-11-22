@@ -29,7 +29,7 @@ test('the shared cursor return face preserves its layout, ink and one hit receiv
   assert.equal(button.visible,false);assert.deepEqual(button.position,[-550,-237]);assert.deepEqual(button.size,[180,54]);
   assert.equal(label(art).text.colour,source.officialAssets.buttonInk);assert.equal(label(art).text.content,'返回');
   assert.equal(label(art).raycastTarget,false);assert.ok(contrast(label(art).text.colour,materialColour(art,'cloth'))>=4.5);
-  assert.equal(hit.kind,'cursorArea');assert.equal(hit.focusable,true);assert.deepEqual(hit.size,button.size);
+  assert.equal(hit.kind,'cursorArea');assert.equal(hit.focusable,undefined);assert.deepEqual(hit.size,button.size);
   for(const role of ['rim','cloth'])for(const part of child(child(art,'roundedButton'),role).children)
    assert.equal(part.raycastTarget,false,part.name);
  }

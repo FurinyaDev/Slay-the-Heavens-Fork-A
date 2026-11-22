@@ -2,7 +2,7 @@
 local Combat = require("abyss_combat")
 local Actors = require("abyss_actor")
 local Theme = require("abyss_theme")
-local Controller = require("abyss_controller")
+local Pointer = require('abyss_pointer_input')
 local M = {}
 local L = Theme.layout
 local function validPower(value,id)
@@ -100,8 +100,7 @@ function M.install(owner, _ownership, host, dependencies)
                 if hoverSlot then owner:setHover(hoverSlot) end
                 local spec = describe()
                 if spec and not spec.kind then
-                    if not Controller.pointerBlocked(host.controller) and not Controller.isController(host.controller)
-                        and not (touchScreen and touchScreen()) then
+                    if not Pointer.blocked(host.platform) and not (touchScreen and touchScreen()) then
                         return show(spec, true)
                     end
                 else owner:queueHelp(spec,control,false) end
@@ -110,12 +109,6 @@ function M.install(owner, _ownership, host, dependencies)
             on(host.cursor.CursorExit,function(event) cancel(false,false,event) end)
         end
         if not clickable or not current() then return end
-        Controller.bind(host.controller,control,function()return owner.potionAim and "aim" or "battle"end,function()
-            if not current() then return false end
-            local spec=describe()
-            if spec then return show(spec,false)end
-        end,function()return current() and dependencies.controllerReady()end,80)
-        if not current() then return end
         local function ready(token)
             local run=owner.run
             return current() and helpPressReady(owner, token, run)
@@ -134,7 +127,7 @@ function M.install(owner, _ownership, host, dependencies)
                 and spec.offset == token.spec.offset then return spec end
         end
         on(host.clickEvent,function(event)
-            if not current() or Controller.pointerBlocked(host.controller) or enemyReader and event and event.dragging then return false end
+            if not current() or Pointer.blocked(host.platform) or enemyReader and event and event.dragging then return false end
             local touch = event and event.touchId
             if input.consumed and input.consumed.touch == touch then input.consumed = nil; return end
             if dependencies.consumeReleasedDragClick(event) or owner.suppressClick then return end
@@ -249,7 +242,7 @@ function M.install(owner, _ownership, host, dependencies)
             end
         end
         dependencies.child("statusDismiss"):AddCursorEventListener(host.clickEvent,function(event)
-            if not Controller.pointerBlocked(host.controller) and not (event and event.dragging) then
+            if not Pointer.blocked(host.platform) and not (event and event.dragging) then
                 return owner:dismissActorDetails()
             end
         end)
@@ -266,7 +259,7 @@ function M.install(owner, _ownership, host, dependencies)
             elseif dependencies.closeInfo() then owner:renderDetailsOnly() end
         end
         info:GetChild("page"):AddCursorEventListener(host.clickEvent,function(event)
-            if Controller.pointerBlocked(host.controller)then return false end
+            if Pointer.blocked(host.platform)then return false end
             local swallow=owner.swallow
             if swallow and swallow.touch==(event and event.touchId) then owner.swallow=nil;return end
             return infoPage()
@@ -274,7 +267,6 @@ function M.install(owner, _ownership, host, dependencies)
         if host.cursor and host.cursor.CursorDown then
             info:GetChild("page"):AddCursorEventListener(host.cursor.CursorDown,function() owner.swallow=nil end)
         end
-        Controller.bind(host.controller,info:GetChild("page"),"battleInfo",infoPage,nil,1)
         bindActorHelp(0,dependencies.child("hero"),function()end)
         if not host.monsterSurfaces then
             for i=1,5 do
@@ -318,7 +310,6 @@ function M.install(owner, _ownership, host, dependencies)
         binding.retired=true
         for _,item in ipairs(binding.controls)do
             if item.cancel then item.cancel(true,engineDestroyed) end
-            Controller.unbind(host.controller,item.control,engineDestroyed)
         end
         bound[box]=nil
     end
@@ -372,7 +363,6 @@ function M.install(owner, _ownership, host, dependencies)
         binding.retired=true
         for _,item in ipairs(binding.controls)do
             if item.cancel then item.cancel(true,engineDestroyed) end
-            Controller.unbind(host.controller,item.control,engineDestroyed)
         end
         powerBindings[powerBox]=nil
     end

@@ -1,7 +1,7 @@
 -- Read state, issue Run commands. No damage/energy/outcome rules live in this view.
 local Combat = require("abyss_combat")
 local Actors = require("abyss_actor")
-local Controller = require("abyss_controller")
+local Pointer = require('abyss_pointer_input')
 local M = {}
 local function needsTarget(state, instance)
     -- Ask the core to validate the same card with and without a target.
@@ -38,7 +38,7 @@ function M.install(owner, ownership, host, dependencies)
             ownership.enemyInputs[screenSlot] = input
             -- Preview ownership is separate from owner.target (which defaults to 1).
             -- Reuse the same selection/turn/actor checks as the eventual command.
-            local function previewEnemy(token, controller)
+            local function previewEnemy(token)
                 local entry=entryAt()
                 if not entry or not Actors.isActive(entry.actor) or not token.uid or token.aim or not dependencies.enemyReady(token) then return end
                 local selected
@@ -46,13 +46,10 @@ function M.install(owner, ownership, host, dependencies)
                 if not selected or not needsTarget(token.battle,selected) then return end
                 token.previewReady=function()
                     if owner.gesture or not Actors.isActive(token.actor) or not entryAt() or not dependencies.enemyReady(token) then return false end
-                    if controller then
-                        return Controller.isController(host.controller) and host.controller.api.getFocus()==control
-                    end
                     return input.held==token or input.released==token
                 end
                 owner.cardAim=token
-                if not controller then owner:render() end
+                owner:render()
             end
             local device = host.platform and host.platform.touchScreen
             local function selectedCard()
@@ -71,11 +68,11 @@ function M.install(owner, ownership, host, dependencies)
                 dependencies.discardEnemyPointer(input, event)
                 return true
             end
-            local function inspectEnemy(target, pointer)
-                if pointer and device and not device() then return false end
+            local function inspectEnemy(target)
+                if device and not device() then return false end
                 return owner:showStatus(target, control, false, true)
             end
-            local function chooseEnemy(pointer)
+            local function chooseEnemy()
             local entry=entryAt()
             if not entry then return false end
             local target=entry.index
@@ -95,32 +92,12 @@ function M.install(owner, ownership, host, dependencies)
                     return owner:playSelected(target)
                 end
                 if Actors.isActive(current) then owner.target = target end
-                return inspectEnemy(target, pointer)
+                return inspectEnemy(target)
             end
             end
-            Controller.bind(host.controller,control,function()
-                local selected = selectedCard()
-                return (owner.potionAim or selected and needsTarget(owner.run.combat,selected)) and "aim" or "battle"
-            end,function()owner.suppressClick=false;return chooseEnemy()end,function()
-                local entry=entryAt()
-                if not (dependencies.controllerReady() and owner.run.phase == "combat" and entry) then return false end
-                local selected = selectedCard()
-                return Actors.isActive(entry.actor) or Actors.isPresent(entry.actor)
-                    and not owner.potionAim and not (selected and needsTarget(owner.run.combat, selected))
-            end,screenSlot,"enemies",function()
-                local entry=entryAt()
-                if entry and Actors.isActive(entry.actor) then
-                    owner.target=entry.index
-                    local battle=owner.run and owner.run.combat
-                    previewEnemy({slot=entry.index,screenSlot=screenSlot,actor=entry.actor,run=owner.run,
-                        battle=battle,turn=battle and battle.turn,uid=owner.selected,
-                        selectionEpoch=owner.selectionEpoch,aim=owner.potionAim},true)
-                    owner:render()
-                end
-            end)
             if not entryAt() then return end
             control:AddCursorEventListener(host.clickEvent, function(event)
-                if not entryAt() or Controller.pointerBlocked(host.controller)then return false end
+                if not entryAt() or Pointer.blocked(host.platform)then return false end
                 if dismissPinnedReader(event) or dependencies.swallowed(event, true) then
                     -- Dismissal consumes this pointer too, but cannot consume a
                     -- newer token owned by a different touch on the same actor.
@@ -135,7 +112,7 @@ function M.install(owner, ownership, host, dependencies)
                     input.held, input.released = nil, nil
                     if not dependencies.enemyReady(released) then return end
                 end
-                if not dependencies.consumeReleasedDragClick(event) and not owner.suppressClick and not owner.gesture then return chooseEnemy(true) end
+                if not dependencies.consumeReleasedDragClick(event) and not owner.suppressClick and not owner.gesture then return chooseEnemy() end
             end)
             if not entryAt() then return end
             local function bindPointer()
@@ -180,7 +157,7 @@ function M.install(owner, ownership, host, dependencies)
                 end
                 if device and host.cursor.CursorEnter and host.cursor.CursorExit then
                     control:AddCursorEventListener(host.cursor.CursorEnter,function()
-                        if device() or Controller.isController(host.controller) or Controller.pointerBlocked(host.controller) or owner.selected then return end
+                        if device() or Pointer.blocked(host.platform) or owner.selected then return end
                         local entry = entryAt()
                         if entry then return owner:showStatus(entry.index, control, true, true) end
                     end)
@@ -206,13 +183,12 @@ function M.install(owner, ownership, host, dependencies)
             end
             if owner.dragEnabled then bindPointer() end
     end
-    local function unbindEnemyControl(screenSlot,box,engineDestroyed)
+    local function unbindEnemyControl(screenSlot,box)
         local input=bound[box]
         if not input then return end
         input.retired=true;input.held=nil;input.released=nil
         if owner.info and owner.info.source == input.control then owner.info = nil end
         if ownership.enemyInputs[screenSlot]==input then ownership.enemyInputs[screenSlot]=nil end
-        Controller.unbind(host.controller,input.control,engineDestroyed)
         bound[box]=nil
     end
     local function bindEnemyControls()

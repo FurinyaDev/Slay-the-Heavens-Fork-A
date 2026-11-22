@@ -58,7 +58,7 @@ export function roundedCursorButton(name,position,size,label,palette){
  const art={name:'art',kind:'container',size,children:[
   roundedButtonMaterial('roundedButton',size,palette.normal),{...label,raycastTarget:false},
  ]};
- return {name,kind:'container',position,size,children:[art,{name:'hit',kind:'cursorArea',size,focusable:true}]};
+ return {name,kind:'container',position,size,children:[art,{name:'hit',kind:'cursorArea',size}]};
 }
 
 export function roundedFramedButton(button,theme,{stretch=false}={}){

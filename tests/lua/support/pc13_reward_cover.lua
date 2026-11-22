@@ -83,7 +83,7 @@ assert(title.localScaleX==1 and title.fontColor.a==255 and shade.imageColor.a==a
 battle:GetChild('cardReward').click()
 assert(host.battleUI.rewardScreen=='cards' and not cover.visible)
 assert(pick.visible and not list.visible and battle:GetChild('hero').visible)
-assert(host.battleUI:controllerBack() and not cover.visible)
+assert(host.battleUI:cancelAim() and not cover.visible)
 assert(list.visible and not pick.visible and title.localScaleX==1 and shade.imageColor.a==alpha)
 assert(victoryCues==1,'returning from the picker played a second victory cue')
 print('PC13_REWARD_COVER_PASS')

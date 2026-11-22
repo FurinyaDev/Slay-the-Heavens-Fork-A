@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - Furinya
 created_date: '2026-10-31T23:38:00Z'
-updated_date: '2026-11-22 09:50'
+updated_date: '2026-11-22 14:45'
 labels:
   - 待验
   - delivery-verify
@@ -17,6 +17,7 @@ references:
   - docs/evidence/m4-deck-controller-lifecycle-20261102/
   - docs/plans/2026-11-03-m9-engineering-foundation.md
   - docs/plans/2026-11-22-map-room-entry.md
+  - docs/adr/0003-keyboard-and-touch-only.md
 parent_task_id: TASK-4
 priority: medium
 type: bug
@@ -105,4 +106,6 @@ Release 653c7cb8 对照：正式 Host 的地图顶栏首屏在同步原生卡位
 续做牌堆：预加载限制为一次单卡索引探测，隐藏回调不支持则首击按原流程校准。卡面缓存按实际文字、样式和原生控件隔离，失败写入重试。独立正式精修布局对照三种战斗牌堆各 12 张，打开总定义计算 27→12，缓存命中重开不重复绘制相同卡面。原生分配策略与手机首屏耗时待验。
 
 Release 营地锻造切片：可操作后的空闲帧预热原生网格与首窗卡面，覆盖门禁期间不抢加载。80 张牌的首屏在 15 槽离线原生夹具中，预热完成后点击时绘制 15→0、网格刷新 2→0、动作 80→15。延迟和部分回调走可见请求，换牌、滚动、取消及重入回归覆盖。营地和商店的局部刷新不复制地图，锻造的同次资格查询复用卡牌能力，房间共用现有文字布局缓存。手机与官方客户端点击到显示仍待测。
+
+Owner 明确要求将 #899 回流 release/v2.0.0。从 #901 Release HEAD 38a2cd87 搭接只读五列两行持久卡面和全项目手柄退役，保留 Release 放大卡面、圆角返回、房间进出与选角。正式设备验收继续待验。
 <!-- SECTION:NOTES:END -->

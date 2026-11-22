@@ -6,7 +6,7 @@ local PAGE_SIZE=layout.columns*layout.rows
 local CardDisplay=require("abyss_card_display")
 local CardSkin=require("abyss_card_skin")
 local M={}
-local Controller=require('abyss_controller')
+local Pointer = require('abyss_pointer_input')
 local types={attack="攻击",skill="技能",power="能力",status="状态",curse="诅咒"}
 local states={"normal","hover","pressed","disabled"}
 local fields={potion='pendingPotionChoice',discard="pendingDiscard",scry="pendingScry",hand="pendingHandChoice",pile='pendingPileChoice'}
@@ -149,18 +149,6 @@ function M.new(root,presentation,clickEvent,platform,onConfirm)
             end
         end
     end
-    local function paintGridNavigation()
-        local overflow=list.context and #view.cards>PAGE_SIZE
-        local shown=not not (overflow and Controller.isController(platform.controller))
-        local progress=list:progress()
-        for _,name in ipairs({'before','after'})do
-            local box=child(name)
-            if box.visible~=shown then box:SetVisible(shown)end
-            local hit=box:GetChild('hit')
-            local enabled=shown and not view.confirming and (name=='before' and progress>0 or name=='after' and progress<1)
-            if hit.interactable~=enabled then hit.interactable=enabled;hit.raycastTarget=enabled end
-        end
-    end
     local function paintStaticCards(kind)
         for slot=1,PAGE_SIZE do
             local box=child("card"..slot)
@@ -216,7 +204,7 @@ function M.new(root,presentation,clickEvent,platform,onConfirm)
         local confirm=child("confirm")
         caption(confirm,kind=="scry" and (#view.selected==0 and "全部保留" or "确认弃置") or "确认选择")
         local confirmHit=confirm:GetChild("hit");confirmHit.interactable=countAllowed() and not view.confirming;confirmHit.raycastTarget=confirmHit.interactable
-        if list then paintGridNavigation();return end
+        if list then return end
         for _,name in ipairs({"before","after"}) do
             local box=root:GetChild(name)
             if box then
@@ -261,7 +249,6 @@ function M.new(root,presentation,clickEvent,platform,onConfirm)
     function view:update()
         if not list or not self.visible or root.active==false then return end
         list:update()
-        paintGridNavigation()
     end
     function view.presentationReady(_)
         if not list then return true end
@@ -310,13 +297,12 @@ function M.new(root,presentation,clickEvent,platform,onConfirm)
         self:refresh(c.run,true)
         return true,reason
     end
-    local function bind(hit,action,order,current)
+    local function bind(hit,action,current)
         local function enabled()
             local binding=current and current()
             return hit.alive~=false and view.visible and not view.confirming and hit.raycastTarget~=false
                 and (not current or binding and binding.context==view.context)
         end
-        Controller.bind(platform.controller,hit,'choice',action,enabled,order)
         local held,released
         local function valid(token)
             if not enabled() or not fresh() then return false end
@@ -346,8 +332,8 @@ function M.new(root,presentation,clickEvent,platform,onConfirm)
             end
         end
         hit:AddCursorEventListener(clickEvent,function(event)
-            if Controller.pointerBlocked(platform.controller)then return false end
-            if current and Controller.pointerDragged(event,Theme.layout.cardDrag.threshold)then
+            if Pointer.blocked(platform)then return false end
+            if current and Pointer.dragged(event,Theme.layout.cardDrag.threshold)then
                 local owner=held or released
                 if owner and owner.touch==touch(event)then held,released=nil,nil end
                 return false
@@ -361,35 +347,35 @@ function M.new(root,presentation,clickEvent,platform,onConfirm)
         end)
     end
     local function bindSlot(prefix,slot)
-        bind(child(prefix..slot):GetChild('hit'),function()return view:select(slot)end,10)
+        bind(child(prefix..slot):GetChild('hit'),function()return view:select(slot)end)
     end
     if grid then
-        list=require('abyss_choice_grid').new(grid,platform.controller,layout.columns,function(hit,current)
+        list=require('abyss_choice_grid').new(grid,layout.columns,function(hit,current)
             bind(hit,function()
                 local binding=current()
                 if not binding or binding.context~=view.context then return false end
                 return view:select(binding.index)
-            end,10,current)
+            end,current)
         end,paintCell,paintCellSelection)
         for slot=1,2 do bindSlot('option',slot)end
     else
         for slot=1,PAGE_SIZE do bindSlot('card',slot)end
     end
-    bind(child("confirm"):GetChild('hit'),function()return view:confirm()end,90)
+    bind(child("confirm"):GetChild('hit'),function()return view:confirm()end)
     for _,name in ipairs({"before","after"}) do
         local box=root:GetChild(name)
-        if box then
+        if box and list then
+            box:SetVisible(false)
+            local hit=box:GetChild('hit')
+            hit.interactable=false;hit.raycastTarget=false
+        elseif box then
             local delta=name=="before" and -1 or 1
             bind(box:GetChild('hit'),function()
                 if not fresh() then return false,"stale_choice" end
-                if list then
-                    if not list:scroll(delta) then return false end
-                    view.generation=view.generation+1;paintGridNavigation();return true
-                end
                 local page=view.page+delta
                 if page<1 or (page-1)*PAGE_SIZE>=#view.cards then return false,"invalid_choice_page" end
                 view.page=page;view.generation=view.generation+1;render();return true
-            end,80)
+            end)
         end
     end
     root.disableCursorEventPassthrough=true

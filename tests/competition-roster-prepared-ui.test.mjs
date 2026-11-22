@@ -28,7 +28,7 @@ function originalPreparedUiSource(value){
  assert.equal(createHash('sha1').update(`blob ${bytes.length}\0`).update(bytes).digest('hex'),proof.originalGitBlob);
  return value;
 }
-for(const slice of slices)test(`configured-source prepared UI retains original cases ${slice.first}–${slice.last}`,t=>{
+for(const slice of slices)test(`configured-source prepared UI checks direct, click and touch cases ${slice.first}–${slice.last}`,t=>{
  const started=Date.now(),result=runLua(slice.path,{timeout:30000});
  assert.equal(result.status,0,result.stdout+result.stderr);
  const expected=Array.from({length:slice.last-slice.first+1},(_,i)=>slice.first+i);

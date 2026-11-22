@@ -1,24 +1,14 @@
 -- Recycle the existing deck-card template. A cell binding owns one index in
 -- one pending choice, even when the native grid keeps the same physical cell.
-local Controller=require('abyss_controller')
 local CardDisplay=require('abyss_card_display')
 local M={}
 
-local function geometry(grid,count,columns)
-    local _,height=grid:GetItemSize()
-    local _,gap=grid:GetItemSpacing()
-    local top,bottom=grid:GetPadding()
-    local rows=math.ceil(count/columns)
-    return height+gap,math.max(0,top+bottom+rows*(height+gap)-gap-grid.sizeDeltaY)
-end
-
-function M.new(grid,controller,columns,bind,paint,paintSelection)
+function M.new(grid,columns,bind,paint,paintSelection)
     local list={bindings={},cells={}}
     local function retire(clear)
         for control,entry in pairs(list.bindings)do
             if control.alive==false then
                 entry.binding=nil
-                Controller.unbind(controller,entry.hit,true)
                 list.bindings[control]=nil
                 if list.cells[entry.index]==control then list.cells[entry.index]=nil end
             elseif clear then
@@ -102,15 +92,6 @@ function M.new(grid,controller,columns,bind,paint,paintSelection)
         end
     end
     function list.progress(_)return grid.scrollProgress or 0 end
-    function list:scroll(delta)
-        local step,extent=geometry(grid,#self.cards,columns)
-        if extent==0 then return false end
-        local progress=self:progress()
-        local nextProgress=math.min(1,math.max(0,progress+delta*step/extent))
-        if nextProgress==progress then return false end
-        grid.scrollProgress=nextProgress
-        return true
-    end
     return list
 end
 return M

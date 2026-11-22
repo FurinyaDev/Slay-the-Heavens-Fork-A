@@ -6,8 +6,10 @@ local CardDisplay = require('abyss_card_display')
 local OriginalDisplay = require('abyss_original_v4_display')
 local CardOrigin = require('abyss_card_origin_view')
 local M = {}
-local Controller = require('abyss_controller')
+local Pointer = require('abyss_pointer_input')
 local RoundedButton = require('abyss_rounded_button')
+local Browser = require('abyss_deck_browser')
+local NativeArt = require('abyss_card_art_runtime')
 local typeNames = { attack = "攻击", skill = "技能", power = "能力", status = "状态", curse = "诅咒" }
 local pileNames = {draw="抽牌堆",discard="弃牌堆",exhaust="消耗堆"}
 local rarityOrder = {basic=1,special=2,common=3,uncommon=4,rare=5,curse=6}
@@ -141,7 +143,7 @@ local function bindPileReturn(deck, button, platform, cursor, clickEvent, revisi
     local function touch(event) return event and event.touchId end
     if cursor.CursorEnter then
         hit:AddCursorEventListener(cursor.CursorEnter, function()
-            if not available() or Controller.pointerBlocked(platform.controller) then return end
+            if not available() or Pointer.blocked(platform) then return end
             hovered = true
             if not held then paint('hover') end
         end)
@@ -156,7 +158,7 @@ local function bindPileReturn(deck, button, platform, cursor, clickEvent, revisi
         hit:AddCursorEventListener(cursor.CursorDown, function(event)
             if current(held) and held.touch ~= touch(event) then return end
             observed, held, released = true, nil, nil
-            if not available() or Controller.pointerBlocked(platform.controller) then
+            if not available() or Pointer.blocked(platform) then
                 reset()
                 return
             end
@@ -171,14 +173,14 @@ local function bindPileReturn(deck, button, platform, cursor, clickEvent, revisi
         end)
     end
     hit:AddCursorEventListener(clickEvent, function(event)
-        if not available() or Controller.pointerBlocked(platform.controller) then return false end
+        if not available() or Pointer.blocked(platform) then return false end
         if observed or cursor.CursorDown and cursor.CursorUp and touch(event) ~= nil then
             if not current(released) or released.touch ~= touch(event) then return false end
             released = nil
         end
         return deck:back()
     end)
-    Controller.bind(platform.controller, hit, 'deck', function() return deck:back() end, available, 100)
+
     return reset
 end
 
@@ -186,15 +188,27 @@ function M.new(root, presentation, clickEvent, platform, onClose)
     local self = { root = root, visible = false, generation = 0, openSession=0,contentRevision=0,bindings={} }
     local onChanged=platform.deckChanged
     local returnRevision=0
+    local browserFit=(platform.deckBrowser or Theme.presentationProfile=='official-assets-first') and CardDisplay.newTextFitter()
     function self.setPresentation(_, value)
         assert(not self.visible and type(value)=="table", "cannot replace visible deck presentation")
         presentation=value
+        if browserFit then browserFit=CardDisplay.newTextFitter() end
     end
     local browserGrid = assert(root:GetChild("grid"), "missing deck grid")
     local pileGrid = root:GetChild('pileGrid')
     local grid = browserGrid
+    local cursor=platform.cursorEvents or {}
+    local pool,browserRun,browserRequest
+    local previousControl,nextControl,pageHint=root:GetChild('previous'),root:GetChild('next'),root:GetChild('pageHint')
+    local previousHit,nextHit=previousControl:GetChild('hit'),nextControl:GetChild('hit')
+    local legacyEmpty=root:GetChild('browserEmpty')
+    local official=Theme.presentationProfile=='official-assets-first'
+    local browserChrome=official and root:GetChild('pileChrome')
+    local empty=browserChrome and browserChrome:GetChild('empty') or legacyEmpty
+    local pileReturn=official and root:GetChild('pileReturn')
+    local titleControl=root:GetChild('title')
     local indexBases=setmetatable({},{__mode='k'})
-    self.browserWarmupPending=Theme.presentationProfile=='official-assets-first' and pileGrid~=nil
+    self.browserWarmupPending=official and not platform.deckBrowser and pileGrid and pileGrid.RefreshItems~=nil
     function self.prepareBrowser()
         if not self.browserWarmupPending or self.visible then return end
         self.browserWarmupPending=false
@@ -224,9 +238,8 @@ function M.new(root, presentation, clickEvent, platform, onClose)
         return pileNames[kind] or '卡组'
     end
     local function liveFaces(fn)
-        for control,binding in pairs(self.bindings)do
+        for control in pairs(self.bindings)do
             if control.alive==false then
-                Controller.unbind(platform.controller,binding.hit,true)
                 self.bindings[control]=nil
             elseif fn then fn(control:GetChild('face')) end
         end
@@ -242,7 +255,8 @@ function M.new(root, presentation, clickEvent, platform, onClose)
         end
     end
     local function canBrowse()
-        return self.visible == true and self.browseEnabled == true and not self.browserShell and not self.detailOnly and not inDetail()
+        return self.visible == true and self.browseEnabled == true
+            and (not self.browserShell or self.paged == true and not self.pileKind) and not self.detailOnly and not inDetail()
     end
     local function paintPileSort()
         if not self.browserShell then return end
@@ -275,21 +289,21 @@ function M.new(root, presentation, clickEvent, platform, onClose)
     end
     local function paintBrowse()
         local active=canBrowse()
-        if Theme.presentationProfile=='official-assets-first' then
+        local legacy=active and not self.browserShell
+        if official then
             root:GetChild('pileTools'):SetVisible(self.browserShell==true and not inDetail())
         end
         root:GetChild('title'):SetVisible(not active and not self.browserShell and not self.cardDetail)
         if self.browserShell then
-            local heading=root:GetChild('pileChrome'):GetChild('heading')
+            local heading=browserChrome:GetChild('heading')
             if not inDetail() then heading.text=self.listTitle end
             heading:SetVisible(self.cardDetail==nil)
             paintPileSort()
-            return -- The legacy filters and sort buttons stay hidden in this shell.
         end
         local heading=root:GetChild('browseTitle')
-        heading:SetVisible(active)
-        if active then heading.text=self.listTitle end
-        paintBrowseSort(active)
+        heading:SetVisible(legacy)
+        if legacy then heading.text=self.listTitle end
+        paintBrowseSort(legacy)
         for _,filter in ipairs(browseFilters)do
             local control=root:GetChild('filter'..filter.control)
             control:SetVisible(active)
@@ -342,11 +356,12 @@ function M.new(root, presentation, clickEvent, platform, onClose)
         detailHit:SetAnchoredPosition(x,y);detailHit:SetSizeDelta(width,height)
         self.detailPages=paginate(raw,width,height)
         self.generation=self.generation+1;self.pending=false;self.pendingGrid=false;self.gridReady=nil
+        if self.paged then pool:cancel() end
         liveFaces(CardDisplay.clearNativeArt)
         self.detailTitle=title
         self.detailPage=1;grid:SetVisible(false);details:SetVisible(true);detailHit:SetVisible(true)
         closeLabel('返回');detailPage();paintBrowse()
-        if self.browserShell then root:GetChild('pileReturn'):SetAsLastSibling()end
+        if self.browserShell then pileReturn:SetAsLastSibling()end
         return true
     end
     function self.inspectText(_,run,title,raw)
@@ -419,13 +434,9 @@ function M.new(root, presentation, clickEvent, platform, onClose)
                 return pickChoice(control,b,repaint)
             end
             hit:AddCursorEventListener(clickEvent,function(event)
-                if Controller.pointerBlocked(platform.controller) or Controller.pointerDragged(event, Theme.layout.cardDrag.threshold) then return false end
+                if Pointer.blocked(platform) or Pointer.dragged(event, Theme.layout.cardDrag.threshold) then return false end
                 return pick()
             end)
-            Controller.bind(platform.controller,hit,'deck',pick,function()
-                local b=self.bindings[control]
-                return control.alive~=false and self.visible and not inDetail() and b~=nil and b.generation==self.generation
-            end,10)
         end
         self.bindings[control].generation,self.bindings[control].uid=self.generation,instance.uid
         -- Browser instances already belong to this read-only snapshot. Details
@@ -440,7 +451,6 @@ function M.new(root, presentation, clickEvent, platform, onClose)
             or Combat.cardPreview(battle,instance,nil,definition)
         return CardDisplay.combatText(display,definition,instance,preview,battle)
     end
-    local browserFit=Theme.presentationProfile=='official-assets-first' and CardDisplay.newTextFitter()
     local function paintCardText(face,instance,display,definition,text,bodyUnchanged)
         local fit=self.browserShell and browserFit or nil
         CardDisplay.writeTitle(face:GetChild("name"),display.name,instance.upgraded,
@@ -452,12 +462,15 @@ function M.new(root, presentation, clickEvent, platform, onClose)
         face:GetChild("cost").text = definition.cost == -2 and "" or definition.costMode == "all_energy" and "X" or tostring(definition.cost)
         return fits,accepted
     end
-    local function paintCardSkin(face,definition,look)
+    local function paintDeckPalette(face,definition)
         face:GetChild("name").fontColor=colour(Theme.cardSkin.text.title)
         tint(face:GetChild("border"), Theme.color.rarity[definition.rarity] or Theme.color.line)
         tint(face:GetChild("nameBand"), Theme.color.rarityBand[definition.rarity] or Theme.color.rarityBand.basic)
         tint(face:GetChild("nameRule"), Theme.color.rarity[definition.rarity] or Theme.color.line)
         tint(face:GetChild("artPlate"), Theme.color.cardType[definition.type] or Theme.color.panelRaised)
+    end
+    local function paintCardSkin(face,definition,look)
+        paintDeckPalette(face,definition)
         CardSkin.apply(face,definition,platform,look)
     end
     local function appearanceOf(face,instance,display,definition,base,text)
@@ -591,6 +604,7 @@ function M.new(root, presentation, clickEvent, platform, onClose)
         local upgraded=Combat.copy(current)
         if Combat.upgrade(state,upgraded)then context.upgraded=detailVersion(upgraded,display,state,self.battle)end
         self.cardDetail=context
+        if self.paged then pool:cancel();self.pendingGrid=false end
         returnRevision=returnRevision+1
         details:SetAnchoredPosition(360,30);details:SetSizeDelta(noteWidth,noteHeight)
         detailHit:SetAnchoredPosition(360,30);detailHit:SetSizeDelta(noteWidth,noteHeight)
@@ -607,6 +621,69 @@ function M.new(root, presentation, clickEvent, platform, onClose)
         if not self.visible or not context or not context.upgraded then return false end
         context.preview=not context.preview
         return paintCardDetail(context,context.preview and context.upgraded or context.current)
+    end
+    local function browserModel(instance)
+        local battle=self.pileKind and self.battle
+        local definition=Combat.cardDefinition(battle or {catalog=self.catalog},instance)
+        local display=assert(presentation[instance.cardId],'missing browser presentation')
+        local printed=self.catalog.cards[instance.cardId]
+        local base=printedField(printed,instance,'cost')
+        local text=cardBody(display,definition,instance,battle)
+        return {definition=definition,display=display,instance=instance,text=text,base=base,
+            look={definition.id,definition.type,definition.rarity or false,definition.color or false,
+                definition.originalV4 and definition.originalV4.role or false,display.name,not not instance.upgraded,
+                definition.repeatable and (instance.upgrades or 1) or false,definition.cost,definition.costMode or false,
+                base or false,not not self.pileView,text}}
+    end
+    local function paintBrowser(entry,model,unchanged,current)
+        local face,definition,instance=entry.face,model.definition,model.instance
+        if not unchanged then
+            CardDisplay.writeTitle(face:GetChild('name'),model.display.name,instance.upgraded,
+                definition.repeatable and (instance.upgrades or 1) or nil,face:GetChild('type'),typeNames[definition.type] or definition.type,browserFit)
+            if not current() then return end
+            if entry.bodyText~=model.text then
+                local _,accepted=CardDisplay.writeBody(face:GetChild('label'),model.text,face,browserFit)
+                assert(accepted~=false,'deck browser body geometry rejected')
+                if not current() then return end
+                entry.bodyText=model.text
+            end
+            face:GetChild('name').fontColor=colour(Theme.cardSkin.text.title)
+            if Theme.cardSkin.text.body then face:GetChild('label').fontColor=colour(Theme.cardSkin.text.body) end
+            face:GetChild('cost').text=definition.cost==-2 and '' or definition.costMode=='all_energy' and 'X' or tostring(definition.cost)
+            paintDeckPalette(face,definition)
+            assert(CardDisplay.writeArt(entry.art,definition,picture,face)~=false,'deck browser art geometry rejected')
+            if not current() then return end
+            CardSkin.apply(face,definition,platform,{cost=definition.cost,baseCost=model.base,
+                surfaceScope=self.pileView and 'battle' or 'deck',staticCost=self.browserShell,referenceParts=entry.parts,
+                templateKind=self.browserShell and 'attack' or nil,templateMaterials=self.browserShell})
+        end
+        if not current() then return end
+        if model.display.nativeArt then
+            entry.nativeArt=true
+            CardDisplay.writeNativeArt(face,definition,model.display.nativeArt,platform,entry.art,instance.uid)
+        elseif entry.art.visible~=true then
+            entry.art:SetVisible(true)
+        end
+    end
+    if pileGrid and platform.deckBrowser then
+        local viewport=official and Theme.layout.deckView.pileViewport or Theme.layout.deckView.viewport
+        pool=Browser.new(pileGrid,platform.deckBrowser,platform,clickEvent,viewport[4]/2-123,browserModel,paintBrowser,
+            function(instance)
+                return self:showCardDetails(instance)
+            end)
+    end
+    function self.syncRun(_,run)
+        if browserRun==run then return end
+        browserRun=run
+        if self.paged and self.visible and not self.previewInfo and self.run~=run then self:close() end
+        self.savedPage,self.masterSort=nil,nil
+        if pool then pool:release() end
+    end
+    function self.releaseBrowser()
+        if pool then pool:release() end
+    end
+    function self.onEngineDestroy()
+        if pool then pool:release(true) end
     end
     -- Pure presentation projection. The permanent deck and the three combat
     -- piles retain their UIDs, acquisition order and RNG state unchanged.
@@ -654,12 +731,39 @@ function M.new(root, presentation, clickEvent, platform, onClose)
         local amount=self.typeFilter=='all' and tostring(total) or #self.cards..'/'..total
         self.listTitle=browserHeading(self.pileKind)..' · '..amount..' 张'
     end
+    local function pageControls(shown,page,pages,total)
+        previousControl:SetVisible(shown)
+        nextControl:SetVisible(shown)
+        pageHint:SetVisible(shown)
+        if not shown then return end
+        local before,after=page>1,page<pages
+        previousHit.interactable,previousHit.raycastTarget=before,before
+        nextHit.interactable,nextHit.raycastTarget=after,after
+        pageHint.text='第 '..page..'/'..pages..' 页 · '..total..' 张'
+    end
+    browserRequest=function()
+        self.generation=self.generation+1
+        self.pending,self.calibrating=false,false
+        self.contentRevision=self.contentRevision+1
+        self.pageCount=math.ceil(#self.cards/Browser.pageSize)
+        self.pageIndex=math.max(1,math.min(self.pageIndex,self.pageCount))
+        local cards={}
+        for i=(self.pageIndex-1)*Browser.pageSize+1,math.min(self.pageIndex*Browser.pageSize,#self.cards) do
+            cards[#cards+1]=self.cards[i]
+        end
+        pageControls(true,self.pageCount>0 and self.pageIndex or 0,self.pageCount,#self.allCards)
+        if empty then empty:SetVisible(#cards==0) end
+        require('abyss_page_reveal').registerSource(platform,'deckPanel')
+        pool:request(cards)
+        self.pendingGrid=#cards>0
+        self.preparedCards,self.prepareError=0,nil
+    end
     local function refreshGrid()
+        if self.paged then browserRequest();return end
         self.gridReady=nil
         self.generation=self.generation+1
         local generation=self.generation
         local cards,catalog=self.cards,self.catalog
-        self.controllerPage=1
         -- Only the shared official browser publishes a complete same-page list.
         -- Legacy/choice grids retain their calibration-then-update transaction.
         self.indexBase=self.browserShell and indexBases[grid] or nil
@@ -689,15 +793,15 @@ function M.new(root, presentation, clickEvent, platform, onClose)
         if self.browserShell and self.pending and self.generation==generation then self:update(0) end
     end
     local function changeBrowse()
-        self.contentRevision=self.contentRevision+1
-        paintPileSort()
+        if not self.paged then self.contentRevision=self.contentRevision+1 end
+        self.pageIndex=1
         projectCards()
+        paintBrowse()
         if not self.browserShell then
             root:GetChild('title').text=self.listTitle
-            paintBrowse()
         end
         refreshGrid()
-        if self.browserShell then root:GetChild('pileReturn'):SetAsLastSibling()end
+        if self.browserShell then pileReturn:SetAsLastSibling()end
         if onChanged then onChanged()end
         return true
     end
@@ -742,13 +846,13 @@ function M.new(root, presentation, clickEvent, platform, onClose)
             handToDraw="选择放回抽牌堆顶的手牌",upgradeHand="选择要升级的牌",dualWield="选择要复制的攻击或能力牌"}
     end
     local function openBrowserShell(choice,pileKind)
-        self.pileView=Theme.presentationProfile=='official-assets-first' and pileNames[pileKind]~=nil
+        self.pileView=(official or self.paged) and pileNames[pileKind]~=nil
         -- Visual shell selection never determines the snapshot, combat context or
         -- card surface owner. Permanent browsing still projects only run.deck.
         self.browserShell=Theme.presentationProfile=='official-assets-first' and choice==nil
-        grid=self.browserShell and assert(pileGrid,'missing official pile grid') or browserGrid
-        browserGrid:SetVisible(not self.browserShell)
-        if pileGrid then pileGrid:SetVisible(self.browserShell) end
+        grid=self.paged and pileGrid or (self.browserShell and pileGrid and pileGrid.RefreshItems and pileGrid or browserGrid)
+        browserGrid:SetVisible(not self.paged and grid==browserGrid)
+        if pileGrid then pileGrid:SetVisible(not self.paged and grid==pileGrid) end
         root:GetChild('pileVeil'):SetVisible(self.browserShell)
         if Theme.presentationProfile=='official-assets-first' then
             local chrome=root:GetChild('pileChrome')
@@ -769,6 +873,8 @@ function M.new(root, presentation, clickEvent, platform, onClose)
         end
         self.choiceToken,self.onPick,self.battle=choice and choice.token,onPick,(choice or pileKind) and run.combat
         self.pileKind=pileKind
+        self.paged=pool~=nil and choice==nil
+        if self.paged and not self.previewInfo then self:syncRun(run) end
         openBrowserShell(choice,pileKind)
         if Theme.presentationProfile=='official-assets-first' then root:GetChild('pileChrome'):GetChild('empty'):SetVisible(self.browserShell and #cards==0)end
         self.multiple,self.choiceSelected=choice and choice.multiple,choice and choice.selected
@@ -777,15 +883,22 @@ function M.new(root, presentation, clickEvent, platform, onClose)
         self.browseEnabled=choice==nil
         self.typeFilter='all'
         restoreSort(run)
-        self.controllerPage=1
+        if self.pileView and not self.paged then self.sortMode,self.sortAscending='original',true end
+        local entry=self.previewInfo and ('starter:'..self.previewInfo.id) or pileKind or 'deck'
+        local saved=self.paged and self.savedPage
+        self.entry=entry
+        self.pageIndex=1
+        if saved and saved.entry==entry and saved.battle==(pileKind and run.combat or nil) then
+            self.pageIndex,self.typeFilter=saved.page,saved.filter
+            self.sortMode,self.sortAscending,self.sortDirections=saved.sort,saved.ascending,saved.directions
+        end
         self.detailOnly,self.detailPages,self.cardDetail=nil,nil,nil
         upgradePreview:SetVisible(false)
-        grid:SetVisible(true);details:SetVisible(false);detailHit:SetVisible(false)
+        grid:SetVisible(not self.paged);details:SetVisible(false);detailHit:SetVisible(false)
         self.indexBase, self.pending, self.calibrating = nil, false, true
         root:SetVisible(true)
         root:SetAsLastSibling()
         self.listTitle=browserHeading(pileKind).." · "..#cards.." 张"
-        if self.pileView then self.sortMode,self.sortAscending='original',true end
         if self.browseEnabled then projectCards() end
         root:GetChild("title").text = choice and choicePrompts(choice)[choice.op] or self.listTitle
         if Theme.presentationProfile=='official-assets-first' then
@@ -802,8 +915,9 @@ function M.new(root, presentation, clickEvent, platform, onClose)
             closeLabel(self.optional and '跳过' or self.multiple and '确认选择' or '关闭')
         end
         paintBrowse()
+        if self.paged then NativeArt.setLeasePage('deckPanel') end
         refreshGrid()
-        if self.browserShell then root:GetChild('pileReturn'):SetAsLastSibling()end
+        if self.browserShell then pileReturn:SetAsLastSibling()end
         return true
     end
     function self.openPreview(_,info)
@@ -856,50 +970,51 @@ function M.new(root, presentation, clickEvent, platform, onClose)
         refreshing=false
         ready()
     end
-    local function controllerModeChanged()
-        local mode=platform.controllerApi and platform.controllerApi.isController() or false
-        if self.controllerMode==mode then return false end
-        self.controllerMode=mode;self.controllerPage=1
-        return not self.calibrating and self.cards and #self.cards>0
-    end
     function self.update(_, dt)
-        if not self.visible or inDetail() then liveFaces();return end
-        if controllerModeChanged()then self.generation=self.generation+1;self.pending=true end
-        local mode=self.controllerMode
-        local pageSize=gridColumns()*2
-        local pages=math.max(1,math.ceil(#(self.cards or {})/pageSize))
-        for _,name in ipairs({'previous','next','pageHint'})do
-            local box=root:GetChild(name)
-            if box then
-                box:SetVisible(mode and pages>1)
-                if name=='pageHint' then box.text='摇杆导航 · 确认选择 · 返回关闭 · '..(self.controllerPage or 1)..'/'..pages
-                else local hit=box:GetChild('hit');hit.interactable=name=='previous' and (self.controllerPage or 1)>1
-                    or name=='next' and (self.controllerPage or 1)<pages;hit.raycastTarget=hit.interactable end
+        if self.paged then
+            if not inDetail() and self.pendingGrid then
+                require('abyss_page_reveal').registerSource(platform,'deckPanel')
+                pool:step()
+                local job=pool.job
+                if job and job.assigned then self.preparedCards=job.next-1 end
+                if job and job.error then
+                    self.prepareError=job.error;self.pendingGrid=false
+                    if not platform.presentationReady then pageHint.text='卡牌加载失败，返回后可重试' end
+                elseif job and job.ready then
+                    self.pendingGrid=false
+                end
             end
+            return
         end
+        if not self.visible or inDetail() then liveFaces();return end
         if self.browserShell then liveFaces()
         else liveFaces(function(face)CardSkin.tick(face,dt or 0)end) end
         if not self.pending then return end
         self.pending, self.calibrating = false, false
         local generation, cards, catalog, base = self.generation, self.cards, self.catalog, self.indexBase
-        if mode then
-            local subset={}
-            for i=((self.controllerPage or 1)-1)*pageSize+1,math.min((self.controllerPage or 1)*pageSize,#cards)do subset[#subset+1]=cards[i]end
-            cards=subset;grid.scrollProgress=0
-        end
         paintGrid(cards,catalog,base,generation)
         liveFaces()
     end
-    function self.controllerStep(_,delta)
-        if not self.visible or not self.controllerMode or inDetail() or self.calibrating then return false end
-        local page=(self.controllerPage or 1)+delta
-        if page<1 or page>math.ceil(#self.cards/(gridColumns()*2))then return false end
-        self.generation=self.generation+1
-        self.controllerPage,self.pending=page,true;self:update();return true
+    function self.stepPage(_,delta)
+        if not self.paged or inDetail() then return false end
+        local page=self.pageIndex+delta
+        if page<1 or page>self.pageCount then return false end
+        self.pageIndex=page
+        browserRequest()
+        if onChanged then onChanged() end
+        return true
     end
     local resetPileReturn
     function self.close(_)
         if not self.visible then return false end
+        if self.paged then
+            self.savedPage={entry=self.entry,battle=self.pileKind and self.battle,page=self.pageIndex,filter=self.typeFilter,sort=self.sortMode,
+                ascending=self.sortAscending,directions=self.sortDirections}
+            pool:cancel()
+            NativeArt.setLeasePage(nil)
+            pageControls(false)
+            if empty then empty:SetVisible(false) end
+        end
         if self.previewInfo then presentation=self.previousPresentation;self.masterSort=self.previewMasterSort end
         self.previewInfo,self.previousPresentation,self.previewMasterSort=nil,nil,nil
         self.generation = self.generation + 1
@@ -916,7 +1031,8 @@ function M.new(root, presentation, clickEvent, platform, onClose)
         if self.relicView then self.relicView:close();self.relicView=nil end
         details:SetVisible(false);detailHit:SetVisible(false)
         root:SetVisible(false);liveFaces(CardDisplay.clearNativeArt)
-        grid:RefreshItems(0, function() end)
+        if not self.paged then grid:RefreshItems(0, function() end) end
+        self.paged,self.prepareError=nil,nil
         if pileGrid then pileGrid:SetVisible(false) end
         root:GetChild('pileVeil'):SetVisible(false)
         root:GetChild('header'):SetVisible(true)
@@ -932,15 +1048,12 @@ function M.new(root, presentation, clickEvent, platform, onClose)
     end
     local previewHit=upgradePreview:GetChild('hit')
     previewHit:AddCursorEventListener(clickEvent,function()
-        if Controller.pointerBlocked(platform.controller)then return false end
+        if Pointer.blocked(platform)then return false end
         return self:toggleUpgradePreview()
     end)
-    Controller.bind(platform.controller,previewHit,'deck',function()return self:toggleUpgradePreview()end,
-        function()return self.visible and self.cardDetail~=nil and self.cardDetail.upgraded~=nil end,80)
     root.disableCursorEventPassthrough = true
     local blocker=root:GetChild('blocker')
     local outsideHeld,outsideReleased,outsideObserved
-    local cursor=platform.cursorEvents or {}
     if cursor.CursorDown and cursor.CursorUp then
         blocker:AddCursorEventListener(cursor.CursorDown,function(event)
             outsideObserved=true;outsideReleased=nil
@@ -956,7 +1069,7 @@ function M.new(root, presentation, clickEvent, platform, onClose)
     end
     blocker:AddCursorEventListener(clickEvent,function(event)
         local token=outsideReleased;outsideHeld,outsideReleased=nil,nil
-        if Controller.pointerBlocked(platform.controller) or not self.visible or not self.closeOnOutside then return true end
+        if Pointer.blocked(platform) or not self.visible or not self.closeOnOutside then return true end
         if outsideObserved or event and event.touchId~=nil then
             if not token or token.generation~=self.generation or token.touch~=(event and event.touchId) then return true end
         end
@@ -972,21 +1085,26 @@ function M.new(root, presentation, clickEvent, platform, onClose)
         self.detailPage=self.detailPage%#self.detailPages+1;detailPage();return true
     end
     detailHit:AddCursorEventListener(clickEvent,function()
-        if Controller.pointerBlocked(platform.controller)then return false end
+        if Pointer.blocked(platform)then return false end
         return nextPage()
     end)
-    Controller.bind(platform.controller,detailHit,'deck',nextPage,nil,1)
     function self.back(_)
         if not self.visible then return false end
         if self.cardDetail then
-            hideCardDetail();details:SetVisible(false);detailHit:SetVisible(false);grid:SetVisible(true)
-            closeLabel('关闭');paintBrowse();self:update(0)
+            hideCardDetail();details:SetVisible(false);detailHit:SetVisible(false);grid:SetVisible(not self.paged)
+            closeLabel('关闭');paintBrowse()
+            if self.paged then browserRequest() else self:update(0) end
             if onChanged then onChanged()end
             return true
         end
         if self.detailPages and not self.detailOnly then
-            self.detailPages,self.cardDetail=nil,nil;upgradePreview:SetVisible(false);details:SetVisible(false);detailHit:SetVisible(false);grid:SetVisible(true)
-            root:GetChild('title').text=self.listTitle;closeLabel('关闭');self.pending=true;paintBrowse();return true
+            self.detailPages,self.cardDetail=nil,nil;upgradePreview:SetVisible(false);details:SetVisible(false);detailHit:SetVisible(false);grid:SetVisible(not self.paged)
+            titleControl.text=self.listTitle;closeLabel('关闭');paintBrowse()
+            if self.paged then
+                browserRequest()
+                if onChanged then onChanged() end
+            else self.pending=true end
+            return true
         end
         if self.multiple or self.optional then
             if not root:GetChild('close'):GetChild('hit').interactable or not self.run or self.run.combat~=self.battle
@@ -1000,11 +1118,10 @@ function M.new(root, presentation, clickEvent, platform, onClose)
     local close=root:GetChild('close'):GetChild('hit')
     close:AddCursorEventListener(clickEvent,function()
         local swallow=self.visible and self.browserShell
-        if Controller.pointerBlocked(platform.controller)then return swallow or false end
+        if Pointer.blocked(platform)then return swallow or false end
         local result=self:back()
         return swallow or result
     end)
-    Controller.bind(platform.controller,close,'deck',function()return self:back()end,nil,100)
     local function bindOfficialBrowser()
         if Theme.presentationProfile~='official-assets-first' then return end
         for _,mode in ipairs({'original','type','cost','name'})do
@@ -1014,8 +1131,7 @@ function M.new(root, presentation, clickEvent, platform, onClose)
                 if self.pileView then return self:setPileSort(mode)end
                 return self:setSort(mode)
             end
-            hit:AddCursorEventListener(clickEvent,function()if Controller.pointerBlocked(platform.controller)then return true end;return action()end)
-            Controller.bind(platform.controller,hit,'deck',action,function()return self.visible and self.browserShell and not inDetail() end,80)
+            hit:AddCursorEventListener(clickEvent,function()if Pointer.blocked(platform)then return true end;return action()end)
         end
         resetPileReturn=bindPileReturn(self,root:GetChild('pileReturn'),platform,cursor,clickEvent,function()return returnRevision end)
     end
@@ -1024,31 +1140,41 @@ function M.new(root, presentation, clickEvent, platform, onClose)
         local box=root:GetChild(name)
         if box then
             local delta=name=='previous' and -1 or 1
-            local action=function()return self:controllerStep(delta)end
+            local action=function()return self:stepPage(delta)end
             box:GetChild('hit'):AddCursorEventListener(clickEvent,function()
-                if Controller.pointerBlocked(platform.controller)then return false end
+                if Pointer.blocked(platform)then return false end
                 return action()
             end)
-            Controller.bind(platform.controller,box:GetChild('hit'),'deck',action,nil,80)
+        end
+    end
+    local keys=platform.keyEvents
+    if pool and keys and root.AddKeyEventListener then
+        for _,action in ipairs({{'KeyboardCraftspersonKey38Down',-1},{'KeyboardCraftspersonKey39Down',1}}) do
+            local event=keys[action[1]]
+            local delta=action[2]
+            if event then
+                root:AddKeyEventListener(event,function()
+                    if self.paged and not Pointer.blocked(platform) then return self:stepPage(delta) end
+                    return false
+                end)
+            end
         end
     end
     for _,entry in ipairs(browseFilters)do
         local hit=root:GetChild('filter'..entry.control):GetChild('hit')
         local action=function()return self:setFilter(entry.id)end
         hit:AddCursorEventListener(clickEvent,function()
-            if Controller.pointerBlocked(platform.controller)then return false end
+            if Pointer.blocked(platform)then return false end
             return action()
         end)
-        Controller.bind(platform.controller,hit,'deck',action,canBrowse,65)
     end
     for _,mode in ipairs(browseSorts)do
         local hit=root:GetChild('sort'..mode):GetChild('hit')
         local action=function()return self:setSort(mode)end
         hit:AddCursorEventListener(clickEvent,function()
-            if Controller.pointerBlocked(platform.controller)then return false end
+            if Pointer.blocked(platform)then return false end
             return action()
         end)
-        Controller.bind(platform.controller,hit,'deck',action,function()return canBrowse() and not self.pileKind end,65)
     end
     root:SetVisible(false)
     return self
