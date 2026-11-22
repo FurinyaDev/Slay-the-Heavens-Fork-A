@@ -7,7 +7,7 @@ local Map,Run=require('abyss_map'),require('abyss_run')
 local function awaitNativePage(host)
     for _=1,80 do
         if not host.starting and not(host.prologue and host.prologue:covering())
-            and not(host.pageReveal and host.pageReveal:covered())then assert(host.run and not host.disabled);return end
+            and not(host.pageReveal and host.pageReveal:covered())then assert(not host.disabled);return end
         OnUpdate(0.05)
     end
     error('native page did not become ready')
@@ -49,10 +49,16 @@ local function fixture(experimental,bgm)
     return host,canvas:GetChild('stage'),signals
 end
 local function start(host,root,button,element)
+    awaitNativePage(host)
     F.click(root,'menuPanel','start')
+    awaitNativePage(host)
     assert(host.characterOpen and not host.run)
     F.click(root,'characterPanel',button)
-    if element then F.click(root,'characterPanel','elements/element'..element)end
+    awaitNativePage(host)
+    if element then
+        F.click(root,'characterPanel','elements/element'..element)
+        awaitNativePage(host)
+    end
     assert(not host.run,'selection must not create a Run')
     F.click(root,'characterPanel','confirm')
     awaitNativePage(host)
@@ -73,14 +79,18 @@ local function start(host,root,button,element)
     for _,key in ipairs({'ruby','emerald','sapphire'})do assert(host.run.keys[key]==false)end
 end
 local function fight(host,root,floor)
+    awaitNativePage(host)
     local nextNode=Map.available(host.map)[1]
     assert(nextNode.floor==floor and host.mapUI:choose(nextNode.id))
+    awaitNativePage(host)
     assert(host.mode=='battle' and host.run.phase=='combat')
     -- Controlled final-damage boundary; encounter construction and rewards stay real.
     for _,enemy in ipairs(host.run.combat.enemies)do enemy.hp=0 end
     assert(Run.finishCombat(host.run));host:refresh()
+    awaitNativePage(host)
     assert(host.run.phase=='reward' and host.run.rewards.cards)
     F.click(root,'battlePanel','continue')
+    awaitNativePage(host)
     assert(host.mode=='map' and host.run.nodeFlow.complete)
 end
 local function bossComplete(host,bossFloor)
@@ -94,10 +104,12 @@ local function bossComplete(host,bossFloor)
     run.nodeFlow={id=map.currentNodeId,floor=bossFloor,type='boss',complete=true,result='boss_victory',
         mapSeed=map.seed,mapSignature=map.sourceSignature}
     host:refresh()
+    awaitNativePage(host)
 end
 local function chest(host,bossFloor,nextAct)
     local run,map=host.run,host.map
     bossComplete(host,bossFloor)
+    awaitNativePage(host)
     assert(host.mapUI:choose(Map.available(map)[1].id))
     awaitNativePage(host)
     assert(host.nodeUI:press('treasureView/chest'))
@@ -110,6 +122,7 @@ local function chest(host,bossFloor,nextAct)
     local uid,gold=run.deck[1].uid,run.gold
     awaitNativePage(host)
     assert(host.nodeUI:press('confirm'))
+    awaitNativePage(host)
     assert(host.run==run and host.map==map and run.act==nextAct and host.mode=='map')
     assert(run.deck[1].uid==uid and run.gold==gold)
 end
@@ -127,6 +140,7 @@ assert(host.run.endingUnlocked==false and host.run.endingHistory.known==false)
 for _,key in ipairs({'ruby','emerald','sapphire'})do assert(host.run.keys[key]==false)end
 bossComplete(host,50)
 assert(host.mapUI:choose(Map.available(host.map)[1].id))
+awaitNativePage(host)
 assert(host.run.floor==51 and host.run.phase=='victory' and host.mode=='victory')
 assert(host.run.nodeFlow.result=='normal_victory' and not host.run.pendingAct)
 assert(host.run.act==3 and host.map.act==3 and not host.run.endingHistoryResult)

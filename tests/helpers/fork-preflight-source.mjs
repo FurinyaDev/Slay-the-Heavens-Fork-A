@@ -91,6 +91,13 @@ function beforeTravelerStatusCiSource(path,source){
  const actorTemplate=path==='tests/native-monster-actor-template.test.mjs';
  if((!copier&&!regression&&!actorTemplate)||typeof source!=='string'||source.includes('\r\r\n'))return source;
  let lf=normalize(source);
+ if(copier&&hash(lf)==='7839a90538fdc661a02da94afed8b610a9a204141108456a1618ed6dcf7d5070'){
+  lf=lf.replace(" 'tests/helpers/release-map-deck-source.mjs':'d76d9d67c6e696d966fe9608a46e66eea0c0e2739c06dd9672151afd4b1f0973',\n"," 'tests/helpers/release-map-deck-source.mjs':'dd02f8976ed65dae8d055f881020f71d6169a4e396c9cd0bc72d6c84c9254e9a',\n")
+     .replace(" 'tests/helpers/combat-visual-source.mjs':'795056833d48bd9a2e5a1944a5d9b56fb5d0f0ce7967fdbac72da5566ae5e35d',\n"," 'tests/helpers/combat-visual-source.mjs':'721b73965767d683ef2b1853113baa1508fb7d8f913031df84b5285ba38caada',\n")
+     .replace(" 'tests/helpers/release-ui-closeout-source.mjs':'a3d1de143ef40fdaab5a08bca47e4e1ff29414d2e3e97826fb68db84885998ab',\n","")
+     .replace(" 'tests/fixtures/release-ui-closeout-source.json.gz':'1798bb413901e57c51a19f359721a4621212c7a48d51a7d4b48bdc4be05eddba',\n","");
+  assert.equal(hash(lf),'3910354d5306dd7ff7a86d282e5f5716b7ec8e3982d98e5a29d26d32bddd48d4','exact Release UI closeout helper copy predecessor');
+ }
  if(copier&&hash(lf)==='3910354d5306dd7ff7a86d282e5f5716b7ec8e3982d98e5a29d26d32bddd48d4'){
   lf=lf.replace(" 'tests/helpers/release-map-deck-source.mjs':'dd02f8976ed65dae8d055f881020f71d6169a4e396c9cd0bc72d6c84c9254e9a',", " 'tests/helpers/release-map-deck-source.mjs':'c661e5dfa5035a09a47935bd7bfbc3e1f37b992d809bc7387d93e757c3df6fd5',");
   assert.equal(hash(lf),'2c468260f8ca242e3a9e2d3d683616b45cca8ac6ad962388d7e0c5c0ceb2f85a','exact Forethought helper copy predecessor');
@@ -101,8 +108,9 @@ function beforeTravelerStatusCiSource(path,source){
   prior=lf.replace(/const travelerStatusFiles=Object\.freeze\(\{[\s\S]*?^\}\);\n/m,'')
    .replace('Object.entries(travelerStatusFiles))','Object.entries(loadingRecoveryFiles))');
   expected='eb6e433e3a66f62e4b5aece6f475322cbf3d6d68e6d5e85107676cdff98719ac';
- }else if(regression&&sha==='e411b5d46c2bde12ef10d0615abaeacee3bc83d6c72221aa212cb3e708494089'){
-  prior=lf.replace("import {beforeTravelerStatusSource,travelerStatusSourcePaths} from './helpers/traveler-status-source.mjs';\n",'')
+ }else if(regression&&['e411b5d46c2bde12ef10d0615abaeacee3bc83d6c72221aa212cb3e708494089','cff90e25684015aa6df74f6d3533ecb0448eb6597b18eb8eebf9c0a618a10ecb'].includes(sha)){
+  prior=lf.replace("import {beforeReleaseUiCloseoutSource,ownsReleaseUiCloseoutSource,releaseUiCloseoutPriorRead} from './helpers/release-ui-closeout-source.mjs';\n",'')
+   .replace("import {beforeTravelerStatusSource,travelerStatusSourcePaths} from './helpers/traveler-status-source.mjs';\n",'')
    .replace(/^test\('Traveler status continuation[^\n]*\n[\s\S]*?^\}\);\n\n/m,'');
   expected='db962d7fe34be9e68f12ee153be9ef6679135e0803d28fb0db0db8a3d3fba0f4';
  }else if(actorTemplate&&sha==='d28f7e6ac4221f6424d9c4c9c36e23c79e5d7f88186f4ae288a8faa52e36ac6e'){
@@ -264,6 +272,8 @@ export function beforeShopEntryInventory(paths,kind,read=readFileSync){
  return beforeAddedTest(paths,shopEntryTests[kind],read);
 }
 export function assertCurrentJsInventory(paths,preceding,read=readFileSync){
+ paths=beforeAddedTest(paths,['tests/sts-selection-fade.test.mjs',
+  '3257ed5beda1cca328ac38a080f9112e9394f6d4152d0a0d27e9a6765182df1b'],read);
  paths=beforeRefinedReleaseJsInventory(beforeShopEntryInventory(paths,'js',read),[...preceding,coopLabTest],read,true);
  assertCoopJsInventory(paths,preceding,read);
 }
