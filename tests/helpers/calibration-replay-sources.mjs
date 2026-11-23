@@ -10,6 +10,7 @@ import {beforeActionButtons} from './action-buttons-source.mjs';
 import {beforeDeckPages} from './develop-release-backflow-source.mjs';
 import {beforeCurrentReplayFixes} from './current-replay-fix-sources.mjs';
 import {beforeUiEntranceWitness} from './ui-entrance-source.mjs';
+import {beforeAct3EndingCopier} from './act3-ending-ci-source.mjs';
 import {stsStylePriorRuntime} from './sts-style-prior-runtime.mjs';
 
 const hash=(bytes,algorithm='sha256')=>createHash(algorithm).update(bytes).digest('hex');
@@ -77,7 +78,7 @@ export function beforeCurrentHistoricalStsSource(path,source){
   return prior===text?source:Buffer.from(prior);
  }
  source=beforeUiEntranceWitness(path,source);
- if(path===copierPath)return beforeCurrentReplayCopier(path,source);
+ if(path===copierPath)return beforeCurrentReplayCopier(path,beforeAct3EndingCopier(source));
  if(path!==historicalStsEntry)return beforeCurrentReplayFixes(path,source);
  if(!matches(source,{
   sha256:'f358b5956f55a33890ea4f4481b75bcd0bfc56048cbc50e4b45a0f9870654c3b',gitBlob:'eb9b2d891344249dfb6644f8800240e3078d38b6',

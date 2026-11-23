@@ -7,6 +7,7 @@ import {beforeNativeHostReplay} from './native-host-replay-source.mjs';
 import {assertNativeFixturesCurrent,beforeNativeFixtureReplay} from './native-fixture-replay-source.mjs';
 import {assertNativeFlowFixturesCurrent,beforeNativeFlowFixture} from './native-flow-fixture-source.mjs';
 import {beforeUiEntranceWitness} from './ui-entrance-source.mjs';
+import {beforeAct3EndingCopier} from './act3-ending-ci-source.mjs';
 import {beforeOfficialBackgroundFixture} from './official-background-fixture-source.mjs';
 import {beforeMapRoomReplayCohort,beforeDevelopReplayMerge} from './develop-replay-merge-source.mjs';
 import {beforeStsUiCloseoutSource} from './sts-ui-closeout-source.mjs';
@@ -122,6 +123,7 @@ for(const {before,after} of Object.values(releaseUiBuild.files)){
 // Authenticate the current copier before giving old CI receipts its exact predecessor.
 function beforeUiEntranceCopier(path,source){
  if(path!=='tests/helpers/copy-integration-source-closure.mjs'||typeof source!=='string'||source.includes('\r\r\n'))return source;
+ source=beforeAct3EndingCopier(source);
  const lf=normalize(source);
  if(hash(lf)!=='b4c25c36b3b4858a52aa2a6881c51b4096602843fde95b3b5ef854cf7b07cda3')return source;
  const prior=lf.replace(/const entranceFiles=Object.freeze\(\{\n[\s\S]+?\n\}\);\n/,'')
