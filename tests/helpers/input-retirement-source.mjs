@@ -8,6 +8,7 @@ import {beforeNativeFixtureInputRetirement} from './native-fixture-replay-source
 import {beforeNativeHostInputRetirement} from './native-host-replay-source.mjs';
 import {beforeNativeFlowFixture} from './native-flow-fixture-source.mjs';
 import {exactSourceMatches as matches} from './source-fingerprint.mjs';
+import {beforeSts1Develop} from './sts1-develop-source.mjs';
 
 const hash=(bytes,algorithm='sha256')=>createHash(algorithm).update(bytes).digest('hex');
 const normalize=source=>source.replaceAll('\r\n','\n');
@@ -86,14 +87,16 @@ export function beforePotionBackflow(path,source){
 export function assertCurrentDevelopUiSource(path,source,read){
  const row=potionBackflow.files[path]??browserBackflow.files[path];
  if(!row)return;
- assert(matches(source,row.after),'fresh current production owner: '+path);
+ const prior=beforeSts1Develop(path,source);
+ assert(matches(prior,row.after),'fresh current production owner: '+path);
  let live;
  try{live=read(path);}catch(error){assert.fail('combined linked owner missing: '+path+': '+String(error?.message??error));}
- assert(matches(live,row.after),'combined linked owner identity: '+path+' during deck/potion backflow validation');
+ assert(typeof live==='string'&&normalize(live)===normalize(source)&&matches(beforeSts1Develop(path,live),row.after),
+  'combined linked owner identity: '+path+' during deck/potion backflow validation');
 }
 
 export function beforeDevelopUiBackflows(path,source){
- return beforeDeckBrowserBackflow(path,beforePotionBackflow(path,source));
+ return beforeDeckBrowserBackflow(path,beforePotionBackflow(path,beforeSts1Develop(path,source)));
 }
 
 export function beforeMergedInputRetirement(path,source,options){

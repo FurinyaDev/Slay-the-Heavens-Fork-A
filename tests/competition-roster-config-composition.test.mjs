@@ -220,3 +220,13 @@ nativeTest('current Roster legacy bridge rejects incompatible owners rather than
  const raw=readFileSync(path,'utf8').replaceAll('\r\n','\n');
  assert.throws(()=>current.preRosterConfigSource(path,raw),/delivery linked source identity: src\/lua\/abyss_monster_intent_particle_view\.lua/,'an unsupported old bridge cannot borrow a much older delivery owner');
 });
+
+nativeTest('dev admission keeps the exact Roster projection and rejects changed raw selector source',async()=>{
+ const {sourceEpoch}=await import('./helpers/combined-epoch/source-epoch.mjs');
+ const owner='src/lua/abyss_character_select.lua';
+ const readRaw=file=>readFileSync(file,'utf8');
+ const project=readSource=>sourceEpoch.preCombinedSource(path,readRaw(path),{target:'develop',readSource});
+ assert.equal(hash(project(readRaw)),'0e75d9e1f08cfb7738215b9a31cce141f03cc2469077bce0db3376fe1f446a9c');
+ assert.throws(()=>project(file=>file===owner?readRaw(file)+'\n-- unreviewed mode\n':readRaw(file)),
+  /combined linked owner identity: src\/lua\/abyss_character_select\.lua/);
+});
