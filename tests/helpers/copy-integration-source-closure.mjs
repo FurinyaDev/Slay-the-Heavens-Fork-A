@@ -333,6 +333,8 @@ const currentReplayFiles=Object.freeze({
 });
 const entranceFiles=Object.freeze({
  ...currentReplayFiles,
+ 'tests/helpers/release-ui-restore-source.mjs':'57ea0c0631f3a9817621554c786880c718d21550c375ab7e5bb75fdaedf66292',
+ 'tests/helpers/current-replay-fix-sources.mjs':'830e31e97ac5c51d2f732236fa165a80991d21bc772f7165e43a450fe8ec2df6',
  [runtime]:'cce16863eb1c92fb713e0b1048789dddfd05ca578fcd80f4e3566c8134146f29',
  [closeout]:'4f559399c631fbd0fd25ea7f1ceb8f3b8c6643e167f0116d9f151e12ee0a0ecb',
  'tests/helpers/character-preparation-source.mjs':'4d209e768d9dfcb5afa466c0224eccfd1fa8f47a22c27e5d7b8b99fd8231f5cb',
