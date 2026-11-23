@@ -75,17 +75,20 @@ export async function findArtifact(api, request, runId, now = Date.now()) {
       const { artifacts } = await api(`actions/runs/${run.id}/artifacts?name=${name}`);
       const artifact = artifacts.find(item => item.name === name && item.expired === false && Date.parse(item.expires_at) > now &&
         item.size_in_bytes > 0 && /^sha256:[a-f0-9]{64}$/.test(item.digest ?? '') && item.workflow_run?.id === run.id);
-      if (artifact) return `https://github.com/${repository}/actions/runs/${run.id}/artifacts/${artifact.id}`;
+      if (artifact && await api(`actions/artifacts/${artifact.id}/zip`, true))
+        return `https://github.com/${repository}/actions/runs/${run.id}/artifacts/${artifact.id}`;
     }
     if (runs.length < 100) return;
   }
 }
 
-async function api(path) {
+async function api(path, checkDownload = false) {
   const response = await fetch(`https://api.github.com/repos/${repository}/${path}`, {
     headers: { Authorization: `Bearer ${process.env.GH_TOKEN}`, Accept: 'application/vnd.github+json' },
-    signal: AbortSignal.timeout(20000), redirect: 'error',
+    signal: AbortSignal.timeout(20000), redirect: checkDownload ? 'manual' : 'error',
   });
+  if (checkDownload && [404, 410].includes(response.status)) return false;
+  if (checkDownload && response.status === 302) return response.headers.has('location');
   requireGate(response.ok, path.startsWith('compare/') && response.status === 404
     ? 'source_sha is unknown in the main repository.' : `GitHub API verification failed (HTTP ${response.status}).`);
   return response.json();

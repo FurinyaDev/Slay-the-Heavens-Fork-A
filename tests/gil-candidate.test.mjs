@@ -62,11 +62,14 @@ test('reuse only a matching unexpired Artifact on a successful main develop disp
     head_branch: 'develop', display_title: `GIL candidate / ${sourceSha}`, path: '.github/workflows/gil-candidate.yml' };
   const artifact = { id: 11, name: `gil-candidate-${candidate.id}`, expired: false,
     expires_at: '2026-11-24T00:00:00Z', size_in_bytes: 42, digest: 'sha256:' + baseSha256, workflow_run: { id: run.id } };
-  const api = (runChanges = {}, artifactChanges = {}) => async path => path.includes('/artifacts?')
-    ? { artifacts: [{ ...artifact, ...artifactChanges }] } : { workflow_runs: [{ ...run, ...runChanges }] };
+  const api = (runChanges = {}, artifactChanges = {}, downloadable = true) => async (path, checkDownload) => {
+    if (checkDownload) return downloadable;
+    return path.includes('/artifacts?') ? { artifacts: [{ ...artifact, ...artifactChanges }] } : { workflow_runs: [{ ...run, ...runChanges }] };
+  };
   assert.match(await findArtifact(api(), candidate, '20', now), /runs\/10\/artifacts\/11$/);
   assert.equal(await findArtifact(api(), candidate, '10', now), undefined);
   assert.equal(await findArtifact(api({ head_repository: { id: 3 } }), candidate, '20', now), undefined);
+  assert.equal(await findArtifact(api({}, {}, false), candidate, '20', now), undefined);
   for (const changes of [{ expired: true }, { expires_at: '2026-11-22T00:00:00Z' }, { digest: null }, { name: 'other' }]) {
     assert.equal(await findArtifact(api({}, changes), candidate, '20', now), undefined);
   }
