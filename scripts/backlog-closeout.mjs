@@ -171,11 +171,15 @@ export function syncBacklogCloseout({pr,files,targetSha,readTargetSha,root=proce
         throw Error('Backlog pending: task snapshot or HEAD changed before CLI write');
       return current;
     };
+    const checkTarget=()=>{
+      if(readTargetSha&&readTargetSha()!==targetSha)
+        throw Error('Backlog pending: remote develop advanced during closeout');
+    };
+    checkTarget();
     checkCurrent();
     save();
     for(const args of plan.commands) {
-      if(readTargetSha&&readTargetSha()!==targetSha)
-        throw Error('Backlog pending: remote develop advanced before CLI write');
+      checkTarget();
       const before=checkCurrent();
       run(args,{root});
       const after=readCurrent();
@@ -185,6 +189,7 @@ export function syncBacklogCloseout({pr,files,targetSha,readTargetSha,root=proce
       expected=digest(after);
       save();
     }
+    checkTarget();
     const after=planBacklogCloseout({...input,records:checkCurrent()});
     if(after.errors.length||after.commands.length)throw Error('Backlog CLI readback differs from declared disposition; preserve this checkout and reconcile');
     return {state:'backlog_synced',prNumber:pr.number,mergeSha:pr.merge_commit_sha,targetSha,

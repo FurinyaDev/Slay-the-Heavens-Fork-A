@@ -1498,3 +1498,19 @@ test('closeout stops before writing when the remote develop SHA advances',t=>{
   assert.throws(()=>delivery.syncBacklogCloseout({...f,targetSha:f.mergeSha,readTargetSha:()=> 'a'.repeat(40)},
     ()=>assert.fail('remote advance must stop CLI writes')),/remote develop advanced/);
 });
+
+test('recorded-only closeout rejects a stale remote without writing a receipt',t=>{
+  const f=closeoutFixture(t),pr={...f.pr,body:'Backlog: TASK-1=recorded'};
+  assert.throws(()=>delivery.syncBacklogCloseout({...f,pr,targetSha:f.mergeSha,readTargetSha:()=> 'a'.repeat(40)},
+    ()=>assert.fail('recorded-only must not invoke the CLI')),/remote develop advanced/);
+  assert.throws(()=>readFileSync(join(f.root,'build/delivery',`backlog-${pr.number}-${f.mergeSha}.json`)),/ENOENT/);
+});
+
+test('closeout rejects a remote advance during the final CLI write',t=>{
+  const f=closeoutFixture(t),pr={...f.pr,body:'Backlog: TASK-1=continue'};
+  let remote=f.mergeSha;
+  assert.throws(()=>delivery.syncBacklogCloseout({...f,pr,targetSha:f.mergeSha,readTargetSha:()=>remote},args=>{
+    writeFileSync(f.path,f.source+args.at(-1)+'\n');
+    remote='b'.repeat(40);
+  }),/remote develop advanced/);
+});
