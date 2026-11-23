@@ -8,6 +8,7 @@ local Policy=dofile('scripts/warrior75-autoplay-policy.lua')
 local EventCards=dofile('scripts/m3-event-card-policy.lua')
 local RelicChoices=dofile('scripts/m3-relic-choice-policy.lua')
 local Pending=require('abyss_relic_pending')
+local Replay=dofile('scripts/m3-campaign-replay.lua')
 local profile=M3_PROFILE or 'competition-two-act'
 assert(profile=='competition-two-act' or profile=='full-source','unsupported campaign profile')
 local function json(value)
@@ -36,7 +37,8 @@ local function snap(run,map)
  shuffle=run.combat.shuffleRng and R.snapshot(run.combat.shuffleRng),
  cardRandom=run.combat.cardRandomRng and R.snapshot(run.combat.cardRandomRng),
  hp=run.combat.monsterHpRng and R.snapshot(run.combat.monsterHpRng)}or nil},path=C.copy(map.path),ending=run.ending,
- terminalResult=run.nodeFlow and run.nodeFlow.roomKind=='ending' and run.nodeFlow.result or nil}
+ terminalResult=run.nodeFlow and run.nodeFlow.roomKind=='ending' and run.nodeFlow.result or nil,
+ keys=C.copy(run.keys),pendingAct=run.pendingAct}
 end
 local function new(seed)
  local run=Run.new(Data,tostring(seed),{experimental=true,campaign=true,campaignProfile=profile,character='ironclad'})
@@ -59,9 +61,15 @@ local function handChoiceUid(run,choice)
 end
 local function play(seed)
  local run,map=new(seed)
- local report={seed=seed,campaignProfile=profile,policy='warrior75-engine-state-v1',
+ local report={seed=seed,campaignProfile=profile,policy=M3_REPLAY and 'recorded-commands' or 'warrior75-engine-state-v1',
   actions={},rooms={},initial=snap(run,map),platformVerified=false}
  local coverage,done={},{}
+ local function enteredRoom()
+  local flow=run.nodeFlow
+  report.rooms[#report.rooms+1]={floor=run.floor,act=run.act,type=flow.type,roomKind=flow.roomKind,
+   node=flow.id,event=flow.event and flow.event.id,encounter=run.encounterId,
+   encounterSource=run.phase=='combat' and run.encounterSource or nil}
+ end
  local function command(label,fn,details)
   local act,floor=run.act,run.floor
   local capture=not M3_COMPACT or label=='advance_act'
@@ -73,6 +81,13 @@ local function play(seed)
   assert(ok,label..': '..tostring(reason))
  end
  local function execute()
+ if M3_REPLAY then
+  for _,step in ipairs(M3_REPLAY)do
+   command(step.label,function()return Replay.command(run,map,step)end,step.details)
+   if step.label=='enter'then enteredRoom()end
+  end
+  return
+ end
  if profile=='competition-two-act'then
   command('begin_neow',function()return Nodes.beginNeow(run,map,{bossCount=0,source='fresh-start'})end)
  end
@@ -112,7 +127,7 @@ local function play(seed)
   elseif run.phase=='reward'then
    if run.rewards.goldClaimed==false then command('gold',function()return Run.claimGoldReward(run)end)
    elseif run.rewards.potion and not run.rewards.potion.resolved then
-    command('potion_reward',function()if run.rewards.potion.unavailable or Run.potionCount(run)>=run.data.rules.player.potionSlots then return Run.skipPotionReward(run)end return Run.claimPotionReward(run)end)
+    command('potion_reward',function()return Replay.potionReward(run)end)
    elseif not run.rewards.cardResolved then local index=Policy.chooseReward(run);command('card_reward',function()return Run.claimCardReward(run,index)end,{index=index,offers=Run.rewardOptions(run)})
    elseif run.rewards.stolenGold and not run.rewards.stolenGold.claimed then command('stolen_gold',function()return Run.claimStolenGoldReward(run)end)
    elseif run.rewards.manualContinue then command('leave_rewards',function()return Run.leaveCombatRewards(run)end)
@@ -148,7 +163,7 @@ local function play(seed)
   else
    local node=assert(Policy.chooseNode(run,map,coverage),'no legal next node')
    command('enter',function()return Nodes.enter(run,map,node.id)end,{node=node.id,type=node.type})
-   report.rooms[#report.rooms+1]={floor=run.floor,act=run.act,type=run.nodeFlow.type,event=run.nodeFlow.event and run.nodeFlow.event.id,encounter=run.encounterId}
+   enteredRoom()
    coverage[run.nodeFlow.type]=true;done={}
   end
  end
