@@ -827,6 +827,18 @@ const bindings = new Map([
     "after": "    ...maps.map(weights=>weights[file]??timings.unknownJsMs),\n    timings.jsPlanning?.localLowerBounds?.[file]?.durationMs??0,\n    platform === 'win32' ? 0 : linuxReplayMinimumMs[file.slice('tests/'.length)] ?? 0)]));\n}"
    }
   ]
+ },
+ {
+  "path": "tests/helpers/game-ui-extraction-source-inverse.mjs",
+  "beforeSha256": "53382c07cd63cd010a8aa3c9b2dc12ba3a38ac628d3104cce8eb2ef3c8c33d8c",
+  "afterSha256": "59497a6fdb63ef8b8e68e9467c53f5117fb573e1b0794e6ab78aa6813b477067",
+  "hunks": [
+   {
+    "at": 18,
+    "before": " }\n if(readSource===live&&(path==='config/architecture.json'||path==='src/lua/abyss_game_ui.lua'))\n  return sourceEpoch.withCombinedProjection(path,source,{target:'develop',readSource},",
+    "after": " }\n // The invocation rereads every observed owner before returning. Only the\n // projection of an already verified byte string is reused within the call.\n if(path==='config/architecture.json'||path==='src/lua/abyss_game_ui.lua')\n  return sourceEpoch.withCombinedProjection(path,source,{target:'develop',readSource},"
+   }
+  ]
  }
 ].map(row=>[row.path,row]));
 
