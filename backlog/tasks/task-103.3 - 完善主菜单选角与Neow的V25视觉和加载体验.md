@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - Furinya
 created_date: '2026-11-11T08:07:00Z'
-updated_date: '2026-11-23T15:50:13Z'
+updated_date: '2026-11-23T15:55:01Z'
 labels:
   - 待验
   - delivery-verify
@@ -92,4 +92,6 @@ Owner 更正为初代选角构图，移除左侧半透明信息板，保留原�
 正式选角摘要 P1 由 Release PR #923 接续。该 PR 在正式精绘布局完成 Red → Green，并独立复审固定 HEAD 0833275f。develop 已在 #812 删除正式摘要，本接续登记 release-sts1-20261122 为批准修订，保留旧稿及历史投影，接回正式生成回归。#912 的选角渲染与输入有重叠，组合时沿用批准稿和回归。千星客户端和设备验收保持待验。
 
 Owner 补充手机上正式选角介绍裁切。Release #923 保留原文并在句号处换行，正式介绍预留两行高度，初始遗物下移留出间距。本 develop 接续同步空间预算并保留现行短介绍。正式生成回归与手机尺寸的离线 Lua Host 纳入验收，设备复测仍待验。
+
+Release #923 已由管理员 PR-only Squash 合入 release/v2.0.0，实际提交 b131b84b730b4ff0e5e8f8d1aafdc5f26c1bc91b，GitHub 合入状态、分支及精确审核树已读回。合入时 Licenses 通过、Quality 排队。develop 接续为 #924，原设备验收项保持待验。
 <!-- SECTION:NOTES:END -->
