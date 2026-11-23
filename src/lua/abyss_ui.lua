@@ -237,6 +237,7 @@ function OnStart()
         local nativePageLifecycle=readNativePageLifecycle()
         local build = require('abyss_narrative').build
         local alpha = type(build)=='table' and build.workKey=='alpha-test'
+        local editorProfile = require('abyss_run_admission').editorProfile(build,isTest and testPlay)
         local deckBinding=require('abyss_deck_browser_binding')
         local deckTemplateIndex=deckBinding.templateIndex
         local deckTemplateNames={[deckTemplateIndex]='AbyssBattlePileCard'}
@@ -259,7 +260,7 @@ function OnStart()
             actorDestroy=function(control)return game.DestroyClientUIControl(componentBridge.unwrap(control))end
         end
         view = GameUI.new(stage, Data, Presentation, Enum.CursorEventType.CursorClick,
-            { background = background, portraits = portraits, cardArt = cardArt, music = music, prologue = true, campaign = true, campaignProfile = "competition-two-act",
+            { background = background, portraits = portraits, cardArt = cardArt, music = music, prologue = true, campaign = true, campaignProfile = editorProfile or "competition-two-act",
               nativePageLifecycle = nativePageLifecycle,presentationReady=presentationReady,presentationPage=presentationPage,
               entryTrace=isTest and testPlay==true and traceEntry or nil,
               -- Native OnUpdate timing has not been verified across mobile
@@ -267,7 +268,7 @@ function OnStart()
               -- elapsed time; retain the internal Host counter unchanged.
               runTimeUnavailable = true,
               createEasterEggArt=createEasterEggArt,
-              characterProfile = (alpha or isTest and testPlay == true) and "competition-candidate" or "production",
+              characterProfile = editorProfile or ((alpha or isTest and testPlay == true) and "competition-candidate" or "production"),
               deckBrowser=deckTemplateIndex>0 and {
                   parts=deckBinding.parts,
                   create=function(parent,part)return actorInstantiate(part and part.templateIndex or deckTemplateIndex,parent)end,

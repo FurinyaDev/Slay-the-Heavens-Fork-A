@@ -1,6 +1,7 @@
 -- STS1 PC A0 chapter coordinates. Behavior ledger: docs/rules/CROSS_ACT.md.
 -- Global floors describe the run; local rows describe one chapter's map only.
 local Seed = require('abyss_run_seed')
+local Admission = require('abyss_run_admission')
 local M = {}
 local definitions = {
     {id='Exordium',name='第一幕',first=1,last=17,rows=15,boss=16,treasure=9,camp=15,terminal='boss_treasure',seedOffset=1,upgradeChance=0},
@@ -8,8 +9,8 @@ local definitions = {
     {id='TheBeyond',name='第三幕',first=35,last=51,rows=15,boss=50,treasure=43,camp=49,terminal='ending',seedOffset=600,upgradeChance=.5},
     {id='TheEnding',name='隐藏第四幕',first=52,last=55,rows=0,boss=55,camp=52,terminal='true_victory',seedOffset=1200,upgradeChance=.5},
 }
--- Explicit competition boundary; omitted/full-source retains future chapter fixtures.
-function M.isCompetition(run)return run.campaignProfile=='competition-two-act'end
+-- Both bounded profiles use the same two-act progression.
+function M.isCompetition(run)return Admission.isTwoAct(run.campaignProfile)end
 function M.get(act)
     assert(type(act)=='number' and act%1==0 and definitions[act],'invalid act')
     local result={act=act}

@@ -105,6 +105,7 @@ export function releaseInputPaths(root = process.cwd()) {
 export function loadReleaseNotes({ root = process.cwd(), workKey = 'alpha-test', releaseCandidate = false,
   sourceIdentity = gitSourceIdentity(root) } = {}) {
   if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(workKey)) throw new Error('Invalid workKey');
+  if (releaseCandidate && workKey === 'sts1-develop') throw new Error('STS1 development work key is editor-only');
   const { sourceCommit, sourceDirty } = sourceIdentity;
   if (releaseCandidate && (!/^[a-f0-9]{40}$/.test(sourceCommit ?? '') || typeof sourceDirty !== 'boolean')) throw new Error('Release candidate requires a known source identity');
   if (releaseCandidate && sourceDirty) throw new Error('Release candidate requires a clean source checkout');

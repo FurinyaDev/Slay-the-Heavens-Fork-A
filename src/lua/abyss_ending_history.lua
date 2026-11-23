@@ -1,5 +1,6 @@
 -- Independent source _WIN ownership. Never consume Neow's _SPIRITS history.
 local M={}
+local Admission=require('abyss_run_admission')
 local roles={ironclad=true,silent=true,defect=true}
 local function plain(value)return type(value)=='table'and getmetatable(value)==nil end
 local function copyWins(wins)
@@ -65,7 +66,7 @@ local function flags(context)
 end
 function M.begin(owner,run,context)
  if not plain(run)then return nil,'invalid_ending_run'end
- if run.campaignProfile=='competition-two-act'then
+ if Admission.isTwoAct(run.campaignProfile) then
   return {known=false,unlocked=false,wins={},source='competition-disabled',
    readStatus='disabled',persistence='disabled'}
  end

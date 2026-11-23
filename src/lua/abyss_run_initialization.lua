@@ -18,12 +18,13 @@ function M.install(Run, shared)
         if options ~= nil then
             assert(type(options)=='table','invalid character options')
             assert(options.campaign==nil or type(options.campaign)=='boolean','invalid campaign option')
+            local admission=require('abyss_run_admission')
             assert(options.campaignProfile==nil or options.campaign==true
-                and (options.campaignProfile=='competition-two-act' or options.campaignProfile=='full-source'),
+                and admission.supportsCampaign(options.campaignProfile),
                 'invalid campaign profile')
             assert(not options.campaign or options.experimental==true,
                 'campaign requires explicit experimental mode')
-            assert(require('abyss_run_admission').accepts(data,options),'competition_character_unavailable')
+            assert(admission.accepts(data,options),'competition_character_unavailable')
             if require('abyss_original_v4_profiles').is(options.character) then
                 data,profile=require('abyss_original_v4_profiles').prepare(data,options.character)
                 ownsData=true

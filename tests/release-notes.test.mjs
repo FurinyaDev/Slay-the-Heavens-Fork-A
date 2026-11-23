@@ -212,3 +212,18 @@ test('unpublished competition candidate does not advertise future acts or persis
       `future/persistent feature must remain in engineering history, not candidate player copy: ${line}`);
   }
 });
+
+test('the STS1 development work key is rejected for formal candidate builds',()=>{
+  assert.throws(()=>loadReleaseNotes({workKey:'sts1-develop',releaseCandidate:true}),
+    /STS1 development work key/);
+});
+
+test('UI builds write the STS1 work key only to the explicit editor candidate',t=>{
+  const root=mkdtempSync(join(tmpdir(),'abyss-sts1-build-'));
+  t.after(()=>rmSync(root,{recursive:true,force:true}));
+  const editor=join(root,'editor'), ordinary=join(root,'ordinary');
+  buildUI(editor,undefined,{workKey:'sts1-develop'});
+  buildUI(ordinary);
+  assert.ok(readFileSync(join(editor,'abyss_narrative.lua'),'utf8').includes('["build"]={["workKey"]="sts1-develop"}'));
+  assert.ok(!readFileSync(join(ordinary,'abyss_narrative.lua'),'utf8').includes('["workKey"]'));
+});

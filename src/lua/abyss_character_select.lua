@@ -7,7 +7,8 @@ local names={hutao='胡桃',arlecchino='阿蕾奇诺',furina='芙宁娜',raiden=
 local elements={ironclad='岩',silent='风',defect='雷',watcher='草'}
 local function contains(list,id)for _,value in ipairs(list)do if value==id then return true end end return false end
 local profiles={dev='full-source',alpha='competition-two-act',['competition-candidate']='competition-two-act',
-    production='competition-two-act',['competition-two-act']='competition-two-act',['full-source']='full-source'}
+    production='competition-two-act',['competition-two-act']='competition-two-act',['full-source']='full-source',
+    ['sts1-develop']='sts1-develop'}
 local function admissionProfile(profile)
     if profile==nil then return 'full-source' end
     return assert(profiles[profile],'unknown character admission profile')

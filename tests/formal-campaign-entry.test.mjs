@@ -35,8 +35,12 @@ function assertCurrentCampaignEntry(source){
  const options=constructors[0].arguments[4];assert.equal(options?.type,'TableConstructorExpression');
  const field=name=>{const rows=options.fields.filter(row=>row.type==='TableKeyString'&&row.key.name===name);assert.equal(rows.length,1,'one current '+name+' field');return rows[0].value;};
  assert.equal(field('campaign').type,'BooleanLiteral');assert.equal(field('campaign').value,true);
- assert.equal(field('campaignProfile').type,'StringLiteral');
- assert.ok(['"competition-two-act"',"'competition-two-act'"].includes(field('campaignProfile').raw),'current two-act profile');
+ const profile=field('campaignProfile');
+ assert.equal(profile.type,'LogicalExpression');
+ assert.equal(profile.operator,'or');
+ assert.equal(profile.left.name,'editorProfile');
+ assert.equal(profile.right.type,'StringLiteral');
+ assert.ok(['"competition-two-act"',"'competition-two-act'"].includes(profile.right.raw),'current two-act fallback');
  assert.equal(updates.length,1,'startup enables the real update loop exactly once');
  assert.equal(updates[0].arguments[0]?.type,'BooleanLiteral');assert.equal(updates[0].arguments[0].value,true);
 }
@@ -44,8 +48,8 @@ test('current native entry keeps one enabled two-act campaign constructor and re
  const source=readFileSync(entryPath,'utf8');assertCurrentCampaignEntry(source);
  assertCurrentCampaignEntry(source.replaceAll('\r\n','\n').replaceAll('\n','\r\n'));
  for(const [before,after]of [['campaign = true','campaign = false'],['campaign = true,',''],['campaign = true,','campaign = true, campaign = true,'],
-  ['campaignProfile = "competition-two-act",',''],['competition-two-act','full-source'],
-  ['campaignProfile = "competition-two-act",','campaignProfile = "competition-two-act", campaignProfile = "competition-two-act",'],
+  ['campaignProfile = editorProfile or "competition-two-act",',''],['competition-two-act','full-source'],
+  ['campaignProfile = editorProfile or "competition-two-act",','campaignProfile = editorProfile or "competition-two-act", campaignProfile = "competition-two-act",'],
   ['script:EnableUpdate(true)','script:EnableUpdate(false)']]){
   const mutant=source.replace(before,after);assert.notEqual(mutant,source,'current negative control changes real source');assert.throws(()=>assertCurrentCampaignEntry(mutant));
  }
