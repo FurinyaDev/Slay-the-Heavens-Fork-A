@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { test } from 'node:test';
-import { approvedRequest, findArtifact, verifyReceipts, verifySource } from '../scripts/gil-candidate.mjs';
+import { api, approvedRequest, findArtifact, verifyReceipts, verifySource } from '../scripts/gil-candidate.mjs';
 
 const sourceSha = '1'.repeat(40);
 const baseSha256 = '2'.repeat(64);
@@ -81,6 +81,19 @@ test('reject missing protected base URL before downloads', () => {
   });
   assert.equal(result.status, 1);
   assert.match(result.stderr, /Missing protected GIL_BASE_URL/);
+});
+
+test('check the download redirect without fetching the archive', async ({ mock }) => {
+  const path = 'actions/artifacts/11/zip';
+  const fetch = mock.method(globalThis, 'fetch', async () => new Response('{}'));
+  await assert.rejects(api(path, true), /download redirect/);
+  fetch.mock.mockImplementation(async () => new Response(null, { status: 410 }));
+  assert.equal(await api(path, true), false);
+  fetch.mock.mockImplementation(async (_url, options) => {
+    assert.equal(options.redirect, 'manual');
+    return new Response(null, { status: 302, headers: { location: 'https://example.com/archive' } });
+  });
+  assert.equal(await api(path, true), true);
 });
 
 test('bind the exact full and final audio receipts, final bytes and production profile', () => {
