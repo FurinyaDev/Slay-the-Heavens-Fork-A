@@ -200,8 +200,8 @@ test('Act1 current source enters the unchanged historical chain and rereads ever
   changed=undefined;reads=[];assert.equal(preRelicQuerySource(file,source,{readSource}),before);
   if(!admittedReads){
    // Keep the complete current trace and the ordered original contract.
-   assert.equal(reads.length,403);
-   assert.equal(createHash('sha256').update(JSON.stringify(reads)).digest('hex'),'6f35ecd12c3f1edbc8ee8e476324bdb4380725eeacf240cc6ec15cd106fc2e3f');
+   assert.equal(reads.length,446);
+   assert.equal(createHash('sha256').update(JSON.stringify(reads)).digest('hex'),'5dad58d855f93d4169fa5877eff635d77f2c0b99af76f12e8f5cb68a4d659a4f');
    let position=-1;
    for(const owner of priorReadOrder){
     position=reads.indexOf(owner,position+1);

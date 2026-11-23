@@ -673,6 +673,131 @@ const bindings = new Map([
     "after": " }\n for(const [path,row]of Object.entries(p.current))assert.equal(beforeCharacterPreparationSource(path,readProductionHistory(path)).replaceAll('\\r\\n','\\n'),row.source,path);\n const anchor=feedbackProductionPaths[0],raw=readProduction;\n assert.equal(sourceEpoch.preCombinedSource(anchor,raw(anchor),{target:'stsFeedbackPrior',readSource:raw}),stsStyleEpoch.proof.current[anchor].source);"
    }
   ]
+ },
+ {
+  "path": "tests/end-turn-responsibilities.test.mjs",
+  "beforeSha256": "b02e9290633bb79c94f6ce1b176a2ec6ca2fba5a4dce2c8fba573097493897f3",
+  "afterSha256": "2b73f46ebb60947aceaa9637f0b2fec9bc5215d9ee00ed5f2dea5cf3363a812e",
+  "hunks": [
+   {
+    "at": 101,
+    "before": " assert.equal(preRelicQuerySource(file,current),old);assert.equal(wrapped(file),old);\n const outerReadCount=403;\n let validReads;",
+    "after": " assert.equal(preRelicQuerySource(file,current),old);assert.equal(wrapped(file),old);\n const outerReadCount=446;\n let validReads;"
+   },
+   {
+    "at": 106,
+    "before": "  if(!validReads){\n   // Nested source cohorts have their own fresh reads before and after the\n   // original owners. Bind the full live trace to its exact frozen order.\n   assert.equal(reads.length,8150);\n   assert.equal(hash(JSON.stringify(reads)),'78bb454171aed5367d039514c30a57c9971c0be116f11e048df8f3a08bc7cbb2');\n   let position=-1;",
+    "after": "  if(!validReads){\n   // Current replay cohorts add fresh linked reads around the original owner sequence.\n   // Bind the complete live trace after normalizing Windows checkout endings.\n   assert.equal(reads.length,9458);\n   assert.equal(hash(JSON.stringify(reads)),'fcf5e049f6c8f284fa248ebe012c2f7a5620546e453ebc8766fea8c1d14bd749');\n   let position=-1;"
+   },
+   {
+    "at": 142,
+    "before": " assert.throws(()=>preRelicQuerySource(file,current,{readSource:p=>p===config?JSON.stringify(JSON.parse(read(p))):read(p)}),{message:configDrift});\n // The first 403 observations belong to the outer authenticated projection.\n // Mutate the first config observation from the wrapped N35 projector.\n const firstInnerConfig=validReads.indexOf(config,outerReadCount);\n assert.equal(firstInnerConfig,405);\n const innerOccurrence=validReads.slice(0,firstInnerConfig+1).filter(path=>path===config).length;",
+    "after": " assert.throws(()=>preRelicQuerySource(file,current,{readSource:p=>p===config?JSON.stringify(JSON.parse(read(p))):read(p)}),{message:configDrift});\n // The first 446 observations belong to the outer authenticated projection.\n // Mutate the first config observation from the wrapped N35 projector.\n const firstInnerConfig=validReads.indexOf(config,outerReadCount);\n assert.equal(firstInnerConfig,448);\n const innerOccurrence=validReads.slice(0,firstInnerConfig+1).filter(path=>path===config).length;"
+   }
+  ]
+ },
+ {
+  "path": "tests/act1-choice-responsibilities.test.mjs",
+  "beforeSha256": "1905ee60a014ae61728e2463717a5cbbdae05ff0d4e66d26184659e89a02ab3c",
+  "afterSha256": "de4f375b53338158e10b08a56e9a2ff4f55ab0e0b9f36d34b396e1543dc48ef8",
+  "hunks": [
+   {
+    "at": 201,
+    "before": "   // Keep the complete current trace and the ordered original contract.\n   assert.equal(reads.length,403);\n   assert.equal(createHash('sha256').update(JSON.stringify(reads)).digest('hex'),'6f35ecd12c3f1edbc8ee8e476324bdb4380725eeacf240cc6ec15cd106fc2e3f');\n   let position=-1;",
+    "after": "   // Keep the complete current trace and the ordered original contract.\n   assert.equal(reads.length,446);\n   assert.equal(createHash('sha256').update(JSON.stringify(reads)).digest('hex'),'5dad58d855f93d4169fa5877eff635d77f2c0b99af76f12e8f5cb68a4d659a4f');\n   let position=-1;"
+   }
+  ]
+ },
+ {
+  "path": "tests/defect-final-source-epoch.test.mjs",
+  "beforeSha256": "eb4ef25a274eabbf967b02022968e14f90448746816a88fc784e41b6b3b52e77",
+  "afterSha256": "0eee0e80fef5972e8b5ce092e1ef29cd98c4b6a52542b7adfa88e054894e6656",
+  "hunks": [
+   {
+    "at": 0,
+    "before": "import {beforeCharacterPreparationSource} from './helpers/character-preparation-source.mjs';\nimport {pointerInputPath,readRetiredController,retiredControllerPath} from './helpers/input-retirement-source.mjs';\nimport {currentProductionRereads} from './helpers/current-production-source-reads.mjs';",
+    "after": "import {beforeCharacterPreparationSource} from './helpers/character-preparation-source.mjs';\nimport {readRetiredController,retiredControllerPath} from './helpers/input-retirement-source.mjs';\nimport {currentProductionRereads} from './helpers/current-production-source-reads.mjs';"
+   },
+   {
+    "at": 175,
+    "before": "  changed=owner;reads=[];assert.throws(()=>project(source),/combined linked owner/);\n  const attempted=current.owners.slice(0,current.owners.indexOf(owner)+1);\n  if(owner===retiredControllerPath&&replacement===null)attempted.push(pointerInputPath);\n  assert.deepEqual(reads,attempted);\n  changed=undefined;reads=[];assert.equal(project(source),expected);assert.deepEqual(reads,current.owners);",
+    "after": "  changed=owner;reads=[];assert.throws(()=>project(source),/combined linked owner/);\n  // The frozen owner set still requires its original controller bytes.\n  assert.deepEqual(reads,current.owners.slice(0,current.owners.indexOf(owner)+1));\n  changed=undefined;reads=[];assert.equal(project(source),expected);assert.deepEqual(reads,current.owners);"
+   },
+   {
+    "at": 194,
+    "before": " const admittedReads=[...reads];\n assert.equal(admittedReads.length,417);\n assert.equal(createHash('sha256').update(JSON.stringify(admittedReads)).digest('hex'),\n  '05131aa3de86e8f88d0e82bca23e667bba10e3921cf029de891ec4e8b06c3a67','exact current owner read order');\n let prior=-1;",
+    "after": " const admittedReads=[...reads];\n assert.equal(admittedReads.length,460);\n assert.equal(createHash('sha256').update(JSON.stringify(admittedReads)).digest('hex'),\n  '6b72ef490e6f79b870b0a21d5b63ddb122f065aff81f837e8f6fa3bafbd40d51','exact current owner read order');\n let prior=-1;"
+   }
+  ]
+ },
+ {
+  "path": "tests/art-feature-source-inverse.test.mjs",
+  "beforeSha256": "8b6e9fe7734cb8b52180adb708ceb89a232e9e0b7ec7a6801037c5a9192eb02b",
+  "afterSha256": "4b93c836f87883e6895e0bec7d449a2e721e586fa72acc332ef62e3764d11fdb",
+  "hunks": [
+   {
+    "at": 18,
+    "before": "import {beforeCharacterPreparationSource} from './helpers/character-preparation-source.mjs';\n",
+    "after": "import {beforeCharacterPreparationSource} from './helpers/character-preparation-source.mjs';\nimport {pointerInputPath,readRetiredController,retiredControllerPath} from './helpers/input-retirement-source.mjs';\n"
+   },
+   {
+    "at": 239,
+    "before": "test('current feature and history entries authenticate supported intermediates and freshly read every raw owner',()=>{\n for(const [path,expected]of Object.entries(currentTargets)){\n  const current=readFileSync(path,'utf8').replaceAll('\\r\\n','\\n');\n  assert.notEqual(hash(expected),proof.files[path].beforeSha256,'a supported intermediate is not original feature history: '+path);",
+    "after": "test('current feature and history entries authenticate supported intermediates and freshly read every raw owner',()=>{\n const disk=path=>readFileSync(path,'utf8');\n assert.throws(()=>disk(retiredControllerPath),{code:'ENOENT'});\n const retired=readRetiredController(disk).source;\n const owners=[...sourceEpoch.proof.owners,pointerInputPath];\n const inputs=new Map();\n const currentBytes=owner=>{\n  if(owner===retiredControllerPath)return undefined;\n  if(!inputs.has(owner))inputs.set(owner,disk(owner));\n  return inputs.get(owner);\n };\n for(const [path,expected]of Object.entries(currentTargets)){\n  const current=currentBytes(path).replaceAll('\\r\\n','\\n');\n  assert.notEqual(hash(expected),proof.files[path].beforeSha256,'a supported intermediate is not original feature history: '+path);"
+   },
+   {
+    "at": 259,
+    "before": "     if(mode==='missing')return undefined;if(mode==='null')return null;\n     if(mode==='buffer')return Buffer.from(readFileSync(owner));\n     if(mode==='changed')return readFileSync(owner,'utf8')+'\\n';\n    }\n    return readFileSync(owner,'utf8');\n   };",
+    "after": "     if(mode==='missing')return undefined;if(mode==='null')return null;\n     const source=owner===retiredControllerPath?retired:currentBytes(owner);\n     if(mode==='present')return source;\n     if(mode==='buffer')return Buffer.from(source);\n     if(mode==='changed')return source+'\\n';\n    }\n    return currentBytes(owner);\n   };"
+   },
+   {
+    "at": 268,
+    "before": "   check();const first=[...seen];\n   for(const owner of sourceEpoch.proof.owners)assert(first.includes(owner),'complete dynamic current owner: '+owner);\n   seen.length=0;check();assert.deepEqual(seen,first,'warm calls repeat the entire raw read sequence');\n   assert.equal(project(path,current.replaceAll('\\n','\\r\\n'),{readSource}),expected,'current CRLF input');\n   for(const owner of sourceEpoch.proof.owners){\n    for(const fault of ['changed','missing','null','buffer','throw']){\n     seen.length=0;bad=owner;mode=fault;\n     for(let repeat=0;repeat<2;repeat++)assert.throws(check,error=>{\n      assert.equal(error.code,'ERR_ASSERTION');assert.match(error.message,/linked owner/);assert(error.message.includes(owner));\n      if(fault==='throw')assert.match(error.message,/feature raw reader sentinel/);return true;",
+    "after": "   check();const first=[...seen];\n   for(const owner of owners)assert(first.includes(owner),'complete dynamic current owner: '+owner);\n   seen.length=0;check();assert.deepEqual(seen,first,'warm calls repeat the entire raw read sequence');\n   assert.equal(project(path,current.replaceAll('\\n','\\r\\n'),{readSource}),expected,'current CRLF input');\n   for(const owner of owners){\n    if(owner===retiredControllerPath)for(mode of ['missing','null']){\n     bad=owner;seen.length=0;check();assert.deepEqual(seen,first,'retired Controller remains absent');\n    }\n    const faults=owner===retiredControllerPath?['present','changed','buffer','throw']:['changed','missing','null','buffer','throw'];\n    for(const fault of faults){\n     seen.length=0;bad=owner;mode=fault;\n     for(let repeat=0;repeat<2;repeat++)assert.throws(check,error=>{\n      const reported=owner===pointerInputPath&&fault!=='throw'?retiredControllerPath:owner;\n      assert.equal(error.code,'ERR_ASSERTION');assert.match(error.message,/linked owner/);assert(error.message.includes(reported));\n      if(fault==='throw')assert.match(error.message,/feature raw reader sentinel/);return true;"
+   }
+  ]
+ },
+ {
+  "path": "tests/game-ui-extraction-source-inverse.test.mjs",
+  "beforeSha256": "6ca8445df8f38cee88937c6ccdc28384f9042d555c2b86f59761b4558ee50146",
+  "afterSha256": "8a5c1a39066e89ba16efac49ff9c2a6088883d21704e7947cfcc0d2dcabb37e6",
+  "hunks": [
+   {
+    "at": 14,
+    "before": "import {beforeLumineSource} from './helpers/lumine-portrait-source.mjs';\n// Keep the existing two/four-owner contracts in their original source epochs.",
+    "after": "import {beforeLumineSource} from './helpers/lumine-portrait-source.mjs';\nimport {pointerInputPath,readRetiredController,retiredControllerPath} from './helpers/input-retirement-source.mjs';\n// Keep the existing two/four-owner contracts in their original source epochs."
+   },
+   {
+    "at": 21,
+    "before": "const currentRaw=p=>readFileSync(p,'utf8');\nconst cursesPriorRead=p=>{\n const source=sourceSlice(p,currentRaw(p),'cursesPrior',currentRaw);\n return beforeLumineSource(p,beforePc13ThenV2UiHudSource(p,source,currentRaw),currentRaw);\n};\n// The new potion source witness reads these owners again after the frozen layer's owner scan.\nconst potionRereads=['src/lua/abyss_battle_card_gestures.lua','src/lua/abyss_battle_ui.lua'];\ntest('portrait demand layer authenticates fresh complete owners and rejects warm drift before entering the prior epoch',()=>{\n const sourceEpoch=portraitDemandEpoch;\n const path='src/lua/abyss_traveler_portraits.lua',raw=cursesPriorRead;\n const source=raw(path).replaceAll('\\r\\n','\\n'),target=sourceEpoch.proof.targets.noncombatDemandPrior;",
+    "after": "const currentRaw=p=>readFileSync(p,'utf8');\nfunction cursesPriorReader(){\n const cohort=new Map();\n return p=>{\n  if(!cohort.has(p)){\n   const current=p===retiredControllerPath?readRetiredController(currentRaw).source:currentRaw(p);\n   const source=p===architecture?sourceEpoch.preCombinedSource(p,current,{target:'cursesPrior',readSource:currentRaw}):sourceSlice(p,current,'cursesPrior',currentRaw);\n   cohort.set(p,beforeLumineSource(p,beforePc13ThenV2UiHudSource(p,source,currentRaw),currentRaw));\n  }\n  return cohort.get(p);\n };\n}\n// The authenticated portrait continuation reads these linked owners after the frozen base scan.\nconst portraitRereads=['battle_info_content','battle_render_hud','battle_card_glow','battle_render_hud','battle_render_hud']\n .map(name=>'src/lua/abyss_'+name+'.lua');\ntest('portrait demand layer authenticates fresh complete owners and rejects warm drift before entering the prior epoch',()=>{\n const sourceEpoch=portraitDemandEpoch;\n const path='src/lua/abyss_traveler_portraits.lua',raw=cursesPriorReader();\n const source=raw(path).replaceAll('\\r\\n','\\n'),target=sourceEpoch.proof.targets.noncombatDemandPrior;"
+   },
+   {
+    "at": 45,
+    "before": "  reads=[];assert.equal(sourceEpoch.preCombinedSource(path,input,{target:'noncombatDemandPrior',readSource:reader}),target.files[path].source);\n  assert.deepEqual(reads,[...sourceEpoch.proof.owners,...potionRereads]);\n }",
+    "after": "  reads=[];assert.equal(sourceEpoch.preCombinedSource(path,input,{target:'noncombatDemandPrior',readSource:reader}),target.files[path].source);\n  assert.deepEqual(reads,[...sourceEpoch.proof.owners,...portraitRereads]);\n }"
+   },
+   {
+    "at": 53,
+    "before": " for(const drift of [source+'\\n',null]){live=drift;assert.throws(()=>sourceEpoch.preCombinedSource(path,source,{target:'noncombatDemandPrior',readSource:mutable}),/combined linked owner identity/);}\n for(const owner of potionRereads){\n  let seen=0;\n  const late=p=>p===owner&&++seen===2?null:raw(p);\n  assert.throws(()=>sourceEpoch.preCombinedSource(path,source,{target:'noncombatDemandPrior',readSource:late}),\n   error=>error.message.includes('combined linked owner identity: '+owner+' changed during owner validation'));\n  assert.equal(seen,2);\n }",
+    "after": " for(const drift of [source+'\\n',null]){live=drift;assert.throws(()=>sourceEpoch.preCombinedSource(path,source,{target:'noncombatDemandPrior',readSource:mutable}),/combined linked owner identity/);}\n for(const [index,owner] of portraitRereads.entries()){\n  const occurrence=[...sourceEpoch.proof.owners,...portraitRereads.slice(0,index+1)].filter(path=>path===owner).length;\n  let seen=0;\n  const late=p=>p===owner&&++seen===occurrence?null:raw(p);\n  assert.throws(()=>sourceEpoch.preCombinedSource(path,source,{target:'noncombatDemandPrior',readSource:late}),\n   error=>error.message.includes(owner)&&/linked owner/.test(error.message));\n  assert.equal(seen,occurrence);\n }"
+   },
+   {
+    "at": 69,
+    "before": " assert.equal(target.commit,'3a061a76b5eb917ac0f4213c01a9cbafd28d1824');\n const raw=cursesPriorRead;\n const live=p=>sourceEpoch.preCombinedSource(p,raw(p),{target:'noncombatDemandPrior',readSource:raw});",
+    "after": " assert.equal(target.commit,'3a061a76b5eb917ac0f4213c01a9cbafd28d1824');\n const raw=cursesPriorReader();\n const live=p=>sourceEpoch.preCombinedSource(p,raw(p),{target:'noncombatDemandPrior',readSource:raw});"
+   },
+   {
+    "at": 74,
+    "before": "  assert.equal(epoch.preCombinedSource(path,source,{target:'noncombatPrior',readSource:p=>{fresh.push(p);return live(p);}}),target.files[path].source);\n  assert.deepEqual(fresh,[...epoch.proof.owners,...potionRereads],'every owner, including both potion rereads, is read freshly');\n  for(const input of [source+'\\n',source.slice(1),target.files[path].source,null,{}]){",
+    "after": "  assert.equal(epoch.preCombinedSource(path,source,{target:'noncombatPrior',readSource:p=>{fresh.push(p);return live(p);}}),target.files[path].source);\n  assert.deepEqual(fresh,[...epoch.proof.owners,...portraitRereads],'every frozen owner and continuation is read freshly');\n  for(const input of [source+'\\n',source.slice(1),target.files[path].source,null,{}]){"
+   },
+   {
+    "at": 277,
+    "before": " const live=join(root,'combined-live'),destination=join(root,'combined-copy');\n for(const path of sourceEpoch.proof.owners){const target=join(live,path);mkdirSync(dirname(target),{recursive:true});copyFileSync(path,target);}\n for(const path of added){const target=join(destination,path);mkdirSync(dirname(target),{recursive:true});copyFileSync(path,target);}\n const retire=prepare(destination,{sourceRoot:live});\n for(const owner of sourceEpoch.proof.owners){\n  const file=join(live,owner),original=readFileSync(file,'utf8');",
+    "after": " const live=join(root,'combined-live'),destination=join(root,'combined-copy');\n const visits=new Set();\n const readClosure=path=>{visits.add(path);return currentRaw(path);};\n for(const path of added){\n  const accepted=sourceEpoch.proof.targets.develop.files[path];\n  assert.equal(accepted.sha256,proof.files[path].afterSha256,'exact retirement predecessor identity: '+path);\n  const projected=sourceEpoch.preCombinedSource(path,currentRaw(path),{target:'develop',readSource:readClosure});\n  assert.equal(projected.replaceAll('\\r\\n','\\n'),accepted.source,'exact live retirement owner: '+path);\n }\n assert(sourceEpoch.proof.owners.every(path=>visits.has(path)),'complete current linked owner set');\n assert(visits.has(pointerInputPath),'complete live pointer replacement');\n const owners=[...visits].filter(path=>path!==retiredControllerPath);\n for(const path of owners){const target=join(live,path);mkdirSync(dirname(target),{recursive:true});copyFileSync(path,target);}\n for(const path of added){const target=join(destination,path);mkdirSync(dirname(target),{recursive:true});copyFileSync(path,target);}\n const retire=prepare(destination,{sourceRoot:live});\n const restoredController=join(live,retiredControllerPath);\n writeFileSync(restoredController,readRetiredController(currentRaw).source);\n assert.throws(retire,/retirement module/,'even an exact retired controller cannot be reintroduced');\n rmSync(restoredController);\n for(const owner of owners){\n  const file=join(live,owner),original=readFileSync(file,'utf8');"
+   }
+  ]
  }
 ].map(row=>[row.path,row]));
 

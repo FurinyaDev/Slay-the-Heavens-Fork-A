@@ -17,6 +17,7 @@ import {betaSources} from './helpers/beta-integration-source.mjs';
 import {round3CatalogProof} from './helpers/epochs/develop/tests/helpers/round3-catalog-source-inverse.mjs';
 import {preComponentUiCiSource} from './helpers/component-ui-ci-source-inverse.mjs';
 import {beforeCharacterPreparationSource} from './helpers/character-preparation-source.mjs';
+import {pointerInputPath,readRetiredController,retiredControllerPath} from './helpers/input-retirement-source.mjs';
 
 // Execute the exact original 98fef helper closure on the original 98fef inputs.
 // The reviewed ready-art manifest supplies 34 files; this extension adds only
@@ -237,8 +238,18 @@ const currentTargets=Object.fromEntries([
  ...['src/lua/abyss_ui.lua','src/lua/abyss_traveler_portraits.lua'].map(path=>[path,sourceEpoch.proof.targets.develop.files[path].source]),
 ]);
 test('current feature and history entries authenticate supported intermediates and freshly read every raw owner',()=>{
+ const disk=path=>readFileSync(path,'utf8');
+ assert.throws(()=>disk(retiredControllerPath),{code:'ENOENT'});
+ const retired=readRetiredController(disk).source;
+ const owners=[...sourceEpoch.proof.owners,pointerInputPath];
+ const inputs=new Map();
+ const currentBytes=owner=>{
+  if(owner===retiredControllerPath)return undefined;
+  if(!inputs.has(owner))inputs.set(owner,disk(owner));
+  return inputs.get(owner);
+ };
  for(const [path,expected]of Object.entries(currentTargets)){
-  const current=readFileSync(path,'utf8').replaceAll('\r\n','\n');
+  const current=currentBytes(path).replaceAll('\r\n','\n');
   assert.notEqual(hash(expected),proof.files[path].beforeSha256,'a supported intermediate is not original feature history: '+path);
   for(const project of [currentFeature,currentHistory]){
    const seen=[];let bad=null,mode='good';
@@ -247,21 +258,28 @@ test('current feature and history entries authenticate supported intermediates a
     if(owner===bad){
      if(mode==='throw')throw Error('feature raw reader sentinel: '+owner);
      if(mode==='missing')return undefined;if(mode==='null')return null;
-     if(mode==='buffer')return Buffer.from(readFileSync(owner));
-     if(mode==='changed')return readFileSync(owner,'utf8')+'\n';
+     const source=owner===retiredControllerPath?retired:currentBytes(owner);
+     if(mode==='present')return source;
+     if(mode==='buffer')return Buffer.from(source);
+     if(mode==='changed')return source+'\n';
     }
-    return readFileSync(owner,'utf8');
+    return currentBytes(owner);
    };
    const check=()=>assert.equal(project(path,current,{readSource}),expected);
    check();const first=[...seen];
-   for(const owner of sourceEpoch.proof.owners)assert(first.includes(owner),'complete dynamic current owner: '+owner);
+   for(const owner of owners)assert(first.includes(owner),'complete dynamic current owner: '+owner);
    seen.length=0;check();assert.deepEqual(seen,first,'warm calls repeat the entire raw read sequence');
    assert.equal(project(path,current.replaceAll('\n','\r\n'),{readSource}),expected,'current CRLF input');
-   for(const owner of sourceEpoch.proof.owners){
-    for(const fault of ['changed','missing','null','buffer','throw']){
+   for(const owner of owners){
+    if(owner===retiredControllerPath)for(mode of ['missing','null']){
+     bad=owner;seen.length=0;check();assert.deepEqual(seen,first,'retired Controller remains absent');
+    }
+    const faults=owner===retiredControllerPath?['present','changed','buffer','throw']:['changed','missing','null','buffer','throw'];
+    for(const fault of faults){
      seen.length=0;bad=owner;mode=fault;
      for(let repeat=0;repeat<2;repeat++)assert.throws(check,error=>{
-      assert.equal(error.code,'ERR_ASSERTION');assert.match(error.message,/linked owner/);assert(error.message.includes(owner));
+      const reported=owner===pointerInputPath&&fault!=='throw'?retiredControllerPath:owner;
+      assert.equal(error.code,'ERR_ASSERTION');assert.match(error.message,/linked owner/);assert(error.message.includes(reported));
       if(fault==='throw')assert.match(error.message,/feature raw reader sentinel/);return true;
      });
      assert(seen.includes(owner),'the failing raw owner was actually read');
