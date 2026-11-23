@@ -63,10 +63,13 @@ local function play(seed)
   actions={},rooms={},initial=snap(run,map),platformVerified=false}
  local coverage,done={},{}
  local function command(label,fn,details)
-  local before=snap(run,map)
+  local act,floor=run.act,run.floor
+  local capture=not M3_COMPACT or label=='advance_act'
+  local before=capture and snap(run,map) or nil
   local ok,reason=fn()
   if label=='enter'then print('M3_PROGRESS '..seed..' floor='..run.floor..' hp='..run.hp)end
-  report.actions[#report.actions+1]={label=label,details=details,ok=ok,reason=reason,before=before,after=snap(run,map)}
+  report.actions[#report.actions+1]={label=label,act=act,floor=floor,details=details,ok=ok,reason=reason,
+   before=before,after=capture and snap(run,map) or nil}
   assert(ok,label..': '..tostring(reason))
  end
  local function execute()

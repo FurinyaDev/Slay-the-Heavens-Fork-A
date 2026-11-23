@@ -6,7 +6,7 @@ import {createHash} from 'node:crypto';
 import {parseArgs} from 'node:util';
 import {gitSourceIdentity} from './release-notes.mjs';
 const {values,positionals}=parseArgs({allowPositionals:true,options:{
- profile:{type:'string',default:'competition-two-act'},output:{type:'string'},
+ profile:{type:'string',default:'competition-two-act'},output:{type:'string'},compact:{type:'boolean',default:false},
 }});
 const profile=values.profile;
 if(!['competition-two-act','full-source'].includes(profile))throw Error('Unsupported campaign profile');
@@ -17,12 +17,12 @@ mkdirSync(directory,{recursive:true});
 const hash=p=>createHash('sha256').update(readFileSync(p)).digest('hex');
 const source=gitSourceIdentity();
 if(!source.sourceCommit||source.sourceDirty)throw Error('Normal-rule evidence requires an exact clean source commit');
-const report={kind:'offline-normal-rule-campaign',campaignProfile:profile,platformVerified:false,dataModified:false,
+const report={kind:'offline-normal-rule-campaign',campaignProfile:profile,compact:values.compact,platformVerified:false,dataModified:false,
  ...source,startedAt:new Date().toISOString(),
  policy:'warrior75-engine-state-v1',policySha256:hash('scripts/warrior75-autoplay-policy.lua'),driverSha256:hash('scripts/m3-normal-campaign.lua'),eventCardPolicySha256:hash('scripts/m3-event-card-policy.lua'),relicChoicePolicySha256:hash('scripts/m3-relic-choice-policy.lua'),resetVerificationKind:'fresh-Run-construction-only; not Host restart',runs:[]};
 for(const seed of seeds){
  const temporary=`build/m3-normal-${seed}.lua`;
- writeFileSync(temporary,`M3_SEED=${seed}\nM3_PROFILE=${JSON.stringify(profile)}\ndofile('scripts/m3-normal-campaign.lua')\n`);
+ writeFileSync(temporary,`M3_SEED=${seed}\nM3_PROFILE=${JSON.stringify(profile)}\nM3_COMPACT=${values.compact}\ndofile('scripts/m3-normal-campaign.lua')\n`);
  let result;try{result=runLua(temporary,{timeout:300000,maxBuffer:50000000});}finally{unlinkSync(temporary);}
  if(result.status!==0)throw Error(result.stderr||result.stdout);
  const line=result.stdout.split('\n').find(x=>x.startsWith('M3_EVIDENCE_JSON '));if(!line)throw Error('missing evidence');
