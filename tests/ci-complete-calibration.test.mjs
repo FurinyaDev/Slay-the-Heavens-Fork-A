@@ -1982,7 +1982,7 @@ test('menu current complete JS and Lua workload retains Full budgets and every a
  for(const [path,row]of Object.entries(menuRedCiProof.addedLua)){
   assert.equal(liveDiskReadFileSync(path,'utf8').replaceAll('\r\n','\n'),row.source);
   assert.equal(hash(row.source),row.sha256);
-  assert.throws(()=>menuRedPriorLua(lua,(p,e)=>liveDiskReadFileSync(p,e)+(p===path?'\n':'')),/added menu Lua source/);
+  assert.throws(()=>menuRedPriorLua(lua,(p,e)=>rawBootstrapReadFileSync(p,e)+(p===path?'\n':'')),/added menu Lua source/);
  }
  for(const paths of [lua.slice(1),[...lua,lua[0]],[...lua,'tests/lua/foreign.lua']])assert.throws(()=>menuRedPriorLua(paths),/Lua discovery/);
  for(const [platform,count,budget]of [['win32',18,1800000],['linux',15,1200000]]){

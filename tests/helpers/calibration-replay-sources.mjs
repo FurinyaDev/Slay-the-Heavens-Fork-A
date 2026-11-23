@@ -8,6 +8,7 @@ import {readRetiredInputLuaReceipt,readRetiredInputTestReceipt} from './input-re
 import {beforeCombatEvents,beforeDevelopUiBackflows,beforePotionBackflow,readRetiredController,retiredControllerPath} from './input-retirement-source.mjs';
 import {beforeActionButtons} from './action-buttons-source.mjs';
 import {beforeDeckPages} from './develop-release-backflow-source.mjs';
+import {beforeCurrentReplayFixes} from './current-replay-fix-sources.mjs';
 import {stsStylePriorRuntime} from './sts-style-prior-runtime.mjs';
 
 const hash=(bytes,algorithm='sha256')=>createHash(algorithm).update(bytes).digest('hex');
@@ -84,7 +85,7 @@ export function beforeCurrentHistoricalStsSource(path,source){
 }
 function beforeCurrentReplayCopier(path,source){
  if(path!==copierPath||!matches(source,{
-  sha256:'34832f1d6a4bc053e06a2dd06c2122c92efa047c9dddbed282bd611278ca17d7',gitBlob:'f0bb5abe5e6d4ea3fc1fc6e38653fcf4d41d982b',
+  sha256:'70147e10827a0743b98c29984baac36687d5eee6881ac92943ecfab7bf214d71',gitBlob:'ece987329cb1f2ca9c81414c09b275f4edaa21ef',
  }))return source;
  const text=lf(source);
  const block='const currentReplayFiles=Object.freeze({\n';
@@ -97,7 +98,7 @@ function beforeCurrentReplayCopier(path,source){
  return source.includes('\r\n')?prior.replaceAll('\n','\r\n'):prior;
 }
 
-function matchesRetirementReceipt(path,source,expected){
+function matchesCurrentReceipt(path,source,expected){
  if(matches(source,expected))return true;
  const ui=beforeDevelopUiBackflows(path,source);
  const actions=beforeActionButtons(path,ui);
@@ -108,6 +109,10 @@ function matchesRetirementReceipt(path,source,expected){
 // A frozen receipt may read a registered old blob only after checking the
 // corresponding current file. Raw Full discovery and inputs use their normal readers.
 export function readCalibrationReceiptInput(path,digest,read,readCurrent=readFileSync){
+ const fallback=()=>{
+  const source=read(),prior=beforeCurrentReplayFixes(path,source);
+  return typeof prior==='string'&&hash(lf(prior))===digest?prior:source;
+ };
  const retired=readRetiredInputTestReceipt(path,digest,readCurrent);
  if(retired!==undefined)return retired;
  if(path==='tests/lua/relic_view_controller_click.lua'){
@@ -125,24 +130,24 @@ export function readCalibrationReceiptInput(path,digest,read,readCurrent=readFil
   const prior=Object.hasOwn(stsStylePriorRuntime.files,path)?stsStylePriorRuntime.files[path]:null;
   const witness=retained??(extra?.sha256===digest?extra:prior?.sha256===digest?prior:null);
   if(witness){
-   assert(matchesRetirementReceipt(path,readCurrent(path,'utf8'),current),'current receipt input changed: '+path);
+   assert(matchesCurrentReceipt(path,readCurrent(path,'utf8'),current),'current receipt input changed: '+path);
    assert(matches(witness.source,witness),path+' exact retained calibration input');
    return witness.source;
   }
  }
- if(!Object.hasOwn(packet.receipts,path))return read();
+ if(!Object.hasOwn(packet.receipts,path))return fallback();
  const row=packet.receipts[path];
- if(!Object.hasOwn(row.before,digest))return read();
+ if(!Object.hasOwn(row.before,digest))return fallback();
  if(row.current===null)assert.throws(()=>readCurrent(path,'utf8'),{code:'ENOENT'},'retired receipt input reappeared: '+path);
  else{
-  const raw=beforeCurrentReplayCopier(path,readCurrent(path,'utf8'));
+  const raw=beforeCurrentReplayFixes(path,beforeCurrentReplayCopier(path,readCurrent(path,'utf8')));
   let current=raw;
   if(path==='tests/helpers/combined-epoch/source-epoch-runtime.mjs'||path==='tests/helpers/copy-integration-source-closure.mjs'||
      path==='tests/helpers/round3-catalog-source-inverse.mjs'){
    current=beforeMapRoomReplayCohort(path,raw);
    assert.notEqual(current,raw,'current receipt input changed: '+path);
   }
-  assert(matches(current,row.current),'current receipt input changed: '+path);
+  assert(matchesCurrentReceipt(path,current,row.current),'current receipt input changed: '+path);
  }
  return row.before[digest].source;
 }

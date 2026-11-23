@@ -767,7 +767,7 @@ export function assertIntegrationSuccessorsCurrent(read=readFileSync){
  const liveRead=read;
  assertNativeFixturesCurrent(liveRead);
  assertNativeFlowFixturesCurrent(liveRead);
- read=(path,encoding)=>beforeCalibrationReplay(path,liveRead(path,encoding));
+ read=(path,encoding)=>beforeCalibrationReplay(path,beforeCurrentReplayFixes(path,liveRead(path,encoding)));
  const readCurrent=(path,encoding)=>{
   const live=read(path,encoding);
   let raw=beforeNativeFlowFixture(path,live);

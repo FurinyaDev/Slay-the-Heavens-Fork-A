@@ -332,10 +332,14 @@ export function assertCurrentSessionRelicOwner(path,source){
 export function authenticateDevelopBackflow(path,source,read,options){
  return authenticateDevelopBackflowWithReaders(path,source,read,recentBackflowOwnerReader(read),options);
 }
+function readBackflowOwner(read,path){
+ try{return read(path);}
+ catch(error){assert.fail('combined linked owner missing: '+path+': '+String(error?.message??error));}
+}
 function authenticateDevelopBackflowWithReaders(path,source,readLive,readLinked,options){
  const priorUi=beforeDevelopUiBackflows(path,source);
  if(priorUi!==source){
-  const live=readLive(path);
+  const live=readBackflowOwner(readLive,path);
   assert(typeof live==='string'&&live.replaceAll('\r\n','\n')===source.replaceAll('\r\n','\n'),
    'combined linked owner identity: '+path+' during deck/potion backflow validation');
  }
@@ -344,7 +348,7 @@ function authenticateDevelopBackflowWithReaders(path,source,readLive,readLinked,
  const readActions=owner=>beforeActionButtons(owner,readUi(owner));
  const beforeCloseout=beforeCombatEvents(path,source);
  if(beforeCloseout!==source){
-  const live=readActions(path);
+  const live=readBackflowOwner(readActions,path);
   assert(typeof live==='string'&&live.replaceAll('\r\n','\n')===source.replaceAll('\r\n','\n'),
    'combined linked owner identity: '+path+' during combat/event backflow validation');
  }

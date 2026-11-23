@@ -60,12 +60,17 @@ const bindings = new Map([
  {
   "path": "tests/helpers/fork-preflight-source.mjs",
   "beforeSha256": "f1611ba371126867ce69926daa71fbb211bafb32ece60362d992cd9d3efc49c0",
-  "afterSha256": "15bb8150756d3e23db809dbbfa1e7680b0800638523aa9c06cf1974313ba8ae9",
+  "afterSha256": "3f5545f4164d5fdefdc5e42712fadbee5571d0a5ed19334090c6224f319aba4a",
   "hunks": [
    {
     "at": 11,
     "before": "import {beforeStsFadeCi} from './sts-fade-ci-source.mjs';\nimport {beforeIntegratedStsInventory} from './sts-selection-fade-source.mjs';",
     "after": "import {beforeStsFadeCi} from './sts-fade-ci-source.mjs';\nimport {beforeCurrentReplayFixes} from './current-replay-fix-sources.mjs';\nimport {beforeIntegratedStsInventory} from './sts-selection-fade-source.mjs';"
+   },
+   {
+    "at": 768,
+    "before": " assertNativeFlowFixturesCurrent(liveRead);\n read=(path,encoding)=>beforeCalibrationReplay(path,liveRead(path,encoding));\n const readCurrent=(path,encoding)=>{",
+    "after": " assertNativeFlowFixturesCurrent(liveRead);\n read=(path,encoding)=>beforeCalibrationReplay(path,beforeCurrentReplayFixes(path,liveRead(path,encoding)));\n const readCurrent=(path,encoding)=>{"
    },
    {
     "at": 815,
@@ -366,6 +371,181 @@ const bindings = new Map([
     "at": 63,
     "before": "  AbyssMonsterActor:1073741849,AbyssMonsterPower:1073741850,AbyssOfficialBackgroundImage:1073741851,\n  AbyssSelectionHalfTriangle:1073741852,AbyssBattlePileCard:1073741853,AbyssForgeCard:1073741854};\n if(!Object.hasOwn(indices,name))throw Error('Unregistered native template '+name);",
     "after": "  AbyssMonsterActor:1073741849,AbyssMonsterPower:1073741850,AbyssOfficialBackgroundImage:1073741851,\n  AbyssSelectionHalfTriangle:1073741852,AbyssBattlePileCard:1073741853,AbyssForgeCard:1073741854,\n  AbyssDeckBrowserBack:1073741855,AbyssDeckBrowserBanner:1073741856,\n  AbyssDeckBrowserFrame0:1073741857,AbyssDeckBrowserFrame1:1073741858,AbyssDeckBrowserFrame2:1073741859};\n if(!Object.hasOwn(indices,name))throw Error('Unregistered native template '+name);"
+   }
+  ]
+ },
+ {
+  "path": "tests/ci-complete-calibration.test.mjs",
+  "beforeSha256": "78b7d2983f4cb9e8cd53846f3c072158a200ad5b4dcd91fbe1873e99f57c1056",
+  "afterSha256": "1a74e2f450531ad9e4dcd030872ef3c55abec3c73401f8924a8aac1f613708fe",
+  "hunks": [
+   {
+    "at": 1983,
+    "before": "  assert.equal(hash(row.source),row.sha256);\n  assert.throws(()=>menuRedPriorLua(lua,(p,e)=>liveDiskReadFileSync(p,e)+(p===path?'\\n':'')),/added menu Lua source/);\n }",
+    "after": "  assert.equal(hash(row.source),row.sha256);\n  assert.throws(()=>menuRedPriorLua(lua,(p,e)=>rawBootstrapReadFileSync(p,e)+(p===path?'\\n':'')),/added menu Lua source/);\n }"
+   }
+  ]
+ },
+ {
+  "path": "tests/helpers/reward-query-boundary-source-inverse.mjs",
+  "beforeSha256": "3895df6c5d661a04f71d7086414bc738ec66d3f777299ac92da4329183eab373",
+  "afterSha256": "047320dcda1683f7425f09a181dbc9cb71f5984ef13a4cfb7ad9d5a01cca42cf",
+  "hunks": [
+   {
+    "at": 2,
+    "before": "import { preRewardQueryBoundarySource as original } from './epochs/reward/tests/helpers/reward-query-boundary-source-inverse.mjs';\nimport {sourceEpoch} from './combined-epoch/source-epoch.mjs';\nimport {readFileSync} from 'node:fs';",
+    "after": "import { preRewardQueryBoundarySource as original } from './epochs/reward/tests/helpers/reward-query-boundary-source-inverse.mjs';\nimport {sourceEpoch} from './closeout-source-epoch.mjs';\nimport {readFileSync} from 'node:fs';"
+   }
+  ]
+ },
+ {
+  "path": "tests/lua/match_event_ui.lua",
+  "beforeSha256": "bea6f5d076652bfee459a08e80f58f297afca783af399230183d915105f699c3",
+  "afterSha256": "7f2a04dec7dd6cbd6bdd12a0cb576aaf42ae654624fede034c12deb5aa416621",
+  "hunks": [
+   {
+    "at": 56,
+    "before": "  for _,spec in ipairs(gridSpec.children[i].children)do\n   if spec.name~='hit'and spec.name~='matchBack'then eq(get(path..'/'..spec.name).visible,false)end\n  end",
+    "after": "  for _,spec in ipairs(gridSpec.children[i].children)do\n   if spec.name~='hit'and spec.name~='matchBack'then\n    local facePath=path..'/'..spec.name\n    assert(not get(facePath).visible,'concealed Match card leaks '..facePath)\n   end\n  end"
+   },
+   {
+    "at": 66,
+    "before": " assert(get('pickerView/forgeGrid/card1/name').text:find(ctx.cardName(slot.cardId,false),1,true))\n assert(get('pickerView/label').text:find('5',1,true));eq(ctx.self.actions['pickerView/forgeGrid/card1'].enabled,false)",
+    "after": " assert(get('pickerView/forgeGrid/card1/name').text:find(ctx.cardName(slot.cardId,false),1,true))\n local referenceCost=get('pickerView/forgeGrid/card1'):GetChild('stsReferenceCost')\n if referenceCost then assert(referenceCost.visible,'revealed Match card must restore its reference cost layer')end\n assert(get('pickerView/label').text:find('5',1,true));eq(ctx.self.actions['pickerView/forgeGrid/card1'].enabled,false)"
+   }
+  ]
+ },
+ {
+  "path": "tests/helpers/develop-release-backflow-source.mjs",
+  "beforeSha256": "0b94dc40162bd992de8ecff48bbdd5d3d3d391a27bd59268eac309d714bf0752",
+  "afterSha256": "9ca671565f3919804ba22edf19a1fb13c5078f4597ac5f379de2d493a7c0d28e",
+  "hunks": [
+   {
+    "at": 333,
+    "before": "}\nfunction authenticateDevelopBackflowWithReaders(path,source,readLive,readLinked,options){",
+    "after": "}\nfunction readBackflowOwner(read,path){\n try{return read(path);}\n catch(error){assert.fail('combined linked owner missing: '+path+': '+String(error?.message??error));}\n}\nfunction authenticateDevelopBackflowWithReaders(path,source,readLive,readLinked,options){"
+   },
+   {
+    "at": 340,
+    "before": " if(priorUi!==source){\n  const live=readLive(path);\n  assert(typeof live==='string'&&live.replaceAll('\\r\\n','\\n')===source.replaceAll('\\r\\n','\\n'),",
+    "after": " if(priorUi!==source){\n  const live=readBackflowOwner(readLive,path);\n  assert(typeof live==='string'&&live.replaceAll('\\r\\n','\\n')===source.replaceAll('\\r\\n','\\n'),"
+   },
+   {
+    "at": 349,
+    "before": " if(beforeCloseout!==source){\n  const live=readActions(path);\n  assert(typeof live==='string'&&live.replaceAll('\\r\\n','\\n')===source.replaceAll('\\r\\n','\\n'),",
+    "after": " if(beforeCloseout!==source){\n  const live=readBackflowOwner(readActions,path);\n  assert(typeof live==='string'&&live.replaceAll('\\r\\n','\\n')===source.replaceAll('\\r\\n','\\n'),"
+   }
+  ]
+ },
+ {
+  "path": "tests/watcher-actor-boundary.test.mjs",
+  "beforeSha256": "b0982219c0acb8055c72aa19355b5857a172479a404a1a8fc71c7c92ec88a26b",
+  "afterSha256": "5a0b9063382d741133439782f69c51b97a4c0405f1d4c31ddd4109440a162ba9",
+  "hunks": [
+   {
+    "at": 13,
+    "before": "import {beforeCurrentProductionSource} from './helpers/character-preparation-source.mjs';\nimport {actorFocusAdded,deckPagesAdded,beforeDeckPages,assertActorFocusInventory,assertDevelopBackflowCurrent,assertStasisUpgradeAdded,stasisUpgradeAddedPaths} from './helpers/develop-release-backflow-source.mjs';\nconst file='src/lua/abyss_watcher_attack_cards.lua';",
+    "after": "import {beforeCurrentProductionSource} from './helpers/character-preparation-source.mjs';\nimport {actorFocusAdded,deckPagesAdded,assertActorFocusInventory,assertDevelopBackflowCurrent,assertStasisUpgradeAdded,stasisUpgradeAddedPaths} from './helpers/develop-release-backflow-source.mjs';\nconst file='src/lua/abyss_watcher_attack_cards.lua';"
+   },
+   {
+    "at": 76,
+    "before": " assert.equal(Object.keys(raw).length,357,'complete raw current inventory');\n const readPredecessor=path=>beforeDeckPages(path,historicalRead(path));\n for(const [path,source]of Object.entries(historical)){",
+    "after": " assert.equal(Object.keys(raw).length,357,'complete raw current inventory');\n for(const [path,source]of Object.entries(historical)){"
+   },
+   {
+    "at": 88,
+    "before": "  }\n  assert.equal(beforeCurrentProductionSource(path,beforeDeckPages(path,source),readPredecessor).replaceAll('\\r\\n','\\n'),currentEpoch.proof.current[path].source,path);\n }",
+    "after": "  }\n  assert.equal(beforeCurrentProductionSource(path,source,read).replaceAll('\\r\\n','\\n'),currentEpoch.proof.current[path].source,path);\n }"
+   },
+   {
+    "at": 101,
+    "before": "  assert(!Object.hasOwn(currentEpoch.proof.current,path),'new responsibility has no invented predecessor');\n currentEpoch.preCombinedSource('config/architecture.json',readPredecessor('config/architecture.json'),{target:'stsStylePrior',readSource:readPredecessor});\n const report=analyzeSources(sources,policy);assert.deepEqual(report.errors,[]);",
+    "after": "  assert(!Object.hasOwn(currentEpoch.proof.current,path),'new responsibility has no invented predecessor');\n currentEpoch.preCombinedSource('config/architecture.json',read('config/architecture.json'),{target:'stsStylePrior',readSource:read});\n const report=analyzeSources(sources,policy);assert.deepEqual(report.errors,[]);"
+   }
+  ]
+ },
+ {
+  "path": "tests/watcher-actor-source-inverse.test.mjs",
+  "beforeSha256": "5ec1b054af331d6d95684dc315939db881fc365c724fe6a4dc758a5872e0260a",
+  "afterSha256": "cd3be2d4046817760ef54b13b42541e594add693722ba5608106fc57cc68a7dd",
+  "hunks": [
+   {
+    "at": 11,
+    "before": "import {standaloneArchitectureSource} from './helpers/class-potion-watcher-source-inverse.mjs';\nconst rawRead=p=>readFileSync(p,'utf8').replaceAll('\\r\\n','\\n');\nconst actorRead=currentDefectActorReader(rawRead);\nconst read=p=>preDefectActorSource(p,rawRead(p),{readSource:actorRead});\nconst before=JSON.parse(gunzipSync(readFileSync('tests/fixtures/watcher-actor-before.json.gz')));",
+    "after": "import {standaloneArchitectureSource} from './helpers/class-potion-watcher-source-inverse.mjs';\nimport {sourceEpoch} from './helpers/combined-epoch/source-epoch.mjs';\nconst rawRead=p=>readFileSync(p,'utf8').replaceAll('\\r\\n','\\n');\nconst actorRead=currentDefectActorReader(rawRead);\nconst read=p=>{\n const source=rawRead(p);\n const before=p==='src/lua/abyss_combat_queued_play.lua'\n  ?sourceEpoch.preCombinedSource(p,source,{target:'pr618',readSource:rawRead}):source;\n return preDefectActorSource(p,before,{readSource:actorRead});\n};\nconst before=JSON.parse(gunzipSync(readFileSync('tests/fixtures/watcher-actor-before.json.gz')));"
+   }
+  ]
+ },
+ {
+  "path": "tests/lua/support/modal_cover_setters.lua",
+  "beforeSha256": "1607d0872125f71c99bb7c22c97d7c3db6b253e7d925100b5c0fee3e77358d82",
+  "afterSha256": "995fc1bc11b435e91cf2b6445f302f8acff96d22f19448bb7e48b2f5a154abdc",
+  "hunks": [
+   {
+    "at": 1,
+    "before": "local Gate=require('abyss_page_reveal')\nlocal function fixture()",
+    "after": "local Gate=require('abyss_page_reveal')\nlocal function blocker()\n return {SetAnchoredPosition=function()end,SetSizeDelta=function()end}\nend\nlocal function fixture()"
+   },
+   {
+    "at": 17,
+    "before": " end\n local cover={SetVisible=function(self,v)self.visible=v end,SetAsLastSibling=function()end,\n  GetChild=function(_,name)if name=='veil'then return veil end end}\n local frames={full={0,0,1280,720},deckPanel={0,28,1120,560}}",
+    "after": " end\n local hitBlocker=blocker()\n local cover={SetVisible=function(self,v)self.visible=v end,SetAsLastSibling=function()end,\n  GetChild=function(_,name)if name=='veil'then return veil elseif name=='blocker'then return hitBlocker end end}\n local frames={full={0,0,1280,720},deckPanel={0,28,1120,560}}"
+   },
+   {
+    "at": 67,
+    "before": " function veil:SetSizeDelta()if hooks.size then hooks.size()end end\n local cover={SetVisible=function(self,v)self.visible=v end,SetAsLastSibling=function()end,\n  GetChild=function(_,name)if name=='veil'then return veil end end}\n local frames={full={0,0,1280,720},deckPanel={0,28,1120,560},potionPanel={0,0,500,400}}",
+    "after": " function veil:SetSizeDelta()if hooks.size then hooks.size()end end\n local hitBlocker=blocker()\n local cover={SetVisible=function(self,v)self.visible=v end,SetAsLastSibling=function()end,\n  GetChild=function(_,name)if name=='veil'then return veil elseif name=='blocker'then return hitBlocker end end}\n local frames={full={0,0,1280,720},deckPanel={0,28,1120,560},potionPanel={0,0,500,400}}"
+   }
+  ]
+ },
+ {
+  "path": "tests/runtime-ui-hotpaths.test.mjs",
+  "beforeSha256": "54567cfd9f99a8f2197e305b4d3cb1475d0b3cd80a5f7fc905e4f0cda0533962",
+  "afterSha256": "653e02f06216b597260dd819f23e4ada87dc6d8bf2f870ff22938a7d1c0796e7",
+  "hunks": [
+   {
+    "at": 73,
+    "before": "});\ntest('runtime UI negative control: deferred activation violates render ordering',()=>{\n const module='abyss_game_ui_view',source=readFileSync(`src/lua/${module}.lua`,'utf8');\n const anchor='suspendBattle(run,deckOpen,potionOpen))';assert.equal(source.split(anchor).length-1,1);\n const entry=join(tmpdir(),`gameui-render-mutant-${randomUUID()}.lua`);\n writeFileSync(entry,`package.preload[${luaString(module)}]=assert(load(${luaString(source.replace(anchor,'suspendBattle(run,deckOpen,potionOpen),true)'))},'@${module}-mutant'))\\ndofile('tests/lua/runtime_ui_hotpaths.lua')\\n`);\n try{const result=runLua(entry);assert.notEqual(result.status,0);assert.match(result.stdout+result.stderr,/GameUI refresh must preserve both observable render boundaries/);}finally{unlinkSync(entry);}",
+    "after": "});\nconst activation='suspendBattle(run,deckOpen,potionOpen),self.mode==\\'battle\\' and deckOpen)';\ntest('runtime UI negative control: deferred activation violates render ordering',()=>{\n const module='abyss_game_ui_view',source=readFileSync(`src/lua/${module}.lua`,'utf8');\n assert.equal(source.split(activation).length-1,1);\n const entry=join(tmpdir(),`gameui-render-mutant-${randomUUID()}.lua`);\n writeFileSync(entry,`package.preload[${luaString(module)}]=assert(load(${luaString(source.replace(activation,'suspendBattle(run,deckOpen,potionOpen),true)'))},'@${module}-mutant'))\\ndofile('tests/lua/runtime_ui_hotpaths.lua')\\n`);\n try{const result=runLua(entry);assert.notEqual(result.status,0);assert.match(result.stdout+result.stderr,/GameUI refresh must preserve both observable render boundaries/);}finally{unlinkSync(entry);}"
+   },
+   {
+    "at": 83,
+    "before": " const module='abyss_game_ui_view';let source=readFileSync(`src/lua/${module}.lua`,'utf8').replaceAll('\\r\\n','\\n');\n const anchor='suspendBattle(run,deckOpen,potionOpen))';assert.equal(source.split(anchor).length-1,1);\n const final='        self.battleUI:render()\\n';assert.equal(source.split(final).length-1,1);",
+    "after": " const module='abyss_game_ui_view';let source=readFileSync(`src/lua/${module}.lua`,'utf8').replaceAll('\\r\\n','\\n');\n assert.equal(source.split(activation).length-1,1);\n const final='        self.battleUI:render()\\n';assert.equal(source.split(final).length-1,1);"
+   }
+  ]
+ },
+ {
+  "path": "tests/silent-final-source-epoch.test.mjs",
+  "beforeSha256": "053fbce34fbca97b8fbdebf02e20abefa7d5f8e332075819f5b7c8f2dbf0cd6d",
+  "afterSha256": "219c29d681c28882ff8fa0e43e7f33afca035fbbfbd7d1fc94c71ce28996438e",
+  "hunks": [
+   {
+    "at": 10,
+    "before": "import {sourceSlice} from './helpers/closeout-source-epoch.mjs';\n// These original49-owner contracts authenticate the pre-component Silent epoch;",
+    "after": "import {sourceSlice} from './helpers/closeout-source-epoch.mjs';\nimport {sourceEpoch as currentEpoch} from './helpers/combined-epoch/source-epoch.mjs';\nimport {pointerInputPath,readRetiredController,retiredControllerPath} from './helpers/input-retirement-source.mjs';\nimport {createHash} from 'node:crypto';\n// These original49-owner contracts authenticate the pre-component Silent epoch;"
+   },
+   {
+    "at": 103,
+    "before": "\ntest('live LF and CRLF raw owner reads authenticate 49 current owners on every call',()=>{\n const config='config/architecture.json',input=readFileSync(config,'utf8'),expected=proof.targets.actor.files[config].source;\n for(const crlf of [false,true]){\n  const seen=[];let corrupt=null,missing=null;\n  const live=file=>{seen.push(file);if(file===missing)return null;const bytes=readFileSync(file,'utf8').replaceAll('\\r\\n','\\n');return file===corrupt?bytes+'\\n':crlf?bytes.replaceAll('\\n','\\r\\n'):bytes;};\n  for(let repeat=0;repeat<2;repeat++){seen.length=0;assert.equal(sourceEpoch.preCombinedSource(config,input,{target:'actor',readSource:live}),expected);assert.deepEqual(seen,proof.owners);}\n  for(const owner of proof.owners){\n   corrupt=owner;assert.throws(()=>sourceEpoch.preCombinedSource(config,input,{target:'actor',readSource:live}),/linked owner identity/,owner);corrupt=null;\n   missing=owner;assert.throws(()=>sourceEpoch.preCombinedSource(path,readFileSync(path,'utf8'),{target:'silentFinalPrior',readSource:live}),/linked owner identity/,owner);missing=null;\n  }",
+    "after": "\ntest('live LF and CRLF raw owner reads authenticate the complete current closure on every call',()=>{\n const config='config/architecture.json',input=diskReadFileSync(config,'utf8'),expected=proof.targets.actor.files[config].source;\n const readLive=file=>diskReadFileSync(file,'utf8');\n const retired=readRetiredController(readLive);\n assert(retired.restored,'the live pointer owner authenticates controller retirement');\n for(const crlf of [false,true]){\n  const seen=[];let corrupt=null,missing=null;\n  const live=file=>{\n   seen.push(file);\n   if(file===missing)return null;\n   const bytes=(file===retiredControllerPath&&file===corrupt?retired.source:readLive(file)).replaceAll('\\r\\n','\\n');\n   if(file===corrupt&&file!==retiredControllerPath)return bytes+'\\n';\n   return crlf?bytes.replaceAll('\\n','\\r\\n'):bytes;\n  };\n  for(let repeat=0;repeat<2;repeat++){\n   seen.length=0;\n   assert.equal(currentEpoch.preCombinedSource(config,input,{target:'actor',readSource:live}),expected);\n   assert.equal(seen.length,460);\n   assert.equal(createHash('sha256').update(JSON.stringify(seen)).digest('hex'),\n    '6b72ef490e6f79b870b0a21d5b63ddb122f065aff81f837e8f6fa3bafbd40d51');\n   for(const owner of proof.owners)assert(seen.includes(owner),'retained Silent owner: '+owner);\n  }\n  for(const owner of proof.owners){\n   corrupt=owner;assert.throws(()=>currentEpoch.preCombinedSource(config,input,{target:'actor',readSource:live}),/linked owner identity/,owner);corrupt=null;\n   missing=owner===retiredControllerPath?pointerInputPath:owner;\n   assert.throws(()=>currentEpoch.preCombinedSource(path,readLive(path),{target:'silentFinalPrior',readSource:live}),/linked owner (?:identity|missing)/,owner);\n   missing=null;\n  }"
+   }
+  ]
+ },
+ {
+  "path": "tests/sts-page-reveal.test.mjs",
+  "beforeSha256": "28026050ac54563301c3168d7492f782a7345b6ccea059c5aee48c7d60c7fae0",
+  "afterSha256": "d7000dc572d0c4988844c339ba60e3970e386b7a9017e4069c38e1bfcc83b5c4",
+  "hunks": [
+   {
+    "at": 86,
+    "before": "local veil={SetAnchoredPosition=function()end,SetSizeDelta=function()end}\nlocal cover={SetVisible=function(_,v)shown=v end,SetAsLastSibling=function()end,\n GetChild=function(_,name)if name=='veil'then return veil end end}\nlocal gate=Gate.new(cover,function()return true end,nil,{full={0,0,1280,720},choicePanel={5,10,1100,600},battlePanel={0,0,1100,600}})",
+    "after": "local veil={SetAnchoredPosition=function()end,SetSizeDelta=function()end}\nlocal blocker={SetAnchoredPosition=function()end,SetSizeDelta=function()end}\nlocal cover={SetVisible=function(_,v)shown=v end,SetAsLastSibling=function()end,\n GetChild=function(_,name)if name=='veil'then return veil elseif name=='blocker'then return blocker end end}\nlocal gate=Gate.new(cover,function()return true end,nil,{full={0,0,1280,720},choicePanel={5,10,1100,600},battlePanel={0,0,1100,600}})"
+   },
+   {
+    "at": 337,
+    "before": " const read=path=>readFileSync(path,'utf8');\n const crlf=source=>source.replaceAll('\\n','\\r\\n');\n const priorLua=beforeDevelopBackflow(lua,read(lua));",
+    "after": " const read=path=>readFileSync(path,'utf8');\n const crlf=source=>source.replace(/\\r?\\n/g,'\\r\\n');\n const priorLua=beforeDevelopBackflow(lua,read(lua));"
    }
   ]
  }
