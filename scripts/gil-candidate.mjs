@@ -137,21 +137,32 @@ function toolchain(root = 'miliastra-mcp') {
 async function assets() {
   const root = resolve('source');
   const { lfsEnvironment, lfsArguments } = await moduleAt(root, 'scripts/ci-reviewed-lfs.mjs');
-  const { mediaByPath } = await moduleAt(root, 'scripts/ci-media-lfs.mjs');
+  const { mediaByPath, mediaPointer } = await moduleAt(root, 'scripts/ci-media-lfs.mjs');
   const { sourceInputs } = await moduleAt(root, 'scripts/build-native-candidate.mjs');
   const { nativeAudioBuildArgs } = await moduleAt(root, 'scripts/build-native-audio-game.mjs');
   git(root, ['lfs', 'install', '--local', '--skip-smudge']);
   cleanHead(root, process.env.SOURCE_SHA, 'Source');
   const { options } = nativeAudioBuildArgs([]);
-  const files = sourceInputs(root, options).map(row => relative(root, row.path).replaceAll('\\', '/'))
+  requireGate(options.officialAssets && options.refinedReleaseMonsterArt && options.nativePageLifecycle,
+    'This source does not have the approved default production preset.');
+  const files = sourceInputs(root, options).map(row => relative(root, resolve(root, row.path)).replaceAll('\\', '/'))
     .map(path => mediaByPath.get(path)).filter(Boolean);
-  if (files.length) {
-    git(root, [...lfsArguments.slice(0, -6), 'lfs', 'pull', '--include', files.map(row => row.path).join(','), '--exclude', ''],
-      lfsEnvironment());
-    for (const { path, sha256, bytes } of files) {
-      const data = readFileSync(join(root, path));
-      requireGate(data.length === bytes && hash(data) === sha256, 'Production LFS asset size or SHA-256 mismatch.');
-    }
+  for (const row of files) {
+    const file = join(root, row.path);
+    const data = readFileSync(file);
+    if (data.length === row.bytes && hash(data) === row.sha256) continue;
+    requireGate(data.equals(mediaPointer(row)), 'Production LFS pointer differs from the reviewed manifest.');
+    let bytes;
+    try {
+      bytes = execFileSync('git', [...lfsArguments.slice(0, -6), 'lfs', 'smudge', '--', row.path], {
+        cwd: root, env: { ...lfsEnvironment(), GIT_LFS_SKIP_SMUDGE: '0' }, input: data,
+        maxBuffer: row.bytes + 4096, timeout: 90000, stdio: ['pipe', 'pipe', 'pipe'],
+      });
+    } catch { throw new GateError('Could not download a reviewed production LFS object.'); }
+    requireGate(bytes.length === row.bytes && hash(bytes) === row.sha256, 'Production LFS asset size or SHA-256 mismatch.');
+    writeFileSync(file, bytes);
+    // Refresh the sparse index through the clean filter. The following clean-head check rejects any staged delta.
+    git(root, ['add', '--', row.path]);
   }
   cleanHead(root, process.env.SOURCE_SHA, 'Source');
   console.log(`Verified production LFS assets: ${files.length} files, ${files.reduce((sum, row) => sum + row.bytes, 0)} bytes.`);

@@ -78,6 +78,7 @@ jobs:
           persist-credentials: false
           sparse-checkout-cone-mode: false
           sparse-checkout: |
+            /.gitignore
             /src/
             /docs/PLATFORM_RULES.zh-CN.md
             /*.json
