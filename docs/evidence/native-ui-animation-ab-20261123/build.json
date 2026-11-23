@@ -1,0 +1,121 @@
+{
+  "seed": "3dbe6df5896af2c243cb6b6fe224c738840b2268beff64edbb15912c3ccc6563",
+  "layout": "1763ca8087e9ec6fcd1ed74b9a2a44c0d7dcafd867a33009816b9aad8376e779",
+  "encoder": "8bf40edc24fb2e7c2cd59908e7e1d37a7a8c6a431c921d9bbd2c66b3417a34f3",
+  "variants": {
+    "lua": {
+      "gil": "37fdde35ee836179e7299040cb79ca63e19438d67629a9116d06f3720b4a4604",
+      "save": "f6d1740a54d4db3dd53fa1168f00aeddb5ed9968504d8dce9249e93c540891db",
+      "allControls": 1037,
+      "nativeWarnings": 9,
+      "buttonCounts": {
+        "buttonCurrent": 77,
+        "buttonPreset": 69,
+        "buttonStretch": 17
+      },
+      "modules": {
+        "ab_probe": {
+          "id": 1073741826,
+          "lines": 222,
+          "sha256": "21097431510ae123b57e923b03d8f15c6bea50d202b67c848062ea53fa9c949b"
+        },
+        "abyss_theme": {
+          "id": 1073741827,
+          "lines": 2,
+          "sha256": "c9f224b42288eb570cee29a1fad23e71e305886c94f0014b7cbfc5268b1bb816"
+        },
+        "abyss_numbers": {
+          "id": 1073741828,
+          "lines": 8,
+          "sha256": "857c071eefa67b128b5d8aaf16fb4ae04374ac3f80ba2eddb13b324382953c80"
+        },
+        "abyss_node_ui_motion": {
+          "id": 1073741829,
+          "lines": 115,
+          "sha256": "f4458f50d20014ebb7151596ffce165600fc6096991a46009c11f58fcb801a9a"
+        },
+        "abyss_page_reveal": {
+          "id": 1073741830,
+          "lines": 491,
+          "sha256": "5823d3f41d52b010c41e61aa65f2fe2e6a888434d82a49e2cc48550020018ae4"
+        }
+      }
+    },
+    "tween": {
+      "gil": "8da81e498a37a39fa095903132d94ea85ae1593aae4bc41f9bc2a14206d835aa",
+      "save": "be9bc77798fc6d8258786d61aff91850b46ef57d63a2efeeb0b2387c6c5ae3ac",
+      "allControls": 1037,
+      "nativeWarnings": 9,
+      "buttonCounts": {
+        "buttonCurrent": 77,
+        "buttonPreset": 69,
+        "buttonStretch": 17
+      },
+      "modules": {
+        "ab_probe": {
+          "id": 1073741826,
+          "lines": 222,
+          "sha256": "131f493dfd9e737f799bed92f2a79b9fc14d47e28e79690811e4bc9a6990f2c7"
+        },
+        "abyss_theme": {
+          "id": 1073741827,
+          "lines": 2,
+          "sha256": "c9f224b42288eb570cee29a1fad23e71e305886c94f0014b7cbfc5268b1bb816"
+        },
+        "abyss_numbers": {
+          "id": 1073741828,
+          "lines": 8,
+          "sha256": "857c071eefa67b128b5d8aaf16fb4ae04374ac3f80ba2eddb13b324382953c80"
+        },
+        "abyss_node_ui_motion": {
+          "id": 1073741829,
+          "lines": 116,
+          "sha256": "140598bdb8275cd864796d575f9f0fd0265278a21447cecad497d0382f014da3"
+        },
+        "abyss_page_reveal": {
+          "id": 1073741830,
+          "lines": 491,
+          "sha256": "11c8edad24e494626f654623678110737b15ee2480de9ffcd90fc5bb3cdafd1a"
+        }
+      }
+    },
+    "sequence": {
+      "gil": "8950a9e354555cd13523c27d6d2c8ac93d4df991e0c093e517125510f700d7e7",
+      "save": "d788bd76c43b90787ea0f844f95f0442abe6cdf1a432af5657e7cfa3fcd71adc",
+      "allControls": 1037,
+      "nativeWarnings": 9,
+      "buttonCounts": {
+        "buttonCurrent": 77,
+        "buttonPreset": 69,
+        "buttonStretch": 17
+      },
+      "modules": {
+        "ab_probe": {
+          "id": 1073741826,
+          "lines": 222,
+          "sha256": "ccdd7ded4ec807795a0a6d5579e8116eededba0cebbf9142b8a8f40eb17e97b7"
+        },
+        "abyss_theme": {
+          "id": 1073741827,
+          "lines": 2,
+          "sha256": "c9f224b42288eb570cee29a1fad23e71e305886c94f0014b7cbfc5268b1bb816"
+        },
+        "abyss_numbers": {
+          "id": 1073741828,
+          "lines": 8,
+          "sha256": "857c071eefa67b128b5d8aaf16fb4ae04374ac3f80ba2eddb13b324382953c80"
+        },
+        "abyss_node_ui_motion": {
+          "id": 1073741829,
+          "lines": 121,
+          "sha256": "b45557caf46d9d15638fe8d785b11eca7a36c1fd316f8fb4fe1549b41bc9981f"
+        },
+        "abyss_page_reveal": {
+          "id": 1073741830,
+          "lines": 491,
+          "sha256": "11c8edad24e494626f654623678110737b15ee2480de9ffcd90fc5bb3cdafd1a"
+        }
+      }
+    }
+  }
+}

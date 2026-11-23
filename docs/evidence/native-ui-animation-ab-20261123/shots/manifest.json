@@ -1,0 +1,730 @@
+[
+  {
+    "file": "lua-buttons-normal.png",
+    "details": [
+      {
+        "canvasId": "pc-16-9",
+        "frame": 0,
+        "time": 0,
+        "clockMode": "manual",
+        "width": 1600,
+        "height": 900,
+        "pixelWidth": 1600,
+        "pixelHeight": 900,
+        "assetWarnings": [
+          {
+            "imageId": 106030,
+            "imageSource": "StaticReference",
+            "error": "fetch failed"
+          },
+          {
+            "imageId": 106025,
+            "imageSource": "StaticReference",
+            "error": "fetch failed"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "file": "lua-buttons-hover.png",
+    "details": [
+      {
+        "canvasId": "pc-16-9",
+        "frame": 0,
+        "time": 0,
+        "clockMode": "manual",
+        "width": 1600,
+        "height": 900,
+        "pixelWidth": 1600,
+        "pixelHeight": 900,
+        "assetWarnings": [
+          {
+            "imageId": 106030,
+            "imageSource": "StaticReference",
+            "error": "fetch failed"
+          },
+          {
+            "imageId": 106025,
+            "imageSource": "StaticReference",
+            "error": "fetch failed"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "file": "lua-buttons-pressed.png",
+    "details": [
+      {
+        "canvasId": "pc-16-9",
+        "frame": 0,
+        "time": 0,
+        "clockMode": "manual",
+        "width": 1600,
+        "height": 900,
+        "pixelWidth": 1600,
+        "pixelHeight": 900,
+        "assetWarnings": [
+          {
+            "imageId": 106030,
+            "imageSource": "StaticReference",
+            "error": "fetch failed"
+          },
+          {
+            "imageId": 106025,
+            "imageSource": "StaticReference",
+            "error": "fetch failed"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "file": "lua-buttons-disabled.png",
+    "details": [
+      {
+        "canvasId": "pc-16-9",
+        "frame": 0,
+        "time": 0,
+        "clockMode": "manual",
+        "width": 1600,
+        "height": 900,
+        "pixelWidth": 1600,
+        "pixelHeight": 900,
+        "assetWarnings": [
+          {
+            "imageId": 106030,
+            "imageSource": "StaticReference",
+            "error": "fetch failed"
+          },
+          {
+            "imageId": 106025,
+            "imageSource": "StaticReference",
+            "error": "fetch failed"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "file": "lua-shop-100ms.png",
+    "details": [
+      {
+        "canvasId": "pc-16-9",
+        "frame": 6,
+        "time": 0.09999999999999999,
+        "clockMode": "manual",
+        "width": 1600,
+        "height": 900,
+        "pixelWidth": 1600,
+        "pixelHeight": 900,
+        "assetWarnings": [
+          {
+            "imageId": 106025,
+            "imageSource": "StaticReference",
+            "error": "fetch failed"
+          },
+          {
+            "imageId": 105077,
+            "imageSource": "StaticReference",
+            "error": "fetch failed"
+          },
+          {
+            "imageId": 106095,
+            "imageSource": "StaticReference",
+            "error": "fetch failed"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "file": "lua-shop-final.png",
+    "details": [
+      {
+        "canvasId": "pc-16-9",
+        "frame": 20,
+        "time": 0.3333333333333333,
+        "clockMode": "manual",
+        "width": 1600,
+        "height": 900,
+        "pixelWidth": 1600,
+        "pixelHeight": 900,
+        "assetWarnings": [
+          {
+            "imageId": 106025,
+            "imageSource": "StaticReference",
+            "error": "fetch failed"
+          },
+          {
+            "imageId": 105077,
+            "imageSource": "StaticReference",
+            "error": "fetch failed"
+          },
+          {
+            "imageId": 106095,
+            "imageSource": "StaticReference",
+            "error": "fetch failed"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "file": "lua-character-100ms.png",
+    "details": [
+      {
+        "canvasId": "pc-16-9",
+        "frame": 26,
+        "time": 0.4333333333333333,
+        "clockMode": "manual",
+        "width": 1600,
+        "height": 900,
+        "pixelWidth": 1600,
+        "pixelHeight": 900,
+        "assetWarnings": [
+          {
+            "imageId": 106025,
+            "imageSource": "StaticReference",
+            "error": "fetch failed"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "file": "lua-character-final.png",
+    "details": [
+      {
+        "canvasId": "pc-16-9",
+        "frame": 66,
+        "time": 1.100000000000001,
+        "clockMode": "manual",
+        "width": 1600,
+        "height": 900,
+        "pixelWidth": 1600,
+        "pixelHeight": 900,
+        "assetWarnings": [
+          {
+            "imageId": 106025,
+            "imageSource": "StaticReference",
+            "error": "fetch failed"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "file": "lua-treasure-450ms.png",
+    "details": [
+      {
+        "canvasId": "pc-16-9",
+        "frame": 93,
+        "time": 1.5499999999999994,
+        "clockMode": "manual",
+        "width": 1600,
+        "height": 900,
+        "pixelWidth": 1600,
+        "pixelHeight": 900,
+        "assetWarnings": [
+          {
+            "imageId": 106095,
+            "imageSource": "StaticReference",
+            "error": "fetch failed"
+          },
+          {
+            "imageId": 106056,
+            "imageSource": "StaticReference",
+            "error": "fetch failed"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "file": "lua-treasure-final.png",
+    "details": [
+      {
+        "canvasId": "pc-16-9",
+        "frame": 138,
+        "time": 2.2999999999999967,
+        "clockMode": "manual",
+        "width": 1600,
+        "height": 900,
+        "pixelWidth": 1600,
+        "pixelHeight": 900,
+        "assetWarnings": [
+          {
+            "imageId": 106025,
+            "imageSource": "StaticReference",
+            "error": "fetch failed"
+          },
+          {
+            "imageId": 106095,
+            "imageSource": "StaticReference",
+            "error": "fetch failed"
+          },
+          {
+            "imageId": 106056,
+            "imageSource": "StaticReference",
+            "error": "fetch failed"
+          },
+          {
+            "imageId": 102028,
+            "imageSource": "StaticReference",
+            "error": "fetch failed"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "file": "lua-map-reveal.png",
+    "details": [
+      {
+        "canvasId": "pc-16-9",
+        "frame": 201,
+        "time": 3.349999999999993,
+        "clockMode": "manual",
+        "width": 1600,
+        "height": 900,
+        "pixelWidth": 1600,
+        "pixelHeight": 900,
+        "assetWarnings": [
+          {
+            "imageId": 106057,
+            "imageSource": "StaticReference",
+            "error": "fetch failed"
+          },
+          {
+            "imageId": 106045,
+            "imageSource": "StaticReference",
+            "error": "fetch failed"
+          },
+          {
+            "imageId": 106059,
+            "imageSource": "StaticReference",
+            "error": "fetch failed"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "file": "tween-shop-100ms.png",
+    "details": [
+      {
+        "canvasId": "pc-16-9",
+        "frame": 6,
+        "time": 0.09999999999999999,
+        "clockMode": "manual",
+        "width": 1600,
+        "height": 900,
+        "pixelWidth": 1600,
+        "pixelHeight": 900,
+        "assetWarnings": [
+          {
+            "imageId": 106025,
+            "imageSource": "StaticReference",
+            "error": "fetch failed"
+          },
+          {
+            "imageId": 105077,
+            "imageSource": "StaticReference",
+            "error": "fetch failed"
+          },
+          {
+            "imageId": 106095,
+            "imageSource": "StaticReference",
+            "error": "fetch failed"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "file": "tween-shop-final.png",
+    "details": [
+      {
+        "canvasId": "pc-16-9",
+        "frame": 20,
+        "time": 0.3333333333333333,
+        "clockMode": "manual",
+        "width": 1600,
+        "height": 900,
+        "pixelWidth": 1600,
+        "pixelHeight": 900,
+        "assetWarnings": [
+          {
+            "imageId": 106025,
+            "imageSource": "StaticReference",
+            "error": "fetch failed"
+          },
+          {
+            "imageId": 105077,
+            "imageSource": "StaticReference",
+            "error": "fetch failed"
+          },
+          {
+            "imageId": 106095,
+            "imageSource": "StaticReference",
+            "error": "fetch failed"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "file": "tween-character-100ms.png",
+    "details": [
+      {
+        "canvasId": "pc-16-9",
+        "frame": 26,
+        "time": 0.4333333333333333,
+        "clockMode": "manual",
+        "width": 1600,
+        "height": 900,
+        "pixelWidth": 1600,
+        "pixelHeight": 900,
+        "assetWarnings": [
+          {
+            "imageId": 106025,
+            "imageSource": "StaticReference",
+            "error": "fetch failed"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "file": "tween-character-final.png",
+    "details": [
+      {
+        "canvasId": "pc-16-9",
+        "frame": 66,
+        "time": 1.100000000000001,
+        "clockMode": "manual",
+        "width": 1600,
+        "height": 900,
+        "pixelWidth": 1600,
+        "pixelHeight": 900,
+        "assetWarnings": [
+          {
+            "imageId": 106025,
+            "imageSource": "StaticReference",
+            "error": "fetch failed"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "file": "tween-treasure-450ms.png",
+    "details": [
+      {
+        "canvasId": "pc-16-9",
+        "frame": 93,
+        "time": 1.5499999999999994,
+        "clockMode": "manual",
+        "width": 1600,
+        "height": 900,
+        "pixelWidth": 1600,
+        "pixelHeight": 900,
+        "assetWarnings": [
+          {
+            "imageId": 106095,
+            "imageSource": "StaticReference",
+            "error": "fetch failed"
+          },
+          {
+            "imageId": 106056,
+            "imageSource": "StaticReference",
+            "error": "fetch failed"
+          },
+          {
+            "animationId": 10001077,
+            "error": "UI effect video frames are available in browser playback only; omitted from this PNG"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "file": "tween-treasure-final.png",
+    "details": [
+      {
+        "canvasId": "pc-16-9",
+        "frame": 138,
+        "time": 2.2999999999999967,
+        "clockMode": "manual",
+        "width": 1600,
+        "height": 900,
+        "pixelWidth": 1600,
+        "pixelHeight": 900,
+        "assetWarnings": [
+          {
+            "imageId": 102028,
+            "imageSource": "StaticReference",
+            "error": "fetch failed"
+          },
+          {
+            "imageId": 106025,
+            "imageSource": "StaticReference",
+            "error": "fetch failed"
+          },
+          {
+            "imageId": 106095,
+            "imageSource": "StaticReference",
+            "error": "fetch failed"
+          },
+          {
+            "imageId": 106056,
+            "imageSource": "StaticReference",
+            "error": "fetch failed"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "file": "tween-map-reveal.png",
+    "details": [
+      {
+        "canvasId": "pc-16-9",
+        "frame": 201,
+        "time": 3.349999999999993,
+        "clockMode": "manual",
+        "width": 1600,
+        "height": 900,
+        "pixelWidth": 1600,
+        "pixelHeight": 900,
+        "assetWarnings": [
+          {
+            "imageId": 106045,
+            "imageSource": "StaticReference",
+            "error": "fetch failed"
+          },
+          {
+            "imageId": 106059,
+            "imageSource": "StaticReference",
+            "error": "fetch failed"
+          },
+          {
+            "imageId": 106057,
+            "imageSource": "StaticReference",
+            "error": "fetch failed"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "file": "sequence-shop-100ms.png",
+    "details": [
+      {
+        "canvasId": "pc-16-9",
+        "frame": 6,
+        "time": 0.09999999999999999,
+        "clockMode": "manual",
+        "width": 1600,
+        "height": 900,
+        "pixelWidth": 1600,
+        "pixelHeight": 900,
+        "assetWarnings": [
+          {
+            "imageId": 106025,
+            "imageSource": "StaticReference",
+            "error": "fetch failed"
+          },
+          {
+            "imageId": 105077,
+            "imageSource": "StaticReference",
+            "error": "fetch failed"
+          },
+          {
+            "imageId": 106095,
+            "imageSource": "StaticReference",
+            "error": "fetch failed"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "file": "sequence-shop-final.png",
+    "details": [
+      {
+        "canvasId": "pc-16-9",
+        "frame": 20,
+        "time": 0.3333333333333333,
+        "clockMode": "manual",
+        "width": 1600,
+        "height": 900,
+        "pixelWidth": 1600,
+        "pixelHeight": 900,
+        "assetWarnings": [
+          {
+            "imageId": 106025,
+            "imageSource": "StaticReference",
+            "error": "fetch failed"
+          },
+          {
+            "imageId": 105077,
+            "imageSource": "StaticReference",
+            "error": "fetch failed"
+          },
+          {
+            "imageId": 106095,
+            "imageSource": "StaticReference",
+            "error": "fetch failed"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "file": "sequence-character-100ms.png",
+    "details": [
+      {
+        "canvasId": "pc-16-9",
+        "frame": 26,
+        "time": 0.4333333333333333,
+        "clockMode": "manual",
+        "width": 1600,
+        "height": 900,
+        "pixelWidth": 1600,
+        "pixelHeight": 900,
+        "assetWarnings": [
+          {
+            "imageId": 106025,
+            "imageSource": "StaticReference",
+            "error": "fetch failed"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "file": "sequence-character-final.png",
+    "details": [
+      {
+        "canvasId": "pc-16-9",
+        "frame": 66,
+        "time": 1.100000000000001,
+        "clockMode": "manual",
+        "width": 1600,
+        "height": 900,
+        "pixelWidth": 1600,
+        "pixelHeight": 900,
+        "assetWarnings": [
+          {
+            "imageId": 106025,
+            "imageSource": "StaticReference",
+            "error": "fetch failed"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "file": "sequence-treasure-450ms.png",
+    "details": [
+      {
+        "canvasId": "pc-16-9",
+        "frame": 93,
+        "time": 1.5499999999999994,
+        "clockMode": "manual",
+        "width": 1600,
+        "height": 900,
+        "pixelWidth": 1600,
+        "pixelHeight": 900,
+        "assetWarnings": [
+          {
+            "imageId": 106095,
+            "imageSource": "StaticReference",
+            "error": "fetch failed"
+          },
+          {
+            "imageId": 106056,
+            "imageSource": "StaticReference",
+            "error": "fetch failed"
+          },
+          {
+            "animationId": 10001077,
+            "error": "UI effect video frames are available in browser playback only; omitted from this PNG"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "file": "sequence-treasure-final.png",
+    "details": [
+      {
+        "canvasId": "pc-16-9",
+        "frame": 138,
+        "time": 2.2999999999999967,
+        "clockMode": "manual",
+        "width": 1600,
+        "height": 900,
+        "pixelWidth": 1600,
+        "pixelHeight": 900,
+        "assetWarnings": [
+          {
+            "imageId": 102028,
+            "imageSource": "StaticReference",
+            "error": "fetch failed"
+          },
+          {
+            "imageId": 106025,
+            "imageSource": "StaticReference",
+            "error": "fetch failed"
+          },
+          {
+            "imageId": 106095,
+            "imageSource": "StaticReference",
+            "error": "fetch failed"
+          },
+          {
+            "imageId": 106056,
+            "imageSource": "StaticReference",
+            "error": "fetch failed"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "file": "sequence-map-reveal.png",
+    "details": [
+      {
+        "canvasId": "pc-16-9",
+        "frame": 201,
+        "time": 3.349999999999993,
+        "clockMode": "manual",
+        "width": 1600,
+        "height": 900,
+        "pixelWidth": 1600,
+        "pixelHeight": 900,
+        "assetWarnings": [
+          {
+            "imageId": 106045,
+            "imageSource": "StaticReference",
+            "error": "fetch failed"
+          },
+          {
+            "imageId": 106059,
+            "imageSource": "StaticReference",
+            "error": "fetch failed"
+          },
+          {
+            "imageId": 106057,
+            "imageSource": "StaticReference",
+            "error": "fetch failed"
+          }
+        ]
+      }
+    ]
+  }
+]
