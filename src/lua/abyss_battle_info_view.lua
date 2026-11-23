@@ -4,6 +4,7 @@ local Theme = require("abyss_theme")
 local number = require("abyss_numbers").integer
 local M = {}
 local UnitView=require("abyss_battle_unit_view")
+local EnemyView=require("abyss_battle_enemy_view")
 local C, L, S = Theme.color, Theme.layout, Theme.space
 local I, A, P = L.statusInfo, L.actorDetail, L.powerTips
 local wrappedLines = require("abyss_battle_info_content").lines
@@ -105,13 +106,13 @@ local function powerColumns(rows, width, font, room)
         for j = first, math.min(#rows, first + groupSize - 1) do
             local row = rows[j]
             count = count + wrappedLines(row.name, width, font, P.padding * 2)
-            for paragraph in row.body:gmatch("[^\n]+") do
-                count = count + wrappedLines(paragraph, width, font, P.padding * 2)
+            for paragraph in (row.body .. "\n"):gmatch("(.-)\n") do
+                count = count + math.max(1, wrappedLines(paragraph, width, font, P.padding * 2))
             end
             copy[#copy + 1] = powerTitle .. row.name .. "</color>\n" .. row.body
             i = j + 1
         end
-        local height = math.max(L.nativeText.lineHeight, count * pitch + P.padding * 2)
+        local height = math.max(L.nativeText.lineHeight, count * pitch) + P.padding * 2
         if used > 0 and used + height > room then
             columns[#columns + 1] = {rows = column, height = used - P.gap}
             column, used = {}, 0
@@ -146,6 +147,16 @@ local function powerLayout(rows, edge, direction)
     for _, column in ipairs(columns) do scale = math.min(scale, (top - floor) / column.height) end
     left = math.min(left, safeRight - span * scale)
     return columns, left, top, floor, width, P.minFont, scale
+end
+
+-- STS TipHelper.calculateAdditionalOffset, using the measured native text heights.
+local function monsterTipTop(columns, actorY, top, floor, scale)
+    local height = 0
+    for _, column in ipairs(columns) do height = math.max(height, column.height * scale) end
+    local canvasHeight = Theme.canvas.base[2]
+    local above = 0.5 - actorY / canvasHeight
+    local natural = actorY + above * height - columns[1].rows[1].height * scale / 2
+    return math.min(top, math.max(natural, floor + height))
 end
 
 function M.new(self, child, enemyPosition, describeInfo, paginate, tint, ink, picture)
@@ -362,7 +373,7 @@ function M.new(self, child, enemyPosition, describeInfo, paginate, tint, ink, pi
         place(box, "edge", 0, 0, geometry.width, entry.height)
         place(box, "face", 0, 0, geometry.width - 2, entry.height - 2)
         box:SetLocalScale(geometry.scale, geometry.scale, 1)
-        local copy = place(box, "copy", 0, 0, geometry.width - P.padding * 2, entry.height)
+        local copy = place(box, "copy", 0, 0, geometry.width - P.padding * 2, entry.height - P.padding * 2)
         copy.fontSize, copy.minimumFontSize = geometry.font, geometry.font
         copy.text = entry.text
         box:SetVisible(true)
@@ -374,8 +385,16 @@ function M.new(self, child, enemyPosition, describeInfo, paginate, tint, ink, pi
             local size = L.player.portrait
             return x + size / 2 + S.l, 1, y + UnitView.noticeLift(battle.player, size, y, true) + size / 2
         end
-        local x, _, size, _, y = enemyPosition(battle, info.index)
-        return x - size / 2 - S.l, -1, y + size / 2
+        local g = EnemyView.geometry(battle.enemies[info.index])
+        local width = Theme.canvas.base[1]
+        local scale = width / 1920
+        local right = g.hitX + g.hitWidth / 2
+        local rightEdge = right + 20 * scale
+        local safeRight = width / 2 - Theme.canvas.safe.x
+        -- STS AbstractMonster.renderTip chooses a side at TIP_X_THRESHOLD.
+        -- The native tooltip is wider, so it also must fit before the safe edge.
+        if right + width / 2 < 1544 * scale and rightEdge + P.width <= safeRight then return rightEdge, 1, g.hitY end
+        return g.hitX - g.hitWidth / 2 - 60 * scale, -1, g.hitY
     end
 
     local function paintPowers(panel, info, rows, battle)
@@ -389,9 +408,10 @@ function M.new(self, child, enemyPosition, describeInfo, paginate, tint, ink, pi
         end
         local edge, direction, actorTop = powerAnchor(battle, info)
         local columns, left, top, floor, width, font, scale = powerLayout(rows, edge, direction)
+        local monsterTop = info.index > 0 and monsterTipTop(columns, actorTop, top, floor, scale)
         local index = 0
         for column, items in ipairs(columns) do
-            local y = math.min(top, math.max(actorTop, floor + items.height * scale))
+            local y = monsterTop or math.min(top, math.max(actorTop, floor + items.height * scale))
             local x = direction * (left + ((column - 1) * (width + P.gap) + width / 2) * scale)
             for _, entry in ipairs(items.rows) do
                 index = index + 1
