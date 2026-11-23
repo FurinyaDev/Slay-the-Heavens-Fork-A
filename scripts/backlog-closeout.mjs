@@ -120,7 +120,7 @@ export function runBacklog(args,{root=process.cwd()}={}) {
 
 export function syncBacklogCloseout({pr,files,targetSha,readTargetSha,root=process.cwd()},run=runBacklog) {
   if(pr?.merged!==true||pr?.base?.ref!=='develop')throw Error('Backlog synchronization requires a verified merged develop PR');
-  const changedTaskIds=changedBacklogTasks(files);
+  const changedTaskIds=[...changedBacklogTasks(files),...mentionedTasks(pr.title)];
   const declaration=visibleBody(pr.body).split(/\r?\n/).filter(line=>/^Backlog:/.test(line)).join('\n');
   const ids=new Set(mentionedTasks(declaration));
   const input={body:pr.body,mergeSha:pr.merge_commit_sha,prNumber:pr.number,changedTaskIds};

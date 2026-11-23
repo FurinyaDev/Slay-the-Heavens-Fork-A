@@ -154,7 +154,7 @@ export async function auditBacklogDelivery({prs, tasks, loadFiles}) {
     } catch (error) {
       return {pr:pr.number, merge_sha:sha, task_ids:[], drift:[error.message]};
     }
-    const { actions, errors } = backlogDeclaration(pr.body, changed);
+    const { actions, errors } = backlogDeclaration(pr.body, [...changed, ...mentionedTasks(pr.title)]);
     const historicalLinks = tasks.filter(task =>
       task.source.includes(pr.html_url ?? 'https://invalid.example/no-link')).map(task => task.id);
     const scopedIds = [...new Set([...actions.keys(), ...changed, ...mentionedTasks(pr.title), ...historicalLinks])];

@@ -1492,3 +1492,9 @@ test('an open or closed-unmerged PR with a synthetic merge SHA cannot write a re
   assert.throws(()=>delivery.syncBacklogCloseout({...f,pr:{...f.pr,merged:false},targetSha:f.mergeSha},
     ()=>assert.fail('unmerged PR must not invoke CLI')),/requires a verified merged/);
 });
+
+test('closeout stops before writing when the remote develop SHA advances',t=>{
+  const f=closeoutFixture(t);
+  assert.throws(()=>delivery.syncBacklogCloseout({...f,targetSha:f.mergeSha,readTargetSha:()=> 'a'.repeat(40)},
+    ()=>assert.fail('remote advance must stop CLI writes')),/remote develop advanced/);
+});
