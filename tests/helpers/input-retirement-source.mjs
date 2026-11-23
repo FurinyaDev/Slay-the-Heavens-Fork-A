@@ -7,6 +7,7 @@ import {beforeActionButtons} from './action-buttons-source.mjs';
 import {beforeNativeFixtureInputRetirement} from './native-fixture-replay-source.mjs';
 import {beforeNativeHostInputRetirement} from './native-host-replay-source.mjs';
 import {beforeNativeFlowFixture} from './native-flow-fixture-source.mjs';
+import {beforeCurrentReplayFixes} from './current-replay-fix-sources.mjs';
 import {exactSourceMatches as matches} from './source-fingerprint.mjs';
 
 const hash=(bytes,algorithm='sha256')=>createHash(algorithm).update(bytes).digest('hex');
@@ -58,6 +59,7 @@ export function beforeCombatEvents(path,source){
 const browserArchive=readFileSync(new URL('../fixtures/develop-deck-browser-backflow-source.json.gz',import.meta.url));
 assert.equal(hash(browserArchive),'84b5198436d5858f1630db9d577a188d2033b4e7cb8ce2897e7ecd4378ebf49c','exact Develop deck browser archive');
 const browserBackflow=JSON.parse(gunzipSync(browserArchive));
+const deckChromePath='src/lua/abyss_deck_ui.lua';
 assert.equal(browserBackflow.base,'beba19bad25db7de71f96af521656c13b882909b');
 for(const [path,row] of Object.entries(browserBackflow.files)){
  assert(matches(row.before.source,row.before),'exact deck browser predecessor: '+path);
@@ -65,6 +67,7 @@ for(const [path,row] of Object.entries(browserBackflow.files)){
 }
 export function beforeDeckBrowserBackflow(path,source){
  const row=Object.hasOwn(browserBackflow.files,path)&&browserBackflow.files[path];
+ if(path===deckChromePath)source=beforeCurrentReplayFixes(path,source);
  if(!row||!matches(source,row.after))return source;
  return source.includes('\r\n')?row.before.source.replaceAll('\n','\r\n'):row.before.source;
 }
@@ -120,10 +123,15 @@ export function assertCurrentDevelopUiSource(path,source,read){
  const row=potionBackflow.files[path]??browserBackflow.files[path];
  if(!row)return;
  const expected=path===rewardsBackView?rewardsBackViewSuccessor:row.after;
- assert(matches(source,expected),'fresh current production owner: '+path);
+ const isCurrent=value=>{
+  if(path!==deckChromePath)return matches(value,expected);
+  const prior=beforeCurrentReplayFixes(path,value);
+  return prior!==value&&matches(prior,expected);
+ };
+ assert(isCurrent(source),'fresh current production owner: '+path);
  let live;
  try{live=read(path);}catch(error){assert.fail('combined linked owner missing: '+path+': '+String(error?.message??error));}
- assert(matches(live,expected),'combined linked owner identity: '+path+' during deck/potion backflow validation');
+ assert(isCurrent(live),'combined linked owner identity: '+path+' during deck/potion backflow validation');
 }
 
 export function beforeDevelopUiBackflows(path,source){
