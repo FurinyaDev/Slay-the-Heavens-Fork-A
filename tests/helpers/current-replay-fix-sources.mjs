@@ -798,12 +798,49 @@ const bindings = new Map([
     "after": " const live=join(root,'combined-live'),destination=join(root,'combined-copy');\n const visits=new Set();\n const readClosure=path=>{visits.add(path);return currentRaw(path);};\n for(const path of added){\n  const accepted=sourceEpoch.proof.targets.develop.files[path];\n  assert.equal(accepted.sha256,proof.files[path].afterSha256,'exact retirement predecessor identity: '+path);\n  const projected=sourceEpoch.preCombinedSource(path,currentRaw(path),{target:'develop',readSource:readClosure});\n  assert.equal(projected.replaceAll('\\r\\n','\\n'),accepted.source,'exact live retirement owner: '+path);\n }\n assert(sourceEpoch.proof.owners.every(path=>visits.has(path)),'complete current linked owner set');\n assert(visits.has(pointerInputPath),'complete live pointer replacement');\n const owners=[...visits].filter(path=>path!==retiredControllerPath);\n for(const path of owners){const target=join(live,path);mkdirSync(dirname(target),{recursive:true});copyFileSync(path,target);}\n for(const path of added){const target=join(destination,path);mkdirSync(dirname(target),{recursive:true});copyFileSync(path,target);}\n const retire=prepare(destination,{sourceRoot:live});\n const restoredController=join(live,retiredControllerPath);\n writeFileSync(restoredController,readRetiredController(currentRaw).source);\n assert.throws(retire,/retirement module/,'even an exact retired controller cannot be reintroduced');\n rmSync(restoredController);\n for(const owner of owners){\n  const file=join(live,owner),original=readFileSync(file,'utf8');"
    }
   ]
+ },
+ {
+  "path": "tests/helpers/action-buttons-source.mjs",
+  "beforeSha256": "fdb6c73f52cf92fededa3d48fded11f05e21356ec66864a43c54bdf51781d4cd",
+  "afterSha256": "2ed23e99f0b72927215c24189b1a93752d9869b968cca0fc327a4b780900d4af",
+  "hunks": [
+   {
+    "at": 14,
+    "before": "export const actionButtonsOwns = path => Object.hasOwn(files, path);\n\nfunction matches(path, source) {\n  return actionButtonsOwns(path) && typeof source === 'string' && !source.includes('\\r\\r\\n')\n    && hash(normalize(source)) === files[path].afterSha;\n}",
+    "after": "export const actionButtonsOwns = path => Object.hasOwn(files, path);\nconst lastVerifiedBytes = new Map();\n\nfunction matches(path, source) {\n  if (!actionButtonsOwns(path) || typeof source !== 'string') return false;\n  if (lastVerifiedBytes.get(path) === source) return true;\n  if (source.includes('\\r\\r\\n') || hash(normalize(source)) !== files[path].afterSha) return false;\n  lastVerifiedBytes.set(path, source);\n  return true;\n}"
+   }
+  ]
+ },
+ {
+  "path": "scripts/ci-shards.mjs",
+  "beforeSha256": "6becba66be6048f090cd0036c2e5292f180d9010bbe24aef181977dca18fdeb3",
+  "afterSha256": "a1c56eb4386b5144e7540e2b3926d69181b49808340517e199731d9695028799",
+  "hunks": [
+   {
+    "at": 14,
+    "before": "timings.js.win32[artFeatureInverseTest] = Math.max(timings.js.win32[artFeatureInverseTest] ?? timings.unknownJsMs, 431203);\n",
+    "after": "timings.js.win32[artFeatureInverseTest] = Math.max(timings.js.win32[artFeatureInverseTest] ?? timings.unknownJsMs, 431203);\n\n// Reserve the work that completed in POSIX jobs 137444936421, 137444936442,\n// 137444936458, 137444936507 and 137444936550 before their 30-minute cutoff.\n// These rounded-down case totals guide placement only. They are not full-file timings.\nconst linuxReplayMinimumMs = Object.freeze({\n  'approved-ui-inverse.test.mjs': 1295000,\n  'art-feature-source-inverse.test.mjs': 412000,\n  'card-origin-source-inverse.test.mjs': 149000,\n  'combat-reactions-architecture-inverse.test.mjs': 137000,\n  'game-ui-extraction-source-inverse.test.mjs': 870000,\n  'max-hp-accepted-source-inverse.test.mjs': 677000,\n  'player-death-inverse.test.mjs': 172000,\n  'potion-callback-source.test.mjs': 238000,\n  'presentation-native-m3-contract.test.mjs': 1037000,\n});\n"
+   },
+   {
+    "at": 57,
+    "before": "    ...maps.map(weights=>weights[file]??timings.unknownJsMs),\n    timings.jsPlanning?.localLowerBounds?.[file]?.durationMs??0)]));\n}",
+    "after": "    ...maps.map(weights=>weights[file]??timings.unknownJsMs),\n    timings.jsPlanning?.localLowerBounds?.[file]?.durationMs??0,\n    platform === 'win32' ? 0 : linuxReplayMinimumMs[file.slice('tests/'.length)] ?? 0)]));\n}"
+   }
+  ]
  }
 ].map(row=>[row.path,row]));
 
+// Retain at most one verified byte-for-byte projection per declared path.
+const lastVerifiedProjection=new Map();
 export function beforeCurrentReplayFixes(path, source){
  const binding=bindings.get(path);
  if(!binding)return source;
+ const cached=lastVerifiedProjection.get(path);
+ if(cached&&cached.source===source)return cached.previous;
+ if(cached&&cached.previous===source)return source;
  const prior=restoreExactFixtureHunks(binding,path,source);
- return prior!==source&&source.includes('\r\n')?prior.replaceAll('\n','\r\n'):prior;
+ if(prior===source)return source;
+ const previous=source.includes('\r\n')?prior.replaceAll('\n','\r\n'):prior;
+ lastVerifiedProjection.set(path,{source,previous});
+ return previous;
 }

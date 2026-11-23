@@ -14,6 +14,21 @@ export const timings = JSON.parse(readFileSync(new URL('./ci-test-timings.json',
 const artFeatureInverseTest = ['tests', 'art-feature-source-inverse.test.mjs'].join('/');
 timings.js.win32[artFeatureInverseTest] = Math.max(timings.js.win32[artFeatureInverseTest] ?? timings.unknownJsMs, 431203);
 
+// Reserve the work that completed in POSIX jobs 137444936421, 137444936442,
+// 137444936458, 137444936507 and 137444936550 before their 30-minute cutoff.
+// These rounded-down case totals guide placement only. They are not full-file timings.
+const linuxReplayMinimumMs = Object.freeze({
+  'approved-ui-inverse.test.mjs': 1295000,
+  'art-feature-source-inverse.test.mjs': 412000,
+  'card-origin-source-inverse.test.mjs': 149000,
+  'combat-reactions-architecture-inverse.test.mjs': 137000,
+  'game-ui-extraction-source-inverse.test.mjs': 870000,
+  'max-hp-accepted-source-inverse.test.mjs': 677000,
+  'player-death-inverse.test.mjs': 172000,
+  'potion-callback-source.test.mjs': 238000,
+  'presentation-native-m3-contract.test.mjs': 1037000,
+});
+
 export function partition(files, value, weights, fallback, initial) {
   const match = /^([1-9]\d*)\/([1-9]\d*)$/.exec(String(value));
   const [index, count] = match ? match.slice(1).map(Number) : [];
@@ -41,7 +56,8 @@ export function jsPlanningWeights(files,platform=process.platform) {
   const maps=Object.hasOwn(timings.js,platform)?[timings.js[platform]]:Object.values(timings.js);
   return Object.fromEntries(files.map(file=>[file,Math.max(
     ...maps.map(weights=>weights[file]??timings.unknownJsMs),
-    timings.jsPlanning?.localLowerBounds?.[file]?.durationMs??0)]));
+    timings.jsPlanning?.localLowerBounds?.[file]?.durationMs??0,
+    platform === 'win32' ? 0 : linuxReplayMinimumMs[file.slice('tests/'.length)] ?? 0)]));
 }
 
 export function jsShard(files, value, platform = process.platform) {
