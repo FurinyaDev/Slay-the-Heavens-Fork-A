@@ -21,7 +21,8 @@ export function preGameUiExtractionSource(path,source,{readSource=live}={}){
  // projection of an already verified byte string is reused within the call.
  if(path==='config/architecture.json'||path==='src/lua/abyss_game_ui.lua')
   return sourceEpoch.withCombinedProjection(path,source,{target:'develop',readSource},
-   (projected,read)=>original(path,projected,{readSource:read}));
+   (projected,read)=>original(path,projected,{readSource:projected===source&&readSource!==live
+    ?sourceEpoch.combinedReader(readSource,'develop'):read}));
  const projected=sourceEpoch.preCombinedSource(path,source,{target:'develop',readSource});
  return original(path,projected,{readSource:(typeof readSource==='function'?sourceEpoch.combinedReader(readSource,'develop'):readSource)});
 }
