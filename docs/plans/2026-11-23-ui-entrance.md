@@ -52,3 +52,7 @@
 在基线和候选中分别复现了牌组同名局部变量和 HUD 奖励入口函数超限。复用已审阅实现中的局部变量改名与原有奖励入口提取，两处均保留视觉状态和写入顺序。牌库字体回归对应当前排序与翻页控件。Lua 静态和工程门禁一并验证。 [两处原补丁](https://github.com/FurinyaWorks/Slay-the-Heavens/pull/909) · [字体断言来源](https://github.com/FurinyaWorks/Slay-the-Heavens/pull/907)
 
 房间与选角发布的 14 项回归通过。历史回放从精确入场源码指纹还原旧视图，原始档案保持原样。17 项定向回放通过，包括逐项拒绝漂移、删除及使用旧源码的负控。源文件恢复差异压成约 37 KB，仅测试读取。原 develop 的旧牌堆清单仍无法核对已退役的控制器及旧夹具。Fork B 的修复在四项单独复现的用例上通过，正式基线仍待接回。 [Fork B 基线验证修复](https://github.com/v5g95m7t8m-max/Slay-the-Heavens-Fork-B/tree/ci/develop-replay-repair)
+
+## PR #912 准入声明补全
+
+PR 正文已声明 `UI-Design: v2.0.0 scripts/ui-entrance-layout.mjs entrance sts1-timing-20261123`，覆盖本组合的商店、选角和 `scripts/node-ui-layout.mjs` 入场布局。此补全不改动画、性能策略或回归断言；实机待验项仍按原记录执行。
