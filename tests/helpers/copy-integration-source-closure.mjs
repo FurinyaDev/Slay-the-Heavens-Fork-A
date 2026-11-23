@@ -316,9 +316,10 @@ const actionButtonFiles=Object.freeze({
 });
 const currentReplayFiles=Object.freeze({
  ...actionButtonFiles,
+ 'tests/helpers/potion-pointer-source.mjs':'0eee6e133a69f776e08576c0f5c981c1601ec45a371c1d641ec647f998734c76',
  'tests/helpers/input-retirement-source.mjs':'2644fcd5f1abf80737bb341c3bf4764b1ae3eaf8dcb786a2154b548dbf87f42c',
- 'tests/helpers/release-ui-restore-source.mjs':'1867656e25690863431d7aba898b45ecf79c0a33d9207e65cc42188fb040301a',
- 'tests/helpers/current-replay-fix-sources.mjs':'80559092f77bd5a2dc9a8a6d37239f86fed63289c0bef9f7a7c0e991c6948332',
+ 'tests/helpers/release-ui-restore-source.mjs':'de6835c2a44271c50a20ea39cb18c68f3d5c84b04ce8959171c013b34efc4664',
+ 'tests/helpers/current-replay-fix-sources.mjs':'830cda6e7b971598622ef938c4b72e38ed17af4055ee158958798cbdf03d6d01',
  'tests/helpers/exact-fixture-hunks.mjs':'83f9cb15d9d745c86c555a77875b6b2bfc283a12ec380bcd2af518aa6526a935',
  'tests/helpers/input-retirement-sts-binding.mjs':'f6395a7c5e299738db3caf30f29d7d29724e7ac091af012a585c76b785697219',
  'tests/helpers/input-retirement-merged-sts-source.json.gz':'0c8455ee5877bbb5c4c2fa9e8c2dfb5bfba9cb7e6c388bf1c67f149ac53ca960',

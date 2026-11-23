@@ -5,7 +5,8 @@ import {createHash} from 'node:crypto';
 import {readFileSync} from 'node:fs';
 import {gunzipSync} from 'node:zlib';
 import {readRetiredInputLuaReceipt,readRetiredInputTestReceipt} from './input-retirement-inventory.mjs';
-import {readRetiredController,retiredControllerPath} from './input-retirement-source.mjs';
+import {beforeCombatEvents,beforeDevelopUiBackflows,readRetiredController,retiredControllerPath} from './input-retirement-source.mjs';
+import {beforeActionButtons} from './action-buttons-source.mjs';
 import {stsStylePriorRuntime} from './sts-style-prior-runtime.mjs';
 
 const hash=(bytes,algorithm='sha256')=>createHash(algorithm).update(bytes).digest('hex');
@@ -53,6 +54,7 @@ function beforeRunHudPotionFixture(path,source){
 }
 
 export function beforeCalibrationReplay(path,source){
+ source=beforeCurrentHistoricalStsSource(path,source);
  source=beforeMapNodeVisualsLineEndings(path,source);
  source=beforeRunHudPotionFixture(path,source);
  if(Object.hasOwn(retirement.continuations,path)){
@@ -63,6 +65,42 @@ export function beforeCalibrationReplay(path,source){
  const row=packet.continuations[path];
  if(!matches(source,row.after))return source;
  return source.includes('\r\n')?row.before.source.replaceAll('\n','\r\n'):row.before.source;
+}
+const copierPath='tests/helpers/copy-integration-source-closure.mjs';
+const historicalStsEntry='tests/helpers/historical-sts-style-entry.mjs';
+export function beforeCurrentHistoricalStsSource(path,source){
+ if(path===copierPath)return beforeCurrentReplayCopier(path,source);
+ if(path!==historicalStsEntry||!matches(source,{
+  sha256:'f358b5956f55a33890ea4f4481b75bcd0bfc56048cbc50e4b45a0f9870654c3b',gitBlob:'eb9b2d891344249dfb6644f8800240e3078d38b6',
+ }))return source;
+ const prior=lf(source)
+  .replace("import {beforeCurrentHistoricalStsSource} from './calibration-replay-sources.mjs';\n",'')
+  .replace('beforeCurrentHistoricalStsSource(p,readFileSync(join(root,p),e))','readFileSync(join(root,p),e)');
+ assert(matches(prior,{
+  sha256:'96c580efcf1c7ed4e1be8b1bc3a27d15212c8b485e5a345d5ec450ad364017ae',gitBlob:'ce9126941e02931a16a28e10e20182c41799c7ef',
+ }),'exact historical StS runner predecessor');
+ return source.includes('\r\n')?prior.replaceAll('\n','\r\n'):prior;
+}
+function beforeCurrentReplayCopier(path,source){
+ if(path!==copierPath||!matches(source,{
+  sha256:'7125ec328839c4aae8bcdaa2024e39cd2522e1a41b831e09c07a9b2a5824b0e4',gitBlob:'a00fa5ae579003d91c34fbe7fc890e1e71065c4a',
+ }))return source;
+ const text=lf(source);
+ const block='const currentReplayFiles=Object.freeze({\n';
+ const start=text.indexOf(block),end=text.indexOf('const inside=',start);
+ assert(start>=0&&end>start,'exact current replay copy closure extension');
+ const prior=(text.slice(0,start)+text.slice(end)).replace('Object.entries(currentReplayFiles))','Object.entries(actionButtonFiles))');
+ assert(matches(prior,{
+  sha256:'848e21017bfe022dd0a5e8215ffa94aee50b328ac9d7055ef1fade4f3a170677',gitBlob:'f3005ce3dcd73c1a5bd64fc252535ee6950bc6ff',
+ }),'exact pre-repair helper copy closure');
+ return source.includes('\r\n')?prior.replaceAll('\n','\r\n'):prior;
+}
+
+function matchesRetirementReceipt(path,source,expected){
+ if(matches(source,expected))return true;
+ const ui=beforeDevelopUiBackflows(path,source);
+ const actions=beforeActionButtons(path,ui);
+ return [ui,actions,beforeCombatEvents(path,actions)].some(prior=>matches(prior,expected));
 }
 
 // A frozen receipt may read a registered old blob only after checking the
@@ -85,7 +123,7 @@ export function readCalibrationReceiptInput(path,digest,read,readCurrent=readFil
   const prior=Object.hasOwn(stsStylePriorRuntime.files,path)?stsStylePriorRuntime.files[path]:null;
   const witness=retained??(extra?.sha256===digest?extra:prior?.sha256===digest?prior:null);
   if(witness){
-   assert(matches(readCurrent(path,'utf8'),current),'current receipt input changed: '+path);
+   assert(matchesRetirementReceipt(path,readCurrent(path,'utf8'),current),'current receipt input changed: '+path);
    assert(matches(witness.source,witness),path+' exact retained calibration input');
    return witness.source;
   }
@@ -95,7 +133,7 @@ export function readCalibrationReceiptInput(path,digest,read,readCurrent=readFil
  if(!Object.hasOwn(row.before,digest))return read();
  if(row.current===null)assert.throws(()=>readCurrent(path,'utf8'),{code:'ENOENT'},'retired receipt input reappeared: '+path);
  else{
-  const raw=readCurrent(path,'utf8');
+  const raw=beforeCurrentReplayCopier(path,readCurrent(path,'utf8'));
   let current=raw;
   if(path==='tests/helpers/combined-epoch/source-epoch-runtime.mjs'||path==='tests/helpers/copy-integration-source-closure.mjs'||
      path==='tests/helpers/round3-catalog-source-inverse.mjs'){

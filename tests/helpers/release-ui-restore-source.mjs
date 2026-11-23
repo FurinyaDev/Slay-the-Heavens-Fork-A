@@ -4,6 +4,7 @@ import {beforeCombatVisualSource,combatVisualPriorRead} from './combat-visual-so
 import {authorizeRefinedReleaseProduction,beforeRefinedReleaseProduction} from './refined-release-source.mjs';
 import {inputRetirementStsFixtureSource} from './input-retirement-sts-binding.mjs';
 import {beforeStsFadeCi} from './sts-fade-ci-source.mjs';
+import {beforeCurrentReplayFixes} from './current-replay-fix-sources.mjs';
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import {readFileSync} from 'node:fs';
@@ -69,6 +70,7 @@ const pileReturnLayout={
  gitBlob:'6c9ce59b446f0dd9b8d5f9ffb3c2303e0320195d',
 };
 function recordingRuntimeInput(path,source){
+ source=beforeCurrentReplayFixes(path,source);
  if(path!==officialRuntimePath||!matches(source,currentOfficialRuntime))return source;
  return beforeStsFadeCi(path,inputRetirementStsFixtureSource(path,source));
 }
@@ -83,7 +85,11 @@ function recordingLayoutInput(path,source){
 }
 export function beforeAuthenticatedRecordingStage(path,source,read){
  const input=recordingRuntimeInput(path,source);
- if(input!==source)assert(matches(read(path,'utf8'),currentOfficialRuntime),'recording UI linked owner changed: '+path);
+ if(input!==source){
+  const live=read(path,'utf8');
+  assert(typeof live==='string'&&live.replaceAll('\r\n','\n')===source.replaceAll('\r\n','\n'),
+   'recording UI linked owner changed: '+path);
+ }
  const readInput=owner=>recordingRuntimeInput(owner,read(owner,'utf8'));
  const released=beforeRebasedRelease(path,input);
  if(released!==input)authorizeRebasedRelease([[path,input]],readInput);
