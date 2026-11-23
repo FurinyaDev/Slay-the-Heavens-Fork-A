@@ -25,7 +25,7 @@ print('FADE_PASS')`;
  assert.equal(r.status,0,r.stdout+r.stderr);assert.match(r.stdout,/FADE_PASS/);
 });
 
-test('production Host exposes an empty selection and confirms exactly one run after opaque fade', async t=>{
+test('production Host opens selection with a transparent gate and confirms exactly one run after opaque departure', async t=>{
  const {mkdtempSync,mkdirSync,readdirSync,rmSync}=await import('node:fs');
  const {join,resolve}=await import('node:path');
  const {buildUI}=await import('../scripts/build-ui.mjs');
@@ -44,7 +44,10 @@ local F=dofile('tests/lua/support/game_ui_fixture.lua');local host,root=F.fixtur
 local Gate=require('abyss_page_reveal');local panel=root:GetChild('characterPanel');local veil=root:GetChild('pageReveal'):GetChild('veil')
 local function tick()host:update(.05);if host.pageReveal:step(Gate.intent(host),.05)then host:refresh()end;host.pageReveal:paint(true)end
 local function settle()for i=1,20 do tick()end;assert(not host.pageReveal:covered())end
-settle();assert(host:start());assert(not panel.visible,'destination was painted before fade');settle()
+settle();assert(host:start())
+assert(panel.visible and veil.imageColor.a==0 and not panel:GetChild('confirm').visible,
+ 'selection must prepare in place with a transparent cover')
+settle()
 assert(host.characterSelection.info==nil and panel:GetChild('title').visible)
 assert(not panel:GetChild('officialBackdropVeil').visible,'approved #785 selection veil removal was lost')
 assert(not panel:GetChild('details').visible and not panel:GetChild('confirm').visible)

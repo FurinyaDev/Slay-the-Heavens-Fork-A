@@ -198,7 +198,7 @@ function M.new(cover,ready,onIntent,frames,motion)
         local blocked=not (limited or editing)
         if cover.disableCursorEventPassthrough~=blocked then cover.disableCursorEventPassthrough=blocked end
         if gate.epoch~=ticket then return false end
-        if motion and motion.characterLocal then
+        if blocker and motion and motion.characterLocal then
             local raycast=not editing
             if blocker.raycastTarget~=raycast then blocker.raycastTarget=raycast end
         end
@@ -210,7 +210,7 @@ function M.new(cover,ready,onIntent,frames,motion)
         local ticket=gate.epoch
         local blocker=cover:GetChild('blocker')
         if gate.epoch~=ticket or not paintBlockerInput(blocker,limited,ticket) then return false end
-        if blockerFrame==paintedBlocker then return true end
+        if not blocker or blockerFrame==paintedBlocker then return true end
         if blocker:SetAnchoredPosition(blockerFrame[1],blockerFrame[2])==false or gate.epoch~=ticket then return false end
         if blocker:SetSizeDelta(blockerFrame[3],blockerFrame[4])==false or gate.epoch~=ticket then return false end
         paintedBlocker=blockerFrame
