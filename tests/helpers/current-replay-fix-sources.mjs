@@ -548,6 +548,18 @@ const bindings = new Map([
     "after": " const read=path=>readFileSync(path,'utf8');\n const crlf=source=>source.replace(/\\r?\\n/g,'\\r\\n');\n const priorLua=beforeDevelopBackflow(lua,read(lua));"
    }
   ]
+ },
+ {
+  "path": "tests/sts1-menu-native.cases.mjs",
+  "beforeSha256": "5a30f4553da5e3892ce819403cf3592c9d9236d83c8ca5f79f9cb798d04f8d09",
+  "afterSha256": "cb934afa9e6982a388e37139086f900340c53168823200b6863b651a8c00e742",
+  "hunks": [
+   {
+    "at": 41,
+    "before": " assert.equal(project(path,null),null);\n assert.equal(project(path,source.replaceAll('\\n','\\r\\n')),prior.replaceAll('\\n','\\r\\n'));\n});",
+    "after": " assert.equal(project(path,null),null);\n const toCrlf=value=>value.replace(/\\r?\\n/g,'\\r\\n');\n assert.equal(project(path,toCrlf(source)),toCrlf(prior));\n const malformed=toCrlf(source).replace('\\r\\n','\\r\\r\\n');\n assert.equal(project(path,malformed),malformed,'double CR must remain unrecognized');\n});"
+   }
+  ]
  }
 ].map(row=>[row.path,row]));
 
