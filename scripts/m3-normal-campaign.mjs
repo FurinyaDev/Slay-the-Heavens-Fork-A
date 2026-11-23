@@ -1,8 +1,10 @@
 // Reproducible bounded, offline normal-rule runs; never rewrites game state.
 import {runLua} from './test-lua.mjs';
-import {writeFileSync,readFileSync,mkdirSync,unlinkSync} from 'node:fs';
+import {writeFileSync,readFileSync,mkdirSync,mkdtempSync,rmSync} from 'node:fs';
 import {gzipSync,gunzipSync} from 'node:zlib';
 import {createHash} from 'node:crypto';
+import {tmpdir} from 'node:os';
+import {join} from 'node:path';
 import {parseArgs} from 'node:util';
 import {gitSourceIdentity} from './release-notes.mjs';
 import {toLua} from './build-lua-data.mjs';
@@ -32,10 +34,14 @@ const report={kind:'offline-normal-rule-campaign',campaignProfile:profile,compac
  replayDriverSha256:replay?hash('scripts/m3-campaign-replay.lua'):undefined,
  driverSha256:hash('scripts/m3-normal-campaign.lua'),eventCardPolicySha256:hash('scripts/m3-event-card-policy.lua'),relicChoicePolicySha256:hash('scripts/m3-relic-choice-policy.lua'),resetVerificationKind:'fresh-Run-construction-only; not Host restart',runs:[]};
 for(const seed of seeds){
- const temporary=`build/m3-normal-${seed}.lua`;
  const replayInput=replay?`M3_REPLAY=${toLua(replay.commands)}\n`:'';
- writeFileSync(temporary,`M3_SEED=${seed}\nM3_PROFILE=${JSON.stringify(profile)}\nM3_COMPACT=${compact}\n${replayInput}dofile('scripts/m3-normal-campaign.lua')\n`);
- let result;try{result=runLua(temporary,{timeout:300000,maxBuffer:50000000});}finally{unlinkSync(temporary);}
+ const temporaryDirectory=mkdtempSync(join(tmpdir(),'abyss-campaign-'));
+ const temporary=join(temporaryDirectory,`seed-${seed}.lua`);
+ let result;
+ try{
+  writeFileSync(temporary,`M3_SEED=${seed}\nM3_PROFILE=${JSON.stringify(profile)}\nM3_COMPACT=${compact}\n${replayInput}dofile('scripts/m3-normal-campaign.lua')\n`);
+  result=runLua(temporary,{timeout:300000,maxBuffer:50000000});
+ }finally{rmSync(temporaryDirectory,{recursive:true,force:true});}
  if(result.status!==0)throw Error(result.stderr||result.stdout);
  const line=result.stdout.split('\n').find(x=>x.startsWith('M3_EVIDENCE_JSON '));if(!line)throw Error('missing evidence');
  const evidence={...JSON.parse(line.slice(17)),...source,driverSha256:report.driverSha256,
