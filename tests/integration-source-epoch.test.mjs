@@ -227,6 +227,7 @@ test('entrance replay freshly checks the complete changed cohort and preserves f
  const incomplete=live.filter(path=>!addedEntranceModules.includes(path));
  assert.throws(()=>entranceInventory(incomplete,read),/complete entrance module inventory/);
  assert.throws(()=>assertActorFocusInventory(incomplete.filter(path=>path!==config),read),/complete entrance module inventory/);
+ assert.throws(()=>entranceInventory([...live,addedEntranceModules[0]],read),/complete entrance module inventory/);
  const project=input=>entrancePredecessor(config,source,input).source;
  assert.equal(project(read),prior);
  for(const changedPath of changed){

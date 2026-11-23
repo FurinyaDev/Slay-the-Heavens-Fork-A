@@ -122,7 +122,7 @@ for(const {before,after} of Object.values(releaseUiBuild.files)){
 function beforeUiEntranceCopier(path,source){
  if(path!=='tests/helpers/copy-integration-source-closure.mjs'||typeof source!=='string'||source.includes('\r\r\n'))return source;
  const lf=normalize(source);
- if(hash(lf)!=='5c42d9b55c662984f4109b850c1ddbeec736d4d4bfb3b7454f25dcb2b78b43f4')return source;
+ if(hash(lf)!=='87c116a92881d35c58cdbf793ebdfa5d2c49c70133eac2138669c5eb378871d9')return source;
  const prior=lf.replace(/const entranceFiles=Object.freeze\(\{\n[\s\S]+?\n\}\);\n/,'')
   .replace('Object.entries(entranceFiles)','Object.entries(actionButtonFiles)');
  assert.equal(hash(prior),'848e21017bfe022dd0a5e8215ffa94aee50b328ac9d7055ef1fade4f3a170677','exact entrance helper copy predecessor');
