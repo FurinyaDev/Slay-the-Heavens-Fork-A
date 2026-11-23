@@ -43,6 +43,20 @@ local function new(seed)
  local map=Map.generate(run.data,run.runSeed,1,assert(Run.freezeMapContext(run)))
  return run,map
 end
+local function cardUsefulness(run,card)
+ local definition=C.cardDefinition(run.combat,card)
+ if definition.type=='status'or definition.type=='curse'then return -10000 end
+ return math.max(1,Policy.scoreCard(run,card.cardId))+(definition.type=='attack'and 10 or 0)
+end
+local function handChoiceUid(run,choice)
+ local uid,best
+ for _,card in ipairs(run.combat.hand)do
+  local score=cardUsefulness(run,card)
+  if choice.mode~='put_on_deck'then score=-score end
+  if not best or score>best then uid,best=card.uid,score end
+ end
+ return assert(uid,'empty hand choice')
+end
 local function play(seed)
  local run,map=new(seed)
  local report={seed=seed,campaignProfile=profile,policy='warrior75-engine-state-v1',
@@ -68,14 +82,16 @@ local function play(seed)
    assert(run.act<3,'the offline campaign ends after Act 3')
    command('advance_act',function()return Nodes.advanceAct(run,map)end);done={}
   elseif run.phase=='combat'then
-   local choice=run.combat.pendingChoice
-   if choice then
+   local handChoice,choice=run.combat.pendingHandChoice,run.combat.pendingChoice
+   if handChoice then
+    local uid=handChoiceUid(run,handChoice)
+    command('choose_hand',function()return Run.chooseHand(run,{uid},handChoice.token,run.combatGeneration)end,
+     {uid=uid,mode=handChoice.mode})
+   elseif choice then
     local uid,best
     for _,candidate in ipairs(choice.uids)do
      for _,pile in ipairs({run.combat.hand,run.combat.discard,run.combat.exhaust})do for _,card in ipairs(pile)do if card.uid==candidate then
-      local def=C.cardDefinition(run.combat,card)
-      local score=math.max(1,Policy.scoreCard(run,card.cardId))+(def.type=='attack'and 10 or 0)
-      if def.type=='status'or def.type=='curse'then score=-10000 end
+      local score=cardUsefulness(run,card)
       if choice.op=='exhaustChoose'or choice.op=='handToDraw'then score=-score end
       if not best or score>best then uid,best=candidate,score end
      end end end
