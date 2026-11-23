@@ -78,6 +78,10 @@ function M.install(ctx)
         if shopArt[box] then shopArt[box]() end
     end
 
+    local function keepShopBinding(look, entries, box, value)
+        if look.shop then entries[box] = value end
+    end
+
     function ctx.fillCard(box, id, upgraded, look)
         look = look or {}
         local definition, display = ctx.card(id) or {}, ctx.self.presentation[id] or {}
@@ -86,7 +90,7 @@ function M.install(ctx)
         local instance=look.instance or {cardId=id,upgraded=upgraded==true}
         definition=Combat.cardDefinition({catalog={cards={[id]=definition}}},instance)
         ctx.inspectCards[box]=definition.originalV4 and {definition=definition,upgraded=instance.upgraded} or nil
-        if look.shop then shopInspection[box] = ctx.inspectCards[box] end
+        keepShopBinding(look, shopInspection, box, ctx.inspectCards[box])
         if look.inspectOnly then box:GetChild('hit'):SetVisible(definition.originalV4~=nil) end
         local kind = Theme.icon.cardArt[definition.type] and definition.type or "status"
         local function writeCardCopy()
@@ -117,7 +121,7 @@ function M.install(ctx)
             else CardDisplay.clearNativeArt(box)end
             ctx.tint(box:GetChild("artPlate"), look.dim and C.panelSunken or C.cardType[kind] or C.panelRaised)
         end
-        if look.shop then shopArt[box] = writeCardArt end
+        keepShopBinding(look, shopArt, box, writeCardArt)
         writeCardArt()
         local covered=look.veil or look.stamp~=nil
         local reason=look.reason or look.stamp or '当前不可选择'

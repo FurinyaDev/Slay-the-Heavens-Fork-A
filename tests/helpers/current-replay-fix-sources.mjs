@@ -953,27 +953,27 @@ const bindings = new Map([
  {
   "path": "src/lua/abyss_node_ui_faces.lua",
   "beforeSha256": "d56aed5198b7111008f25c86f1f03eee36bab8549ebd9b92dd7f99f9e4cf6f58",
-  "afterSha256": "52369c0d497a3aaab4852d055dd2afebf83f8bd8cc9f9070f54fe0ea31cd479e",
+  "afterSha256": "e7e27a40bf19e6ab42e00cc8d78e501e25b76c66cf2e5ac18fc0bf75615afa3f",
   "hunks": [
    {
-    "at": 70,
-    "before": "    local shopInspection = setmetatable({}, {__mode='k'})\n    function ctx.reuseShopFace(box)",
-    "after": "    local shopInspection = setmetatable({}, {__mode='k'})\n    local shopArt = setmetatable({}, {__mode='k'})\n    function ctx.reuseShopFace(box)"
+    "at": 69,
+    "before": "    ctx.artFaces={}\n    local shopInspection = setmetatable({}, {__mode='k'})\n    function ctx.reuseShopFace(box)\n        ctx.inspectCards[box] = shopInspection[box]\n        ctx.artFaces[box] = true\n    end\n",
+    "after": "    ctx.artFaces={}\n    local shopInspection = setmetatable({}, {__mode='k'})\n    local shopArt = setmetatable({}, {__mode='k'})\n    function ctx.reuseShopFace(box)\n        ctx.inspectCards[box] = shopInspection[box]\n        ctx.artFaces[box] = true\n        -- Quote reuse skips copy/frame/price work, but an explicit render must\n        -- reconcile native ownership after clear, rejection or metadata changes.\n        if shopArt[box] then shopArt[box]() end\n    end\n\n    local function keepShopBinding(look, entries, box, value)\n        if look.shop then entries[box] = value end\n    end\n"
    },
    {
-    "at": 74,
-    "before": "        ctx.artFaces[box] = true\n    end",
-    "after": "        ctx.artFaces[box] = true\n        -- Quote reuse skips copy/frame/price work, but an explicit render must\n        -- reconcile native ownership after clear, rejection or metadata changes.\n        if shopArt[box] then shopArt[box]() end\n    end"
+    "at": 90,
+    "before": "        definition=Combat.cardDefinition({catalog={cards={[id]=definition}}},instance)\n        ctx.inspectCards[box]=definition.originalV4 and {definition=definition,upgraded=instance.upgraded} or nil\n        if look.shop then shopInspection[box] = ctx.inspectCards[box] end\n        if look.inspectOnly then box:GetChild('hit'):SetVisible(definition.originalV4~=nil) end\n        local kind = Theme.icon.cardArt[definition.type] and definition.type or \"status\"",
+    "after": "        definition=Combat.cardDefinition({catalog={cards={[id]=definition}}},instance)\n        ctx.inspectCards[box]=definition.originalV4 and {definition=definition,upgraded=instance.upgraded} or nil\n        keepShopBinding(look, shopInspection, box, ctx.inspectCards[box])\n        if look.inspectOnly then box:GetChild('hit'):SetVisible(definition.originalV4~=nil) end\n        local kind = Theme.icon.cardArt[definition.type] and definition.type or \"status\""
    },
    {
-    "at": 112,
-    "before": "            CardDisplay.writeArt(box:GetChild(\"art_\" .. kind), definition, ctx.picture,box)\n            if ctx.self.visible or look.shop then\n                CardDisplay.writeNativeArt(box,definition,display.nativeArt,ctx.options,box:GetChild('art_'..kind),instance.uid)",
-    "after": "            CardDisplay.writeArt(box:GetChild(\"art_\" .. kind), definition, ctx.picture,box)\n            if ctx.self.visible then\n                CardDisplay.writeNativeArt(box,definition,display.nativeArt,ctx.options,box:GetChild('art_'..kind),instance.uid)"
+    "at": 115,
+    "before": "            for art in pairs(Theme.icon.cardArt) do box:GetChild(\"art_\" .. art):SetVisible(art == kind) end\n            CardDisplay.writeArt(box:GetChild(\"art_\" .. kind), definition, ctx.picture,box)\n            if ctx.self.visible or look.shop then\n                CardDisplay.writeNativeArt(box,definition,display.nativeArt,ctx.options,box:GetChild('art_'..kind),instance.uid)\n                ctx.artFaces[box]=true -- Pending pools also belong to this page's lifetime.",
+    "after": "            for art in pairs(Theme.icon.cardArt) do box:GetChild(\"art_\" .. art):SetVisible(art == kind) end\n            CardDisplay.writeArt(box:GetChild(\"art_\" .. kind), definition, ctx.picture,box)\n            if ctx.self.visible then\n                CardDisplay.writeNativeArt(box,definition,display.nativeArt,ctx.options,box:GetChild('art_'..kind),instance.uid)\n                ctx.artFaces[box]=true -- Pending pools also belong to this page's lifetime."
    },
    {
-    "at": 118,
-    "before": "        end\n        writeCardArt()",
-    "after": "        end\n        if look.shop then shopArt[box] = writeCardArt end\n        writeCardArt()"
+    "at": 121,
+    "before": "            ctx.tint(box:GetChild(\"artPlate\"), look.dim and C.panelSunken or C.cardType[kind] or C.panelRaised)\n        end\n        writeCardArt()\n        local covered=look.veil or look.stamp~=nil",
+    "after": "            ctx.tint(box:GetChild(\"artPlate\"), look.dim and C.panelSunken or C.cardType[kind] or C.panelRaised)\n        end\n        keepShopBinding(look, shopArt, box, writeCardArt)\n        writeCardArt()\n        local covered=look.veil or look.stamp~=nil"
    }
   ]
  },
