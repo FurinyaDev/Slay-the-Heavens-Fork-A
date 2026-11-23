@@ -21,7 +21,9 @@ jobs:
           path: control
           persist-credentials: false
           sparse-checkout-cone-mode: false
-          sparse-checkout: /scripts/gil-candidate.mjs
+          sparse-checkout: |
+            /scripts/gil-candidate.mjs
+            /.github/gil-headless-probe.mjs
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           repository: FurinyaWorks/Slay-the-Heavens
@@ -78,3 +80,5 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           Set-Location source
           npm run build:ui -- build/gil-ui-check --official-assets --refined-release-monsters --native-page-lifecycle
+      - name: Compile, write and read back the project BGM graph on a real upstream fixture
+        run: node control/.github/gil-headless-probe.mjs miliastra-mcp source

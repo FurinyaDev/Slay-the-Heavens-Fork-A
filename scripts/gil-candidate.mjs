@@ -143,6 +143,8 @@ async function assets() {
   git(root, ['lfs', 'install', '--local', '--skip-smudge']);
   cleanHead(root, process.env.SOURCE_SHA, 'Source');
   const { options } = nativeAudioBuildArgs([]);
+  requireGate(options.officialAssets && options.refinedReleaseMonsterArt && options.nativePageLifecycle,
+    'This source does not have the approved default production preset.');
   const files = sourceInputs(root, options).map(row => relative(root, resolve(root, row.path)).replaceAll('\\', '/'))
     .map(path => mediaByPath.get(path)).filter(Boolean);
   for (const row of files) {
@@ -159,6 +161,8 @@ async function assets() {
     } catch { throw new GateError('Could not download a reviewed production LFS object.'); }
     requireGate(bytes.length === row.bytes && hash(bytes) === row.sha256, 'Production LFS asset size or SHA-256 mismatch.');
     writeFileSync(file, bytes);
+    // Refresh the sparse index through the clean filter. The following clean-head check rejects any staged delta.
+    git(root, ['add', '--', row.path]);
   }
   cleanHead(root, process.env.SOURCE_SHA, 'Source');
   console.log(`Verified production LFS assets: ${files.length} files, ${files.reduce((sum, row) => sum + row.bytes, 0)} bytes.`);
