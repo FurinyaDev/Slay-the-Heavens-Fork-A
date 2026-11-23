@@ -29,6 +29,44 @@ function currentMatches(path,source,expected){
 }
 const predecessors=new Map();
 
+const act3MenuSource={
+ path:'src/lua/abyss_game_ui_menu_view.lua',
+ before:{sha256:'a8a0e37eaa4e17f3e504cf5ec21a4f8a342a127b03dde4541ab8539d2deb86bf',gitBlob:'b179a308ff877a041167b107ad6521078806e51a'},
+ after:{sha256:'3aedad847857077249e9f7e94bad650c747a7a80d69a2aeb5ed75e815f98fea6',gitBlob:'d3e04cffb3675cca8b1846d776a835b9180284be'},
+ hunks:[
+  {at:90,before:"end\nlocal function endingTitle(run)",after:"end\nlocal function normalCampaignVictory(run)\n    local flow=run.nodeFlow\n    return run.phase=='victory' and run.act==3 and flow and flow.result=='normal_victory'\nend\nlocal function endingTitle(run)"},
+  {at:97,before:"    if run.ending=='true_victory' then return '真结局 · 深渊已被封印' end\n    return '深渊已被封印'",
+   after:"    if run.ending=='true_victory' then return '真结局 · 深渊已被封印' end\n    if normalCampaignVictory(run) then return '三幕冒险完成' end\n    return '深渊已被封印'"},
+  {at:103,before:"    if victory and run.ending=='true_victory' then return '腐化之心已击败。真结局已达成。' end\n    return Narrative.flow[mode].full",
+   after:"    if victory and run.ending=='true_victory' then return '腐化之心已击败。真结局已达成。' end\n    if victory and normalCampaignVictory(run) then return '三幕冒险已完成。本局挑战到此结束。' end\n    return Narrative.flow[mode].full"},
+  {at:111,before:"    if victory and run.ending=='true_victory' then return ctx.owner.map.terminalFloor or floors end\n    return floors",
+   after:"    if victory and run.ending=='true_victory' then return ctx.owner.map.terminalFloor or floors end\n    if victory and normalCampaignVictory(run) then return Acts.get(3).last end\n    return floors"},
+ ],
+};
+const act3MenuReaders=new WeakMap();
+
+function beforeAct3EndingMenu(path,source){
+ return path===act3MenuSource.path?project(path,source,act3MenuSource):source;
+}
+
+function act3MenuReader(read,authenticated=false){
+ const binding=act3MenuReaders.get(read);
+ if(binding){
+  if(authenticated)binding.requireCurrent();
+  return read;
+ }
+ const reader=path=>{
+  const source=read(path),prior=beforeAct3EndingMenu(path,source);
+  if(path===act3MenuSource.path){
+   if(authenticated)assert(prior!==source,'combined linked owner identity: '+path+' during Act 3 ending validation');
+   authenticated=prior!==source;
+  }
+  return prior;
+ };
+ act3MenuReaders.set(reader,{read,requireCurrent:()=>{authenticated=true;}});
+ return reader;
+}
+
 function project(path,source,row){
  if(row)source=currentInput(path,source);
  if(!row||!matches(source,row.after))return source;
@@ -62,6 +100,7 @@ export function authenticateUiEntrance(read){
 }
 
 export function entranceReader(read,authenticated=false){
+ read=act3MenuReader(read);
  return owner=>{
   const source=read(owner);
   const row=binding(owner);
@@ -83,6 +122,13 @@ export function assertCurrentUiEntrance(path,source){
 
 export function entrancePredecessor(path,source,read=readLive,{allowConfigLayout=false}={}){
  const input=source;
+ const menuPrior=beforeAct3EndingMenu(path,source);
+ if(menuPrior!==source){
+  const readCurrent=act3MenuReaders.get(read)?.read??read;
+  assert(matches(readCurrent(path),act3MenuSource.after),'combined linked owner identity: '+path+' during Act 3 ending validation');
+  return {source:menuPrior,read:act3MenuReader(read,true)};
+ }
+ read=act3MenuReader(read);
  if(allowConfigLayout&&path==='config/architecture.json'&&typeof source==='string'
   &&!matches(source,files[path].after)){
   // Only the caller's JSON layout may vary. Tokens retain key order, duplicate

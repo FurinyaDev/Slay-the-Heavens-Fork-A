@@ -342,7 +342,7 @@ const entranceFiles=Object.freeze({
  'tests/helpers/develop-release-backflow-source.mjs':'f29a5a75c1cf63d7e7227b14f0f4bc9472d32a0364681eb733f101598651c122',
  'tests/helpers/native-fixture-replay-source.mjs':'5a9de41dfd4ee6d5438c24c9c7c9f068eeaeba66bc6fc8abec16d9c08d32864b',
  'tests/helpers/native-flow-fixture-source.mjs':'303770de22647a8eea4090cefa8e75cafa9c8643a2048441698ed8c02633a732',
- 'tests/helpers/ui-entrance-source.mjs':'f1c56304e9847881824326828896d1393ec576d36b46dcac8795ef58f8ce65d0',
+ 'tests/helpers/ui-entrance-source.mjs':'c080e43f8d55814a1d5d714deb69e39b06acd2f488df5719126e07e99fd8662b',
  'tests/helpers/exact-fixture-hunks.mjs':'83f9cb15d9d745c86c555a77875b6b2bfc283a12ec380bcd2af518aa6526a935',
  'tests/fixtures/ui-entrance-source.json.gz':'7ac3f53b242819cdb569c0a1ebf60de0605b72297a1072ea612bfeb11b0597c9',
 });
