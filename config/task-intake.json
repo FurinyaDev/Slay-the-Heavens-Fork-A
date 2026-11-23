@@ -7,9 +7,7 @@
   "blockedUntilOwnerApproval": [
     "TASK-85",
     "TASK-96",
-    "TASK-97",
-    "TASK-62",
-    "TASK-64"
+    "TASK-97"
   ],
-  "note": "Read-only preliminary check for new claims. M7 archived; only M8/M9 are active product milestones. No calendar or milestone lane gates. ALLOW does not grant approval or claim ownership."
+  "note": "Read-only new-claim check. 2026-11-23 Owner approved develop-only STS1 Act3/Act4 work (TASK-62/64), not release or acceptance; both tasks remain subject to existing status and dependency checks. TASK-85/96/97 retain separate Owner approval and TASK-97 still requires design/capacity GO. ALLOW is not a claim or public launch authorization."
 }
