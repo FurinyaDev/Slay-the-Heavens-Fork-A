@@ -97,6 +97,24 @@ test('the simplified-Chinese sort header has three native buttons and clears the
   assert.ok(sort.position[1] + 22 < shade.position[1] + shade.size[1] / 2);
 });
 
+test('pile chrome contains a centered, non-interactive text heading and no bottom badges', () => {
+  const panel = gameLayout().controls.find(c => c.name === 'deckPanel');
+  const chrome = panel.children.find(c => c.name === 'pileChrome');
+  assert.deepEqual(chrome.children.map(c => c.name), ['shade', 'empty', 'heading']);
+  const heading = chrome.children.find(c => c.name === 'heading');
+  assert.equal(heading.kind, 'text');
+  assert.equal(heading.visible, false);
+  assert.equal(heading.raycastTarget, false);
+  assert.equal(heading.position[0], 0);
+  assert.equal(heading.text.align, 'centre');
+  assert.equal(heading.text.fontSize, theme.font.heading);
+  assert.equal(heading.text.colour, theme.color.text);
+  assert.deepEqual(heading.children ?? [], []);
+  assert.equal(heading.states, undefined);
+  assert.equal(theme.layout.deckView.browser.drawBadge, undefined);
+  assert.equal(theme.layout.deckView.browser.discardBadge, undefined);
+});
+
 test('overlays avoid navigation metadata and deck pages leave the card viewport clear', () => {
   const layout = gameLayout(undefined, {originalCharacters: true});
   for (const name of ['deckPanel','potionPanel','choicePanel','characterPanel','exitPanel']) {
