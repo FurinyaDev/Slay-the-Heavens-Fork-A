@@ -33,6 +33,14 @@ test('explicit Owner approvals survive removal of Sprint gates',()=>{
     assert.ok(result.reasons.includes('explicit Owner approval required'),id);
   }
 });
+test('approved Act 3/4 develop work no longer needs Owner reapproval but still respects task status',()=>{
+  for(const id of ['TASK-62','TASK-64']) {
+    assert.equal(check(id,'m-9').decision,'ALLOW',id);
+    const held=check(id,'m-9','Blocked');
+    assert.equal(held.decision,'HOLD',id);
+    assert.ok(held.reasons.some(reason=>reason.includes('instead of duplicating')),id);
+  }
+});
 test('verification-only and fully checked tasks cannot be picked as new implementation',t=>{
   const root=fixture(t);
   for(const metadata of ['labels: [待验]\n','labels:\n  - 待验\n',
