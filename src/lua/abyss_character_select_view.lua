@@ -3,7 +3,7 @@ local Theme=require('abyss_theme')
 local Select=require('abyss_character_select')
 local number=require('abyss_numbers').integer
 local M={}
--- 选角只做一眼扫读（对标 STS 选角页）：牌组按 攻击→技能→能力→其它 排好直接列出，不提供筛选。
+-- The legacy layout lists cards in type order.
 local typeOrder={attack=1,skill=2,power=3,status=4,curse=5}
 local function sortedDeck(info)
     local cards={}
@@ -16,7 +16,7 @@ local function sortedDeck(info)
     end)
     return cards
 end
--- Selection owns the summary only; the shared deck browser owns all card faces.
+-- The legacy selection summary shares no card faces with the deck browser.
 local function renderStarterDeck(details,info)
     local parts={}
     for _,card in ipairs(sortedDeck(info))do parts[#parts+1]=card.name..'×'..number(card.count)end
@@ -98,7 +98,7 @@ local function paintDetails(details,state,platform,originalSts,nativeV25,info)
     for _,r in ipairs(info.relics)do relics[#relics+1]=r.name;if r.text and r.text~='' then texts[#texts+1]=r.text end end
     details:GetChild('relic').text=#relics>0 and table.concat(relics,'、') or '无'
     details:GetChild('relicText').text=table.concat(texts,' ')
-    if details:GetChild('deckSummary') then renderStarterDeck(details,info) end
+    if not nativeV25 and details:GetChild('deckSummary') then renderStarterDeck(details,info) end
     local large,key,portraits=paintPortraits(details,state,platform)
     if originalSts then portraits:SetVisible(false)end
     paintPortraitNote(details,info,platform,large,key,portraits)
@@ -120,7 +120,7 @@ function M.render(panel,state,platform,published)
     paintCharacterButtons(panel,state,platform,originalSts,open)
     paintThemesAndElements(panel,state,platform,elementsOpen)
     local details=panel:GetChild('details');details:SetVisible(info~=nil)
-    panel:GetChild('deckView'):SetVisible(false)
+    if not nativeV25 then panel:GetChild('deckView'):SetVisible(false) end
     local roster=panel:GetChild('v25Roster')
     if nativeV25 and roster then
         roster:SetVisible(open==1)

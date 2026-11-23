@@ -4,13 +4,15 @@ title: 复核菜单选角与祝福体验（既有实现已交付）
 status: In Progress
 assignee:
   - Furinya
-created_date: 2026-11-11 08:07
-updated_date: '2026-11-19T15:56:00Z'
+created_date: '2026-11-11T08:07:00Z'
+updated_date: '2026-11-23T15:34:23Z'
 labels:
   - 待验
   - delivery-verify
 milestone: m-8
 dependencies: []
+references:
+  - https://github.com/FurinyaWorks/Slay-the-Heavens/pull/923
 parent_task_id: TASK-103
 priority: medium
 ordinal: 171000
@@ -41,6 +43,8 @@ ordinal: 171000
 6.按用户控制变量要求，官方选角直接复用战斗同一battlePixel57；原立绘保留不再优化，显式生成标记防旧候选误报。R7干净构建后重验完整黑盒与首次ready，来源证明和独审绑定最终生产提交。
 
 7.按用户拒收意见纠正原命之座与红青旗帜按钮；只保留角色57和背景暂缓例外。修复实际Hosted Full失败（Windows字节来源换行/历史reader层等），完整画面对照与黑盒重验，精确独审后按merge:auto送Merge Queue。
+
+本轮 P1 修复：核对 #812/#839/#880/#900 与批准稿，从 Release 删除选角摘要并以正式生成布局和 Lua 入口验证。在 develop 接续设计索引与同一防回归约束，保持原有设备验收项待验。
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -84,4 +88,6 @@ R7最终复验：SDK28项、实际浏览器HP21+Lament9项通过，20次暖选�
 Owner 更正为初代选角构图，移除左侧半透明信息板，保留原生 1600 图元背景及现有按钮，以原生文字描边保持可读性。正式配置离线前后画面与回归见 docs/evidence/v2-ui-20261119/README.md。同候选 PC/手机保持待验。
 
 选角起始遗物使用六块原生三角形绘制岩脉残晶图标，并移除「查看牌组」的控件及输入命中区。摘要、返回和开始保留。
+
+正式选角摘要 P1 由 Release PR #923 接续。该 PR 在正式精绘布局完成 Red → Green，并独立复审固定 HEAD 0833275f。develop 已在 #812 删除正式摘要，本接续登记 release-sts1-20261122 为批准修订，保留旧稿及历史投影，接回正式生成回归。#912 的选角渲染与输入有重叠，组合时沿用批准稿和回归。千星客户端和设备验收保持待验。
 <!-- SECTION:NOTES:END -->
