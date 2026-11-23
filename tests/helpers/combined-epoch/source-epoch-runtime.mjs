@@ -18,6 +18,7 @@ import {projectV2UiHudSource,authorizeV2UiHudSource} from '../v2-ui-hud-source.m
 import {projectFatalBgmSource,authorizeFatalBgmSource} from '../fatal-bgm-source-continuation.mjs';
 import {projectSelectorSource,authorizeSelectorSource} from '../character-selector-source.mjs';
 import {projectPotionTextSource,authorizePotionTextSource} from '../potion-text-source.mjs';
+import {beforeSilentToolsDrawSource,isSilentToolsDrawSuccessor} from '../silent-tools-draw-source.mjs';
 import {readFileSync} from 'node:fs';
 import {createHash} from 'node:crypto';
 import {resolve} from 'node:path';
@@ -128,8 +129,14 @@ export function createSourceEpochProjector(input,{root=process.cwd(),allowConfig
  function preCombinedSource(path,source,{target,readSource=readLive}={}){
   const destination=requireTarget(target);
   const liveInput=source;
-  const isLiveReader=liveReaders.has(rawReader(readSource));
-  const projected=entrancePredecessor(path,source,rawReader(readSource),{allowConfigLayout});
+  const actualReader=rawReader(readSource);
+  const isLiveReader=liveReaders.has(actualReader);
+  const toolsPrior=beforeSilentToolsDrawSource(path,source);
+  const readToolsPrior=owner=>{
+   assert.equal(typeof actualReader,'function','linked owner reader');
+   return beforeSilentToolsDrawSource(owner,actualReader(owner));
+  };
+  const projected=entrancePredecessor(path,toolsPrior,readToolsPrior,{allowConfigLayout});
   source=projected.source;readSource=projected.read;
   const rawInput=source,backflow=beforeDevelopBackflow(path,source,{allowConfigLayout}),rebased=beforeRebasedCi(path,backflow);
   const reconciled=beforeSlimeSplitSource(path,rebased),mapPrior=beforeCardFeedbackOwner(path,beforeSts1MapSource(path,reconciled)),guidePrior=beforeReleaseGuideSource(path,mapPrior);
@@ -148,9 +155,11 @@ export function createSourceEpochProjector(input,{root=process.cwd(),allowConfig
   const readRaw=rawReader(readSource);
   // An exact frozen input can be replayed against its owner cohort. Live
   // Develop successors and the default live reader require current owners.
-  const historicalOwners=!isLiveReader&&backflow===rawInput
+  const historicalOwners=!isLiveReader&&toolsPrior===liveInput&&backflow===rawInput
    &&(sourceHash(rawInput)===current.sha256||(path==='config/architecture.json'&&sameConfigLayout(rawInput)))?proof.current:undefined;
   const backflowReader=bindDevelopBackflow(readRaw,historicalOwners);
+  if(toolsPrior!==liveInput)assert(isSilentToolsDrawSuccessor(path,actualReader(path)),
+   'combined linked owner identity: '+path+' changed during owner validation');
   backflowReader.authenticate(path,rawInput,{allowConfigLayout});
   readSource=owner=>{
    const raw=backflowReader.readOwner(owner);

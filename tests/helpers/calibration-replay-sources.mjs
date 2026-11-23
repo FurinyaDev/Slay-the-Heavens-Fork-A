@@ -11,6 +11,8 @@ import {beforeDeckPages} from './develop-release-backflow-source.mjs';
 import {beforeCurrentReplayFixes} from './current-replay-fix-sources.mjs';
 import {beforeUiEntranceWitness} from './ui-entrance-source.mjs';
 import {stsStylePriorRuntime} from './sts-style-prior-runtime.mjs';
+import {restoreExactFixtureHunks} from './exact-fixture-hunks.mjs';
+import {beforeSilentToolsDrawSource} from './silent-tools-draw-source.mjs';
 
 const hash=(bytes,algorithm='sha256')=>createHash(algorithm).update(bytes).digest('hex');
 const blob=source=>hash(`blob ${Buffer.byteLength(source)}\0${source}`,'sha1');
@@ -69,6 +71,106 @@ export function beforeCalibrationReplay(path,source){
  if(!matches(source,row.after))return source;
  return source.includes('\r\n')?row.before.source.replaceAll('\n','\r\n'):row.before.source;
 }
+// These are test-helper continuations on the repaired baseline. Live test
+// discovery, the current copier and the actual Silent runtime retain raw bytes.
+const silentToolsReplayProofs = [
+ {
+  path:"tests/helpers/copy-integration-source-closure.mjs",
+  beforeSha256:'1c6fb395d316833f309f3574faeb6b1930f7ea01ff540d40a82f8cad25a803c0',
+  afterSha256:'4412a51015acd3cfd4c853315601b102e2bce1414f3207ea2c757ffe80a88154',
+  hunks:[
+  {at:337,
+   before:` 'tests/helpers/current-replay-fix-sources.mjs':'54d1516c036a2cd208f697e912a4b359cc21dd47beed3ad1e9e37b9892fdf9a5',
+ [runtime]:'278820e92b95d78ccca26cee32a353e53eaf8e87377fabe8c8dcb64f6995264d',
+ [closeout]:'4f559399c631fbd0fd25ea7f1ceb8f3b8c6643e167f0116d9f151e12ee0a0ecb',`,
+   after:` 'tests/helpers/current-replay-fix-sources.mjs':'54d1516c036a2cd208f697e912a4b359cc21dd47beed3ad1e9e37b9892fdf9a5',
+ [runtime]:'c32e722ec57f1bfef0b1e2523c6867188611a7b74ffadde39c61c68530ffffee',
+ 'tests/helpers/silent-tools-draw-source.mjs':'fccfe657249e5dee3a423bf8f5d00d8d62328ac47c7a00dad851daef8e29813c',
+ [closeout]:'4f559399c631fbd0fd25ea7f1ceb8f3b8c6643e167f0116d9f151e12ee0a0ecb',`,
+  }
+  ],
+ },
+ {
+  path:"tests/helpers/combined-epoch/source-epoch-runtime.mjs",
+  beforeSha256:'278820e92b95d78ccca26cee32a353e53eaf8e87377fabe8c8dcb64f6995264d',
+  afterSha256:'c32e722ec57f1bfef0b1e2523c6867188611a7b74ffadde39c61c68530ffffee',
+  hunks:[
+  {at:19,
+   before:`import {projectPotionTextSource,authorizePotionTextSource} from '../potion-text-source.mjs';
+import {readFileSync} from 'node:fs';`,
+   after:`import {projectPotionTextSource,authorizePotionTextSource} from '../potion-text-source.mjs';
+import {beforeSilentToolsDrawSource,isSilentToolsDrawSuccessor} from '../silent-tools-draw-source.mjs';
+import {readFileSync} from 'node:fs';`,
+  },
+  {at:130,
+   before:`  const liveInput=source;
+  const isLiveReader=liveReaders.has(rawReader(readSource));
+  const projected=entrancePredecessor(path,source,rawReader(readSource),{allowConfigLayout});
+  source=projected.source;readSource=projected.read;`,
+   after:`  const liveInput=source;
+  const actualReader=rawReader(readSource);
+  const isLiveReader=liveReaders.has(actualReader);
+  const toolsPrior=beforeSilentToolsDrawSource(path,source);
+  const readToolsPrior=owner=>{
+   assert.equal(typeof actualReader,'function','linked owner reader');
+   return beforeSilentToolsDrawSource(owner,actualReader(owner));
+  };
+  const projected=entrancePredecessor(path,toolsPrior,readToolsPrior,{allowConfigLayout});
+  source=projected.source;readSource=projected.read;`,
+  },
+  {at:156,
+   before:`  // Develop successors and the default live reader require current owners.
+  const historicalOwners=!isLiveReader&&backflow===rawInput
+   &&(sourceHash(rawInput)===current.sha256||(path==='config/architecture.json'&&sameConfigLayout(rawInput)))?proof.current:undefined;
+  const backflowReader=bindDevelopBackflow(readRaw,historicalOwners);
+  backflowReader.authenticate(path,rawInput,{allowConfigLayout});`,
+   after:`  // Develop successors and the default live reader require current owners.
+  const historicalOwners=!isLiveReader&&toolsPrior===liveInput&&backflow===rawInput
+   &&(sourceHash(rawInput)===current.sha256||(path==='config/architecture.json'&&sameConfigLayout(rawInput)))?proof.current:undefined;
+  const backflowReader=bindDevelopBackflow(readRaw,historicalOwners);
+  if(toolsPrior!==liveInput)assert(isSilentToolsDrawSuccessor(path,actualReader(path)),
+   'combined linked owner identity: '+path+' changed during owner validation');
+  backflowReader.authenticate(path,rawInput,{allowConfigLayout});`,
+  }
+  ],
+ },
+ {
+  path:"tests/helpers/silent-final-apply-vm.mjs",
+  beforeSha256:'50d8bc937b8718e3ae0127ec7e040d85268b9ce91aca71d3c275f0cdb80c47de',
+  afterSha256:'de6a9cefdf8065cf65d69bf1efbf331955de5be7c99e4ec9bf8c0ebf7152006c',
+  hunks:[
+  {at:11,
+   before:`const sites=[
+ ["local c=actions().fresh(combat,s,e.template.cardId,e.template)","attempt to index a nil value (field 'template')"],`,
+   after:`const sites=[
+ ["assert(s.potionRng,'missing persistent potion RNG')",'missing persistent potion RNG'],
+ ["local c=actions().fresh(combat,s,e.template.cardId,e.template)","attempt to index a nil value (field 'template')"],`,
+  },
+  {at:48,
+   before:`  local outer=depth==0;depth=depth+1;local returned=table.pack(pcall(fn,s,...));depth=depth-1
+  if outer then SILENT_GRAPH_WRITE({state=s,returned=returned},name)end
+  if not returned[1]then error(returned[2],0)end`,
+   after:`  local outer=depth==0;depth=depth+1;local returned=table.pack(pcall(fn,s,...));depth=depth-1
+  if outer then
+   local observed=returned
+   if not returned[1] and type(returned[2])=='string'then
+    observed=table.pack(table.unpack(returned,1,returned.n));observed[2]=SILENT_ERROR(returned[2])
+   end
+   SILENT_GRAPH_WRITE({state=s,returned=observed},name)
+  end
+  if not returned[1]then error(returned[2],0)end`,
+  }
+  ],
+ }
+];
+const silentToolsReplayByPath = new Map(silentToolsReplayProofs.map(proof => [proof.path, proof]));
+function beforeSilentToolsReplay(path, source) {
+ const proof = silentToolsReplayByPath.get(path);
+ if (!proof) return beforeSilentToolsDrawSource(path, source);
+ const before = restoreExactFixtureHunks(proof, path, source);
+ return before !== source && source.includes('\r\n') ? before.replaceAll('\n','\r\n') : before;
+}
+
 const copierPath='tests/helpers/copy-integration-source-closure.mjs';
 const historicalStsEntry='tests/helpers/historical-sts-style-entry.mjs';
 export function beforeCurrentHistoricalStsSource(path,source){
@@ -76,7 +178,7 @@ export function beforeCurrentHistoricalStsSource(path,source){
   const text=source.toString('utf8'),prior=beforeCurrentHistoricalStsSource(path,text);
   return prior===text?source:Buffer.from(prior);
  }
- source=beforeUiEntranceWitness(path,source);
+ source=beforeUiEntranceWitness(path,beforeSilentToolsReplay(path,source));
  if(path===copierPath)return beforeCurrentReplayCopier(path,source);
  if(path!==historicalStsEntry)return beforeCurrentReplayFixes(path,source);
  if(!matches(source,{
@@ -114,7 +216,7 @@ function beforeCurrentReplayCopier(path,source){
 }
 
 function matchesCurrentReceipt(path,source,expected){
- source=beforeUiEntranceWitness(path,source);
+ source=beforeUiEntranceWitness(path,beforeSilentToolsReplay(path,source));
  if(matches(source,expected))return true;
  const ui=beforeDevelopUiBackflows(path,source);
  const actions=beforeActionButtons(path,ui);
@@ -126,7 +228,7 @@ function matchesCurrentReceipt(path,source,expected){
 // corresponding current file. Raw Full discovery and inputs use their normal readers.
 export function readCalibrationReceiptInput(path,digest,read,readCurrent=readFileSync){
  const fallback=()=>{
-  const source=read(),prior=beforeCurrentReplayFixes(path,source);
+  const source=read(),prior=beforeCurrentReplayFixes(path,beforeSilentToolsReplay(path,source));
   return typeof prior==='string'&&hash(lf(prior))===digest?prior:source;
  };
  const retired=readRetiredInputTestReceipt(path,digest,readCurrent);
