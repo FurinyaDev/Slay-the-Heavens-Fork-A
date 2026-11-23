@@ -5,14 +5,17 @@ status: In Progress
 assignee:
   - Furinya
 created_date: '2026-11-21T12:50:00Z'
-updated_date: '2026-11-23 06:02'
+updated_date: '2026-11-23 06:46'
 labels:
   - P2
   - non-blocking
   - next-version
+  - 待验
+  - delivery-verify
 dependencies: []
 references:
   - docs/evidence/sts-character-reference-20261113/REFERENCE.md
+  - 'https://github.com/FurinyaWorks/Slay-the-Heavens/pull/812'
 priority: medium
 type: enhancement
 ordinal: 186000
@@ -77,4 +80,6 @@ Owner 纠正界面基线为最新 Release。按只读 release/v2.0.0@8af38667 �
 2026-11-23 Owner 最新明确授权「放宽点就放宽点没有关系啊不要搞复杂了」：保留原候选 POSIX 30min 预测上限（实际作业超时仍30min），本轮试验的预算恢复及解析缓存均撤销，不新增性能改造。先前恢复预算备注已被本授权取代。正式CI/最终独审/队列仍须通过，官方设备待验。
 
 2026-11-23 PR912正式Full实际接续：45117204709暴露历史source/trace与生命周期回归，合并授权已原入口暂停。最小修复保留动画/报价写入复用，补NativeArt清理后重绑及隐藏不重建、同角色选择触摸失效、缺预建面板清晰失败；保持全部负控与原冻结来源身份。已成功的定向结果复用，新候选待统一冻结独审及正式CI/队列，不标交付或实机通过。Owner本轮已明确允许合理时间预算调整，未添加Runner/调度或改变Required Checks。
+
+2026-11-23：#812 已合 develop c186c1dce398727440c25d9db36022c27ed771a8；选角三态和页面 Fade 已接，按原 AC 和 TASK-59.3 复验同候选白名单、PC/手机真实交互。
 <!-- SECTION:NOTES:END -->
