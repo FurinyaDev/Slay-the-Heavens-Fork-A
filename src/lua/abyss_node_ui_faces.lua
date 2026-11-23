@@ -117,7 +117,7 @@ function M.install(ctx)
             else CardDisplay.clearNativeArt(box)end
             ctx.tint(box:GetChild("artPlate"), look.dim and C.panelSunken or C.cardType[kind] or C.panelRaised)
         end
-        if look.shop then shopArt[box] = writeCardArt end
+        shopArt[box] = writeCardArt
         writeCardArt()
         local covered=look.veil or look.stamp~=nil
         local reason=look.reason or look.stamp or '当前不可选择'

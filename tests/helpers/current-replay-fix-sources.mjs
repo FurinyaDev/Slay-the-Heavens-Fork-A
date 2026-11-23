@@ -953,7 +953,7 @@ const bindings = new Map([
  {
   "path": "src/lua/abyss_node_ui_faces.lua",
   "beforeSha256": "d56aed5198b7111008f25c86f1f03eee36bab8549ebd9b92dd7f99f9e4cf6f58",
-  "afterSha256": "52369c0d497a3aaab4852d055dd2afebf83f8bd8cc9f9070f54fe0ea31cd479e",
+  "afterSha256": "7904a5a622f2116511a6b14a33baa70b58dd4b6c9265dd320c89fcb2294b5caa",
   "hunks": [
    {
     "at": 70,
@@ -973,7 +973,7 @@ const bindings = new Map([
    {
     "at": 118,
     "before": "        end\n        writeCardArt()",
-    "after": "        end\n        if look.shop then shopArt[box] = writeCardArt end\n        writeCardArt()"
+    "after": "        end\n        shopArt[box] = writeCardArt\n        writeCardArt()"
    }
   ]
  },
