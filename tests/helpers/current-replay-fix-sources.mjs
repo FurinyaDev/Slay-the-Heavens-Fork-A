@@ -106,17 +106,17 @@ const bindings = new Map([
  {
   "path": "tests/helpers/m7-core-final-source-inverse.mjs",
   "beforeSha256": "96eae58fe74ee798a8c87be865a3640508e983e43e98b55e0ccd8756516ba768",
-  "afterSha256": "e54e91f55205207fd832ddad079b3fcf03102c4ca1ebcb045d6507b52feaab6b",
+  "afterSha256": "acd5d226aa7f1e4e843a2b6db3f6e4d97b36476df2319ad6b6176cfac1c0cf86",
   "hunks": [
    {
     "at": 9,
     "before": "import assert from 'node:assert/strict';\nconst live=p=>readFileSync(new URL('../../'+p,import.meta.url),'utf8');",
-    "after": "import assert from 'node:assert/strict';\nimport {isCurrentInputRetirementSource} from './input-retirement-source.mjs';\nconst live=p=>readFileSync(new URL('../../'+p,import.meta.url),'utf8');"
+    "after": "import assert from 'node:assert/strict';\nimport {beforeCombatEvents,isCurrentInputRetirementSource} from './input-retirement-source.mjs';\nconst live=p=>readFileSync(new URL('../../'+p,import.meta.url),'utf8');"
    },
    {
     "at": 29,
-    "before": "}\n// Explicit compatibility readers share this same full-current admission gate.\nexport {actorReader as currentDefectActorReader};\nexport function preM7FinalSource(path,source,{readSource=live}={}){",
-    "after": "}\n// Explicit live compatibility readers start with the exact current architecture\n// before authenticating the complete current graph and exposing an earlier view.\nexport function currentDefectActorReader(raw){\n if(typeof raw!=='function')return raw;\n return path=>{\n  const source=raw(actorAnchor);\n  assert(isCurrentInputRetirementSource(actorAnchor,source),'combined linked owner identity: '+actorAnchor);\n  assert.equal(sourceEpoch.preCombinedSource(actorAnchor,source,{target:'pr618',readSource:raw}),\n   actorTarget.files[actorAnchor].source,'exact current Actor admission target');\n  assert(Object.hasOwn(defectActorEpoch.proof.current,path),'known Actor owner');\n  return actorTarget.files[path].source;\n };\n}\nexport function preM7FinalSource(path,source,{readSource=live}={}){"
+    "before": "}\n// Explicit compatibility readers share this same full-current admission gate.\nexport {actorReader as currentDefectActorReader};\nexport function preM7FinalSource(path,source,{readSource=live}={}){\n readSource=readers.get(readSource)??readSource;\n const input=source;source=preDefectActorSource(path,source,{readSource:actorReader(readSource)});\n const utility=preDefectUtilitySource(path,source);if(utility!==source)return utility;",
+    "after": "}\n// Explicit live compatibility readers start with the exact current architecture\n// before authenticating the complete current graph and exposing an earlier view.\nexport function currentDefectActorReader(raw){\n if(typeof raw!=='function')return raw;\n return path=>{\n  const source=raw(actorAnchor);\n  assert(isCurrentInputRetirementSource(actorAnchor,source),'combined linked owner identity: '+actorAnchor);\n  assert.equal(sourceEpoch.preCombinedSource(actorAnchor,source,{target:'pr618',readSource:raw}),\n   actorTarget.files[actorAnchor].source,'exact current Actor admission target');\n  assert(Object.hasOwn(defectActorEpoch.proof.current,path),'known Actor owner');\n  return actorTarget.files[path].source;\n };\n}\nexport function preM7FinalSource(path,source,{readSource=live}={}){\n readSource=readers.get(readSource)??readSource;\n const input=source;\n // Authenticate the post-Actor combat backflow against real disk owners before\n // passing an older source to the independently frozen Actor verifier.\n const actorInput=path==='src/lua/abyss_combat_queued_play.lua'&&beforeCombatEvents(path,input)!==input\n  ?sourceEpoch.preCombinedSource(path,input,{target:'pr618',readSource}):input;\n source=preDefectActorSource(path,actorInput,{readSource:actorReader(readSource)});\n const utility=preDefectUtilitySource(path,source);if(utility!==source)return utility;"
    }
   ]
  },
@@ -195,6 +195,177 @@ const bindings = new Map([
     "at": 129,
     "before": "  const live=readFileSync(path,'utf8');\n  assert.equal(beforeAuthenticatedRecordingStage(path,live,readFileSync),row.before.source,path);\n  const drift=live+'\\n-- unreviewed drift\\n';",
     "after": "  const live=readFileSync(path,'utf8');\n  assert.equal(beforeAuthenticatedRecordingStage(path,live,readFileSync).replaceAll('\\r\\n','\\n'),row.before.source,path);\n  const drift=live+'\\n-- unreviewed drift\\n';"
+   }
+  ]
+ },
+ {
+  "path": "tests/defect-integration-source.test.mjs",
+  "beforeSha256": "bbf70b7aae3ae376480b1291c8418e4ad5686e23c8d0cd7b8dafa172d51edae2",
+  "afterSha256": "433134488c464644b3c693a65c5fb386b0f19699a281098cb35a42d7e1d70788",
+  "hunks": [
+   {
+    "at": 183,
+    "before": " const expected=proof.targets.develop.files[p].source;\n assertRawActorClosure(project,expected,[...proof.owners,...currentProductionRereads],417,\n  '05131aa3de86e8f88d0e82bca23e667bba10e3921cf029de891ec4e8b06c3a67');\n});",
+    "after": " const expected=proof.targets.develop.files[p].source;\n assertRawActorClosure(project,expected,[...proof.owners,...currentProductionRereads],460,\n  '6b72ef490e6f79b870b0a21d5b63ddb122f065aff81f837e8f6fa3bafbd40d51');\n});"
+   },
+   {
+    "at": 203,
+    "before": " assert.equal(hash(m7FinalReader()(p)),expected);\n const raw=q=>actorCurrentEpoch.proof.current[q]?.source??null;\n for(const input of [source,source.replaceAll('\\n','\\r\\n')])assert.equal(hash(preM7FinalSource(p,input,{readSource:raw})),expected);",
+    "after": " assert.equal(hash(m7FinalReader()(p)),expected);\n const raw=q=>readFileSync(q,'utf8');\n for(const input of [source,source.replaceAll('\\n','\\r\\n')])assert.equal(hash(preM7FinalSource(p,input,{readSource:raw})),expected);"
+   },
+   {
+    "at": 218,
+    "before": " let bad,value,reads=[];\n const reader=q=>{reads.push(q);if(q===bad){if(value instanceof Error)throw value;return value;}return proof.current[q]?.source??null;};\n const project=()=>preM7FinalSource(p,source,{readSource:reader});",
+    "after": " let bad,value,reads=[];\n const reader=q=>{reads.push(q);if(q===bad){if(value instanceof Error)throw value;return value;}return readFileSync(q,'utf8');};\n const project=()=>preM7FinalSource(p,source,{readSource:reader});"
+   },
+   {
+    "at": 223,
+    "before": "  assert(reads.includes(owner),'successful projection freshly reads '+owner);\n  for(value of [(proof.current[owner]?.source??'')+'\\n',null,new Error('missing')]){\n   bad=owner;reads=[];assert.throws(project,/combined linked owner/);assert(reads.includes(owner),owner);\n  }",
+    "after": "  assert(reads.includes(owner),'successful projection freshly reads '+owner);\n  const invalid=owner===retiredControllerPath?[readRetiredController(q=>readFileSync(q,'utf8')).source,new Error('missing')]\n   :[readFileSync(owner,'utf8')+'\\n',null,new Error('missing')];\n  for(value of invalid){\n   bad=owner;reads=[];\n   assert.throws(project,error=>error===value||/combined linked owner/.test(error.message),owner);\n   assert(reads.includes(owner),owner);\n  }"
+   },
+   {
+    "at": 240,
+    "before": " const project=readSource=>preM7FinalSource(p,source,{readSource});\n const admittedReads=assertRawActorClosure(project,beforeUtility(),proof.owners,1209,\n  'b6d10e2f98133c5b61d8aaeb7982d3f6047c17b098cc126d39815a9b08af17e1');\n // Supplying just the old three-owner snapshot is never permission to bypass",
+    "after": " const project=readSource=>preM7FinalSource(p,source,{readSource});\n const admittedReads=assertRawActorClosure(project,beforeUtility(),proof.owners,1338,\n  '2d2695fc540981ef4a663d36bb70d7af6548c232f2a07f742426fcd0a588fda5');\n // Supplying just the old three-owner snapshot is never permission to bypass"
+   }
+  ]
+ },
+ {
+  "path": "tests/potion-callback-source.test.mjs",
+  "beforeSha256": "b7263dfdfad9cb57957fd492531a15232ff9f0e2548bace3d2196761a12f37eb",
+  "afterSha256": "15ca25e2f3197881d3c921981066c590126a29dfa961164731ba1f071e74dd54",
+  "hunks": [
+   {
+    "at": 14,
+    "before": "import {sourceEpoch} from './helpers/combined-epoch/source-epoch.mjs';\nconst read=p=>readFileSync(p,'utf8').replaceAll('\\r\\n','\\n');",
+    "after": "import {sourceEpoch} from './helpers/combined-epoch/source-epoch.mjs';\nimport {readRetiredController,retiredControllerPath} from './helpers/input-retirement-source.mjs';\nconst read=p=>readFileSync(p,'utf8').replaceAll('\\r\\n','\\n');"
+   },
+   {
+    "at": 195,
+    "before": "test('the current potion facade freshly rejects every expanded raw owner after warm nested reads',()=>{\n const current=Object.fromEntries(sourceEpoch.proof.owners.map(p=>[p,read(p)]));\n for(const path of originals){",
+    "after": "test('the current potion facade freshly rejects every expanded raw owner after warm nested reads',()=>{\n const current=Object.fromEntries(sourceEpoch.proof.owners.filter(p=>p!==retiredControllerPath).map(p=>[p,read(p)]));\n assert.throws(()=>read(retiredControllerPath),{code:'ENOENT'});\n const retired=readRetiredController(read);\n assert(retired.restored,'the pointer input must authenticate the retired controller');\n for(const path of originals){"
+   },
+   {
+    "at": 206,
+    "before": "   if(mode==='buffer')return Buffer.from(current[p]);if(mode==='changed')return current[p]+'\\n';\n  }return current[p]??read(p);};\n  const wrapped=potionCallbackReader(potionCallbackReader(raw));assert.equal(potionCallbackReader(wrapped),wrapped);",
+    "after": "   if(mode==='buffer')return Buffer.from(current[p]);if(mode==='changed')return current[p]+'\\n';\n  }return p===retiredControllerPath?null:current[p]??read(p);};\n  const wrapped=potionCallbackReader(potionCallbackReader(raw));assert.equal(potionCallbackReader(wrapped),wrapped);"
+   },
+   {
+    "at": 211,
+    "before": "  seen=[];check();assert.deepEqual(seen,first,'warm calls repeat the complete raw-read sequence');\n  for(bad of sourceEpoch.proof.owners)for(mode of ['changed','missing','null','buffer','throw',...(Object.hasOwn(proof.files,bad)?['old']:[])]){\n   seen=[];assert.throws(check,error=>{assert.match(error.message,/linked owner/);assert(error.message.includes(bad));if(mode==='throw')assert.match(error.message,/expanded reader sentinel/);return true;});\n   assert(seen.includes(bad));const previous=mode;mode='good';check();mode=previous;\n  }",
+    "after": "  seen=[];check();assert.deepEqual(seen,first,'warm calls repeat the complete raw-read sequence');\n  for(bad of sourceEpoch.proof.owners){\n   if(bad===retiredControllerPath){\n    mode='good';seen=[];check();assert(seen.includes(bad));\n    mode='throw';assert.throws(check,/linked owner missing: src\\/lua\\/abyss_controller\\.lua/);\n    mode='old';assert.throws(()=>project(path,read(path),{readSource:p=>p===bad?retired.source:raw(p)}),/linked owner identity: src\\/lua\\/abyss_controller\\.lua/);\n    continue;\n   }\n   for(mode of ['changed','missing','null','buffer','throw',...(Object.hasOwn(proof.files,bad)?['old']:[])]){\n    seen=[];assert.throws(check,error=>{assert.match(error.message,/linked owner/);assert(error.message.includes(bad));if(mode==='throw')assert.match(error.message,/expanded reader sentinel/);return true;});\n    assert(seen.includes(bad));const previous=mode;mode='good';check();mode=previous;\n   }\n  }"
+   }
+  ]
+ },
+ {
+  "path": "tests/relic-query-source-inverse.test.mjs",
+  "beforeSha256": "d6a95f7de7a57145febed598f187c8fd7496691fcf095e4e25870214ceb3252b",
+  "afterSha256": "430f1438280e0cf993815e7e690b0cba3d8349494e04355ad7771704c96aa859",
+  "hunks": [
+   {
+    "at": 10,
+    "before": "import {sourceEpoch} from './helpers/combined-epoch/source-epoch.mjs';\nimport {preCoreLifecycleSource as frozenCore,coreLifecycleSourceProof} from './helpers/epochs/develop/tests/helpers/core-lifecycle-source-inverse.mjs';",
+    "after": "import {sourceEpoch} from './helpers/combined-epoch/source-epoch.mjs';\nimport {pointerInputPath,readRetiredController,retiredControllerPath} from './helpers/input-retirement-source.mjs';\nimport {preCoreLifecycleSource as frozenCore,coreLifecycleSourceProof} from './helpers/epochs/develop/tests/helpers/core-lifecycle-source-inverse.mjs';"
+   },
+   {
+    "at": 172,
+    "before": "  const currentOwners=detachedEpoch.proof.owners;\n  const source=Object.fromEntries([...new Set([...paths,...currentOwners])].map(path=>[path,raw(path)]));\n  const expected={...old,[config]:inverse()(config,read(config))};",
+    "after": "  const currentOwners=detachedEpoch.proof.owners;\n  const source=Object.fromEntries([...new Set([...paths,...currentOwners,pointerInputPath])].filter(path=>path!==retiredControllerPath).map(path=>[path,raw(path)]));\n  assert.throws(()=>raw(retiredControllerPath),{code:'ENOENT'});\n  const retired=readRetiredController(raw);\n  assert(retired.restored,'the pointer input must authenticate the retired controller');\n  const expected={...old,[config]:inverse()(config,read(config))};"
+   },
+   {
+    "at": 182,
+    "before": "  }\n  for(const linked of currentOwners){\n   const target=join(directory,linked);\n   writeFileSync(target,source[linked]+'\\n');\n   assert.throws(()=>prior(actor,source[actor]),error=>{assert.match(error.message,/linked owner identity/);assert(error.message.includes(linked));return true;});\n   rmSync(target);\n   assert.throws(()=>prior(actor,source[actor]),error=>{assert.match(error.message,/linked owner missing/);assert(error.message.includes(linked));return true;});\n   writeFileSync(target,source[linked]);assert.equal(prior(actor,source[actor]),expected[actor]);",
+    "after": "  }\n  for(const linked of new Set([...currentOwners,pointerInputPath])){\n   const target=join(directory,linked);\n   if(linked===retiredControllerPath){\n    writeFileSync(target,retired.source);\n    assert.throws(()=>prior(actor,source[actor]),/linked owner identity: src\\/lua\\/abyss_controller\\.lua/);\n    rmSync(target);\n    assert.equal(prior(actor,source[actor]),expected[actor]);\n    continue;\n   }\n   const required=linked===pointerInputPath?retiredControllerPath:linked;\n   writeFileSync(target,source[linked]+'\\n');\n   assert.throws(()=>prior(actor,source[actor]),error=>{assert.match(error.message,linked===pointerInputPath?/linked owner missing/:/linked owner identity/);assert(error.message.includes(required));return true;});\n   rmSync(target);\n   assert.throws(()=>prior(actor,source[actor]),error=>{assert.match(error.message,/linked owner missing/);assert(error.message.includes(required));return true;});\n   writeFileSync(target,source[linked]);assert.equal(prior(actor,source[actor]),expected[actor]);"
+   }
+  ]
+ },
+ {
+  "path": "tests/combat-reactions-architecture-inverse.test.mjs",
+  "beforeSha256": "58f63ffee23c3d421b31d67a60a628962bf43ea6430780ddd2173e4650ef7785",
+  "afterSha256": "7e16d6c495cc08259afd5446f68792d0d89c6aca5849bb6349fd14f824575bbe",
+  "hunks": [
+   {
+    "at": 13,
+    "before": "import {sourceEpoch} from './helpers/combined-epoch/source-epoch.mjs';\nconst path='config/architecture.json';",
+    "after": "import {sourceEpoch} from './helpers/combined-epoch/source-epoch.mjs';\nimport {readRetiredController,retiredControllerPath} from './helpers/input-retirement-source.mjs';\nconst path='config/architecture.json';"
+   },
+   {
+    "at": 53,
+    "before": " assert.equal(extractionEpoch.preNativePageSource(path,current,{readSource:raw}),expected);\n for(const owner of sourceEpoch.proof.owners){\n  assert.throws(()=>extractionEpoch.preNativePageSource(path,current,{readSource:p=>raw(p)+(p===owner?'\\n-- combined owner drift\\n':'')}),/linked owner/);\n  assert.throws(()=>extractionEpoch.preNativePageSource(path,current,{readSource:p=>{if(p===owner)throw Error('combined missing owner '+owner);return raw(p);}}),/linked owner missing/);",
+    "after": " assert.equal(extractionEpoch.preNativePageSource(path,current,{readSource:raw}),expected);\n const retired=readRetiredController(raw);\n assert(retired.restored,'the current pointer input authenticates controller retirement');\n for(const owner of sourceEpoch.proof.owners){\n  const drifted=owner===retiredControllerPath?retired.source:raw(owner)+'\\n-- combined owner drift\\n';\n  assert.throws(()=>extractionEpoch.preNativePageSource(path,current,{readSource:p=>p===owner?drifted:raw(p)}),/linked owner/);\n  assert.throws(()=>extractionEpoch.preNativePageSource(path,current,{readSource:p=>{if(p===owner)throw Error('combined missing owner '+owner);return raw(p);}}),/linked owner missing/);"
+   }
+  ]
+ },
+ {
+  "path": "tests/defect-utility-planning.test.mjs",
+  "beforeSha256": "ce4ae91f55192d99a8e7cc28cc84b341b2dcbaf9b4fa0a906496687333ccf22b",
+  "afterSha256": "a619c07e048b0a89f15d9db31be2fb677fa0911f43ba7eba9b86ffe59e8e892d",
+  "hunks": [
+   {
+    "at": 40,
+    "before": " const admittedReads=[...reads];\n assert.equal(admittedReads.length,418);\n assert.equal(createHash('sha256').update(JSON.stringify(admittedReads)).digest('hex'),\n  '5a6e1ad0b3362c34562f566c1a8b3c5496a1c1cebb6c302930cc1efe6976e1bc','exact raw Actor admission before historical bytes');\n let preceding=-1;",
+    "after": " const admittedReads=[...reads];\n assert.equal(admittedReads.length,461);\n assert.equal(createHash('sha256').update(JSON.stringify(admittedReads)).digest('hex'),\n  'f6930061a5fe2d5db08649eddf310bf9afe106ed91fb204433124f98352260bb','exact raw Actor admission before historical bytes');\n let preceding=-1;"
+   }
+  ]
+ },
+ {
+  "path": "tests/effects-target-group-source-epoch.test.mjs",
+  "beforeSha256": "56b24c6713838e4f82115c8e090a3007226203a8672d9d56562ea73d1b642337",
+  "afterSha256": "582c8e56f9679233aeee5ea9c26a3270fe7178bb4d68e5b9f61f57322c1e12b8",
+  "hunks": [
+   {
+    "at": 18,
+    "before": " assert.equal(proof.effectsTargetGroupSourceTree,'ef6ff1bd7ce4fe466ea52752bee6c9fd9eb5fc65');\n assert.equal(raw(path),readFileSync(path,'utf8').replaceAll('\\r\\n','\\n'));\n assert.deepEqual(effectsTargetGroupEpoch.proof.targets.prior.files[path],prior.current[path]);",
+    "after": " assert.equal(proof.effectsTargetGroupSourceTree,'ef6ff1bd7ce4fe466ea52752bee6c9fd9eb5fc65');\n const live=file=>readFileSync(file,'utf8');\n assertDevelopBackflowCurrent(path,live(path));\n assert.equal(raw(path),authenticateDevelopBackflow(path,live(path),live).replaceAll('\\r\\n','\\n'));\n assert.deepEqual(effectsTargetGroupEpoch.proof.targets.prior.files[path],prior.current[path]);"
+   }
+  ]
+ },
+ {
+  "path": "tests/native-candidate-art.test.mjs",
+  "beforeSha256": "b6afc5fedc8d09855e5b783eec557eeebeb5a66a9cb73a205f8b70fd9e7843b4",
+  "afterSha256": "0555bff6fce6df6ddfff6c198543e0070a8d33b8076f7070d05d57e1abc38f5e",
+  "hunks": [
+   {
+    "at": 173,
+    "before": "  let runs=0;\n  const packageAudio=mutate=>buildNativeAudioGame({root:f.root,baseMap:f.baseMap,output:'audio',nativeCardArt:{registry:f.literal,hosts:['battlePanel/card1']},buildFull:async()=>full,\n    run:(script,[base,directory])=>{",
+    "after": "  let runs=0;\n  const packageAudio=(output,mutate)=>buildNativeAudioGame({root:f.root,baseMap:f.baseMap,output,nativeCardArt:{registry:f.literal,hosts:['battlePanel/card1']},buildFull:async()=>full,\n    run:(script,[base,directory])=>{"
+   },
+   {
+    "at": 181,
+    "before": "    }});\n  const audio=await packageAudio();assert.deepEqual(audio.nativeCardArt,full.nativeCardArt);\n  assert.deepEqual(audio.toolchainIdentity,full.toolchainIdentity);",
+    "after": "    }});\n  const audio=await packageAudio('audio');assert.deepEqual(audio.nativeCardArt,full.nativeCardArt);\n  assert.deepEqual(audio.toolchainIdentity,full.toolchainIdentity);"
+   },
+   {
+    "at": 186,
+    "before": "  const original=readFileSync(f.literal);writeFileSync(f.literal,Buffer.concat([original,Buffer.from('\\n')]));\n  await assert.rejects(packageAudio(),/Native art.*changed/);assert.equal(runs,1,'stale art must not start audio packaging');\n  writeFileSync(f.literal,original);\n  const drawing=f.registry.sourceInputs[0].path,drawingBytes=readFileSync(drawing);\n  await assert.rejects(packageAudio(()=>writeFileSync(drawing,'changed during audio')),/Native art.*changed/);\n  writeFileSync(drawing,drawingBytes);",
+    "after": "  const original=readFileSync(f.literal);writeFileSync(f.literal,Buffer.concat([original,Buffer.from('\\n')]));\n  await assert.rejects(packageAudio('stale-registry-audio'),/Native art.*changed/);assert.equal(runs,1,'stale art must not start audio packaging');\n  writeFileSync(f.literal,original);\n  const drawing=f.registry.sourceInputs[0].path,drawingBytes=readFileSync(drawing);\n  await assert.rejects(packageAudio('changed-drawing-audio',()=>writeFileSync(drawing,'changed during audio')),/Native art.*changed/);\n  writeFileSync(drawing,drawingBytes);"
+   },
+   {
+    "at": 193,
+    "before": "  try {\n    await assert.rejects(packageAudio(()=>writeFileSync(encoder,Buffer.concat([encoderBytes,Buffer.from('\\n')]))),/Native UI encoder input changed/);\n  } finally {writeFileSync(encoder,encoderBytes);}",
+    "after": "  try {\n    await assert.rejects(packageAudio('changed-encoder-audio',()=>writeFileSync(encoder,Buffer.concat([encoderBytes,Buffer.from('\\n')]))),/Native UI encoder input changed/);\n  } finally {writeFileSync(encoder,encoderBytes);}"
+   },
+   {
+    "at": 374,
+    "before": " const {buildNativeAudioGame}=await import('../scripts/build-native-audio-game.mjs');\n const run=()=>buildNativeAudioGame({root:f.root,baseMap:f.baseMap,output:'audio',artFeatures:{monsters:true},buildFull:async()=>full,\n  run:(script,[base,directory])=>{",
+    "after": " const {buildNativeAudioGame}=await import('../scripts/build-native-audio-game.mjs');\n const run=output=>buildNativeAudioGame({root:f.root,baseMap:f.baseMap,output,artFeatures:{monsters:true},buildFull:async()=>full,\n  run:(script,[base,directory])=>{"
+   },
+   {
+    "at": 381,
+    "before": "  }});\n const audio=await run();assert.deepEqual(audio.nativeMonsterArt,full.nativeMonsterArt);\n const path=join(f.root,full.nativeMonsterArt.inputs[0].path);writeFileSync(path,readFileSync(path,'utf8')+'\\n-- changed');\n await assert.rejects(run(),/Source changed during audio/);\n});",
+    "after": "  }});\n const audio=await run('audio');assert.deepEqual(audio.nativeMonsterArt,full.nativeMonsterArt);\n const path=join(f.root,full.nativeMonsterArt.inputs[0].path);writeFileSync(path,readFileSync(path,'utf8')+'\\n-- changed');\n await assert.rejects(run('changed-source-audio'),/Source changed during audio/);\n});"
+   }
+  ]
+ },
+ {
+  "path": "tests/helpers/native-toolchain-fixture.mjs",
+  "beforeSha256": "bc9707cdc2c4bf4e91de019134f371aaca3cfa6b352a01ed076d214060fb9b89",
+  "afterSha256": "59a9c6a50e488598acc03e5782a8f4ed6bab8b74cda899f18a0b06ca7b4fdcdc",
+  "hunks": [
+   {
+    "at": 63,
+    "before": "  AbyssMonsterActor:1073741849,AbyssMonsterPower:1073741850,AbyssOfficialBackgroundImage:1073741851,\n  AbyssSelectionHalfTriangle:1073741852,AbyssBattlePileCard:1073741853,AbyssForgeCard:1073741854};\n if(!Object.hasOwn(indices,name))throw Error('Unregistered native template '+name);",
+    "after": "  AbyssMonsterActor:1073741849,AbyssMonsterPower:1073741850,AbyssOfficialBackgroundImage:1073741851,\n  AbyssSelectionHalfTriangle:1073741852,AbyssBattlePileCard:1073741853,AbyssForgeCard:1073741854,\n  AbyssDeckBrowserBack:1073741855,AbyssDeckBrowserBanner:1073741856,\n  AbyssDeckBrowserFrame0:1073741857,AbyssDeckBrowserFrame1:1073741858,AbyssDeckBrowserFrame2:1073741859};\n if(!Object.hasOwn(indices,name))throw Error('Unregistered native template '+name);"
    }
   ]
  }

@@ -5,8 +5,9 @@ import {createHash} from 'node:crypto';
 import {readFileSync} from 'node:fs';
 import {gunzipSync} from 'node:zlib';
 import {readRetiredInputLuaReceipt,readRetiredInputTestReceipt} from './input-retirement-inventory.mjs';
-import {beforeCombatEvents,beforeDevelopUiBackflows,readRetiredController,retiredControllerPath} from './input-retirement-source.mjs';
+import {beforeCombatEvents,beforeDevelopUiBackflows,beforePotionBackflow,readRetiredController,retiredControllerPath} from './input-retirement-source.mjs';
 import {beforeActionButtons} from './action-buttons-source.mjs';
+import {beforeDeckPages} from './develop-release-backflow-source.mjs';
 import {stsStylePriorRuntime} from './sts-style-prior-runtime.mjs';
 
 const hash=(bytes,algorithm='sha256')=>createHash(algorithm).update(bytes).digest('hex');
@@ -83,7 +84,7 @@ export function beforeCurrentHistoricalStsSource(path,source){
 }
 function beforeCurrentReplayCopier(path,source){
  if(path!==copierPath||!matches(source,{
-  sha256:'7125ec328839c4aae8bcdaa2024e39cd2522e1a41b831e09c07a9b2a5824b0e4',gitBlob:'a00fa5ae579003d91c34fbe7fc890e1e71065c4a',
+  sha256:'34832f1d6a4bc053e06a2dd06c2122c92efa047c9dddbed282bd611278ca17d7',gitBlob:'f0bb5abe5e6d4ea3fc1fc6e38653fcf4d41d982b',
  }))return source;
  const text=lf(source);
  const block='const currentReplayFiles=Object.freeze({\n';
@@ -100,7 +101,8 @@ function matchesRetirementReceipt(path,source,expected){
  if(matches(source,expected))return true;
  const ui=beforeDevelopUiBackflows(path,source);
  const actions=beforeActionButtons(path,ui);
- return [ui,actions,beforeCombatEvents(path,actions)].some(prior=>matches(prior,expected));
+ return [beforePotionBackflow(path,source),ui,actions,beforeCombatEvents(path,actions),beforeDeckPages(path,source)]
+  .some(prior=>matches(prior,expected));
 }
 
 // A frozen receipt may read a registered old blob only after checking the

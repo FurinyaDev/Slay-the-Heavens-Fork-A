@@ -182,8 +182,8 @@ test('the full current facade freshly checks every original owner including afte
  const epoch=actorCurrentEpoch,proof=epoch.proof,p=actorPaths[0],source=read(p);
  const project=readSource=>epoch.preCombinedSource(p,source,{target:'develop',readSource});
  const expected=proof.targets.develop.files[p].source;
- assertRawActorClosure(project,expected,[...proof.owners,...currentProductionRereads],417,
-  '05131aa3de86e8f88d0e82bca23e667bba10e3921cf029de891ec4e8b06c3a67');
+ assertRawActorClosure(project,expected,[...proof.owners,...currentProductionRereads],460,
+  '6b72ef490e6f79b870b0a21d5b63ddb122f065aff81f837e8f6fa3bafbd40d51');
 });
 test('capability config layout accepts only an input spelling and still binds exact raw owners',()=>{
  const p=actorPaths[0],source=actorRaw(p),old=actorProof.targets.prior.files[p].source;
@@ -202,7 +202,7 @@ test('M7 live and explicit current readers preserve the queued historical capabi
  const p=actorPaths[1],source=read(p),expected=classPotionWatcherSourceProof[p].beforeSha256;
  assert.equal(hash(preM7FinalSource(p,source)),expected);
  assert.equal(hash(m7FinalReader()(p)),expected);
- const raw=q=>actorCurrentEpoch.proof.current[q]?.source??null;
+ const raw=q=>readFileSync(q,'utf8');
  for(const input of [source,source.replaceAll('\n','\r\n')])assert.equal(hash(preM7FinalSource(p,input,{readSource:raw})),expected);
  assert.equal(hash(m7FinalReader(raw)(p)),expected);
  const fail=()=>assert.fail('foreign queued input cannot authorize owner reads');
@@ -217,13 +217,17 @@ test('M7 queued capability authenticates all current owners freshly after warm s
  const p=actorPaths[1],source=read(p),proof=actorCurrentEpoch.proof;
  const expected=classPotionWatcherSourceProof[p].beforeSha256;
  let bad,value,reads=[];
- const reader=q=>{reads.push(q);if(q===bad){if(value instanceof Error)throw value;return value;}return proof.current[q]?.source??null;};
+ const reader=q=>{reads.push(q);if(q===bad){if(value instanceof Error)throw value;return value;}return readFileSync(q,'utf8');};
  const project=()=>preM7FinalSource(p,source,{readSource:reader});
  assert.equal(hash(project()),expected);
  for(const owner of proof.owners){
   assert(reads.includes(owner),'successful projection freshly reads '+owner);
-  for(value of [(proof.current[owner]?.source??'')+'\n',null,new Error('missing')]){
-   bad=owner;reads=[];assert.throws(project,/combined linked owner/);assert(reads.includes(owner),owner);
+  const invalid=owner===retiredControllerPath?[readRetiredController(q=>readFileSync(q,'utf8')).source,new Error('missing')]
+   :[readFileSync(owner,'utf8')+'\n',null,new Error('missing')];
+  for(value of invalid){
+   bad=owner;reads=[];
+   assert.throws(project,error=>error===value||/combined linked owner/.test(error.message),owner);
+   assert(reads.includes(owner),owner);
   }
   bad=undefined;reads=[];assert.equal(hash(project()),expected);
  }
@@ -235,8 +239,8 @@ test('Actor entry authenticates the complete raw current closure before exposing
  for(const owner of actorPaths)for(const key of ['source','sha256','gitBlob'])
   assert.equal(proof.targets.pr618.files[owner][key],actorProof.current[owner][key]);
  const project=readSource=>preM7FinalSource(p,source,{readSource});
- const admittedReads=assertRawActorClosure(project,beforeUtility(),proof.owners,1209,
-  'b6d10e2f98133c5b61d8aaeb7982d3f6047c17b098cc126d39815a9b08af17e1');
+ const admittedReads=assertRawActorClosure(project,beforeUtility(),proof.owners,1338,
+  '2d2695fc540981ef4a663d36bb70d7af6548c232f2a07f742426fcd0a588fda5');
  // Supplying just the old three-owner snapshot is never permission to bypass
  // the real current owners, even though it matches the old Actor verifier.
  assert.throws(()=>preM7FinalSource(p,source,{readSource:actorRaw}),/combined linked owner identity/);

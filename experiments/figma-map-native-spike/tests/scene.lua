@@ -31,9 +31,15 @@ local geometry=dofile('geometry.lua');assert(geometry.firstY+100-session.ui.scro
 assert(session.ui.canvasWidth==1600 and session.ui.scale==1,'use actual canvas on startup')
 width,height=1560,720;OnUpdate(.016);assert(session.ui.scale==1,'landscape text must not shrink to .8');assert(root:GetChild('mapRoot'):GetChild('stage').localScaleX==1);width,height=2340,1080;OnUpdate(.016);assert(session.ui.canvasWidth==2340 and session.ui.scale==1,'mobile aspect uses real canvas')
 assert(root:GetChild('mapRoot'):GetChild('mapBackdrop').w==2340,'backdrop fills actual width')
-local panel=root:GetChild('mapRoot'):GetChild('stage'):GetChild('mapPanel')
 local chosen,chosenId
-for _,g in pairs(panel.children)do for name,n in pairs(g.children)do if name:match('^node%d+$')and n.visible and n:GetChild('hit').visible and n:GetChild('hit').canControllerFocus then chosen=n:GetChild('hit');chosenId=session.ui.slots[tonumber(name:match('%d+'))];print('AVAILABLE_NATIVE_TARGET '..name..'/hit');break end end;if chosen then break end end
+for _,node in ipairs(session.ui.breathing)do
+ local hit=node:GetChild('hit')
+ if node.visible and hit.visible then
+  chosen,chosenId=hit,session.ui.slots[tonumber(node.name:match('%d+'))]
+  print('AVAILABLE_NATIVE_TARGET '..node.name..'/hit')
+  break
+ end
+end
 assert(chosen,'real available node target')
 local function find(c,name)if c.name==name then return c end;for _,child in pairs(c.children)do local got=find(child,name);if got then return got end end end
 -- Every ambient particle moves on each ordinary frame, rather than 4/26 hopping.
