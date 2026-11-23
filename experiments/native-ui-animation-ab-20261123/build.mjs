@@ -3,6 +3,7 @@ import {createHash} from 'node:crypto';
 import {copyFileSync, mkdirSync, readFileSync, writeFileSync} from 'node:fs';
 import {join, resolve, sep} from 'node:path';
 import {loadNativeUiEncoder} from '../../scripts/native-ui-encoder.mjs';
+import {pathToFileURL} from 'node:url';
 import {previewImageMaskFields} from '../../scripts/native-candidate-preview.mjs';
 
 const here = new URL('./', import.meta.url);
@@ -81,7 +82,7 @@ const devices = {KEYBOARD:null,TOUCHSCREEN:'mobile',CONTROLLER_CONSOLE:'console'
 const pair = ([x,y]) => ({x,y});
 const ink = (c='#FFFFFF',a=1) => ((Math.round(a*255)<<24)|(parseInt(c.slice(1),16)&0xffffff))>>>0;
 const align = {left:'Left',centre:'Middle',center:'Middle',right:'Right',middle:'Middle',top:'Top',bottom:'Bottom'};
-function project(readback, scripts) {
+export function project(readback, scripts) {
     const save = json('experiments/art-tech-lab/seed.save.json');
     const {interface:ui, ids, rootId} = readback;
     function convert(spec, path) {
@@ -113,7 +114,7 @@ function project(readback, scripts) {
             Object.assign(n,{raycastTarget:true,interactable:spec.enabled!==false,hoverChildId:stateId('hover'),
                 pressedChildId:stateId('pressed'),unavailableChildId:stateId('disabled'),clickAudioId:spec.sound});
         }
-        if (kind==='animation'||kind==='fullscreen') Object.assign(n,{animationId:spec.effect,playSoundEffect:false,layer:'BelowAllControls'});
+        if (kind==='animation'||kind==='fullscreen') Object.assign(n,{animationId:spec.effect,playSoundEffect:false,layer:spec.kind==='fullscreenAnimation'||spec.below?'BelowAllControls':'AboveAllControls'});
         return n;
     }
     const root = convert({name:'root',kind:'container',showCursor:true,anchor:rect,children:ui.controls},'');
@@ -162,50 +163,54 @@ function modules(variant) {
     };
 }
 
-assert.equal(process.env.MILIASTRA_ALLOW_LIVE_WRITE,'0');
-const [mcpRoot, input, outPath] = process.argv.slice(2);
-assert(mcpRoot && input && outPath, 'Usage: node build.mjs <MCP repo> <its clientkinds test fixture> <new .artifacts subdirectory>');
-const out = resolve(outPath);
-const seed = resolve(input);
-assert(out.startsWith(resolve('.artifacts')+sep));
-assert.equal(seed, resolve(mcpRoot,'tests/fixtures/editor-2026-10-13-clientkinds.gil'));
-assert.equal(hash(seed),'3dbe6df5896af2c243cb6b6fe224c738840b2268beff64edbb15912c3ccc6563');
-mkdirSync(out);
-const seedCopy = join(out,'training-seed.gil');
-copyFileSync(seed,seedCopy);
-const {native,identity} = await loadNativeUiEncoder(mcpRoot);
-const receipt = {seed:hash(seedCopy),layout:hash('build/official-ab/game-ui.json'),encoder:identity.transformedSha256,variants:{}};
-for (const variant of variants) {
-    const dir = join(out,variant);
-    mkdirSync(dir);
-    const sources = modules(variant);
-    let {mapPath} = native.removeClient({mapPath:seedCopy,ui:'CG_ui',outputName:'base-ui'},dir);
-    ({mapPath}=native.removeClient({mapPath,script:'CG_game',outputName:'base'},dir));
-    for (const [name,source] of Object.entries(sources)) {
-        ({mapPath}=native.setClientScript({mapPath,name,source,outputName:name},dir));
+async function main() {
+    assert.equal(process.env.MILIASTRA_ALLOW_LIVE_WRITE,'0');
+    const [mcpRoot, input, outPath] = process.argv.slice(2);
+    assert(mcpRoot && input && outPath, 'Usage: node build.mjs <MCP repo> <its clientkinds test fixture> <new .artifacts subdirectory>');
+    const out = resolve(outPath);
+    const seed = resolve(input);
+    assert(out.startsWith(resolve('.artifacts')+sep));
+    assert.equal(seed, resolve(mcpRoot,'tests/fixtures/editor-2026-10-13-clientkinds.gil'));
+    assert.equal(hash(seed),'3dbe6df5896af2c243cb6b6fe224c738840b2268beff64edbb15912c3ccc6563');
+    mkdirSync(out);
+    const seedCopy = join(out,'training-seed.gil');
+    copyFileSync(seed,seedCopy);
+    const {native,identity} = await loadNativeUiEncoder(mcpRoot);
+    const receipt = {seed:hash(seedCopy),layout:hash('build/official-ab/game-ui.json'),encoder:identity.transformedSha256,variants:{}};
+    for (const variant of variants) {
+        const dir = join(out,variant);
+        mkdirSync(dir);
+        const sources = modules(variant);
+        let {mapPath} = native.removeClient({mapPath:seedCopy,ui:'CG_ui',outputName:'base-ui'},dir);
+        ({mapPath}=native.removeClient({mapPath,script:'CG_game',outputName:'base'},dir));
+        for (const [name,source] of Object.entries(sources)) {
+            ({mapPath}=native.setClientScript({mapPath,name,source,outputName:name},dir));
+        }
+        const uiName = 'NativeUiAnimationAB';
+        const {mapPath:gil} = native.addClientUi({mapPath,name:uiName,script:'ab_probe',showCursor:true,controls:controls(variant),outputName:'candidate'},dir);
+        const ui = native.getClientUi({mapPath:gil,ui:uiName});
+        const scripts = native.listClientScripts({mapPath:gil,includeSource:true}).scripts.filter(s=>Object.hasOwn(sources,s.name));
+        assert.equal(scripts.length,Object.keys(sources).length);
+        for (const s of scripts) assert.equal(s.source,sources[s.name],s.name);
+        const save = join(dir,'candidate.save.json');
+        writeFileSync(save,JSON.stringify(project(ui,scripts)));
+        const result = native.checkClientScripts({mapPath:gil,scripts:Object.keys(sources)});
+        writeFileSync(join(dir,'native-check.json'),JSON.stringify(result,null,2));
+        assert.equal(result.errors,0,'Inspect '+join(dir,'native-check.json'));
+        const faces = ui.interface.controls.find(c=>c.name==='buttons').children;
+        for (const face of faces) assert.deepEqual(Object.keys(face.states).sort(),['disabled','hover','normal','pressed']);
+        const chest = ui.interface.controls.find(c=>c.name==='treasure').children.find(c=>c.name==='treasureView');
+        assert.equal(chest.children.find(c=>c.name==='burst').effect,variant==='lua'?undefined:10001077);
+        const full = chest.children.find(c=>c.name==='fullscreenProbe');
+        assert(full.visible===false && full.effect===undefined);
+        receipt.variants[variant] = {gil:hash(gil),save:hash(save),allControls:ui.interface.controls.reduce((sum,c)=>sum+count(c),2),
+            nativeWarnings:result.warnings,
+            buttonCounts:Object.fromEntries(faces.map(c=>[c.name,count(c)])),
+            modules:Object.fromEntries(scripts.map(s=>[s.name,{id:s.scriptId,lines:s.source.split('\n').length-1,
+                sha256:createHash('sha256').update(s.source).digest('hex')}]))};
     }
-    const uiName = 'NativeUiAnimationAB';
-    const {mapPath:gil} = native.addClientUi({mapPath,name:uiName,script:'ab_probe',showCursor:true,controls:controls(variant),outputName:'candidate'},dir);
-    const ui = native.getClientUi({mapPath:gil,ui:uiName});
-    const scripts = native.listClientScripts({mapPath:gil,includeSource:true}).scripts.filter(s=>Object.hasOwn(sources,s.name));
-    assert.equal(scripts.length,Object.keys(sources).length);
-    for (const s of scripts) assert.equal(s.source,sources[s.name],s.name);
-    const save = join(dir,'candidate.save.json');
-    writeFileSync(save,JSON.stringify(project(ui,scripts)));
-    const result = native.checkClientScripts({mapPath:gil,scripts:Object.keys(sources)});
-    writeFileSync(join(dir,'native-check.json'),JSON.stringify(result,null,2));
-    assert.equal(result.errors,0,'Inspect '+join(dir,'native-check.json'));
-    const faces = ui.interface.controls.find(c=>c.name==='buttons').children;
-    for (const face of faces) assert.deepEqual(Object.keys(face.states).sort(),['disabled','hover','normal','pressed']);
-    const chest = ui.interface.controls.find(c=>c.name==='treasure').children.find(c=>c.name==='treasureView');
-    assert.equal(chest.children.find(c=>c.name==='burst').effect,variant==='lua'?undefined:10001077);
-    const full = chest.children.find(c=>c.name==='fullscreenProbe');
-    assert(full.visible===false && full.effect===undefined);
-    receipt.variants[variant] = {gil:hash(gil),save:hash(save),allControls:ui.interface.controls.reduce((sum,c)=>sum+count(c),2),
-        nativeWarnings:result.warnings,
-        buttonCounts:Object.fromEntries(faces.map(c=>[c.name,count(c)])),
-        modules:Object.fromEntries(scripts.map(s=>[s.name,{id:s.scriptId,lines:s.source.split('\n').length-1,
-            sha256:createHash('sha256').update(s.source).digest('hex')}]))};
+    assert.equal(hash(seed),receipt.seed);
+    writeFileSync(join(out,'build.json'),JSON.stringify(receipt,null,2)+'\n');
 }
-assert.equal(hash(seed),receipt.seed);
-writeFileSync(join(out,'build.json'),JSON.stringify(receipt,null,2)+'\n');
+
+if (process.argv[1] && pathToFileURL(resolve(process.argv[1])).href === import.meta.url) await main();

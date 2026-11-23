@@ -1,0 +1,24 @@
+{
+  "radiusRatio": 0.16666666666666666,
+  "rimWidth": 2,
+  "pressedScale": 0.96,
+  "labelInset": 18,
+  "iconSize": 20,
+  "iconGap": 8,
+  "stretchImage": 106030,
+  "roles": {
+    "Primary": {"palette": "primary"},
+    "Secondary": {"palette": "secondary"},
+    "Danger": {"palette": "danger"}
+  },
+  "feedback": {
+    "motionSeconds": 0.30,
+    "hover": false,
+    "trail": false,
+    "priorityOnly": true,
+    "asset": 10001077,
+    "trailInterval": 0.12,
+    "trailDistance": 36,
+    "trailLifetime": 0.18
+  }
+}

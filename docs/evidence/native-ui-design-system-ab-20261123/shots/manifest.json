@@ -1,0 +1,290 @@
+[
+  {
+    "file": "A1.png",
+    "metadata": [
+      {
+        "canvasId": "pc-16-9",
+        "frame": 0,
+        "time": 0,
+        "clockMode": "manual",
+        "width": 1600,
+        "height": 900,
+        "pixelWidth": 1600,
+        "pixelHeight": 900,
+        "assetWarnings": [
+          {
+            "imageId": 106025,
+            "imageSource": "StaticReference",
+            "error": "fetch failed"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "file": "B1.png",
+    "metadata": [
+      {
+        "canvasId": "pc-16-9",
+        "frame": 0,
+        "time": 0,
+        "clockMode": "manual",
+        "width": 1600,
+        "height": 900,
+        "pixelWidth": 1600,
+        "pixelHeight": 900,
+        "assetWarnings": [
+          {
+            "imageId": 106025,
+            "imageSource": "StaticReference",
+            "error": "fetch failed"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "file": "C1.png",
+    "metadata": [
+      {
+        "canvasId": "pc-16-9",
+        "frame": 0,
+        "time": 0,
+        "clockMode": "manual",
+        "width": 1600,
+        "height": 900,
+        "pixelWidth": 1600,
+        "pixelHeight": 900,
+        "assetWarnings": [
+          {
+            "imageId": 106030,
+            "imageSource": "StaticReference",
+            "error": "fetch failed"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "file": "themesB.png",
+    "metadata": [
+      {
+        "canvasId": "pc-16-9",
+        "frame": 0,
+        "time": 0,
+        "clockMode": "manual",
+        "width": 1600,
+        "height": 900,
+        "pixelWidth": 1600,
+        "pixelHeight": 900,
+        "assetWarnings": [
+          {
+            "imageId": 106025,
+            "imageSource": "StaticReference",
+            "error": "fetch failed"
+          },
+          {
+            "imageId": 100104,
+            "imageSource": "StaticReference",
+            "error": "fetch failed"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "file": "skipA.png",
+    "metadata": [
+      {
+        "canvasId": "pc-16-9",
+        "frame": 0,
+        "time": 0,
+        "clockMode": "manual",
+        "width": 1600,
+        "height": 900,
+        "pixelWidth": 1600,
+        "pixelHeight": 900,
+        "assetWarnings": [
+          {
+            "imageId": 106025,
+            "imageSource": "StaticReference",
+            "error": "fetch failed"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "file": "skipB.png",
+    "metadata": [
+      {
+        "canvasId": "pc-16-9",
+        "frame": 0,
+        "time": 0,
+        "clockMode": "manual",
+        "width": 1600,
+        "height": 900,
+        "pixelWidth": 1600,
+        "pixelHeight": 900,
+        "assetWarnings": [
+          {
+            "imageId": 106025,
+            "imageSource": "StaticReference",
+            "error": "fetch failed"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "file": "rewardPanelA.png",
+    "metadata": [
+      {
+        "canvasId": "pc-16-9",
+        "frame": 0,
+        "time": 0,
+        "clockMode": "manual",
+        "width": 1600,
+        "height": 900,
+        "pixelWidth": 1600,
+        "pixelHeight": 900,
+        "assetWarnings": [
+          {
+            "imageId": 106025,
+            "imageSource": "StaticReference",
+            "error": "fetch failed"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "file": "rewardPanelB.png",
+    "metadata": [
+      {
+        "canvasId": "pc-16-9",
+        "frame": 0,
+        "time": 0,
+        "clockMode": "manual",
+        "width": 1600,
+        "height": 900,
+        "pixelWidth": 1600,
+        "pixelHeight": 900,
+        "assetWarnings": [
+          {
+            "imageId": 106025,
+            "imageSource": "StaticReference",
+            "error": "fetch failed"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "file": "shopPanelA.png",
+    "metadata": [
+      {
+        "canvasId": "pc-16-9",
+        "frame": 0,
+        "time": 0,
+        "clockMode": "manual",
+        "width": 1600,
+        "height": 900,
+        "pixelWidth": 1600,
+        "pixelHeight": 900,
+        "assetWarnings": [
+          {
+            "imageId": 106025,
+            "imageSource": "StaticReference",
+            "error": "fetch failed"
+          },
+          {
+            "imageId": 106095,
+            "imageSource": "StaticReference",
+            "error": "fetch failed"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "file": "shopPanelB.png",
+    "metadata": [
+      {
+        "canvasId": "pc-16-9",
+        "frame": 0,
+        "time": 0,
+        "clockMode": "manual",
+        "width": 1600,
+        "height": 900,
+        "pixelWidth": 1600,
+        "pixelHeight": 900,
+        "assetWarnings": [
+          {
+            "imageId": 106025,
+            "imageSource": "StaticReference",
+            "error": "fetch failed"
+          },
+          {
+            "imageId": 106095,
+            "imageSource": "StaticReference",
+            "error": "fetch failed"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "file": "panelEffect.png",
+    "metadata": [
+      {
+        "canvasId": "pc-16-9",
+        "frame": 7,
+        "time": 0.11666666666666665,
+        "clockMode": "manual",
+        "width": 1600,
+        "height": 900,
+        "pixelWidth": 1600,
+        "pixelHeight": 900,
+        "assetWarnings": [
+          {
+            "imageId": 106025,
+            "imageSource": "StaticReference",
+            "error": "fetch failed"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "file": "fx-hover.png",
+    "metadata": [
+      {
+        "canvasId": "pc-16-9",
+        "frame": 0,
+        "time": 0,
+        "clockMode": "manual",
+        "width": 1600,
+        "height": 900,
+        "pixelWidth": 1600,
+        "pixelHeight": 900,
+        "assetWarnings": [
+          {
+            "imageId": 106025,
+            "imageSource": "StaticReference",
+            "error": "fetch failed"
+          },
+          {
+            "imageId": 100104,
+            "imageSource": "StaticReference",
+            "error": "fetch failed"
+          },
+          {
+            "animationId": 10001077,
+            "error": "UI effect video frames are available in browser playback only; omitted from this PNG"
+          }
+        ]
+      }
+    ]
+  }
+]

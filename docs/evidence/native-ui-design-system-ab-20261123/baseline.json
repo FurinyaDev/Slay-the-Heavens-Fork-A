@@ -1,0 +1,104 @@
+{
+  "schemaVersion": 1,
+  "sourceCommit": "fb865f273bda0ff8941a6f5f8c272e13006232ff",
+  "sourceBranch": "experiment/native-ui-animation-ab-20261123",
+  "runDate": "2026-11-23",
+  "node": "v24.22.1",
+  "platform": "linux",
+  "twoCasesRun": 2,
+  "twoPinnedBaselineFailuresReproduced": 2,
+  "headBefore": "fb865f273bda0ff8941a6f5f8c272e13006232ff",
+  "headAfter": "fb865f273bda0ff8941a6f5f8c272e13006232ff",
+  "statusBefore": "",
+  "statusAfter": "",
+  "hashesUnchanged": true,
+  "files": {
+    "src/lua/abyss_page_reveal.lua": {
+      "sha256": "5823d3f41d52b010c41e61aa65f2fe2e6a888434d82a49e2cc48550020018ae4",
+      "observedBlob": "85b48c454591eea56270d9cdc5548012ccc920fd",
+      "expectedBlob": "85b48c454591eea56270d9cdc5548012ccc920fd"
+    },
+    "tests/sts-page-reveal.test.mjs": {
+      "sha256": "28026050ac54563301c3168d7492f782a7345b6ccea059c5aee48c7d60c7fae0",
+      "observedBlob": "b4bdac8b07c6df848ef2a8a4ec7f770593fc0e54",
+      "expectedBlob": "b4bdac8b07c6df848ef2a8a4ec7f770593fc0e54"
+    },
+    "tests/lua/support/modal_cover_setters.lua": {
+      "sha256": "1607d0872125f71c99bb7c22c97d7c3db6b253e7d925100b5c0fee3e77358d82",
+      "observedBlob": "4db53c9c75b23adbd2cb5cfc026570cbc2f3e899",
+      "expectedBlob": "4db53c9c75b23adbd2cb5cfc026570cbc2f3e899"
+    },
+    "tests/lua/support/pc13_reward_cover.lua": {
+      "sha256": "3308af855e48b4751c1a69a82caf83bd93a48fe840a615a2f3826109a1c2f60b",
+      "observedBlob": "6ef80a2cfb4e07e13fefc4066a3dd106e21841ab",
+      "expectedBlob": "6ef80a2cfb4e07e13fefc4066a3dd106e21841ab"
+    },
+    "tests/lua/support/pc13_reward_feedback_tail.lua": {
+      "sha256": "a59b950e0b953ea00c9f1be5973a750085b4dabea6a77143975750bb44557ab7",
+      "observedBlob": "d3def327b412e133872f1c1c3db3af3cbd0b7153",
+      "expectedBlob": "d3def327b412e133872f1c1c3db3af3cbd0b7153"
+    },
+    "scripts/build-ui.mjs": {
+      "sha256": "5acfb9f226bb58d735840471bf9c03727a498efc1f80a03ecd69d56f6d1e1a7e",
+      "observedBlob": "78a929ecb636795d67ee3cd0668553f1f14b384b",
+      "expectedBlob": "78a929ecb636795d67ee3cd0668553f1f14b384b"
+    },
+    "scripts/build-lua-data.mjs": {
+      "sha256": "2a04be0449e7fd43404662e4998c7d0541761708f50043f966e66ac7c5ed67d1",
+      "observedBlob": "f418dbea667b278e87b29eab35921fee0a9bc04b",
+      "expectedBlob": "f418dbea667b278e87b29eab35921fee0a9bc04b"
+    },
+    "package.json": {
+      "sha256": "f1b1fa527b0a019901c4aa48789a52df9efd31e00f7b4c0ca19057efc2fae15a",
+      "observedBlob": "e806f335584a5ea916e4e035626044480bff7357",
+      "expectedBlob": "e806f335584a5ea916e4e035626044480bff7357"
+    },
+    "package-lock.json": {
+      "sha256": "4324b6b6d38e7c8dc3d8d00a374663cf4eaf27e02f72ca4eebd51a63414c2436",
+      "observedBlob": "7d16dba5458e565e4aeb82036011622c5689bee5",
+      "expectedBlob": "7d16dba5458e565e4aeb82036011622c5689bee5"
+    }
+  },
+  "runs": [
+    {
+      "name": "ready combat choice cannot publish through a synchronous paint or on its first ready turn",
+      "command": [
+        "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+        "--test",
+        "--test-reporter=spec",
+        "--test-name-pattern=^ready combat choice cannot publish through a synchronous paint or on its first ready turn$",
+        "tests/sts-page-reveal.test.mjs"
+      ],
+      "exitCode": 1,
+      "signal": null,
+      "elapsedMilliseconds": 436.35601599999995,
+      "stdout": "✖ ready combat choice cannot publish through a synchronous paint or on its first ready turn (195.705379ms)\nℹ tests 1\nℹ suites 0\nℹ pass 0\nℹ fail 1\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 373.034202\n\n✖ failing tests:\n\ntest at tests/sts-page-reveal.test.mjs:84:1\n✖ ready combat choice cannot publish through a synchronous paint or on its first ready turn (195.705379ms)\n  AssertionError [ERR_ASSERTION]: ABYSS_PAGE_REVEAL preparing page=battlePanel epoch=1\n  src/lua/abyss_page_reveal.lua:205: attempt to index a nil value (local 'blocker')\n  stack traceback:\n  \tsrc/lua/abyss_page_reveal.lua:205: in upvalue 'paintFrame'\n  \tsrc/lua/abyss_page_reveal.lua:269: in method 'request'\n  \tsrc/lua/abyss_page_reveal.lua:475: in method 'step'\n  \t(command line):9: in main chunk\n  \n  \n  1 !== 0\n  \n      at lua (file:///workspace/work/native-ui-ab/tests/sts-page-reveal.test.mjs:12:9)\n      at TestContext.<anonymous> (file:///workspace/work/native-ui-ab/tests/sts-page-reveal.test.mjs:85:2)\n      at Test.runInAsyncScope (node:async_hooks:227:14)\n      at Test.run (node:internal/test_runner/test:1402:25)\n      at Test.start (node:internal/test_runner/test:1262:17)\n      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {\n    generatedMessage: false,\n    code: 'ERR_ASSERTION',\n    actual: 1,\n    expected: 0,\n    operator: 'strictEqual',\n    diff: 'simple'\n  }\n",
+      "stderr": ""
+    },
+    {
+      "name": "new battle still gates input while settlement and reward cards stay on the ready scene",
+      "command": [
+        "/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node",
+        "--test",
+        "--test-reporter=spec",
+        "--test-name-pattern=^new battle still gates input while settlement and reward cards stay on the ready scene$",
+        "tests/sts-page-reveal.test.mjs"
+      ],
+      "exitCode": 1,
+      "signal": null,
+      "elapsedMilliseconds": 7823.777920999999,
+      "stdout": "✖ new battle still gates input while settlement and reward cards stay on the ready scene (7650.99398ms)\nℹ tests 1\nℹ suites 0\nℹ pass 0\nℹ fail 1\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 7784.187394\n\n✖ failing tests:\n\ntest at tests/sts-page-reveal.test.mjs:275:1\n✖ new battle still gates input while settlement and reward cards stay on the ready scene (7650.99398ms)\n  AssertionError [ERR_ASSERTION]: ABYSS_PAGE_REVEAL preparing page=menuPanel epoch=1\n  ABYSS_PAGE_REVEAL visible page=menuPanel epoch=1\n  ABYSS_PAGE_REVEAL preparing page=characterPanel epoch=2\n  ABYSS_PAGE_REVEAL visible page=characterPanel epoch=2\n  ABYSS_PAGE_REVEAL updated page=characterPanel epoch=3\n  ABYSS_RUN seed=1 source=explicit\n  ABYSS_PAGE_REVEAL preparing page=mapPanel epoch=4\n  ABYSS_PAGE_REVEAL visible page=mapPanel epoch=4\n  ABYSS_PAGE_REVEAL preparing page=battlePanel epoch=5\n  ABYSS_PAGE_REVEAL visible page=battlePanel epoch=5\n  ABYSS_PAGE_REVEAL preparing page=battlePanel epoch=6\n  ABYSS_PAGE_REVEAL visible page=battlePanel epoch=6\n  ABYSS_PAGE_REVEAL preparing page=battlePanel epoch=7\n  ABYSS_PAGE_REVEAL visible page=battlePanel epoch=7\n  ABYSS_FEEDBACK play source=- target=1 amount=0\n  ABYSS_FEEDBACK action_wait source=- target=- amount=0\n  ABYSS_FEEDBACK damage source=player target=acid_slime_s_1 amount=10\n  ABYSS_FEEDBACK death source=- target=acid_slime_s_1 amount=0\n  ABYSS_FEEDBACK victory source=- target=- amount=0\n  ABYSS_PAGE_REVEAL updated page=battlePanel epoch=8\n  REWARD_LETHAL_TO_LIST_FRAMES 22\n  ABYSS_PAGE_REVEAL preparing page=menuPanel epoch=1\n  ABYSS_PAGE_REVEAL preparing page=battlePanel epoch=2\n  ABYSS_FEEDBACK orb_end_turn source=- target=- amount=0\n  ABYSS_FEEDBACK damage source=player target=cultist_1 amount=1\n  ABYSS_FEEDBACK death source=- target=cultist_1 amount=0\n  ABYSS_FEEDBACK orb_effect source=- target=- amount=3\n  ABYSS_FEEDBACK block source=player target=player amount=2\n  ABYSS_FEEDBACK orb_effect source=- target=- amount=2\n  ABYSS_FEEDBACK block source=player target=player amount=2\n  ABYSS_FEEDBACK orb_effect source=- target=- amount=2\n  ABYSS_FEEDBACK block source=player target=player amount=2\n  ABYSS_FEEDBACK orb_effect source=- target=- amount=2\n  ABYSS_FEEDBACK block source=player target=player amount=2\n  ABYSS_FEEDBACK orb_effect source=- target=- amount=2\n  ABYSS_FEEDBACK block source=player target=player amount=2\n  ABYSS_FEEDBACK orb_effect source=- target=- amount=2\n  ABYSS_FEEDBACK block source=player target=player amount=2\n  ABYSS_FEEDBACK orb_effect source=- target=- amount=2\n  ABYSS_FEEDBACK block source=player target=player amount=2\n  ABYSS_FEEDBACK orb_effect source=- target=- amount=2\n  ABYSS_FEEDBACK block source=player target=player amount=2\n  ABYSS_FEEDBACK orb_effect source=- target=- amount=2\n  ABYSS_FEEDBACK block source=player target=player amount=2\n  ABYSS_FEEDBACK orb_effect source=- target=- amount=2\n  ABYSS_FEEDBACK victory source=- target=- amount=0\n  ABYSS_PAGE_REVEAL preparing page=battlePanel epoch=3\n  PC13_REWARD_COVER_PASS\n  ABYSS_PAGE_REVEAL preparing page=battlePanel epoch=1\n  src/lua/abyss_page_reveal.lua:205: attempt to index a nil value (local 'blocker')\n  stack traceback:\n  \tsrc/lua/abyss_page_reveal.lua:205: in upvalue 'paintFrame'\n  \tsrc/lua/abyss_page_reveal.lua:269: in method 'request'\n  \ttests/lua/support/modal_cover_setters.lua:24: in local 'fixture'\n  \ttests/lua/support/modal_cover_setters.lua:29: in main chunk\n  \t[JS]: in function 'dofile'\n  \t(command line):3: in main chunk\n  \n  \n  1 !== 0\n  \n      at lua (file:///workspace/work/native-ui-ab/tests/sts-page-reveal.test.mjs:12:9)\n      at TestContext.<anonymous> (file:///workspace/work/native-ui-ab/tests/sts-page-reveal.test.mjs:279:2)\n      at Test.runInAsyncScope (node:async_hooks:227:14)\n      at Test.run (node:internal/test_runner/test:1402:25)\n      at Test.start (node:internal/test_runner/test:1262:17)\n      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {\n    generatedMessage: false,\n    code: 'ERR_ASSERTION',\n    actual: 1,\n    expected: 0,\n    operator: 'strictEqual',\n    diff: 'simple'\n  }\n",
+      "stderr": ""
+    }
+  ],
+  "diagnosis": {
+    "productionPath": "src/lua/abyss_page_reveal.lua:205",
+    "cause": "The old mocked cover supplies veil but not the separately maintained blocker control",
+    "testFixturePaths": [
+      "tests/sts-page-reveal.test.mjs:89",
+      "tests/lua/support/modal_cover_setters.lua:16",
+      "tests/lua/support/modal_cover_setters.lua:59"
+    ],
+    "scope": "Unchanged fixture behavior on original Round 1 worktree. No assertions removed or production edits."
+  }
+}

@@ -5,24 +5,30 @@ import {registerHooks} from 'node:module';
 import {resolve,join} from 'node:path';
 import {pathToFileURL} from 'node:url';
 
-const [outDir, worker] = process.argv.slice(2);
-assert(outDir && worker,'Usage: node replay.mjs <build output directory> <BeyondSimulator 0.5.2 dist/worker.js>');
 const sha = bytes=>createHash('sha256').update(bytes).digest('hex');
 const sdkHash = 'de72d4f80b230cfac330ab0ac6fa9d05e51bb8f51d352f08dd1ee6bcba0fe09d';
-const sdkUrl = pathToFileURL(resolve(worker));
-sdkUrl.hash='native-ui-ab';
-const workerEnd = 'var Of=setInterval(f0,l0);';
-const hooks = registerHooks({load(url,context,next) {
-    const result=next(url,context);
-    if (url!==sdkUrl.href) return result;
-    assert.equal(sha(result.source),sdkHash);
-    const source=Buffer.from(result.source).toString('utf8');
-    assert.equal(source.split(workerEnd).length,2);
-    // Expose the package's studio constructor and remove its outer worker timer/IPC.
-    return {...result,source:source.split(workerEnd)[0]+'\nexport {Na, ot, fi, Ht, Qi};\n'};
-}});
-let sdk;
-try { sdk=await import(sdkUrl); } finally { hooks.deregister(); }
+export async function loadSdk(worker) {
+    const sdkUrl = pathToFileURL(resolve(worker));
+    sdkUrl.hash='native-ui-ab';
+    const workerEnd = 'var Of=setInterval(f0,l0);';
+    const hooks = registerHooks({load(url,context,next) {
+        const result=next(url,context);
+        if (url!==sdkUrl.href) return result;
+        assert.equal(sha(result.source),sdkHash);
+        const source=Buffer.from(result.source).toString('utf8');
+        assert.equal(source.split(workerEnd).length,2);
+        // Expose the package's studio constructor and remove its outer worker timer/IPC.
+        return {...result,source:source.split(workerEnd)[0]+'\nexport {Na, ot, fi, Ht, Qi};\n'};
+    }});
+    let sdk;
+    try { sdk=await import(sdkUrl); } finally { hooks.deregister(); }
+    return sdk;
+}
+
+async function main() {
+const [outDir, worker] = process.argv.slice(2);
+assert(outDir && worker,'Usage: node replay.mjs <build output directory> <BeyondSimulator 0.5.2 dist/worker.js>');
+const sdk = await loadSdk(worker);
 
 const variants=['lua','tween','sequence'];
 const input = variant => {
@@ -271,3 +277,6 @@ for(const [variant,scenes]of Object.entries(buffers)){
 }
 writeFileSync(join(outDir,'replay.json'),JSON.stringify(report,null,2)+'\n');
 console.log('Paired offline SDK cases finished');
+}
+
+if (process.argv[1] && pathToFileURL(resolve(process.argv[1])).href === import.meta.url) await main();

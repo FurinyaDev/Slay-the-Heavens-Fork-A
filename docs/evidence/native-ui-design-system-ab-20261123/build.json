@@ -1,0 +1,1651 @@
+{
+  "source": "fb865f273bda0ff8941a6f5f8c272e13006232ff",
+  "mcp": "59c576e41632a6bf6781bbca83a676d0da0374ec",
+  "seed": "3dbe6df5896af2c243cb6b6fe224c738840b2268beff64edbb15912c3ccc6563",
+  "layout": "1763ca8087e9ec6fcd1ed74b9a2a44c0d7dcafd867a33009816b9aad8376e779",
+  "theme": "7703fb420a201aad388403cd06cbe302c02d5ff344ee9b9776c0b8e7c31550db",
+  "encoder": "25dbe281655a21d30401d8001dc3ee04b34038adf8f3f42be4230bf03bd85e2b",
+  "variants": {
+    "A1": {
+      "bytes": 90108,
+      "sha": "1f2d04c04634cd076275738002c2610450ca7fd4425209f017274bbcfb50ddc2",
+      "uiBytes": 66733,
+      "uiSha": "b28853036dc3e9f87e6db699956d15d034af930ace43090de3b023066923c923",
+      "scriptSectionBytes": 656,
+      "scriptSha": "f9741c8c3ed7b90ad63d30806a4ff8bebed4f21561cef882be5cdfe830b151eb",
+      "uiRecords": 105,
+      "save": "4c437ac830bb338fb3d769308fdff75c04d676a6cae4268e6060358cfa52c500",
+      "readbackTree": "fe2cb0a838a1489f0885aeaebeba58b9fa6d4c935a0f935d3e2f0f54523baf14",
+      "controlRecords": 82,
+      "buttonRecords": [
+        77
+      ],
+      "scriptBytes": 618,
+      "imageRefs": 57,
+      "imageIds": [
+        100001,
+        106025,
+        107231
+      ],
+      "warnings": 0
+    },
+    "B1": {
+      "bytes": 84024,
+      "sha": "753f8da58b523cf54832c19f2ce79f4a4c62a6e51b3ad29d3fb4710ce79efd48",
+      "uiBytes": 60649,
+      "uiSha": "40523f5357252b7bccfde14197105509473495b8c00c7f6d1c454805e80a2402",
+      "scriptSectionBytes": 656,
+      "scriptSha": "f9741c8c3ed7b90ad63d30806a4ff8bebed4f21561cef882be5cdfe830b151eb",
+      "uiRecords": 97,
+      "save": "329804e190491b6507d506e9e717f8e051904dc41a84247c8e4551839083b22d",
+      "readbackTree": "d837315dc16792b3cba097f3859500b2f9d2fe142dd452b06fc8ac485e218692",
+      "controlRecords": 74,
+      "buttonRecords": [
+        69
+      ],
+      "scriptBytes": 618,
+      "imageRefs": 49,
+      "imageIds": [
+        100001,
+        106025
+      ],
+      "warnings": 0
+    },
+    "C1": {
+      "bytes": 44056,
+      "sha": "15a52eb942070001b783f0a171d4c9584db25d63f0aa0694cf7cebd7741c584c",
+      "uiBytes": 20681,
+      "uiSha": "5e918aeec29331fb51b0e9b6f1e7571efa2a1fdfe0c62aab1e72c34397a385bb",
+      "scriptSectionBytes": 656,
+      "scriptSha": "f9741c8c3ed7b90ad63d30806a4ff8bebed4f21561cef882be5cdfe830b151eb",
+      "uiRecords": 45,
+      "save": "bbd984c3be4ddb9e6651c3fa3d20709048248142c415850fcc6e4967163a6444",
+      "readbackTree": "b8c8d0f06f4ef8177cf6ed46302fc2858c15303fc91b18d49613accc79544d15",
+      "controlRecords": 22,
+      "buttonRecords": [
+        17
+      ],
+      "scriptBytes": 618,
+      "imageRefs": 9,
+      "imageIds": [
+        100001,
+        106030
+      ],
+      "warnings": 0
+    },
+    "A20": {
+      "bytes": 1199778,
+      "sha": "9deabc0e531782dcc660b83b2756d2b612fecc415482b60485eefa5ea632e3cf",
+      "uiBytes": 1176403,
+      "uiSha": "ca8ab4e231a92cf2e579be58407472068adb3c17a7b9241289c704b4e8e13197",
+      "scriptSectionBytes": 656,
+      "scriptSha": "f9741c8c3ed7b90ad63d30806a4ff8bebed4f21561cef882be5cdfe830b151eb",
+      "uiRecords": 1569,
+      "save": "984e3c071bf6492d77fb99010a00c620fd3a41f46c78472ca2501031a3d6297c",
+      "readbackTree": "0913f47e1418de7e919622ff5400d48d3ddecf09024db420fa85a428ebabcbfa",
+      "controlRecords": 1546,
+      "buttonRecords": [
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77
+      ],
+      "scriptBytes": 618,
+      "imageRefs": 1121,
+      "imageIds": [
+        100001,
+        106025,
+        107231
+      ],
+      "warnings": 0
+    },
+    "B20": {
+      "bytes": 1078098,
+      "sha": "c0ab5e9129f62f6924e5f27f77e49960426f984a365d9d52c211b561c68e1616",
+      "uiBytes": 1054723,
+      "uiSha": "a72fc1f65f28d13a584673f00345f77c8a2dded99419e31e7ad8164172e5df20",
+      "scriptSectionBytes": 656,
+      "scriptSha": "f9741c8c3ed7b90ad63d30806a4ff8bebed4f21561cef882be5cdfe830b151eb",
+      "uiRecords": 1409,
+      "save": "6faf2cc32a288f64942751ce622eb6c02acc09c8246a580967dfeef806366f51",
+      "readbackTree": "7c62069870972e01f5488e10c0f198680e99bd27b227c48b34d0e4ae5bee1854",
+      "controlRecords": 1386,
+      "buttonRecords": [
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69
+      ],
+      "scriptBytes": 618,
+      "imageRefs": 961,
+      "imageIds": [
+        100001,
+        106025
+      ],
+      "warnings": 0
+    },
+    "C20": {
+      "bytes": 278738,
+      "sha": "8c14de1b6c53040452df66b63b5e04b3c75b45c9596e87b0bdf435883c4d0867",
+      "uiBytes": 255363,
+      "uiSha": "3fddf89c9c0858de6aab8bf30e7b818b11a88766a27e96a0c1ba1f62454cd792",
+      "scriptSectionBytes": 656,
+      "scriptSha": "f9741c8c3ed7b90ad63d30806a4ff8bebed4f21561cef882be5cdfe830b151eb",
+      "uiRecords": 369,
+      "save": "eb64b0e0390aa8fb7b7cfd5ce25e2d57423a0629865541793bac509a2c83619c",
+      "readbackTree": "d3a8720b9e5860aabc5efcb66184537a0120bcfdb07bd867bfe0cec6daee6f0c",
+      "controlRecords": 346,
+      "buttonRecords": [
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17
+      ],
+      "scriptBytes": 618,
+      "imageRefs": 161,
+      "imageIds": [
+        100001,
+        106030
+      ],
+      "warnings": 0
+    },
+    "A100": {
+      "bytes": 5874427,
+      "sha": "568c0e693c25bcb3eaacbe9d5ffec76d3e22bdb3a74722d07599fca1c76d1489",
+      "uiBytes": 5851051,
+      "uiSha": "d2920f925f0afbd472fac69156e79b6569c37b0496d3052bb98567ace7d6708c",
+      "scriptSectionBytes": 656,
+      "scriptSha": "f9741c8c3ed7b90ad63d30806a4ff8bebed4f21561cef882be5cdfe830b151eb",
+      "uiRecords": 7737,
+      "save": "52599cc527ba686bc9a259fff0bf7a77de2535e8c2e3e33de0f289cebffb2690",
+      "readbackTree": "589d457c58034a6970bf4a6e7ee98bf39936013d6a3727f45386abf67473346f",
+      "controlRecords": 7714,
+      "buttonRecords": [
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77
+      ],
+      "scriptBytes": 618,
+      "imageRefs": 5601,
+      "imageIds": [
+        100001,
+        106025,
+        107231
+      ],
+      "warnings": 0
+    },
+    "B100": {
+      "bytes": 5266027,
+      "sha": "2608c59806688a269149261e28a42daced35520bfa26d613d770c2d9b93a7083",
+      "uiBytes": 5242651,
+      "uiSha": "1d1e8eda8d4ca33aea8ed8373d0e330ae16f7b5240c7caeb4feb2898bc4c8ba2",
+      "scriptSectionBytes": 656,
+      "scriptSha": "f9741c8c3ed7b90ad63d30806a4ff8bebed4f21561cef882be5cdfe830b151eb",
+      "uiRecords": 6937,
+      "save": "7e4da3c4f42f1878aba4cd6945d4eb701e3464f91b5cd8a05b925198226ad3b9",
+      "readbackTree": "d4beb87c8636135ccee02f0f5ccbc3073d0021f7a6f86c7ac11a276082fe7e4c",
+      "controlRecords": 6914,
+      "buttonRecords": [
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69
+      ],
+      "scriptBytes": 618,
+      "imageRefs": 4801,
+      "imageIds": [
+        100001,
+        106025
+      ],
+      "warnings": 0
+    },
+    "C100": {
+      "bytes": 1269226,
+      "sha": "d1fe939ed4858cfea3ab47f8ea37d5f4b04db6def54baa2131affc04fd9d0cbc",
+      "uiBytes": 1245851,
+      "uiSha": "a27412ef6a17d247ed9b7b842441cf010985303571bc7861bdaf4687d5359e96",
+      "scriptSectionBytes": 656,
+      "scriptSha": "f9741c8c3ed7b90ad63d30806a4ff8bebed4f21561cef882be5cdfe830b151eb",
+      "uiRecords": 1737,
+      "save": "1d7b71b7a7ed61215b43e02a8849cdf6136d9151391f197f2e2dc79715b6b8af",
+      "readbackTree": "43de4dec04dcbab9ebda2212b2cc958ab22a5ac3251457bfa7f822871809b65d",
+      "controlRecords": 1714,
+      "buttonRecords": [
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17
+      ],
+      "scriptBytes": 618,
+      "imageRefs": 801,
+      "imageIds": [
+        100001,
+        106030
+      ],
+      "warnings": 0
+    },
+    "inventoryA": {
+      "bytes": 1666625,
+      "sha": "9f5cd9d14cb21ae4e0ddb9fbb1bfc0ff9ef3bd92bef16dd04dad51cecad2ccd5",
+      "uiBytes": 1643250,
+      "uiSha": "71fcb96740b73c1a92d318093fddd3b1692c6ff8cc25b5a185e2f0f43c8688e3",
+      "scriptSectionBytes": 656,
+      "scriptSha": "f9741c8c3ed7b90ad63d30806a4ff8bebed4f21561cef882be5cdfe830b151eb",
+      "uiRecords": 2186,
+      "save": "7f07589f65b1c9db3a4d4105cd285aa42241308253a833964d4f561e0f32724c",
+      "readbackTree": "693358430a4c90079102d0af67a3baa1c53c9cceab774ede20d1d40debdbb635",
+      "controlRecords": 2163,
+      "buttonRecords": [
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77,
+        77
+      ],
+      "scriptBytes": 618,
+      "imageRefs": 1569,
+      "imageIds": [
+        100001,
+        106025,
+        107231
+      ],
+      "warnings": 0
+    },
+    "inventoryB": {
+      "bytes": 1496273,
+      "sha": "de54744adfbb0725f0b0b9dcae9d0f04ca080239ad4084e3d4de8ea8925fd563",
+      "uiBytes": 1472898,
+      "uiSha": "f5e78c80776a9f5cd098110ca35c460a43adb1f44ed4fcc936216292250ea547",
+      "scriptSectionBytes": 656,
+      "scriptSha": "f9741c8c3ed7b90ad63d30806a4ff8bebed4f21561cef882be5cdfe830b151eb",
+      "uiRecords": 1962,
+      "save": "76ef1222afce66bb73149e5792926e3c591123798afcfa6faabfb8d900e73e70",
+      "readbackTree": "bc376030519a92277a5382d386aedaae0c8a3dd1e513711aeedfe03de321f8df",
+      "controlRecords": 1939,
+      "buttonRecords": [
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69,
+        69
+      ],
+      "scriptBytes": 618,
+      "imageRefs": 1345,
+      "imageIds": [
+        100001,
+        106025
+      ],
+      "warnings": 0
+    },
+    "inventoryC": {
+      "bytes": 377265,
+      "sha": "f5ad6de71f20a7c5f945f5acd3925dbf78f55d57db7ed68df1ea17b1403fdf5e",
+      "uiBytes": 353890,
+      "uiSha": "2ba2d7639913f0a6fe348fb178becb2835637534fde7f7d30eb9fbda74b2bf8c",
+      "scriptSectionBytes": 656,
+      "scriptSha": "f9741c8c3ed7b90ad63d30806a4ff8bebed4f21561cef882be5cdfe830b151eb",
+      "uiRecords": 506,
+      "save": "ad3690068c26ffb435e84a693e128de6a2cfe1d2c0f05b087b90db3b8f767db9",
+      "readbackTree": "f00dff0bca5a1aca47a36bb686d69dd2c3a4b6b459ceb890ce2fa2ed22d79efa",
+      "controlRecords": 483,
+      "buttonRecords": [
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17,
+        17
+      ],
+      "scriptBytes": 618,
+      "imageRefs": 225,
+      "imageIds": [
+        100001,
+        106030
+      ],
+      "warnings": 0
+    },
+    "skipA": {
+      "bytes": 101964,
+      "sha": "9a42af7c98384a2812a44f32839385d8afa8ffdd9a418e1c2f3e190987cf121d",
+      "uiBytes": 78589,
+      "uiSha": "e506eee638133cecbe2912d8b7bce9656f7591743ad672b0d48e42665d8a108a",
+      "scriptSectionBytes": 656,
+      "scriptSha": "f9741c8c3ed7b90ad63d30806a4ff8bebed4f21561cef882be5cdfe830b151eb",
+      "uiRecords": 121,
+      "save": "b356c8dc9c9e1edf0a4a60c12057957ab60497008f9610da1f3362332b20c411",
+      "readbackTree": "c5b87dd23ba348f15e43778929decaa538aefd6ce5da7e914d390298adf36a8c",
+      "controlRecords": 98,
+      "buttonRecords": [
+        93
+      ],
+      "scriptBytes": 618,
+      "imageRefs": 69,
+      "imageIds": [
+        100001,
+        100002,
+        106025,
+        106057,
+        107231
+      ],
+      "warnings": 0
+    },
+    "skipB": {
+      "bytes": 84012,
+      "sha": "df00ac5162f0b770ef2beda5172bbcaad4d893b1efacbdd2779546c072fba2d4",
+      "uiBytes": 60637,
+      "uiSha": "93d05a9e57949f33a21bc488c951f44c3564048f854c1b1424f44fc23c7e87b0",
+      "scriptSectionBytes": 656,
+      "scriptSha": "f9741c8c3ed7b90ad63d30806a4ff8bebed4f21561cef882be5cdfe830b151eb",
+      "uiRecords": 97,
+      "save": "15961552e11499dad3de0ca3361ff33d7f39fc8b9000f5c60f21c1970eec6ace",
+      "readbackTree": "60e7e1dd6dce0f9ced96bc8912ae6cc9c99b9e9767ef0e06c94218e55cdc55f3",
+      "controlRecords": 74,
+      "buttonRecords": [
+        69
+      ],
+      "scriptBytes": 618,
+      "imageRefs": 49,
+      "imageIds": [
+        100001,
+        106025
+      ],
+      "warnings": 0
+    },
+    "rewardPanelA": {
+      "bytes": 91061,
+      "sha": "64bf8c0079e5605bca9352bc33fb76d470ea1edd2496f6e79898ce9b1615dc09",
+      "uiBytes": 67686,
+      "uiSha": "69b32138bc25a1864154cf34360f7b55d3ced5cfdbd35a493dc12a531b13de44",
+      "scriptSectionBytes": 656,
+      "scriptSha": "f9741c8c3ed7b90ad63d30806a4ff8bebed4f21561cef882be5cdfe830b151eb",
+      "uiRecords": 106,
+      "save": "9dfc58e137ec095d97551927e5abc5c0f42ae98a1a24e839ddfb12edd3f53ffd",
+      "readbackTree": "6c1850526dad59b0a0df286ef9e818bd7b100846aee11fc3ae6bccdd4020570d",
+      "controlRecords": 83,
+      "buttonRecords": [
+        69
+      ],
+      "scriptBytes": 618,
+      "imageRefs": 57,
+      "imageIds": [
+        100001,
+        100002,
+        106025
+      ],
+      "warnings": 0
+    },
+    "rewardPanelB": {
+      "bytes": 87058,
+      "sha": "9799432ef70adb30eb5c8b85f973c3883426260f2a3938af8e15eb9885f768f7",
+      "uiBytes": 63683,
+      "uiSha": "f65b8aa3a53a077e1c8d4500db368aea2728d7b064e3f49e349920b8a981193d",
+      "scriptSectionBytes": 656,
+      "scriptSha": "f9741c8c3ed7b90ad63d30806a4ff8bebed4f21561cef882be5cdfe830b151eb",
+      "uiRecords": 101,
+      "save": "9451b058ed3f7e38a6d351bc7633874880928518a49dce6e53084634c1c71ae1",
+      "readbackTree": "f76d10c603e3d54fd5198b4ece4f3086a8c17466021afb26a23bdd59686c0804",
+      "controlRecords": 78,
+      "buttonRecords": [
+        69
+      ],
+      "scriptBytes": 618,
+      "imageRefs": 52,
+      "imageIds": [
+        100001,
+        106025
+      ],
+      "warnings": 0
+    },
+    "shopPanelA": {
+      "bytes": 99158,
+      "sha": "69a43431a476e03787456fc9ed7850ac1f90d8ba33b4cbd7aab78a61239f2009",
+      "uiBytes": 75783,
+      "uiSha": "716c36e468168ed688f81f50545214fb76412b3de7230558842336510a60b66d",
+      "scriptSectionBytes": 656,
+      "scriptSha": "f9741c8c3ed7b90ad63d30806a4ff8bebed4f21561cef882be5cdfe830b151eb",
+      "uiRecords": 116,
+      "save": "a109f1b9eea7aee7e1c3b7228e315e14adaacee91f1e19c003d282b9cca49bbf",
+      "readbackTree": "51db8c5bacbaace596791e4f34f02a79332891f9540904dcbcac2c902258368c",
+      "controlRecords": 93,
+      "buttonRecords": [
+        69
+      ],
+      "scriptBytes": 618,
+      "imageRefs": 67,
+      "imageIds": [
+        100001,
+        100004,
+        106025,
+        106095
+      ],
+      "warnings": 0
+    },
+    "shopPanelB": {
+      "bytes": 91063,
+      "sha": "34d3b59735a332cc94393875064e954388b3769cbc13d9de10c49222255127af",
+      "uiBytes": 67688,
+      "uiSha": "3b2d45a96d875c82c693a7d68d9922b80da23a7ed465026a1404572aeba213f8",
+      "scriptSectionBytes": 656,
+      "scriptSha": "f9741c8c3ed7b90ad63d30806a4ff8bebed4f21561cef882be5cdfe830b151eb",
+      "uiRecords": 106,
+      "save": "b18e10fe5c79ffde094b4d441e5c2c1cf54caa0ac189f4f3d1fb5e4b84c17612",
+      "readbackTree": "df60eaa97e5ad6672a639c7cfd7934dd4c6198919ad4c623d40f2d4cc081840d",
+      "controlRecords": 83,
+      "buttonRecords": [
+        69
+      ],
+      "scriptBytes": 618,
+      "imageRefs": 57,
+      "imageIds": [
+        100001,
+        106025,
+        106095
+      ],
+      "warnings": 0
+    },
+    "panelEffect": {
+      "bytes": 92923,
+      "sha": "81c3061ad12c1240550fb03ce5ac8270093fc1dd9d5d69558b404527f96badf8",
+      "uiBytes": 68446,
+      "uiSha": "743afcd5de8d562ec94c5bbe17919cd9de0dab41d31a13321b69bad9eedd32be",
+      "scriptSectionBytes": 1758,
+      "scriptSha": "cdaa78eb60a42d72fba4acdd6a820b65d3d53b9432265d4d227d0a8ee68d6f6c",
+      "uiRecords": 107,
+      "save": "e6568c757baee4a650569217c852d664cfb340c814b98bf23de0e07d8b581b9e",
+      "readbackTree": "72ad3152630755e6308ea02f0209abc4b4700ccefebca9b4258a3b23326830a1",
+      "controlRecords": 84,
+      "buttonRecords": [
+        69
+      ],
+      "scriptBytes": 1720,
+      "imageRefs": 58,
+      "imageIds": [
+        100001,
+        100002,
+        106025
+      ],
+      "warnings": 0
+    },
+    "themesB": {
+      "bytes": 351927,
+      "sha": "e95dcb8dc5ba8ada7a40dfe7560679c30bc15e8aab5771fd8182c074c8d08b4a",
+      "uiBytes": 328552,
+      "uiSha": "e34dd756e29ccbe09287d12c5dab289aedfbd179476afc25a33f78d211d33063",
+      "scriptSectionBytes": 656,
+      "scriptSha": "f9741c8c3ed7b90ad63d30806a4ff8bebed4f21561cef882be5cdfe830b151eb",
+      "uiRecords": 450,
+      "save": "facd6887ff22cc290798786498c487199068f41c45dc96d9580b0e2018ad5bc9",
+      "readbackTree": "a2ca24a14babd0460202cfc53a372a40005a9d7ae2a98c67b7fb9314e9f53b51",
+      "controlRecords": 427,
+      "buttonRecords": [
+        69,
+        69,
+        73,
+        69,
+        73,
+        69
+      ],
+      "scriptBytes": 618,
+      "imageRefs": 297,
+      "imageIds": [
+        100001,
+        100104,
+        106025
+      ],
+      "warnings": 0
+    },
+    "themesC": {
+      "bytes": 112119,
+      "sha": "4452672ea7c9a5824db75a2dab449ff0dbe9a967603b6b37a75816bf3a97f012",
+      "uiBytes": 88744,
+      "uiSha": "4b41c292ea0588864687478b7e0763c20dc07d5f5d8cefd2d265251975b476d4",
+      "scriptSectionBytes": 656,
+      "scriptSha": "f9741c8c3ed7b90ad63d30806a4ff8bebed4f21561cef882be5cdfe830b151eb",
+      "uiRecords": 138,
+      "save": "8e5236804dd23f0cca8fe9bb631ae90ce9513f5834670fc7b89e4cde85cf24f5",
+      "readbackTree": "10179a03073d8e92df263e857f23f82c5e13d61a65fc5549967b30d11b34a380",
+      "controlRecords": 115,
+      "buttonRecords": [
+        17,
+        17,
+        21,
+        17,
+        21,
+        17
+      ],
+      "scriptBytes": 618,
+      "imageRefs": 57,
+      "imageIds": [
+        100001,
+        100104,
+        106030
+      ],
+      "warnings": 0
+    },
+    "shop-lua": {
+      "bytes": 85685,
+      "sha": "3d8313df372a4891a68f76a6f4c12b4a577b6ef09eeaaa5d893bb9b10fcee32a",
+      "uiBytes": 60028,
+      "uiSha": "97f3eec95a257cbf72639113c105bae0a2f436f4d6fec3990cb427f92b08cf8d",
+      "scriptSectionBytes": 2938,
+      "scriptSha": "71a4c0c99769ce2b822fa3fc179310b5edb2742f8bb5a1e31aac2bc3ca75509e",
+      "uiRecords": 96,
+      "save": "558d7a86d62805e58d974b26def6824781292e108ed0b76e036dc74a99ce3d9b",
+      "readbackTree": "d45707b232b5f7d20f8f5d5e903a267dd586cd27adc79285e52d2a6dc137bad7",
+      "controlRecords": 73,
+      "buttonRecords": [
+        69
+      ],
+      "scriptBytes": 2900,
+      "imageRefs": 49,
+      "imageIds": [
+        100001,
+        106025
+      ],
+      "warnings": 0
+    },
+    "shop-tween": {
+      "bytes": 85687,
+      "sha": "8f56052e106d7c9f6fec4a421e110b0ea63090841c91819a3527736cb159932b",
+      "uiBytes": 60028,
+      "uiSha": "97f3eec95a257cbf72639113c105bae0a2f436f4d6fec3990cb427f92b08cf8d",
+      "scriptSectionBytes": 2940,
+      "scriptSha": "4d20ecb71ed15e4f1f119c59f7b116b7ebb94aac8d233728e51695c190452d99",
+      "uiRecords": 96,
+      "save": "7dc8ed1df3153d78f89e29fa79dd555a313e4f84e8deb3198dcf05c7f1ccc156",
+      "readbackTree": "d45707b232b5f7d20f8f5d5e903a267dd586cd27adc79285e52d2a6dc137bad7",
+      "controlRecords": 73,
+      "buttonRecords": [
+        69
+      ],
+      "scriptBytes": 2902,
+      "imageRefs": 49,
+      "imageIds": [
+        100001,
+        106025
+      ],
+      "warnings": 0
+    },
+    "shop-sequence": {
+      "bytes": 85690,
+      "sha": "fcefe57ab4165c246c2fa70c1f1bd4b9894f9855b2e38df1063437172c9a15a6",
+      "uiBytes": 60028,
+      "uiSha": "97f3eec95a257cbf72639113c105bae0a2f436f4d6fec3990cb427f92b08cf8d",
+      "scriptSectionBytes": 2943,
+      "scriptSha": "31b581dc54ad33507cc9788bc6d0448c9aecfea5d575f004f05b8d82031cf287",
+      "uiRecords": 96,
+      "save": "021356bb2bb17dce32480c9617c91aaa82cc22647bf6cfccf5dba21fc2141537",
+      "readbackTree": "d45707b232b5f7d20f8f5d5e903a267dd586cd27adc79285e52d2a6dc137bad7",
+      "controlRecords": 73,
+      "buttonRecords": [
+        69
+      ],
+      "scriptBytes": 2905,
+      "imageRefs": 49,
+      "imageIds": [
+        100001,
+        106025
+      ],
+      "warnings": 0
+    },
+    "fx-off": {
+      "bytes": 355820,
+      "sha": "f7a0195dbd6c1ef6865f93214a40df2c66ade0a3129348dda45b12de5dafc388",
+      "uiBytes": 329888,
+      "uiSha": "0d103e7c9a7ba7cbaffd9ff2fe7650d1a9e86012332932d798e7618eb17d5202",
+      "scriptSectionBytes": 3213,
+      "scriptSha": "5af8555c454a95297ffc6078307c3b85b1e5dc2e02aaeffb331bfb8f93e813e3",
+      "uiRecords": 452,
+      "save": "c11c26e2347f567c98323b87c9fe65355e8f4397557b35f1949f8710ceff4ad2",
+      "readbackTree": "e973211f1e3fee4aa06b73a8b7c9a38ce1351abd0e738425aee65b16ac6209c3",
+      "controlRecords": 429,
+      "buttonRecords": [
+        69,
+        69,
+        73,
+        69,
+        73,
+        69
+      ],
+      "scriptBytes": 3175,
+      "imageRefs": 297,
+      "imageIds": [
+        100001,
+        100104,
+        106025
+      ],
+      "warnings": 0
+    },
+    "fx-hover": {
+      "bytes": 355822,
+      "sha": "b004455c7dcc91483926378b4b11c36b197682b44929e61420a070377f95c84d",
+      "uiBytes": 329888,
+      "uiSha": "0d103e7c9a7ba7cbaffd9ff2fe7650d1a9e86012332932d798e7618eb17d5202",
+      "scriptSectionBytes": 3215,
+      "scriptSha": "2d07c52c3c7363e8326876dc544e93a702dded72ca3462977b32dbd3223e319b",
+      "uiRecords": 452,
+      "save": "a8fbd2b4739b00503d21aa49f9ddf84dc0dc2928bddc2e95c5d330c67d1e4c33",
+      "readbackTree": "e973211f1e3fee4aa06b73a8b7c9a38ce1351abd0e738425aee65b16ac6209c3",
+      "controlRecords": 429,
+      "buttonRecords": [
+        69,
+        69,
+        73,
+        69,
+        73,
+        69
+      ],
+      "scriptBytes": 3177,
+      "imageRefs": 297,
+      "imageIds": [
+        100001,
+        100104,
+        106025
+      ],
+      "warnings": 0
+    },
+    "fx-trail": {
+      "bytes": 355822,
+      "sha": "8fcd7f7ec408c63ae193ee5da748f12bc410e9cffe5b0b0ce5141c43c539f3cc",
+      "uiBytes": 329888,
+      "uiSha": "0d103e7c9a7ba7cbaffd9ff2fe7650d1a9e86012332932d798e7618eb17d5202",
+      "scriptSectionBytes": 3215,
+      "scriptSha": "3bc0a701fd7b5b02fbb8bb1333d08050b3c4e10913a733ef761f3bbf30edff1b",
+      "uiRecords": 452,
+      "save": "eec4ee9fc53dee7463c3f05f7fed0564025ca96797b4dc28ebad5f79a6435e67",
+      "readbackTree": "e973211f1e3fee4aa06b73a8b7c9a38ce1351abd0e738425aee65b16ac6209c3",
+      "controlRecords": 429,
+      "buttonRecords": [
+        69,
+        69,
+        73,
+        69,
+        73,
+        69
+      ],
+      "scriptBytes": 3177,
+      "imageRefs": 297,
+      "imageIds": [
+        100001,
+        100104,
+        106025
+      ],
+      "warnings": 0
+    },
+    "fx-theme": {
+      "bytes": 355822,
+      "sha": "6daeac424f862e7ef6e649ed954e0df85471d3b24be748127e573190cdb52899",
+      "uiBytes": 329888,
+      "uiSha": "0d103e7c9a7ba7cbaffd9ff2fe7650d1a9e86012332932d798e7618eb17d5202",
+      "scriptSectionBytes": 3215,
+      "scriptSha": "ef933f0b48370c64d727de75572e92e964b6057865303a63d0d8d317d779181a",
+      "uiRecords": 452,
+      "save": "4e9f9ed1f060ddcacc2569df766fc62db5b1f1b8ca5dba872e828fddafc0007e",
+      "readbackTree": "e973211f1e3fee4aa06b73a8b7c9a38ce1351abd0e738425aee65b16ac6209c3",
+      "controlRecords": 429,
+      "buttonRecords": [
+        69,
+        69,
+        73,
+        69,
+        73,
+        69
+      ],
+      "scriptBytes": 3177,
+      "imageRefs": 297,
+      "imageIds": [
+        100001,
+        100104,
+        106025
+      ],
+      "warnings": 0
+    }
+  },
+  "representatives": [
+    {
+      "path": [
+        "menuPanel",
+        "start"
+      ],
+      "role": "Primary",
+      "label": "开始游戏",
+      "priority": true,
+      "sourceKind": "container",
+      "sourceLabel": "开始游戏",
+      "size": [
+        208,
+        48
+      ],
+      "fontSize": 24,
+      "name": "button0",
+      "position": [
+        -235,
+        112
+      ]
+    },
+    {
+      "path": [
+        "nodePanel",
+        "back"
+      ],
+      "role": "Secondary",
+      "label": "返回",
+      "priority": false,
+      "sourceKind": "container",
+      "sourceLabel": "返回",
+      "size": [
+        180,
+        52
+      ],
+      "fontSize": 24,
+      "name": "button1",
+      "position": [
+        235,
+        112
+      ]
+    },
+    {
+      "path": [
+        "mapPanel",
+        "previewBack"
+      ],
+      "role": "Secondary",
+      "label": "返回",
+      "priority": false,
+      "sourceKind": "container",
+      "sourceLabel": "返回",
+      "size": [
+        150,
+        48
+      ],
+      "fontSize": 20,
+      "icon": 100104,
+      "name": "button2",
+      "position": [
+        -235,
+        0
+      ]
+    },
+    {
+      "path": [
+        "nodePanel",
+        "treasureView",
+        "take"
+      ],
+      "role": "Primary",
+      "label": "拿取并离开",
+      "priority": false,
+      "sourceKind": "container",
+      "sourceLabel": "拿取并离开",
+      "size": [
+        220,
+        56
+      ],
+      "fontSize": 28,
+      "name": "button3",
+      "position": [
+        235,
+        0
+      ]
+    },
+    {
+      "path": [
+        "combatRewards"
+      ],
+      "role": "Secondary",
+      "label": "返回战利品",
+      "priority": false,
+      "sourceKind": "container",
+      "sourceLabel": "返回战利品",
+      "size": [
+        150,
+        48
+      ],
+      "fontSize": 20,
+      "icon": 100104,
+      "name": "button4",
+      "position": [
+        -235,
+        -112
+      ]
+    },
+    {
+      "path": [
+        "exitPanel",
+        "confirm",
+        "hit"
+      ],
+      "role": "Danger",
+      "label": "退出并结算",
+      "priority": true,
+      "sourceKind": "presetButton",
+      "sourceLabel": "退出并结算",
+      "size": [
+        320,
+        64
+      ],
+      "fontSize": 22,
+      "name": "button5",
+      "position": [
+        235,
+        -112
+      ]
+    }
+  ],
+  "probeMotion": {
+    "shopDuration": 0.3
+  },
+  "inventory": {
+    "totalControls": 25786,
+    "presetButtons": 62,
+    "exact": [
+      {
+        "path": "SlayTheAbyss/stage/battlePanel/potionHelp/potionPopup/use",
+        "counts": [
+          77,
+          69,
+          17
+        ]
+      },
+      {
+        "path": "SlayTheAbyss/stage/battlePanel/potionHelp/potionPopup/discard",
+        "counts": [
+          77,
+          69,
+          17
+        ]
+      },
+      {
+        "path": "SlayTheAbyss/stage/battlePanel/start",
+        "counts": [
+          77,
+          69,
+          17
+        ]
+      },
+      {
+        "path": "SlayTheAbyss/stage/battlePanel/continue",
+        "counts": [
+          77,
+          69,
+          17
+        ]
+      },
+      {
+        "path": "SlayTheAbyss/stage/deckPanel/sortoriginal/hit",
+        "counts": [
+          77,
+          69,
+          17
+        ]
+      },
+      {
+        "path": "SlayTheAbyss/stage/deckPanel/sorttype/hit",
+        "counts": [
+          77,
+          69,
+          17
+        ]
+      },
+      {
+        "path": "SlayTheAbyss/stage/deckPanel/sortcost/hit",
+        "counts": [
+          77,
+          69,
+          17
+        ]
+      },
+      {
+        "path": "SlayTheAbyss/stage/deckPanel/upgradePreview/hit",
+        "counts": [
+          77,
+          69,
+          17
+        ]
+      },
+      {
+        "path": "SlayTheAbyss/stage/deckPanel/close/hit",
+        "counts": [
+          77,
+          69,
+          17
+        ]
+      },
+      {
+        "path": "SlayTheAbyss/stage/deckPanel/previous/hit",
+        "counts": [
+          77,
+          69,
+          17
+        ]
+      },
+      {
+        "path": "SlayTheAbyss/stage/deckPanel/next/hit",
+        "counts": [
+          77,
+          69,
+          17
+        ]
+      },
+      {
+        "path": "SlayTheAbyss/stage/relicPanel/close/hit",
+        "counts": [
+          77,
+          69,
+          17
+        ]
+      },
+      {
+        "path": "SlayTheAbyss/stage/relicPanel/previous/hit",
+        "counts": [
+          77,
+          69,
+          17
+        ]
+      },
+      {
+        "path": "SlayTheAbyss/stage/relicPanel/next/hit",
+        "counts": [
+          77,
+          69,
+          17
+        ]
+      },
+      {
+        "path": "SlayTheAbyss/stage/potionPanel/use",
+        "counts": [
+          77,
+          69,
+          17
+        ]
+      },
+      {
+        "path": "SlayTheAbyss/stage/potionPanel/discard",
+        "counts": [
+          77,
+          69,
+          17
+        ]
+      },
+      {
+        "path": "SlayTheAbyss/stage/characterPanel/cancel/hit",
+        "counts": [
+          77,
+          69,
+          17
+        ]
+      },
+      {
+        "path": "SlayTheAbyss/stage/characterPanel/confirm/hit",
+        "counts": [
+          77,
+          69,
+          17
+        ]
+      },
+      {
+        "path": "SlayTheAbyss/stage/choicePanel/before/hit",
+        "counts": [
+          77,
+          69,
+          17
+        ]
+      },
+      {
+        "path": "SlayTheAbyss/stage/choicePanel/after/hit",
+        "counts": [
+          77,
+          69,
+          17
+        ]
+      },
+      {
+        "path": "SlayTheAbyss/stage/choicePanel/confirm/hit",
+        "counts": [
+          77,
+          69,
+          17
+        ]
+      },
+      {
+        "path": "SlayTheAbyss/stage/exitPanel/cancel/hit",
+        "counts": [
+          77,
+          69,
+          17
+        ]
+      },
+      {
+        "path": "SlayTheAbyss/stage/exitPanel/confirm/hit",
+        "counts": [
+          77,
+          69,
+          17
+        ]
+      },
+      {
+        "path": "SlayTheAbyss/stage/runMenu/resume/hit",
+        "counts": [
+          77,
+          69,
+          17
+        ]
+      },
+      {
+        "path": "SlayTheAbyss/stage/runMenu/map/hit",
+        "counts": [
+          77,
+          69,
+          17
+        ]
+      },
+      {
+        "path": "SlayTheAbyss/stage/runMenu/mainMenu/hit",
+        "counts": [
+          77,
+          69,
+          17
+        ]
+      },
+      {
+        "path": "SlayTheAbyss/stage/runMenu/abandon/hit",
+        "counts": [
+          77,
+          69,
+          17
+        ]
+      },
+      {
+        "path": "SlayTheAbyss/stage/runMenu/quit/hit",
+        "counts": [
+          77,
+          69,
+          17
+        ]
+      }
+    ]
+  },
+  "bankSections": [
+    [
+      1,
+      "bd93d942f1e74680ad106e17e88da6d2e3f6cfac14a982cea266a384be2fb4d1"
+    ],
+    [
+      2,
+      "b5253e4412d9f532bc144729efaa57a2ed51d6bfb6d176664edcdb341d7d4a79"
+    ],
+    [
+      3,
+      "fdbb66f97af044e4b88b0bb0a4789f8f014f98b53f5fe11102bd19f45d53c45b"
+    ],
+    [
+      4,
+      "d39c2133afcf06ce19c0c05215e8eb27ab65cec728c09fb577e4ed989c55a45c"
+    ],
+    [
+      5,
+      "89b92b2cdc4df28d11076da99cba520d5d835843ef47627616b1da47d68541e0"
+    ],
+    [
+      6,
+      "f34532a01eb1f1d40c902d478e3b76867f9392bc7d43e8fd3ef24e7710dad149"
+    ],
+    [
+      7,
+      "3ea7b5a262ff04398e15b0b5497e104029663a098d387faf39183b860a9b48f1"
+    ],
+    [
+      8,
+      "f6c6e57cc3dac1d6a2349701056ff5a3e48134efe4496a8c0f5cb9fc9e6dfc12"
+    ],
+    [
+      10,
+      "d1b39b6186c93f281bd851495a1fe62eccd122b50b60d70ae92910301113b99a"
+    ],
+    [
+      11,
+      "6bf1b7e3ed9f4c2e639d3516fc23401cd32321756acf888c276cdc0c30210957"
+    ],
+    [
+      12,
+      "1e57b933b0a78203e21d41cc4b16d731b255b04058d48a4ac2731f0089312129"
+    ],
+    [
+      14,
+      "24b861a299427a0f328da70f952672965ddc57aa9bf1fabac12238b331ac7eb8"
+    ],
+    [
+      15,
+      "fb1591a5a0911f658c1673c825b67236f3dae99164e4937901b1d8629abe6bc8"
+    ],
+    [
+      16,
+      "61da16039a8028296094706e9afe024b2897efcdbfcd1cfe8d6400a3e2c5971f"
+    ],
+    [
+      17,
+      "6d912068289b0e6bcc8956c9775c140df3fb9d20f82d944fb1a5dd93c7cc7d11"
+    ],
+    [
+      18,
+      "d2c95e8a0ec86b39366d7bbff62c5000b25437f82261aad091532234eeadfcb3"
+    ],
+    [
+      19,
+      "5ca9071640bd0a0df16a9465b6cc72fecbf03d4402233dbbc85516fc2e8a033d"
+    ],
+    [
+      20,
+      "c71c2e2f3ac57925f268e72de92a849b9cb3be333dc18f21b7589acc194f02bd"
+    ],
+    [
+      21,
+      "dc8b515e54a8915189f15d390a69c3d56601de878f2da364772c59547b0c4720"
+    ],
+    [
+      22,
+      "c60869e5ad0d35dc0d3dc44c984eceb43fc753718a52e1b29f362489e7cf3d85"
+    ],
+    [
+      23,
+      "4844d573af33e47123cb7f821275ac8856f4746c583e8a4abe990ac5f8b3f12a"
+    ],
+    [
+      25,
+      "a27019e32f6d42bca7e07342c48a238c7b3d1e6e95782029e21c16c321135108"
+    ],
+    [
+      27,
+      "65a2aa37621eaf02423205f32fb673980c973341cb315f7fe3c80db423f35941"
+    ],
+    [
+      29,
+      "c65715b6ff3222d58ceec98aa88edc9692832861021c8f13f04ce925e9bed4d7"
+    ],
+    [
+      30,
+      "4c7a97420a1b6f175aa7de3d5bd6f370942bd0678a50004d79d50e7d9b639154"
+    ],
+    [
+      31,
+      "9666f8a0917c8b0104b5159accc77a60b0bf875ef338fef518b9fa0ac8c6061b"
+    ],
+    [
+      32,
+      "95397da2338a6e41e75d2a34be802255e05cb6e7d79088fcd6a0d9f99b344681"
+    ],
+    [
+      33,
+      "881752fe1c40fa5dda2b4eb704a991d67b4105cfc200249bd8dc8fa083119fdc"
+    ],
+    [
+      35,
+      "b54b5f826fc58026d9acdda6854ff511bd939a5a927e6eb1ae429d0eb9500081"
+    ],
+    [
+      36,
+      "1b7015d2e09c8e6b54bae854c3c73f831530682023f426a6116b41dcb10ed8f1"
+    ],
+    [
+      37,
+      "2006a2d29b2cacbe778037a419f91fcf7772c859e95c9bbefbeef69acb8fb82f"
+    ],
+    [
+      38,
+      "62e30274fc741326044230a1d9091e795b64d805403d753fe2277a5a19f2208c"
+    ],
+    [
+      39,
+      "d3239d3cb4212c5c2097ede07eefa831e919c74d3dc4b604ea695889cf11ce2d"
+    ],
+    [
+      40,
+      "3974ef84767eb31488afc08ab338137defedb459860709fc0ab6302c72981cdf"
+    ],
+    [
+      41,
+      "93ba432f4976a8e1d7f8f26ff9ad11df58fdac68d89847602988a1b3e0f42c1c"
+    ],
+    [
+      43,
+      "c13324a86d5f1680740f152a9dd206bb54f2825ac7d03612bbb88663444ea90e"
+    ],
+    [
+      44,
+      "6208719faa218ea2b37526d8647dfcaf1f3859ed18753b0efbd7097ac2c51881"
+    ],
+    [
+      45,
+      "acdc7a04fe20ab590325d4cb8d9b0b1f65336dc0eeeecf7339a98fc66f4d6a56"
+    ],
+    [
+      46,
+      "7bdc6531378775a6d2a930cad38114ba529ee33fcada8819866cd4290e24fe9d"
+    ],
+    [
+      48,
+      "c1446d769d6d013454d8705a7e9fee7a3102f17248e22fa611b6ac49baf00df0"
+    ],
+    [
+      49,
+      "bffaab00e1dc88fae43c5fd5f4578f7b65e4181ff9f6b81c01699b68f8c961bc"
+    ],
+    [
+      50,
+      "c3110ca568ecd30af60d42197bf49133f1565b566327f6d6de6ca7f137d57ff7"
+    ],
+    [
+      52,
+      "65aa671d1e78e0f204302da16c4d5e205816e5a47f7a9e2eb46bfee1c0314e3a"
+    ],
+    [
+      53,
+      "9165dbb6621e8eb0cbc24a0fc6624655b956bd5269683b001ae6e0ce71420b67"
+    ]
+  ]
+}
