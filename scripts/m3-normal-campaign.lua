@@ -8,6 +8,8 @@ local Policy=dofile('scripts/warrior75-autoplay-policy.lua')
 local EventCards=dofile('scripts/m3-event-card-policy.lua')
 local RelicChoices=dofile('scripts/m3-relic-choice-policy.lua')
 local Pending=require('abyss_relic_pending')
+local profile=M3_PROFILE or 'competition-two-act'
+assert(profile=='competition-two-act' or profile=='full-source','unsupported campaign profile')
 local function json(value)
     if type(value)=='nil' then return 'null' end
     if type(value)=='boolean' or type(value)=='number' then return tostring(value) end
@@ -33,16 +35,18 @@ local function snap(run,map)
  combat=run.combat and {ai=run.combat.aiRng and R.snapshot(run.combat.aiRng),
  shuffle=run.combat.shuffleRng and R.snapshot(run.combat.shuffleRng),
  cardRandom=run.combat.cardRandomRng and R.snapshot(run.combat.cardRandomRng),
- hp=run.combat.monsterHpRng and R.snapshot(run.combat.monsterHpRng)}or nil},path=C.copy(map.path),ending=run.ending}
+ hp=run.combat.monsterHpRng and R.snapshot(run.combat.monsterHpRng)}or nil},path=C.copy(map.path),ending=run.ending,
+ terminalResult=run.nodeFlow and run.nodeFlow.roomKind=='ending' and run.nodeFlow.result or nil}
 end
 local function new(seed)
- local run=Run.new(Data,tostring(seed),{experimental=true,campaign=true,campaignProfile='competition-two-act',character='ironclad'})
+ local run=Run.new(Data,tostring(seed),{experimental=true,campaign=true,campaignProfile=profile,character='ironclad'})
  local map=Map.generate(run.data,run.runSeed,1,assert(Run.freezeMapContext(run)))
  return run,map
 end
 local function play(seed)
  local run,map=new(seed)
- local report={seed=seed,policy='warrior75-visible-state-v1',actions={},rooms={},initial=snap(run,map),platformVerified=false}
+ local report={seed=seed,campaignProfile=profile,policy='warrior75-engine-state-v1',
+  actions={},rooms={},initial=snap(run,map),platformVerified=false}
  local coverage,done={},{}
  local function command(label,fn,details)
   local before=snap(run,map)
@@ -52,13 +56,17 @@ local function play(seed)
   assert(ok,label..': '..tostring(reason))
  end
  local function execute()
- command('begin_neow',function()return Nodes.beginNeow(run,map,{bossCount=0,source='fresh-start'})end)
+ if profile=='competition-two-act'then
+  command('begin_neow',function()return Nodes.beginNeow(run,map,{bossCount=0,source='fresh-start'})end)
+ end
  local actions=0
  while (run.phase~='defeat' and run.phase~='victory' or Pending.owner(run)) and actions<3000 do
   actions=actions+1
   local pendingToken,pendingDetails=RelicChoices.choose(run,Policy.scoreCard)
-  if pendingToken then command('mandatory_relic_choice',function()return Pending.resolve(run,pendingToken)end,pendingDetails)
-  elseif run.phase=='act_transition'then command('advance_act',function()return Nodes.advanceAct(run,map)end);done={}
+  if pendingToken then command('mandatory_relic_choice',function()return Pending.resolve(run,pendingToken,Run)end,pendingDetails)
+  elseif run.phase=='act_transition'then
+   assert(run.act<3,'the offline campaign ends after Act 3')
+   command('advance_act',function()return Nodes.advanceAct(run,map)end);done={}
   elseif run.phase=='combat'then
    local choice=run.combat.pendingChoice
    if choice then
@@ -133,7 +141,8 @@ local function play(seed)
  local fresh,freshMap=new(seed)
  report.newRunConstructionResetVerified=json(snap(fresh,freshMap))==json(report.initial)
  assert(report.newRunConstructionResetVerified,'new Run construction retained state')
- print('M3_SUMMARY '..json({seed=seed,status=report.status,reason=report.reason,floor=run.floor,hp=run.hp,actions=#report.actions,ending=run.ending}))
+ print('M3_SUMMARY '..json({seed=seed,status=report.status,reason=report.reason,floor=run.floor,hp=run.hp,
+  actions=#report.actions,ending=run.ending,terminalResult=report.final.terminalResult}))
  print('M3_EVIDENCE_JSON '..json(report))
 end
 play(M3_SEED or 42)
