@@ -10,6 +10,7 @@ import {beforeOfficialBackgroundFixture} from './official-background-fixture-sou
 import {beforeMapRoomReplayCohort,beforeDevelopReplayMerge} from './develop-replay-merge-source.mjs';
 import {beforeStsUiCloseoutSource} from './sts-ui-closeout-source.mjs';
 import {beforeStsFadeCi} from './sts-fade-ci-source.mjs';
+import {beforeCurrentReplayFixes} from './current-replay-fix-sources.mjs';
 import {beforeIntegratedStsInventory} from './sts-selection-fade-source.mjs';
 import {beforeNativeButtonRepair,beforeRebasedCi,beforeRebasedRelease,historicalReleaseCopier} from './rebased-release-source.mjs';
 import {beforeTinyHouseIntegratedSource} from './tiny-house-integrated-source.mjs';
@@ -813,6 +814,7 @@ export function assertIntegrationSuccessorsCurrent(read=readFileSync){
  }
 }
 export function beforePreflightSource(path,source,view='prior'){
+ source=beforeCurrentReplayFixes(path,source);
  source=beforeNativeFlowFixture(path,source);
  source=beforeOfficialBackgroundFixture(path,source);
  if(path===replayAssetLedger)source=beforeDeckBrowserAssetLedger(source);

@@ -77,8 +77,41 @@ for(const [path,row] of Object.entries(potionBackflow.files)){
  assert(matches(row.before.source,row.before),'exact potion popup predecessor: '+path);
  assert.match(row.after.sha256,/^[a-f0-9]{64}$/);assert.match(row.after.gitBlob,/^[a-f0-9]{40}$/);
 }
+const rewardsBackView='src/lua/abyss_game_ui_view.lua';
+const rewardsBackViewSuccessor=Object.freeze({
+ sha256:'9b4968a3fd23e0956ef565ef4da1d4dbc2a0c5b666308c59c963d02c8f15f0fb',
+ gitBlob:'96f9fadefeabc3d3540e2797943c3b415605140d',
+});
+function beforeRewardsBackExtraction(path,source){
+ if(path!==rewardsBackView||!matches(source,rewardsBackViewSuccessor))return source;
+ const helper=`local function refreshRewardsBack(button,available)
+    button:SetVisible(available)
+    if button:GetChild('v25Face') then
+        require('abyss_v25_menu_view').button(button,available)
+    end
+    -- Route preview raises the map. Raise this sibling when navigation returns.
+    if available then button:SetAsLastSibling() end
+end
+
+`;
+ const inline=`local rewardsBack=child("combatRewards")
+            rewardsBack:SetVisible(returnAvailable)
+            if rewardsBack:GetChild('v25Face') then
+                require('abyss_v25_menu_view').button(rewardsBack,returnAvailable)
+            end
+            -- Route preview raises the full-page map. Restore this sibling above it
+            -- when returning to navigation; visibility alone leaves it occluded.
+            if returnAvailable then rewardsBack:SetAsLastSibling() end`;
+ const text=normalize(source),call='refreshRewardsBack(child("combatRewards"),returnAvailable)';
+ assert.equal(text.split(helper).length,2,'exact rewards back helper extraction');
+ assert.equal(text.split(call).length,2,'exact rewards back helper call');
+ const prior=text.replace(helper,'').replace(call,inline);
+ assert(matches(prior,potionBackflow.files[path].after),'exact rewards back predecessor');
+ return source.includes('\r\n')?prior.replaceAll('\n','\r\n'):prior;
+}
 export function beforePotionBackflow(path,source){
  const row=Object.hasOwn(potionBackflow.files,path)&&potionBackflow.files[path];
+ source=beforeRewardsBackExtraction(path,source);
  if(!row||!matches(source,row.after))return source;
  return source.includes('\r\n')?row.before.source.replaceAll('\n','\r\n'):row.before.source;
 }
@@ -86,10 +119,11 @@ export function beforePotionBackflow(path,source){
 export function assertCurrentDevelopUiSource(path,source,read){
  const row=potionBackflow.files[path]??browserBackflow.files[path];
  if(!row)return;
- assert(matches(source,row.after),'fresh current production owner: '+path);
+ const expected=path===rewardsBackView?rewardsBackViewSuccessor:row.after;
+ assert(matches(source,expected),'fresh current production owner: '+path);
  let live;
  try{live=read(path);}catch(error){assert.fail('combined linked owner missing: '+path+': '+String(error?.message??error));}
- assert(matches(live,row.after),'combined linked owner identity: '+path+' during deck/potion backflow validation');
+ assert(matches(live,expected),'combined linked owner identity: '+path+' during deck/potion backflow validation');
 }
 
 export function beforeDevelopUiBackflows(path,source){

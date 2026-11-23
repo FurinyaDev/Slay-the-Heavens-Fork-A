@@ -101,11 +101,15 @@ const runtimeFixtureSuccessors = [
  }
 ];
 
-export function inputRetirementStsFixtureSource(path,raw){
- const buffered=Buffer.isBuffer(raw),source=buffered?raw.toString('utf8'):raw;
+export function beforeStsRuntimeFixtureSuccessor(path,source){
  const proof=runtimeFixtureSuccessors.find(row=>row.path===path);
  const original=proof?restoreExactFixtureHunks(proof,path,source):source;
- const projected=original!==source&&source.includes('\r\n')?original.replaceAll('\n','\r\n'):original;
+ return original!==source&&source.includes('\r\n')?original.replaceAll('\n','\r\n'):original;
+}
+
+export function inputRetirementStsFixtureSource(path,raw){
+ const buffered=Buffer.isBuffer(raw),source=buffered?raw.toString('utf8'):raw;
+ const projected=beforeStsRuntimeFixtureSuccessor(path,source);
  const fixture=beforeNativeFlowFixture(path,beforeMapNodeVisualsLineEndings(path,projected),{requireCurrent:true});
  const native=beforeMergedInputRetirement(path,fixture,{requireCurrent:true});
  // The exact native-flow chain already returns the composed StS runtime predecessor.
