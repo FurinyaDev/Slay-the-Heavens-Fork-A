@@ -1,5 +1,5 @@
 import {execFileSync} from 'node:child_process';
-import {mentionedTasks} from './backlog-closeout.mjs';
+import {backlogDeclaration,mentionedTasks} from './backlog-closeout.mjs';
 import {readFileSync} from 'node:fs';
 import {resolve} from 'node:path';
 import {pathToFileURL} from 'node:url';
@@ -38,6 +38,8 @@ export function evaluateIntake({id,task,policy,tasks=task?[task]:[],completed=[]
   if(task?.verificationOnly)errors.push('implementation already delivered; resume verification instead of implementing again');
   if(task?.allCriteriaChecked)errors.push('all AC checked; reconcile delivery and task status before claiming');
   for(const pr of openPullRequests) {
+    const {actions,errors:declarationErrors}=backlogDeclaration(pr.body);
+    if(!declarationErrors.length&&[...actions].some(([id,action])=>normalizeTaskId(id)===identity&&action==='recorded'))continue;
     if(mentionedTasks([pr.title,pr.body,pr.branch].join('\n')).some(id=>normalizeTaskId(id)===identity))
       errors.push(`Open PR already references this scope: ${pr.url}`);
   }

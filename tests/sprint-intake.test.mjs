@@ -327,3 +327,10 @@ test('the checked-in approval allows the source slice and holds Act 4 even when 
   const conflict={...current,blockedUntilOwnerApproval:current.blockedUntilOwnerApproval.filter(id=>id!=='TASK-64')};
   assert.match(check('TASK-64','m-9','To Do',{policy:conflict}).reasons.join(' '),/policy invalid/);
 });
+
+test('an administrative recorded disposition does not occupy an independent implementation slice',()=>{
+  const result=check('TASK-25','m-9','To Do',{openPullRequests:[
+    {url:'https://github.com/a/b/pull/8',body:'Backlog: TASK-25=recorded\nTASK-25 可单独源码开发。'}
+  ]});
+  assert.equal(result.decision,'ALLOW');
+});

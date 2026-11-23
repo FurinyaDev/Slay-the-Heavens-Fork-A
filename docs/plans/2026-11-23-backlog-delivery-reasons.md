@@ -8,7 +8,7 @@ Backlog 原生任务记录状态、AC、依赖和下一动作。GitHub 的实际
 
 ## 实施与运行
 
-1. 开工查原任务、全仓在途切片和历史继承。运行 `npm run task:pick -- TASK-ID --live`，或在既有 `check-pr-slice --start` 命令附 `--live`。当前三仓 PR 声明同任务时返回 HOLD。独立切片用子任务 ID 明确自己的范围，仍须核对未显式标任务的 PR、分支写入和唯一执行者。
+1. 开工查原任务、全仓在途切片和历史继承。运行 `npm run task:pick -- TASK-ID --live`，或在既有 `check-pr-slice --start` 命令附 `--live`。当前三仓 PR 声明同任务实施时返回 HOLD；仅以 recorded 对账的 PR 不占用独立开发切片。独立切片用子任务 ID 明确自己的范围，仍须核对未显式标任务的 PR、分支写入和唯一执行者。
 2. PR 内用一个 `Backlog:` 声明覆盖改动任务。用 `Tracks:` 明示额外的正式任务，相关任务须声明处置。无正式任务时用 `Backlog: none` 和单行 `Backlog-none-reason:`。Quality 的 PR guidance 校验准确组合的任务文件清单；独立审查核对声明与实际交付范围。
 3. 正常队列合入后跑 `npm run verify:delivery -- <PR> <preflight-or-intent.json> --merged`，使用真实 GitHub 合并与 push Full 证据；匹配实际 develop、合入任务快照和 CLI 读回。写入说明包含 PR、完整 SHA 及剩余 AC。任务变化或 CLI 中断保留 checkpoint，继续前先核对；在独立干净工作树运行，基于当前 develop 提交同步结果。
 4. 用既有 `branch-hygiene.mjs` 巡检。48 小时窗口的 `backlog_delivery_drift` 包含 PR、SHA、任务、状态、剩余 AC 和问题。以 PR、merge SHA、任务、差异为身份对比上次报告，只通知新增、升级或恢复。巡检保持只读，使用已有手动工作流或每日巡检；GitHub 的定时 workflow 定义随后随默认分支发布生效。

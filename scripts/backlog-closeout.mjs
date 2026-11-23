@@ -14,7 +14,7 @@ export function changedBacklogTasks(files) {
     .map(path => path.split('/').at(-1).split(' - ')[0]).join(' '));
 }
 
-export function backlogDeclaration(body, changedTaskIds = [], { requireReason = true } = {}) {
+export function backlogDeclaration(body, changedTaskIds = []) {
   const visible = visibleBody(body);
   const lines = visible.split(/\r?\n/).filter(line => /^Backlog:/.test(line));
   const errors = [], actions = new Map();
@@ -22,7 +22,7 @@ export function backlogDeclaration(body, changedTaskIds = [], { requireReason = 
   const value = lines[0]?.slice(8).trim();
   if (value === 'none') {
     const reasons = [...visible.matchAll(/^Backlog-none-reason:[ \t]*(\S[^\r\n]*)$/gm)];
-    if (requireReason && (reasons.length !== 1 || /^(?:none|n\/a|todo|无|\[)/i.test(reasons[0][1]))) {
+    if (reasons.length !== 1 || /^(?:none|n\/a|todo|无|\[)/i.test(reasons[0][1])) {
       errors.push('Backlog: none requires one specific Backlog-none-reason');
     }
   } else if (value) {
