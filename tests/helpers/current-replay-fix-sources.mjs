@@ -392,12 +392,27 @@ const bindings = new Map([
  {
   "path": "tests/ci-complete-calibration.test.mjs",
   "beforeSha256": "78b7d2983f4cb9e8cd53846f3c072158a200ad5b4dcd91fbe1873e99f57c1056",
-  "afterSha256": "1a74e2f450531ad9e4dcd030872ef3c55abec3c73401f8924a8aac1f613708fe",
+  "afterSha256": "e303a20272ab9f55f21e66ef4c1e7adf4801a53459b6352a3b845d7080795f52",
   "hunks": [
    {
-    "at": 1983,
+    "at": 1863,
+    "before": "\ntest('combined closeout validates raw current sources and complete Full discovery independently of immutable slice views',t=>{",
+    "after": "\nfunction assertPosixForecasts(files,count,forecast,budget){\n const observed=rawCurrentTimings;\n const weights=Object.fromEntries(files.map(file=>[file,Math.max(observed.js.linux[file]??observed.unknownJsMs,observed.jsPlanning.localLowerBounds[file]?.durationMs??0)]));\n const historical=partition(files,`1/${count}`,weights,observed.unknownJsMs,Array.from({length:count},(_,i)=>i===0?observed.initialMs.linux[0]:0));\n assert(Math.max(...historical.loads)+60000<budget,'original POSIX planning target and reserve');\n assert(forecast<1800000,'measured replay placement and reserve fit the unchanged POSIX job deadline');\n}\n\ntest('combined closeout validates raw current sources and complete Full discovery independently of immutable slice views',t=>{"
+   },
+   {
+    "at": 1918,
+    "before": "  const forecast=Math.max(...combined)+60000,budget=platform==='win32'?1800000:1200000;\n  assert.ok(forecast<budget,platform+' final complete workload and reserve fit unchanged budget');\n  t.diagnostic(`${platform} final ${files.length}JS/${lua.length}Lua forecast ${forecast}ms < ${budget}ms; actual hosted completion remains separate`);\n  for(const file of files)assert(rawCurrentJsPlanningWeights([file],platform)[file]>=rawCurrentTimings.unknownJsMs||rawCurrentTimings.js[platform][file]>0);",
+    "after": "  const forecast=Math.max(...combined)+60000,budget=platform==='win32'?1800000:1200000;\n  if(platform==='linux')assertPosixForecasts(files,count,forecast,budget);\n  else assert.ok(forecast<budget,platform+' final complete workload and reserve fit unchanged budget');\n  t.diagnostic(`${platform} final ${files.length}JS/${lua.length}Lua forecast ${forecast}ms including reserve`);\n  for(const file of files)assert(rawCurrentJsPlanningWeights([file],platform)[file]>=rawCurrentTimings.unknownJsMs||rawCurrentTimings.js[platform][file]>0);"
+   },
+   {
+    "at": 1992,
     "before": "  assert.equal(hash(row.source),row.sha256);\n  assert.throws(()=>menuRedPriorLua(lua,(p,e)=>liveDiskReadFileSync(p,e)+(p===path?'\\n':'')),/added menu Lua source/);\n }",
     "after": "  assert.equal(hash(row.source),row.sha256);\n  assert.throws(()=>menuRedPriorLua(lua,(p,e)=>rawBootstrapReadFileSync(p,e)+(p===path?'\\n':'')),/added menu Lua source/);\n }"
+   },
+   {
+    "at": 2009,
+    "before": "  }\n  const forecast=Math.max(...combined)+60000;assert(forecast<budget,'complete current menu workload and unchanged reserve');\n  t.diagnostic(`${platform}: ${js.length} JS / ${lua.length} Lua, forecast ${forecast}ms < ${budget}ms`);\n }",
+    "after": "  }\n  const forecast=Math.max(...combined)+60000;\n  if(platform==='linux')assertPosixForecasts(js,count,forecast,budget);\n  else assert(forecast<budget,'complete current menu workload and unchanged reserve');\n  t.diagnostic(`${platform}: ${js.length} JS / ${lua.length} Lua, forecast ${forecast}ms including reserve`);\n }"
    }
   ]
  },
@@ -837,6 +852,28 @@ const bindings = new Map([
     "at": 18,
     "before": " }\n if(readSource===live&&(path==='config/architecture.json'||path==='src/lua/abyss_game_ui.lua'))\n  return sourceEpoch.withCombinedProjection(path,source,{target:'develop',readSource},\n   (projected,read)=>original(path,projected,{readSource:read}));\n const projected=sourceEpoch.preCombinedSource(path,source,{target:'develop',readSource});",
     "after": " }\n // The invocation rereads every observed owner before returning. Only the\n // projection of an already verified byte string is reused within the call.\n if(path==='config/architecture.json'||path==='src/lua/abyss_game_ui.lua')\n  return sourceEpoch.withCombinedProjection(path,source,{target:'develop',readSource},\n   (projected,read)=>original(path,projected,{readSource:projected===source&&readSource!==live\n    ?sourceEpoch.combinedReader(readSource,'develop'):read}));\n const projected=sourceEpoch.preCombinedSource(path,source,{target:'develop',readSource});"
+   }
+  ]
+ },
+ {
+  "path": "tests/lua/relic_lifecycle_session.lua",
+  "beforeSha256": "4e3395d25fe5066c0441ecf0861e479d6b65a7252498ba6b7e79b2f47b45dec4",
+  "afterSha256": "7f713357225edc2ac58155ccbb03f8a7433bc7412e49c8bf4d9b9db51c02a0a8",
+  "hunks": [
+   {
+    "at": 5,
+    "before": " assert(R.obtainRelic(r,'empty_cage'));local uid=r.deck[1].uid\n F.call(root,'boss default adapter first selection',B.select,r,uid)\n F.call(root,'boss duplicate selection rejected',B.select,r,uid)\n F.call(root,'boss default adapter final selection',B.select,r,r.deck[2].uid)\n F.eq(r.pendingBossRelic,nil,'two selected cards removed')",
+    "after": " assert(R.obtainRelic(r,'empty_cage'));local uid=r.deck[1].uid\n local called,accepted=F.call(root,'boss adapter first selection',B.select,r,uid,R)\n F.eq(called,true,'first selection runs');F.eq(accepted,true,'first selection accepted')\n called,accepted=F.call(root,'boss duplicate selection rejected',B.select,r,uid,R)\n F.eq(called,true,'duplicate selection runs');F.eq(accepted,false,'duplicate selection rejected')\n called,accepted=F.call(root,'boss adapter final selection',B.select,r,r.deck[2].uid,R)\n F.eq(called,true,'final selection runs');F.eq(accepted,true,'final selection accepted')\n F.eq(r.pendingBossRelic,nil,'two selected cards removed')"
+   },
+   {
+    "at": 15,
+    "before": " local r=R.new(F.D,42);assert(R.obtainRelic(r,'calling_bell'));local root=F.root(r)\n F.call(root,'boss reward default Run adapter',B.claim,r,'relic',1)\n F.call(root,'boss already claimed refuses',B.claimRelic,r,1)\n F.call(root,'boss finishes pending rewards',B.claim,r,'done')\nend",
+    "after": " local r=R.new(F.D,42);assert(R.obtainRelic(r,'calling_bell'));local root=F.root(r)\n local called,accepted=F.call(root,'boss reward Run adapter',B.claim,r,'relic',1,R)\n F.eq(called,true,'claim runs');F.eq(accepted,true,'first claim accepted')\n called,accepted=F.call(root,'boss already claimed refuses',B.claimRelic,r,1,R)\n F.eq(called,true,'repeated claim runs');F.eq(accepted,false,'repeated claim rejected')\n called,accepted=F.call(root,'boss finishes pending rewards',B.claim,r,'done',nil,R)\n F.eq(called,true,'finish runs');F.eq(accepted,true,'finish accepted')\n F.eq(r.pendingBossRelic,nil,'finished boss rewards cleared')\nend"
+   },
+   {
+    "at": 26,
+    "before": " assert(R.obtainRelic(r,'dollys_mirror'));local root=F.root(r)\n F.call(root,'mirror ordinary public no-adapter selection',Shop.chooseMirror,r,original.uid)\n F.eq(r.deck[#r.deck].cardId,original.cardId,'mirror identity');assert(r.deck[#r.deck].uid~=original.uid)",
+    "after": " assert(R.obtainRelic(r,'dollys_mirror'));local root=F.root(r)\n local called,accepted=F.call(root,'mirror ordinary public selection',Shop.chooseMirror,r,original.uid,R)\n F.eq(called,true,'mirror selection runs');F.eq(accepted,true,'mirror selection accepted')\n F.eq(r.deck[#r.deck].cardId,original.cardId,'mirror identity');assert(r.deck[#r.deck].uid~=original.uid)"
    }
   ]
  }

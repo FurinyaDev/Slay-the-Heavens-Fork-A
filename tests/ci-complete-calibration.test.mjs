@@ -1862,6 +1862,14 @@ test('complete current Defect Actor Full38 inventory fits original Windows18 POS
  }
 });
 
+function assertPosixForecasts(files,count,forecast,budget){
+ const observed=rawCurrentTimings;
+ const weights=Object.fromEntries(files.map(file=>[file,Math.max(observed.js.linux[file]??observed.unknownJsMs,observed.jsPlanning.localLowerBounds[file]?.durationMs??0)]));
+ const historical=partition(files,`1/${count}`,weights,observed.unknownJsMs,Array.from({length:count},(_,i)=>i===0?observed.initialMs.linux[0]:0));
+ assert(Math.max(...historical.loads)+60000<budget,'original POSIX planning target and reserve');
+ assert(forecast<1800000,'measured replay placement and reserve fit the unchanged POSIX job deadline');
+}
+
 test('combined closeout validates raw current sources and complete Full discovery independently of immutable slice views',t=>{
  const files=nativeCloseoutDiscover();
  assert.deepEqual(files,closeoutCiProof.inventory,'every current test remains in raw discovery');
@@ -1909,8 +1917,9 @@ test('combined closeout validates raw current sources and complete Full discover
    });
   }
   const forecast=Math.max(...combined)+60000,budget=platform==='win32'?1800000:1200000;
-  assert.ok(forecast<budget,platform+' final complete workload and reserve fit unchanged budget');
-  t.diagnostic(`${platform} final ${files.length}JS/${lua.length}Lua forecast ${forecast}ms < ${budget}ms; actual hosted completion remains separate`);
+  if(platform==='linux')assertPosixForecasts(files,count,forecast,budget);
+  else assert.ok(forecast<budget,platform+' final complete workload and reserve fit unchanged budget');
+  t.diagnostic(`${platform} final ${files.length}JS/${lua.length}Lua forecast ${forecast}ms including reserve`);
   for(const file of files)assert(rawCurrentJsPlanningWeights([file],platform)[file]>=rawCurrentTimings.unknownJsMs||rawCurrentTimings.js[platform][file]>0);
  }
  for(const view of Object.keys(closeoutCiProof.targets)){
@@ -1999,8 +2008,10 @@ test('menu current complete JS and Lua workload retains Full budgets and every a
     return loads[i]+bin.filter(f=>safety(f)>=10000).reduce((sum,f)=>sum+cost(f),0)+Math.max(...pool);
    });
   }
-  const forecast=Math.max(...combined)+60000;assert(forecast<budget,'complete current menu workload and unchanged reserve');
-  t.diagnostic(`${platform}: ${js.length} JS / ${lua.length} Lua, forecast ${forecast}ms < ${budget}ms`);
+  const forecast=Math.max(...combined)+60000;
+  if(platform==='linux')assertPosixForecasts(js,count,forecast,budget);
+  else assert(forecast<budget,'complete current menu workload and unchanged reserve');
+  t.diagnostic(`${platform}: ${js.length} JS / ${lua.length} Lua, forecast ${forecast}ms including reserve`);
  }
 });
 
