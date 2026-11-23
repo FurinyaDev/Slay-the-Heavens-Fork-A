@@ -1799,8 +1799,6 @@
         "sort": [0, 282, 856, 36],
         "legacyDescription": [0, -303, 860, 36],
         "legacyRarityTip": [0, -336, 650, 30],
-        "drawBadge": [-534, -310, 170, 46],
-        "discardBadge": [534, -310, 170, 46],
         "footer": {
           "browserDescription": [0, -282, 900, 36],
           "rarityTip": [0, -308, 450, 36],

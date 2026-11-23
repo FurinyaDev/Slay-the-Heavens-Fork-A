@@ -208,6 +208,7 @@ function M.new(root, presentation, clickEvent, platform, onClose)
     local official=Theme.presentationProfile=='official-assets-first'
     local browserChrome=official and root:GetChild('pileChrome')
     local empty=browserChrome and browserChrome:GetChild('empty') or legacyEmpty
+    local pileHeading=browserChrome and browserChrome:GetChild('heading')
     local pileReturn=official and root:GetChild('pileReturn')
     local titleControl=root:GetChild('title')
     local indexBases=setmetatable({},{__mode='k'})
@@ -303,9 +304,9 @@ function M.new(root, presentation, clickEvent, platform, onClose)
         rarityTip:SetVisible(active==true and self.pileKind=='draw' and not frozenEye(self.run))
         titleControl:SetVisible(not sorting and not self.browserShell and not self.cardDetail)
         if self.browserShell then
-            browserChrome:GetChild('heading'):SetVisible(self.detailPages~=nil)
-            browserChrome:GetChild('drawBadge'):SetVisible(active==true and self.pileKind=='draw')
-            browserChrome:GetChild('discardBadge'):SetVisible(active==true and self.pileKind=='discard')
+            local caption=active and pileNames[self.pileKind] or nil
+            if caption then pileHeading.text=caption end
+            pileHeading:SetVisible(caption~=nil or self.detailPages~=nil)
         end
         local heading=root:GetChild('browseTitle')
         local legacySort=sorting and not self.browserShell
@@ -314,8 +315,8 @@ function M.new(root, presentation, clickEvent, platform, onClose)
         paintBrowseSort(legacySort==true)
     end
     local function detailPage()
-        root:GetChild('title').text=self.detailTitle..' · '..self.detailPage..'/'..#self.detailPages
-        if self.browserShell then root:GetChild('pileChrome'):GetChild('heading').text=root:GetChild('title').text end
+        titleControl.text=self.detailTitle..' · '..self.detailPage..'/'..#self.detailPages
+        if self.browserShell then pileHeading.text=titleControl.text end
         details.text=self.detailPages[self.detailPage]..'\n\n点按正文翻页 · '..(self.browserShell and '左下角返回' or '右上角返回')
     end
     function self.showDetails(_,definition,upgraded)
