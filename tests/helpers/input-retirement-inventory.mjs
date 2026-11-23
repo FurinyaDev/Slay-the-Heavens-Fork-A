@@ -4,6 +4,7 @@ import {readFileSync} from 'node:fs';
 import {beforeDeckBrowserBackflow,beforeInputRetirementStsSuite} from './input-retirement-source.mjs';
 import {inputRetirementStsWitness} from './input-retirement-sts-binding.mjs';
 import {stsStylePriorRuntime} from './sts-style-prior-runtime.mjs';
+import {beforeAct3EndingInventory} from './act3-ending-ci-source.mjs';
 
 const normalize=source=>source.replaceAll('\r\n','\n');
 const hash=(source,algorithm='sha256')=>createHash(algorithm).update(source).digest('hex');
@@ -44,6 +45,7 @@ function historicalStsSuite(paths,read){
 // inventory, discovery and runners continue to use the tests on disk.
 export function beforeInputRetirementTestInventory(paths,kind,read=readFileSync,{required=false}={}){
  assert(kind==='js'||kind==='lua','known input retirement inventory kind');
+ paths=beforeAct3EndingInventory(paths,kind,read,{required});
  const added=kind==='js'?inputRetirementJsTests:Object.keys(inputRetirementLuaTests);
  if(!required&&!added.some(path=>paths.includes(path)))return paths;
  if(kind==='js')return historicalStsSuite(paths,read).paths;

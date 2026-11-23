@@ -44,6 +44,15 @@ const act3MenuSource={
  ],
 };
 const act3MenuReaders=new WeakMap();
+const act3EndingFixture={
+ path:'tests/lua/full_source_campaign_entry.lua',
+ before:{sha256:'6eb5e8016625dd7d3586d81872814c5d28021371e2d9c4ce78f4741a5f9ea3b3',gitBlob:'7d9f18b6c5c63d4cf18593f7811fab0334b2d769'},
+ after:{sha256:'93a77941f39e79436dd26058e57e4cc60022e4293b85b3c91254846fa79c0aec',gitBlob:'bf6707072ef5e17d1b017a8f7567e355568c2ccb'},
+ hunks:[{at:150,
+  before:"assert(host.run.act==3 and host.map.act==3 and not host.run.endingHistoryResult)\nassert(not host:advanceAct(),'missing real history/keys must keep Act4 locked')",
+  after:"assert(host.run.act==3 and host.map.act==3 and not host.run.endingHistoryResult)\nassert(F.statValue(root,'floor')=='51 / 51','normal third-act result must use the real campaign floor range')\nassert(root:GetChild('menuPanel'):GetChild('title').text=='三幕冒险完成')\nassert(F.resultText(root,'subtitle')=='三幕冒险已完成。本局挑战到此结束。')\nassert(not host:advanceAct(),'missing real history/keys must keep Act4 locked')",
+ }],
+};
 
 function beforeAct3EndingMenu(path,source){
  return path===act3MenuSource.path?project(path,source,act3MenuSource):source;
@@ -87,6 +96,7 @@ export function beforeUiEntrance(path,source){
 }
 
 export function beforeUiEntranceWitness(path,source){
+ if(path===act3EndingFixture.path)source=project(path,source,act3EndingFixture);
  return project(path,source,Object.hasOwn(witnesses,path)?witnesses[path]:undefined);
 }
 
