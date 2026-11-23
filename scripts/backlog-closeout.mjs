@@ -181,6 +181,10 @@ export function syncBacklogCloseout({pr,files,targetSha,readTargetSha,root=proce
     for(const args of plan.commands) {
       checkTarget();
       const before=checkCurrent();
+      const pending=planBacklogCloseout({...input,records:before});
+      if(pending.errors.length)throw Error('Backlog pending: '+pending.errors.join('; '));
+      if(JSON.stringify(pending.commands[0])!==JSON.stringify(args))
+        throw Error('Backlog pending: next CLI operation changed; preserve the last checkpoint');
       run(args,{root});
       const after=readCurrent();
       const otherTasks=list=>digest(list.filter(task=>task.id!==args[2]));

@@ -1514,3 +1514,22 @@ test('closeout rejects a remote advance during the final CLI write',t=>{
     remote='b'.repeat(40);
   }),/remote develop advanced/);
 });
+
+test('closeout will not archive a task that acquires a new active dependent',t=>{
+  const f=closeoutFixture(t);
+  const successor=join(f.root,'backlog/tasks/task-2 - 承接.md');
+  const dependent=join(f.root,'backlog/tasks/task-3 - 新依赖.md');
+  writeFileSync(successor,f.source.replace('TASK-1','TASK-2'));
+  writeFileSync(dependent,f.source.replace('TASK-1','TASK-3'));
+  f.git('add','.');f.git('-c','user.name=Fixture','-c','user.email=fixture@example.invalid','commit','-qm','initial scope');
+  const targetSha=f.git('rev-parse','HEAD');
+  const pr={...f.pr,merge_commit_sha:targetSha,body:'Backlog: TASK-1=superseded:TASK-2'};
+  const calls=[];
+  assert.throws(()=>delivery.syncBacklogCloseout({...f,pr,targetSha},args=>{
+    calls.push(args[1]);
+    if(args[1]!=='edit')assert.fail('new active dependent must prevent archive');
+    writeFileSync(f.path,f.source.replace('dependencies: []','dependencies: []\nreferences: [TASK-2]')+args.at(-1)+'\n');
+    writeFileSync(dependent,f.source.replace('TASK-1','TASK-3').replace('dependencies: []','dependencies: [TASK-1]'));
+  }),/migrate active dependencies/);
+  assert.deepEqual(calls,['edit']);
+});
