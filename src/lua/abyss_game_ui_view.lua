@@ -210,20 +210,22 @@ function M.refreshDeckEntry(child,self)
         end
 end
 
+local function refreshRewardShortcut(rewardsBack,available)
+    rewardsBack:SetVisible(available)
+    if rewardsBack:GetChild('v25Face') then
+        require('abyss_v25_menu_view').button(rewardsBack,available)
+    end
+    -- Restore the shortcut above the full-page route preview.
+    if available then rewardsBack:SetAsLastSibling() end
+end
+
 function M.refreshUtilities(child,self,inCombat,refreshPotionEntry,refreshDeckEntry)
     return function(run,inMenu,deckOpen,potionOpen,blocked,returnAvailable)
             local ending=run and run.phase=='ending_proceed'
             local hudVisible=not ending and not inMenu and not deckOpen and not blocked
             local utilitiesVisible=hudVisible and not potionOpen
             local inventoryVisible=hudVisible and (not potionOpen or self.potionUI.localPanel==true)
-            local rewardsBack=child("combatRewards")
-            rewardsBack:SetVisible(returnAvailable)
-            if rewardsBack:GetChild('v25Face') then
-                require('abyss_v25_menu_view').button(rewardsBack,returnAvailable)
-            end
-            -- Route preview raises the full-page map. Restore this sibling above it
-            -- when returning to navigation; visibility alone leaves it occluded.
-            if returnAvailable then rewardsBack:SetAsLastSibling() end
+            refreshRewardShortcut(child("combatRewards"),returnAvailable)
             child("deckEntry"):SetVisible(utilitiesVisible)
             -- STS has no separate relic button: the discs under the HP row are the one control.
             child("relicEntry"):SetVisible(false)

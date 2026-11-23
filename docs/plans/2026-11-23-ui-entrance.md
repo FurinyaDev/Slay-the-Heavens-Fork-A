@@ -46,3 +46,7 @@
 - `node --test tests/character-selection-exit.test.mjs` 检查真实宿主选角发布、暂停和快速切换。 `node --test --test-name-pattern='official selection only exposes|official mobile shop map return' tests/official-assets-runtime.test.mjs` 检查正式样式的就绪门控、两张图 alpha 编码与移动端导航返回手势。
 - `tests/lua/shop_entry.lua` 经 `scripts/test-lua.mjs` 的 `runLua` 执行独立原版递推对照，覆盖 30/60/120 Hz、冷开首次呈现、暖缓存、新手势购物、删除与离开。离线冷开只绘制一次七张卡。相同报价的暖重开额外绘制 0 次。
 - 原版客户端录像、107271 原图透明度、千星官方导入与 ready、PC／实体手机的视觉、声音及墙钟时延待验。Lua 轨迹、默认触控夹具与生成物提供源码证据。
+
+## 集成门禁修复
+
+在基线和候选中分别复现了牌组同名局部变量和 HUD 奖励入口函数超限。复用已审阅实现中的局部变量改名与原有奖励入口提取，两处均保留视觉状态和写入顺序。牌库字体回归对应当前排序与翻页控件。Lua 静态和工程门禁一并验证。 [两处原补丁](https://github.com/FurinyaWorks/Slay-the-Heavens/pull/909) · [字体断言来源](https://github.com/FurinyaWorks/Slay-the-Heavens/pull/907)
