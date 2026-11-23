@@ -72,7 +72,8 @@ const copierPath='tests/helpers/copy-integration-source-closure.mjs';
 const historicalStsEntry='tests/helpers/historical-sts-style-entry.mjs';
 export function beforeCurrentHistoricalStsSource(path,source){
  if(path===copierPath)return beforeCurrentReplayCopier(path,source);
- if(path!==historicalStsEntry||!matches(source,{
+ if(path!==historicalStsEntry)return beforeCurrentReplayFixes(path,source);
+ if(!matches(source,{
   sha256:'f358b5956f55a33890ea4f4481b75bcd0bfc56048cbc50e4b45a0f9870654c3b',gitBlob:'eb9b2d891344249dfb6644f8800240e3078d38b6',
  }))return source;
  const prior=lf(source)
