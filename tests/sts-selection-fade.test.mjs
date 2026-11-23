@@ -94,7 +94,9 @@ test('historical source replay rejects foreign bytes and a changed linked fade o
  assert.equal(beforeStsSelectionFade(path,lf),files[path].before);
  assert.equal(beforeStsSelectionFade(path,crlf(lf)),crlf(files[path].before));
  const foreign=source+'\n-- foreign drift';assert.equal(beforeStsSelectionFade(path,foreign),foreign);
- assert.throws(()=>beforeAuthenticatedStsSelectionFade(path,source,owner=>readFileSync(owner,'utf8')+(owner==='src/lua/abyss_game_ui_run.lua'?'\n-- drift':'')),/fresh linked STS fade source/);
+ const owner='src/lua/abyss_game_ui_run.lua';
+ assert.throws(()=>beforeAuthenticatedStsSelectionFade(path,source,linked=>readFileSync(linked,'utf8')+(linked===owner?'\n-- drift':'')),error=>
+  error.message.includes(owner)&&/(?:fresh linked STS fade source|combined linked owner identity)/.test(error.message));
 });
 
 test('a superseded departure releases its callback and never creates a run',()=>{

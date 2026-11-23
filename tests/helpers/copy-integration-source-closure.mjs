@@ -314,11 +314,23 @@ const actionButtonFiles=Object.freeze({
  'tests/helpers/action-buttons-source.mjs':'fdb6c73f52cf92fededa3d48fded11f05e21356ec66864a43c54bdf51781d4cd',
  'tests/fixtures/action-buttons-source.json.gz':'86634a756c4085906261d4d318118bb1f7692a642479651526c1ace0fefe4487',
 });
+const entranceFiles=Object.freeze({
+ ...actionButtonFiles,
+ [runtime]:'e9f70b5c84a7d808c2b7722ba4bab561f7995d5c163d8ea75f6a393aa5094cb2',
+ [closeout]:'4f559399c631fbd0fd25ea7f1ceb8f3b8c6643e167f0116d9f151e12ee0a0ecb',
+ 'tests/helpers/character-preparation-source.mjs':'4d209e768d9dfcb5afa466c0224eccfd1fa8f47a22c27e5d7b8b99fd8231f5cb',
+ 'tests/helpers/develop-release-backflow-source.mjs':'483660c88940f869877e0305636be89d6b9005cae8d34638febfcb9e8b099d18',
+ 'tests/helpers/native-fixture-replay-source.mjs':'5a9de41dfd4ee6d5438c24c9c7c9f068eeaeba66bc6fc8abec16d9c08d32864b',
+ 'tests/helpers/native-flow-fixture-source.mjs':'303770de22647a8eea4090cefa8e75cafa9c8643a2048441698ed8c02633a732',
+ 'tests/helpers/ui-entrance-source.mjs':'4d87167e5b9ce337bb753eeef5fa581c8bb09e34622df338ae2fd582b4147a57',
+ 'tests/helpers/exact-fixture-hunks.mjs':'83f9cb15d9d745c86c555a77875b6b2bfc283a12ec380bcd2af518aa6526a935',
+ 'tests/fixtures/ui-entrance-source.json.gz':'7987dd46fe3a77b4fd92b991d913c92035c9b3221b3e36bb3c581719df1f1878',
+});
 const inside=(root,path)=>{const r=relative(root,path);return r!==''&&!isAbsolute(r)&&r!=='..'&&!r.startsWith('../')&&!r.startsWith('..\\');};
 export function copyIntegrationSourceClosure(directory,{sourceRoot=process.cwd()}={}){
  const destination=realpathSync.native(directory);
  assert.notEqual(destination,realpathSync.native(sourceRoot),'isolated helper copy destination');
- for(const [path,sha]of Object.entries(actionButtonFiles)){
+ for(const [path,sha]of Object.entries(entranceFiles)){
   assert((path.startsWith('tests/helpers/')||path.startsWith('tests/fixtures/'))&&!path.split('/').includes('..'),'fixed helper path');
   const source=join(sourceRoot,path),content=integrationClosureBytes(path,readFileSync(source));assert.equal(hash(content),sha,'fresh helper copy identity: '+path);
   const target=join(directory,path);mkdirSync(dirname(target),{recursive:true});

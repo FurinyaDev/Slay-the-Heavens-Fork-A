@@ -8,6 +8,7 @@ import {assertCharacterPreparationSources,beforeCharacterPreparationSource,befor
 import {authenticateInputRetirement,beforeDeckBrowserBackflow,beforePotionBackflow,beforeInputRetirement,beforeInputRetirementReader,assertPointerInputSource,pointerInputPath,retiredControllerPath} from './helpers/input-retirement-source.mjs';
 import {actorFocusAdded,deckPagesAdded,assertDevelopBackflowCurrent,assertStasisUpgradeAdded,authenticateDevelopBackflow,stasisUpgradeAddedPaths} from './helpers/develop-release-backflow-source.mjs';
 import test from 'node:test';
+import {addedEntranceModules,beforeUiEntrance,entranceInventory,entrancePredecessor} from './helpers/ui-entrance-source.mjs';
 import assert from 'node:assert/strict';
 import {readFileSync,readdirSync,mkdtempSync,mkdirSync,writeFileSync,existsSync,linkSync,unlinkSync,rmSync} from 'node:fs';
 import {execFileSync} from 'node:child_process';
@@ -182,8 +183,8 @@ test('fresh authorization covers the complete changed-owner union without cachin
 test('combined epoch authenticates the complete current production tree',()=>{
  const files=['config/architecture.json',...readdirSync('src/lua').filter(p=>p.endsWith('.lua')).map(p=>'src/lua/'+p)].sort();
  const recorded=Object.keys(proof.current).filter(path=>path!==retiredControllerPath&&proof.current[path]!==null).sort();
- assert.deepEqual(files,[...recorded,...stasisUpgradeAddedPaths,...actorFocusAdded,...deckPagesAdded,pointerInputPath].sort());
  const readDisk=path=>readFileSync(path,'utf8');
+ assert.deepEqual(entranceInventory(files,readDisk),[...recorded,...stasisUpgradeAddedPaths,...actorFocusAdded,...deckPagesAdded,pointerInputPath].sort());
  assert.throws(()=>readDisk(retiredControllerPath),{code:'ENOENT'});
  const retired=beforeInputRetirementReader(readDisk)(retiredControllerPath);
  assert.equal(beforeCharacterPreparationSource(retiredControllerPath,retired,readDisk),raw(retiredControllerPath));
@@ -214,6 +215,31 @@ test('combined epoch authenticates the complete current production tree',()=>{
    assert.throws(()=>beforeCurrentProductionSource(path,latest,owner=>owner===path?invalid:read(owner)),/fresh .*source|(?:combined|map deck) linked owner identity/);
   }
  }
+});
+test('entrance replay freshly checks the complete changed cohort and preserves foreign inputs',()=>{
+ const config='config/architecture.json',read=path=>readFileSync(path,'utf8');
+ const source=read(config),prior=beforeUiEntrance(config,source);
+ const live=[config,...readdirSync('src/lua').filter(name=>name.endsWith('.lua')).map(name=>'src/lua/'+name)];
+ const changed=live.filter(path=>beforeUiEntrance(path,read(path))!==read(path));
+ assert.notEqual(prior,source);
+ assert.equal(addedEntranceModules.length,2);
+ for(const path of addedEntranceModules)assert(changed.includes(path),path);
+ const project=input=>entrancePredecessor(config,source,input).source;
+ assert.equal(project(read),prior);
+ for(const changedPath of changed){
+  const current=read(changedPath);
+  for(const invalid of [beforeUiEntrance(changedPath,current),current+'\n',null]){
+   assert.throws(()=>project(path=>path===changedPath?invalid:read(path)),error=>
+    /linked owner identity/.test(error.message)&&error.message.includes(changedPath));
+  }
+  assert.throws(()=>project(path=>{
+   if(path===changedPath)throw Error('removed');
+   return read(path);
+  }),/linked owner missing/);
+ }
+ const foreign=source+'\n';
+ assert.equal(entrancePredecessor(config,foreign,()=>assert.fail('foreign bytes read linked owners')).source,foreign);
+ assert.equal(project(read),prior);
 });
 test('combined replay rejects a menu owner from before the controls guide removal',()=>{
  const read=path=>readFileSync(path,'utf8');
