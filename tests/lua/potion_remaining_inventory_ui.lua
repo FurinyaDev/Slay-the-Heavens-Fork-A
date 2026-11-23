@@ -17,7 +17,7 @@ for offset=0,3,3 do
  for slot=1,3 do flow.potions[slot]={slot=slot,id=specs[offset+slot][1],price=50,rarity='common',sold=false,unavailable=false}end
  h.nodeUI:render()
  for slot=1,3 do
-  local text=root:GetChild('nodePanel'):GetChild('shopView'):GetChild('potion'..slot):GetChild('description').text
+  local text=root:GetChild('nodePanel'):GetChild('shopView'):GetChild('goods'):GetChild('potion'..slot):GetChild('description').text
   assert(text:find(specs[offset+slot][2],1,true),specs[offset+slot][1]..': '..text)
  end
 end

@@ -90,6 +90,7 @@ function M.update(self,platform,openingCovered,updateBossEntrance,bgm)
             -- The terminal rule state can precede the last feedback animation.
             if not countRunTime(self,dt,openingCovered) then return false,"invalid_delta" end
             self:animate(dt)
+            if self.selectionMotion and self.characterOpen and not self.deckUI.visible then self.selectionMotion:update(dt) end
             if self.prologue then self.prologue:update(dt) end
             if openingCovered() then return true end
             if advancePreparation(self,platform,dt) then return true end
@@ -115,6 +116,7 @@ function M.disable(self,platform,characterPanel,owner)
             if self.prologue then self.prologue:cancel() end
             owner.exitGeneration=owner.exitGeneration+1;owner.menuGeneration=owner.menuGeneration+1
             self.characterOpen=false
+            if self.selectionMotion then self.selectionMotion:hide() end
             if characterPanel then characterPanel:SetVisible(false) end
             -- Set every controller inert before cancelling feedback: cancellation
             -- invokes its completion callback synchronously, which now cannot refresh.

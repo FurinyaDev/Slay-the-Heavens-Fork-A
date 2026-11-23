@@ -227,13 +227,21 @@ function M.new(cover,ready,onIntent,frames,motion)
         paintFrame()
     end
     function gate:covered()return self.state~='visible' end
+    function gate:publishedIntent(intent)
+        return self.state=='visible' and same(intent,self.published)
+    end
+    function gate:allowsCharacterEdit()
+        return motion and motion.characterLocal and self.state=='preparing' and self.localOnly
+            and self.published and self.published.page=='characterPanel'
+    end
     local function requestTransition(intent)
         local entry=gate.entry
         if entry and (gate.departure or entry.destination and not sameOwner(entry.destination,intent))then gate.entry=nil end
         gate.roomEntry=entersMapRoom(gate.published,intent) or gate.roomEntry and sameOwner(gate.intent,intent)
         gate.localFrame=localFrame(intent,gate.intent)
         gate.painting=nil
-        gate.localOnly=motion and gate.published and gate.published.page=='characterPanel' and intent.page=='characterPanel'
+        gate.localOnly=motion and intent.page=='characterPanel'
+            and (motion.characterLocal or gate.published and gate.published.page=='characterPanel')
         local exiting=motion and gate.published and not gate.localFrame and not gate.localOnly
             and (gate.published.page~=intent.page or not sameBase(intent,gate.published)) and gate.state=='visible'
         gate.epoch=gate.epoch+1;gate.intent=intent;gate.state=exiting and 'fadingOut' or 'preparing';gate.armed=nil;gate.error=nil
@@ -366,6 +374,16 @@ function M.new(cover,ready,onIntent,frames,motion)
         if recovery and recovery.visible~=failed then recovery:SetVisible(failed)end
         return self.epoch==ticket
     end
+    local function paintCharacterInput(self,ticket)
+        if not (motion and motion.characterLocal) then return true end
+        local blocked=not self:allowsCharacterEdit()
+        local blocker=cover:GetChild('blocker')
+        if self.epoch~=ticket then return false end
+        if blocker.raycastTarget~=blocked then blocker.raycastTarget=blocked end
+        if self.epoch~=ticket then return false end
+        if cover.disableCursorEventPassthrough~=blocked then cover.disableCursorEventPassthrough=blocked end
+        return self.epoch==ticket
+    end
     function gate:paint(raise)
         local ticket=self.epoch
         if not paintFrame()then return false end
@@ -373,7 +391,7 @@ function M.new(cover,ready,onIntent,frames,motion)
         if cover.visible~=covered then cover:SetVisible(covered)end
         if self.epoch~=ticket then return false end
         if covered and raise then cover:SetAsLastSibling()end
-        if self.epoch~=ticket then return false end
+        if self.epoch~=ticket or not paintCharacterInput(self,ticket) then return false end
         return paintRecovery(self,failed,ticket)
     end
     local function restoreDeparture(departure,reason)
