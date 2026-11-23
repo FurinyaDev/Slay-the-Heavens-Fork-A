@@ -178,12 +178,14 @@ test('generated official character selection follows the approved details revisi
   .map(row=>[row.revision,row.status]),[['release-sts1-20261122','APPROVED']]);
  assert.equal(revisions.find(row=>row.revision==='sts1-open-copy-20261119')?.status,'SUPERSEDED');
  const output=join(directory,'refined-release');
- buildUI(output,undefined,{officialAssets:true,refinedReleaseMonsterArt:true,nativePageLifecycle:true});
+ buildUI(output,undefined,{officialAssets:true,refinedReleaseMonsterArt:true,nativePageLifecycle:true,experimentalCharacters:false});
  const tree=JSON.parse(readFileSync(join(output,'game-ui.json'),'utf8'));
  const selection=child(child(tree,'stage'),'characterPanel');
  const details=child(selection,'details');
- for(const name of ['name','stats','gold','v25Story','relic','relicText']){
-  assert.equal(child(details,name)?.kind,'text',name);
+ const motion=child(details,'infoMotion'),infoLayers=motion?parts(motion):[details];
+ assert(infoLayers.length>0);
+ for(const info of infoLayers)for(const name of ['name','stats','gold','v25Story','relic','relicText']){
+  assert.equal(child(info,name)?.kind,'text',name);
  }
  const retired=new Set(['deckTitle','deckSummary','deckRule','deckOpen','deckView']);
  const found=all(selection).filter(node=>retired.has(node.name)||/初始牌组|查看牌组/.test(node.text?.content??''));
