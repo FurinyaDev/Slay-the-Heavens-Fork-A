@@ -772,7 +772,8 @@ function beforeReplayArchiveStorage(path,source){
  return source.includes('\r\n')?prior.replaceAll('\n','\r\n'):prior;
 }
 export function beforeReviewedBuildInput(path,source,read){
- const reviewed=(owner,raw)=>beforeCurrentReplayFixes(owner,beforeUiEntranceWitness(owner,beforeCurrentReplayCopier(owner,raw)));
+ const reviewed=(owner,raw)=>owner.startsWith('src/')||owner==='config/architecture.json'?raw:
+  beforeCurrentReplayFixes(owner,beforeUiEntranceWitness(owner,beforeCurrentReplayCopier(owner,raw)));
  const live=owner=>reviewed(owner,read(owner,'utf8'));
  const production=authenticateDevelopBackflow(path,reviewed(path,source),live);
  const deck=beforeDeckPagesSuiteSource(path,production);
@@ -791,7 +792,13 @@ export function assertIntegrationSuccessorsCurrent(read=readFileSync){
  const liveRead=read;
  assertNativeFixturesCurrent(liveRead);
  assertNativeFlowFixturesCurrent(liveRead);
- read=(path,encoding)=>beforeCalibrationReplay(path,beforeCurrentReplayFixes(path,beforeUiEntranceWitness(path,beforeCurrentReplayCopier(path,liveRead(path,encoding)))));
+ read=(path,encoding)=>{
+  const raw=liveRead(path,encoding);
+  // Raw production owners reach their own fresh admission guard unchanged.
+  // Only CI and helper receipts need the pure historical source projections.
+  return path.startsWith('src/')||path==='config/architecture.json'?raw:
+   beforeCalibrationReplay(path,beforeCurrentReplayFixes(path,beforeUiEntranceWitness(path,beforeCurrentReplayCopier(path,raw))));
+ };
  const readCurrent=(path,encoding)=>{
   const live=read(path,encoding);
   let raw=beforeNativeFlowFixture(path,live);
