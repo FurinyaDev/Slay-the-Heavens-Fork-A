@@ -4,6 +4,7 @@ import {createHash} from 'node:crypto';
 import {readFileSync} from 'node:fs';
 import {gunzipSync} from 'node:zlib';
 import {beforeMergedInputRetirement} from './input-retirement-source.mjs';
+import {restoreExactFixtureHunks} from './exact-fixture-hunks.mjs';
 import {exactSourceMatches} from './source-fingerprint.mjs';
 import {beforeNativeFlowFixture} from './native-flow-fixture-source.mjs';
 import {beforeCurrentOfficialRuntimeFixture} from './sts-fade-ci-source.mjs';
@@ -61,9 +62,51 @@ export function beforeMapNodeVisualsLineEndings(path,source){
  return source.includes('\r\n')?prior.replaceAll('\n','\r\n'):prior;
 }
 
+// Runtime tests keep the updated live contracts. Only the StS archive reader
+// projects the exact reviewed test successors back to their original bytes.
+const runtimeFixtureSuccessors = [
+ {
+  "path": "tests/art-feature-flags-runtime.test.mjs",
+  "afterSha256": "829838455b61faf4edd163a3db71a6816ef61c75c55489d32bd42fcccb4e4614",
+  "beforeSha256": "5fd7d8a4a86cc2e1129f1d11bbf4fffbb2adb71943009cd849d4f68f4f29bc1b",
+  "hunks": [
+   {
+    "at": 19,
+    "before": " modules={abyss_ui_profile={schemaVersion=1,nativePageLifecycle=false},abyss_monster_actor_binding={templateIndex=31,containerTemplateIndex=32,powerTemplateIndex=33,enabled=true},abyss_art_features=config,abyss_data={},abyss_presentation={},abyss_theme={sound={}},\n  -- This fixture substitutes GameUI itself; provide its page-intent boundary too.",
+    "after": " modules={abyss_ui_profile={schemaVersion=1,nativePageLifecycle=false},abyss_monster_actor_binding={templateIndex=31,containerTemplateIndex=32,powerTemplateIndex=33,enabled=true},abyss_art_features=config,abyss_data={},abyss_presentation={},abyss_theme={sound={}},\n  -- The standard UI build emits this binding even when no browser template is installed.\n  abyss_deck_browser_binding={templateIndex=0,parts={}},\n  -- This fixture substitutes GameUI itself; provide its page-intent boundary too."
+   },
+   {
+    "at": 50,
+    "before": " assert(load(ENTRY))();OnStart();assert(updates and views==1,'art availability must not disable GameUI')\n assert(componentParams==1,'comparison switch must be read once with its registered default off')",
+    "after": " assert(load(ENTRY))();OnStart();assert(updates and views==1,'art availability must not disable GameUI')\n assert(requested.abyss_deck_browser_binding==1 and options.deckBrowser==nil,\n  'the generated default binding must be loaded once without activating the native deck browser')\n assert(componentParams==1,'comparison switch must be read once with its registered default off')"
+   },
+   {
+    "at": 98,
+    "before": "end\n`));",
+    "after": "end\n`));\ntest('missing mandatory deck browser binding fails closed before GameUI attaches',()=>vm(setup+`\nlocal messages={}\nprint=function(message)messages[#messages+1]=message end\nlocal ok=pcall(start,snapshot(),function(m)m.abyss_deck_browser_binding=nil end)\nassert(not ok and updates==false and views==0,'missing browser binding must not start GameUI')\nassert(requested.abyss_deck_browser_binding==1,'the missing binding must be consulted exactly once')\nassert(table.concat(messages,'|'):find('missing abyss_deck_browser_binding',1,true),'startup must report the missing module')\n`));"
+   }
+  ]
+ },
+ {
+  "path": "tests/event-option-rim-clipping.test.mjs",
+  "afterSha256": "a354c46d56ac029cdb54ccb499ded7b2fc491f883c41842cd4636ecf15d25890",
+  "beforeSha256": "cc7b1ad3322f7bc7516e6ec168b1b75ae312f849d916ed91984913986bbfc726",
+  "hunks": [
+   {
+    "at": 48,
+    "before": "  assert.equal(child(row,'border').visible,false);\n  assert(parts.indexOf(material)<parts.indexOf(child(row,'title')));\n  assert.deepEqual(material.anchor,{min:[0,0],max:[1,1]});\n  assert.deepEqual(child(material,'cloth').size,[-4,-4]);\n  for(const layer of material.children){\n   assert.equal(layer.children.length,6);\n   assert.equal(layer.children.filter(part=>part.image===100002).length,4);\n   assert(layer.children.every(part=>part.raycastTarget===false));\n  }",
+    "after": "  assert.equal(child(row,'border').visible,false);\n  for(const name of ['title','description','hit'])assert(parts.indexOf(material)<parts.indexOf(child(row,name)),'material stays behind live '+name);\n  assert.deepEqual(material.anchor,{min:[0,0],max:[1,1]});\n  assert.deepEqual(child(material,'cloth').size,[-4,-4]);\n  assert.deepEqual(children(material).map(layer=>layer.name),['rim','cloth']);\n  for(const layer of children(material)){\n   const layerParts=children(layer);\n   assert.deepEqual(layerParts.map(part=>part.name).sort(),\n    ['corner-1_-1','corner-1_1','corner1_-1','corner1_1','horizontal','vertical']);\n   for(const part of layerParts){\n    assert.equal(part.image,part.name.startsWith('corner')?theme.image.disc:theme.image.rect,layer.name+'/'+part.name);\n    assert.equal(part.raycastTarget,false);\n   }\n  }"
+   }
+  ]
+ }
+];
+
 export function inputRetirementStsFixtureSource(path,raw){
  const buffered=Buffer.isBuffer(raw),source=buffered?raw.toString('utf8'):raw;
- const fixture=beforeNativeFlowFixture(path,beforeMapNodeVisualsLineEndings(path,source),{requireCurrent:true});
+ const proof=runtimeFixtureSuccessors.find(row=>row.path===path);
+ const original=proof?restoreExactFixtureHunks(proof,path,source):source;
+ const projected=original!==source&&source.includes('\r\n')?original.replaceAll('\n','\r\n'):original;
+ const fixture=beforeNativeFlowFixture(path,beforeMapNodeVisualsLineEndings(path,projected),{requireCurrent:true});
  const native=beforeMergedInputRetirement(path,fixture,{requireCurrent:true});
  // The exact native-flow chain already returns the composed StS runtime predecessor.
  // Accept it only after a current native-flow fixture actually projected.
