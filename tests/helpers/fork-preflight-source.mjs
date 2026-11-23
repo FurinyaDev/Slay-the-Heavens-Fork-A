@@ -6,6 +6,7 @@ import {beforeCalibrationReplay} from './calibration-replay-sources.mjs';
 import {beforeNativeHostReplay} from './native-host-replay-source.mjs';
 import {assertNativeFixturesCurrent,beforeNativeFixtureReplay} from './native-fixture-replay-source.mjs';
 import {assertNativeFlowFixturesCurrent,beforeNativeFlowFixture} from './native-flow-fixture-source.mjs';
+import {beforeUiEntranceWitness} from './ui-entrance-source.mjs';
 import {beforeOfficialBackgroundFixture} from './official-background-fixture-source.mjs';
 import {beforeMapRoomReplayCohort,beforeDevelopReplayMerge} from './develop-replay-merge-source.mjs';
 import {beforeStsUiCloseoutSource} from './sts-ui-closeout-source.mjs';
@@ -119,6 +120,27 @@ for(const {before,after} of Object.values(releaseUiBuild.files)){
  assert.match(after.gitBlob,/^[a-f0-9]{40}$/);
 }
 // Authenticate the current copier before giving old CI receipts its exact predecessor.
+function beforeUiEntranceCopier(path,source){
+ if(path!=='tests/helpers/copy-integration-source-closure.mjs'||typeof source!=='string'||source.includes('\r\r\n'))return source;
+ const lf=normalize(source);
+ if(hash(lf)!=='978f3ab852caffea974f4514a5c62c89495bd6790a373c8c2109f3fbbab339f5')return source;
+ const prior=lf.replace(/const entranceFiles=Object.freeze\(\{\n[\s\S]+?\n\}\);\n/,'')
+  .replace('Object.entries(entranceFiles)','Object.entries(currentReplayFiles)');
+ assert.equal(hash(prior),'f606b9a16cf0800cdec7f8a781aaab7deca6f05e08937a3488fef86a54b6742b','exact entrance helper copy predecessor');
+ return source.includes('\r\n')?prior.replaceAll('\n','\r\n'):prior;
+}
+function beforeCurrentReplayCopier(path,source){
+ source=beforeUiEntranceCopier(path,source);
+ if(path!=='tests/helpers/copy-integration-source-closure.mjs'||typeof source!=='string'||source.includes('\r\r\n'))return source;
+ const lf=normalize(source);
+ if(hash(lf)!=='f606b9a16cf0800cdec7f8a781aaab7deca6f05e08937a3488fef86a54b6742b'||
+  blob(lf)!=='a796a1ddf69bd0a3c19e21eb7be78d21f498e720')return source;
+ const prior=lf.replace(/^const currentReplayFiles=Object\.freeze\(\{\n[\s\S]*?^\}\);\n/m,'')
+  .replace('Object.entries(currentReplayFiles)','Object.entries(actionButtonFiles)');
+ assert.equal(hash(prior),'848e21017bfe022dd0a5e8215ffa94aee50b328ac9d7055ef1fade4f3a170677','exact current replay copier predecessor');
+ assert.equal(blob(prior),'f3005ce3dcd73c1a5bd64fc252535ee6950bc6ff');
+ return source.includes('\r\n')?prior.replaceAll('\n','\r\n'):prior;
+}
 function beforeRefinedReleaseCopier(path,source){
  if(path!=="tests/helpers/copy-integration-source-closure.mjs"||typeof source!=='string'||source.includes('\r\r\n'))return source;
  const lf=normalize(source);
@@ -241,6 +263,7 @@ function beforeDevelopSessionRelicCopier(path,source){
  return source.includes('\r\n')?prior.replaceAll('\n','\r\n'):prior;
 }
 function beforeDevelopBackflowCopier(path,source){
+ source=beforeCurrentReplayCopier(path,source);
  source=beforeDevelopReplayMerge(path,source);
  source=beforeReplayFingerprintSource(path,source);
  if(path==='tests/helpers/copy-integration-source-closure.mjs'&&typeof source==='string'&&!source.includes('\r\r\n')){
@@ -535,7 +558,7 @@ const newerTests={
  },
 };
 export function beforeReleaseAdditionalInventory(paths,kind,read=readFileSync){
- paths=beforeM05BackflowInventory(paths,kind,read);
+ paths=beforeM05BackflowInventory(paths,kind,(path,encoding)=>beforeUiEntranceWitness(path,read(path,encoding)));
  for(const [path,sha] of Object.entries(newerTests[kind])){
   const count=paths.filter(candidate=>candidate===path).length;
   if(!count)continue;
@@ -553,7 +576,7 @@ export function beforeShopEntryInventory(paths,kind,read=readFileSync){
  const position=paths.indexOf(path);
  if(position===-1)return paths;
  assert.equal(paths.lastIndexOf(path),position,'duplicate inventory source: '+path);
- const source=read(path,'utf8');
+ const source=beforeUiEntranceWitness(path,read(path,'utf8'));
  assert(typeof source==='string'&&!source.includes('\r\r\n')&&authenticated.includes(hash(normalize(source))),'fresh added inventory source: '+path);
  return paths.filter(test=>test!==path);
 }
@@ -749,8 +772,9 @@ function beforeReplayArchiveStorage(path,source){
  return source.includes('\r\n')?prior.replaceAll('\n','\r\n'):prior;
 }
 export function beforeReviewedBuildInput(path,source,read){
- const live=owner=>read(owner,'utf8');
- const production=authenticateDevelopBackflow(path,source,live);
+ const reviewed=(owner,raw)=>beforeCurrentReplayFixes(owner,beforeUiEntranceWitness(owner,beforeCurrentReplayCopier(owner,raw)));
+ const live=owner=>reviewed(owner,read(owner,'utf8'));
+ const production=authenticateDevelopBackflow(path,reviewed(path,source),live);
  const deck=beforeDeckPagesSuiteSource(path,production);
  const merged=beforeDevelopReplayMerge(path,deck);
  return beforeForkFirstCi(path,beforeReplayArchiveStorage(path,merged));
@@ -767,7 +791,7 @@ export function assertIntegrationSuccessorsCurrent(read=readFileSync){
  const liveRead=read;
  assertNativeFixturesCurrent(liveRead);
  assertNativeFlowFixturesCurrent(liveRead);
- read=(path,encoding)=>beforeCalibrationReplay(path,beforeCurrentReplayFixes(path,liveRead(path,encoding)));
+ read=(path,encoding)=>beforeCalibrationReplay(path,beforeCurrentReplayFixes(path,beforeUiEntranceWitness(path,beforeCurrentReplayCopier(path,liveRead(path,encoding)))));
  const readCurrent=(path,encoding)=>{
   const live=read(path,encoding);
   let raw=beforeNativeFlowFixture(path,live);
@@ -814,6 +838,7 @@ export function assertIntegrationSuccessorsCurrent(read=readFileSync){
  }
 }
 export function beforePreflightSource(path,source,view='prior'){
+ source=beforeUiEntranceWitness(path,beforeCurrentReplayCopier(path,source));
  source=beforeCurrentReplayFixes(path,source);
  source=beforeNativeFlowFixture(path,source);
  source=beforeOfficialBackgroundFixture(path,source);

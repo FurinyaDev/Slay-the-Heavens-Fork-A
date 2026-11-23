@@ -1,3 +1,4 @@
+local advanceShop = dofile('tests/lua/support/shop_timeline.lua')
 local testStart=dofile('tests/lua/support/game_ui_fixture.lua').start
 package.path='src/lua/?.lua;build/lua/?.lua;'..package.path
 local F=dofile('tests/lua/support/game_ui_fixture.lua')
@@ -90,7 +91,8 @@ test('shop counter allows replacing a full belt without bypassing purchase price
     local offer
     for _,p in ipairs(h.run.nodeFlow.potions)do if not p.unavailable then offer=p;break end end
     assert(offer);local gold=h.run.gold
-    local tile=r:GetChild('nodePanel'):GetChild('shopView'):GetChild('potion'..offer.slot)
+    local tile=r:GetChild('nodePanel'):GetChild('shopView'):GetChild('goods'):GetChild('potion'..offer.slot)
+    assert(F.click(r,'nodePanel','merchant/talk'));advanceShop(h)
     equal(tile:GetChild('hit').click(),false);equal(h.run.gold,gold);counter(r,3)
     equal(h.run.potions[2],'block_potion');assert(not offer.sold)
     open(r)

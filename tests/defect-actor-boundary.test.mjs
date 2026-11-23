@@ -10,6 +10,7 @@ import {generatedRuntimeModules} from '../scripts/build-native-candidate.mjs';
 import {currentDefectActorReader} from './helpers/m7-core-final-source-inverse.mjs';
 import {sourceEpoch,ciRepairSourceEpoch} from './helpers/closeout-source-epoch.mjs';
 import {beforeCurrentProductionSource} from './helpers/character-preparation-source.mjs';
+import {entranceInventory} from './helpers/ui-entrance-source.mjs';
 import {actorFocusAdded,assertActorFocusInventory,deckPagesAdded,stasisUpgradeAddedPaths} from './helpers/develop-release-backflow-source.mjs';
 import {beforeCombatEvents,beforeInputRetirementReader,pointerInputPath,retiredControllerPath} from './helpers/input-retirement-source.mjs';
 const require=createRequire(import.meta.url),luaparse=require('luaparse');
@@ -25,7 +26,7 @@ function capabilityPreStyle(raw=discoverSources()){
  const readLive=path=>Object.hasOwn(live,path)?live[path]:read(path);
  const expected=[...Object.keys(proof.current),...actorFocusAdded,...stasisUpgradeAddedPaths,...deckPagesAdded];
  assert(expected.includes(retiredControllerPath),'preStyle inventory includes the historical controller');
- assert.deepEqual(Object.keys(live).sort(),[...expected.filter(path=>path!==retiredControllerPath),pointerInputPath].sort(),'complete live source inventory before preStyle');
+ assert.deepEqual(entranceInventory(Object.keys(live).sort(),readLive),[...expected.filter(path=>path!==retiredControllerPath),pointerInputPath].sort(),'complete live source inventory before preStyle');
  assertActorFocusInventory(Object.keys(raw),readLive);
  const historicalRead=beforeInputRetirementReader(readLive);
  for(const [path,binding]of Object.entries(proof.current)){
