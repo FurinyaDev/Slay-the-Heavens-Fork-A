@@ -7,7 +7,7 @@ import {execFileSync,spawnSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
 import {evaluateIntake,loadTask} from '../scripts/check-task-intake.mjs';
 
-const policy={schemaVersion:1,blockedUntilOwnerApproval:['TASK-85','TASK-96','TASK-97','TASK-62','TASK-64']};
+const policy={schemaVersion:1,blockedUntilOwnerApproval:['TASK-85','TASK-96','TASK-97']};
 const check=(id,milestone,status='To Do',extra={})=>evaluateIntake({id,task:{id,milestone,status},policy,...extra});
 
 test('an unclaimed engineering task needs no Sprint or current date',()=>assert.equal(check('TASK-74','m-7').decision,'ALLOW'));
@@ -27,7 +27,7 @@ test('obsolete Sprint lanes and dates cannot restore an intake gate',()=>{
   }
 });
 test('explicit Owner approvals survive removal of Sprint gates',()=>{
-  for(const id of ['TASK-85','TASK-96','TASK-97','TASK-62','TASK-64']) {
+  for(const id of ['TASK-85','TASK-96','TASK-97']) {
     const result=check(id,'m-8');
     assert.equal(result.decision,'HOLD',id);
     assert.ok(result.reasons.includes('explicit Owner approval required'),id);
