@@ -198,12 +198,75 @@ import { assertCurrentUiEntrance, entrancePredecessor } from './ui-entrance-sour
   assertCurrentUiEntrance(path,source);`,
   }
   ],
+ },
+ {
+  path:"tests/silent-final-apply.test.mjs",
+  beforeSha256:'64bd02fa0c0a41dbc5aedb16c369d7aae1cba42a79d7a4e133f40932fe5fa1e4',
+  afterSha256:'cc83fe27d06f7e740dcdf006f846c2502b52d770ef42691b3dfd336ef4ccd820',
+  hunks:[
+  {at:7,
+   before:`import luaparse from 'luaparse';
+const path='src/lua/abyss_silent_final_cards.lua';`,
+   after:`import luaparse from 'luaparse';
+import {runLua} from '../scripts/test-lua.mjs';
+const path='src/lua/abyss_silent_final_cards.lua';`,
+  },
+  {at:56,
+   before:``,
+   after:`
+test('Tools of the Trade offers a draw-hook copy in both turn hosts',()=>{
+ const result=runLua('tests/lua/support/silent_tools_draw_choice.lua');
+ assert.equal(result.status,0,result.stderr);
+ assert.match(result.stdout,/discard choice for experimental/);
+ assert.match(result.stdout,/discard choice for native/);
+});
+`,
+  }
+  ],
+ },
+ {
+  path:"tests/helpers/fork-preflight-source.mjs",
+  beforeSha256:'e158feddf842c1c5b893192c4b4bc7e880c538fd6e365f4abe74c9da4a60c435',
+  afterSha256:'6773bcf06747e54f3853a317b644d1f6f6c39aaacb49a874acfdce594331ce79',
+  hunks:[
+  {at:3,
+   before:`import {assertDevelopBackflowCurrent,authenticateDevelopBackflow,beforeDevelopBackflow,developBackflowOwns} from './develop-release-backflow-source.mjs';
+import {beforeCalibrationReplay} from './calibration-replay-sources.mjs';
+import {beforeNativeHostReplay} from './native-host-replay-source.mjs';`,
+   after:`import {assertDevelopBackflowCurrent,authenticateDevelopBackflow,beforeDevelopBackflow,developBackflowOwns} from './develop-release-backflow-source.mjs';
+import {beforeCalibrationReplay,beforeSilentToolsReplayFixture} from './calibration-replay-sources.mjs';
+import {beforeNativeHostReplay} from './native-host-replay-source.mjs';`,
+  },
+  {at:774,
+   before:` const reviewed=(owner,raw)=>owner.startsWith('src/')||owner==='config/architecture.json'?raw:
+  beforeCurrentReplayFixes(owner,beforeUiEntranceWitness(owner,beforeCurrentReplayCopier(owner,raw)));
+ const live=owner=>reviewed(owner,read(owner,'utf8'));`,
+   after:` const reviewed=(owner,raw)=>owner.startsWith('src/')||owner==='config/architecture.json'?raw:
+  beforeCurrentReplayFixes(owner,beforeUiEntranceWitness(owner,beforeCurrentReplayCopier(owner,beforeSilentToolsReplayFixture(owner,raw))));
+ const live=owner=>reviewed(owner,read(owner,'utf8'));`,
+  },
+  {at:798,
+   before:`  return path.startsWith('src/')||path==='config/architecture.json'?raw:
+   beforeCalibrationReplay(path,beforeCurrentReplayFixes(path,beforeUiEntranceWitness(path,beforeCurrentReplayCopier(path,raw))));
+ };`,
+   after:`  return path.startsWith('src/')||path==='config/architecture.json'?raw:
+   beforeCalibrationReplay(path,beforeCurrentReplayFixes(path,beforeUiEntranceWitness(path,beforeCurrentReplayCopier(path,beforeSilentToolsReplayFixture(path,raw)))));
+ };`,
+  },
+  {at:846,
+   before:`export function beforePreflightSource(path,source,view='prior'){
+ source=beforeUiEntranceWitness(path,beforeCurrentReplayCopier(path,source));`,
+   after:`export function beforePreflightSource(path,source,view='prior'){
+ source=beforeSilentToolsReplayFixture(path,source);
+ source=beforeUiEntranceWitness(path,beforeCurrentReplayCopier(path,source));`,
+  }
+  ],
  }
 ];
 const silentToolsReplayByPath = new Map(silentToolsReplayProofs.map(proof => [proof.path, proof]));
-function beforeSilentToolsReplay(path, source) {
+export function beforeSilentToolsReplayFixture(path, source) {
  const proof = silentToolsReplayByPath.get(path);
- if (!proof) return beforeSilentToolsDrawSource(path, source);
+ if (!proof) return source;
  const before = restoreExactFixtureHunks(proof, path, source);
  return before !== source && source.includes('\r\n') ? before.replaceAll('\n','\r\n') : before;
 }
@@ -215,7 +278,7 @@ export function beforeCurrentHistoricalStsSource(path,source){
   const text=source.toString('utf8'),prior=beforeCurrentHistoricalStsSource(path,text);
   return prior===text?source:Buffer.from(prior);
  }
- source=beforeUiEntranceWitness(path,beforeSilentToolsReplay(path,source));
+ source=beforeUiEntranceWitness(path,beforeSilentToolsReplayFixture(path,beforeSilentToolsDrawSource(path,source)));
  if(path===copierPath)return beforeCurrentReplayCopier(path,source);
  if(path!==historicalStsEntry)return beforeCurrentReplayFixes(path,source);
  if(!matches(source,{
@@ -253,7 +316,7 @@ function beforeCurrentReplayCopier(path,source){
 }
 
 function matchesCurrentReceipt(path,source,expected){
- source=beforeUiEntranceWitness(path,beforeSilentToolsReplay(path,source));
+ source=beforeUiEntranceWitness(path,beforeSilentToolsReplayFixture(path,beforeSilentToolsDrawSource(path,source)));
  if(matches(source,expected))return true;
  const ui=beforeDevelopUiBackflows(path,source);
  const actions=beforeActionButtons(path,ui);
@@ -265,7 +328,7 @@ function matchesCurrentReceipt(path,source,expected){
 // corresponding current file. Raw Full discovery and inputs use their normal readers.
 export function readCalibrationReceiptInput(path,digest,read,readCurrent=readFileSync){
  const fallback=()=>{
-  const source=read(),prior=beforeCurrentReplayFixes(path,beforeSilentToolsReplay(path,source));
+  const source=read(),prior=beforeCurrentReplayFixes(path,beforeSilentToolsReplayFixture(path,beforeSilentToolsDrawSource(path,source)));
   return typeof prior==='string'&&hash(lf(prior))===digest?prior:source;
  };
  const retired=readRetiredInputTestReceipt(path,digest,readCurrent);

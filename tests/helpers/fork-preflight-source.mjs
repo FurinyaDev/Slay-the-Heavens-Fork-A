@@ -2,7 +2,7 @@ import {beforeInputRetirementTestInventory,readRetiredInputLuaReceipt} from './i
 import {beforeDeckPagesSuiteSource} from './input-retirement-source.mjs';
 export {beforeInputRetirementTestInventory} from './input-retirement-inventory.mjs';
 import {assertDevelopBackflowCurrent,authenticateDevelopBackflow,beforeDevelopBackflow,developBackflowOwns} from './develop-release-backflow-source.mjs';
-import {beforeCalibrationReplay} from './calibration-replay-sources.mjs';
+import {beforeCalibrationReplay,beforeSilentToolsReplayFixture} from './calibration-replay-sources.mjs';
 import {beforeNativeHostReplay} from './native-host-replay-source.mjs';
 import {assertNativeFixturesCurrent,beforeNativeFixtureReplay} from './native-fixture-replay-source.mjs';
 import {assertNativeFlowFixturesCurrent,beforeNativeFlowFixture} from './native-flow-fixture-source.mjs';
@@ -773,7 +773,7 @@ function beforeReplayArchiveStorage(path,source){
 }
 export function beforeReviewedBuildInput(path,source,read){
  const reviewed=(owner,raw)=>owner.startsWith('src/')||owner==='config/architecture.json'?raw:
-  beforeCurrentReplayFixes(owner,beforeUiEntranceWitness(owner,beforeCurrentReplayCopier(owner,raw)));
+  beforeCurrentReplayFixes(owner,beforeUiEntranceWitness(owner,beforeCurrentReplayCopier(owner,beforeSilentToolsReplayFixture(owner,raw))));
  const live=owner=>reviewed(owner,read(owner,'utf8'));
  const production=authenticateDevelopBackflow(path,reviewed(path,source),live);
  const deck=beforeDeckPagesSuiteSource(path,production);
@@ -797,7 +797,7 @@ export function assertIntegrationSuccessorsCurrent(read=readFileSync){
   // Raw production owners reach their own fresh admission guard unchanged.
   // Only CI and helper receipts need the pure historical source projections.
   return path.startsWith('src/')||path==='config/architecture.json'?raw:
-   beforeCalibrationReplay(path,beforeCurrentReplayFixes(path,beforeUiEntranceWitness(path,beforeCurrentReplayCopier(path,raw))));
+   beforeCalibrationReplay(path,beforeCurrentReplayFixes(path,beforeUiEntranceWitness(path,beforeCurrentReplayCopier(path,beforeSilentToolsReplayFixture(path,raw)))));
  };
  const readCurrent=(path,encoding)=>{
   const live=read(path,encoding);
@@ -845,6 +845,7 @@ export function assertIntegrationSuccessorsCurrent(read=readFileSync){
  }
 }
 export function beforePreflightSource(path,source,view='prior'){
+ source=beforeSilentToolsReplayFixture(path,source);
  source=beforeUiEntranceWitness(path,beforeCurrentReplayCopier(path,source));
  source=beforeCurrentReplayFixes(path,source);
  source=beforeNativeFlowFixture(path,source);

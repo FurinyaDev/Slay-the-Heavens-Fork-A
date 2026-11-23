@@ -6,6 +6,7 @@ import {tmpdir} from 'node:os';
 import {spawnSync} from 'node:child_process';
 import {createHash} from 'node:crypto';
 import luaparse from 'luaparse';
+import {runLua} from '../scripts/test-lua.mjs';
 const path='src/lua/abyss_silent_final_cards.lua';
 const read=p=>readFileSync(p,'utf8').replaceAll('\r\n','\n');
 const before=read('tests/fixtures/silent-final-apply-before.lua');
@@ -52,4 +53,11 @@ for(const [name,from,to]of [
  console.log('SILENT_MUTANT_RESULT '+JSON.stringify({name,status:result.status,error:result.error}));
  assert.equal(result.status,2,result.error);
  assert.match(result.error,new RegExp('tests/helpers/silent-final-apply-edges.lua:\\d+: '+name+'$'));
+});
+
+test('Tools of the Trade offers a draw-hook copy in both turn hosts',()=>{
+ const result=runLua('tests/lua/support/silent_tools_draw_choice.lua');
+ assert.equal(result.status,0,result.stderr);
+ assert.match(result.stdout,/discard choice for experimental/);
+ assert.match(result.stdout,/discard choice for native/);
 });
