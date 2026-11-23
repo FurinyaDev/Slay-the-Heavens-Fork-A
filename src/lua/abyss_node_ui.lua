@@ -162,7 +162,6 @@ function M.new(root, run, map, presentation, clickEvent, onChange, options)
 
     function ctx.renderNodePage(view,node,result,active)
         local screen,hint=ctx.nodeScreen(view,node,result,active)
-        if screen ~= 'shopView' then ctx.invalidateShopVisuals() end
         local recallSource,treasureSource
         if screen ~= 'pickerView' or not ctx.enhancedForge(node) then
             ctx.campUI:hide(active and node.type == 'camp')

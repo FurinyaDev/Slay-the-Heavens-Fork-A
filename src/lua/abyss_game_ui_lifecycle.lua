@@ -64,6 +64,9 @@ local function updateSuspended(self,dt)
     if self.sessionPaused then self:animate(dt);return true end
     return false
 end
+local function updateSelection(self,dt)
+    if self.selectionMotion and self.characterOpen and not self.deckUI.visible then self.selectionMotion:update(dt) end
+end
 function M.update(self,platform,openingCovered,updateBossEntrance,bgm)
     local function advancePages(dt)
             PageReveal.registerSource(platform,'battlePanel')
@@ -90,7 +93,7 @@ function M.update(self,platform,openingCovered,updateBossEntrance,bgm)
             -- The terminal rule state can precede the last feedback animation.
             if not countRunTime(self,dt,openingCovered) then return false,"invalid_delta" end
             self:animate(dt)
-            if self.selectionMotion and self.characterOpen and not self.deckUI.visible then self.selectionMotion:update(dt) end
+            updateSelection(self,dt)
             if self.prologue then self.prologue:update(dt) end
             if openingCovered() then return true end
             if advancePreparation(self,platform,dt) then return true end

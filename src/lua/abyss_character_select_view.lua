@@ -126,6 +126,21 @@ function M.motion(panel,platform)
     local nativeV25=officialPanel(panel)
     return Motion.new(panel,platform,function(control,info)paintInfo(control,info,nativeV25)end)
 end
+local function paintPublished(panel,details,state,platform,motion,info,originalSts,nativeV25)
+    local portrait
+    if info then
+        if not motion then paintInfo(details,info,nativeV25) end
+        portrait=paintFigure(details,state,platform,originalSts,info)
+    end
+    if motion then
+        local portraits=platform.portraits
+        local native=portraits and portraits.status and portraits:status().selection
+        motion:show(info,info and info.id=='ironclad' and native and native.phase=='ready',portrait)
+    else panel:GetChild('confirm'):SetVisible(info~=nil) end
+    local confirm=panel:GetChild('confirm'):GetChild('hit')
+    local enabled=state:canConfirm()
+    confirm.interactable,confirm.raycastTarget=enabled,enabled
+end
 function M.render(panel,state,platform,published,motion)
     local info=state.info
     if published==false then info=nil end
@@ -146,18 +161,6 @@ function M.render(panel,state,platform,published,motion)
         roster:GetChild('selected'):GetChild('selection'):SetVisible(info~=nil)
         panel:GetChild('traveler'):GetChild('selected'):SetVisible(false)
     end
-    local portrait
-    if info then
-        if not motion then paintInfo(details,info,nativeV25) end
-        portrait=paintFigure(details,state,platform,originalSts,info)
-    end
-    if motion then
-        local portraits=platform.portraits
-        local native=portraits and portraits.status and portraits:status().selection
-        motion:show(info,info and info.id=='ironclad' and native and native.phase=='ready',portrait)
-    else panel:GetChild('confirm'):SetVisible(info~=nil) end
-    local confirm=panel:GetChild('confirm'):GetChild('hit')
-    local enabled=state:canConfirm()
-    confirm.interactable,confirm.raycastTarget=enabled,enabled
+    paintPublished(panel,details,state,platform,motion,info,originalSts,nativeV25)
 end
 return M

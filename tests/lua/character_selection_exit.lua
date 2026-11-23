@@ -100,3 +100,19 @@ tick()
 assert(not confirm.visible and not rowWith('胡桃'))
 near(cancel.x,cancelX-400*2/3)
 print('CHARACTER_ENTRANCE_PASS publication, selected and retiring details, reselect, pooled cleanup')
+
+
+-- A selection-enabled gate still leaves the deck browser's chrome interactive
+-- while its grid is prepared behind the smaller input barrier.
+local cover=stage:GetChild('pageReveal')
+local deckFrame={0,0,918,452}
+local deckGate=PageReveal.new(cover,function(intent)return intent.page=='battlePanel'end,nil,{
+ full={0,0,1280,720},deckPanel=deckFrame,deckPaged=deckFrame,
+},{characterLocal=true,duration=.35,color=function(r,g,b,a)return {r=r,g=g,b=b,a=a}end})
+local base={page='battlePanel',mode='battle',phase='combat'}
+deckGate:step(base,1/60);deckGate:step(base,1/60);deckGate:step(base,.35)
+assert(not deckGate:covered())
+assert(deckGate:request({page='deckPanel',mode='battle',phase='combat',deckPaged=true}))
+assert(deckGate:paint(true) and not cover.disableCursorEventPassthrough)
+local blocker=cover:GetChild('blocker')
+assert(blocker.raycastTarget and blocker.sizeDeltaX==918 and blocker.sizeDeltaY==452)

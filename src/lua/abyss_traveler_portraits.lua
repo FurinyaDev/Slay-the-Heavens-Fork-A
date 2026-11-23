@@ -581,6 +581,12 @@ function M.new(stage,report,flags,cardTemplates)
             fallbackVisibility[control]={visible=visible,phase=phase,setter=setter}
         end
     end
+    local function clearPortraitPlaceholder()
+        local note=details:GetChild('portraitNote')
+        local old=note.text
+        local painted=old:gsub(' · 肖像待补','')
+        if painted~=old then note.text=painted end
+    end
     local function paint()
         if destroyed or painting then return end
         painting=true
@@ -598,12 +604,7 @@ function M.new(stage,report,flags,cardTemplates)
                     end
                 end
             end
-            if row.name=='selection' and ready then
-                local note=details:GetChild('portraitNote')
-                local old=note.text
-                local painted=old:gsub(' · 肖像待补','')
-                if painted~=old then note.text=painted end
-            end
+            if row.name=='selection' and ready then clearPortraitPlaceholder() end
             if row.lastPhase~=s.phase then row.lastPhase=s.phase;if report then pcall(report,'ABYSS_PORTRAIT '..row.name..' phase='..s.phase..' owned='..s.owned..' reason='..tostring(s.reason))end end
         end
         painting=false

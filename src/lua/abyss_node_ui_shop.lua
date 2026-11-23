@@ -106,23 +106,27 @@ function M.install(ctx)
             ctx.shopId, ctx.shopRun, ctx.shopMap = node and node.id, ctx.self.run, ctx.self.map
         end
     end
+    local function fitShade()
+        if not shade then return end
+        local w, h = ctx.self.canvasWidth or 1280, ctx.self.canvasHeight or 720
+        if shadeWidth == w and shadeHeight == h then return end
+        shadeWidth, shadeHeight = w, h
+        local scale = math.min(w / 1280, h / 720)
+        shade:SetSizeDelta(w / scale, h / scale)
+    end
+    local function resetShelfPosition()
+        if rug ~= 0 then panel:SetAnchoredPosition(0, 0) end
+        if goods and goodsOffset and goodsOffset ~= 0 then goods:SetAnchoredPosition(0, 0) end
+        elapsed, rug, button, closing, goodsOffset = nil, 0, 0, false, 0
+    end
     function ctx.cancelShop(reset)
         ctx.shopEpoch = (ctx.shopEpoch or 0) + 1
         held, released, ctx.shopPointerOpened = nil, nil, nil
         local retiring = closing
-        if rug ~= 0 then panel:SetAnchoredPosition(0, 0) end
-        if goods and goodsOffset and goodsOffset ~= 0 then goods:SetAnchoredPosition(0, 0) end
-        elapsed, rug, button, closing, goodsOffset = nil, 0, 0, false, 0
+        resetShelfPosition()
         if reset then ctx.self.shopOpen = false;ctx.invalidateShopVisuals() end
         alpha = ctx.self.shopOpen and .85 or 0
-        if shade then
-            local w, h = ctx.self.canvasWidth or 1280, ctx.self.canvasHeight or 720
-            if shadeWidth ~= w or shadeHeight ~= h then
-                shadeWidth, shadeHeight = w, h
-                local scale = math.min(w / 1280, h / 720)
-                shade:SetSizeDelta(w / scale, h / scale)
-            end
-        end
+        fitShade()
         paintShade()
         if retiring and not reset then paintBack();setBackEnabled(true) end
     end
@@ -181,6 +185,7 @@ function M.install(ctx)
     function ctx.paintShop()
         local active = inShop() == true
         local main = active and ctx.self.mode == 'main'
+        if not main then ctx.invalidateShopVisuals() end
         local farewell = ctx.self:holding() and ctx.self.result.view == 'farewell'
         ctx.showShopRoom(active or farewell, main and not ctx.self.shopOpen)
         visible(panel, main and ctx.self.shopOpen == true)
@@ -206,11 +211,7 @@ function M.install(ctx)
         rug = nextRug
         if previous == 0 then elapsed = nil end
     end
-    function ctx.updateShop(dt)
-        if not ctx.self.visible or ctx.self.pendingOwner or not inShop()
-            or ctx.shopRun ~= ctx.self.run or ctx.shopMap ~= ctx.self.map or ctx.shopId ~= ctx.self.run.nodeFlow.id then return end
-        if dt <= 0 then return end
-        advanceRug(dt)
+    local function advanceButton(dt)
         local target = ctx.self.shopOpen and 0 or -buttonTravel
         if ctx.self.shopOpen or closing then
             local nextButton = Motion.approach(button, target, 9, Motion.scale, dt)
@@ -223,6 +224,13 @@ function M.install(ctx)
             end
             if closing and button == target then closing = false;paintBack();setBackEnabled(true) end
         end
+    end
+    function ctx.updateShop(dt)
+        if not ctx.self.visible or ctx.self.pendingOwner or not inShop()
+            or ctx.shopRun ~= ctx.self.run or ctx.shopMap ~= ctx.self.map or ctx.shopId ~= ctx.self.run.nodeFlow.id then return end
+        if dt <= 0 then return end
+        advanceRug(dt)
+        advanceButton(dt)
         local nextAlpha = ctx.self.shopOpen and math.min(.85, alpha + dt * 2) or math.max(0, alpha - dt * 2)
         if nextAlpha ~= alpha then alpha = nextAlpha;paintShade() end
     end
