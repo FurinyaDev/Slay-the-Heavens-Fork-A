@@ -10,6 +10,7 @@ import {generatedRuntimeModules} from '../scripts/build-native-candidate.mjs';
 import {currentDefectActorReader} from './helpers/m7-core-final-source-inverse.mjs';
 import {sourceEpoch,ciRepairSourceEpoch} from './helpers/closeout-source-epoch.mjs';
 import {beforeCurrentProductionSource} from './helpers/character-preparation-source.mjs';
+import {entranceInventory} from './helpers/ui-entrance-source.mjs';
 import {actorFocusAdded,assertActorFocusInventory,stasisUpgradeAddedPaths} from './helpers/develop-release-backflow-source.mjs';
 const require=createRequire(import.meta.url),luaparse=require('luaparse');
 const utility='src/lua/abyss_defect_utility_cards.lua',queued='src/lua/abyss_combat_queued_play.lua';
@@ -22,7 +23,7 @@ const actorRead=currentDefectActorReader(read);
 function capabilityPreStyle(raw=discoverSources()){
  const config='config/architecture.json',live={...raw,[config]:read(config)},proof=sourceEpoch.proof;
  const readLive=path=>Object.hasOwn(live,path)?live[path]:read(path);
- assert.deepEqual(Object.keys(live).sort(),[...Object.keys(proof.current),...actorFocusAdded,...stasisUpgradeAddedPaths].sort(),'complete live source inventory before preStyle');
+ assert.deepEqual(entranceInventory(Object.keys(live).sort(),readLive),[...Object.keys(proof.current),...actorFocusAdded,...stasisUpgradeAddedPaths].sort(),'complete live source inventory before preStyle');
  assertActorFocusInventory(Object.keys(raw),readLive);
  for(const [path,binding]of Object.entries(proof.current))
   assert.equal(beforeCurrentProductionSource(path,live[path],readLive).replaceAll('\r\n','\n'),binding.source,'live preStyle input identity: '+path);

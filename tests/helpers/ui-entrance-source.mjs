@@ -9,7 +9,7 @@ import {restoreExactFixtureHunks} from './exact-fixture-hunks.mjs';
 
 const archive=readFileSync(new URL('../fixtures/ui-entrance-source.json.gz',import.meta.url));
 assert.equal(createHash('sha256').update(archive).digest('hex'),
- '7987dd46fe3a77b4fd92b991d913c92035c9b3221b3e36bb3c581719df1f1878','exact entrance predecessor archive');
+ '4063625ad7c48bbc73e7b614d2344ab63f0091055deec439ca947590c2948429','exact entrance predecessor archive');
 const {base,reviewedSource,files,witnesses}=JSON.parse(gunzipSync(archive));
 assert.equal(base,'73c21489efaab409d4c0c46bee517d410d3427fc');
 assert.equal(reviewedSource,'50b61b8fa243a39c189bf138a14702d73b39a903');
@@ -77,8 +77,7 @@ export function entrancePredecessor(path,source,read=readLive){
 }
 
 export function entranceInventory(paths,read){
- if(!paths.some(path=>addedEntranceModules.includes(path)))return paths;
- authenticateUiEntrance(read);
  assert(addedEntranceModules.every(path=>paths.includes(path)),'complete entrance module inventory');
+ authenticateUiEntrance(read);
  return paths.filter(path=>!addedEntranceModules.includes(path));
 }

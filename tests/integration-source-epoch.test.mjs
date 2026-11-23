@@ -6,7 +6,7 @@ import {beforePc13RewardCover,beforePc13ThenV2UiHudSource,pc13RewardCoverSourceP
 import {beforeAuthenticatedReleaseUiRestore,beforeReleaseControlsGuideRemoval,beforeReleaseUiRestore,releaseControlsGuideRemovalSourcePaths} from './helpers/release-ui-restore-source.mjs';
 import {assertCharacterPreparationSources,beforeCharacterPreparationSource,beforeCurrentProductionSource,characterPreparationOwners} from './helpers/character-preparation-source.mjs';
 import {authenticateInputRetirement,beforeDeckBrowserBackflow,beforePotionBackflow,beforeInputRetirement,beforeInputRetirementReader,assertPointerInputSource,pointerInputPath,retiredControllerPath} from './helpers/input-retirement-source.mjs';
-import {actorFocusAdded,deckPagesAdded,assertDevelopBackflowCurrent,assertStasisUpgradeAdded,authenticateDevelopBackflow,stasisUpgradeAddedPaths} from './helpers/develop-release-backflow-source.mjs';
+import {actorFocusAdded,deckPagesAdded,assertActorFocusInventory,assertDevelopBackflowCurrent,assertStasisUpgradeAdded,authenticateDevelopBackflow,stasisUpgradeAddedPaths} from './helpers/develop-release-backflow-source.mjs';
 import test from 'node:test';
 import {addedEntranceModules,beforeUiEntrance,entranceInventory,entrancePredecessor} from './helpers/ui-entrance-source.mjs';
 import assert from 'node:assert/strict';
@@ -224,6 +224,9 @@ test('entrance replay freshly checks the complete changed cohort and preserves f
  assert.notEqual(prior,source);
  assert.equal(addedEntranceModules.length,2);
  for(const path of addedEntranceModules)assert(changed.includes(path),path);
+ const incomplete=live.filter(path=>!addedEntranceModules.includes(path));
+ assert.throws(()=>entranceInventory(incomplete,read),/complete entrance module inventory/);
+ assert.throws(()=>assertActorFocusInventory(incomplete.filter(path=>path!==config),read),/complete entrance module inventory/);
  const project=input=>entrancePredecessor(config,source,input).source;
  assert.equal(project(read),prior);
  for(const changedPath of changed){

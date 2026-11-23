@@ -1,5 +1,6 @@
 import {actorFocusAdded,assertActorFocusInventory,stasisUpgradeAddedPaths} from './helpers/develop-release-backflow-source.mjs';
 import {beforeCharacterPreparationSource} from './helpers/character-preparation-source.mjs';
+import {entranceInventory} from './helpers/ui-entrance-source.mjs';
 import {assertCurrentJsInventory,beforeInputRetirementTestInventory,beforeShopEntryInventory} from './helpers/fork-preflight-source.mjs';
 import test from 'node:test';
 import {integratedRead,integratedCiProof,integratedPriorInventory,assertIntegratedCurrent} from './helpers/integrated-ci-source.mjs';
@@ -113,7 +114,7 @@ test('real style source retains the complete CI-repair and every older target wh
  assert.equal(Object.keys(prePowerMembershipEpoch.proof.current).length,352); // Final menu adds navigation and navigation view.
  assert.deepEqual(Object.keys(p.current).sort(),[...Object.keys(prePowerMembershipEpoch.proof.current),'src/lua/abyss_power_membership.lua'].sort());
  const actual=['config/architecture.json',...readdirSync('src/lua').filter(n=>n.endsWith('.lua')).map(n=>'src/lua/'+n)].sort();
- assert.deepEqual([...Object.keys(p.current),...stasisUpgradeAddedPaths,...actorFocusAdded].sort(),actual);
+ assert.deepEqual([...Object.keys(p.current),...stasisUpgradeAddedPaths,...actorFocusAdded].sort(),entranceInventory(actual,read));
  assertActorFocusInventory(actual.filter(path=>path!=='config/architecture.json'),read);
  for(const [path,row]of Object.entries(before.current))assert.deepEqual(p.targets.stsStylePrior.files[path],row,path+' complete prior');
  for(const [name,target]of Object.entries(before.targets))for(const [path,row]of Object.entries(target.files))assert.deepEqual(p.targets[name].files[path],row,name+'/'+path);
