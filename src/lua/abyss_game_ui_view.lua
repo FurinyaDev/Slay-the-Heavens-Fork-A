@@ -210,20 +210,22 @@ function M.refreshDeckEntry(child,self)
         end
 end
 
+local function refreshRewardsBack(button,available)
+    button:SetVisible(available)
+    if button:GetChild('v25Face') then
+        require('abyss_v25_menu_view').button(button,available)
+    end
+    -- Route preview raises the map. Raise this sibling when navigation returns.
+    if available then button:SetAsLastSibling() end
+end
+
 function M.refreshUtilities(child,self,inCombat,refreshPotionEntry,refreshDeckEntry)
     return function(run,inMenu,deckOpen,potionOpen,blocked,returnAvailable)
             local ending=run and run.phase=='ending_proceed'
             local hudVisible=not ending and not inMenu and not deckOpen and not blocked
             local utilitiesVisible=hudVisible and not potionOpen
             local inventoryVisible=hudVisible and (not potionOpen or self.potionUI.localPanel==true)
-            local rewardsBack=child("combatRewards")
-            rewardsBack:SetVisible(returnAvailable)
-            if rewardsBack:GetChild('v25Face') then
-                require('abyss_v25_menu_view').button(rewardsBack,returnAvailable)
-            end
-            -- Route preview raises the full-page map. Restore this sibling above it
-            -- when returning to navigation; visibility alone leaves it occluded.
-            if returnAvailable then rewardsBack:SetAsLastSibling() end
+            refreshRewardsBack(child("combatRewards"),returnAvailable)
             child("deckEntry"):SetVisible(utilitiesVisible)
             -- STS has no separate relic button: the discs under the HP row are the one control.
             child("relicEntry"):SetVisible(false)
@@ -260,7 +262,8 @@ end
 
 function M.refreshPageVisibility(menu,self,suspendBattle,child,refreshMapResources,nativePageLifecycle)
     local syncNative=nativePageLifecycle==true and NativePages.new(child,self) or nil
-    local coveredMapRun
+    local coveredMapRun,coveredDeckBattle
+    local visibilityPass=0
     local function refreshMapVisibility(run,deckOpen,blocked)
         local onMap=self.mode=="map"
         local returningFromDeck=coveredMapRun~=nil and coveredMapRun==run
@@ -270,23 +273,55 @@ function M.refreshPageVisibility(menu,self,suspendBattle,child,refreshMapResourc
         child("mapPanel"):SetVisible(onMap)
         refreshMapResources(run)
     end
+    local function coveredPaintCheck(run,battle,pass)
+        if not self.pageReveal or not battle or run.phase~='combat' or self.battleUI.busy then return end
+        local events,epoch=battle.events,self.pageReveal.epoch
+        local eventCount=#events
+        -- Inventory and the health cap can change without a combat event.
+        local potionInventory,maxHp=battle.potionInventory,run.maxHp
+        return function()
+            return visibilityPass==pass and self.run==run and run.phase=='combat' and run.combat==battle
+                and self.deckUI.visible and not self.battleUI.active and not self.battleUI.busy
+                and self.pageReveal.epoch==epoch and battle.events==events and #events==eventCount
+                and battle.potionInventory==potionInventory and run.maxHp==maxHp
+        end
+    end
+    local function refreshBattleVisibility(run,deckOpen,potionOpen,blocked,pass)
+        -- Reuse a cover only after its eager render has committed suspension.
+        -- The active flag changes before the native setter and can survive failure.
+        local deckBattle=self.mode=='battle' and deckOpen and run and run.combat or nil
+        local deferDeckRender=deckBattle~=nil and coveredDeckBattle==deckBattle
+        local coveredPaint
+        if not deferDeckRender then
+            coveredDeckBattle=nil
+            coveredPaint=coveredPaintCheck(run,deckBattle,pass)
+        end
+        self.battleUI:setActive(self.mode == "battle" and not deckOpen and not potionOpen and not blocked,
+            suspendBattle(run,deckOpen,potionOpen),deferDeckRender)
+        if visibilityPass==pass then coveredDeckBattle=deckBattle end
+        return coveredPaint
+    end
     return function(run,inMenu,deckOpen,potionOpen,blocked)
+            visibilityPass=visibilityPass+1
+            local pass=visibilityPass
             if syncNative then syncNative(run) end
             menu:SetVisible(inMenu and not self.characterOpen and not self.easterEggOpen)
-            -- A deck open still commits one battle render below (input retirement,
-            -- art ownership and suspension), after the host's visibility writes.
-            self.battleUI:setActive(self.mode == "battle" and not deckOpen and not potionOpen and not blocked,
-                suspendBattle(run,deckOpen,potionOpen),self.mode=='battle' and deckOpen)
+            local coveredPaint=refreshBattleVisibility(run,deckOpen,potionOpen,blocked,pass)
             child("battlePanel"):SetVisible(self.mode == "battle")
             refreshMapVisibility(run,deckOpen,potionOpen or blocked)
             self.nodeUI:setVisible(self.mode == "node" and not deckOpen and not potionOpen and not blocked,self.mode == "node",true)
             child("nodePanel"):SetVisible(self.mode == "node")
+            return coveredPaint
         end
 end
 
 function M.renderBattlePage(self,child)
-    return function(run)
-            self.battleUI:render()
+    return function(run,coveredPaint)
+            -- Page readiness can reuse the eager deck cover, unless a native
+            -- callback advanced the page or the combat after that paint.
+            if not (coveredPaint and coveredPaint()) then
+                self.battleUI:render()
+            end
             if run.phase == "combat" and self.presentedBattle ~= run.combat then
                 self.presentedBattle = run.combat
                 local guardian = false
@@ -334,12 +369,12 @@ local function recordEntryProjection(self,platform,entry,epoch)
 end
 
 function M.renderCurrentPage(self,renderBattlePage,renderMapPage,platform)
-    return function(run,deckOpen,potionOpen,blocked,covering)
+    return function(run,deckOpen,potionOpen,blocked,covering,coveredPaint)
             local entry=self.nodeEntry
             local epoch=entry and self.pageReveal.epoch
             PageReveal.registerSource(platform,PageReveal.basePage(self.mode))
             if self.mode == "battle" then
-                renderBattlePage(run)
+                renderBattlePage(run,coveredPaint)
             elseif self.mode == "map" then
                 renderMapPage(run,deckOpen,potionOpen,blocked,covering)
             elseif self.mode == "node" then self.nodeUI:render() end
@@ -623,8 +658,8 @@ function M.refresh(self,finishRunFlow,syncOpening,selectMode,syncOfficialBattleS
             local blocked=overlaysBlocked() or covering
             local returnAvailable=syncRewardReturn(run,deckOpen,potionOpen,blocked,covering)
             refreshUtilities(run,inMenu,deckOpen,potionOpen,blocked,returnAvailable)
-            refreshPageVisibility(run,inMenu,deckOpen,potionOpen,blocked)
-            renderCurrentPage(run,deckOpen,potionOpen,blocked,covering)
+            local coveredPaint=refreshPageVisibility(run,inMenu,deckOpen,potionOpen,blocked)
+            renderCurrentPage(run,deckOpen,potionOpen,blocked,covering,coveredPaint)
             bgm:update(self.settlementRequested and "stop" or Bgm.scene(self.mode, run, self.battleUI.busy, bgm.cue))
             present()
             refreshForeground()

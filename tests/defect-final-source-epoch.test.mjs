@@ -1,5 +1,5 @@
 import {beforeCharacterPreparationSource} from './helpers/character-preparation-source.mjs';
-import {pointerInputPath,readRetiredController,retiredControllerPath} from './helpers/input-retirement-source.mjs';
+import {readRetiredController,retiredControllerPath} from './helpers/input-retirement-source.mjs';
 import {currentProductionRereads} from './helpers/current-production-source-reads.mjs';
 import {closeoutPriorEpoch,ciRepairSourceEpoch,stsStyleEpoch,menuRedEpoch} from './helpers/closeout-source-epoch.mjs';
 import test from 'node:test';
@@ -174,9 +174,8 @@ test('pre-feedback production retains original68, exact28, merchant and all 104 
  assert.equal(project(source),expected);assert.deepEqual(reads,current.owners);
  for(const owner of current.owners)for(replacement of [actual[owner]+'\n',null,new Error('missing current owner')]){
   changed=owner;reads=[];assert.throws(()=>project(source),/combined linked owner/);
-  const attempted=current.owners.slice(0,current.owners.indexOf(owner)+1);
-  if(owner===retiredControllerPath&&replacement===null)attempted.push(pointerInputPath);
-  assert.deepEqual(reads,attempted);
+  // The frozen owner set still requires its original controller bytes.
+  assert.deepEqual(reads,current.owners.slice(0,current.owners.indexOf(owner)+1));
   changed=undefined;reads=[];assert.equal(project(source),expected);assert.deepEqual(reads,current.owners);
  }
  for(const foreign of [source+'-- foreign',expected,null,undefined,{},17]){reads=[];assert.equal(project(foreign),foreign);assert.deepEqual(reads,[]);}
@@ -194,9 +193,9 @@ test('current raw production retains the exact power-view owner and complete rel
  const expected=current.targets.develop.files[file].source;
  assert.equal(currentEpoch.preCombinedSource(file,source,{target:'develop',readSource:raw}),expected);
  const admittedReads=[...reads];
- assert.equal(admittedReads.length,417);
+ assert.equal(admittedReads.length,460);
  assert.equal(createHash('sha256').update(JSON.stringify(admittedReads)).digest('hex'),
-  '05131aa3de86e8f88d0e82bca23e667bba10e3921cf029de891ec4e8b06c3a67','exact current owner read order');
+  '6b72ef490e6f79b870b0a21d5b63ddb122f065aff81f837e8f6fa3bafbd40d51','exact current owner read order');
  let prior=-1;
  for(const path of [...current.owners,...currentProductionRereads]){
   prior=admittedReads.indexOf(path,prior+1);

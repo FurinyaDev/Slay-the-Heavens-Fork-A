@@ -2,7 +2,7 @@ import {beforeInputRetirementTestInventory,readRetiredInputLuaReceipt} from './i
 import {beforeDeckPagesSuiteSource} from './input-retirement-source.mjs';
 export {beforeInputRetirementTestInventory} from './input-retirement-inventory.mjs';
 import {assertDevelopBackflowCurrent,authenticateDevelopBackflow,beforeDevelopBackflow,developBackflowOwns} from './develop-release-backflow-source.mjs';
-import {beforeCalibrationReplay} from './calibration-replay-sources.mjs';
+import {beforeCalibrationReplay,beforeCurrentReplayCopier} from './calibration-replay-sources.mjs';
 import {beforeNativeHostReplay} from './native-host-replay-source.mjs';
 import {assertNativeFixturesCurrent,beforeNativeFixtureReplay} from './native-fixture-replay-source.mjs';
 import {assertNativeFlowFixturesCurrent,beforeNativeFlowFixture} from './native-flow-fixture-source.mjs';
@@ -10,6 +10,7 @@ import {beforeOfficialBackgroundFixture} from './official-background-fixture-sou
 import {beforeMapRoomReplayCohort,beforeDevelopReplayMerge} from './develop-replay-merge-source.mjs';
 import {beforeStsUiCloseoutSource} from './sts-ui-closeout-source.mjs';
 import {beforeStsFadeCi} from './sts-fade-ci-source.mjs';
+import {beforeCurrentReplayFixes} from './current-replay-fix-sources.mjs';
 import {beforeIntegratedStsInventory} from './sts-selection-fade-source.mjs';
 import {beforeNativeButtonRepair,beforeRebasedCi,beforeRebasedRelease,historicalReleaseCopier} from './rebased-release-source.mjs';
 import {beforeTinyHouseIntegratedSource} from './tiny-house-integrated-source.mjs';
@@ -322,6 +323,7 @@ function beforeReleaseUiBuildSource(path,source,read=readFileSync){
  return source.includes('\r\n')?before.source.replaceAll('\n','\r\n'):before.source;
 }
 function releaseHistoricalInput(path,source){
+ source=beforeCurrentReplayCopier(path,source);
  return beforeRebasedCopier(path,source)!==source?historicalReleaseCopier(source):beforeRebasedRelease(path,source);
 }
 export function beforeReleaseTinyHouseSource(path,source,read=readFileSync){
@@ -751,7 +753,7 @@ export function beforeReviewedBuildInput(path,source,read){
  const live=owner=>read(owner,'utf8');
  const production=authenticateDevelopBackflow(path,source,live);
  const deck=beforeDeckPagesSuiteSource(path,production);
- const merged=beforeDevelopReplayMerge(path,deck);
+ const merged=beforeDevelopReplayMerge(path,beforeCurrentReplayFixes(path,deck));
  return beforeForkFirstCi(path,beforeReplayArchiveStorage(path,merged));
 }
 function beforeIntegrationSuccessor(path,source){
@@ -766,7 +768,7 @@ export function assertIntegrationSuccessorsCurrent(read=readFileSync){
  const liveRead=read;
  assertNativeFixturesCurrent(liveRead);
  assertNativeFlowFixturesCurrent(liveRead);
- read=(path,encoding)=>beforeCalibrationReplay(path,liveRead(path,encoding));
+ read=(path,encoding)=>beforeCalibrationReplay(path,beforeCurrentReplayFixes(path,liveRead(path,encoding)));
  const readCurrent=(path,encoding)=>{
   const live=read(path,encoding);
   let raw=beforeNativeFlowFixture(path,live);
@@ -813,6 +815,7 @@ export function assertIntegrationSuccessorsCurrent(read=readFileSync){
  }
 }
 export function beforePreflightSource(path,source,view='prior'){
+ source=beforeCurrentReplayFixes(path,source);
  source=beforeNativeFlowFixture(path,source);
  source=beforeOfficialBackgroundFixture(path,source);
  if(path===replayAssetLedger)source=beforeDeckBrowserAssetLedger(source);

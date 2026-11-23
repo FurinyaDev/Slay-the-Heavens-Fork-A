@@ -39,9 +39,9 @@ test('the explicit historical reader requires current owners and rejects a stale
  const expected=defectActorEpoch.proof.current[config].source;
  assert.equal(reader(config),expected);
  const admittedReads=[...reads];
- assert.equal(admittedReads.length,418);
+ assert.equal(admittedReads.length,461);
  assert.equal(createHash('sha256').update(JSON.stringify(admittedReads)).digest('hex'),
-  '5a6e1ad0b3362c34562f566c1a8b3c5496a1c1cebb6c302930cc1efe6976e1bc','exact raw Actor admission before historical bytes');
+  'f6930061a5fe2d5db08649eddf310bf9afe106ed91fb204433124f98352260bb','exact raw Actor admission before historical bytes');
  let preceding=-1;
  for(const owner of [config,...proof.owners,...currentProductionRereads]){
   preceding=admittedReads.indexOf(owner,preceding+1);
