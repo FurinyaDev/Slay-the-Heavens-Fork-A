@@ -587,6 +587,92 @@ const bindings = new Map([
     "after": "        if self.browserShell then\n            local pileChrome=root:GetChild('pileChrome')\n            pileChrome:GetChild('heading'):SetVisible(self.detailPages~=nil)\n            pileChrome:GetChild('drawBadge'):SetVisible(active==true and self.pileKind=='draw')\n            pileChrome:GetChild('discardBadge'):SetVisible(active==true and self.pileKind=='discard')\n        end"
    }
   ]
+ },
+ {
+  "path": "tests/art-feature-flags-runtime.test.mjs",
+  "beforeSha256": "5fd7d8a4a86cc2e1129f1d11bbf4fffbb2adb71943009cd849d4f68f4f29bc1b",
+  "afterSha256": "829838455b61faf4edd163a3db71a6816ef61c75c55489d32bd42fcccb4e4614",
+  "hunks": [
+   {
+    "at": 19,
+    "before": " modules={abyss_ui_profile={schemaVersion=1,nativePageLifecycle=false},abyss_monster_actor_binding={templateIndex=31,containerTemplateIndex=32,powerTemplateIndex=33,enabled=true},abyss_art_features=config,abyss_data={},abyss_presentation={},abyss_theme={sound={}},\n  -- This fixture substitutes GameUI itself; provide its page-intent boundary too.",
+    "after": " modules={abyss_ui_profile={schemaVersion=1,nativePageLifecycle=false},abyss_monster_actor_binding={templateIndex=31,containerTemplateIndex=32,powerTemplateIndex=33,enabled=true},abyss_art_features=config,abyss_data={},abyss_presentation={},abyss_theme={sound={}},\n  -- The standard UI build emits this binding even when no browser template is installed.\n  abyss_deck_browser_binding={templateIndex=0,parts={}},\n  -- This fixture substitutes GameUI itself; provide its page-intent boundary too."
+   },
+   {
+    "at": 50,
+    "before": " assert(load(ENTRY))();OnStart();assert(updates and views==1,'art availability must not disable GameUI')\n assert(componentParams==1,'comparison switch must be read once with its registered default off')",
+    "after": " assert(load(ENTRY))();OnStart();assert(updates and views==1,'art availability must not disable GameUI')\n assert(requested.abyss_deck_browser_binding==1 and options.deckBrowser==nil,\n  'the generated default binding must be loaded once without activating the native deck browser')\n assert(componentParams==1,'comparison switch must be read once with its registered default off')"
+   },
+   {
+    "at": 98,
+    "before": "end\n`));",
+    "after": "end\n`));\ntest('missing mandatory deck browser binding fails closed before GameUI attaches',()=>vm(setup+`\nlocal messages={}\nprint=function(message)messages[#messages+1]=message end\nlocal ok=pcall(start,snapshot(),function(m)m.abyss_deck_browser_binding=nil end)\nassert(not ok and updates==false and views==0,'missing browser binding must not start GameUI')\nassert(requested.abyss_deck_browser_binding==1,'the missing binding must be consulted exactly once')\nassert(table.concat(messages,'|'):find('missing abyss_deck_browser_binding',1,true),'startup must report the missing module')\n`));"
+   }
+  ]
+ },
+ {
+  "path": "tests/event-option-rim-clipping.test.mjs",
+  "beforeSha256": "92cb2e2ba8bc2b9e5ee5ec39a7321a874368cb2f6aed167aa13d1b2d8f03b901",
+  "afterSha256": "a354c46d56ac029cdb54ccb499ded7b2fc491f883c41842cd4636ecf15d25890",
+  "hunks": [
+   {
+    "at": 3,
+    "before": "import {nativeTheme} from '../scripts/native-ui-theme.mjs';\nimport {officialAssetsTheme} from '../scripts/official-assets-layout.mjs';",
+    "after": "import {nativeTheme} from '../scripts/native-ui-theme.mjs';\nimport {v25Theme} from '../scripts/v25-layout.mjs';\nimport {officialAssetsTheme} from '../scripts/official-assets-layout.mjs';"
+   },
+   {
+    "at": 12,
+    "before": "test('shared event corner masks clip the complete option chrome before live copy and input',()=>{\n const theme=officialAssetsTheme(nativeTheme),layout=nodeLayout(theme),event=find(layout,'eventView');\n const hits=Array.from({length:4},(_,i)=>child(child(event,'option'+(i+1)),'hit'));",
+    "after": "test('shared event corner masks clip the complete option chrome before live copy and input',()=>{\n const theme=v25Theme(nativeTheme),layout=nodeLayout(theme),event=find(layout,'eventView');\n const hits=Array.from({length:4},(_,i)=>child(child(event,'option'+(i+1)),'hit'));"
+   },
+   {
+    "at": 19,
+    "before": "  assert.equal(masks.length,4,'all ordinary event options retain the same four corner masks');\n  assert.deepEqual(row.size,[700,44]);\n  assert.equal(child(row,'hit'),hits[i-1],'corner repair cannot replace the input owner');\n  assert.deepEqual(child(row,'hit').size,row.size,'corner repair cannot shrink native input');\n  assert.deepEqual(child(chrome,'topStitch').size,[692,2],'the shared rim geometry is retained');\n  assert.deepEqual(child(chrome,'topStitch').position,[0,20]);\n  assert.equal(child(chrome,'lowerRim').opacity,0);",
+    "after": "  assert.equal(masks.length,4,'all ordinary event options retain the same four corner masks');\n  assert.deepEqual(row.size,theme.layout.nativeNode.event.options.size);\n  assert.equal(child(row,'hit'),hits[i-1],'corner repair cannot replace the input owner');\n  assert.deepEqual(child(row,'hit').size,row.size,'corner repair cannot shrink native input');\n  assert.deepEqual(child(chrome,'topStitch').size,[row.size[0]-8,2],'the shared rim geometry is retained');\n  assert.deepEqual(child(chrome,'topStitch').position,[0,row.size[1]/2-2]);\n  assert.equal(child(chrome,'lowerRim').opacity,0);"
+   },
+   {
+    "at": 36,
+    "before": "",
+    "after": "\ntest('official event choices use one responsive rim and fill beneath intact copy and input',()=>{\n const theme=officialAssetsTheme(nativeTheme),event=find(nodeLayout(theme),'eventView');\n const first=child(event,'option1'),hit=child(first,'hit'),title=child(first,'title');\n styleEvent(event,theme);\n assert.strictEqual(child(first,'hit'),hit);\n assert.strictEqual(child(first,'title'),title);\n for(let i=1;i<=4;i++){\n  const row=child(event,'option'+i),material=child(row,'roundedButton'),parts=children(row);\n  assert.deepEqual(row.size,[700,44]);\n  assert.deepEqual(child(row,'hit').size,row.size);\n  assert(!parts.some(part=>part.name.startsWith('v25Corner')));\n  assert.equal(child(row,'border').visible,false);\n  for(const name of ['title','description','hit'])assert(parts.indexOf(material)<parts.indexOf(child(row,name)),'material stays behind live '+name);\n  assert.deepEqual(material.anchor,{min:[0,0],max:[1,1]});\n  assert.deepEqual(child(material,'cloth').size,[-4,-4]);\n  assert.deepEqual(children(material).map(layer=>layer.name),['rim','cloth']);\n  for(const layer of children(material)){\n   const layerParts=children(layer);\n   assert.deepEqual(layerParts.map(part=>part.name).sort(),\n    ['corner-1_-1','corner-1_1','corner1_-1','corner1_1','horizontal','vertical']);\n   for(const part of layerParts){\n    assert.equal(part.image,part.name.startsWith('corner')?theme.image.disc:theme.image.rect,layer.name+'/'+part.name);\n    assert.equal(part.raycastTarget,false);\n   }\n  }\n }\n});\n"
+   }
+  ]
+ },
+ {
+  "path": "tests/sts-style-source-epoch.test.mjs",
+  "beforeSha256": "3b28f64febf618d28d413c7ffb063053a46f048068aa291d9901d216f10e7a99",
+  "afterSha256": "adf7475283bbd7a93e24fe9b5148206e5c5e793baa333fb36db27a7cae081934",
+  "hunks": [
+   {
+    "at": 0,
+    "before": "import {actorFocusAdded,assertActorFocusInventory,stasisUpgradeAddedPaths} from './helpers/develop-release-backflow-source.mjs';\nimport {beforeCharacterPreparationSource} from './helpers/character-preparation-source.mjs';",
+    "after": "import {actorFocusAdded,assertActorFocusInventory,deckPagesAdded,stasisUpgradeAddedPaths} from './helpers/develop-release-backflow-source.mjs';\nimport {pointerInputPath,readRetiredController,retiredControllerPath} from './helpers/input-retirement-source.mjs';\nimport {beforeCharacterPreparationSource} from './helpers/character-preparation-source.mjs';"
+   },
+   {
+    "at": 17,
+    "before": "const bind=source=>({source,sha256:hash(source)}),commit='c'.repeat(40);\nfunction fixture(){",
+    "after": "const bind=source=>({source,sha256:hash(source)}),commit='c'.repeat(40);\nconst readProduction=path=>readFileSync(path,'utf8');\nconst readProductionHistory=path=>path===retiredControllerPath?readRetiredController(readProduction).source:readProduction(path);\nfunction fixture(){"
+   },
+   {
+    "at": 111,
+    "before": " const {sourceEpoch,ciRepairSourceEpoch,releaseSourceEpoch,prePowerMembershipEpoch}=await import('./helpers/closeout-source-epoch.mjs');\n const p=sourceEpoch.proof,before=ciRepairSourceEpoch.proof,read=path=>readFileSync(path,'utf8');\n assert.equal(Object.keys(before.current).length,347); // config plus all 346 prior Lua modules.",
+    "after": " const {sourceEpoch,ciRepairSourceEpoch,releaseSourceEpoch,prePowerMembershipEpoch}=await import('./helpers/closeout-source-epoch.mjs');\n const p=sourceEpoch.proof,before=ciRepairSourceEpoch.proof,read=readProduction;\n assert.equal(Object.keys(before.current).length,347); // config plus all 346 prior Lua modules."
+   },
+   {
+    "at": 117,
+    "before": " const actual=['config/architecture.json',...readdirSync('src/lua').filter(n=>n.endsWith('.lua')).map(n=>'src/lua/'+n)].sort();\n assert.deepEqual([...Object.keys(p.current),...stasisUpgradeAddedPaths,...actorFocusAdded].sort(),actual);\n assertActorFocusInventory(actual.filter(path=>path!=='config/architecture.json'),read);",
+    "after": " const actual=['config/architecture.json',...readdirSync('src/lua').filter(n=>n.endsWith('.lua')).map(n=>'src/lua/'+n)].sort();\n assert(Object.hasOwn(p.current,retiredControllerPath),'the archived controller must remain available to historical targets');\n const previous=Object.keys(p.current).filter(path=>path!==retiredControllerPath);\n assert.deepEqual([...previous,...stasisUpgradeAddedPaths,...actorFocusAdded,...deckPagesAdded,pointerInputPath].sort(),actual);\n assertActorFocusInventory(actual.filter(path=>path!=='config/architecture.json'),read);"
+   },
+   {
+    "at": 123,
+    "before": " for(const [name,target]of Object.entries(before.targets))for(const [path,row]of Object.entries(target.files))assert.deepEqual(p.targets[name].files[path],row,name+'/'+path);\n for(const path of Object.keys(p.current))assert.equal(beforeCharacterPreparationSource(path,read(path)).replaceAll('\\r\\n','\\n'),p.current[path].source,path+' raw complete current');\n const config='config/architecture.json',raw=read(config),prior=p.targets.stsStylePrior.files[config].source;\n assert.equal(sourceEpoch.preCombinedSource(config,raw,{target:'stsStylePrior',readSource:read}),prior);\n for(const owner of p.owners.filter(path=>!before.owners.includes(path)))for(const missing of [null,read(owner)+'\\n'])\n  assert.throws(()=>sourceEpoch.preCombinedSource(config,raw,{target:'stsStylePrior',readSource:path=>path===owner?missing:read(path)}),/linked owner identity/,owner);\n});",
+    "after": " for(const [name,target]of Object.entries(before.targets))for(const [path,row]of Object.entries(target.files))assert.deepEqual(p.targets[name].files[path],row,name+'/'+path);\n for(const path of Object.keys(p.current))assert.equal(beforeCharacterPreparationSource(path,readProductionHistory(path)).replaceAll('\\r\\n','\\n'),p.current[path].source,path+' exact historical input');\n const config='config/architecture.json',raw=read(config),prior=p.targets.stsStylePrior.files[config].source;\n assert.equal(sourceEpoch.preCombinedSource(config,raw,{target:'stsStylePrior',readSource:read}),prior);\n for(const owner of p.owners.filter(path=>!before.owners.includes(path))){\n  const foreign=readProductionHistory(owner)+'\\n';\n  // The retired controller has an absence witness. Removing its live replacement must still fail.\n  const missing=owner===retiredControllerPath?pointerInputPath:owner;\n  for(const [changed,value] of [[missing,null],[owner,foreign]]){\n   assert.throws(()=>sourceEpoch.preCombinedSource(config,raw,{target:'stsStylePrior',readSource:path=>path===changed?value:read(path)}),/linked owner|pointer input/,changed);\n  }\n }\n});"
+   },
+   {
+    "at": 246,
+    "before": " }\n for(const [path,row]of Object.entries(p.current))assert.equal(beforeCharacterPreparationSource(path,readFileSync(path,'utf8')).replaceAll('\\r\\n','\\n'),row.source,path);\n const anchor=feedbackProductionPaths[0],raw=path=>readFileSync(path,'utf8');\n assert.equal(sourceEpoch.preCombinedSource(anchor,raw(anchor),{target:'stsFeedbackPrior',readSource:raw}),stsStyleEpoch.proof.current[anchor].source);",
+    "after": " }\n for(const [path,row]of Object.entries(p.current))assert.equal(beforeCharacterPreparationSource(path,readProductionHistory(path)).replaceAll('\\r\\n','\\n'),row.source,path);\n const anchor=feedbackProductionPaths[0],raw=readProduction;\n assert.equal(sourceEpoch.preCombinedSource(anchor,raw(anchor),{target:'stsFeedbackPrior',readSource:raw}),stsStyleEpoch.proof.current[anchor].source);"
+   }
+  ]
  }
 ].map(row=>[row.path,row]));
 

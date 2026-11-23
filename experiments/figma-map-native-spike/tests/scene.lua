@@ -74,10 +74,10 @@ indexControls(root)
 local function find(name)return controlsByName[name]end
 -- Every ambient particle moves on each ordinary frame, rather than 4/26 hopping.
 local particles={};for i=0,25 do particles[i]={x=find('ember'..i).x,y=find('ember'..i).y}end
-local ambientBefore=captureState();OnUpdate(.016)
+OnUpdate(.016)
 for i=0,25 do local n=find('ember'..i);assert(n.y~=particles[i].y,'each ambient track must update every normal frame')end
 assert(session.ui.spikeAnimatedWrites<=256,'ambient and sparks share unchanged budget')
-assert(ambientBefore(),'visual sampling cannot consume game RNG')
+assert(before(),'visual sampling cannot consume game RNG')
 assert(find('figmaHP').text=='<b>'..string.format('%.0f',session.run.hp)..'</b>','current HP uses supported bold rich text')
 assert(find('figmaHPMax').text=='<b>/'..string.format('%.0f',session.run.maxHp)..'</b>','maximum HP is separate muted run')
 local coin=find('hudCoin');local money=find('figmaGold');assert(math.abs((money.x-money.w/2+2)-(coin.x+8.5)-6)<.001,'gold glyph and number have source6px gap')
@@ -85,9 +85,9 @@ session.ui.reducedMotion=true;OnUpdate(.016);for i=0,25 do assert(not find('embe
 session.ui.reducedMotion=false;OnUpdate(.016);for i=0,25 do assert(find('ember'..i).visible,'resume only after sampling restored position')end
 local readsBefore=treeReads;session.ui:render();assert(treeReads-readsBefore<64,'render must reuse control index rather than traverse the entire native tree')
 local officialIcons={combat=102044,elite=102034,event=100114,shop=102025,camp=102002,treasure=102028,boss=102033};for _,node in ipairs(session.map.nodes)do local fx=session.ui.roomFx[node.id];if fx and fx.visible then assert(fx.box:GetChild('icon').image==officialIcons[node.type],'visible node body must remain official icon')end end
-local menuBefore=captureState();find('menuHit').listeners.click();assert(find('mapMenu').visible);assert(not session.ui:choose(chosenId),'menu modal must block queued/controller choice');find('menuLegend').listeners.click();assert(not find('legendPlate').visible);find('menuHit').listeners.click();find('menuLegend').listeners.click();assert(find('legendPlate').visible);find('menuHit').listeners.click();find('menuHelpHit').listeners.click();assert(find('menuHelp').visible);find('menuDismiss').listeners.click();assert(menuBefore(),'menu only controls presentation')
-local locked;for _,fx in pairs(session.ui.roomFx)do if fx.visible and fx.state=='locked'then locked=fx.box:GetChild('hit');break end end;assert(locked and locked.visible,'nonavailable nodes need informational hit target');locked.listeners.enter({touchId=-1});assert(find('mapTooltip').visible);local lockedBefore=captureState();assert(not locked.listeners.click({touchId=7}),'informational mobile tap must not bypass Nodes');assert(lockedBefore(),'inspection must preserve game RNG/state');locked.listeners.exit({})
-local inspected=captureState();chosen.listeners.enter({touchId=-1});OnUpdate(.016);chosen.listeners.exit({});assert(inspected(),'hover must not alter real run/map/RNG')
+find('menuHit').listeners.click();assert(find('mapMenu').visible);assert(not session.ui:choose(chosenId),'menu modal must block queued/controller choice');find('menuLegend').listeners.click();assert(not find('legendPlate').visible);find('menuHit').listeners.click();find('menuLegend').listeners.click();assert(find('legendPlate').visible);find('menuHit').listeners.click();find('menuHelpHit').listeners.click();assert(find('menuHelp').visible);find('menuDismiss').listeners.click();assert(before(),'menu only controls presentation')
+local locked;for _,fx in pairs(session.ui.roomFx)do if fx.visible and fx.state=='locked'then locked=fx.box:GetChild('hit');break end end;assert(locked and locked.visible,'nonavailable nodes need informational hit target');locked.listeners.enter({touchId=-1});assert(find('mapTooltip').visible);assert(not locked.listeners.click({touchId=7}),'informational mobile tap must not bypass Nodes');assert(before(),'inspection must preserve game RNG/state');locked.listeners.exit({})
+chosen.listeners.enter({touchId=-1});OnUpdate(.016);chosen.listeners.exit({});assert(before(),'hover must not alter real run/map/RNG')
 local cameraBefore=session.ui.scroll
 assert(chosen.listeners.click(),'actual Nodes.enter must succeed')
 assert(session.ui.scroll==cameraBefore,'business commit must not immediately jump camera');assert(session.ui.spikeTransition.segments>0 and session.ui.spikeTransition.progress<.01,'new route must begin undrawn');session.ui:render();assert(session.ui.spikeTransition.segments>0 and session.ui.spikeTransition.progress<.01,'render/update(0) must retain transition transaction')
