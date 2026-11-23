@@ -1,0 +1,401 @@
+{
+  "source": {
+    "before": "69e74142f628900cf1e3bad3ed8ea00bb48217cc",
+    "after": "bd642ecd98573d90155ef05a2bf51eff05372715"
+  },
+  "candidateTree": "fbce818e526624f961b96e40f56dc09577042ac9",
+  "method": "Official profile generated UI, real project Lua host with fixed fixture piles, visible native-control tree projected to BeyondSimulator 0.5.2, offline PNG.",
+  "contactSheets": {
+    "compare-pc-16-9.png": "1dbcbae520062a95a7cd183b798df652104cd2d6383c419a81dc2ebf90f3be9d",
+    "after-mobile-states.png": "8a437b07ff6e2e614347559c2efa00d848e836656cf44e0bbb3f9072970a1e5e",
+    "compare-mobile-16-9.png": "76d882394be7a958626048be557a14bb2881055ea7d361640f331b8e66762e47"
+  },
+  "captures": {
+    "before": [
+      {
+        "file": "before/draw-pc-16-9.png",
+        "sha256": "218b9f021edbcb6c15ea38fd3ee57b67525c2fceb4a9dcb56e1f7f9778592208",
+        "width": 1600,
+        "height": 900,
+        "unavailableImageIds": [
+          100149,
+          100161,
+          102012,
+          102014,
+          102018,
+          102024,
+          102049,
+          106056,
+          106057,
+          106059,
+          106095,
+          111046
+        ]
+      },
+      {
+        "file": "before/draw-mobile-16-9.png",
+        "sha256": "dafe8cb5b682acd770f03272a606a3b66406e1dfac06375011839cf45b553da5",
+        "width": 1280,
+        "height": 720,
+        "unavailableImageIds": [
+          100149,
+          100161,
+          102012,
+          102014,
+          102018,
+          102024,
+          102049,
+          106056,
+          106057,
+          106059,
+          106095,
+          111046
+        ]
+      },
+      {
+        "file": "before/discard-pc-16-9.png",
+        "sha256": "9e18f84025518ba33d2db91a986233894f86160c39b621c90fa33effe6bd53f5",
+        "width": 1600,
+        "height": 900,
+        "unavailableImageIds": [
+          100122,
+          100150,
+          100161,
+          102012,
+          102014,
+          102018,
+          102024,
+          102049,
+          106056,
+          106057,
+          106059,
+          106095,
+          111046
+        ]
+      },
+      {
+        "file": "before/discard-mobile-16-9.png",
+        "sha256": "0c76a94e1c47c1b162c713765eaa09657ad029f303e28db27dfdc25ca8d04884",
+        "width": 1280,
+        "height": 720,
+        "unavailableImageIds": [
+          100122,
+          100150,
+          100161,
+          102012,
+          102014,
+          102018,
+          102024,
+          102049,
+          106056,
+          106057,
+          106059,
+          106095,
+          111046
+        ]
+      },
+      {
+        "file": "before/exhaust-pc-16-9.png",
+        "sha256": "a891ded3b6ee6d1165932ccf7ecf41605388a8c20d905a6378eacf6ef1848332",
+        "width": 1600,
+        "height": 900,
+        "unavailableImageIds": [
+          100161,
+          102012,
+          102014,
+          102018,
+          102024,
+          102049,
+          106056,
+          106057,
+          106059,
+          106095,
+          111046
+        ]
+      },
+      {
+        "file": "before/exhaust-mobile-16-9.png",
+        "sha256": "c49707423f47ec61dd519f1c74dd6e3d3df647784fc15195ef609fc1281a2c57",
+        "width": 1280,
+        "height": 720,
+        "unavailableImageIds": [
+          100161,
+          102012,
+          102014,
+          102018,
+          102024,
+          102049,
+          106056,
+          106057,
+          106059,
+          106095,
+          111046
+        ]
+      }
+    ],
+    "after": [
+      {
+        "file": "after/draw-pc-16-9.png",
+        "sha256": "a6230d2bd13ce294775745820595d326eb68278dbd5643445080def61d7ac2d4",
+        "width": 1600,
+        "height": 900,
+        "unavailableImageIds": [
+          100161,
+          102012,
+          102014,
+          102018,
+          102024,
+          102049,
+          106056,
+          106057,
+          106059,
+          106095,
+          111046
+        ]
+      },
+      {
+        "file": "after/draw-mobile-16-9.png",
+        "sha256": "3ca1daef6a6da05484c342c5dbafe1f87a4aed988c69cdce80198b681f4238b0",
+        "width": 1280,
+        "height": 720,
+        "unavailableImageIds": [
+          100161,
+          102012,
+          102014,
+          102018,
+          102024,
+          102049,
+          106056,
+          106057,
+          106059,
+          106095,
+          111046
+        ]
+      },
+      {
+        "file": "after/draw-page2-pc-16-9.png",
+        "sha256": "f8d2a03bc945e6ff15c196cdfcd7ad6ab17c2ab0185fc703ede194a2699bbfa1",
+        "width": 1600,
+        "height": 900,
+        "unavailableImageIds": [
+          100122,
+          100161,
+          102012,
+          102014,
+          102018,
+          102024,
+          102049,
+          106056,
+          106057,
+          106059,
+          106095,
+          111046
+        ]
+      },
+      {
+        "file": "after/draw-page2-mobile-16-9.png",
+        "sha256": "182eb3889965e306cae56626712cf9d190c07740002978533102bf15084d16f5",
+        "width": 1280,
+        "height": 720,
+        "unavailableImageIds": [
+          100122,
+          100161,
+          102012,
+          102014,
+          102018,
+          102024,
+          102049,
+          106056,
+          106057,
+          106059,
+          106095,
+          111046
+        ]
+      },
+      {
+        "file": "after/draw-detail-pc-16-9.png",
+        "sha256": "2fb768ef9acbaeeae62d6090c15b7a163cefe120922a72eddec15c00b2e96b0d",
+        "width": 1600,
+        "height": 900,
+        "unavailableImageIds": [
+          100161,
+          102012,
+          102014,
+          102018,
+          102024,
+          102049,
+          106056,
+          106057,
+          106059,
+          106095,
+          111046
+        ]
+      },
+      {
+        "file": "after/draw-detail-mobile-16-9.png",
+        "sha256": "95cfa831efb72417f2751f40423609bb1c4f6140f6f528197b94bfda6c35934e",
+        "width": 1280,
+        "height": 720,
+        "unavailableImageIds": [
+          100161,
+          102012,
+          102014,
+          102018,
+          102024,
+          102049,
+          106056,
+          106057,
+          106059,
+          106095,
+          111046
+        ]
+      },
+      {
+        "file": "after/discard-pc-16-9.png",
+        "sha256": "16cb7c20d8840751881a11706a38d074aff23f9653d25c6a63e5921d808ca452",
+        "width": 1600,
+        "height": 900,
+        "unavailableImageIds": [
+          100122,
+          100161,
+          102012,
+          102014,
+          102018,
+          102024,
+          102049,
+          106056,
+          106057,
+          106059,
+          106095,
+          111046
+        ]
+      },
+      {
+        "file": "after/discard-mobile-16-9.png",
+        "sha256": "96f982cd12b29cc517f696146a82374f8c2167dfa1062f2964ef73073143865a",
+        "width": 1280,
+        "height": 720,
+        "unavailableImageIds": [
+          100122,
+          100161,
+          102012,
+          102014,
+          102018,
+          102024,
+          102049,
+          106056,
+          106057,
+          106059,
+          106095,
+          111046
+        ]
+      },
+      {
+        "file": "after/exhaust-pc-16-9.png",
+        "sha256": "8afae13fb088189142f40478bb433953e6650ebd32e6750f0204a2340c616403",
+        "width": 1600,
+        "height": 900,
+        "unavailableImageIds": [
+          100161,
+          102012,
+          102014,
+          102018,
+          102024,
+          102049,
+          106056,
+          106057,
+          106059,
+          106095,
+          111046
+        ]
+      },
+      {
+        "file": "after/exhaust-mobile-16-9.png",
+        "sha256": "caa6036a524c3f62bab1aa619f2d4b8dcabb9fff578115fbd10b7216a50d703a",
+        "width": 1280,
+        "height": 720,
+        "unavailableImageIds": [
+          100161,
+          102012,
+          102014,
+          102018,
+          102024,
+          102049,
+          106056,
+          106057,
+          106059,
+          106095,
+          111046
+        ]
+      },
+      {
+        "file": "after/exhaust-empty-pc-16-9.png",
+        "sha256": "91bcb3db5077e4ea4d64c61d2ffaab6ad0a4b02f43bf6aec044ab327e94aab58",
+        "width": 1600,
+        "height": 900,
+        "unavailableImageIds": [
+          100161,
+          102012,
+          102014,
+          102018,
+          106056,
+          106057,
+          106059,
+          106095,
+          111046
+        ]
+      },
+      {
+        "file": "after/exhaust-empty-mobile-16-9.png",
+        "sha256": "f7c8d11bf02e675328e8a3615148052638ed50a49aa6bb1a0318aa2a16ea04c3",
+        "width": 1280,
+        "height": 720,
+        "unavailableImageIds": [
+          100161,
+          102012,
+          102014,
+          102018,
+          106056,
+          106057,
+          106059,
+          106095,
+          111046
+        ]
+      },
+      {
+        "file": "after/permanent-pc-16-9.png",
+        "sha256": "c2ecb90b7e0b9e788c3563e5ce3c63668b7e81e0451c614e87d7e748f9de8d53",
+        "width": 1600,
+        "height": 900,
+        "unavailableImageIds": [
+          100161,
+          102012,
+          102014,
+          102018,
+          106056,
+          106057,
+          106059,
+          106095,
+          111046
+        ]
+      },
+      {
+        "file": "after/permanent-mobile-16-9.png",
+        "sha256": "2167400e8a1fc0a41f7dad93d7f8eb24a3398835b359f909f4ad9b1d3721a572",
+        "width": 1280,
+        "height": 720,
+        "unavailableImageIds": [
+          100161,
+          102012,
+          102014,
+          102018,
+          106056,
+          106057,
+          106059,
+          106095,
+          111046
+        ]
+      }
+    ]
+  }
+}
