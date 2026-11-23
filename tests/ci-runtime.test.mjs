@@ -37,6 +37,21 @@ import { shardLuaScripts } from '../scripts/test-lua.mjs';
 import {historicalTest,readHistoricalBaselineSource} from './helpers/historical-baseline-inputs.mjs';
 import {qualityShardMatrices} from '../scripts/ci-quality-shape.mjs';
 
+// Rounded-down completed-case work from the five recorded POSIX timeout jobs.
+// These are placement minima, never successful whole-file or hosted timings.
+const replayCaseMinimumMs=Object.freeze({
+ 'tests/approved-ui-inverse.test.mjs':1295000,
+ 'tests/art-feature-source-inverse.test.mjs':412000,
+ 'tests/card-origin-source-inverse.test.mjs':149000,
+ 'tests/combat-reactions-architecture-inverse.test.mjs':137000,
+ 'tests/game-ui-extraction-source-inverse.test.mjs':870000,
+ 'tests/max-hp-accepted-source-inverse.test.mjs':677000,
+ 'tests/player-death-inverse.test.mjs':172000,
+ 'tests/potion-callback-source.test.mjs':238000,
+ 'tests/presentation-native-m3-contract.test.mjs':1037000,
+});
+const replayMinimum=(file,platform)=>platform==='win32'?0:replayCaseMinimumMs[file]??0;
+
 // Historical assertions consume exact predecessor bytes, while scheduling imports stay live.
 const readFileSync=(file,encoding)=>{
  const raw=actualReadFileSync(file,encoding),text=typeof raw==='string'?raw:raw.toString('utf8');
@@ -125,7 +140,7 @@ test('platform-native placement covers every current file once and unknown platf
  assert.ok(asymmetric,'the observed platform maps contain distinct costs');
  for(const platform of ['win32','linux']){
   const native=jsPlanningWeights(files,platform);
-  for(const file of files)assert.equal(native[file],Math.max(timings.js[platform][file]??timings.unknownJsMs,timings.jsPlanning?.localLowerBounds?.[file]?.durationMs??0));
+  for(const file of files)assert.equal(native[file],Math.max(timings.js[platform][file]??timings.unknownJsMs,timings.jsPlanning?.localLowerBounds?.[file]?.durationMs??0,replayMinimum(file,platform)));
   const count=platform==='win32'?qualityShardMatrices.windows.length:qualityShardMatrices.posix.length;
   const bins=Array.from({length:count},(_,i)=>jsShard(files,`${i+1}/${count}`,platform).files),all=bins.flat();
   assert.equal(new Set(all).size,all.length,platform+' must not duplicate files');
@@ -134,7 +149,7 @@ test('platform-native placement covers every current file once and unknown platf
  assert.notEqual(jsPlanningWeights([asymmetric],'win32')[asymmetric],jsPlanningWeights([asymmetric],'linux')[asymmetric],'known platforms must not inherit the other platform cost');
  for(const platform of ['unknown-platform','toString']){
   const fallback=jsPlanningWeights(files,platform);
-  for(const file of files)assert.equal(fallback[file],Math.max(...Object.values(timings.js).map(map=>map[file]??timings.unknownJsMs),timings.jsPlanning?.localLowerBounds?.[file]?.durationMs??0));
+  for(const file of files)assert.equal(fallback[file],Math.max(...Object.values(timings.js).map(map=>map[file]??timings.unknownJsMs),timings.jsPlanning?.localLowerBounds?.[file]?.durationMs??0,replayMinimum(file,platform)));
  }
  assert.deepEqual(jsPlanningWeights(files),jsPlanningWeights(files,process.platform));
 });
@@ -279,7 +294,7 @@ test('current timing records preserve all measured corrections without duplicate
   }else{
    assert.match(entry.environment,/local/);assert.match(entry.kind,/not .*hosted/);localFloorCount++;originalLocalFloorKeys.push(file);
   }
-  for(const platform of ['win32','linux'])assert.equal(jsPlanningWeights([file],platform)[file],Math.max(timings.js[platform][file]??timings.unknownJsMs,entry.durationMs));
+  for(const platform of ['win32','linux'])assert.equal(jsPlanningWeights([file],platform)[file],Math.max(timings.js[platform][file]??timings.unknownJsMs,entry.durationMs,replayMinimum(file,platform)));
  }
  assert.equal(localFloorCount,8,'all eight original local floor contracts remain checked');
  assert.deepEqual(originalLocalFloorKeys.sort(),[
@@ -413,7 +428,7 @@ test('complete local Game UI run raises only its planning floor and preserves ev
  assert.equal(JSON.stringify(expected,null,2)+'\n',source);
  for(const platform of ['win32','linux']){
   assert.equal(timings.js[platform][key],10000,'retain actual old observations separately from the new local planning floor');
-  assert.equal(jsPlanningWeights([key],platform)[key],Math.max(timings.js[platform][key],floor.durationMs));
+  assert.equal(jsPlanningWeights([key],platform)[key],Math.max(timings.js[platform][key],floor.durationMs,replayMinimum(key,platform)));
  }
  assert.equal(preGameUiLocalPlanningSource(path,source.replaceAll('\n','\r\n')),prior);
  assert.equal(preGameUiLocalPlanningSource('foreign/'+path,source),source);
@@ -443,7 +458,7 @@ test('partial successful source cases provide lower bounds without claiming thei
   assert.ok(text.includes(observation.rawSuccessLine+'\n'));
   assert.ok(readFileSync(file,'utf8').includes("test('"+floor.sourceCase+"'"),'explicit unique named case belongs to the declared file');
   assert.equal(floor.durationMs,Math.ceil(observation.durationMs));assert.equal(observation.planningFloorMs,floor.durationMs);
-  for(const platform of ['win32','linux'])assert.equal(jsPlanningWeights([file],platform)[file],Math.max(timings.js[platform][file]??timings.unknownJsMs,floor.durationMs));
+  for(const platform of ['win32','linux'])assert.equal(jsPlanningWeights([file],platform)[file],Math.max(timings.js[platform][file]??timings.unknownJsMs,floor.durationMs,replayMinimum(file,platform)));
  }
  const path='scripts/ci-test-timings.json',source=preCombinedPlanningSource(path,readFileSync(path,'utf8').replaceAll('\r\n','\n')),prior=prePartialCasePlanningSource(path,source);
  assert.notEqual(prior,source);const expected=JSON.parse(prior);

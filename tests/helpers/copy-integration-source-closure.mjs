@@ -333,15 +333,16 @@ const currentReplayFiles=Object.freeze({
 });
 const entranceFiles=Object.freeze({
  ...currentReplayFiles,
+ 'tests/helpers/m7-core-final-source-inverse.mjs':'e33c3f8db7b6ebd67809d24f3ac77dc6b7acbf7f1b254b6dba54c1edcd8cee3a',
  'tests/helpers/release-ui-restore-source.mjs':'57ea0c0631f3a9817621554c786880c718d21550c375ab7e5bb75fdaedf66292',
- 'tests/helpers/current-replay-fix-sources.mjs':'830e31e97ac5c51d2f732236fa165a80991d21bc772f7165e43a450fe8ec2df6',
- [runtime]:'cce16863eb1c92fb713e0b1048789dddfd05ca578fcd80f4e3566c8134146f29',
+ 'tests/helpers/current-replay-fix-sources.mjs':'87ceab3d300d28f560906cfa07b18d99ef5e6892b5ffb01ba055263ebd2746b6',
+ [runtime]:'278820e92b95d78ccca26cee32a353e53eaf8e87377fabe8c8dcb64f6995264d',
  [closeout]:'4f559399c631fbd0fd25ea7f1ceb8f3b8c6643e167f0116d9f151e12ee0a0ecb',
  'tests/helpers/character-preparation-source.mjs':'4d209e768d9dfcb5afa466c0224eccfd1fa8f47a22c27e5d7b8b99fd8231f5cb',
  'tests/helpers/develop-release-backflow-source.mjs':'f29a5a75c1cf63d7e7227b14f0f4bc9472d32a0364681eb733f101598651c122',
  'tests/helpers/native-fixture-replay-source.mjs':'5a9de41dfd4ee6d5438c24c9c7c9f068eeaeba66bc6fc8abec16d9c08d32864b',
  'tests/helpers/native-flow-fixture-source.mjs':'303770de22647a8eea4090cefa8e75cafa9c8643a2048441698ed8c02633a732',
- 'tests/helpers/ui-entrance-source.mjs':'78f632b4f1c958576447c1b08f6e656a83d6e7213fc4b75374441b6f93a50530',
+ 'tests/helpers/ui-entrance-source.mjs':'f1c56304e9847881824326828896d1393ec576d36b46dcac8795ef58f8ce65d0',
  'tests/helpers/exact-fixture-hunks.mjs':'83f9cb15d9d745c86c555a77875b6b2bfc283a12ec380bcd2af518aa6526a935',
  'tests/fixtures/ui-entrance-source.json.gz':'7ac3f53b242819cdb569c0a1ebf60de0605b72297a1072ea612bfeb11b0597c9',
 });

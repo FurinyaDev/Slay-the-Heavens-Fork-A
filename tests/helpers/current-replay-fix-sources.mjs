@@ -33,25 +33,30 @@ const bindings = new Map([
  {
   "path": "tests/defect-actor-boundary.test.mjs",
   "beforeSha256": "8a0596438f603331d4e961f1887c68e5303ba8e920463bfde4973b22df17da0d",
-  "afterSha256": "c2f7eca4ef113eaa612aefd7740581e97b95b366d46eb758516bec773e076fcd",
+  "afterSha256": "8c6018ed92a5783613bdf73c6b73cb48c77bb6b22d7d28debef82ca3a1c5dbc8",
   "hunks": [
    {
     "at": 11,
     "before": "import {beforeCurrentProductionSource} from './helpers/character-preparation-source.mjs';\nimport {actorFocusAdded,assertActorFocusInventory,stasisUpgradeAddedPaths} from './helpers/develop-release-backflow-source.mjs';\nconst require=createRequire(import.meta.url),luaparse=require('luaparse');",
-    "after": "import {beforeCurrentProductionSource} from './helpers/character-preparation-source.mjs';\nimport {actorFocusAdded,assertActorFocusInventory,deckPagesAdded,stasisUpgradeAddedPaths} from './helpers/develop-release-backflow-source.mjs';\nimport {beforeCombatEvents,beforeInputRetirementReader,pointerInputPath,retiredControllerPath} from './helpers/input-retirement-source.mjs';\nconst require=createRequire(import.meta.url),luaparse=require('luaparse');"
+    "after": "import {beforeCurrentProductionSource} from './helpers/character-preparation-source.mjs';\nimport {entranceInventory} from './helpers/ui-entrance-source.mjs';\nimport {actorFocusAdded,assertActorFocusInventory,deckPagesAdded,stasisUpgradeAddedPaths} from './helpers/develop-release-backflow-source.mjs';\nimport {beforeCombatEvents,beforeInputRetirementReader,pointerInputPath,retiredControllerPath} from './helpers/input-retirement-source.mjs';\nconst require=createRequire(import.meta.url),luaparse=require('luaparse');"
    },
    {
-    "at": 24,
+    "at": 25,
     "before": " const readLive=path=>Object.hasOwn(live,path)?live[path]:read(path);\n assert.deepEqual(Object.keys(live).sort(),[...Object.keys(proof.current),...actorFocusAdded,...stasisUpgradeAddedPaths].sort(),'complete live source inventory before preStyle');\n assertActorFocusInventory(Object.keys(raw),readLive);\n for(const [path,binding]of Object.entries(proof.current))\n  assert.equal(beforeCurrentProductionSource(path,live[path],readLive).replaceAll('\\r\\n','\\n'),binding.source,'live preStyle input identity: '+path);\n const admitted=sourceEpoch.preCombinedSource(config,live[config],{target:'stsStylePrior',readSource:readLive});",
-    "after": " const readLive=path=>Object.hasOwn(live,path)?live[path]:read(path);\n const expected=[...Object.keys(proof.current),...actorFocusAdded,...stasisUpgradeAddedPaths,...deckPagesAdded];\n assert(expected.includes(retiredControllerPath),'preStyle inventory includes the historical controller');\n assert.deepEqual(Object.keys(live).sort(),[...expected.filter(path=>path!==retiredControllerPath),pointerInputPath].sort(),'complete live source inventory before preStyle');\n assertActorFocusInventory(Object.keys(raw),readLive);\n const historicalRead=beforeInputRetirementReader(readLive);\n for(const [path,binding]of Object.entries(proof.current)){\n  const source=path===retiredControllerPath?historicalRead(path):live[path];\n  assert.equal(beforeCurrentProductionSource(path,source,readLive).replaceAll('\\r\\n','\\n'),binding.source,'live preStyle input identity: '+path);\n }\n const admitted=sourceEpoch.preCombinedSource(config,live[config],{target:'stsStylePrior',readSource:readLive});"
+    "after": " const readLive=path=>Object.hasOwn(live,path)?live[path]:read(path);\n const expected=[...Object.keys(proof.current),...actorFocusAdded,...stasisUpgradeAddedPaths,...deckPagesAdded];\n assert(expected.includes(retiredControllerPath),'preStyle inventory includes the historical controller');\n assert.deepEqual(entranceInventory(Object.keys(live).sort(),readLive),[...expected.filter(path=>path!==retiredControllerPath),pointerInputPath].sort(),'complete live source inventory before preStyle');\n assertActorFocusInventory(Object.keys(raw),readLive);\n const historicalRead=beforeInputRetirementReader(readLive);\n for(const [path,binding]of Object.entries(proof.current)){\n  const source=path===retiredControllerPath?historicalRead(path):live[path];\n  assert.equal(beforeCurrentProductionSource(path,source,readLive).replaceAll('\\r\\n','\\n'),binding.source,'live preStyle input identity: '+path);\n }\n const admitted=sourceEpoch.preCombinedSource(config,live[config],{target:'stsStylePrior',readSource:readLive});"
    },
    {
-    "at": 98,
+    "at": 99,
     "before": "  .replaceAll('        local Actors=actorHost()\\n',''),original[utility]);\n assert.equal(read(queued).replace(\"local function utilityActorHost()return require('abyss_actor')end\\n\",'')\n  .replace('utility.prepareEffect(state,e,target,utilityActorHost)','utility.prepareEffect(state,e,target)'),original[queued]);",
     "after": "  .replaceAll('        local Actors=actorHost()\\n',''),original[utility]);\n assert.equal(beforeCombatEvents(queued,read(queued)).replace(\"local function utilityActorHost()return require('abyss_actor')end\\n\",'')\n  .replace('utility.prepareEffect(state,e,target,utilityActorHost)','utility.prepareEffect(state,e,target)'),original[queued]);"
    },
    {
-    "at": 134,
+    "at": 110,
+    "before": " const foreign=discoverSources();foreign['src/lua/abyss_page_reveal.lua']+='\\n-- unrelated drift';\n assert.throws(()=>capabilityPreStyle(foreign),{message:'fresh current production owner: src/lua/abyss_page_reveal.lua'},'historical policy cannot conceal current owner drift');\n const updated='src/lua/abyss_character_presentation.lua';",
+    "after": " const foreign=discoverSources();foreign['src/lua/abyss_page_reveal.lua']+='\\n-- unrelated drift';\n assert.throws(()=>capabilityPreStyle(foreign),{message:'combined linked owner identity: src/lua/abyss_page_reveal.lua during entrance validation'},'historical policy cannot conceal current owner drift');\n const updated='src/lua/abyss_character_presentation.lua';"
+   },
+   {
+    "at": 135,
     "before": " assert.equal(hosts.length,3,'original eager Actor, untouched Watcher host and new Utility host');\n for(const name of ['utilityActorHost','watcherActorHost'])assert(hosts.some(e=>read(queued).split('\\n')[e.line-1].includes(`local function ${name}()`)));\n // Parse the complete changed module for each mutant, then replace its edges",
     "after": " assert.equal(hosts.length,3,'original eager Actor, untouched Watcher host and new Utility host');\n const queuedLines=raw[queued].split('\\n');\n for(const name of ['utilityActorHost','watcherActorHost'])assert(hosts.some(e=>queuedLines[e.line-1].includes(`local function ${name}()`)));\n // Parse the complete changed module for each mutant, then replace its edges"
    }
@@ -126,17 +131,22 @@ const bindings = new Map([
  {
   "path": "tests/helpers/m7-core-final-source-inverse.mjs",
   "beforeSha256": "96eae58fe74ee798a8c87be865a3640508e983e43e98b55e0ccd8756516ba768",
-  "afterSha256": "acd5d226aa7f1e4e843a2b6db3f6e4d97b36476df2319ad6b6176cfac1c0cf86",
+  "afterSha256": "e33c3f8db7b6ebd67809d24f3ac77dc6b7acbf7f1b254b6dba54c1edcd8cee3a",
   "hunks": [
    {
     "at": 9,
     "before": "import assert from 'node:assert/strict';\nconst live=p=>readFileSync(new URL('../../'+p,import.meta.url),'utf8');",
-    "after": "import assert from 'node:assert/strict';\nimport {beforeCombatEvents,isCurrentInputRetirementSource} from './input-retirement-source.mjs';\nconst live=p=>readFileSync(new URL('../../'+p,import.meta.url),'utf8');"
+    "after": "import assert from 'node:assert/strict';\nimport {isCurrentInputRetirementSource} from './input-retirement-source.mjs';\nimport {beforeUiEntrance} from './ui-entrance-source.mjs';\nconst live=p=>readFileSync(new URL('../../'+p,import.meta.url),'utf8');"
    },
    {
-    "at": 29,
+    "at": 25,
+    "before": "  // any old byte. Never cache permission or use a projected reader downstream.\n  sourceEpoch.preCombinedSource(actorAnchor,sourceEpoch.proof.current[actorAnchor].source,{target:'pr618',readSource:raw});\n  assert(Object.hasOwn(defectActorEpoch.proof.current,path),'known Actor owner');",
+    "after": "  // any old byte. Never cache permission or use a projected reader downstream.\n  const source=raw(actorAnchor);\n  assert.equal(sourceEpoch.preCombinedSource(actorAnchor,source,{target:'pr618',readSource:raw}),\n   actorTarget.files[actorAnchor].source,'exact current Actor admission target');\n  assert(Object.hasOwn(defectActorEpoch.proof.current,path),'known Actor owner');"
+   },
+   {
+    "at": 32,
     "before": "}\n// Explicit compatibility readers share this same full-current admission gate.\nexport {actorReader as currentDefectActorReader};\nexport function preM7FinalSource(path,source,{readSource=live}={}){\n readSource=readers.get(readSource)??readSource;\n const input=source;source=preDefectActorSource(path,source,{readSource:actorReader(readSource)});\n const utility=preDefectUtilitySource(path,source);if(utility!==source)return utility;",
-    "after": "}\n// Explicit live compatibility readers start with the exact current architecture\n// before authenticating the complete current graph and exposing an earlier view.\nexport function currentDefectActorReader(raw){\n if(typeof raw!=='function')return raw;\n return path=>{\n  const source=raw(actorAnchor);\n  assert(isCurrentInputRetirementSource(actorAnchor,source),'combined linked owner identity: '+actorAnchor);\n  assert.equal(sourceEpoch.preCombinedSource(actorAnchor,source,{target:'pr618',readSource:raw}),\n   actorTarget.files[actorAnchor].source,'exact current Actor admission target');\n  assert(Object.hasOwn(defectActorEpoch.proof.current,path),'known Actor owner');\n  return actorTarget.files[path].source;\n };\n}\nexport function preM7FinalSource(path,source,{readSource=live}={}){\n readSource=readers.get(readSource)??readSource;\n const input=source;\n // Authenticate the post-Actor combat backflow against real disk owners before\n // passing an older source to the independently frozen Actor verifier.\n const actorInput=path==='src/lua/abyss_combat_queued_play.lua'&&beforeCombatEvents(path,input)!==input\n  ?sourceEpoch.preCombinedSource(path,input,{target:'pr618',readSource}):input;\n source=preDefectActorSource(path,actorInput,{readSource:actorReader(readSource)});\n const utility=preDefectUtilitySource(path,source);if(utility!==source)return utility;"
+    "after": "}\n// Explicit live compatibility readers start with the exact current architecture\n// before authenticating the complete current graph and exposing an earlier view.\nexport function currentDefectActorReader(raw){\n if(typeof raw!=='function')return raw;\n return path=>{\n  const source=raw(actorAnchor);\n  assert(isCurrentInputRetirementSource(actorAnchor,beforeUiEntrance(actorAnchor,source)),'combined linked owner identity: '+actorAnchor);\n  assert.equal(sourceEpoch.preCombinedSource(actorAnchor,source,{target:'pr618',readSource:raw}),\n   actorTarget.files[actorAnchor].source,'exact current Actor admission target');\n  assert(Object.hasOwn(defectActorEpoch.proof.current,path),'known Actor owner');\n  return actorTarget.files[path].source;\n };\n}\nexport function preM7FinalSource(path,source,{readSource=live}={}){\n readSource=readers.get(readSource)??readSource;\n const input=source;\n // Authenticate the post-Actor combat backflow against real disk owners before\n // passing an older source to the independently frozen Actor verifier.\n const actorInput=sourceEpoch.preCombinedSource(path,input,{target:'pr618',readSource});\n source=preDefectActorSource(path,actorInput,{readSource:actorReader(readSource)});\n const utility=preDefectUtilitySource(path,source);if(utility!==source)return utility;"
    }
   ]
  },
@@ -319,12 +329,17 @@ const bindings = new Map([
  {
   "path": "tests/defect-utility-planning.test.mjs",
   "beforeSha256": "ce4ae91f55192d99a8e7cc28cc84b341b2dcbaf9b4fa0a906496687333ccf22b",
-  "afterSha256": "a619c07e048b0a89f15d9db31be2fb677fa0911f43ba7eba9b86ffe59e8e892d",
+  "afterSha256": "bab3074b05a3a823c0a90d444804f1f053be42071fb9bb6d05ccd8abf7c67069",
   "hunks": [
    {
-    "at": 40,
+    "at": 8,
+    "before": "import {createHash} from 'node:crypto';\nimport {join} from 'node:path';",
+    "after": "import {createHash} from 'node:crypto';\nimport {gunzipSync} from 'node:zlib';\nimport {join} from 'node:path';"
+   },
+   {
+    "at": 41,
     "before": " const admittedReads=[...reads];\n assert.equal(admittedReads.length,418);\n assert.equal(createHash('sha256').update(JSON.stringify(admittedReads)).digest('hex'),\n  '5a6e1ad0b3362c34562f566c1a8b3c5496a1c1cebb6c302930cc1efe6976e1bc','exact raw Actor admission before historical bytes');\n let preceding=-1;",
-    "after": " const admittedReads=[...reads];\n assert.equal(admittedReads.length,461);\n assert.equal(createHash('sha256').update(JSON.stringify(admittedReads)).digest('hex'),\n  'f6930061a5fe2d5db08649eddf310bf9afe106ed91fb204433124f98352260bb','exact raw Actor admission before historical bytes');\n let preceding=-1;"
+    "after": " const admittedReads=[...reads];\n const entranceBytes=readFileSync('tests/fixtures/ui-entrance-source.json.gz');\n assert.equal(createHash('sha256').update(entranceBytes).digest('hex'),\n  '7ac3f53b242819cdb569c0a1ebf60de0605b72297a1072ea612bfeb11b0597c9');\n const entranceOwners=Object.keys(JSON.parse(gunzipSync(entranceBytes)).files);\n assert.equal(entranceOwners.length,20);\n assert.deepEqual(admittedReads.slice(1,21),entranceOwners,'complete fresh entrance owner admission');\n assert.equal(admittedReads.length,481);\n assert.equal(createHash('sha256').update(JSON.stringify(admittedReads)).digest('hex'),\n  '020fb0e5445e67c44775c716f475dee3a856f7f67f1f7d1e46573c614ddc8de2','complete current Actor admission order');\n assert.equal(createHash('sha256').update(JSON.stringify([admittedReads[0],...admittedReads.slice(21)])).digest('hex'),\n  'f6930061a5fe2d5db08649eddf310bf9afe106ed91fb204433124f98352260bb','exact raw Actor admission before historical bytes');\n let preceding=-1;"
    }
   ]
  },
@@ -497,12 +512,12 @@ const bindings = new Map([
  {
   "path": "tests/watcher-actor-source-inverse.test.mjs",
   "beforeSha256": "5ec1b054af331d6d95684dc315939db881fc365c724fe6a4dc758a5872e0260a",
-  "afterSha256": "cd3be2d4046817760ef54b13b42541e594add693722ba5608106fc57cc68a7dd",
+  "afterSha256": "2c2e433766296a0ba9e39293496dc4c7a3dc953bf570e49ea6af1a05e8517b76",
   "hunks": [
    {
     "at": 11,
     "before": "import {standaloneArchitectureSource} from './helpers/class-potion-watcher-source-inverse.mjs';\nconst rawRead=p=>readFileSync(p,'utf8').replaceAll('\\r\\n','\\n');\nconst actorRead=currentDefectActorReader(rawRead);\nconst read=p=>preDefectActorSource(p,rawRead(p),{readSource:actorRead});\nconst before=JSON.parse(gunzipSync(readFileSync('tests/fixtures/watcher-actor-before.json.gz')));",
-    "after": "import {standaloneArchitectureSource} from './helpers/class-potion-watcher-source-inverse.mjs';\nimport {sourceEpoch} from './helpers/combined-epoch/source-epoch.mjs';\nconst rawRead=p=>readFileSync(p,'utf8').replaceAll('\\r\\n','\\n');\nconst actorRead=currentDefectActorReader(rawRead);\nconst read=p=>{\n const source=rawRead(p);\n const before=p==='src/lua/abyss_combat_queued_play.lua'\n  ?sourceEpoch.preCombinedSource(p,source,{target:'pr618',readSource:rawRead}):source;\n return preDefectActorSource(p,before,{readSource:actorRead});\n};\nconst before=JSON.parse(gunzipSync(readFileSync('tests/fixtures/watcher-actor-before.json.gz')));"
+    "after": "import {standaloneArchitectureSource} from './helpers/class-potion-watcher-source-inverse.mjs';\nimport {sourceEpoch} from './helpers/combined-epoch/source-epoch.mjs';\nconst rawRead=p=>readFileSync(p,'utf8').replaceAll('\\r\\n','\\n');\nconst actorRead=currentDefectActorReader(rawRead);\nconst read=p=>{\n const source=rawRead(p);\n const before=sourceEpoch.preCombinedSource(p,source,{target:'pr618',readSource:rawRead});\n return preDefectActorSource(p,before,{readSource:actorRead});\n};\nconst before=JSON.parse(gunzipSync(readFileSync('tests/fixtures/watcher-actor-before.json.gz')));"
    }
   ]
  },
@@ -692,22 +707,22 @@ const bindings = new Map([
  {
   "path": "tests/end-turn-responsibilities.test.mjs",
   "beforeSha256": "b02e9290633bb79c94f6ce1b176a2ec6ca2fba5a4dce2c8fba573097493897f3",
-  "afterSha256": "2b73f46ebb60947aceaa9637f0b2fec9bc5215d9ee00ed5f2dea5cf3363a812e",
+  "afterSha256": "8aeaa7ad14f1c5ef274a544e59380ec10b6d450bca1ff197523d31e5becf26cc",
   "hunks": [
    {
     "at": 101,
     "before": " assert.equal(preRelicQuerySource(file,current),old);assert.equal(wrapped(file),old);\n const outerReadCount=403;\n let validReads;",
-    "after": " assert.equal(preRelicQuerySource(file,current),old);assert.equal(wrapped(file),old);\n const outerReadCount=446;\n let validReads;"
+    "after": " assert.equal(preRelicQuerySource(file,current),old);assert.equal(wrapped(file),old);\n const outerReadCount=466;\n let validReads;"
    },
    {
     "at": 106,
     "before": "  if(!validReads){\n   // Nested source cohorts have their own fresh reads before and after the\n   // original owners. Bind the full live trace to its exact frozen order.\n   assert.equal(reads.length,8150);\n   assert.equal(hash(JSON.stringify(reads)),'78bb454171aed5367d039514c30a57c9971c0be116f11e048df8f3a08bc7cbb2');\n   let position=-1;",
-    "after": "  if(!validReads){\n   // Current replay cohorts add fresh linked reads around the original owner sequence.\n   // Bind the complete live trace after normalizing Windows checkout endings.\n   assert.equal(reads.length,9458);\n   assert.equal(hash(JSON.stringify(reads)),'fcf5e049f6c8f284fa248ebe012c2f7a5620546e453ebc8766fea8c1d14bd749');\n   let position=-1;"
+    "after": "  if(!validReads){\n   // Current replay cohorts add fresh linked reads around the original owner sequence.\n   // Bind the complete live trace after normalizing Windows checkout endings.\n   assert.equal(reads.length,9898);\n   assert.equal(hash(JSON.stringify(reads)),'79bf86a4544d87721356dea6a0e668a4cb1ffbd076b8c97ba227107540d6b8e0');\n   const entranceBytes=readFileSync('tests/fixtures/ui-entrance-source.json.gz');\n   assert.equal(hash(entranceBytes),'7ac3f53b242819cdb569c0a1ebf60de0605b72297a1072ea612bfeb11b0597c9');\n   const entranceOwners=Object.keys(JSON.parse(gunzipSync(entranceBytes)).files),priorReads=[];\n   let entranceGroups=0;\n   for(let i=0;i<reads.length;){\n    if(JSON.stringify(reads.slice(i,i+entranceOwners.length))===JSON.stringify(entranceOwners)){\n     entranceGroups++;i+=entranceOwners.length;\n    }else priorReads.push(reads[i++]);\n   }\n   assert.equal(entranceGroups,22,'all complete fresh entrance cohorts remain observed');\n   assert.equal(priorReads.length,9458);\n   assert.equal(hash(JSON.stringify(priorReads)),'fcf5e049f6c8f284fa248ebe012c2f7a5620546e453ebc8766fea8c1d14bd749','unchanged complete prior admission sequence');\n   let position=-1;"
    },
    {
-    "at": 142,
+    "at": 154,
     "before": " assert.throws(()=>preRelicQuerySource(file,current,{readSource:p=>p===config?JSON.stringify(JSON.parse(read(p))):read(p)}),{message:configDrift});\n // The first 403 observations belong to the outer authenticated projection.\n // Mutate the first config observation from the wrapped N35 projector.\n const firstInnerConfig=validReads.indexOf(config,outerReadCount);\n assert.equal(firstInnerConfig,405);\n const innerOccurrence=validReads.slice(0,firstInnerConfig+1).filter(path=>path===config).length;",
-    "after": " assert.throws(()=>preRelicQuerySource(file,current,{readSource:p=>p===config?JSON.stringify(JSON.parse(read(p))):read(p)}),{message:configDrift});\n // The first 446 observations belong to the outer authenticated projection.\n // Mutate the first config observation from the wrapped N35 projector.\n const firstInnerConfig=validReads.indexOf(config,outerReadCount);\n assert.equal(firstInnerConfig,448);\n const innerOccurrence=validReads.slice(0,firstInnerConfig+1).filter(path=>path===config).length;"
+    "after": " assert.throws(()=>preRelicQuerySource(file,current,{readSource:p=>p===config?JSON.stringify(JSON.parse(read(p))):read(p)}),{message:configDrift});\n // The first 466 observations include the new complete entrance cohort.\n // Mutate the first config observation from the wrapped N35 projector.\n const firstInnerConfig=validReads.indexOf(config,outerReadCount);\n assert.equal(firstInnerConfig,468);\n const innerOccurrence=validReads.slice(0,firstInnerConfig+1).filter(path=>path===config).length;"
    }
   ]
  },
@@ -874,6 +889,319 @@ const bindings = new Map([
     "at": 26,
     "before": " assert(R.obtainRelic(r,'dollys_mirror'));local root=F.root(r)\n F.call(root,'mirror ordinary public no-adapter selection',Shop.chooseMirror,r,original.uid)\n F.eq(r.deck[#r.deck].cardId,original.cardId,'mirror identity');assert(r.deck[#r.deck].uid~=original.uid)",
     "after": " assert(R.obtainRelic(r,'dollys_mirror'));local root=F.root(r)\n local called,accepted=F.call(root,'mirror ordinary public selection',Shop.chooseMirror,r,original.uid,R)\n F.eq(called,true,'mirror selection runs');F.eq(accepted,true,'mirror selection accepted')\n F.eq(r.deck[#r.deck].cardId,original.cardId,'mirror identity');assert(r.deck[#r.deck].uid~=original.uid)"
+   }
+  ]
+ },
+ {
+  "path": "tests/shop-dismiss.test.mjs",
+  "beforeSha256": "db23a1f592c395e4ffad5cffbfb0770ef1e84674545dbd9cbabbd85e9630a82c",
+  "afterSha256": "977f0a3919d51785f4a42faae84612ffe46e59821af8e26429695c7e23db6ef0",
+  "hunks": [
+   {
+    "at": 14,
+    "before": "  assert.ok(panel.children.findIndex(c=>c.name==='backdrop')<index);\n  assert.equal(panel.children[index-1].name,'shopRoom');\n  for(const name of ['shopView','merchant','back','confirm']) {",
+    "after": "  assert.ok(panel.children.findIndex(c=>c.name==='backdrop')<index);\n  assert.equal(panel.children[index-2].name,'shopRoom');\n  const shade=panel.children[index-1];\n  assert.equal(shade.name,'shopShade');\n  assert.equal(shade.kind,'image','transition shade adds paint only, never an input area');\n  assert.notEqual(shade.focusable,true);\n  assert.notEqual(shade.raycastTarget,true);\n  assert.equal(shade.visible,false,'transition shade starts hidden');\n  for(const name of ['shopView','merchant','back','confirm']) {"
+   }
+  ]
+ },
+ {
+  "path": "tests/noncombat-v25-layout.test.mjs",
+  "beforeSha256": "c2447b37bdc387e514e978fb065674f31bac2818907e3b491983108b1a2d4a20",
+  "afterSha256": "c2d275a928d9f168c28d5dea5c78d60e3b7a480447463723eabe2bcb4d34ca13",
+  "hunks": [
+   {
+    "at": 179,
+    "before": " assert.equal(child(panel,'v25Background').visible,true,'the controller still owns its loading fallback');\n assert.deepEqual(parts(child(panel,'v25Background')).map(n=>n.name),['landscape'],'loading and failure show the unshaded fallback image');\n assert.deepEqual(readArtFeatures(directory),officialAssetFlags);",
+    "after": " assert.equal(child(panel,'v25Background').visible,true,'the controller still owns its loading fallback');\n const fallback=child(panel,'v25Background');\n assert.deepEqual(parts(fallback).map(n=>n.name),['landscape','selectionShade']);\n assert.notEqual(child(fallback,'landscape').visible,false,'loading retains the fallback landscape');\n assert.equal(child(fallback,'selectionShade').visible,false,'the new transition layer starts hidden; loading remains unshaded');\n assert.deepEqual(readArtFeatures(directory),officialAssetFlags);"
+   },
+   {
+    "at": 198,
+    "before": "local fallback=panel:GetChild('v25Background')\nlocal Asset=require('abyss_traveler_portrait_assets')",
+    "after": "local fallback=panel:GetChild('v25Background')\nlocal landscape,transition=fallback:GetChild('landscape'),fallback:GetChild('selectionShade')\nlocal motion=require('abyss_character_entrance').new(panel,{color=function(r,g,b,a)return {r=r,g=g,b=b,a=a}end},function()end)\nlocal Asset=require('abyss_traveler_portrait_assets')"
+   },
+   {
+    "at": 227,
+    "before": "portraits:sync('menu',true,false,'ironclad');scope('building')\nfor _=1,600 do portraits:tick();if portraits:readyForPage('menu',true,'ironclad','characterPanel')then break end end\nassert(portraits:readyForPage('menu',true,'ironclad','characterPanel'))\nassert(portraits:status().selection.phase=='ready' and art.visible and not fallback.visible)\nscope('ready')\nlocal total=created\nportraits:sync('menu',false,false,'ironclad');assert(not art.visible and fallback.visible);scope('paused')\nportraits:sync('menu',true,false,'ironclad');portraits:tick()\nassert(art.visible and not fallback.visible and created==total and destroyed==0);scope('reentry')\nassert(panel:GetChild('blocker').visible,'input barrier was removed with legacy paint')\nassert(portraits:release());rejectCreation=true\nportraits:sync('menu',true,false,'ironclad');portraits:tick()\nassert(portraits:status().selection.phase=='failed' and not art.visible and fallback.visible)\nscope('failed')",
+    "after": "portraits:sync('menu',true,false,'ironclad');scope('building')\nassert(fallback.visible and landscape.visible and not transition.visible,'loading fallback is effectively unshaded')\nfor _=1,600 do portraits:tick();if portraits:readyForPage('menu',true,'ironclad','characterPanel')then break end end\nassert(portraits:readyForPage('menu',true,'ironclad','characterPanel'))\nmotion:show({id='ironclad'},true)\nmotion:update(1)\nassert(portraits:status().selection.phase=='ready' and art.visible and art:GetChild('figure').visible and not landscape.visible and not transition.visible and transition.imageColor.a==0)\nscope('ready')\nlocal total=created\nportraits:sync('menu',false,false,'ironclad');motion:pause(true)\nassert(not art.visible and fallback.visible and landscape.visible and not transition.visible and landscape.imageColor.a==255 and transition.imageColor.a==0);scope('paused')\nportraits:sync('menu',true,false,'ironclad');portraits:tick()\nmotion:pause(false)\nassert(art.visible and not landscape.visible and not transition.visible and created==total and destroyed==0);scope('reentry')\nassert(panel:GetChild('blocker').visible,'input barrier was removed with legacy paint')\nassert(portraits:release());motion:hide();rejectCreation=true\nportraits:sync('menu',true,false,'ironclad');portraits:tick()\nassert(portraits:status().selection.phase=='failed' and not art.visible and fallback.visible and landscape.visible and not transition.visible)\nscope('failed')"
+   }
+  ]
+ },
+ {
+  "path": "tests/architecture-token-read.test.mjs",
+  "beforeSha256": "1cd2336bca41624bf4a1ba16fde096ec111895d69a7c8400b78c60e93e7fd2d8",
+  "afterSha256": "a650c6e60af40f89b9ed5ce523dc116bd432c90004c33c3d47c57ade2b012531",
+  "hunks": [
+   {
+    "at": 12,
+    "before": "   const output=join(directory,mode+'.json');\n   const result=spawnSync(process.execPath,['--trace-event-file-pattern='+output,fileURLToPath(new URL('./helpers/architecture-token-read-probe.mjs',import.meta.url)),mode],{encoding:'utf8',timeout:30000,maxBuffer:1024*1024,windowsHide:true});\n   assert.ifError(result.error);assert.equal(result.status,0,result.stdout+result.stderr);",
+    "after": "   const output=join(directory,mode+'.json');\n   // Each probe imports and authenticates the complete historical source chain.\n   // Leave room for that real work on hosted shards; keep every FS/read assertion.\n   const result=spawnSync(process.execPath,['--trace-event-file-pattern='+output,fileURLToPath(new URL('./helpers/architecture-token-read-probe.mjs',import.meta.url)),mode],{encoding:'utf8',timeout:180000,maxBuffer:1024*1024,windowsHide:true});\n   assert.ifError(result.error);assert.equal(result.status,0,result.stdout+result.stderr);"
+   }
+  ]
+ },
+ {
+  "path": "tests/relic-equip-source-epoch.test.mjs",
+  "beforeSha256": "e6b512fabde8920b86d4d2111db89774e8e9ee71c5c88621251f77969f5eb039",
+  "afterSha256": "cc552a1f69f99ff624a232444959405017ae81eb67de2057c2d8ed81e650e4bb",
+  "hunks": [
+   {
+    "at": 39,
+    "before": " assert.notEqual(raw(mapOwner),currentMapOwner);\n assert.throws(()=>sourceEpoch.preCombinedSource(file,source,{target,readSource:p=>p===mapOwner?currentMapOwner:raw(p)}),/map-room validation/);\n for(const owner of proof.owners){",
+    "after": " assert.notEqual(raw(mapOwner),currentMapOwner);\n assert.throws(()=>sourceEpoch.preCombinedSource(file,source,{target,readSource:p=>p===mapOwner?currentMapOwner:raw(p)}),\n  /(?:linked owner identity: src\\/lua\\/abyss_traveler_portraits\\.lua.*map-room validation|linked owner missing: src\\/lua\\/abyss_traveler_portraits\\.lua: combined linked owner identity: config\\/architecture\\.json during entrance validation)/);\n for(const owner of proof.owners){"
+   }
+  ]
+ },
+ {
+  "path": "src/lua/abyss_node_ui_faces.lua",
+  "beforeSha256": "d56aed5198b7111008f25c86f1f03eee36bab8549ebd9b92dd7f99f9e4cf6f58",
+  "afterSha256": "52369c0d497a3aaab4852d055dd2afebf83f8bd8cc9f9070f54fe0ea31cd479e",
+  "hunks": [
+   {
+    "at": 70,
+    "before": "    local shopInspection = setmetatable({}, {__mode='k'})\n    function ctx.reuseShopFace(box)",
+    "after": "    local shopInspection = setmetatable({}, {__mode='k'})\n    local shopArt = setmetatable({}, {__mode='k'})\n    function ctx.reuseShopFace(box)"
+   },
+   {
+    "at": 74,
+    "before": "        ctx.artFaces[box] = true\n    end",
+    "after": "        ctx.artFaces[box] = true\n        -- Quote reuse skips copy/frame/price work, but an explicit render must\n        -- reconcile native ownership after clear, rejection or metadata changes.\n        if shopArt[box] then shopArt[box]() end\n    end"
+   },
+   {
+    "at": 112,
+    "before": "            CardDisplay.writeArt(box:GetChild(\"art_\" .. kind), definition, ctx.picture,box)\n            if ctx.self.visible or look.shop then\n                CardDisplay.writeNativeArt(box,definition,display.nativeArt,ctx.options,box:GetChild('art_'..kind),instance.uid)",
+    "after": "            CardDisplay.writeArt(box:GetChild(\"art_\" .. kind), definition, ctx.picture,box)\n            if ctx.self.visible then\n                CardDisplay.writeNativeArt(box,definition,display.nativeArt,ctx.options,box:GetChild('art_'..kind),instance.uid)"
+   },
+   {
+    "at": 118,
+    "before": "        end\n        writeCardArt()",
+    "after": "        end\n        if look.shop then shopArt[box] = writeCardArt end\n        writeCardArt()"
+   }
+  ]
+ },
+ {
+  "path": "tests/lua/shop_entry.lua",
+  "beforeSha256": "1024c032f3b00a7d6fbe40a5a9b164cceb8d719860fe8cab785f77cc4842d1fa",
+  "afterSha256": "a1a88df871a7ac2f469371a892e063cfacd0b809c2e7f6b3c9803a092333a07b",
+  "hunks": [
+   {
+    "at": 153,
+    "before": "\n    -- A warm close/open survives during both tails and preserves the live view.",
+    "after": "\n    -- Explicit settled renders still reconcile art ownership without rewriting\n    -- the quote's card copy or price.\n    local stable={}\n    for _,path in ipairs({'shopView/card1/name','shopView/card1/description','shopView/card1/cost','shopView/price1/value'})do\n        local box=get(path);stable[box]=writes[box] or 0\n    end\n    ui:render()\n    for box,count in pairs(stable)do assert((writes[box] or 0)==count,'settled quote rewrote copy or price')end\n\n    -- A warm close/open survives during both tails and preserves the live view."
+   }
+  ]
+ },
+ {
+  "path": "tests/intent-visibility-cache.test.mjs",
+  "beforeSha256": "f19fc1a950528d85de567e7bcfe6a90ca5bf7da3af5609b767069df5b484663f",
+  "afterSha256": "4a26b068e24d98f16c8e59c4a424e887e759683733c5f0c2be3b5294efbcd9b2",
+  "hunks": [
+   {
+    "at": 40,
+    "before": " const idle=samples.map(s=>s.counts.find(row=>row.phase==='idle-300'));\n assert.deepEqual(idle.map(row=>row.counts),[[900,0,3600,7200,0],[900,0,1800,5400,0]]);\n for(let i=0;i<samples[0].counts.length;i++)for(const index of [0,1,4])assert.equal(samples[0].counts[i].counts[index],samples[1].counts[i].counts[index],'require/load/snapshot workload changed');",
+    "after": " const idle=samples.map(s=>s.counts.find(row=>row.phase==='idle-300'));\n // Entrance assertions now require the fixture to mirror each position write\n // into anchoredPositionX/Y. Count those extra fixture fields separately;\n // native calls and the original visibility-write saving retain their budgets.\n const anchorMirrors=idle.map(row=>(row.properties.anchoredPositionX??0)+(row.properties.anchoredPositionY??0));\n assert.deepEqual(anchorMirrors,[1800,1800]);\n assert.deepEqual(idle.map((row,i)=>row.counts.map((count,index)=>index===3?count-anchorMirrors[i]:count)),\n  [[900,0,3600,7200,0],[900,0,1800,5400,0]]);\n for(let i=0;i<samples[0].counts.length;i++)for(const index of [0,1,4])assert.equal(samples[0].counts[i].counts[index],samples[1].counts[i].counts[index],'require/load/snapshot workload changed');"
+   },
+   {
+    "at": 53,
+    "before": "  graphBytes:Buffer.byteLength(samples[0].graph),graphSha256:createHash('sha256').update(samples[0].graph).digest('hex'),\n  equal:true,samples:samples.map(({side,counts})=>({side,counts})),\n  scope:'Full final Host/run/native reachable fields and alias/metatable graph after the fixed route, not per-frame output or official device evidence.'},null,2)+'\\n');",
+    "after": "  graphBytes:Buffer.byteLength(samples[0].graph),graphSha256:createHash('sha256').update(samples[0].graph).digest('hex'),\n  equal:true,fixtureAnchorMirrorWrites:anchorMirrors,samples:samples.map(({side,counts})=>({side,counts})),\n  scope:'Full final Host/run/native reachable fields and alias/metatable graph after the fixed route, not per-frame output or official device evidence.'},null,2)+'\\n');"
+   }
+  ]
+ },
+ {
+  "path": "tests/helpers/intent-visibility-vm.mjs",
+  "beforeSha256": "4bfbddbd45cc1be1e4edba539dfdd971783a46a099ba30207ecd4640ee8cc2b5",
+  "afterSha256": "690a38110f68a49a59b78a04eb1bc75fdcd1cf8a85199a1b2035b43e2f416a59",
+  "hunks": [
+   {
+    "at": 28,
+    "before": "lua.lua_pushstring(L,to_luastring(fixture.replace(needle,'ABYSS_HOST_CONTROL(self); '+needle)));lua.lua_setglobal(L,to_luastring('BASELINE_FIXTURE'));\nconst rows=[];let previous=[0,0,0,0,0];\nlua.lua_pushjsfunction(L,state=>{\n const current=previous.map((_,i)=>lua.lua_tonumber(state,i+2));\n rows.push({phase:to_jsstring(lua.lua_tostring(state,1)),counts:current.map((value,i)=>value-previous[i])});previous=current;return 0;\n});lua.lua_setglobal(L,to_luastring('BASELINE_MARK'));",
+    "after": "lua.lua_pushstring(L,to_luastring(fixture.replace(needle,'ABYSS_HOST_CONTROL(self); '+needle)));lua.lua_setglobal(L,to_luastring('BASELINE_FIXTURE'));\nconst rows=[];let previous=[0,0,0,0,0],previousProperties={};\nlua.lua_pushjsfunction(L,state=>{\n const current=previous.map((_,i)=>lua.lua_tonumber(state,i+2));\n const properties={};lua.lua_pushnil(state);\n while(lua.lua_next(state,8)!==0){properties[to_jsstring(lua.lua_tostring(state,-2))]=lua.lua_tonumber(state,-1);lua.lua_pop(state,1);}\n rows.push({phase:to_jsstring(lua.lua_tostring(state,1)),counts:current.map((value,i)=>value-previous[i]),\n  properties:Object.fromEntries(Object.entries(properties).map(([key,value])=>[key,value-(previousProperties[key]??0)]))});\n previous=current;previousProperties=properties;return 0;\n});lua.lua_setglobal(L,to_luastring('BASELINE_MARK'));"
+   }
+  ]
+ },
+ {
+  "path": "tests/official-assets-flow.test.mjs",
+  "beforeSha256": "4686d704bfb173f809033fa0c778ce9884d01e696fbce7477e86cffa7b872f6f",
+  "afterSha256": "1ea949a97033b8a8370da32dc2c8619481a8f238ed45f92112618bcc834ac7df",
+  "hunks": [
+   {
+    "at": 142,
+    "before": "F.click(root,'nodePanel','back');assert(run.phase=='node')\nh.nodeUI:update(.31);assert(run.phase=='map' and h.mode=='node')\nF.click(root,'nodePanel','confirm');assert(h.mode=='map' and run.nodeFlow.complete)\nassert(run.gold==spent and #run.deck==deck+1,'shop exit replayed transaction')",
+    "after": "F.click(root,'nodePanel','back');assert(run.phase=='node')\ndofile('tests/lua/support/shop_timeline.lua')(h.nodeUI)\nassert(run.phase=='node' and not h.nodeUI.shopOpen,'closing the shelf returns to the merchant room')\nF.click(root,'nodePanel','back');assert(run.phase=='map' and h.mode=='map' and run.nodeFlow.complete,'the separate leave action finishes the shop')\nlocal exited=C.copy(run)\nassert(not h.nodeUI:press('confirm'),'hidden shop confirmation must be inert')\nunchanged(run,exited,'stale shop confirmation changed the completed run')\nassert(run.gold==spent and #run.deck==deck+1,'shop exit replayed transaction')"
+   }
+  ]
+ },
+ {
+  "path": "tests/helpers/combined-epoch/source-epoch-runtime.mjs",
+  "beforeSha256": "cce16863eb1c92fb713e0b1048789dddfd05ca578fcd80f4e3566c8134146f29",
+  "afterSha256": "278820e92b95d78ccca26cee32a353e53eaf8e87377fabe8c8dcb64f6995264d",
+  "hunks": [
+   {
+    "at": 130,
+    "before": "  const isLiveReader=liveReaders.has(rawReader(readSource));\n  const projected=entrancePredecessor(path,source,rawReader(readSource));\n  source=projected.source;readSource=projected.read;",
+    "after": "  const isLiveReader=liveReaders.has(rawReader(readSource));\n  const projected=entrancePredecessor(path,source,rawReader(readSource),{allowConfigLayout});\n  source=projected.source;readSource=projected.read;"
+   }
+  ]
+ },
+ {
+  "path": "src/lua/abyss_game_ui.lua",
+  "beforeSha256": "1b1e3b9722dbc0c4c0af8c06243a15e118cf61d7a506ef6f801b2e735c85ed14",
+  "afterSha256": "26e13ce816c467f096a57b9226806f7b2bc6fdf87606d35031ad691225747b7e",
+  "hunks": [
+   {
+    "at": 50,
+    "before": "    platform=setmetatable({},{__index=platform})\n    self.selectionMotion=CharacterView.motion(root:GetChild('characterPanel'),platform)\n    local neowHistory=NeowHistory.new(platform.readNeowHistory)",
+    "after": "    platform=setmetatable({},{__index=platform})\n    self.selectionMotion=CharacterView.motion(assert(root:GetChild('characterPanel'),'missing game panel characterPanel'),platform)\n    local neowHistory=NeowHistory.new(platform.readNeowHistory)"
+   }
+  ]
+ },
+ {
+  "path": "src/lua/abyss_game_ui_run.lua",
+  "beforeSha256": "c2198e3d704115f83c6c172be3eb8515d72997d97779678df0bc4616b4e741f0",
+  "afterSha256": "29aa9c5455e55dfe1a69ff5afed7550ecd4ec6f9adc3f14521b5d81ebd79f142",
+  "hunks": [
+   {
+    "at": 52,
+    "before": "            if not self.characterOpen or self.starting or self.disabled then return false end\n            if id and self.characterSelection.character==id then return true end\n            local ok,reason=self.characterSelection:select(id)",
+    "after": "            if not self.characterOpen or self.starting or self.disabled then return false end\n            local ok,reason=self.characterSelection:select(id)"
+   },
+   {
+    "at": 61,
+    "before": "            if not self.characterOpen or self.starting or self.disabled then return false end\n            if self.characterSelection.character=='traveler' and self.characterSelection.element==id then return true end\n            local ok,reason=self.characterSelection:selectElement(id)",
+    "after": "            if not self.characterOpen or self.starting or self.disabled then return false end\n            local ok,reason=self.characterSelection:selectElement(id)"
+   }
+  ]
+ },
+ {
+  "path": "tests/native-audio-release-provenance.test.mjs",
+  "beforeSha256": "1e661c1eca61f3eaa762bb139ab9d18b1c507a6e9b28c5555638385ffe90f6e9",
+  "afterSha256": "f73f539e71ee68ae392239b7bfde3f31b71b7d57d48aa37509e1c34f59e35328",
+  "hunks": [
+   {
+    "at": 5,
+    "before": "import assert from 'node:assert/strict';\nimport { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync, existsSync } from 'node:fs';\nimport { join } from 'node:path';",
+    "after": "import assert from 'node:assert/strict';\nimport { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync, existsSync, realpathSync } from 'node:fs';\nimport { join } from 'node:path';"
+   },
+   {
+    "at": 17,
+    "before": "function fixture(t, mutate = () => {}, {refined=false}={}) {\n  const root = mkdtempSync(join(tmpdir(), 'abyss-audio-release-'));\n  t.after(() => rmSync(root, { recursive: true, force: true }));",
+    "after": "function fixture(t, mutate = () => {}, {refined=false}={}) {\n  const root = realpathSync(mkdtempSync(join(tmpdir(), 'abyss-audio-release-')));\n  t.after(() => rmSync(root, { recursive: true, force: true }));"
+   }
+  ]
+ },
+ {
+  "path": "tests/official-background-build.test.mjs",
+  "beforeSha256": "d15e64cf8dccf6a71cc2012e76ee85e1a0aba3ba0d543d99b0b4d1ebc31dde6f",
+  "afterSha256": "bff7e52298b5187766692a8153814b7f249057ccc8b82c9c5a72713d5b86afda",
+  "hunks": [
+   {
+    "at": 47,
+    "before": " const approved=JSON.parse(JSON.stringify(applyV25RewardLayout(gameLayout(),nativeTheme).controls));\n const assertControls=controls=>assert.ok(isDeepStrictEqual(controls,approved),'approved controls/input remain exact apart from explicit empty artwork hosts');\n removeMenuEdgePlates(original);",
+    "after": " const approved=JSON.parse(JSON.stringify(applyV25RewardLayout(gameLayout(),nativeTheme).controls));\n // The approved entrance groups move the existing controls without changing\n // their bytes or adding input. Keep this expectation independent of the builder.\n const shelf=approved.find(n=>n.name==='nodePanel').children.find(n=>n.name==='shopView');\n const goods=shelf.children.filter(n=>/^(removal|relic|potion)/.test(n.name));\n shelf.children=shelf.children.filter(n=>!goods.includes(n));\n shelf.children.splice(shelf.children.findIndex(n=>n.name==='detail'),0,\n  {name:'goods',kind:'container',size:[1280,720],visible:false,children:goods});\n const character=approved.find(n=>n.name==='characterPanel');\n const details=character.children.find(n=>n.name==='details');\n const infoNames=['name','stats','gold','v25Story','v25HealthIcon','v25GoldIcon',\n  'relicTag','relic','relicText','v25RelicIcon','deckRule','deckTitle','deckSummary'];\n const info=details.children.filter(n=>infoNames.includes(n.name));\n details.children=details.children.filter(n=>!info.includes(n));\n details.children.push({name:'infoMotion',kind:'container',size:[1280,720],\n  children:Array.from({length:8},(_,i)=>({name:'info'+(i+1),kind:'container',size:[1280,720],visible:false,children:structuredClone(info)}))});\n for(const name of ['confirm','cancel'])character.children.find(n=>n.name===name).visible=false;\n const assertControls=controls=>assert.ok(isDeepStrictEqual(controls,approved),'approved controls/input and entrance groups remain exact apart from explicit empty artwork hosts');\n removeMenuEdgePlates(original);"
+   },
+   {
+    "at": 80,
+    "before": " ])assert.throws(()=>removeMenuEdgePlates(changed(mutate)),assert.AssertionError);\n for(const mutate of [c=>{menuOf(c).size[0]++;},c=>{menuOf(c).raycastTarget=true;}]){\n  const drift=changed(mutate);removeMenuEdgePlates(drift);strip(drift);",
+    "after": " ])assert.throws(()=>removeMenuEdgePlates(changed(mutate)),assert.AssertionError);\n for(const mutate of [c=>{menuOf(c).size[0]++;},c=>{menuOf(c).raycastTarget=true;},\n  c=>{c.find(n=>n.name==='nodePanel').children.find(n=>n.name==='shopView').children.find(n=>n.name==='goods').raycastTarget=true;},\n  c=>{c.find(n=>n.name==='characterPanel').children.find(n=>n.name==='details').children.find(n=>n.name==='infoMotion').children[0].children[0].size[0]++;}]){\n  const drift=changed(mutate);removeMenuEdgePlates(drift);strip(drift);"
+   }
+  ]
+ },
+ {
+  "path": "tests/pure-source-projection-cache.test.mjs",
+  "beforeSha256": "ee987e0758410dc925d3b0b45ebb66e3353c7d15f00aa1fbaead95cf6ff7058b",
+  "afterSha256": "f370aa01f579eb0a5ca75210ee364c72e19d7d65adbc7440b52db0772e911891",
+  "hunks": [
+   {
+    "at": 15,
+    "before": "import {beforeInputRetirementReader,pointerInputPath,retiredControllerPath} from './helpers/input-retirement-source.mjs';\nconst hash=source=>createHash('sha256').update(source).digest('hex');",
+    "after": "import {beforeInputRetirementReader,pointerInputPath,retiredControllerPath} from './helpers/input-retirement-source.mjs';\nimport {addedEntranceModules} from './helpers/ui-entrance-source.mjs';\nconst hash=source=>createHash('sha256').update(source).digest('hex');"
+   },
+   {
+    "at": 92,
+    "before": " const retired=beforeInputRetirementReader(live)(retiredControllerPath);\n const added=['scripts/deck-ui-layout.mjs',...stasisUpgradeAddedPaths,...actorFocusAdded,pointerInputPath];\n const paths=[...Object.keys(sourceEpoch.proof.current),...added].filter(p=>p!==retiredControllerPath);",
+    "after": " const retired=beforeInputRetirementReader(live)(retiredControllerPath);\n const added=['scripts/deck-ui-layout.mjs',...stasisUpgradeAddedPaths,...actorFocusAdded,pointerInputPath,...addedEntranceModules];\n const paths=[...Object.keys(sourceEpoch.proof.current),...added].filter(p=>p!==retiredControllerPath);"
+   }
+  ]
+ },
+ {
+  "path": "tests/shop-relics-missing.test.mjs",
+  "beforeSha256": "5e1b22aead49c6bcfd262db55a2af52cb1b5acbc9785c8ffeafd9227327e9484",
+  "afterSha256": "a532fc2d40fbea837b2cbf9c1d3d019856aea3dd5f743201e0cfac6160614a85",
+  "hunks": [
+   {
+    "at": 10,
+    "before": " assert.equal(result.status,0,result.stdout+result.stderr);\n assert.match(result.stdout,/LUA_SHOP_RELIC_PENDING_UI_PASS 9/);\n});",
+    "after": " assert.equal(result.status,0,result.stdout+result.stderr);\n assert.match(result.stdout,/LUA_SHOP_RELIC_PENDING_UI_PASS 10/);\n});"
+   }
+  ]
+ },
+ {
+  "path": "tests/tiny-house-pending-ui.cases.mjs",
+  "beforeSha256": "22cc5c5d1288a903b9abc55739646ed55da4b0ab9bf2b0efce52d24035804806",
+  "afterSha256": "ad5a77d379252e337e8421c8e8d2f784272371032f209145be51e0f2b71abab1",
+  "hunks": [
+   {
+    "at": 103,
+    "before": " const {beforeDeckPagesSuiteSource}=await import('./helpers/input-retirement-source.mjs');\n const project=(path,source)=>beforeReleaseCapacitySource(path,beforeRebasedRelease(path,beforeDeckPagesSuiteSource(path,source)));\n const paths=['scripts/build-native-candidate.mjs','scripts/build-ui.mjs','scripts/monster-art.mjs',",
+    "after": " const {beforeDeckPagesSuiteSource}=await import('./helpers/input-retirement-source.mjs');\n const {beforeUiEntranceWitness}=await import('./helpers/ui-entrance-source.mjs');\n const project=(path,source)=>beforeReleaseCapacitySource(path,beforeRebasedRelease(path,beforeDeckPagesSuiteSource(path,beforeUiEntranceWitness(path,source))));\n const paths=['scripts/build-native-candidate.mjs','scripts/build-ui.mjs','scripts/monster-art.mjs',"
+   }
+  ]
+ },
+ {
+  "path": "tests/architecture-composition-format.test.mjs",
+  "beforeSha256": "42c023af3c5930045506206f94da88c6469de7cecd737e3548c72f918cd173d0",
+  "afterSha256": "fce73e3cc4fbc2753ab170f6ee864b6e489f054673ddb2f2f23f0889e78c5596",
+  "hunks": [
+   {
+    "at": 0,
+    "before": "import {historicalTest as test} from './helpers/historical-baseline-inputs.mjs';\nimport assert from 'node:assert/strict';",
+    "after": "import {historicalTest as test,readHistoricalBaselineSource} from './helpers/historical-baseline-inputs.mjs';\nimport assert from 'node:assert/strict';"
+   },
+   {
+    "at": 9,
+    "before": "const path='config/architecture.json';\nconst source=readFileSync(path,'utf8').replaceAll('\\r\\n','\\n');\nconst hash=text=>createHash('sha256').update(text).digest('hex');",
+    "after": "const path='config/architecture.json';\nconst currentPolicy=JSON.parse(readFileSync(path,'utf8'));\nconst source=readHistoricalBaselineSource(path).replaceAll('\\r\\n','\\n');\nconst hash=text=>createHash('sha256').update(text).digest('hex');"
+   },
+   {
+    "at": 34,
+    "before": " reordered.deferredImports.reverse();\n const missingScore=structuredClone(policy);delete missingScore.layers.abyss_run_score;\n const missingScoring=structuredClone(policy);delete missingScoring.layers.abyss_run_scoring;\n const wrongScoring=structuredClone(policy);wrongScoring.layers.abyss_run_scoring='ui';\n const first=JSON.stringify(key),value=JSON.stringify(policy.layers[key]);",
+    "after": " reordered.deferredImports.reverse();\n // Run scoring postdates the immutable baseline. Keep its removal/wrong-owner\n // negative controls on actual current input, rather than deleting absent keys.\n assert(Object.hasOwn(currentPolicy.layers,'abyss_run_score')&&Object.hasOwn(currentPolicy.layers,'abyss_run_scoring'));\n const missingScore=structuredClone(currentPolicy);delete missingScore.layers.abyss_run_score;\n const missingScoring=structuredClone(currentPolicy);delete missingScoring.layers.abyss_run_scoring;\n const wrongScoring=structuredClone(currentPolicy);wrongScoring.layers.abyss_run_scoring='ui';\n for(const variant of [missingScore,missingScoring,wrongScoring])assert.notEqual(JSON.stringify(variant),JSON.stringify(currentPolicy));\n const first=JSON.stringify(key),value=JSON.stringify(policy.layers[key]);"
+   }
+  ]
+ },
+ {
+  "path": "tests/ci-runtime.test.mjs",
+  "beforeSha256": "e420cc0f4973bc975a1d0fabdbc1b316fcf34c7ccb7db0ab1efef9270bbf0876",
+  "afterSha256": "01538912f5e008c948521c2e29674d8f4b643a45168f3624bc4ba0aae5fe4609",
+  "hunks": [
+   {
+    "at": 37,
+    "before": "import {qualityShardMatrices} from '../scripts/ci-quality-shape.mjs';\n",
+    "after": "import {qualityShardMatrices} from '../scripts/ci-quality-shape.mjs';\n\n// Rounded-down completed-case work from the five recorded POSIX timeout jobs.\n// These are placement minima, never successful whole-file or hosted timings.\nconst replayCaseMinimumMs=Object.freeze({\n 'tests/approved-ui-inverse.test.mjs':1295000,\n 'tests/art-feature-source-inverse.test.mjs':412000,\n 'tests/card-origin-source-inverse.test.mjs':149000,\n 'tests/combat-reactions-architecture-inverse.test.mjs':137000,\n 'tests/game-ui-extraction-source-inverse.test.mjs':870000,\n 'tests/max-hp-accepted-source-inverse.test.mjs':677000,\n 'tests/player-death-inverse.test.mjs':172000,\n 'tests/potion-callback-source.test.mjs':238000,\n 'tests/presentation-native-m3-contract.test.mjs':1037000,\n});\nconst replayMinimum=(file,platform)=>platform==='win32'?0:replayCaseMinimumMs[file]??0;\n"
+   },
+   {
+    "at": 141,
+    "before": "  const native=jsPlanningWeights(files,platform);\n  for(const file of files)assert.equal(native[file],Math.max(timings.js[platform][file]??timings.unknownJsMs,timings.jsPlanning?.localLowerBounds?.[file]?.durationMs??0));\n  const count=platform==='win32'?qualityShardMatrices.windows.length:qualityShardMatrices.posix.length;",
+    "after": "  const native=jsPlanningWeights(files,platform);\n  for(const file of files)assert.equal(native[file],Math.max(timings.js[platform][file]??timings.unknownJsMs,timings.jsPlanning?.localLowerBounds?.[file]?.durationMs??0,replayMinimum(file,platform)));\n  const count=platform==='win32'?qualityShardMatrices.windows.length:qualityShardMatrices.posix.length;"
+   },
+   {
+    "at": 150,
+    "before": "  const fallback=jsPlanningWeights(files,platform);\n  for(const file of files)assert.equal(fallback[file],Math.max(...Object.values(timings.js).map(map=>map[file]??timings.unknownJsMs),timings.jsPlanning?.localLowerBounds?.[file]?.durationMs??0));\n }",
+    "after": "  const fallback=jsPlanningWeights(files,platform);\n  for(const file of files)assert.equal(fallback[file],Math.max(...Object.values(timings.js).map(map=>map[file]??timings.unknownJsMs),timings.jsPlanning?.localLowerBounds?.[file]?.durationMs??0,replayMinimum(file,platform)));\n }"
+   },
+   {
+    "at": 295,
+    "before": "  }\n  for(const platform of ['win32','linux'])assert.equal(jsPlanningWeights([file],platform)[file],Math.max(timings.js[platform][file]??timings.unknownJsMs,entry.durationMs));\n }",
+    "after": "  }\n  for(const platform of ['win32','linux'])assert.equal(jsPlanningWeights([file],platform)[file],Math.max(timings.js[platform][file]??timings.unknownJsMs,entry.durationMs,replayMinimum(file,platform)));\n }"
+   },
+   {
+    "at": 429,
+    "before": "  assert.equal(timings.js[platform][key],10000,'retain actual old observations separately from the new local planning floor');\n  assert.equal(jsPlanningWeights([key],platform)[key],Math.max(timings.js[platform][key],floor.durationMs));\n }",
+    "after": "  assert.equal(timings.js[platform][key],10000,'retain actual old observations separately from the new local planning floor');\n  assert.equal(jsPlanningWeights([key],platform)[key],Math.max(timings.js[platform][key],floor.durationMs,replayMinimum(key,platform)));\n }"
+   },
+   {
+    "at": 459,
+    "before": "  assert.equal(floor.durationMs,Math.ceil(observation.durationMs));assert.equal(observation.planningFloorMs,floor.durationMs);\n  for(const platform of ['win32','linux'])assert.equal(jsPlanningWeights([file],platform)[file],Math.max(timings.js[platform][file]??timings.unknownJsMs,floor.durationMs));\n }",
+    "after": "  assert.equal(floor.durationMs,Math.ceil(observation.durationMs));assert.equal(observation.planningFloorMs,floor.durationMs);\n  for(const platform of ['win32','linux'])assert.equal(jsPlanningWeights([file],platform)[file],Math.max(timings.js[platform][file]??timings.unknownJsMs,floor.durationMs,replayMinimum(file,platform)));\n }"
    }
   ]
  }

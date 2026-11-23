@@ -14,6 +14,7 @@ import {gameUiExtractionProof} from './helpers/epochs/develop/tests/helpers/game
 import {sourceEpoch} from './helpers/combined-epoch/source-epoch.mjs';
 import {actorFocusAdded,stasisUpgradeAddedPaths} from './helpers/develop-release-backflow-source.mjs';
 import {beforeInputRetirementReader,pointerInputPath,retiredControllerPath} from './helpers/input-retirement-source.mjs';
+import {addedEntranceModules} from './helpers/ui-entrance-source.mjs';
 const hash=source=>createHash('sha256').update(source).digest('hex');
 const targets=deepFreezeSourceProof({one:{files:{a:{},b:{}}},two:{files:{a:{}}}});
 
@@ -90,7 +91,7 @@ test('warm current UI projections preserve their frozen intermediate epoch and r
  const live=p=>readFileSync(p,'utf8').replaceAll('\r\n','\n');
  assert.throws(()=>live(retiredControllerPath),{code:'ENOENT'});
  const retired=beforeInputRetirementReader(live)(retiredControllerPath);
- const added=['scripts/deck-ui-layout.mjs',...stasisUpgradeAddedPaths,...actorFocusAdded,pointerInputPath];
+ const added=['scripts/deck-ui-layout.mjs',...stasisUpgradeAddedPaths,...actorFocusAdded,pointerInputPath,...addedEntranceModules];
  const paths=[...Object.keys(sourceEpoch.proof.current),...added].filter(p=>p!==retiredControllerPath);
  const current=Object.fromEntries(paths.map(p=>[p,live(p)]));
  const owners=[...new Set([...sourceEpoch.proof.owners,...added])];

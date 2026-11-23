@@ -129,7 +129,7 @@ export function createSourceEpochProjector(input,{root=process.cwd(),allowConfig
   const destination=requireTarget(target);
   const liveInput=source;
   const isLiveReader=liveReaders.has(rawReader(readSource));
-  const projected=entrancePredecessor(path,source,rawReader(readSource));
+  const projected=entrancePredecessor(path,source,rawReader(readSource),{allowConfigLayout});
   source=projected.source;readSource=projected.read;
   const rawInput=source,backflow=beforeDevelopBackflow(path,source,{allowConfigLayout}),rebased=beforeRebasedCi(path,backflow);
   const reconciled=beforeSlimeSplitSource(path,rebased),mapPrior=beforeCardFeedbackOwner(path,beforeSts1MapSource(path,reconciled)),guidePrior=beforeReleaseGuideSource(path,mapPrior);

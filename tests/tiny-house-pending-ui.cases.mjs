@@ -102,7 +102,8 @@ test('capacity build exact projection preserves older receipts and rejects mixed
  const {beforeReleaseCapacitySource}=await import('./helpers/release-integration-source.mjs');
  const {beforeRebasedRelease}=await import('./helpers/rebased-release-source.mjs');
  const {beforeDeckPagesSuiteSource}=await import('./helpers/input-retirement-source.mjs');
- const project=(path,source)=>beforeReleaseCapacitySource(path,beforeRebasedRelease(path,beforeDeckPagesSuiteSource(path,source)));
+ const {beforeUiEntranceWitness}=await import('./helpers/ui-entrance-source.mjs');
+ const project=(path,source)=>beforeReleaseCapacitySource(path,beforeRebasedRelease(path,beforeDeckPagesSuiteSource(path,beforeUiEntranceWitness(path,source))));
  const paths=['scripts/build-native-candidate.mjs','scripts/build-ui.mjs','scripts/monster-art.mjs',
   'scripts/official-portraits.mjs','tests/official-portraits-build.test.mjs'];
  const crlf=s=>s.replaceAll('\n','\r\n');

@@ -69,9 +69,13 @@ function M.install(ctx)
 
     ctx.artFaces={}
     local shopInspection = setmetatable({}, {__mode='k'})
+    local shopArt = setmetatable({}, {__mode='k'})
     function ctx.reuseShopFace(box)
         ctx.inspectCards[box] = shopInspection[box]
         ctx.artFaces[box] = true
+        -- Quote reuse skips copy/frame/price work, but an explicit render must
+        -- reconcile native ownership after clear, rejection or metadata changes.
+        if shopArt[box] then shopArt[box]() end
     end
 
     function ctx.fillCard(box, id, upgraded, look)
@@ -107,12 +111,13 @@ function M.install(ctx)
         local function writeCardArt()
             for art in pairs(Theme.icon.cardArt) do box:GetChild("art_" .. art):SetVisible(art == kind) end
             CardDisplay.writeArt(box:GetChild("art_" .. kind), definition, ctx.picture,box)
-            if ctx.self.visible or look.shop then
+            if ctx.self.visible then
                 CardDisplay.writeNativeArt(box,definition,display.nativeArt,ctx.options,box:GetChild('art_'..kind),instance.uid)
                 ctx.artFaces[box]=true -- Pending pools also belong to this page's lifetime.
             else CardDisplay.clearNativeArt(box)end
             ctx.tint(box:GetChild("artPlate"), look.dim and C.panelSunken or C.cardType[kind] or C.panelRaised)
         end
+        if look.shop then shopArt[box] = writeCardArt end
         writeCardArt()
         local covered=look.veil or look.stamp~=nil
         local reason=look.reason or look.stamp or '当前不可选择'

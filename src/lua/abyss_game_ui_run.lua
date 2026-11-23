@@ -51,7 +51,6 @@ end
 function M.selectCharacter(self,selectionChanged)
     return function(_,id)
             if not self.characterOpen or self.starting or self.disabled then return false end
-            if id and self.characterSelection.character==id then return true end
             local ok,reason=self.characterSelection:select(id)
             if ok then selectionChanged()end
             return ok,reason
@@ -61,7 +60,6 @@ end
 function M.selectElement(self,selectionChanged)
     return function(_,id)
             if not self.characterOpen or self.starting or self.disabled then return false end
-            if self.characterSelection.character=='traveler' and self.characterSelection.element==id then return true end
             local ok,reason=self.characterSelection:selectElement(id)
             if ok then selectionChanged()end
             return ok,reason

@@ -152,6 +152,15 @@ for _,mobile in ipairs({false,true}) do
     assert(get('shopView/card1').visible)
     for _=2,18 do ui:update(1/60) end
 
+    -- Explicit settled renders still reconcile art ownership without rewriting
+    -- the quote's card copy or price.
+    local stable={}
+    for _,path in ipairs({'shopView/card1/name','shopView/card1/description','shopView/card1/cost','shopView/price1/value'})do
+        local box=get(path);stable[box]=writes[box] or 0
+    end
+    ui:render()
+    for box,count in pairs(stable)do assert((writes[box] or 0)==count,'settled quote rewrote copy or price')end
+
     -- A warm close/open survives during both tails and preserves the live view.
     view,cardAction=ui.view,ui.actions['shopView/card1']
     local copies=writes[face]

@@ -49,7 +49,7 @@ function M.new(root, data, presentation, clickEvent, platform)
     local owner = {exitGeneration=0, menuGeneration=0, ready=false}
     -- Per-host callbacks must stay with their original control tree.
     platform=setmetatable({},{__index=platform})
-    self.selectionMotion=CharacterView.motion(root:GetChild('characterPanel'),platform)
+    self.selectionMotion=CharacterView.motion(assert(root:GetChild('characterPanel'),'missing game panel characterPanel'),platform)
     local neowHistory=NeowHistory.new(platform.readNeowHistory)
     local endingHistory=EndingHistory.new({read=platform.readEndingHistory,write=platform.writeEndingHistory})
     -- Read-only Production data service; no navigation or eager catalogue build.
