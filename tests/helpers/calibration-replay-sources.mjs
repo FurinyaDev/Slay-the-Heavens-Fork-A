@@ -77,16 +77,20 @@ const silentToolsReplayProofs = [
  {
   path:"tests/helpers/copy-integration-source-closure.mjs",
   beforeSha256:'1c6fb395d316833f309f3574faeb6b1930f7ea01ff540d40a82f8cad25a803c0',
-  afterSha256:'4412a51015acd3cfd4c853315601b102e2bce1414f3207ea2c757ffe80a88154',
+  afterSha256:'a10163f0291500e8757e4f9cdcfb1fdb50bba299f02fc7302e007cd52ccf93f7',
   hunks:[
   {at:337,
    before:` 'tests/helpers/current-replay-fix-sources.mjs':'54d1516c036a2cd208f697e912a4b359cc21dd47beed3ad1e9e37b9892fdf9a5',
  [runtime]:'278820e92b95d78ccca26cee32a353e53eaf8e87377fabe8c8dcb64f6995264d',
- [closeout]:'4f559399c631fbd0fd25ea7f1ceb8f3b8c6643e167f0116d9f151e12ee0a0ecb',`,
+ [closeout]:'4f559399c631fbd0fd25ea7f1ceb8f3b8c6643e167f0116d9f151e12ee0a0ecb',
+ 'tests/helpers/character-preparation-source.mjs':'4d209e768d9dfcb5afa466c0224eccfd1fa8f47a22c27e5d7b8b99fd8231f5cb',
+ 'tests/helpers/develop-release-backflow-source.mjs':'f29a5a75c1cf63d7e7227b14f0f4bc9472d32a0364681eb733f101598651c122',`,
    after:` 'tests/helpers/current-replay-fix-sources.mjs':'54d1516c036a2cd208f697e912a4b359cc21dd47beed3ad1e9e37b9892fdf9a5',
  [runtime]:'c32e722ec57f1bfef0b1e2523c6867188611a7b74ffadde39c61c68530ffffee',
  'tests/helpers/silent-tools-draw-source.mjs':'fccfe657249e5dee3a423bf8f5d00d8d62328ac47c7a00dad851daef8e29813c',
- [closeout]:'4f559399c631fbd0fd25ea7f1ceb8f3b8c6643e167f0116d9f151e12ee0a0ecb',`,
+ [closeout]:'4f559399c631fbd0fd25ea7f1ceb8f3b8c6643e167f0116d9f151e12ee0a0ecb',
+ 'tests/helpers/character-preparation-source.mjs':'9f5b1379d0ae8be28f1c440ea4b791df83564bbef06b3221ab3ff3ab6e1db1d8',
+ 'tests/helpers/develop-release-backflow-source.mjs':'f29a5a75c1cf63d7e7227b14f0f4bc9472d32a0364681eb733f101598651c122',`,
   }
   ],
  },
@@ -159,6 +163,39 @@ import {readFileSync} from 'node:fs';`,
    SILENT_GRAPH_WRITE({state=s,returned=observed},name)
   end
   if not returned[1]then error(returned[2],0)end`,
+  }
+  ],
+ },
+ {
+  path:"tests/helpers/character-preparation-source.mjs",
+  beforeSha256:'4d209e768d9dfcb5afa466c0224eccfd1fa8f47a22c27e5d7b8b99fd8231f5cb',
+  afterSha256:'9f5b1379d0ae8be28f1c440ea4b791df83564bbef06b3221ab3ff3ab6e1db1d8',
+  hunks:[
+  {at:0,
+   before:`import { assertCurrentUiEntrance, entrancePredecessor } from './ui-entrance-source.mjs';`,
+   after:`import {beforeSilentToolsDrawSource,isSilentToolsDrawSuccessor} from './silent-tools-draw-source.mjs';
+import { assertCurrentUiEntrance, entrancePredecessor } from './ui-entrance-source.mjs';`,
+  },
+  {at:87,
+   before:`export function beforeCharacterPreparationSource(path, source, read = readRaw) {
+  ({source,read}=entrancePredecessor(path,source,read));`,
+   after:`export function beforeCharacterPreparationSource(path, source, read = readRaw) {
+  const beforeToolsDraw = beforeSilentToolsDrawSource(path, source);
+  if (beforeToolsDraw !== source) {
+    assert(isSilentToolsDrawSuccessor(path, read(path)), 'combined linked owner identity: '+path+' during Silent draw replay');
+    return beforeToolsDraw;
+  }
+  ({source,read}=entrancePredecessor(path,source,read));`,
+  },
+  {at:147,
+   before:`export function beforeCurrentProductionSource(path, source, read = readRaw) {
+  assertCurrentUiEntrance(path,source);`,
+   after:`export function beforeCurrentProductionSource(path, source, read = readRaw) {
+  if (path === 'src/lua/abyss_silent_final_cards.lua') {
+    assert(isSilentToolsDrawSuccessor(path, source), 'fresh current production owner: '+path);
+    return beforeCharacterPreparationSource(path, source, read);
+  }
+  assertCurrentUiEntrance(path,source);`,
   }
   ],
  }
