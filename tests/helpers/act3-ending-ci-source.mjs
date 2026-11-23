@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import {exactSourceMatches as matches} from './source-fingerprint.mjs';
 
-const copierAfter={sha256:'2a83e12b5badc14f59166c0dffaf3b38ca12d20beca80f91d18fb14da54ba568',gitBlob:'daad28c78271921cd4b1b480a81bf7d8d75c6620'};
-const copierBefore={sha256:'b4c25c36b3b4858a52aa2a6881c51b4096602843fde95b3b5ef854cf7b07cda3',gitBlob:'a88cb37e7ee39233c13d0974e25a4a7ce342efef'};
+const copierAfter={sha256:'f0f713fa80d5b32ab6da5d6b90020b806062d30667df191fe22e0862118f2ed2',gitBlob:'39cedb941b099397f3b2ed871517a498fc92dcc6'};
+const copierBefore={sha256:'1c6fb395d316833f309f3574faeb6b1930f7ea01ff540d40a82f8cad25a803c0',gitBlob:'d986351a338f04b2bc7ae63f2ee199670f393607'};
 
 export function beforeAct3EndingCopier(source){
  if(!matches(source,copierAfter))return source;
