@@ -9,7 +9,7 @@ import {restoreExactFixtureHunks} from './exact-fixture-hunks.mjs';
 
 const archive=readFileSync(new URL('../fixtures/ui-entrance-source.json.gz',import.meta.url));
 assert.equal(createHash('sha256').update(archive).digest('hex'),
- '72629328435f4e319cc2174b909116a2a8c35e2d50d271f2829fcfdf8295984e','exact entrance predecessor archive');
+ '7ac3f53b242819cdb569c0a1ebf60de0605b72297a1072ea612bfeb11b0597c9','exact entrance predecessor archive');
 const {base,reviewedSource,files,witnesses}=JSON.parse(gunzipSync(archive));
 assert.equal(base,'301b854cd8a0bb689c3250f5b05b56bd47409780');
 assert.equal(reviewedSource,'50b61b8fa243a39c189bf138a14702d73b39a903');
@@ -42,6 +42,7 @@ export function beforeUiEntranceWitness(path,source){
 }
 
 export function authenticateUiEntrance(read){
+ assert.equal(typeof read,'function','linked owner reader');
  for(const owner of owners){
   let source;
   try{source=read(owner);}catch(error){assert.fail('combined linked owner missing: '+owner+': '+error.message);}

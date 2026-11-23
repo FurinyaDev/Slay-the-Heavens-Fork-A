@@ -333,15 +333,15 @@ const currentReplayFiles=Object.freeze({
 });
 const entranceFiles=Object.freeze({
  ...currentReplayFiles,
- [runtime]:'e9f70b5c84a7d808c2b7722ba4bab561f7995d5c163d8ea75f6a393aa5094cb2',
+ [runtime]:'cce16863eb1c92fb713e0b1048789dddfd05ca578fcd80f4e3566c8134146f29',
  [closeout]:'4f559399c631fbd0fd25ea7f1ceb8f3b8c6643e167f0116d9f151e12ee0a0ecb',
  'tests/helpers/character-preparation-source.mjs':'4d209e768d9dfcb5afa466c0224eccfd1fa8f47a22c27e5d7b8b99fd8231f5cb',
  'tests/helpers/develop-release-backflow-source.mjs':'f29a5a75c1cf63d7e7227b14f0f4bc9472d32a0364681eb733f101598651c122',
  'tests/helpers/native-fixture-replay-source.mjs':'5a9de41dfd4ee6d5438c24c9c7c9f068eeaeba66bc6fc8abec16d9c08d32864b',
  'tests/helpers/native-flow-fixture-source.mjs':'303770de22647a8eea4090cefa8e75cafa9c8643a2048441698ed8c02633a732',
- 'tests/helpers/ui-entrance-source.mjs':'01892065c42939f3deb22ed2c8c15cc59895a80ef1d3d339d2b01d92b383a9e2',
+ 'tests/helpers/ui-entrance-source.mjs':'78f632b4f1c958576447c1b08f6e656a83d6e7213fc4b75374441b6f93a50530',
  'tests/helpers/exact-fixture-hunks.mjs':'83f9cb15d9d745c86c555a77875b6b2bfc283a12ec380bcd2af518aa6526a935',
- 'tests/fixtures/ui-entrance-source.json.gz':'72629328435f4e319cc2174b909116a2a8c35e2d50d271f2829fcfdf8295984e',
+ 'tests/fixtures/ui-entrance-source.json.gz':'7ac3f53b242819cdb569c0a1ebf60de0605b72297a1072ea612bfeb11b0597c9',
 });
 const inside=(root,path)=>{const r=relative(root,path);return r!==''&&!isAbsolute(r)&&r!=='..'&&!r.startsWith('../')&&!r.startsWith('..\\');};
 export function copyIntegrationSourceClosure(directory,{sourceRoot=process.cwd()}={}){

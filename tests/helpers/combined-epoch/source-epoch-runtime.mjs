@@ -126,6 +126,7 @@ export function createSourceEpochProjector(input,{root=process.cwd(),allowConfig
  function requireTarget(target){assert(Object.hasOwn(proof.targets,target),'unknown source target');return proof.targets[target];}
  function rawReader(reader){return readers.get(reader)?.raw??reader;}
  function preCombinedSource(path,source,{target,readSource=readLive}={}){
+  const destination=requireTarget(target);
   const liveInput=source;
   const isLiveReader=liveReaders.has(rawReader(readSource));
   const projected=entrancePredecessor(path,source,rawReader(readSource));
@@ -134,7 +135,7 @@ export function createSourceEpochProjector(input,{root=process.cwd(),allowConfig
   const reconciled=beforeSlimeSplitSource(path,rebased),mapPrior=beforeCardFeedbackOwner(path,beforeSts1MapSource(path,reconciled)),guidePrior=beforeReleaseGuideSource(path,mapPrior);
   const inputSource=beforePc13RewardCover(path,beforeM05ShopSource(path,beforeTinyHouseIntegratedSource(path,guidePrior)));
   source=inputSource;
-  const destination=requireTarget(target),current=proof.current[path],before=destination.files[path];
+  const current=proof.current[path],before=destination.files[path];
   const sessionSuccessor=isSessionRelicSuccessor(path,rawInput,{allowConfigLayout});
   source=projectTinyHouseUiSource(path,projectV2UiHudSource(path,projectPotionPointerSource(path,source,current),current),current);
   source=projectLumineSource(path,projectPotionTextSource(path,projectSelectorSource(path,projectFatalBgmSource(path,source,current),current),current),current);
