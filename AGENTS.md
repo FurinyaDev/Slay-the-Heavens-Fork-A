@@ -10,6 +10,7 @@
 | --- | --- |
 | 认领任务、核对依赖或准备 PR | [任务执行](docs/TASK_EXECUTION.md#开始任务)；[分支收口与 WIP](docs/BRANCH_LIFECYCLE.md) |
 | 重构状态归属、依赖或关键生命周期 | [REASONS 规约与验收](docs/ENGINEERING.md#关键架构变更) |
+| 对账已合 PR/Backlog，启动 M9 第三四幕或原版四职业 | [交付同步 REASONS](docs/plans/2026-11-23-backlog-delivery-reasons.md)；[M9 内容 REASONS](docs/plans/2026-11-23-m9-acts-classes-reasons.md) |
 | 修改玩法、UI、数据或构建 | [模块与生成物](docs/ARCHITECTURE.md)；[产品范围](docs/SCOPE.md) |
 | 定位故障、选择验证或使用平台工具 | [工具任务索引](docs/TOOLCHAIN.md#工具任务索引)；[工程与候选证据](docs/ENGINEERING.md) |
 | 独立评审、CI 或合并 | [PR 自动合并准入](docs/CI.md#pr-自动合并准入) |
@@ -24,7 +25,7 @@
 - 三仓库共用 Backlog。新功能、重构、实验及技术探针必须在 Fork 开发，日常修复、测试、性能和文档默认在 Fork。Fork A 优先开发与 Fast，Fork B 优先高风险 Full。开工经现有切片检查核对分支和远端，从最新 `origin/develop` 建独立工作树。成熟且通过必要验证的精确提交才能同步到主仓短分支。分流与例外见 [任务执行](docs/TASK_EXECUTION.md#fork-first-开发) 和 [CI](docs/CI.md#三仓库按需验证)。
 - 每次会话先运行 `backlog instructions overview`；创建、执行、收口前分别读对应的 `backlog instructions task-creation`、`backlog instructions task-execution`、`backlog instructions task-finalization`。任务与里程碑只用 Backlog CLI 修改，先查重；负责人沿用 Furinya，任务正文用简洁中文，技术证据放对应附件。 内部单人多agent事项只进Backlog；GitHub Issues保留给外部协作和公开反馈，既有内部Issue迁入后关闭并保留来源链接。
 - 自主认领前按 [任务执行](docs/TASK_EXECUTION.md#开始任务) 检查范围、审批与依赖。
-- **产品优先、工程按需**：M7已归档，只在M8/M9实际功能、稳定性、容量或CI门禁受阻且有证据时实施最小架构修复；质量棘轮照常拦截新增债务，不为清零旧CC/SCC/Fan-out自主开工。按[工程移交](docs/backlog-details/M7-PRODUCT-FIRST-HANDOFF-20261113.md)追踪未验AC。
+- **产品优先、工程按需**：M7已归档，只在M8/M9实际功能、稳定性、容量或CI门禁受阻且有证据时实施最小架构修复；质量棘轮照常拦截新增债务，不为清零旧CC/SCC/Fan-out自主开工。按[工程移交](docs/backlog-details/M7-PRODUCT-FIRST-HANDOFF-20261113.md)追踪未验AC。M8 的剩余验收不阻止已获 Owner 批准的 M9 内容在 develop 单独开发；2026-11-23 第三/四幕源级开发已批准，但正式开放另行验收。
 - 开工先核对任务、同范围分支、PR 和脏文件。旧分支取证和接续见 [2.0 重建交接](docs/versions/V2-RELEASE-HANDOFF.md)。用 Conventional Commits，正式 PR 从主仓短分支指向 `develop`。可信协调者核实真实独立会话，以原生 COMMENTED Review 绑定 HEAD、BASE 和合并树。用 `npm run merge:auto -- <PR> <GitHub-Review-ID>` 挂起，经 Required Checks、严格基线和原生队列 Full 后 squash。暂停用同一入口 `--pause` 并读回。master 只接发布，release 从 develop、hotfix 从 master，均合回 master 与 develop。主仓集成和发布见 [CI](docs/CI.md)。不恢复旧任务锁。
 - **先分支、后 PR**：实现与基本验证完成、明确审批已取得、依赖已落地并可评审合并后才提 PR。任务占位、HOLD 和长期探索留在 Backlog；不成熟的既有 PR 关闭并保留分支/来源。Draft 用于 Owner 明确要求的提前协作评审或冻结留痕，具体收口见[任务执行](docs/TASK_EXECUTION.md#pr-生命周期)。
 - 任务收尾按 [分支生命周期](docs/BRANCH_LIFECYCLE.md#分支出口agent-的最小收口协议definition-of-done) 选择 DELIVERED_VERIFIED / SUPERSEDED / FROZEN / DISCARDED，记录固定 SHA、继任者、责任人和证据；仅入队或已关闭 PR 不等于交付。合并后核对分支没有新工作，保留可恢复历史并清理自己的干净工作树和分支；脏树与独立提交保留。每日云端巡检只发现未收口异常，不代替执行 Agent。版本与不可移动的注释 Tag 按 [PUBLISHING](docs/PUBLISHING.md)，不自动发版或创建归档 Tag。
