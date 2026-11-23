@@ -6,6 +6,7 @@
 
 | 来源及固定身份 | 仓库涉及内容 | 许可、版权与证据 |
 |---|---|---|
+| [MengTo/Skills · workflow-score-to-target](https://github.com/MengTo/Skills/tree/d5463ad2357e3e1c1480cc00e5b8fe49628a253c/agent-skills/workflow/workflow-score-to-target) | `.codebuddy/skills/workflow-score-to-target/` 的 SKILL 与两份评审模板，保留上游原文 | MIT，Copyright (c) 2026 Meng To；[随附原文](.codebuddy/skills/workflow-score-to-target/LICENSE)。仅为开发/评审指引，不进入游戏运行时。 |
 | [Miliastra-toolbox-primitive-shape](https://github.com/1475505/Miliastra-toolbox-primitive-shape/tree/0526509e73d36b359d3c9bee1104718e4a600ed0) | docs/experiments/art-portrait/portrait-64.lua、portrait-256.lua 及其他 primitive.lua 的生成运行时 | MIT，Copyright (c) 2026 LiuL；[原文](docs/experiments/art-portrait/LICENSE-Shaper.txt)。[实验来源](docs/experiments/art-portrait/README.md)记录导出路径与修改；转换器许可不授权角色 IP。 |
 | [primitive](https://github.com/fogleman/primitive) | 上述离线拟合工具链；工具二进制不在 Git 中 | MIT，Copyright (C) 2016 Michael Fogleman；[原文](docs/experiments/art-portrait/LICENSE-primitive.txt)。 |
 | [Miliastra-image-editor-webui](https://github.com/1475505/Miliastra-image-editor-webui/tree/103025f9095d8089e3f9bf097f4d0c5fe039d546) | 16份包含文字框或蒙版适配模板的导出 Lua，精确路径见下方；其余输出不因使用该编辑器而自动适用 GPL | 上游 GPL v3 文本；不推定“或后续版本”或特殊输出豁免。[保留原文](art/cards/shared/licenses/EDITOR-GPL-3.0.txt)、[明确承认嵌入运行时的记录](docs/art/CARD_SHARED_ASSETS.md)。Primitive 子运行时 MIT、LiuL，[原文](art/cards/shared/licenses/PRIMITIVE-SHAPE-MIT.txt)、[未跟踪上游文件及哈希](art/spikes/card-capacity/licenses/PRIMITIVE-SHAPE-PROVENANCE.md)。 |
