@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - Furinya
 created_date: '2026-11-13 09:23'
-updated_date: '2026-11-23 04:22'
+updated_date: '2026-11-23 07:18'
 labels:
   - capacity
   - scalability
@@ -59,4 +59,11 @@ ordinal: 172000
 接续验证：来源最终g的results/28档及639输入、旧39档逐hash核对，83成员恢复包100548673B仅保存在本树.artifacts并全部读回，不提交约100MB原始档；f/g28档压缩字节一致，a-e原树保留。c2409ad7定向合同7组6过0失败1本机symlink能力跳过；未重跑矩阵、不生成本轮候选。完整输入/历史数据不作为当前官方容量，6项AC仍未验；官方MB、ready、PC手机与长期GO均UNVERIFIED。详细验证、失败/跳过、恢复路径见docs/evidence/capacity-105-integration-20261115/README.md；独审与托管交付交主控。
 
 2026-11-23：#641 关闭未合，来源 HEAD 2c559cd4a1356d168f01c8601de8b4ece7c0f76f；#683 已合 develop 2f0177cce40ca05aebcc2c0fd65d313e85ccd6e2，实际承接离线 run/replay 合同及证据，官方 B0/B1/B2、实体手机和 GO 未取得，六项 AC 保留。单职业技能及第三幕源码可独立接续。TASK-97 量产依赖容量 GO。
+
+专题=D | Task=TASK-105 | Outcome=实验完成
+Base=73c21489efaab409d4c0c46bee517d410d3427fc | Head=453dd0c1933e4cb7e8522d08a9f082385f8ebeac | PR=none（压缩实验）；原容量交接见 #916。
+Scope=岩旅三张已批准样卡无损压缩，现行 CardDisplay 沙箱逐格核对。
+Tests=实验测试 10/10，6534 格一致，两次构建字节一致。源码 https://github.com/FurinyaDev/Slay-the-Heavens-Fork-A/commit/453dd0c1933e4cb7e8522d08a9f082385f8ebeac
+Capacity=离线生成 Lua 文件 2,217,195 → 885,127 字节；官方 MB 未测。Shared-owner=D 独立实验目录。
+Remaining=同候选官方 20MB、PC/手机与单职业样卡验收；其他三职业卡图等待 M8 前置。
 <!-- SECTION:NOTES:END -->
