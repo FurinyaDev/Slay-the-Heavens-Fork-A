@@ -741,7 +741,7 @@
       "backlogTask": "TASK-111",
       "reference": {
         "path": "docs/plans/2026-11-23-ui-entrance.md",
-        "sha256": "9784bda576bcd12e685a4435ae0614c286ede296e2d1524289b871d3ca83a77a"
+        "sha256": "a0fd8373bbda1be0a66e4f0fd3e5280bdbf945a26ac3f82d76c8d7376cd92183"
       },
       "supersedes": [],
       "note": "商店与选角按固定源码实施分层入场。保留项目素材与最终排布，107271 纹理和设备效果待验。",
