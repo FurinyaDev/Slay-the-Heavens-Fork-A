@@ -18,19 +18,22 @@ const owners=Object.keys(files);
 export const addedEntranceModules=Object.freeze(owners.filter(path=>files[path].before===null));
 const readLive=path=>readFileSync(path,'utf8');
 const binding=path=>Object.hasOwn(files,path)?files[path]:undefined;
-const currentInput=(path,source)=>['src/lua/abyss_node_ui_faces.lua','src/lua/abyss_game_ui.lua','src/lua/abyss_game_ui_run.lua','src/lua/abyss_game_ui_view.lua',
+const requiredCurrentOwners=[
+ 'src/lua/abyss_node_ui_faces.lua','src/lua/abyss_game_ui.lua','src/lua/abyss_game_ui_run.lua','src/lua/abyss_game_ui_view.lua',
  'src/lua/abyss_character_select_view.lua','src/lua/abyss_game_ui_input.lua',
+];
+const replaySources=[...requiredCurrentOwners,
  'tests/lua/shop_entry.lua','tests/helpers/combined-epoch/source-epoch-runtime.mjs',
  'tests/integration-source-epoch.test.mjs','tests/session-menu-navigation.test.mjs','tests/tiny-house-pending-ui.cases.mjs',
  'tests/helpers/develop-release-backflow-source.mjs','tests/sts-style-source-epoch.test.mjs',
  'tests/watcher-actor-boundary.test.mjs','tests/defect-actor-boundary.test.mjs',
  'tests/competition-roster-config-composition.test.mjs','tests/silent-final-source-epoch.test.mjs',
- 'tests/defect-integration-source.test.mjs','tests/defect-final-source-epoch.test.mjs'].includes(path)
- ?beforeCurrentReplayFixes(path,source):source;
+ 'tests/defect-integration-source.test.mjs','tests/defect-final-source-epoch.test.mjs',
+];
+const currentInput=(path,source)=>replaySources.includes(path)?beforeCurrentReplayFixes(path,source):source;
 function currentMatches(path,source,expected){
  const normalized=currentInput(path,source);
- if(['src/lua/abyss_node_ui_faces.lua','src/lua/abyss_game_ui.lua','src/lua/abyss_game_ui_run.lua','src/lua/abyss_game_ui_view.lua'].includes(path)
-  &&normalized===source)return false;
+ if(requiredCurrentOwners.includes(path)&&normalized===source)return false;
  return matches(normalized,expected);
 }
 const predecessors=new Map();

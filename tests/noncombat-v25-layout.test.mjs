@@ -297,3 +297,17 @@ test('default opt-out retains its existing backdrop shade and no approved native
  assert.equal(child(selection,'lumineSelectionBackground'),undefined);
  assert.equal(child(selection,'veil').opacity,1);
 });
+
+test('selection replay authenticates the current source for both changed owners',async()=>{
+ const {beforeOfficialCharacterBackflow}=await import('./helpers/current-replay-fix-sources.mjs');
+ const {assertCurrentUiEntrance,authenticateUiEntrance,beforeUiEntrance}=await import('./helpers/ui-entrance-source.mjs');
+ const read=path=>readFileSync(path,'utf8');
+ authenticateUiEntrance(read);
+ for(const path of ['src/lua/abyss_character_select_view.lua','src/lua/abyss_game_ui_input.lua']){
+  const current=read(path),previous=beforeOfficialCharacterBackflow(path,current);
+  assert.notEqual(previous,current);
+  assert.equal(beforeUiEntrance(path,previous),beforeUiEntrance(path,current));
+  assert.throws(()=>assertCurrentUiEntrance(path,previous),/fresh current production owner/);
+  assert.throws(()=>authenticateUiEntrance(owner=>owner===path?previous:read(owner)),/combined linked owner identity/);
+ }
+});
