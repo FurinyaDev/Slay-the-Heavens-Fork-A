@@ -27,11 +27,11 @@ local M = {}
 
 -- Installs the lifecycle responsibility on one node UI instance.
 function M.install(ctx)
-    function ctx.self:resize(width, height)
+    function ctx.self:resize(width, height, viewport)
         ctx.resetButtons()
         ctx.shopSelection:clear()
         ctx.roomMotion:cancel()
-        self.canvasWidth, self.canvasHeight = width, height
+        self.canvasWidth, self.canvasHeight, self.viewport = width, height, viewport
         ctx.cancelShop(false)
         if self.pendingOwner then self:render();return end
         if self.view and self.view.node and (self.view.node.type=='shop' or ctx.options.enhancedRooms) then self:render() end

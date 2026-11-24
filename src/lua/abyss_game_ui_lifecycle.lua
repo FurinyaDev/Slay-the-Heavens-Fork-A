@@ -30,16 +30,16 @@ function M.onEngineDestroy(self)
 end
 
 function M.resize(self,owner)
-    return function(_, width, height)
+    return function(_, width, height, viewport)
             owner.exitGeneration = owner.exitGeneration + 1
             owner.menuGeneration = owner.menuGeneration + 1
             if self.choiceUI then self.choiceUI:resize() end
-            if self.pageReveal then self.pageReveal:resize(width,height) end
-            if self.prologue then self.prologue:resize(width,height) end
+            if self.pageReveal then self.pageReveal:resize(width,height,viewport) end
+            if self.prologue then self.prologue:resize(width,height,viewport) end
             local closed=self.potionUI:close()
             self.battleUI:resize(width, height)
             self.mapUI:resize(width, height)
-            self.nodeUI:resize(width, height)
+            self.nodeUI:resize(width, height, viewport)
             if closed then self:refresh()end
         end
 end

@@ -74,7 +74,9 @@ function M.new(root,owner,platform,clickEvent,actions)
         local x,anchorY=anchor(token.slot)
         local y=anchorY-h/2
         root:SetAnchoredPosition(x,y);root:SetSizeDelta(P.width,h)
-        size('dismiss',-x,-y,Theme.canvas.base[1],Theme.canvas.base[2])
+        -- The shared viewport sizes the catcher. Reposition it around the
+        -- stage origin when the popup itself follows the selected slot.
+        child('dismiss'):SetAnchoredPosition(-x,-y)
         for _,name in ipairs({'border','plate','hit'})do
             local inset=name=='plate' and 2 or 0
             size(name,0,0,P.width-inset,h-inset)

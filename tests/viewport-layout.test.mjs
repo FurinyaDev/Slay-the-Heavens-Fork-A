@@ -1,8 +1,15 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { spawnSync } from 'node:child_process';
+import { createRequire } from 'node:module';
 import { withViewport } from '../scripts/viewport-layout.mjs';
 import { gameLayout } from '../scripts/game-ui-layout.mjs';
 import { nativeTheme as theme } from '../scripts/native-ui-theme.mjs';
+import { buildLuaData } from '../scripts/build-lua-data.mjs';
+import { buildUI } from '../scripts/build-ui.mjs';
 
 // RectTransform sizeDelta is added to the span between anchors, not its final size.
 function bounds(control, width, height) {
@@ -50,4 +57,20 @@ test('all major screens and overlays share one background behind the unmodified 
   // Room, card-pick and result views stay in their original panel hierarchies.
   assert.deepEqual(layout.controls[1].children, original.controls);
   assert.equal(layout.controls[0].children, undefined, 'background adds no input targets or update work');
+});
+
+test('the actual official layout adapts its scenery, HUD and modal input at startup and resize', t => {
+  const output = mkdtempSync(join(tmpdir(), 'slay-viewport-'));
+  t.after(() => rmSync(output, { recursive: true, force: true }));
+  buildLuaData('data', join(output, 'abyss_data.lua'));
+  buildUI(output, undefined, {
+    officialAssets: true, nativePageLifecycle: true, refinedReleaseMonsterArt: true,
+  });
+  const cli = createRequire(import.meta.url).resolve('fengari-node-cli/src/lua-cli.js');
+  const result = spawnSync(process.execPath, [cli, '-e', "dofile('tests/lua/viewport.lua')"], {
+    encoding: 'utf8',
+    timeout: 60000,
+    env: { ...process.env, LUA_PATH: output.replaceAll('\\', '/') + '/?.lua;src/lua/?.lua;;' },
+  });
+  assert.equal(result.status, 0, (result.error?.message ?? '') + result.stdout + result.stderr);
 });

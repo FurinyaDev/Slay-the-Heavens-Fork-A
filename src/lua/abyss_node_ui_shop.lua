@@ -53,7 +53,7 @@ function M.install(ctx)
     local shelfBack = { math.min(layout.back[1], -510), layout.back[2] }
     local buttonTravel = 400 * Motion.scale
     local elapsed, rug, button, alpha, closing = nil, 0, 0, 0, false
-    local shadeByte, goodsOffset, shadeWidth, shadeHeight
+    local shadeByte, goodsOffset, shadeWidth, shadeHeight, shadeViewport
     local cards
     local function inShop()
         local node = ctx.self.run and ctx.self.run.nodeFlow
@@ -109,10 +109,11 @@ function M.install(ctx)
     local function fitShade()
         if not shade then return end
         local w, h = ctx.self.canvasWidth or 1280, ctx.self.canvasHeight or 720
-        if shadeWidth == w and shadeHeight == h then return end
-        shadeWidth, shadeHeight = w, h
-        local scale = math.min(w / 1280, h / 720)
-        shade:SetSizeDelta(w / scale, h / scale)
+        local viewport = ctx.self.viewport
+        if shadeWidth == w and shadeHeight == h and shadeViewport == viewport then return end
+        shadeWidth, shadeHeight, shadeViewport = w, h, viewport
+        local frame = (viewport or require('abyss_viewport').measure(w,h)).visual
+        shade:SetSizeDelta(frame[3],frame[4])
     end
     local function resetShelfPosition()
         if rug ~= 0 then panel:SetAnchoredPosition(0, 0) end
