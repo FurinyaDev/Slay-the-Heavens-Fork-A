@@ -1,15 +1,9 @@
 -- Read state, issue Run commands. No damage/energy/outcome rules live in this view.
-local Combat = require("abyss_combat")
 local Actors = require("abyss_actor")
 local Run = require("abyss_run")
 local EnemyView = require('abyss_battle_enemy_view')
 local RewardOwner = require("abyss_battle_reward_owner")
 local M = {}
-local function needsTarget(state, instance)
-    -- Ask the core to validate the same card with and without a target.
-    local _, reason = Combat.canPlay(state, instance.uid, nil)
-    return reason == "invalid_target"
-end
 -- Explicit ports preserve the approved implementation without a shared constructor closure.
 function M.install(owner, ownership, host, _dependencies)
     function owner:setData(nextData, nextPresentation)
@@ -43,15 +37,18 @@ function M.install(owner, ownership, host, _dependencies)
             owner.hover = nil
         end
     end
+    local function inputReady()
+        return owner.active and not owner.busy and not (host.options.inputCovered and host.options.inputCovered())
+    end
     local function dragReady(g)
-        return owner.active and not owner.busy and owner.run == g.run and owner.run.phase == "combat"
+        return inputReady() and owner.run == g.run and owner.run.phase == "combat"
             and owner.run.combat == g.battle and g.battle.phase == "player" and g.battle.turn == g.turn
     end
     local function rewardReady(g)
         return RewardOwner.ready(owner, g)
     end
     local function cardReady(g)
-        if not owner.active or owner.busy or owner.run ~= g.run or owner.run.phase ~= g.phase then return false end
+        if not inputReady() or owner.run ~= g.run or owner.run.phase ~= g.phase then return false end
         if g.phase == "combat" then
             local instance = g.battle.hand[g.slot]
             return dragReady(g) and instance ~= nil and instance.uid == g.uid
@@ -98,7 +95,7 @@ function M.install(owner, ownership, host, _dependencies)
     end
     local function actionContextReady(g)
         local run = owner.run
-        if not owner.active or owner.busy or owner.gesture or run ~= g.run then return false end
+        if not inputReady() or owner.gesture or run ~= g.run then return false end
         if run and (run.phase ~= g.phase or run.combat ~= g.battle
             or g.battle and g.battle.turn ~= g.turn) then return false end
         return true
@@ -107,7 +104,7 @@ function M.install(owner, ownership, host, _dependencies)
         if g.aim then return owner.potionAim == g.aim and aimReady(g.aim) end
         local instance = g.battle and g.battle.hand[g.slot or 0]
         return dragReady(g) and instance and instance.uid == g.uid and owner.selected == g.uid
-            and owner.selectionEpoch == g.selectionEpoch and not needsTarget(g.battle, instance)
+            and owner.selectionEpoch == g.selectionEpoch and not (owner.carry and owner.carry.aiming)
     end
     local function rewardListActionReady(g, rewards)
         local relicIndex=g.name:match('^relicReward(%d)$')
@@ -153,7 +150,8 @@ function M.install(owner, ownership, host, _dependencies)
         return entry and entry.actor==actor and entry.id==actor.id
     end
     local function enemyReady(g)
-        return not owner.info and dragReady(g) and Actors.isActive(g.actor) and g.battle.enemies[g.slot] == g.actor
+        return (not owner.info or not owner.info.kind) and dragReady(g) and (Actors.isActive(g.actor) or not g.aim and Actors.isPresent(g.actor))
+            and g.battle.enemies[g.slot] == g.actor
             and sameEnemySlot(g.screenSlot,g.actor,g.battle)
             and owner.selected == g.uid and owner.selectionEpoch == g.selectionEpoch
             and owner.potionAim == g.aim and (not g.aim or aimReady(g.aim))

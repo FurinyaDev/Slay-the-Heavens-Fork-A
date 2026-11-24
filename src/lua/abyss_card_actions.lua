@@ -5,35 +5,33 @@ local Events = require("abyss_events")
 local PlatedArmor = require('abyss_plated_armor')
 local Act2Powers = require('abyss_act2_powers')
 local TimeEater=require('abyss_time_eater')
-local M = {}
+local Reactions = require('abyss_combat_reactions')
+-- Keep ordinary reads/writes of the two public admission entries live across
+-- Actor and CardActions. These virtual fields are absent from rawget/pairs.
+local function admissionIndex(_,key)
+    if key=='enqueue' or key=='enqueueReaction' then return Reactions[key] end
+end
+local function admissionNewIndex(self,key,value)
+    if key=='enqueue' or key=='enqueueReaction' then Reactions[key]=value
+    else rawset(self,key,value) end
+end
+local M = setmetatable({}, {
+    __index=admissionIndex,
+    __newindex=admissionNewIndex,
+})
 local operations = { timeEater=true, writhingRoll=true,writhingParasite=true, classPotion=true, silentFinal=true, discover=true, colorless=true, heal=true, originalV4=true, exhaustRandom=true, exhaustChoose=true, exhaustNonAttacks=true,
     exhaustMany=true,discardRedraw=true,discardToHand=true,randomizeHandCost=true,
     secondWind=true, fiendFire=true, recoverExhaust=true, upgradeHand=true,
     discardToDraw=true, handToDraw=true, dualWield=true, generateAttack=true,
     makeTempCardInHand=true, makeTempCardInDraw=true, doubleStrength=true,
     spotWeakness=true, feed=true, reaper=true, playTop=true, damageRandom=true }
-for _,op in ipairs({'rareGamblingChip','rareRelicGenerate','rareRelicDamageAll','rareRelicWeak','shopRelic'})do operations[op]=true end
+for _,op in ipairs({'rareTacticalBadge','rareRelicGenerate','rareRelicDamageAll','rareRelicWeak','shopRelic'})do operations[op]=true end
 function M.supports(op) return operations[op] == true end
 
-function M.enqueue(state, effect, source, target, instance, top)
-    state.cardActions = state.cardActions or {}
-    local item = {effect=effect, source=source or state.player, target=target, instance=instance}
-    if top then table.insert(state.cardActions, 1, item) else state.cardActions[#state.cardActions+1] = item end
-end
-
--- Damage/HP-loss callbacks join the queue that already owns the action.
--- This enqueues an effect, never a second action manager or a continuation.
-function M.enqueueReaction(state,effect,top)
-    if state.actionQueue then
-        local queue=require('abyss_action_queue')
-        local action={kind='effect',effect=effect}
-        if top then queue.pushTop(state,action)else queue.pushBottom(state,action)end
-    else M.enqueue(state,effect,nil,nil,nil,top)end
-end
 function M.reactionRetained(effect)
     if effect.op=='rareRelicDamageAll'then return true end
     if require('abyss_corrupt_heart').retained(effect)then return true end
-    if effect.op=='reptomancerSuicide'then return true end
+    if effect.op=='reptomancerDismissal'then return true end
     return TimeEater.retained(effect) or effect.op=='awakenedAction' and effect.kind=='heal' or PlatedArmor.retained(effect) or Act2Powers.retained(effect) or effect.op=='resolveCurlUp'
         or effect.op=='damageRandom' or effect.op=='staticRetaliation'
         or effect.op=='silentFinal' and require('abyss_silent_final_cards').allowedAfterVictory(effect)
@@ -49,7 +47,7 @@ function M.exhaust(combat, state, instance, pile)
     -- card hook. Dark Embrace/FNP append; Sentinel inserts at the top.
     state.exhaust[#state.exhaust+1] = instance
     Events.emit(state, "exhaust", {uid=instance.uid,cardId=instance.cardId})
-    require('abyss_rare_relics').onExhaust(state)
+    require('abyss_relic_family_combat').rare.onExhaust(state)
     local p = state.player
     for _,id in ipairs(Actors.powerSequence(p,{'dark_embrace','feel_no_pain'})) do
         if id=='dark_embrace' and not combat.outcome(state) then
@@ -109,29 +107,39 @@ function M.toHand(state, c)
     pile[#pile+1]=c
 end
 
+local choicePiles={recoverExhaust='exhaust',discardToDraw='discard',discardToHand='discard'}
+local function choiceEligible(combat,state,op,c)
+    local d=combat.cardDefinition(state,c)
+    return (op~="recoverExhaust" or c.cardId~="exhume")
+        and (op~="upgradeHand" or combat.canUpgrade(state,c))
+        and (op~="dualWield" or d.type=="attack" or d.type=="power")
+end
 local function candidates(combat,state,op)
-    local pile=op=="recoverExhaust" and state.exhaust or (op=="discardToDraw" or op=='discardToHand') and state.discard or state.hand
+    local pile=state[choicePiles[op] or 'hand']
     local result={}
     if op=="recoverExhaust" and #state.hand>=state.rules.player.maxHand then return result end
     for _,c in ipairs(pile) do
-        local d=combat.cardDefinition(state,c)
-        if (op~="recoverExhaust" or c.cardId~="exhume")
-            and (op~="upgradeHand" or combat.canUpgrade(state,c))
-            and (op~="dualWield" or d.type=="attack" or d.type=="power") then result[#result+1]=c.uid end
+        if choiceEligible(combat,state,op,c) then result[#result+1]=c.uid end
     end
     return result
 end
 
+local function openChoice(state,choice)
+    state.choiceSerial=(state.choiceSerial or 0)+1
+    choice.token=state.choiceSerial;state.pendingChoice=choice
+    Events.emit(state,'card_choice',{token=state.choiceSerial,op=choice.op})
+end
+local function multipleSelection(op,e,count)
+    return op=='exhaustMany' or op=='discardRedraw' or op=='discardToHand' and e.value>1 and count>e.value
+end
 local function selection(combat,state,item)
     local e,op=item.effect,item.effect.op
     if op=='discardToHand' and e.value<=0 then return end
     local options=candidates(combat,state,op)
     if #options==0 then return end
-    if op=='exhaustMany' or op=='discardRedraw' or op=='discardToHand' and e.value>1 and #options>e.value then
-        state.choiceSerial=(state.choiceSerial or 0)+1
-        state.pendingChoice={token=state.choiceSerial,op=op,uids=options,item=item,multiple=true,selected={},
-            required=op=='discardToHand' and e.value or nil}
-        Events.emit(state,'card_choice',{token=state.choiceSerial,op=op})
+    if multipleSelection(op,e,#options) then
+        openChoice(state,{op=op,uids=options,item=item,multiple=true,selected={},
+            required=op=='discardToHand' and e.value or nil})
         return
     end
     if op=='discardToHand' and #options<=e.value then
@@ -143,59 +151,114 @@ local function selection(combat,state,item)
     -- and returns amount+1 stat-equivalent copies; its one-eligible-card fast
     -- path retains the original and only adds amount copies.
     if op=="dualWield" then item.replaceSelected=true end
-    state.choiceSerial=(state.choiceSerial or 0)+1
-    state.pendingChoice={token=state.choiceSerial,op=op,uids=options,item=item}
-    Events.emit(state,"card_choice",{token=state.choiceSerial,op=op})
+    openChoice(state,{op=op,uids=options,item=item})
 end
 
+local function handChoice(state,uid)
+    for _,v in ipairs(state.hand) do if v.uid==uid then return v end end
+    error('stale hand choice')
+end
+local function returnDualWieldHand(combat,state,uid)
+    remove(state.hand,uid)
+    local eligible,other={},{}
+    for _,v in ipairs(state.hand) do
+        local kind=combat.cardDefinition(state,v).type
+        local pile=(kind=="attack" or kind=="power") and eligible or other
+        pile[#pile+1]=v
+    end
+    -- The selector returns temporarily hidden noneligible cards last.
+    for i=#state.hand,1,-1 do state.hand[i]=nil end
+    for _,pile in ipairs({eligible,other}) do for _,v in ipairs(pile) do state.hand[#state.hand+1]=v end end
+end
+local choiceActions={}
+function choiceActions.exhaustChoose(combat,state,_,uid)
+    local c=remove(state.hand,uid);assert(c,"stale exhaust choice")
+    M.exhaust(combat,state,c)
+end
+function choiceActions.recoverExhaust(_,state,_item,uid)
+    local c=remove(state.exhaust,uid);assert(c and c.cardId~="exhume","invalid Exhume choice")
+    M.toHand(state,c)
+end
+function choiceActions.discardToHand(combat,state,_,uid)
+    if #state.hand>=state.rules.player.maxHand then return false end
+    local c=remove(state.discard,uid);assert(c,'stale discard choice')
+    local definition=combat.cardDefinition(state,c)
+    if definition.cost>=0 and definition.costMode~='all_energy' then c.costForTurn=0 end
+    state.hand[#state.hand+1]=c
+    Events.emit(state,'recover',{uid=c.uid,cardId=c.cardId})
+end
+local function moveChoiceToDraw(_,state,item,uid)
+    local c=remove(item.effect.op=="discardToDraw" and state.discard or state.hand,uid)
+    assert(c,"stale pile choice");state.draw[#state.draw+1]=c
+end
+choiceActions.discardToDraw=moveChoiceToDraw
+choiceActions.handToDraw=moveChoiceToDraw
+function choiceActions.upgradeHand(combat,state,_,uid)
+    combat.upgrade(state,handChoice(state,uid))
+end
+function choiceActions.dualWield(combat,state,item,uid)
+    local c=handChoice(state,uid)
+    local count=item.effect.value
+    if item.replaceSelected then returnDualWieldHand(combat,state,uid);count=count+1 end
+    for _=1,count do
+        local generated=M.fresh(combat,state,c.cardId,c)
+        M.created(combat,state,generated)
+        M.created(combat,state,generated)
+        M.toHand(state,generated)
+    end
+end
 function M.applyChoice(combat,state,item,uid)
-    local e,op=item.effect,item.effect.op
-    if op=="exhaustChoose" then
-        local c=remove(state.hand,uid); assert(c,"stale exhaust choice")
-        M.exhaust(combat,state,c)
-    elseif op=="recoverExhaust" then
-        local c=remove(state.exhaust,uid); assert(c and c.cardId~="exhume","invalid Exhume choice")
-        M.toHand(state,c)
-    elseif op=='discardToHand' then
-        if #state.hand>=state.rules.player.maxHand then return end
-        local c=remove(state.discard,uid);assert(c,'stale discard choice')
-        local definition=combat.cardDefinition(state,c)
-        if definition.cost>=0 and definition.costMode~='all_energy' then c.costForTurn=0 end
-        state.hand[#state.hand+1]=c
-        Events.emit(state,'recover',{uid=c.uid,cardId=c.cardId})
-    elseif op=="discardToDraw" or op=="handToDraw" then
-        local c=remove(op=="discardToDraw" and state.discard or state.hand,uid)
-        assert(c,"stale pile choice"); state.draw[#state.draw+1]=c
-    elseif op=="upgradeHand" or op=="dualWield" then
-        local c
-        for _,v in ipairs(state.hand) do if v.uid==uid then c=v; break end end
-        assert(c,"stale hand choice")
-        if op=="upgradeHand" then combat.upgrade(state,c)
-        else
-            local count=e.value
-            if item.replaceSelected then
-                remove(state.hand,uid)
-                local eligible,other={},{}
-                for _,v in ipairs(state.hand) do
-                    local kind=combat.cardDefinition(state,v).type
-                    local pile=(kind=="attack" or kind=="power") and eligible or other
-                    pile[#pile+1]=v
-                end
-                -- The hand selector temporarily removes noneligible cards;
-                -- returnCards puts them after the remaining eligible cards.
-                for i=#state.hand,1,-1 do state.hand[i]=nil end
-                for _,pile in ipairs({eligible,other}) do for _,v in ipairs(pile) do state.hand[#state.hand+1]=v end end
-                count=count+1
-            end
-            for _=1,count do
-                local generated=M.fresh(combat,state,c.cardId,c)
-                M.created(combat,state,generated)
-                M.created(combat,state,generated)
-                M.toHand(state,generated)
-            end
-        end
-    else error("invalid choice operation") end
+    local op=item.effect.op
+    local handler=choiceActions[op];assert(handler,"invalid choice operation")
+    if handler(combat,state,item,uid)==false then return end
     Events.emit(state,"card_choice_resolved",{op=op,uid=uid})
+end
+
+local function commitMultipleChoice(combat,state,choice)
+    if choice.required and #choice.selected~=choice.required then return false,'invalid_card_choice' end
+    state.pendingChoice=nil
+    for _,id in ipairs(choice.selected) do
+        if choice.op=='exhaustMany' then
+            local c=remove(state.hand,id);M.exhaust(combat,state,c)
+        elseif choice.op=='discardRedraw' then
+            local c=remove(state.hand,id);state.discard[#state.discard+1]=c
+            Events.emit(state,'discard',{uid=c.uid,cardId=c.cardId,manual=true})
+        else M.applyChoice(combat,state,choice.item,id) end
+    end
+    if choice.op=='discardRedraw' and #choice.selected>0 then M.enqueue(state,{op='draw',value=#choice.selected},nil,nil,nil,true) end
+    M.drain(combat,state)
+    return true
+end
+local function toggleChoice(state,choice,uid)
+    local selected,removed={},false
+    for _,id in ipairs(choice.selected) do if id==uid then removed=true else selected[#selected+1]=id end end
+    if not removed then
+        if choice.required and #selected>=choice.required then return false,'invalid_card_choice' end
+        selected[#selected+1]=uid
+    end
+    choice.selected=selected
+    state.choiceSerial=(state.choiceSerial or 0)+1;choice.token=state.choiceSerial
+    return true
+end
+local function chooseMultiple(combat,state,choice,uid)
+    local valid={};for _,id in ipairs(candidates(combat,state,choice.op)) do valid[id]=true end
+    for _,id in ipairs(choice.selected) do if not valid[id] then return false,'stale_card_choice' end end
+    if uid==0 then return commitMultipleChoice(combat,state,choice)end
+    if not valid[uid] then return false,'invalid_card_choice' end
+    return toggleChoice(state,choice,uid)
+end
+local function containsUid(rows,uid)
+    for _,id in ipairs(rows) do if id==uid then return true end end
+    return false
+end
+local function chooseSingle(combat,state,choice,uid)
+    if not containsUid(choice.uids,uid) then return false,"invalid_card_choice" end
+    -- Revalidate eligibility instead of trusting the UI's copied option list.
+    if not containsUid(candidates(combat,state,choice.op),uid) then return false,"stale_card_choice" end
+    state.pendingChoice=nil
+    M.applyChoice(combat,state,choice.item,uid)
+    M.drain(combat,state)
+    return true
 end
 
 function M.choose(combat,state,token,uid)
@@ -208,46 +271,8 @@ function M.choose(combat,state,token,uid)
         if ok then M.drain(combat,state)end
         return ok,reason
     end
-    if choice.multiple then
-        local valid={};for _,id in ipairs(candidates(combat,state,choice.op)) do valid[id]=true end
-        for _,id in ipairs(choice.selected) do if not valid[id] then return false,'stale_card_choice' end end
-        if uid==0 then
-            if choice.required and #choice.selected~=choice.required then return false,'invalid_card_choice' end
-            state.pendingChoice=nil
-            for _,id in ipairs(choice.selected) do
-                if choice.op=='exhaustMany' then
-                    local c=remove(state.hand,id);M.exhaust(combat,state,c)
-                elseif choice.op=='discardRedraw' then
-                    local c=remove(state.hand,id);state.discard[#state.discard+1]=c
-                    Events.emit(state,'discard',{uid=c.uid,cardId=c.cardId,manual=true})
-                else M.applyChoice(combat,state,choice.item,id) end
-            end
-            if choice.op=='discardRedraw' and #choice.selected>0 then M.enqueue(state,{op='draw',value=#choice.selected},nil,nil,nil,true) end
-            M.drain(combat,state)
-            return true
-        end
-        if not valid[uid] then return false,'invalid_card_choice' end
-        local selected,removed={},false
-        for _,id in ipairs(choice.selected) do if id==uid then removed=true else selected[#selected+1]=id end end
-        if not removed then
-            if choice.required and #selected>=choice.required then return false,'invalid_card_choice' end
-            selected[#selected+1]=uid
-        end
-        choice.selected=selected
-        state.choiceSerial=(state.choiceSerial or 0)+1;choice.token=state.choiceSerial
-        return true
-    end
-    local found=false
-    for _,id in ipairs(choice.uids) do if id==uid then found=true end end
-    if not found then return false,"invalid_card_choice" end
-    -- Revalidate eligibility instead of trusting the UI's copied option list.
-    found=false
-    for _,id in ipairs(candidates(combat,state,choice.op)) do if id==uid then found=true end end
-    if not found then return false,"stale_card_choice" end
-    state.pendingChoice=nil
-    M.applyChoice(combat,state,choice.item,uid)
-    M.drain(combat,state)
-    return true
+    if choice.multiple then return chooseMultiple(combat,state,choice,uid)end
+    return chooseSingle(combat,state,choice,uid)
 end
 
 local function liveEnemies(state)
@@ -353,7 +378,7 @@ local function obtainPotion(_,state,item)
         return
     end
     return require('abyss_potion_generation').obtain(state.potionInventory,state.potionCapacity,e.id,
-        require('abyss_relic_hooks').owns(state,'sozu'))
+        require('abyss_relic_queries').hooks.owns(state,'sozu'))
 end
 
 local function doubleStrength(_,state,item)
@@ -387,7 +412,7 @@ local function feedReward(state,source,amount)
     if state.originalV4 and source==state.player then require('abyss_original_v4_health').heal(state,source,healing,nil,'feed')
     else source.hp=math.min(source.maxHp,source.hp+healing)end
     Events.emit(state,"max_hp",{amount=amount,target=source.id})
-    require('abyss_relic_hooks').hpChanged(state,source,beforeHp)
+    require('abyss_relic_combat_hooks').hpChanged(state,source,beforeHp)
 end
 
 local function feed(combat,state,item)
@@ -417,7 +442,7 @@ local function heal(_,state,item)
         local beforeHp=source.hp
         source.hp=source.hp+amount
         Events.emit(state,"heal",{target=source.id,amount=amount})
-        require('abyss_relic_hooks').hpChanged(state,source,beforeHp)
+        require('abyss_relic_combat_hooks').hpChanged(state,source,beforeHp)
     end
 end
 
@@ -431,7 +456,7 @@ local function block(combat,state,item)
 end
 
 local function rareRelic(combat,state,item)
-    require('abyss_rare_relics').applyEffect(combat,state,item.effect)
+    require('abyss_relic_family_combat').rare.applyEffect(combat,state,item.effect)
 end
 
 -- Execution is deliberately broader than supports(), which controls admission
@@ -445,25 +470,28 @@ local actionHandlers={
     recoverExhaust=selection,discardToDraw=selection,handToDraw=selection,dualWield=selection,
     resolveCurlUp=resolveCurlUp,obtainPotion=obtainPotion,doubleStrength=doubleStrength,
     spotWeakness=spotWeakness,damageRandom=damageRandom,feed=feed,reaper=reaper,heal=heal,block=block,
-    rareGamblingChip=rareRelic,rareRelicGenerate=rareRelic,rareRelicDamageAll=rareRelic,rareRelicWeak=rareRelic,
+    rareTacticalBadge=rareRelic,rareRelicGenerate=rareRelic,rareRelicDamageAll=rareRelic,rareRelicWeak=rareRelic,
 }
 function actionHandlers.shopRelic(combat,state,item)
-    if item.effect.kind=='toolbox'then return require('abyss_shop_relics').beginToolbox(combat,state)end
-    return require('abyss_shop_relics').execute(state,item.effect)
+    if item.effect.kind=='toolbox'then return require('abyss_relic_family_combat').shop.beginToolbox(combat,state)end
+    return require('abyss_relic_family_combat').shop.execute(state,item.effect)
 end
 function actionHandlers.writhingRoll(_,state,item)return require('abyss_writhing_mass').roll(state,item.effect.targetId)end
 function actionHandlers.writhingParasite(_,state,item)return require('abyss_writhing_mass').obtainParasite(state,item.source)end
 function actionHandlers.giantHeadSlow(_,state,item)return require('abyss_giant_head').applySlow(Actors,state,item.effect)end
 function actionHandlers.timeEater(combat,state,item)return TimeEater.execute(combat,state,item.effect,item.source,M)end
-function actionHandlers.reptomancerSuicide(_,state,item)return require('abyss_reptomancer').cleanup(Actors,state,item.effect)end
+function actionHandlers.reptomancerDismissal(_,state,item)return require('abyss_reptomancer').cleanup(Actors,state,item.effect)end
 function actionHandlers.enemyAction(combat,state,item)return combat.resolveEnemyAction(state,item.effect,item.source)end
 function actionHandlers.staticRetaliation(combat,state,item)return combat.staticRetaliation(state,item.effect)end
-function actionHandlers.classPotion(combat,state,item)return require('abyss_class_potions').apply(combat,state,item.effect)end
+local function classPotionOrbHost()return require('abyss_orbs')end
+function actionHandlers.classPotion(combat,state,item)
+ return require('abyss_class_potions').apply(combat,state,item.effect,classPotionOrbHost)
+end
 function actionHandlers.silentFinal(combat,state,item)return require('abyss_silent_final_cards').apply(combat,state,item)end
 function actionHandlers.discover(combat,state,item)return require('abyss_potion_discovery').begin(combat,state,item.effect)end
 function actionHandlers.colorless(combat,state,item)return require('abyss_colorless_cards').apply(combat,state,item)end
 function actionHandlers.originalV4(combat,state,item)return require('abyss_original_v4').execute(combat,state,item)end
-function actionHandlers.relicUpgradeRandomHand(combat,state)require('abyss_relic_hooks').upgradeRandomHand(combat,state)end
+function actionHandlers.relicUpgradeRandomHand(combat,state)require('abyss_relic_combat_hooks').upgradeRandomHand(combat,state)end
 function actionHandlers.playTop(combat,state,item)
     local e=item.effect
     combat.autoplayTop(state,e.targetIndex,e.exhaustCards,e.append)
@@ -493,6 +521,18 @@ end
 -- Only source-supported retained actions may survive victory. Selection and
 -- draws are cleared, but disposal, damage, ordinary block and healing survive.
 local retained={originalV4=true,dispose=true,capturedSharpHide=true,damage=true,damageAll=true,damageRandom=true,loseHp=true,block=true,heal=true,feed=true,reaper=true,effectBatch=true}
+local function applyDrainedAction(combat,state,item,outcome)
+    local keep=retained[item.effect.op] or (M.reactionRetained(item.effect) or item.effect.op=='silentFinal' and require('abyss_silent_final_cards').allowedAfterVictory(item.effect))
+    if item.effect.op=='enemyAction'then keep=combat.enemyActionRetained(item.effect)end
+    if not outcome or outcome=="victory" and keep then M.apply(combat,state,item) end
+end
+local function refreshDrainedHand(state,outcome)
+    -- Refresh observes the empty manager, then its draw joins this owner.
+    local rare=require('abyss_relic_family_combat').rare
+    local rareQueries=require('abyss_relic_queries').rare
+    return not outcome and not state.endTurnAfterCard and rareQueries.owns(state,'unceasing_top')
+        and rare.onRefreshHand(state,true)
+end
 function M.drain(combat,state)
     if state.drainingCardActions then return end
     state.drainingCardActions=true
@@ -500,16 +540,11 @@ function M.drain(combat,state)
         local outcome=combat.outcome(state)
         if state.cardActions and #state.cardActions>0 then
             local item=table.remove(state.cardActions,1)
-            local keep=retained[item.effect.op] or (M.reactionRetained(item.effect) or item.effect.op=='silentFinal' and require('abyss_silent_final_cards').allowedAfterVictory(item.effect))
-            if item.effect.op=='enemyAction'then keep=combat.enemyActionRetained(item.effect)end
-            if not outcome or outcome=="victory" and keep then M.apply(combat,state,item) end
+            applyDrainedAction(combat,state,item,outcome)
         elseif not outcome and state.queuedCards and #state.queuedCards>0 then
             combat.resolveQueuedCard(state,table.remove(state.queuedCards,1))
         else
-            -- Refresh observes the empty manager, then its draw joins this owner.
-            local rare=require('abyss_rare_relics')
-            local drew=not outcome and not state.endTurnAfterCard and rare.owns(state,'unceasing_top')
-                and rare.onRefreshHand(state,true)
+            local drew=refreshDrainedHand(state,outcome)
             if not drew then break end
         end
     end

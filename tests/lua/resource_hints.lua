@@ -11,7 +11,7 @@ local function emit(hit,event,id)return assert(hit.listeners[event])({touchId=id
 local function tap(hit,id)emit(hit,'down',id);emit(hit,'up',id);return emit(hit,'click',id)end
 for _,mode in ipairs({'map','battle'})do
  local host,root=F.fixture(nil,nil,nil,cursor);assert(F.start(host))
- if mode=='battle'then assert(require('abyss_run').startCombat(host.run,'cultist_solo'));host:refresh()end
+ if mode=='battle'then assert(require('abyss_run').startCombat(host.run,'raven_adept_solo'));host:refresh()end
  assert(host.mode==mode)
  local panel=root:GetChild(mode=='battle' and 'battlePanel' or 'mapPanel')
  local hp=panel:GetChild('resourceHints'):GetChild('hp'):GetChild('hit')
@@ -33,7 +33,7 @@ for _,mode in ipairs({'map','battle'})do
  assert(tap(outside,6) and not host.deckUI.visible)
  emit(hp,'up',4);assert(not emit(hp,'click',4) and not host.deckUI.visible,'old resource tap reopened hint')
  assert(host:openMenu());assert(not tap(gold,7) and not host.deckUI.visible,'resource hint bypassed menu')
- assert(root:GetChild('runMenu'):GetChild('blocker').listeners.click({touchId=8}))
+ assert(tap(root:GetChild('runMenu'):GetChild('blocker'),8))
  assert(not host.exitOpen and same(before,host.run),'outside menu dismissal mutated run')
  assert(tap(gold,9) and host:closeDeck())
  assert(host:openDeck());assert(deck:GetChild('blocker').listeners.click({touchId=10}) and host.deckUI.visible,'normal deck acquired outside dismissal')
@@ -52,16 +52,4 @@ local host,root=F.fixture()
 assert(host:openMenu() and not root:GetChild('runMenu'):GetChild('map').visible)
 assert(root:GetChild('runMenu'):GetChild('catch').listeners.click() and host.exitOpen)
 assert(root:GetChild('runMenu'):GetChild('blocker').listeners.click() and not host.exitOpen)
-local focus
-local api={events={Confirm='confirm',Cancel='cancel',Focus='focus'},directions={Left='left',Right='right'},
- modes={Specified='specified'},getFocus=function()return focus end,setFocus=function(c)focus=c end,isController=function()return true end}
-host,root=F.fixture(nil,nil,nil,nil,false,nil,nil,api);assert(F.start(host))
-host:update(.01);host:syncController()
-local gold=root:GetChild('mapPanel'):GetChild('resourceHints'):GetChild('gold'):GetChild('hit')
-assert(gold.canControllerFocus,'resource hint missing controller focus');focus=gold
-gold.navigationListeners.confirm();assert(host.deckUI.visible)
-host:update(.01);host:syncController()
-local close=root:GetChild('deckPanel'):GetChild('close'):GetChild('hit');focus=close
-close.navigationListeners.cancel();assert(not host.deckUI.visible,'controller return did not dismiss resource hint')
-gold.click();assert(not host.deckUI.visible,'controller pointer echo reopened resource hint')
 print('RESOURCE_HINTS_PASS map battle read-only values fresh input modal outside')

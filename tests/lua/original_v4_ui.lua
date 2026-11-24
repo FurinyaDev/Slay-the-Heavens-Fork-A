@@ -1,3 +1,4 @@
+local advanceShop=dofile('tests/lua/support/shop_timeline.lua')
 local testStart=dofile('tests/lua/support/game_ui_fixture.lua').start
 package.path='tests/lua/?.lua;'..package.path
 local F=require('support.game_ui_fixture')
@@ -28,13 +29,15 @@ for i,role in ipairs({'hutao','arlecchino','furina','raiden'})do
     local grid=path(root,'deckPanel/grid')
     local slot=assert(grid.items[0]);local before=F.Combat.copy(ui.run)
     assert(slot:GetChild('hit').click())
-    assert(ui.deckUI.detailPages and not grid.visible)
-    local text={}
-    for _=1,#ui.deckUI.detailPages do
-        text[#text+1]=path(root,'deckPanel/details').text
-        assert(path(root,'deckPanel/detailHit').click())
+    assert(path(root,'deckPanel/cardFocus').visible and not grid.visible)
+    local notes=ui.deckUI.cardDetail.notes
+    assert(#notes>0 and table.concat(notes):find('普攻',1,true))
+    for i,note in ipairs(notes)do
+        assert(path(root,'deckPanel/details').text:find(note,1,true)==1)
+        if #notes>1 then
+            assert(ui.deckUI.cardDetail.notePage==i and path(root,'deckPanel/detailHit').click())
+        end
     end
-    assert(table.concat(text):find('普攻',1,true))
     assert(ui.run.gold==before.gold and ui.run.hp==before.hp and #ui.run.deck==#before.deck)
     assert(path(root,'deckPanel/close/hit').click());assert(grid.visible and ui.deckUI.visible)
     assert(ui:closeDeck())
@@ -62,6 +65,13 @@ local run,map=ui.run,ui.map
 assert(Map.choose(map,'f1_l4'));assert(Map.choose(map,'f2_l5'))
 assert(F.Nodes.enter(run,map,'f3_l5'))
 ui:refresh();assert(ui.mode=='node')
+local room=path(ui.root,'nodePanel/shopRoom')
+local shelf=path(ui.root,'nodePanel/shopView')
+assert(room.visible and not shelf.visible, 'the complete shop room appears before the shelf')
+assert(path(ui.root,'nodePanel/merchant/talk/hit').click())
+assert(room.visible and not shelf.visible, 'cold shelf preparation must stay behind the room')
+advanceShop(ui)
+assert(shelf.visible and not room.visible and not ui.nodeUI.shopBusy, 'the staged shelf must become interactive')
 assert(path(ui.root,'nodePanel/shopView/page').text=='') -- all seven offers are displayed together
 for i=1,7 do assert(path(ui.root,'nodePanel/shopView/card'..i).visible) end
 local hit=path(ui.root,'nodePanel/shopView/card1/hit')

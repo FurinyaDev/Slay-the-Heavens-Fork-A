@@ -1,6 +1,6 @@
 local Theme = require("abyss_theme")
 local CampUI = require('abyss_node_ui_camp')
-local Combat = require('abyss_combat')
+local copy = require('abyss_copy').copy
 local Act2Events = require('abyss_act2_events')
 local MatchUI = require('abyss_match_event_ui')
 local number = require("abyss_numbers").integer
@@ -20,12 +20,11 @@ local M = {}
 -- Installs the rewards responsibility on one node UI instance.
 function M.install(ctx)
     function ctx.renderPicker(_view, node, result)
-        if ctx.enhancedForge(node) then return ctx.campUI:render(node,result) end
+        if ctx.enhancedForge(node) then return ctx.campUI:render(node) end
         local picker, before, after, target
         local function resetPickerLayout()
             picker = ctx.child("pickerView")
             ctx.show(picker:GetChild('forgeGrid'),false)
-            ctx.show(picker:GetChild('forgePrevious'),false);ctx.show(picker:GetChild('forgeNext'),false)
             for _,name in ipairs({'before','after'})do
                 picker:GetChild(name):SetLocalScale(1,1,1)
                 picker:GetChild(name):SetAnchoredPosition(layout.picker[name],layout.picker.previewY)
@@ -90,7 +89,11 @@ function M.install(ctx)
                     { dim = not available, veil = stamp ~= nil, stamp = stamp, selected = ctx.self.selected == (library and instance.offerToken or instance.uid),instance=owned or instance })
                     local uid = library and instance.offerToken or instance.uid
                     ctx.action("pickerView/card" .. i, available, function()
-                        ctx.self.selected, ctx.self.notice = uid, "" ctx.self:render() return true
+                        local selectedUid = uid
+                        if ctx.self.picker == "remove" and ctx.self.selected == uid then selectedUid = nil end
+                        ctx.self.selected, ctx.self.notice = selectedUid, ""
+                        ctx.self:render()
+                        return true
                     end, stamp and ("这张卡牌" .. stamp) or "这张卡牌无法升级")
                 end
             end
@@ -103,22 +106,21 @@ function M.install(ctx)
                 ctx.self.pickPage, ctx.self.notice = ctx.self.pickPage - 1, "" ctx.self:render() return true end)
             ctx.action("pickerView/next", ctx.self.pickPage < pageCount, function()
                 ctx.self.pickPage, ctx.self.notice = ctx.self.pickPage + 1, "" ctx.self:render() return true end)
-            picker:GetChild("page").text = not result and pageCount > 1 and ("第 " .. ctx.self.pickPage .. "/" .. pageCount .. " 页 · 共 " .. #rows .. " 张"
-            .. (ctx.self.swipeEnabled and " · 左右拖动翻页" or "")) or ""
+            picker:GetChild("page").text = not result and pageCount > 1 and ("第 " .. ctx.self.pickPage .. "/" .. pageCount .. " 页 · 共 " .. #rows .. " 张") or ""
         end
         bindPickerPaging()
         ctx.show(before, upgrade and selected) ctx.show(after, upgrade and selected)
         ctx.show(picker:GetChild("arrow"), upgrade and selected) ctx.show(target, not upgrade and selected)
-        local function writePickerPrompt()
-            picker:GetChild("empty").text = selected and "" or (library and '点选一张卡牌加入牌组，不能跳过' or dream and '点选一张卡牌加入牌组，也可以跳过' or upgrade and "点选上方卡牌，查看升级前后对比" or copying and '点选上方要复制的卡牌' or transform and '点选上方要变换的卡牌' or "点选上方要移除的卡牌")
+        for _, name in ipairs({'label','hint'}) do
+            local control=picker:GetChild(name)
+            ctx.show(control, selected)
+            control.text=''
         end
-        writePickerPrompt()
-        picker:GetChild("label").text, picker:GetChild("hint").text = "", ""
         if selected and upgrade then
             local function renderUpgradePreview()
                 local display = ctx.self.presentation[selected.cardId] or {}
                 local changed = display.cost ~= nil and display.upgradeCost ~= nil and display.cost ~= display.upgradeCost
-                local nextInstance=Combat.copy(selected)
+                local nextInstance=copy(selected)
                 nextInstance.upgrades=(selected.upgrades or (selected.upgraded and 1 or 0))+1
                 nextInstance.upgraded=true
                 ctx.fillCard(before, selected.cardId, selected.upgraded,{instance=selected,inspectOnly=true})
@@ -149,11 +151,11 @@ function M.install(ctx)
             if ctx.self.picker=='beggar_purge' then
                 return '已支付75金币 · 必须移除卡牌，遗物绑定牌除外；不能取消'
             end
-            if library then return '图书馆 · 从20张不同的卡牌中选择一张，不能跳过' end
+            if library then return '图书馆 · 选择一张卡牌加入牌组，不能跳过' end
             if dream then return '捕梦网 · 选择一张卡牌加入牌组，或跳过奖励' end
             if upgrade then return "选择一张卡牌升级 · 剩余 " .. (result and 0 or node.upgradesLeft) .. " 次" end
             if transform then return '选择一张卡牌变换' end
-            if ctx.self.picker == "remove" then return "选择要移除的卡牌 · 本店删牌服务限一次" end
+            if ctx.self.picker == "remove" then return "选择要移除的卡牌" end
             return "选择要净化的卡牌"
         end
         return pickerHint()
@@ -170,13 +172,13 @@ function M.install(ctx)
 
     function ctx.syncLibraryPicker(node)
         ctx.self.mode,ctx.self.picker='picker','library_offer'
-        ctx.self.offerRows=Combat.copy(node.event.offers)
+        ctx.self.offerRows=copy(node.event.offers)
         if not find(ctx.self.offerRows,ctx.self.selected,'offerToken')then ctx.self.selected=nil end
     end
 
     function ctx.syncAct2PurgePicker(node)
         ctx.self.mode,ctx.self.picker='picker',node.event.id=='beggar' and 'beggar_purge' or 'basics_purge'
-        ctx.self.removeRows=Combat.copy(node.event.purgeCards)
+        ctx.self.removeRows=copy(node.event.purgeCards)
         local matches=0
         for _, instance in ipairs(ctx.self.run.deck) do if instance.uid==ctx.self.selected then matches=matches+1 end end
         if matches~=1 or not find(ctx.self.removeRows,ctx.self.selected,'uid') then ctx.self.selected=nil end
@@ -185,7 +187,7 @@ function M.install(ctx)
     function ctx.syncDuplicatorPicker(node)
         ctx.self.mode,ctx.self.picker='picker','duplicator_card'
         -- Copy rows, not purge candidates: bottled sources and permanent stats remain visible.
-        ctx.self.removeRows=Combat.copy(node.event.copyCards)
+        ctx.self.removeRows=copy(node.event.copyCards)
         local matches=0
         for _,instance in ipairs(ctx.self.run.deck)do if instance.uid==ctx.self.selected then matches=matches+1 end end
         if matches~=1 or not find(ctx.self.removeRows,ctx.self.selected,'uid')then ctx.self.selected=nil end
@@ -209,7 +211,7 @@ function M.install(ctx)
         if active and node.type=='event' and node.event.id=='neow'then
             if node.event.stage=='neow_choose_card'then
                 ctx.self.mode,ctx.self.picker='picker','neow_card'
-                ctx.self.removeRows,ctx.self.upgradeRows=Combat.copy(node.event.purgeCards),Combat.copy(node.event.purgeCards)
+                ctx.self.removeRows,ctx.self.upgradeRows=copy(node.event.purgeCards),copy(node.event.purgeCards)
                 if not find(ctx.self.removeRows,ctx.self.selected,'uid')then ctx.self.selected=nil end
             else ctx.self.mode,ctx.self.picker,ctx.self.selected='main',nil,nil end
         end
@@ -246,7 +248,7 @@ function M.install(ctx)
     function ctx.eventPickerLabel(living,act1)
         local confirmLabel
         if act1 then
-            confirmLabel=ctx.self.picker=='act1_forge' and '确认升级' or ctx.self.picker=='act1_change' and '确认变换' or ctx.self.picker=='act1_purge' and '确认移除' or '确认献祭'
+            confirmLabel=ctx.self.picker=='act1_forge' and '确认升级' or ctx.self.picker=='act1_change' and '确认变换' or ctx.self.picker=='act1_purge' and '确认移除' or '确认交换'
         elseif living then
             confirmLabel=ctx.self.picker=='living_grow' and '确认升级' or ctx.self.picker=='living_change' and '确认变换' or '确认移除'
         end
@@ -254,7 +256,7 @@ function M.install(ctx)
     end
 
     function ctx.pickerLabels(node,living,act1,dream,restReward)
-        if ctx.enhancedForge(node) then return CampUI.labels(ctx.self.selected,node,ctx.self.run) end
+        if ctx.enhancedForge(node) then return CampUI.labels(ctx.self.selected,node) end
         local backLabel,confirmLabel,skipRestReward
         if dream then
             confirmLabel,backLabel='选择此牌','跳过卡牌'
@@ -332,6 +334,10 @@ function M.install(ctx)
                 if command == "upgrade" or command=='upgradeEvent' then
                     local upgraded=find(ctx.self.run.deck,selected,'uid')
                     local text="已升级「"..name.."」→「"..ctx.cardName(instance.cardId,true,upgraded.upgrades).."」"
+                    if command == "upgrade" and ctx.options.enhancedRooms then
+                        ctx.self.selected = nil
+                        if ctx.self.run.nodeFlow.complete then ctx.self.mode, ctx.self.picker = "main", nil end
+                    end
                     return text, { choice = "upgrade", card = instance, text=text }
                 end
                 local paid = before.gold - ctx.self.run.gold

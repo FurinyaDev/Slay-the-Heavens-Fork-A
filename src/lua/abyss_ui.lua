@@ -1,7 +1,15 @@
-local view, Viewport, background, cardArt, portraits
+local view, Viewport, background, cardArt, portraits, v25Textures, nativeStage, componentBridge
+local artFailures={}
 local canvasWidth, canvasHeight
 local attempted = false
+local fatalMusic
 local function failed(phase, reason)
+    -- The independent server music graph survives a disabled Lua UI. Retire
+    -- this live signal port before cleanup; failure must never retry it.
+    local stopMusic=fatalMusic;fatalMusic=nil
+    if stopMusic then pcall(stopMusic,"ABYSS_BGM_STOP") end
+    pcall(function()require('abyss_card_skin').clearSurface()end)
+    if v25Textures then pcall(function()v25Textures:clear()end)end
     print("ABYSS_UI failed " .. phase .. ": " .. tostring(reason))
     if portraits then pcall(function()portraits:release()end) end
     if cardArt then pcall(cardArt.clear) end
@@ -57,11 +65,84 @@ local function artFeatures()
 end
 local function optionalArt(name, create)
     local ok, value = pcall(create)
-    if ok then return value end
+    if ok then
+        if value==nil and (name=='portraits' or name=='cards') then artFailures[name]='requested art owner unavailable'end
+        return value
+    end
     print('ABYSS_ART '..name..' phase=unavailable reason='..tostring(value))
+    artFailures[name]=tostring(value)
 end
 local function boundIndex(value)
     return type(value)=='number' and value>0 and value<math.huge and value%1==0
+end
+local function attachComponents(stage,flags)
+        local hasComponents, componentControls = pcall(function()return script:GetParam('nativeComponentControls')end)
+        if hasComponents and componentControls==true then
+            for key,value in pairs(flags)do assert(value==false,'component comparison forbids legacy artwork: '..key)end
+            local binding=require('abyss_component_binding')
+            componentBridge=require('abyss_component_bridge').new(stage,binding,{
+                instantiate=game.InstantiateClientUIControl,destroy=game.DestroyClientUIControl,color=Color,imageSource=Enum.ImageSource.StaticReference})
+            stage=componentBridge.root
+            print('ABYSS_COMPONENTS attached original-components-control-v1')
+        end
+    return stage
+end
+local function preparedArtOwners(page)
+    for name,reason in pairs(artFailures)do
+        if name=='portraits' and page~='characterPanel' or name=='cards' or name=='v25CardSurface' then return false,reason end
+    end
+    if componentBridge then
+        local state,reason,_,cursor=componentBridge:pageState(page)
+        if state=='failed' then return false,reason end
+        if state~='visible' then return false,nil,cursor end
+    end
+    return true
+end
+local function deckPending(intent)
+    local deck=view and intent.page=='deckPanel' and view.deckUI
+    if not deck or deck.cardDetail then return false end
+    local painted=deck.preparedCards
+    if deck.gridReady and not deck.pending and not deck.calibrating then
+        local _,completed=deck.gridReady();painted=completed
+    end
+    return deck.pending or deck.calibrating or deck.pendingGrid,painted
+end
+local function presentationReady(intent)
+    local prepared,why,progress=preparedArtOwners(intent.page)
+    if not prepared then return false,why,'component:'..tostring(progress) end
+    -- Selection has its own static fallbacks. Keep the page/component and
+    -- input gates below, with native portrait readiness still required elsewhere.
+    if portraits and intent.page~='characterPanel' then
+        local ready,reason,cursor=portraits:readyForPage(intent.mode,intent.characterOpen,intent.character,intent.page)
+        if not ready then return false,reason,'portrait:'..tostring(cursor) end
+    end
+    local pendingDeck,painted=deckPending(intent)
+    if intent.page=='deckPanel' and view and view.deckUI.prepareError then
+        return false,view.deckUI.prepareError
+    end
+    if background and intent.page=='menuPanel' then
+        local state=background:status()
+        if state.phase=='failed' then return false,state.reason end
+        if state.phase~='ready' and state.phase~='disabled' then
+            return false,nil,'background:'..state.phase..':'..tostring(state.owned or 0)
+        end
+    end
+    if v25Textures then
+        local ready,reason,cursor=v25Textures:presentationReady(intent.page)
+        if not ready then return false,reason,'texture:'..tostring(cursor) end
+    end
+    local ready,reason,cursor=require('abyss_card_art_runtime').presentationReady(intent.page)
+    if not ready then return false,reason,'card:'..tostring(cursor) end
+    if pendingDeck then return false,nil,'deck:'..tostring(painted or 0) end
+    return true
+end
+local function presentationPage(page)
+    require('abyss_card_art_runtime').setPresentationPage(page)
+    if v25Textures then v25Textures:setPresentationPage(page)end
+end
+local function traceEntry(phase,requestId,detail)
+    print(string.format('ABYSS_ROOM_ENTRY phase=%s request=%s lua_clock_ms=%.3f detail=%s',
+        phase,tostring(requestId),os.clock()*1000,tostring(detail or '')))
 end
 function OnStart()
     if attempted then return end
@@ -74,9 +155,12 @@ function OnStart()
         local Theme = require("abyss_theme")
         Viewport = require("abyss_viewport")
         local width, height = game.GetUICanvasSize()
-        local stage = Viewport.apply(script.object, width, height)
-        print("ABYSS_UI viewport_ready")
+        local stage, scale = Viewport.apply(script.object, width, height)
+        nativeStage=stage
+        print(("ABYSS_UI viewport_ready device=%s canvas=%sx%s stageScale=%.6f"):format(
+            tostring(game.GetDevice and game.GetDevice()),width,height,scale))
         local flags = artFeatures()
+        stage=attachComponents(stage,flags)
         local createEasterEggArt
         if not flags.cards then
             -- Legacy static candidates embed nativeArt in presentation. Suppress
@@ -96,7 +180,15 @@ function OnStart()
         -- Use native require, not the desktop-only package.loaded assumption.
         require("abyss_card_art_runtime").configure(nil)
         -- Approved gold chrome is pure UI; it remains independent of deferred card illustrations and select fan.
-        optionalArt('cardChrome', function()require("abyss_card_skin").configure('premium')end)
+        if not componentBridge then
+          optionalArt('cardChrome', function()require("abyss_card_skin").configure('premium')end)
+          optionalArt('v25CardSurface',function()
+            local binding=require('abyss_v25_card_assets')
+            v25Textures=require('abyss_v25_texture_runtime').new(binding,{
+                instantiate=game.InstantiateClientUIControl,destroy=game.DestroyClientUIControl})
+            require('abyss_card_skin').configureSurface(binding,v25Textures:surfaceApi())
+          end)
+        end
         if flags.menuBackground then
             createEasterEggArt=function()
                 local factory=require('abyss_traveler_portraits').createController
@@ -136,31 +228,67 @@ function OnStart()
                 game.ServerSignal(signal):SendSignal()
                 print("ABYSS_BGM_REQUEST " .. signal)
             end
+            fatalMusic=music
         end
         local isTest, testPlay = pcall(function()return game.IsTestPlay()end)
+        local uiProfile=require('abyss_ui_profile')
+        assert(type(uiProfile)=='table' and uiProfile.schemaVersion==1 and type(uiProfile.nativePageLifecycle)=='boolean','invalid UI profile')
+        for key in pairs(uiProfile)do assert(key=='schemaVersion' or key=='nativePageLifecycle','unknown UI profile field '..tostring(key))end
+        local nativePageLifecycle=uiProfile.nativePageLifecycle
         local build = require('abyss_narrative').build
         local alpha = type(build)=='table' and build.workKey=='alpha-test'
+        local deckBinding=require('abyss_deck_browser_binding')
+        local deckTemplateIndex=deckBinding.templateIndex
+        local deckTemplateNames={[deckTemplateIndex]='AbyssBattlePileCard'}
+        if deckTemplateIndex>0 then
+            for _,part in ipairs(deckBinding.parts)do
+                deckTemplateNames[assert(part.templateIndex,'unbound deck browser chunk')]=part.name
+            end
+        end
+        local actorBinding=require('abyss_monster_actor_binding')
+        local actorInstantiate,actorDestroy=game.InstantiateClientUIControl,game.DestroyClientUIControl
+        if componentBridge then
+            actorInstantiate=function(index,parent)
+                local name=deckTemplateNames[index]
+                    or index==actorBinding.templateIndex and 'AbyssMonsterActor'
+                    or index==actorBinding.powerTemplateIndex and 'AbyssMonsterPower'
+                    or index==actorBinding.containerTemplateIndex and 'AbyssReadyCardGroup'
+                assert(name,'unmapped component business template '..tostring(index))
+                return componentBridge.instantiateBusiness(index,parent,name)
+            end
+            actorDestroy=function(control)return game.DestroyClientUIControl(componentBridge.unwrap(control))end
+        end
         view = GameUI.new(stage, Data, Presentation, Enum.CursorEventType.CursorClick,
-            { background = background, portraits = portraits, cardArt = cardArt, music = music, campaign = true, campaignProfile = "competition-two-act",
+            { background = background, portraits = portraits, cardArt = cardArt, music = music, prologue = true, campaign = true, campaignProfile = "competition-two-act",
+              nativePageLifecycle = nativePageLifecycle,presentationReady=presentationReady,presentationPage=presentationPage,
+              entryTrace=isTest and testPlay==true and traceEntry or nil,
               -- Native OnUpdate timing has not been verified across mobile
               -- foreground/background transitions. Do not publish it as accurate
               -- elapsed time; retain the internal Host counter unchanged.
               runTimeUnavailable = true,
               createEasterEggArt=createEasterEggArt,
               characterProfile = (alpha or isTest and testPlay == true) and "competition-candidate" or "production",
-              controllerApi = {events=Enum.ControllerNavigationEventType,directions=Enum.ControllerNavigationDir,
-                  modes=Enum.ControllerNavigationMode,getFocus=game.GetControllerFocus,setFocus=game.SetControllerFocus,
-                  isController=function()
-                      local device=game.GetDevice()
-                      return device==Enum.Device.Controller or device==Enum.Device.MobileController
-                  end},
-              monsterActors=setmetatable({instantiate=game.InstantiateClientUIControl,destroy=game.DestroyClientUIControl},
-                  {__index=require('abyss_monster_actor_binding')}),
+              deckBrowser=deckTemplateIndex>0 and {
+                  parts=deckBinding.parts,
+                  create=function(parent,part)return actorInstantiate(part and part.templateIndex or deckTemplateIndex,parent)end,
+                  destroy=actorDestroy,
+              } or nil,
+              monsterActors=setmetatable({instantiate=actorInstantiate,destroy=actorDestroy},{__index=actorBinding}),
               nativeMonsterArtEnabled=flags.monsters,
               color = Color, imageSource = Enum.ImageSource.StaticReference, cursorEvents = Enum.CursorEventType, keyEvents = Enum.KeyEventType,
+              keyRoot = not componentBridge and script.object or nil,
+              tween = game.Tween and function(control,fields,duration)
+                  return game.Tween(componentBridge and componentBridge.unwrap(control) or control,fields,duration)
+              end,
+              tweenSequence = game.TweenSequence, easeTypes = Enum.EaseType,
               imageTypes = Enum.ImageType and {basic=Enum.ImageType.Basic,stretch=Enum.ImageType.Stretch},
+              imageFillRight = Enum.ImageFillHorizontalType and Enum.ImageFillHorizontalType.Right,
+              textAlignments = {horizontal=Enum.TextHorizontalAlignment,vertical=Enum.TextVerticalAlignment},
               cursorPosition = function() return game.GetCursorUIPos() end,
-              touchScreen = function() return game.GetDevice() == Enum.Device.Mobile end,
+              touchScreen = function()
+                  local device=game.GetDevice()
+                  return device==Enum.Device.Mobile or device==Enum.Device.MobileController
+              end,
               sound = function(cue)
                 local id = Theme.sound[cue]
                 if id and game.PlayAudio2D then
@@ -180,26 +308,91 @@ function OnStart()
     end)
     if not ok then failed("startup", reason) end
 end
+local function paintReveal(gate)
+    gate:paint(not view.exitOpen or view.routeOpen)
+end
+local function refreshPreparedPage(gate,reveal)
+    local entry=gate and gate.entry
+    if not entry then view:refresh();return end
+    local ok,reason=pcall(view.refresh,view)
+    if not ok and gate.entry==entry then
+        if not gate:failProjection(entry,reveal.intent(view),reason) and gate.entry==entry then error(reason,0)end
+    end
+end
+local function applyRevealStep(gate,reveal,changed,repaint)
+    if changed and repaint~=false then refreshPreparedPage(gate,reveal) end
+    paintReveal(gate)
+end
+local function prepareRunDeck(gate)
+    local deck=view.deckUI
+    if not deck or not deck.browserWarmupPending or not view.run or not gate or gate:covered() then return end
+    if view.disabled or view.exitOpen or view.sessionPaused or view.starting or view.battleUI.busy then return end
+    if view.mode=='map' or view.mode=='battle' and view.run.phase=='combat' then
+        deck:prepareBrowser()
+    end
+end
+local function prewarmSelection(gate,dt,frameStarted)
+    if not portraits then return end
+    local eligible=frameStarted and gate and not gate:covered() and view.mode=='menu' and not view.run
+        and not view.characterOpen and not view.disabled and not view.starting
+        and not view.exitOpen and not view.settlementRequested and not view.settlementBusy
+        and not view.sessionPaused and not view.easterEggOpen and not view.deckUI.visible
+    portraits:warmSelection(eligible==true,dt,frameStarted)
+end
 function OnUpdate(dt)
     if not view or view.disabled then return end
     local ok, reason = pcall(function()
+        local frameStarted=portraits and view.mode=='menu' and os.clock()
         local width, height = game.GetUICanvasSize()
         if width ~= canvasWidth or height ~= canvasHeight then
             Viewport.apply(script.object, width, height)
             view:resize(width, height)
             canvasWidth, canvasHeight = width, height
         end
+        local reveal=require('abyss_page_reveal')
+        local gate=view.pageReveal
+        local intent=reveal.intent(view)
+        if gate then
+            local departing,changed,repaint=gate:advanceDeparture(intent,dt)
+            if departing then
+                applyRevealStep(gate,reveal,changed,repaint)
+                return -- Give this cover write its own scheduler turn before native preparation.
+            end
+            if not view.exitOpen and gate:takeProjectionRetry()then
+                refreshPreparedPage(gate,reveal)
+                paintReveal(gate)
+                return
+            end
+        end
+        presentationPage(intent.page)
         view:update(dt)
+        presentationPage(reveal.intent(view).page)
+        if componentBridge then componentBridge:step()end
+        if v25Textures then
+            v25Textures:syncMask(nativeStage)
+            if v25Textures:update() then refreshPreparedPage(gate,reveal)end
+        end
         if cardArt then cardArt.update() end
+        if gate then
+            applyRevealStep(gate,reveal,gate:step(reveal.intent(view),dt))
+        end
+        prepareRunDeck(gate)
+        prewarmSelection(gate,dt,frameStarted)
     end)
     if not ok then failed("update", reason) end
 end
 
 function OnDestroy()
+    fatalMusic=nil -- Engine teardown only forgets ownership; no native signals.
+    pcall(function()require('abyss_card_skin').destroySurface()end)
+    if v25Textures then pcall(function()v25Textures:onDestroy()end)end
     if view then pcall(function()view:onEngineDestroy()end) end
     if cardArt then cardArt.onEngineDestroy() end
     if portraits then portraits:onEngineDestroy() end
     if background then background:onEngineDestroy() end
+    if componentBridge then componentBridge:onEngineDestroy()end
     background, portraits, cardArt, view = nil, nil, nil, nil
+    v25Textures,nativeStage=nil,nil
+    componentBridge=nil
     script:EnableUpdate(false)
 end

@@ -12,13 +12,28 @@ local eq,same,test=H.eq,H.same,H.test
 local function setup(r,beforeRender)
  local root=control({name='host',kind='container',children={Layout}});local self={run=r,map={},visible=true,actions={},busy=false}
  self.root=root
+ -- Match the actual SDK: static Image/Text reject cursor-only properties.
+ for i=1,12 do
+  local back=root:GetChild('pickerView'):GetChild('forgeGrid'):GetChild('card'..i):GetChild('matchBack')
+  for _,name in ipairs({'plate','glyph','label'})do
+   local decoration=back:GetChild(name);local mt={}
+   for key,value in pairs(getmetatable(decoration)or{})do mt[key]=value end
+   rawset(decoration,'raycastTarget',nil)
+   local previous=mt.__newindex
+   mt.__newindex=function(t,k,v)
+    assert(k~='raycastTarget','native Image/Text cannot set raycastTarget')
+    if previous then previous(t,k,v)else rawset(t,k,v)end
+   end
+   setmetatable(decoration,mt)
+  end
+ end
  local ctx={root=root,self=self,options={imageSource='static',color=function(a,b,c,d)return {r=a,g=b,b=c,a=d}end}}
  ctx.self.presentation=require('abyss_presentation')
  function ctx.child(name)return assert(root:GetChild(name),name)end
  function ctx.show(c,v)c:SetVisible(v~=nil and v~=false)end
  function ctx.ink()end;function ctx.tint()end
  function ctx.picture(c,id)c:SetImage('static',id)end
- ctx.inspectCards,ctx.skinFaces,ctx.artFaces={},{},{}
+ ctx.inspectCards,ctx.skinFaces,ctx.artFaces={},{},{};ctx.clickEvent='click'
  function ctx.state(c,enabled)for _,name in ipairs({'normal','disabled','hover','pressed','selected'})do c:GetChild(name):SetVisible(name==(enabled and'normal'or'disabled'))end end
  function ctx.action(key,enabled,fn,reason,_,observe)self.actions[key]={enabled=enabled,handler=fn,reason=reason,observe=observe}end
  require('abyss_node_ui_faces').install(ctx);UI.install(ctx)
@@ -40,17 +55,21 @@ test('all twelve actual native card faces stay concealed until core reveal and u
   assert(get(path..'/matchBack').visible)
   local gridSpec;for _,spec in ipairs(Layout.children)do if spec.name=='forgeGrid'then gridSpec=spec end end
   for _,spec in ipairs(gridSpec.children[i].children)do
-   if spec.name~='hit'and spec.name~='matchBack'then eq(get(path..'/'..spec.name).visible,false)end
+   if spec.name~='hit'and spec.name~='matchBack'then
+    local facePath=path..'/'..spec.name
+    assert(not get(facePath).visible,'concealed Match card leaks '..facePath)
+   end
   end
   eq(get(path..'/name').visible,false);eq(get(path..'/name').text,'');eq(get(path..'/description').visible,false)
-  for _,name in ipairs({'plate','glyph','label'})do eq(get(path..'/matchBack/'..name).raycastTarget,false)end
  end
  same(r,before);assert(ctx.self.actions['pickerView/forgeGrid/card1'].handler())
  local slot=H.view(r).match.slots[1];assert(get('pickerView/forgeGrid/card1/name').visible);assert(not get('pickerView/forgeGrid/card1/matchBack').visible)
  assert(get('pickerView/forgeGrid/card1/name').text:find(ctx.cardName(slot.cardId,false),1,true))
+ local referenceCost=get('pickerView/forgeGrid/card1'):GetChild('stsReferenceCost')
+ if referenceCost then assert(referenceCost.visible,'revealed Match card must restore its reference cost layer')end
  assert(get('pickerView/label').text:find('5',1,true));eq(ctx.self.actions['pickerView/forgeGrid/card1'].enabled,false)
 end)
-test('Match and real normal forge reuse the same faces with restored backs, selection and stale ownership',function()
+test('Match and camp use the shared card face without leaving card backs or stale ownership',function()
  local r=H.play(H.fixture());local before=H.C.copy(r.deck)
  local ctx,get=setup(r,function(c)
   local box=c.child('pickerView'):GetChild('forgeGrid'):GetChild('card1')
@@ -60,13 +79,13 @@ test('Match and real normal forge reuse the same faces with restored backs, sele
  eq(old(),false);same(r.deck,before)
  local render=ctx.self.render;ctx.self.mode,ctx.self.picker,ctx.self.selected='picker','upgrade',nil
  ctx.self.upgradeRows=H.C.copy(r.deck);ctx.self.view={node={type='camp'}}
- local camp=require('abyss_node_ui_camp').new(ctx.self,ctx);local node={type='camp',upgradeCards=H.C.copy(r.deck)}
+ local camp=require('abyss_node_ui_camp').new(ctx);local node={type='camp',upgradeCards=H.C.copy(r.deck)}
  ctx.self.render=function()camp:render(node)end;camp:render(node)
  for i=1,12 do eq(get('pickerView/forgeGrid/card'..i..'/matchBack').visible,false)end
- eq(get('pickerView/forgeGrid/card1/name').visible,true)
- assert(get('pickerView/forgeGrid/card1/name').text:find(ctx.cardName(r.deck[1].cardId,false),1,true))
- local forge=ctx.self.actions['pickerView/forgeGrid/card1'].handler;assert(forge());eq(ctx.self.selected,r.deck[1].uid)
- ctx.self.render=render;ctx.self.picker,ctx.self.selected='match',nil;ctx.self:render()
+ local face=get('pickerView/forgeFit').items[0]
+ assert(face:GetChild('name').text:find(ctx.cardName(r.deck[1].cardId,false),1,true))
+ local forge=ctx.self.actions['pickerView/forgeScroll/card1'].handler;assert(forge());eq(ctx.self.selected,r.deck[1].uid)
+ camp:hide();ctx.self.render=render;ctx.self.picker,ctx.self.selected='match',nil;ctx.self:render()
  eq(forge(),false);eq(old(),false);same(r.deck,before)
  assert(get('pickerView/forgeGrid/card1/matchBack').visible);eq(get('pickerView/forgeGrid/card1/name').text,'')
 end)

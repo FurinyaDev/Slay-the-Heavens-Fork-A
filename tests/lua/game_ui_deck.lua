@@ -4,7 +4,6 @@ local F = dofile("tests/lua/support/game_ui_fixture.lua")
 local GameUI, Combat, Nodes, Data = F.GameUI, F.Combat, F.Nodes, F.Data
 local Presentation, Layout, Viewport, Theme = F.Presentation, F.Layout, F.Viewport, F.Theme
 local preview, control, fixture = F.preview, F.control, F.fixture
-local statValue, resultText, mapControl, click, win = F.statValue, F.resultText, F.mapControl, F.click, F.win
 local count = 0
 local Map = require('abyss_map')
 local function test(name, fn) fn(); count = count + 1; print("ok game UI " .. count .. " - " .. name) end
@@ -46,9 +45,9 @@ test("deck overlay reads permanent UID and upgraded text and never changes the r
     assert(not hit.click({dragging=true}),'scroll drag must not open detail')
     assert(not hit.click({dragging=false,GetPressUIPos=function()return 100,100 end,
         GetUIPos=function()return 100,180 end}),'released scroll must not open detail')
-    assert(not ui.deckUI.detailPages and grid.visible and grid.scrollProgress==.4)
+    assert(not ui.deckUI.cardDetail and grid.visible and grid.scrollProgress==.4)
     assert(hit.click(),'ordinary tap still opens read-only detail')
-    assert(ui.deckUI.detailPages and not grid.visible)
+    assert(ui.deckUI.cardDetail and not grid.visible)
     assert(closeDeck(root));ui:update(0)
     assert(grid.visible and grid.scrollProgress==.4,'detail return must retain native scroll position')
     assert(ui.deckUI.bindings[first].uid == ui.run.deck[1].uid and first:GetChild("uid").text == "")
@@ -63,9 +62,7 @@ test("deck overlay reads permanent UID and upgraded text and never changes the r
     local scroll = ui.mapUI.scroll
     assert(root:GetChild("mapPanel").visible and not ui.mapUI.visible)
     assert(not ui.mapUI:scrollBy(100) and ui.mapUI.scroll == scroll)
-    assert(not mapControl(root:GetChild("mapPanel"),"next"):GetChild("hit").click())
-    assert(not mapControl(root:GetChild("mapPanel"),"previous"):GetChild("hit").click())
-    assert(ui.mapUI.scroll == scroll)
+    assert(not ui.mapUI:scrollBy(-100) and ui.mapUI.scroll == scroll)
     assert(not testStart(ui) and not ui:settle())
     assert(same(beforeRun,ui.run) and same(beforeMap,ui.map), "view changed rules or RNG")
     local delayed = grid.refreshCallback

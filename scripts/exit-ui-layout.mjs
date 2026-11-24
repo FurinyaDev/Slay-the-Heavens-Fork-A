@@ -1,10 +1,9 @@
 import { nativeControls, nativeTheme } from './native-ui-theme.mjs';
-import { controlsGuide } from './controls-guide-layout.mjs';
 
 export function exitControls(theme = nativeTheme) {
   const { plate, text } = nativeControls(theme);
   const { color: c, font: f, space: s } = theme, l = theme.layout.exitMenu;
-  // Native presets keep all four states visible on mouse, touch and controller.
+  // Native presets keep all four states visible on mouse and touch.
   const button = (name, frame, label, primary = false) => {
     const size = frame.slice(2);
     const variants = {
@@ -13,7 +12,7 @@ export function exitControls(theme = nativeTheme) {
       pressed: [c.buttonPressedFill, c.buttonPressedText, c.goldBright], disabled: [c.panelSunken, c.textMuted, c.line],
     };
     return { name, kind: 'container', position: frame.slice(0, 2), size, children: [
-      { name: 'hit', kind: 'presetButton', size: [...size], focusable: true,
+      { name: 'hit', kind: 'presetButton', size: [...size],
         states: Object.fromEntries(Object.keys(variants).map(state => [state, state])),
         children: Object.entries(variants).map(([state, [fill, ink, border]]) => ({
           name: state, kind: 'container', size: [...size],
@@ -52,8 +51,6 @@ export function exitControls(theme = nativeTheme) {
       { name: 'blocker', kind: 'cursorArea', size: [...theme.canvas.base], focusable: false },
       plate('border', panel, c.goldDim),
       plate('face', [...panel.slice(0, 2), ...panel.slice(2).map(value => value - s.border * 2)], c.panel),
-      // TASK-4.11: header row = title (left) + 操作说明 (right); a gold rule separates it
-      // from the consequence body so no secondary control can sit on the warning text.
       text('title', l.title, '退出本局？', f.heading, c.goldBright),
       plate('rule', l.rule, c.goldDim),
       text('message', l.message, '退出将结束本局，并进入平台结算。\n当前进度不会保留。', f.body, c.text),
@@ -62,8 +59,6 @@ export function exitControls(theme = nativeTheme) {
       text('status', l.status, '', f.small, c.textDim),
       button('cancel', l.cancel, '继续游戏'),
       button('confirm', l.confirm, '退出并结算', true),
-      button('help', l.help, '操作说明'),
-      controlsGuide(theme),
     ] },
     { name: 'runMenu', kind: 'container', size: [...theme.canvas.base], visible: false, children: [
       plate('veil', [0, 0, ...theme.canvas.base], c.backdropVeil),
@@ -75,11 +70,12 @@ export function exitControls(theme = nativeTheme) {
       // 层级：标题 → 主操作「继续游戏」→ 次要查看 → 分隔线 → 破坏性「放弃本局」。
       text('title', menu.title, '暂停', f.heading, c.goldBright),
       button('resume', menu.resume, '继续游戏', true),
-      button('help', menu.help, '操作说明'),
       // 未启程时整颗隐藏，不留灰色空头承诺；启程后出现并可进入。
       button('map', menu.map, '查看地图'),
+      { ...button('mainMenu', menu.mainMenu, '返回主菜单'), visible: false },
       plate('rule', menu.rule, c.goldDim),
       button('abandon', menu.abandon, '放弃本局'),
+      { ...button('quit', menu.quit, '退出游戏'), visible: false },
       text('dismissHint', menu.dismissHint, '点空白处继续游戏', f.small, c.textMuted),
     ] },
   ];

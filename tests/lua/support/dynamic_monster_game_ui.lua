@@ -2,7 +2,7 @@ local F=dofile('tests/lua/support/game_ui_fixture.lua')
 local cursorX,cursorY
 local host,root=F.fixture(nil,nil,nil,nil,nil,nil,{position=function()return cursorX,cursorY end})
 assert(F.start(host))
-assert(require('abyss_run').startCombat(host.run,'cultist_solo'))
+assert(require('abyss_run').startCombat(host.run,'raven_adept_solo'))
 local ids={};for i=1,6 do ids[i]='acid_slime_m'end
 local state=F.Combat.new(F.Data,{enemies=ids,deck={'strike'},seed=42})
 for i,actor in ipairs(state.enemies)do actor.sourcePosition={x=-600+i*180,y=i*3}end
@@ -32,9 +32,12 @@ surfaces:each(function(box,slot,entry)
  assert(math.abs(intent.size[1]-64/1.5)<1e-8,'original intent hitbox')
 end)
 assert(count==6,'six actual generated full actor templates must render without truncation')
-for _,enemy in ipairs(state.enemies)do
+for index,enemy in ipairs(state.enemies)do
  local control=surfaces:find(enemy.id)
- assert(not control:GetChild('intentBadge').visible and not control:GetChild('intentExtra').visible,'world intent must not use invented horizontal tooltip composites')
+ local badge=control:GetChild('intentBadge')
+ assert(badge.visible==(F.Combat.intent(state,index).id=='acid_slime_m_1'),'only the actual attack-plus-Slimed move shows a badge')
+ if badge.visible then assert(badge.imageId==F.Theme.icon.intent.debuff)end
+ assert(not control:GetChild('intentExtra').visible,'other controls stay hidden')
  assert(math.abs(control:GetChild('intentIcon').size[1]-math.min(128/1.5,require('abyss_theme').layout.intent.size))<1e-8,'full-bleed intent glyph size')
 end
 
@@ -91,7 +94,7 @@ for _,failure in ipairs({'allocate','bind'})do
  local canvas=F.control({children=F.Layout});local nativeRoot=F.Viewport.apply(canvas,1280,720)
  local ui=F.GameUI.new(nativeRoot,F.Data,F.Presentation,'click',{seed=1,monsterActors=api,
   imageSource='static',color=function(r,g,b,a)return {r=r,g=g,b=b,a=a}end})
- nativeRoot.ui=ui;assert(F.start(ui));assert(require('abyss_run').startCombat(ui.run,'cultist_solo'))
+ nativeRoot.ui=ui;assert(F.start(ui));assert(require('abyss_run').startCombat(ui.run,'raven_adept_solo'))
  ui.run.combat=F.Combat.new(F.Data,{enemies=ids,deck={'strike'},seed=42})
  local ok,reason=pcall(ui.refresh,ui)
  assert(not ok and tostring(reason):find('injected'),'native failure must stay explicit')

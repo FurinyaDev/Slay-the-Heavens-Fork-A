@@ -1,7 +1,11 @@
 import { nativeControls, nativeTheme } from './native-ui-theme.mjs';
+import { compactPopupSurface } from './compact-popup-surface.mjs';
 import { cardFaceChildren } from './card-face.mjs';
 import { merchantControl } from './cinematic-ui-layout.mjs';
+import { shopRoom } from './shop-room-layout.mjs';
+import { shopCloth } from './v25-node-layout.mjs';
 import { augmentMatchEventPicker } from './match-event-layout.mjs';
+import { fiveColumnCardGrid } from './deck-ui-layout.mjs';
 
 // Approved PR19 node screens (shop, camp/forge, event, treasure) as one native
 // tree. Every view is its own container so no control exceeds the MCP child limit.
@@ -12,6 +16,7 @@ export function nodeLayout(theme = nativeTheme) {
   const iconId = entry => (typeof entry === 'object' ? entry.id : entry);
   const picture = (name, values, id, colour = color.text) => ({ name, kind: 'image', position: values.slice(0, 2),
     size: values.slice(2), image: iconId(id), colour });
+  const readable = control => ({...control,text:{...control.text,align:'left',valign:'top',autoSize:false}});
   const hidden = control => ({ ...control, visible: false });
   const group = (name, children, visible = false) => ({ name, kind: 'container', size: [...theme.canvas.base], visible, children });
 
@@ -51,6 +56,9 @@ export function nodeLayout(theme = nativeTheme) {
   const bar = layout.topBar;
   const controls = [
     plate('backdrop', layout.backdrop, color.backdrop),
+    shopRoom(theme),
+    // Below every shelf/footer; unlike a button this background is not focusable.
+    {name:'shopDismiss',kind:'cursorArea',position:[0,0],size:[...theme.canvas.base],focusable:false},
     // TopPanel reuse: same dark band, copper hairline and title wings as the map header
     // (layout.map.presentation.header + color.mapHeader), so map → Neow/event keeps one chrome.
     { ...hidden(plate('topBar', bar.plate, color.panelSunken)) },
@@ -72,7 +80,7 @@ export function nodeLayout(theme = nativeTheme) {
     text('name', frame([0, 14], [shop.removal[2], lineHeight]), '移除一张牌', font.small, color.text),
     text('description', frame([0, -34], [shop.removal[2] - space.s, 64]), '', font.small, color.textDim),
   ] });
-  const shopControls = [hidden(arrow('previous', shop.previous, icon.back)), hidden(arrow('next', shop.next, icon.next)),
+  const shopControls = [shopCloth(), hidden(arrow('previous', shop.previous, icon.back)), hidden(arrow('next', shop.next, icon.next)),
     hidden(text('page', shop.page, '', font.small, color.textDim)), removal, price('removalPrice', shop.removal[0], shop.removalPriceY)];
   shop.columns.forEach((x, i) => shopControls.push(card(`card${i + 1}`, [x, shop.cardRows[i]]), price(`price${i + 1}`, x, shop.priceRows[i])));
   relic.columns.forEach((x, i) => {
@@ -97,8 +105,7 @@ export function nodeLayout(theme = nativeTheme) {
   });
   shopControls.push(hidden(arrow('relicPrevious', shop.relicPrevious, icon.back)), hidden(arrow('relicNext', shop.relicNext, icon.next)));
   shopControls.push(hidden({name:'detail',kind:'container',position:shop.detail.slice(0,2),size:shop.detail.slice(2),children:[
-    plate('border',frame([0,0],shop.detail.slice(2)),color.gold),
-    plate('panel',frame([0,0],shop.detail.slice(2).map(v=>v-space.border*2)),color.panelSunken),
+    ...compactPopupSurface(theme,shop.detail.slice(2),{face:'panel'}),
     text('name',frame([0,40],[shop.detail[2]-space.l,40]),'',font.body,color.goldBright),
     text('description',frame([0,-20],[shop.detail[2]-space.l,80]),'',font.body,color.text),
   ]}));
@@ -107,13 +114,27 @@ export function nodeLayout(theme = nativeTheme) {
   const pickerControls = [arrow('previous', picker.previous, icon.back), arrow('next', picker.next, icon.next),
     text('page', picker.page, '', font.small, color.textDim),
     ...picker.columns.map((x, i) => card(`card${i + 1}`, [x, picker.cardY])),
+    // Camp/Match retire six stable semantic slots even when this profile only
+    // displays three. Empty parents preserve lookup without serialized faces.
+    ...Array.from({length:Math.max(0,6-picker.columns.length)},(_,i)=>({
+      name:`card${picker.columns.length+i+1}`,kind:'container',position:[0,picker.cardY],
+      size:[...theme.layout.card.size],visible:false,children:[],
+    })),
     hidden(card('before', [picker.before, previewY], true)), hidden(card('after', [picker.after, previewY], true)),
     hidden(card('target', [picker.target, previewY], false)),
     hidden(picture('arrow', picker.arrow, icon.next, color.positive)),
     text('label', picker.label, '', font.label, color.textDim), text('hint', picker.hint, '', font.small, color.textDim),
     text('empty', picker.empty, '', font.body, color.textMuted)];
   const forge = layout.forge;
-  pickerControls.push(hidden(arrow('forgePrevious',forge.previous,icon.back)),hidden(arrow('forgeNext',forge.next,icon.next)));
+  pickerControls.unshift(
+    hidden(plate('forgeShade', [0, -22, 1280, 676], '#000000BF')),
+    hidden(fiveColumnCardGrid('forgeFit', forge.viewport, 'AbyssForgeCard', false)),
+    hidden(fiveColumnCardGrid('forgeScroll', forge.viewport, 'AbyssForgeCard')),
+    hidden(group('forgePrompt', [
+      plate('plate', forge.prompt, '#000000B3'),
+      text('label', forge.prompt, '选择一张卡牌升级', font.heading, color.text),
+    ])),
+  );
   pickerControls.push(hidden(group('forgeGrid',forge.rows.flatMap((y,row)=>forge.columns.map((x,col)=>
     card(`card${row*forge.columns.length+col+1}`,[x,y]))))));
 
@@ -181,23 +202,27 @@ export function nodeLayout(theme = nativeTheme) {
     hidden(reward), hidden(framed('take', chest.take, '拿取并离开', { primary: true, fontSize: font.heading })),
     hidden(arrow('previous', chest.previous, icon.back)), hidden(arrow('next', chest.next, icon.next)),
     hidden(text('page', chest.page, '', font.label, color.goldBright)),
-    hidden(text('bossDescription', chest.bossDescription, '', font.small, color.textDim)),
+    hidden(text('bossDescription', chest.bossDescription, '', font.small, color.text)),
   ];
   const list=layout.rewardList;
   list.rows.forEach((y,i)=>treasureControls.push(hidden(framed(`rewardItem${i+1}`,[list.x,y,...list.size],null,{children:[
     picture('icon',[-list.size[0]/2+40,0,48,48],icon.node.treasure,color.geo),
-    text('name',frame([28,22],[list.size[0]-100,40]),'',font.body,color.goldBright),
-    text('description',frame([28,-22],[list.size[0]-100,40]),'',font.small,color.textDim),
+    readable(text('name',frame([28,30],[list.size[0]-100,40]),'',24,color.goldBright)),
+    readable(text('description',frame([28,-22],[list.size[0]-100,64]),'',20,color.text)),
   ]}))));
   treasureControls.push(hidden({...picture('burst',[...chest.chest.slice(0,2),360,360],image.glow,color.goldBright)}));
   const rd=list.detail;
   treasureControls.push(hidden({name:'details',kind:'container',position:rd.slice(0,2),size:rd.slice(2),children:[
-    plate('border',[0,0,...rd.slice(2)],color.gold),plate('panel',[0,0,rd[2]-4,rd[3]-4],color.panelSunken),
-    text('name',[0,110,rd[2]-32,40],'',font.heading,color.goldBright),
-    text('description',[0,-20,rd[2]-32,200],'',font.body,color.text),
+    ...compactPopupSurface(theme,rd.slice(2),{face:'panel'}),
+    text('name',[0,rd[3]/2-36,rd[2]-40,44],'',font.heading,color.goldBright),
+    readable(text('description',[0,rd[3]/2-116,rd[2]-40,104],'',22,color.text)),
+    hidden(text('relatedName',[0,-30,rd[2]-40,40],'',font.body,color.goldBright)),
+    hidden(readable(text('relatedDescription',[0,-126,rd[2]-40,144],'',20,color.text))),
   ]}));
 
-  controls.push(group('shopView', shopControls), group('campView', campControls), augmentMatchEventPicker(group('pickerView', pickerControls),theme),
+  // The shelf and its dismiss surface paint below the shared HUD even while the shelf moves.
+  controls.splice(controls.findIndex(control => control.name === 'shopDismiss') + 1, 0, group('shopView', shopControls));
+  controls.push(group('campView', campControls), augmentMatchEventPicker(group('pickerView', pickerControls),theme),
     group('eventView', eventControls), group('treasureView', treasureControls), merchantControl(theme),
     framed('back', layout.back, '返回'), framed('confirm', layout.confirm, '确认', { primary: true, fontSize: font.heading }),
     hidden(group('roomEffect',[

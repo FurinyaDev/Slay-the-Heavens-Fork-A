@@ -5,19 +5,39 @@ local Combat = require('abyss_combat')
 local number = require("abyss_numbers").integer
 local C = Theme.color
 local typeNames = { attack = "攻击", skill = "技能", power = "能力", status = "状态", curse = "诅咒" }
-local triggers = { combat_start = "战斗开始时，", combat_end = "战斗结束时，" }
 local function find(entries, id, key)
     for _, item in ipairs(entries or {}) do if item[key or "id"] == id then return item end end
 end
+local function displayName(id, display, definition)
+    return display and display.name or definition and definition.name or id
+end
 local M = {}
+
+local function referenceCard(ctx, box, definition, look)
+    if box:GetChild('stsReferenceChrome') then return end
+    local reference = Theme.layout.nativeNode.cardReference
+    if not reference then return end
+    local chrome, skin = box:GetChild('v25NodeCardChrome'), box:GetChild('skin')
+    if not chrome then return end
+    for _, name in ipairs({'roundShadow','roundFrame','roundBody','nameBand','nameRule','costCore','costDisc','roleRing','roleMark'}) do
+        box:GetChild(name):SetVisible(false)
+    end
+    skin:GetChild('gloss'):SetVisible(false)
+    for i = 1, Theme.cardSkin.bandSteps do skin:GetChild('band'..i):SetVisible(false) end
+    local ribbon, colour = chrome:GetChild('ribbon'), reference.rarities[definition.rarity] or reference.rarities.basic
+    for i = 0, 7 do ctx.tint(ribbon:GetChild('face'..i), colour) end
+    chrome:GetChild('costOrb'):SetVisible(definition.cost ~= -2)
+    ctx.ink(box:GetChild('cost'), look.changed and C.positive or reference.costInk)
+end
 
 -- Installs the faces responsibility on one node UI instance.
 function M.install(ctx)
+    local fitText = CardDisplay.newTextFitter()
     function ctx.card(id) return find(ctx.self.run.data.cards.cards, id) end
 
     function ctx.cardName(id, upgraded, upgrades)
         local display, definition = ctx.self.presentation[id], ctx.card(id)
-        return (display and display.name or (definition and definition.name) or id)
+        return displayName(id, display, definition)
         .. (upgraded and ('+'..(definition and definition.repeatable and number(upgrades or 1) or '')) or '')
     end
 
@@ -44,30 +64,7 @@ function M.install(ctx)
 
     function ctx.relicText(id,heldRun)
         local data=(heldRun or ctx.self.run).data
-        if id=='membership_card' then return '所有商店商品半价。' end
-        if id=='courier' then return '商店商品八折，购买后补货。' end
-        if id=='smiling_mask' then return '商店删牌服务固定为50金币。' end
-        local definition = find(data.relics.relics, id)
-        if not definition then return "" end
-        if definition.description then return definition.description end
-        local parts
-        local function describeRelicEffects()
-            parts = {}
-            for _, effect in ipairs(definition.effects or {}) do
-                local value = number(effect.value)
-                if effect.op == "heal" then parts[#parts + 1] = "回复 " .. value .. " 点生命"
-                elseif effect.op == "block" then parts[#parts + 1] = "获得 " .. value .. " 点格挡"
-                elseif effect.op == "draw" then parts[#parts + 1] = "抽 " .. value .. " 张牌"
-                elseif effect.op == "energy" then parts[#parts + 1] = "获得 " .. value .. " 点能量"
-                elseif effect.op == "gainStatus" then
-                    local status = find(data.statuses.statuses, effect.status)
-                    parts[#parts + 1] = "获得 " .. value .. " 层" .. (status and status.name or effect.status)
-                end
-            end
-        end
-        describeRelicEffects()
-        if #parts == 0 then return "" end
-        return (triggers[definition.trigger] or "") .. table.concat(parts, "，") .. "。"
+        return require('abyss_relic_text').describe(data,id)
     end
 
     function ctx.self.describeRelic(_,heldRun,id) return ctx.relicText(id,heldRun) end
@@ -76,10 +73,22 @@ function M.install(ctx)
 
     ctx.artFaces={}
 
+    function ctx.fillNativeCardArt(box, definition, art, uid)
+        local kind = Theme.icon.cardArt[definition.type] and definition.type or "status"
+        CardDisplay.writeNativeArt(box, definition, art, ctx.options, box:GetChild('art_'..kind), uid)
+        ctx.artFaces[box] = true
+    end
+
+    local function fillNativeArt(box, definition, display, instance, look)
+        if look.deferNativeArt then return end
+        if ctx.self.visible then ctx.fillNativeCardArt(box, definition, display.nativeArt, instance.uid)
+        else CardDisplay.clearNativeArt(box) end
+    end
+
     function ctx.fillCard(box, id, upgraded, look)
         look = look or {}
         local definition, display = ctx.card(id) or {}, ctx.self.presentation[id] or {}
-        local printedCost=definition.cost
+        local printedCost, title = definition.cost, displayName(id, display, definition)
         ctx.skinFaces[box]=true
         local instance=look.instance or {cardId=id,upgraded=upgraded==true}
         definition=Combat.cardDefinition({catalog={cards={[id]=definition}}},instance)
@@ -87,13 +96,13 @@ function M.install(ctx)
         if look.inspectOnly then box:GetChild('hit'):SetVisible(definition.originalV4~=nil) end
         local kind = Theme.icon.cardArt[definition.type] and definition.type or "status"
         local function writeCardCopy()
-            CardDisplay.writeTitle(box:GetChild("name"),ctx.cardName(id,false),instance.upgraded,
+            CardDisplay.writeTitle(box:GetChild("name"),title,instance.upgraded,
             definition.repeatable and (instance.upgrades or 1) or nil,box:GetChild("type"),
-            typeNames[definition.type] or "")
+            typeNames[definition.type] or "", fitText)
             ctx.ink(box:GetChild("name"), Theme.cardSkin.text.title)
             local text=CardDisplay.permanentText(display,definition,instance)
-            CardDisplay.writeBody(box:GetChild("description"),type(text)=='string' and text or '',box)
-            ctx.ink(box:GetChild("description"), C.text)
+            CardDisplay.writeBody(box:GetChild("description"),type(text)=='string' and text or '',box,fitText)
+            ctx.ink(box:GetChild("description"), Theme.cardSkin.text.body or C.text)
         end
         writeCardCopy()
         -- Presentation costs can be strings; format the numeric rule value.
@@ -107,11 +116,8 @@ function M.install(ctx)
         writeCardCost()
         local function writeCardArt()
             for art in pairs(Theme.icon.cardArt) do box:GetChild("art_" .. art):SetVisible(art == kind) end
-            CardDisplay.writeArt(box:GetChild("art_" .. kind), definition, ctx.picture)
-            if ctx.self.visible then
-                CardDisplay.writeNativeArt(box,definition,display.nativeArt,ctx.options,box:GetChild('art_'..kind),instance.uid)
-                ctx.artFaces[box]=true -- Pending pools also belong to this page's lifetime.
-            else CardDisplay.clearNativeArt(box)end
+            CardDisplay.writeArt(box:GetChild("art_" .. kind), definition, ctx.picture,box)
+            fillNativeArt(box, definition, display, instance, look)
             ctx.tint(box:GetChild("artPlate"), look.dim and C.panelSunken or C.cardType[kind] or C.panelRaised)
         end
         writeCardArt()
@@ -123,14 +129,16 @@ function M.install(ctx)
             ctx.tint(box:GetChild("nameRule"), C.rarity[definition.rarity] or C.line)
             ctx.ink(box:GetChild("cost"), look.dim and C.textMuted or look.changed and C.positive or C.energy)
             CardSkin.apply(box,definition,ctx.options,{dim=look.dim,selected=look.selected,cost=cost,baseCost=look.changed and printedCost or definition.cost,
-                reason=reason,overlayCovered=covered})
+                reason=reason,overlayCovered=covered,surfaceScope='node',templateKind=look.templateKind,templateMaterials=look.templateMaterials})
         end
         writeCardFrame()
+        referenceCard(ctx, box, definition, look)
         ctx.show(box:GetChild("glow"), look.selected)
         ctx.show(box:GetChild("veil"), look.veil)
         ctx.show(box:GetChild("stampPlate"), look.stamp ~= nil)
         ctx.show(box:GetChild("stamp"), look.stamp ~= nil)
         box:GetChild("stamp").text = look.stamp or ""
+        return definition
     end
 end
 return M

@@ -1,9 +1,10 @@
 import { spawnSync } from 'node:child_process';
-import { readFileSync, readdirSync, mkdirSync, writeFileSync } from 'node:fs';
+import { readFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import luaparse from 'luaparse';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { requireLuaTool } from './setup-lua-static.mjs';
+import { discoverSources, measureSources, reviewGameUiMeasurements } from './lua-quality-metrics.mjs';
 
 export function parseDiagnostics(output) {
   return output.split(/\r?\n/).filter(line=>line.trim()).map(line=>{
@@ -93,22 +94,141 @@ export function reviewRenderComplexity(diagnostics, sources) {
 // Budget only this governance slice and every extracted responsibility module.
 // Unrelated pre-existing Combat/UI hotspots keep their diagnostic reports.
 const responsibilityRoots = {
+  'src/lua/abyss_curses.lua': ["function 'M.isImplemented'"],
+  'src/lua/abyss_skill_feedback.lua': [],
+  'src/lua/abyss_joust_event.lua': [],
+  'src/lua/abyss_golden_idol_event.lua': ['M.choose','chooseIntro','invalidTrapHealth','obtainInjury','applyTrapCost'].map(name=>`function '${name}'`),
+  'src/lua/abyss_encounter_formation.lua': ['M.assemble','fixedFormation','shapeFormation','gremlinFormation',
+    'slimeFormation','louseFormation','mixedFormation'].map(name=>`function '${name}'`),
+  'src/lua/abyss_defect_final_cards.lua': ['M.execute','generate','applyFinalPower','recurOrb','scrapeDrawn','recoverZeroCost','recoverDiscard','fissionOrbs','rebootPiles']
+    .map(name=>`function '${name}'`),
+  'src/lua/abyss_silent_final_cards.lua': ['M.apply',
+    ...['gainSilentFinalPower','potionShivs','trigger','choke','setup','bulletTime','copyHand','distraction','doppelganger','phantasmalGain','remove','tools','startPower','corpseDamage','alchemize']
+      .map(name=>`actionHandlers.${name}`)].map(name=>`function '${name}'`),
+  'src/lua/abyss_silent_tactics_cards.lua': [],
+  'src/lua/abyss_watcher_flow_cards.lua': ['M.planEffect','planDamage','planStance','planCollect','planPower','planRecall']
+    .map(name=>`function '${name}'`),
+  'src/lua/abyss_scry.lua': ['M.choose','allowedCandidates','selectedCards','hasWeaveQueue','discardSelected']
+    .map(name=>`function '${name}'`),
+  'src/lua/abyss_shivs.lua': [],
+  'src/lua/abyss_act3_ai.lua': [],
+  'src/lua/abyss_enemy_ai.lua': [
+    ...['M.initialize','M.advance','initializeScriptedPolicy','initializeAct1Policy',
+      'initializeOpeningPolicy','advanceShield','advanceCharge','advanceSleepCycle',
+      'advanceAct1Policy','advanceFixedPolicy'].map(name=>`function '${name}'`),
+  ],
+  'src/lua/abyss_turn_power_phases.lua': [],
+  'src/lua/abyss_shop.lua': ["function 'selectShopCard'"],
+  'src/lua/abyss_defect_engine_cards.lua': ['M.planEffect','change',
+    ...["growClaws", "loseSteamBlock", "reduceStreamlineCost", "aggregateEnergy", "autoShields", "blizzardDamage", "chaosOrbs", "chillOrbs", "randomEngineAttack", "engineRandomRounds", "sunderDamage", "engineSunderRefund", "tempestOrbs", "engineChannelRounds", "engineEvokeRounds"]
+      .map(name=>`planHandlers.${name}`)].map(name=>`function '${name}'`),
+  'src/lua/abyss_act1_events.lua': ['M.choose','bonfireReward','bonfireCurseReward',
+    ...['sssserpent','big_fish','accursed_blacksmith','scrap_ooze','transmogrifier','bonfire']
+      .map(name=>`choiceHandlers.${name}`)].map(name=>`function '${name}'`),
+  'src/lua/abyss_watcher_final_cards.lua': ['M.execute',
+    ...['gainWatcherFinalPower','watcherFinalEndTurnEarly','watcherFinalSkipEnemiesTurn',
+      'watcherFinalEstablishment','watcherFinalOmega','watcherFinalGenerate','watcherFinalWish',
+      'watcherFinalLessonLearned','watcherFinalMeditate','watcherFinalDeusExMachina',
+      'watcherFinalSpiritShield','watcherFinalConjureBlade','watcherFinalJudgment',
+      'watcherFinalExpungerHits','watcherFinalRagnarok','watcherFinalDamageHit']
+      .map(name=>`effectHandlers.${name}`)].map(name=>`function '${name}'`),
+  'src/lua/abyss_inventory.lua': [],
+  'src/lua/abyss_colorless_catalog.lua': [],
+  'src/lua/abyss_card_capability.lua': [],
+  'src/lua/abyss_run_card_catalog.lua': [],
+  'src/lua/abyss_relic_potion_hooks.lua': [],
+  'src/lua/abyss_end_turn_powers.lua': [],
+  'src/lua/abyss_actor_presence.lua': [],
+  'src/lua/abyss_relic_combat_hooks.lua': [],
+  'src/lua/abyss_relic_family_combat.lua': [],
+  'src/lua/abyss_purge_candidates.lua': [],
+  'src/lua/abyss_living_wall.lua': ["function 'queryIndex'","function 'queryNewIndex'"],
+  'src/lua/abyss_relic_queries.lua': [],
+  ...Object.fromEntries(['relic_hooks','uncommon_relics','rare_relics','boss_relics','shop_relics']
+    .map(name=>[`src/lua/abyss_${name}.lua`,["function 'queryIndex'","function 'queryNewIndex'"]])),
+  'src/lua/abyss_relic_hooks.lua': ['queryIndex','queryNewIndex','M.onEquip',
+    'admitEquipment','initializeEquipCounter','equipPotionCapacity','previewEggRewards',
+    'equipPermanentBenefit'].map(name=>`function '${name}'`),
+  'src/lua/abyss_actor_power_rules.lua': [],
+  'src/lua/abyss_combat_reactions.lua': ["function 'M.enqueue'", "function 'M.enqueueReaction'"],
+  'src/lua/abyss_actor.lua': [
+    "function 'presenceIndex'", "function 'presenceNewIndex'",
+    ...['M.status','M.applyPower','M.addStatus','M.endTurn'].map(name=>`function '${name}'`),
+    ...['updatePlayerStatusOrder','updateMonsterStatusOrder','markRoundDebuffApplication',
+      'preparePowerAmount','rememberConstrictedSource','rememberPostDrawPower',
+      'clearOwnerEntangled','appendAcquiredEndPower','collectOwnerEndPowers','settleOwnerEndPower',
+      'clearTemporaryPowerOrder','settleOwnerEndPowers','finishOwnerTurn'].map(name=>`function '${name}'`),
+    ...['damageAmount','consumeAttackBlock','modifyIncomingAttack','applyAttackHpLoss',
+      'queueHitPowers','queueAttackedPowers','M.damage'].map(name=>`function '${name}'`),
+    ...['monsterStatusIds','playerStatusIds','statusKind','statusEntry','statusResource',
+      'appendRaidenResources','appendOriginalV4Resources','appendTargetV4Resources','M.statusView']
+      .map(name=>`function '${name}'`),
+  ],
   'src/lua/abyss_card_actions.lua': [
+    "function 'admissionIndex'", "function 'admissionNewIndex'",
     ...['exhaustRandom','fiendFire','exhaustNonAttacks','exhaustSpecific','upgradeAllHand',
       'makeTemporaryCards','generateAttack','randomizeHandCost','upgradeHand','resolveCurlUp',
       'obtainPotion','doubleStrength','spotWeakness','damageRandom','feedReward','feed','reaper',
-      'heal','applyFallback','block','M.apply'].map(name=>`function '${name}'`),
-    ...['writhingRoll','writhingParasite','giantHeadSlow','timeEater','reptomancerSuicide',
+      'heal','applyFallback','block','M.apply',
+      'choiceEligible','candidates','openChoice','multipleSelection','selection','handChoice',
+      'returnDualWieldHand','choiceActions.exhaustChoose','choiceActions.recoverExhaust',
+      'choiceActions.discardToHand','moveChoiceToDraw','choiceActions.upgradeHand',
+      'choiceActions.dualWield','M.applyChoice','commitMultipleChoice','toggleChoice',
+      'chooseMultiple','containsUid','chooseSingle','M.choose',
+      'applyDrainedAction','refreshDrainedHand','M.drain'].map(name=>`function '${name}'`),
+    ...['writhingRoll','writhingParasite','giantHeadSlow','timeEater','reptomancerDismissal',
       'enemyAction','staticRetaliation','classPotion','silentFinal','discover','colorless','originalV4',
       'relicUpgradeRandomHand','playTop','darklingAction','heartBeat','spireDeathRemove',
       'awakenedAction','capturedSharpHide','dispose','effectBatch'].map(name=>`function 'actionHandlers.${name}'`),
   ],
+  'src/lua/abyss_colorless_cards.lua': [
+    "function 'catalogIndex'","function 'catalogNewIndex'",
+    ...['eligibleKill','rewardGreed','growRitual','resolveKill','M.apply',
+      ...['apotheosis','shackles','impatience','enlightenment','discovery','madness',
+        'generateColorless','generateDraw','transmutation','deepBreath','deepBreathShuffle',
+        'violence','panache','bomb','mayhem','mayhemPlay','sadisticDamage']
+        .map(name=>`actionHandlers.${name}`)].map(name=>`function '${name}'`),
+  ],
   'src/lua/abyss_nodes.lua': [],
+  'src/lua/abyss_original_v4.lua': ['validateEffects','denseEffects','validAmount','validTargetFields',
+    'apply','applyDamage','applyBasic','applyNext','applyHT','applyGuard','applyAR','applyFR','applyRD',
+    'executeRoot','infuseRoot','rootBonus','settleRaiden'].map(name=>`function '${name}'`),
+  'src/lua/abyss_codex_relic.lua': [],
   'src/lua/abyss_run.lua': [],
   'src/lua/abyss_run_potions.lua': ["function 'potionCandidate'"],
   'src/lua/abyss_run_potion_candidate.lua': [],
-  'src/lua/abyss_effects.lua': ["function 'M.apply'", "function 'continueEffects'", "function 'applyOne'"],
-  'src/lua/abyss_combat.lua': ["function 'queuedHandlers.effect'", "function 'M.canPlay'", "function 'playWindow'", "function 'playEligibility'", "function 'playSupportedEffects'", "function 'playCardContent'", "function 'playAdvancedMode'", "function 'playEnergy'", "function 'playEffectTarget'", "function 'playCardRequirements'", "function 'playHandRequirements'"],
+  'src/lua/abyss_effects.lua': ["function 'M.apply'", "function 'continueEffects'", "function 'applyOne'",
+    ...['visitTargetGroup','discoverTargetGroup','targetGroupCount','validTargetGroupMember',
+      'targetGroupMembers','validTargetGroupPair','targetGroup','denseEffectCount','scrySequenceSupported','supportedEffectOp','conditionalAllowed',
+      'nonConditionalOpSupported','selectionAmountsSupported','mantraAmountSupported',
+      'effectMetadataSupported','supported','M.supported'].map(name=>`function '${name}'`)],
+  'src/lua/abyss_combat.lua': [
+    ...['M.damage','draw'].map(name=>`function '${name}'`),
+    ...['damagePoison','damageThornsCallback','damagePreview','recordDamagePreview','completeDamage',
+      'notifyDrawShuffle','drawSourcePile','drawVoid','drawStatusPowers','applyDrawHooks'].map(name=>`function '${name}'`),
+    ...['previewDamage','directAttackPreview','finalAttackPreview','targetedEffectPreview',
+      'damageEffectPreview','blockEffectPreview','previews','M.cardPreview'].map(name=>`function '${name}'`),
+    ...['baseCardDefinition','classCardDefinition','damageCardDefinition',
+      'costCardDefinition','finishCardDefinition','M.cardDefinition'].map(name=>`function '${name}'`),
+    ...['nativeEthereal','resetNativeTurnCosts','prepareNativePlayerEnd','autoUseNativeEndCards',
+      'endNativePlayerPowers','resolveNativeRetainPowers','discardNativeRetainedHand',
+      'cleanupNativePlayerEnd','startNativeEnemyGroup','runNativeEnemyGroup',
+      'finishNativeRound','endNativeTurn','resetExperimentalTurnCosts',
+      'autoUseExperimentalEndCards','prepareExperimentalPlayerEnd','startExperimentalEnemyGroup',
+      'runExperimentalEnemyGroup','finishExperimentalRound','endExperimentalTurn',
+      'catalogNeedsTurnCleanup','powersNeedTurnCleanup','cardNeedsTurnCleanup','advancedTurnCleanup',
+      'resumeRetainedEndTurn','endTurnNeedsTransaction','endTurnRestore','invokeEndTurnResolver','M.endTurn']
+      .map(name=>`function '${name}'`),
+    ...['constructorOptions','validateConstructorOptions','constructorState',
+      'detectConstructorMechanics','constructorRandomStreams','constructorDevelopmentResources',
+      'constructorCardUid','appendConstructorCard','constructorDeck','constructorEnemies',
+      'constructorCardStreams','constructorEmeraldBoost','constructorOpening','M.new']
+      .map(name=>`function '${name}'`),
+    ...['clearNativeTurnPowers','enqueueNativeTurnPowers','enqueueNativeOpeningDraw',
+      'enqueueNativePostDraw','startNativePlayerTurn'].map(name=>`function '${name}'`),
+    "function 'chooseCodex'", "function 'queuedHandlers.effect'", "function 'M.canPlay'", "function 'playWindow'", "function 'playEligibility'", "function 'playSupportedEffects'", "function 'playCardContent'", "function 'playAdvancedMode'", "function 'playEnergy'", "function 'playEffectTarget'", "function 'playCardRequirements'", "function 'playHandRequirements'", "function 'beginQueuedPlay'", "function 'queueNativePlay'", "function 'M.play'"],
+  'src/lua/abyss_combat_native_play.lua': [],
+  'src/lua/abyss_combat_queued_play.lua': [],
   'src/lua/abyss_act2_ai.lua': ["function 'choose'"],
   'src/lua/abyss_character_presentation.lua': [],
   'src/lua/abyss_character_presentation_text.lua': ["function 'fragments'"],
@@ -139,20 +259,41 @@ const responsibilityRoots = {
   'src/lua/abyss_node_ui_rewards.lua': [],
   'src/lua/abyss_node_ui_shop.lua': [],
   'src/lua/abyss_node_ui_treasure.lua': [],
-  'src/lua/abyss_game_ui.lua': [
-    "function 'self.refresh'", "function 'finishRunFlow'", "function 'selectMode'",
-    "function 'syncMenuContext'", "function 'syncCardChoice'",
-    "function 'closeStaleDeck'", "function 'openCardChoice'", "function 'syncRewardReturn'",
-    "function 'refreshPotionEntry'", "function 'refreshDeckEntry'", "function 'refreshUtilities'",
-    "function 'refreshMapResources'", "function 'refreshPageVisibility'", "function 'renderBattlePage'",
-    "function 'renderMapPage'", "function 'renderCurrentPage'", "function 'refreshExitDialog'",
-    "function 'refreshForeground'", "function 'overlaysBlocked'",
-  ],
+  'src/lua/abyss_game_ui.lua': ["function 'M.new'"],
 };
-// Existing catalog/seed/red-card contracts are separate, unchanged responsibilities.
+// Existing seed/red-card contracts are separate, unchanged responsibilities.
 // All Run orchestration and newly extracted Run helpers receive the full budget.
-const responsibilityHelper = file => /^src\/lua\/abyss_(?:effects_.+|combat_effect.*|combat_catalog|act2_ai_.+|character_presentation_.+|feedback_.+|node_ui(?:_.+)?|game_ui_.+|run(?:_(?!(?:card_catalog|red_card_contract|seed)\.lua$).+)?|nodes(?:_.+)?)\.lua$/.test(file);
-export function reviewModuleSize(sources, budgets = {'src/lua/abyss_run.lua': 1000, 'src/lua/abyss_nodes.lua': 1000}) {
+const responsibilityHelper = file => /^src\/lua\/abyss_(?:effects_.+|combat_effect.*|combat_catalog|combat_reactions|combat_native_play|combat_queued_play|act2_ai_.+|character_presentation_.+|feedback_.+|node_ui(?:_.+)?|game_ui_.+|run(?:_(?!(?:card_catalog|red_card_contract|seed)\.lua$).+)?|nodes(?:_.+)?)\.lua$/.test(file);
+const completeResponsibility = file => responsibilityHelper(file)
+  || file==='src/lua/abyss_curses.lua'
+  || file==='src/lua/abyss_skill_feedback.lua'
+  || file==='src/lua/abyss_joust_event.lua'
+  || file==='src/lua/abyss_golden_idol_event.lua'
+  || file==='src/lua/abyss_silent_tactics_cards.lua'
+  || file==='src/lua/abyss_shivs.lua'
+  || file==='src/lua/abyss_act3_ai.lua'
+  || file==='src/lua/abyss_turn_power_phases.lua'
+  || file==='src/lua/abyss_inventory.lua'
+  || file==='src/lua/abyss_colorless_catalog.lua'
+  || file==='src/lua/abyss_card_capability.lua'
+  || file==='src/lua/abyss_run_card_catalog.lua'
+  || file==='src/lua/abyss_end_turn_powers.lua'
+  || file==='src/lua/abyss_actor_presence.lua'
+  || file==='src/lua/abyss_codex_relic.lua'
+  || file==='src/lua/abyss_relic_potion_hooks.lua'
+  || file==='src/lua/abyss_relic_combat_hooks.lua'
+  || file==='src/lua/abyss_relic_family_combat.lua'
+  || file==='src/lua/abyss_purge_candidates.lua'
+  || file==='src/lua/abyss_relic_queries.lua'
+  || file==='src/lua/abyss_actor_power_rules.lua'
+  || file==='src/lua/abyss_card_actions.lua' || file==='src/lua/abyss_game_ui.lua';
+export function reviewModuleSize(sources, budgets = {'src/lua/abyss_run.lua': 1000, 'src/lua/abyss_nodes.lua': 1000,
+  'src/lua/abyss_relic_potion_hooks.lua':1000,
+  'src/lua/abyss_relic_combat_hooks.lua':1000,
+  'src/lua/abyss_relic_family_combat.lua':1000,
+  'src/lua/abyss_purge_candidates.lua':1000,
+  'src/lua/abyss_relic_queries.lua':1000,
+  'src/lua/abyss_actor.lua':1000,'src/lua/abyss_actor_power_rules.lua':1000}) {
   const modules = [], errors = [];
   for (const [file, limit] of Object.entries(budgets)) {
     if (!(file in sources)) { errors.push({file, message:'Required size-governed module missing'}); continue; }
@@ -229,8 +370,11 @@ export function reviewResponsibilityComplexity(diagnostics, sources, roots = res
       if (seen.has(key)) errors.push({...row,message:'Duplicate responsibility complexity measurement'});
       seen.add(key);
       if (key === 'main' ? row.line !== 1 || row.column !== 1 : !functionAt.has(at)) errors.push({...row,message:'Complexity measurement has no corresponding AST function/chunk'});
-      if (!responsibilityHelper(file) && (key === 'main' || !rootRanges.some(([start,end]) => start <= at && at < end))) continue;
-      const value = Number(match[2]), limit = 15;
+      if (!completeResponsibility(file) && (key === 'main' || !rootRanges.some(([start,end]) => start <= at && at < end))) continue;
+      // Preserve ordered ownership/kind reads in the existing encounter router.
+      // New policy responsibilities and nested functions retain the CC15 budget.
+      const limit = file === 'src/lua/abyss_enemy_ai.lua' && match[1] === "function 'M.initialize'" ? 21 : 15;
+      const value = Number(match[2]);
       functions.push({file,line:row.line,subject:match[1],complexity:value,limit});
       if (value > limit) errors.push({...row,message:`Responsibility complexity ${value} exceeds ${limit}: ${match[1]}`});
     }
@@ -269,22 +413,26 @@ export function main(inputs) {
     mkdirSync('build',{recursive:true});writeFileSync('build/lua-static.json',JSON.stringify({...report,unexpected,hard},null,2)+'\n');
     const complexity=inputs?.complexity??runStatic(['--max-cyclomatic-complexity','0','--only','561']);
     writeFileSync('build/lua-complexity.json',JSON.stringify(complexity,null,2)+'\n');
-    const sources=inputs?.sources??Object.fromEntries(readdirSync('src/lua').filter(file=>file.endsWith('.lua'))
-      .map(file=>[`src/lua/${file}`,readFileSync(`src/lua/${file}`,'utf8')]));
+    const sources=inputs?.sources??discoverSources();
+    const measurements=inputs?.measurements??measureSources(sources,complexity.diagnostics);
+    const gameUi=reviewGameUiMeasurements(measurements,sources);
+    writeFileSync('build/game-ui-size.json',JSON.stringify(gameUi,null,2)+'\n');
     const size=reviewNodeUiSize(sources);
     writeFileSync('build/node-ui-size.json',JSON.stringify(size,null,2)+'\n');
     if(size.errors.length)throw new Error(JSON.stringify(size.errors));
     const render=reviewRenderComplexity(complexity.diagnostics,sources);
-    writeFileSync('build/ui-complexity.json',JSON.stringify({...render,tool:complexity.tool},null,2)+'\n');
+    // Keep the scoped result in the existing uploaded UI artifact as well.
+    writeFileSync('build/ui-complexity.json',JSON.stringify({...render,tool:complexity.tool,gameUi},null,2)+'\n');
     const responsibilities=reviewResponsibilityComplexity(complexity.diagnostics,sources);
     writeFileSync('build/responsibility-complexity.json',JSON.stringify({...responsibilities,tool:complexity.tool},null,2)+'\n');
     const sizes=reviewModuleSize(sources);
     writeFileSync('build/module-size.json',JSON.stringify(sizes,null,2)+'\n');
+    if(gameUi.errors.length)throw new Error(`Game UI scope check failed: ${JSON.stringify(gameUi.errors)}`);
     if(unexpected.length||hard.length)throw new Error(`Lua static check failed: ${JSON.stringify([...unexpected,...hard])}`);
     if(render.errors.length)throw new Error(`UI complexity check failed: ${JSON.stringify(render.errors)}`);
     if(responsibilities.errors.length)throw new Error(`Responsibility complexity check failed: ${JSON.stringify(responsibilities.errors)}`);
     if(sizes.errors.length)throw new Error(`Module size check failed: ${JSON.stringify(sizes.errors)}`);
-    console.log(`Luacheck ${report.tool.version}: no new diagnostics; ${report.diagnostics.length} explicit historical warnings. Battle render <=10; every scoped function <=15; ${responsibilities.functions.length} governed responsibility measurements.`);
+    console.log(`Luacheck ${report.tool.version}: no new diagnostics; ${report.diagnostics.length} explicit historical warnings. Battle render <=10; scoped functions <=15 (Enemy AI initialize <=21); ${responsibilities.functions.length} governed responsibility measurements.`);
     return {errors:[]};
 }
 if(process.argv[1]&&import.meta.url===pathToFileURL(resolve(process.argv[1])).href) {

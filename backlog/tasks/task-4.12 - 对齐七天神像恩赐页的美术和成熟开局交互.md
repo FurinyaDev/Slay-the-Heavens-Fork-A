@@ -5,16 +5,19 @@ status: In Progress
 assignee:
   - Furinya
 created_date: '2026-10-30 21:58'
-updated_date: '2026-10-31 03:00'
+updated_date: '2026-11-15 19:11'
 labels:
   - playtest-20261030
   - p1
   - grok
-milestone: m-5
+  - 待验
+  - delivery-verify
+milestone: m-8
 dependencies: []
 references:
   - docs/backlog-details/PLAYTEST-20261030.md
   - docs/backlog-details/MOBILE-QA-20261029.md
+  - backlog/tasks/task-95 - 对照验证美术、交互与动效设计工具.md
 parent_task_id: TASK-4
 priority: medium
 type: enhancement
@@ -30,6 +33,7 @@ Owner截图：七天神像由矩形圆片拼成，左右空旷、恩赐选项简
 <!-- AC:BEGIN -->
 - [ ] #1 七天神像的场景主体是正式可接受的美术表现，不再以简单几何占位拼装充当成品。
 - [ ] #2 恩赐交互与角色对话在视觉和操作上连贯，能接入已批准的实际内容及分支，正常进入后续冒险。
+- [ ] #3 2026-11-15用户认可祝福页样式，但怀疑可点选项高度稍矮；明确‘不确定、未必对’。在手机实际测触控矩形/原版触屏对照后才决定是否增高热区，不把IMG_1402视觉高度直接当真实pt/dp，不得大改已批准设计。
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -46,4 +50,11 @@ Owner截图：七天神像由矩形圆片拼成，左右空旷、恩赐选项简
 本轮定向16项、真实Host formal4组及Neow UI8组、native契约4项通过；license inventory通过；工程quality/architecture/Luacheck无新诊断，复杂度上限不变，4个既有mutation全部被有效断言杀死。仅提取原底部notice选择满足复杂度，未改随机/池/奖励/商店规则。无全量CI、无官方/设备验收，待主集成独审。
 
 UI合流补充：开局顶栏按既有roomKind=neow显示七天神像，普通事件仍保原标识；真实mini/full及普通事件复用回归已通过。组合发现新官方背景/晕影/气泡未进旧精确图ID白名单，新增命名token逐一变异传播断言与精确白名单，未放宽RGBA或任意图ID许可。仍无官方/手机验收，不勾AC。
+
+2026-11-02最新排期：优先M4非美术、非交互设计工程。神像成品美术与角色对话整体新方案先取TASK-95对应实验结论；已明确的恩赐说明可读性、颜色与入口/分支缺陷可继续修复，既有批准内容与已交付实现不重做。 仅对应新增正式设计切片以实验结论为前置；未来纯设计优化子任务显式依赖TASK-95并引用适用Go结论。本混合任务不新增整任务硬依赖，原状态与AC保留。
+
+2026-11-07 看板核对（develop 2c85bc61）：实现类交付已按历史记录保留，剩余 AC 待同候选官方/设备验证；当前无在途 PR，状态由 In Progress 归 To Do（待验）。
+
+2026-11-14第二轮状态纠正：已核对本任务原实施计划、技术附件或已有PR/修复记录；工作已经开展，未勾AC不等于未开始。 状态表示整个任务的完成进展，不表示当前有执行者持续占用；保留原未验AC、负责人、依赖及历史证据。更正过去把已开展待验事项退回To Do的处理。
+2026-11-15手机新证据与逐字时间在docs/backlog-details/MOBILE-QA-20261115.md，所有本轮新增验收项均保持未勾，历史成果不重复实施。
 <!-- SECTION:NOTES:END -->

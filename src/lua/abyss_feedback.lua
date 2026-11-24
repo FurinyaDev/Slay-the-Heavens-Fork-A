@@ -19,6 +19,14 @@ local OVERSHOOT, SWELL = 1 / 3, 1 / 6
 -- Theme hit-stop belongs to the independent VFX clock, never the action gate.
 local DAMAGE_DURATION, AREA_DURATION, POST_ATTACK_WAIT = 0.1, 0.25, 0.1
 local skipDamageWait = {brilliance = true, flechettes = true, barrage = true}
+-- These pinned red-card use() methods queue one DamageAction first. Cards with
+-- pre-hit VFX/waits, area/random or repeated hits are deliberately excluded.
+local immediateSingleDamage={strike=true,bash=true,anger=true,pommel_strike=true,headbutt=true}
+local function sourceSingleDamage(style)
+    local context=style and style.context
+    return Theme.presentationProfile=='official-assets-first' and context and context.kind=='play'
+        and immediateSingleDamage[context.cardId]==true and not context.area and #context.hits==1
+end
 local function n(value) return string.format("%.0f", value or 0) end
 local function clamp(x) return x < 0 and 0 or x > 1 and 1 or x end
 local function easeOut(x) x = clamp(x) return 1 - (1 - x) * (1 - x) end
@@ -108,12 +116,22 @@ local function classify(queue, catalog)
     return styles
 end
 
+local function damageDuration(style,fastMode)
+        local context = style.context or {}
+        -- The .1 DamageAction delay now precedes this source group's contact;
+        -- only its separate non-FAST WaitAction remains after the hit.
+        if sourceSingleDamage(style) then return fastMode and 0 or POST_ATTACK_WAIT end
+        local base = style.form == "area" and context.cardId ~= "whirlwind" and AREA_DURATION or DAMAGE_DURATION
+        local skip = fastMode or skipDamageWait[context.cardId] and style.form ~= "area"
+        return base + (not skip and POST_ATTACK_WAIT or 0)
+end
+
 local function duration(entry, style, fastMode)
     local kind = entry.kind
     if kind == "action_wait" then
         return fastMode and math.min(entry.detail.seconds, 0.1) or entry.detail.seconds
     end
-    if kind == "play" then return T.base end
+    if kind == "play" then return sourceSingleDamage(style) and DAMAGE_DURATION or T.base end
     if kind == "player_death" then return T.playerDeath end
     if banners[kind] then return T.banner end
     if kind == "intent" then return T.enemyActionGap end
@@ -124,10 +142,7 @@ local function duration(entry, style, fastMode)
     -- Area hits land on consecutive rendered frames: one shockwave rippling across the row.
     if kind == "damage" and style.form == "area" and style.hit < style.hits then return 0 end
     if kind == "damage" then
-        local context = style.context or {}
-        local base = style.form == "area" and context.cardId ~= "whirlwind" and AREA_DURATION or DAMAGE_DURATION
-        local skip = fastMode or skipDamageWait[context.cardId] and style.form ~= "area"
-        return base + (not skip and POST_ATTACK_WAIT or 0)
+        return damageDuration(style,fastMode)
     end
     if hurts(kind) or kind == "block" or kind == "status" or kind == "heal" then return T.base end
     return 0
@@ -136,12 +151,14 @@ end
 function M.new(stage, platform, present, complete)
     local self = { busy = false, fastMode = false, effects = {}, deaths = {}, dying = {}, poses = {}, escaping = {}, escaped = {}, slotOwners = {}, tints = {} }
     local overlay = stage:GetChild("feedback")
+    local v25Notice=require('abyss_v25_turn_notice').new(overlay,platform)
     local surfaces=require('abyss_monster_surfaces').get(stage)
     function self.bindIdle(_owner,battle)
         local changing=self.idleBattle and self.idleBattle~=battle
             or battle and self.battle and self.battle~=battle
         if not self.busy and changing then self:reset(battle==nil) end
         self.idleBattle = battle
+        if v25Notice then v25Notice:bind(battle)end
         if battle and not self.busy then self.shadow = battle end
     end
     self.cardFlow=CardFlow.new(stage,platform)
@@ -205,12 +222,14 @@ function M.new(stage, platform, present, complete)
     function self.bindEnemySlot(slot,id)
         if self.slotOwners[slot]~=id then resetUnit('enemy'..slot) self.slotOwners[slot]=id end
     end
-    function self.reset(_owner,retainHistory)
+    function self.reset(_owner,retainHistory,preserveTurnNotice)
+        if v25Notice and not preserveTurnNotice then v25Notice:reset()end
         -- Hiding/rewards retire visuals, but terminal death evidence still belongs
         -- to this battle. Cancellation and the next battle clear that history.
         local history=retainHistory and self.deaths or {}
         self.battle = retainHistory and (self.battle or self.idleBattle) or nil
         self.idleBattle, self.idleClock, self.shadow = nil, 0, nil
+        self.rewardTransition = nil
         self.cardFlow:reset()
         stage:SetAnchoredPosition(0, 0)
         self.stageShake = 0
@@ -297,7 +316,7 @@ function M.new(stage, platform, present, complete)
         if d.target ~= "player" then for _, value in ipairs(old.enemies) do if value.id == d.target then previous = value break end end end
         return previous
     end
-    local function playStep(d)
+    local function playStep(d,_kind,style)
         local card = overlay:GetChild("playedCard")
         local definition = self.shadow.catalog.cards[d.cardId]
         local display = self.presentation[d.cardId]
@@ -306,6 +325,7 @@ function M.new(stage, platform, present, complete)
         card:GetChild("art"):SetImage(platform.imageSource, Theme.icon.cardArt[definition.type] or Theme.icon.cardArt.status)
         local targetsEnemy,area,attack=cardShape(definition)
         cardFlight(d,targetsEnemy,area)
+        self.flight.duration=sourceSingleDamage(style) and DAMAGE_DURATION or T.base
         self.cardFlow:playing(d,self.flight)
         card:SetAnchoredPosition(self.flight.x, self.flight.y) card:SetLocalScale(1, 1, 1)
         card:SetVisible(true) overlay:SetAsLastSibling() sound("player_action")
@@ -315,10 +335,12 @@ function M.new(stage, platform, present, complete)
             and {{0, 0, 1}, {lift, -S.s, 1}, {T.base, S.l, 1}, {T.base + T.slow, 0, 1}}
             or {{0, 0, 1}, {T.base, 0, 1 + SWELL}, {T.base + T.slow, 0, 1}}}
     end
-    local function bannerStep(d, kind)
+    local function bannerStep(kind)
+        if kind=='player_turn' and v25Notice then v25Notice:playerTurn(self.shadow.turn);sound('turn');return end
+        if v25Notice then v25Notice:reset()end
         if kind == "enemy_turn" then banner("敌方回合") sound("turn")
         elseif kind == "player_turn" then banner("我方回合 " .. n(self.shadow.turn)) sound("turn")
-        elseif kind == "victory" then banner(d.allEnemiesEscaped and "敌人已逃跑" or "战斗胜利") sound("victory")
+        elseif kind == "victory" then sound("victory")
         else
             banner("旅途暂歇", true)
             local shade = overlay:GetChild("deathShade")
@@ -436,7 +458,7 @@ function M.new(stage, platform, present, complete)
             if text ~= "" then
                 local floating = box:GetChild("floating")
                 floating.text, floating.fontColor = text, colour(ink)
-                local icon = (kind == "status" or kind == "status_damage") and Theme.icon.status[d.status]
+                local icon = (kind == "status" or kind == "status_damage") and (Theme.icon.status[d.status] or Theme.icon.status[type(d.status)=='string' and d.status:match('^colorless_bomb_') and 'colorless_bomb' or false])
                 box:GetChild("impact"):SetImage(platform.imageSource, icon or Theme.image.diamond)
                 self.effects[d.target] = {kind = kind, age = 0, detail = d, ink = ink, style = style,
                     icon = icon and true or false, stop = style.stop or 0, dir = d.target == "player" and -1 or 1,
@@ -474,6 +496,10 @@ function M.new(stage, platform, present, complete)
         end
         return started
     end
+    local function shouldPresentCombatFrame(entry)
+        -- Completion paints the final reward frame.
+        return not self.rewardTransition or entry.kind ~= "victory"
+    end
     local function enterFrame(entry, style)
         local old = self.shadow
         local nextView = {catalog = old.catalog, rules = old.rules}
@@ -495,7 +521,9 @@ function M.new(stage, platform, present, complete)
         self.acting = entry.kind == "intent" and entry.detail.enemy or self.acting
         if entry.kind == "player_turn" then self.acting = nil end
         self.enemyRows=EnemyView.slots(self.shadow,self)
-        present(self.shadow, self.acting, self.deaths)
+        if shouldPresentCombatFrame(entry) then
+            present(self.shadow, self.acting, self.deaths)
+        end
         return old,contactDeaths
     end
     local function step(entry, style)
@@ -506,7 +534,7 @@ function M.new(stage, platform, present, complete)
             playStep(d,kind,style,old)
             startCast(d,kind,style)
         elseif banners[kind] then
-            bannerStep(d,kind,style,old)
+            bannerStep(kind)
         elseif kind == "intent" then
             intentStep(d,kind,style,old)
             startCast(d,kind,style)
@@ -520,28 +548,31 @@ function M.new(stage, platform, present, complete)
         -- Keep hit/action sound order within the same lethal presentation frame.
         for _,id in ipairs(contactDeaths)do contactDeathSound(id)end
     end
-    local function pendingMonsterExit()
+    local function pendingVictoryEffects()
+        if self.effects.player then return true end
         for id in pairs(self.dying)do if id~='player'then return true end end
         return next(self.escaping)~=nil
     end
     local function advanceQueue()
         repeat
             local entry=self.queue[self.index+1]
-            if entry and entry.kind=='victory' and pendingMonsterExit()then return end
+            if entry and entry.kind=='victory' and pendingVictoryEffects()then return end
             self.index=self.index+1
             if not entry then finish();return end
             step(entry,self.styles[self.index])
-            -- Source onModifyPower is a synchronous callback, never another action wait/frame.
-        until entry.kind~='source_intent_powers'
+            -- Once the last effect completes, the victory cue hands off immediately.
+            -- Source onModifyPower is synchronous as well.
+        until entry.kind~='source_intent_powers' and entry.kind~='victory'
     end
-    function self.start(_owner,before, battle, first, presentation, origin)
+    function self.start(_owner,before, battle, first, presentation, origin, rewardTransition)
         -- GameActionManager releases its action gate independently of the
         -- dungeon's effectList. A subsequent card in this battle must not erase
         -- a previous target's still-running number, HP ghost or recovery pose.
         -- Cancellation, failure and battle replacement retain full cleanup.
-        if self.battle ~= battle then self:reset() end
+        if self.battle ~= battle then self:reset(nil,self.idleBattle==battle) end
         self.battle = battle
         self.playbackFastMode = self.fastMode
+        self.rewardTransition = rewardTransition
         self.presentation, self.origin, self.acting = presentation, origin, nil
         self.shadow = {catalog = battle.catalog, rules = battle.rules}
         for k, v in pairs(before) do self.shadow[k] = v end
@@ -608,10 +639,25 @@ function M.new(stage, platform, present, complete)
         if #self.queue == 0 then finish() return end
         self.index=0;advanceQueue()
     end
+    local function paintCast()
+            if self.cast then
+                local cast=self.cast
+                local total=cast.kind=='play' and T.base or T.enemyActionGap
+                local p=clamp(self.elapsed/total)
+                local x,y,alpha=SkillFeedback.travel(cast.family,p,cast.sx,cast.sy,cast.tx,cast.ty)
+                local sweep=overlay:GetChild('sweep')
+                sweep:SetVisible(alpha>0)
+                sweep:SetAnchoredPosition(x,y)
+                sweep:SetLocalScale(S.xl/(L.enemyRow.xTo-L.enemyRow.xFrom+L.enemyRow.bossPortrait),0.5,1)
+                sweep.localRotationZ=cast.family=='bind' and p*180 or 0
+                tint(sweep,cast.family=='poison' and C.positive or cast.family=='bind' and C.debuff or C.block,alpha)
+            end
+    end
     function self.update(_owner,dt)
         if not self.idleBattle and not self.busy and next(self.effects) == nil and next(self.poses) == nil and next(self.dying) == nil and next(self.escaping)==nil and not self.sweep and not self.dissolve and not self.cardFlow:busy() then return end
         local ok, failure = pcall(function()
             assert(type(dt) == "number" and dt == dt and dt >= 0 and dt < math.huge, "invalid frame delta")
+            if v25Notice then v25Notice:update(dt)end
             self.idleClock=ActorMotion.advance(self.idleClock or 0,dt,T.actorIdle)
             self.elapsed = (self.elapsed or 0) + dt
             ActorPainter.advanceDeaths(painter,dt)
@@ -624,8 +670,8 @@ function M.new(stage, platform, present, complete)
             end
             if self.busy and self.current.kind == "play" then
                 -- Lift and gather, then accelerate into the target: arrival is the contact frame.
-                local p, lift = clamp(self.elapsed / T.base), T.anticipation
                 local card, f = overlay:GetChild("playedCard"), self.flight
+                local p, lift = clamp(self.elapsed / (f.duration or T.base)), T.anticipation
                 if p < lift then
                     local q = easeOut(p / lift)
                     card:SetAnchoredPosition(f.x, f.y + S.l * q)
@@ -637,7 +683,7 @@ function M.new(stage, platform, present, complete)
                     card:SetLocalScale(s, s, 1)
                 end
             end
-            if self.busy and banners[self.current.kind] then
+            if self.busy and banners[self.current.kind] and not (v25Notice and self.current.kind=='player_turn') then
                 -- Slide in, hold, slide out; the plate wipes open before the text arrives.
                 local age, travel = self.elapsed, S.xxl * 2
                 local enter, exit = easeOut(age / T.fast), easeIn((age - T.banner + T.fast) / T.fast)
@@ -667,18 +713,7 @@ function M.new(stage, platform, present, complete)
                 tint(sweep, C.geo, 1 - easeIn(p))
                 if p >= 1 then self.sweep = nil end
             end
-            if self.cast then
-                local cast=self.cast
-                local total=cast.kind=='play' and T.base or T.enemyActionGap
-                local p=clamp(self.elapsed/total)
-                local x,y,alpha=SkillFeedback.travel(cast.family,p,cast.sx,cast.sy,cast.tx,cast.ty)
-                local sweep=overlay:GetChild('sweep')
-                sweep:SetVisible(alpha>0)
-                sweep:SetAnchoredPosition(x,y)
-                sweep:SetLocalScale(S.xl/(L.enemyRow.xTo-L.enemyRow.xFrom+L.enemyRow.bossPortrait),0.5,1)
-                sweep.localRotationZ=cast.family=='bind' and p*180 or 0
-                tint(sweep,cast.family=='poison' and C.positive or cast.family=='bind' and C.debuff or C.block,alpha)
-            end
+            paintCast()
             local shakes, ids = {}, {}
             if self.idleBattle and self.shadow then
                 if self.shadow.player.hp>0 then ids.player=true end

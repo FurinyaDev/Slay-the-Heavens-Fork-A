@@ -66,6 +66,12 @@ assert(creates==0)
 for name in pairs(forbidden)do assert(package.loaded[name]==nil,'disabled data loaded '..name)end
 assert(not options.cardArt and not options.background and not options.portraits)
 assert(captured:confirmCharacter())
+for _=1,80 do
+ if not captured.starting and not(captured.prologue and captured.prologue:covering())
+  and not(captured.pageReveal and captured.pageReveal:covered())then break end
+ OnUpdate(0.05)
+end
+assert(captured.run and not captured.starting and not captured.prologue:covering(),'native monster opening did not finish')
 assert(F.click(root,'nodePanel','eventView/option1'))
 assert(F.click(root,'nodePanel','eventView/option2'))
 assert(F.click(root,'nodePanel','eventView/option1'))
@@ -73,7 +79,7 @@ assert(captured.run.phase=='map' and captured.run.neowStatus=='complete')
 local Nodes=require('abyss_nodes')
 assert(Nodes.enter(captured.run,captured.map,Nodes.available(captured.run,captured.map)[1].id))
 assert(captured.run.phase=='combat')
-captured.run.combat=F.Combat.new(F.Data,{deck={'strike','defend'},enemies={'cultist','acid_slime_m'},seed=11})
+captured.run.combat=F.Combat.new(F.Data,{deck={'strike','defend'},enemies={'raven_adept','acid_slime_m'},seed=11})
 captured:refresh()
 local grass=captured.run.combat.enemies[2]
 local actor=assert(Surfaces.get(panel):find(grass.id),'source instance must own a complete dynamic actor')

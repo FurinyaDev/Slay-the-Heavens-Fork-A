@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { auditRoadmap, auditPriorities, auditQueueOwners, auditMilestoneScope, auditCompetitionRoster, readTaskHeader } from '../scripts/verify-backlog-roadmap.mjs';
+import { auditRoleCapacityGate, auditRoadmap, auditPriorities, auditQueueOwners, auditMilestoneScope, auditCompetitionRoster, readTaskHeader } from '../scripts/verify-backlog-roadmap.mjs';
 
 const competitionTitles = ['M3｜岩系旅行者第一幕与第二幕核心闭环验收', 'M4｜前两幕首局UI、输入、音画与性能'];
 const competitionDecision = '最终选择仅岩系旅行者（Ironclad）完整玩通第一幕与第二幕并正常结算。';
@@ -51,7 +51,7 @@ test('milestone headings can include a human-readable explanation', () => {
   assert.deepEqual(auditRoadmap([task('TASK-4.2')], '### M4 达到正式作品品质\n- TASK-4.2：背景', milestone), []);
 });
 
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -178,6 +178,28 @@ test('the existing command exits nonzero and names both Done files on a duplicat
 test('priority is read from the actual CLI header', () => {
   assert.equal(readTaskHeader('---\nid: TASK-1\npriority: high\n---\n').priority, 'high');
 });
+test('duplicate native metadata cannot silently disappear from the CLI task index',t=>{
+  const root=backlogFixture(t,[['backlog/tasks/task-74.19.md','TASK-74.19','In Progress',
+    'assignee: [Furinya]\nupdated_date: 2026-11-11\nupdated_date: 2026-11-10\n']]);
+  assert.match(verifyBacklogRoadmap(root).join('\n'),/TASK-74\.19.*updated_date/);
+});
+test('checked AC cannot leave a task in progress and unchecked AC cannot claim Done',t=>{
+  for(const [status,checked] of [['In Progress','x'],['Done',' ']]) {
+    const root=backlogFixture(t,[['backlog/tasks/task-9.md','TASK-9',status,'assignee: [Furinya]\n']]);
+    writeFileSync(join(root,'backlog/tasks/task-9.md'),
+      `---\nid: TASK-9\nstatus: ${status}\npriority: medium\nassignee: [Furinya]\n---\n<!-- AC:BEGIN -->\n- [${checked}] #1 observable proof\n<!-- AC:END -->\n`);
+    assert.match(verifyBacklogRoadmap(root).join('\n'),/TASK-9.*AC/);
+  }
+});
+test('a completed diagnostic task cannot evade its evidence contract',t=>{
+  const root=backlogFixture(t,[['backlog/completed/task-104.md','TASK-104','Done','labels: [product-diagnosis]\n']]);
+  assert.match(verifyBacklogRoadmap(root).join('\n'),/产品诊断合同缺失/);
+});
+test('delivery verification must not turn started work back into an unstarted To Do',t=>{
+  const root=backlogFixture(t,[['backlog/tasks/task-81.md','TASK-81','To Do',
+    'assignee: [Furinya]\nlabels: [delivery-verify]\n']]);
+  assert.match(verifyBacklogRoadmap(root).join('\n'),/TASK-81.*To Do/);
+});
 
 test('every current task needs a configured priority, including Done and optional tasks', () => {
   for (const status of ['To Do', 'In Progress', 'Blocked', 'Done']) {
@@ -237,6 +259,16 @@ test('M3 and M4 enforce the confirmed Traveler-only two-act competition scope', 
   }
 });
 
+test('archived M7 and frozen M3/M4 remain auditable while only M8/M9 are active', () => {
+  const active=['M8｜产品体验与核心特色','M9｜内容建设与扩充'];
+  const archived=[...competitionTitles,'M6｜前两幕作品人工投稿与版本归档','M7｜工程架构与性能强化'];
+  assert.deepEqual(auditMilestoneScope(active,archived),[]);
+  assert.match(auditMilestoneScope(active,archived.filter(x=>!x.startsWith('M7'))).join('\n'),/M7.*归档/);
+  assert.match(auditMilestoneScope([...active,'M7｜工程架构与性能强化'],archived).join('\n'),/M7.*活动/);
+  assert.match(auditMilestoneScope(active,[competitionTitles[1],...archived.slice(2)]).join('\n'),/M3.*范围/);
+  assert.match(auditMilestoneScope(active,[competitionTitles[0],...archived.slice(2)]).join('\n'),/M4.*范围/);
+});
+
 test('the public milestone is bound only to Traveler and preserves superseded history separately', () => {
   assert.deepEqual(auditCompetitionRoster(competitionScope()), []);
   assert.deepEqual(auditCompetitionRoster(competitionScope().replaceAll('\n', '\r\n')), []);
@@ -281,6 +313,44 @@ test('the existing CLI accepts Traveler-only and rejects restored or substituted
   }
 });
 
+test('archived milestones still resolve for carry-over tasks and keep the frozen contract', t => {
+  const root = backlogFixture(t, [['backlog/tasks/task-74.md', 'TASK-74', 'To Do',
+    'priority: medium\nmilestone: m-5\nassignee: ["@Codex"]\n']], '### M4\n- TASK-74：承接候选\n');
+  assert.deepEqual(verifyBacklogRoadmap(root), [], 'the fixture starts with m-5 active');
+  assert.deepEqual(verifyMilestoneScope(root), [], 'M3 and M4 are both present while m-5 is active');
+  mkdirSync(join(root, 'backlog/archive/milestones'), { recursive: true });
+  renameSync(join(root, 'backlog/milestones/m-5.md'), join(root, 'backlog/archive/milestones/m-5.md'));
+  assert.deepEqual(verifyBacklogRoadmap(root), [], 'archived M4 still maps carry-over tasks to the M4 roadmap section');
+  assert.deepEqual(verifyMilestoneScope(root), [], 'archived M4 still satisfies the frozen M4 contract');
+  rmSync(join(root, 'backlog/archive/milestones/m-5.md'));
+  assert.ok(verifyMilestoneScope(root).some(error => /M4.*范围/.test(error)), 'losing the archive is a scope regression');
+  assert.ok(verifyBacklogRoadmap(root).some(error => error.includes('TASK-74') && error.includes('里程碑')),
+    'without the milestone record a carry-over task has no valid milestone');
+});
+
+test('archiving both current product stages cannot disable the active-stage contract', t => {
+  const root=backlogFixture(t,[],'### M8\n### M9\n');
+  const archive=join(root,'backlog/archive/milestones');
+  mkdirSync(archive,{recursive:true});
+  for(const [i,title] of ['M7｜工程架构与性能强化','M8｜产品体验与核心特色','M9｜内容建设与扩充'].entries())
+    writeFileSync(join(archive,'m-'+(i+7)+'.md'),'---\nid: m-'+(i+7)+'\ntitle: '+title+'\n---\n');
+  for(const i of [4,5])renameSync(join(root,'backlog/milestones/m-'+i+'.md'),join(archive,'m-'+i+'.md'));
+  for(const verify of [verifyBacklogRoadmap,verifyMilestoneScope]){
+    const errors=verify(root).join('\n');
+    for(const stage of ['M8','M9'])assert.match(errors,new RegExp(stage));
+  }
+});
+
+test('configured active M8/M9 cannot disappear after archiving M7', t => {
+  const root=backlogFixture(t,[]);
+  mkdirSync(join(root,'config'));
+  writeFileSync(join(root,'config/task-intake.json'),JSON.stringify({currentMilestoneIds:['m-8','m-9']}));
+  for(const verify of [verifyBacklogRoadmap,verifyMilestoneScope]){
+    const errors=verify(root).join('\n');
+    for(const stage of ['M8','M9'])assert.match(errors,new RegExp(stage));
+  }
+});
+
 test('unfinished optional work needs an owner; historical Done records do not', () => {
   for (const status of ['To Do', 'In Progress', 'Blocked']) {
     for (const assignees of [[], [''], ['--append-plan']]) {
@@ -288,4 +358,114 @@ test('unfinished optional work needs an owner; historical Done records do not', 
     }
   }
   assert.deepEqual(auditQueueOwners([task('TASK-26', { milestone: null }), task('TASK-2', { status: 'Done', assignees: [] })]), []);
+});
+
+test('M7 retirement and M8/M9 product scope are enforced',()=>{
+  const active=[...competitionTitles,'M8｜产品体验与核心特色','M9｜内容建设与扩充'];
+  const archive=['M7｜工程架构与性能强化'];
+  assert.deepEqual(auditMilestoneScope(active,archive),[]);
+  assert.match(auditMilestoneScope([...active,'M7｜工程架构与性能强化'],archive).join('\n'),/M7.*活动/);
+  assert.match(auditMilestoneScope(active.slice(0,-1),archive).join('\n'),/M9/);
+  assert.match(auditMilestoneScope(active,[]).join('\n'),/M7.*归档/);
+  assert.match(auditMilestoneScope(active,['M7｜工程架构与其他']).join('\n'),/M7.*归档/);
+});
+
+test('historical Done M7 records remain while active product work uses M8/M9',()=>{
+  const phases={...milestone,'m-8':'M8','m-9':'M9'};
+  const tasks=[task('TASK-74',{status:'Done',milestone:'m-7'}),task('TASK-85',{milestone:'m-8'}),task('TASK-97',{milestone:'m-9'})];
+  const plan='### M8\n- TASK-85：角色\n### M9\n- TASK-97：内容\n';
+  assert.deepEqual(auditRoadmap(tasks,plan,phases),[]);
+  assert.ok(auditRoadmap([task('TASK-74',{status:'In Progress',milestone:'m-7'})],plan,phases).length);
+});
+
+test('active native IDs are M8/M9 and cannot reactivate M7',async()=>{
+  const {auditOrderedStageIds}=await import('../scripts/verify-backlog-roadmap.mjs');
+  const good=[{id:'m-8',title:'M8｜产品体验与核心特色'},{id:'m-9',title:'M9｜内容建设与扩充'}];
+  assert.deepEqual(auditOrderedStageIds(good),[]);
+  assert.ok(auditOrderedStageIds([{...good[0],id:'m-9'},good[1]]).length);
+  assert.match(auditOrderedStageIds([{id:'m-7',title:'M7｜工程架构与性能强化'},...good]).join('\n'),/M7.*归档/);
+});
+
+test('engineering maintenance parent remains unmilestoned while its product child is M8',()=>{
+  const phases={'m-8':'M8'};
+  const tasks=[task('TASK-74',{milestone:null}),task('TASK-74.1',{milestone:'m-8',parentTaskId:'TASK-74'})];
+  assert.deepEqual(auditRoadmap(tasks,'### M8\n- TASK-74.1：展示证据\n',phases),[]);
+});
+
+
+test('unfinished tasks cannot keep retired M7 while Done history keeps its identity', t=>{
+  const legacy='milestone: m-7\nassignee: ["@Codex"]\n';
+  const root=backlogFixture(t,[['backlog/tasks/task-100.md','TASK-100','In Progress',legacy]]);
+  assert.match(verifyBacklogRoadmap(root).join('\n'),/TASK-100.*M7/);
+  const done=backlogFixture(t,[['backlog/tasks/task-74.md','TASK-74','Done',legacy]]);
+  assert.deepEqual(verifyBacklogRoadmap(done),[]);
+});
+
+const role=(status='To Do',dependencies=['TASK-96','TASK-105'])=>({id:'TASK-97',status,dependencies});
+const capacity=(status='To Do')=>({id:'TASK-105',status});
+const design=(status='Done')=>({id:'TASK-96',status});
+
+test('Backlog CLI block list parses the role expansion dependency',()=>{
+  const source='---\nid: TASK-97\nstatus: To Do\nassignee:\n  - Furinya\ndependencies:\n  - TASK-105\n---\n';
+  assert.deepEqual(readTaskHeader(source).dependencies,['TASK-105']);
+  assert.deepEqual(readTaskHeader(source.replace('dependencies:\n  - TASK-105','dependencies: []')).dependencies,[]);
+});
+test('mass character rollout requires the exact capacity task, even when still queued',()=>{
+  assert.deepEqual(auditRoleCapacityGate([role(),capacity()]),[]);
+  assert.match(auditRoleCapacityGate([role('To Do',[]),capacity()]).join('\n'),/显式依赖/);
+  assert.match(auditRoleCapacityGate([role()]).join('\n'),/缺少/);
+});
+test('mass rollout cannot start or complete before its concrete prerequisites close',()=>{
+  for(const s of ['In Progress','Done'])
+    assert.match(auditRoleCapacityGate([role(s),capacity('To Do'),design()]).join('\n'),/尚未完成/);
+  assert.deepEqual(auditRoleCapacityGate([role('In Progress'),capacity('Done'),design()]),[]);
+  assert.deepEqual(auditRoleCapacityGate([role('Done'),capacity('Done'),design()]),[]);
+  assert.match(auditRoleCapacityGate([role('In Progress'),capacity('Done'),design('Blocked')]).join('\n'),/设计前置TASK-96尚未完成/);
+});
+test('unrelated release, single-character experiment and other milestones remain unblocked',()=>{
+  assert.deepEqual(auditRoleCapacityGate([{id:'TASK-85',status:'In Progress'},{id:'TASK-103',status:'To Do'}]),[]);
+  assert.deepEqual(auditRoleCapacityGate([role('Blocked'),capacity('To Do')]),[]);
+});
+
+test('mass rollout must retain the explicit design dependency, independently of capacity',()=>{
+  assert.match(auditRoleCapacityGate([role('Blocked',['TASK-105']),capacity(),design('Blocked')]).join('\n'),/TASK-96.*设计|设计.*TASK-96/);
+  assert.deepEqual(auditRoleCapacityGate([role('Blocked'),capacity(),design('Blocked')]),[]);
+});
+
+test('the existing backlog entrypoint rejects a broken graph but permits pending prerequisites',t=>{
+  const root=backlogFixture(t,[
+    ['backlog/tasks/task-1.md','TASK-1','To Do','assignee: [Furinya]\ndependencies: [TASK-2]\n'],
+    ['backlog/tasks/task-2.md','TASK-2','Blocked','assignee: [Furinya]\ndependencies: []\n'],
+  ]);
+  assert.deepEqual(verifyBacklogRoadmap(root),[]);
+  const target=join(root,'backlog/tasks/task-2.md');
+  for(const [field,reason] of [['[TASK-99]',/missing/],['[TASK-1]',/cycle/],['TASK-1',/malformed/]]) {
+    writeFileSync(target,`---\nid: TASK-2\nstatus: Blocked\npriority: medium\nassignee: [Furinya]\ndependencies: ${field}\n---\n`);
+    assert.match(verifyBacklogRoadmap(root).join('\n'),reason,field);
+  }
+});
+
+test('a malformed Done scalar cannot satisfy the design gate in the backlog entrypoint',t=>{
+  for(const status of ['Done\n  Blocked','Done\nstatus : Blocked']) {
+    const root=backlogFixture(t,[
+      ['backlog/tasks/task-97.md','TASK-97','In Progress','assignee: [Furinya]\ndependencies: [TASK-96, TASK-105]\n'],
+      ['backlog/tasks/task-96.md','TASK-96',status],
+      ['backlog/completed/task-105.md','TASK-105','Done'],
+    ]);
+    assert.match(verifyBacklogRoadmap(root).join('\n'),/TASK-96.*metadata|TASK-96.*元数据/,status);
+  }
+});
+
+
+test('capacity source view authenticates complete current bytes and refuses drift',async()=>{
+  const {readFileSync}=await import('node:fs');
+  const {preCloseoutCiSource}=await import('./helpers/closeout-ci-source.mjs');
+  const path='scripts/verify-backlog-roadmap.mjs',current=readFileSync(path,'utf8');
+  const binding=JSON.parse(readFileSync('tests/helpers/role-capacity-roadmap-source.json','utf8'));
+  assert.equal(preCloseoutCiSource(path,current,'pr620'),binding.source);
+  assert.equal(preCloseoutCiSource(path,current,'qualityRatchetIntegrated'),current);
+  for(const drift of [current+'\n',current.slice(1),current.replace('auditRoleCapacityGate','foreignGate')])
+    assert.equal(preCloseoutCiSource(path,drift,'pr620'),drift);
+  assert.equal(preCloseoutCiSource('foreign.mjs',current,'pr620'),current);
+  assert.throws(()=>preCloseoutCiSource(path,current,'foreign-view'));
 });

@@ -10,14 +10,16 @@ function vm(code){const L=lauxlib.luaL_newstate();try {lualib.luaL_openlibs(L);
  assert.equal(result,lua.LUA_OK,result===lua.LUA_OK?'':to_jsstring(lua.lua_tostring(L,-1)));
  } finally {lua.lua_close(L);}}
 const setup=`
-local modules,requested,options,updates,configured,cleared,views,dead,released,params,presentation,backgrounds,viewDeaths,cardDeaths
+local modules,requested,options,updates,configured,cleared,views,dead,released,params,presentation,backgrounds,viewDeaths,cardDeaths,componentParams
 local flags={cards=false,menuBackground=false,selectionAvatar=false,battlePortrait=false,monsters=false}
 local function snapshot()local f={};for k,v in pairs(flags)do f[k]=v end;return {schemaVersion=2,flags=f}end
 local function start(config,broken,previous)
  requested={};updates=false;configured=0;cleared=0;views=0;dead=0;released=0;params={};options=nil
- backgrounds={};viewDeaths=0;cardDeaths=0
+ backgrounds={};viewDeaths=0;cardDeaths=0;componentParams=0
  local function owner()return {release=function()released=released+1 end,onEngineDestroy=function()dead=dead+1 end}end
- modules={abyss_monster_actor_binding={templateIndex=31,containerTemplateIndex=32,powerTemplateIndex=33,enabled=true},abyss_art_features=config,abyss_data={},abyss_presentation={},abyss_theme={sound={}},
+ modules={abyss_ui_profile={schemaVersion=1,nativePageLifecycle=false},abyss_monster_actor_binding={templateIndex=31,containerTemplateIndex=32,powerTemplateIndex=33,enabled=true},abyss_art_features=config,abyss_data={},abyss_presentation={},abyss_theme={sound={}},
+  -- This fixture substitutes GameUI itself; provide its page-intent boundary too.
+  abyss_page_reveal={intent=function()return {page='menuPanel'}end},
   abyss_viewport={apply=function()return {GetChild=function()error('all-off has no custom hosts')end}end},
   abyss_narrative={build={}},abyss_game_ui={new=function(_,_,p,_,o)presentation=p;options=o;views=views+1;return {
    resize=function()end,update=function()end,disable=function()end,
@@ -28,7 +30,8 @@ local function start(config,broken,previous)
    assert(f.selectionAvatar==flags.selectionAvatar and f.battlePortrait==flags.battlePortrait);return owner()end,
    createController=function()error('entry mock must not create geometry')end},
   abyss_card_art_runtime={configure=function(v)if v then configured=configured+1 else cleared=cleared+1 end end,
-   clear=function()cleared=cleared+1 end,update=function()end,onEngineDestroy=function()cardDeaths=cardDeaths+1 end},
+   clear=function()cleared=cleared+1 end,update=function()end,onEngineDestroy=function()cardDeaths=cardDeaths+1 end,
+   setPresentationPage=function(page)assert(page=='menuPanel')end,presentationReady=function()return true end},
   abyss_ready_card_binding={enabled=true,imageTemplateIndex=1234,containerTemplateIndex=5678},
   abyss_ready_card_assets={strike={runtime=true,cardId='strike'}},abyss_card_display={bindNativeAssets=function(_,a)assert(a.strike)end}}
  if broken then broken(modules)end
@@ -37,8 +40,14 @@ local function start(config,broken,previous)
  game={GetUICanvasSize=function()return 1280,720 end,IsTestPlay=function()return false end,
   InstantiateClientUIControl=function()error('unexpected custom creation')end,DestroyClientUIControl=function()end}
  Enum={CursorEventType={CursorClick=1},ImageSource={StaticReference=1}};Color=function()end
- script={object={},EnableUpdate=function(_,v)updates=v end,GetParam=function(_,p)params[#params+1]=p;return true end}
+ script={object={},EnableUpdate=function(_,v)updates=v end,GetParam=function(_,p)
+  -- Model the registered default-off comparison switch separately from BGM.
+  -- Returning true for every unknown parameter accidentally opted this art-only
+  -- fixture into a candidate whose component binding it deliberately lacks.
+  if p=='nativeComponentControls' then componentParams=componentParams+1;return false end
+  params[#params+1]=p;return true end}
  assert(load(ENTRY))();OnStart();assert(updates and views==1,'art availability must not disable GameUI')
+ assert(componentParams==1,'comparison switch must be read once with its registered default off')
  assert(#params==1 and params[1]=='nativeBgmEnabled','art must not expose player parameters')
  return options
 end
@@ -75,6 +84,14 @@ for mask=0,31 do
  end
  OnDestroy();assert(not updates and dead==(flags.menuBackground and 1 or 0)+((flags.selectionAvatar or flags.battlePortrait or flags.cards or flags.menuBackground) and 1 or 0))
  assert(viewDeaths==1 and cardDeaths==(flags.cards and 1 or 0),'entry must retire view and enabled card runtime')
+end
+`));
+
+test('missing or malformed mandatory UI profile remains fail-closed instead of an artwork fallback',()=>vm(setup+`
+for _,bad in ipairs({false,{schemaVersion=0,nativePageLifecycle=false},{schemaVersion=1,nativePageLifecycle='true'},
+ {schemaVersion=1,nativePageLifecycle=false,unknown=true}})do
+ local ok=pcall(start,snapshot(),function(m)if bad==false then m.abyss_ui_profile=nil else m.abyss_ui_profile=bad end end)
+ assert(not ok and not updates and views==0,'mandatory profile failure was silently defaulted or bypassed')
 end
 `));
 test('missing and malformed configuration fail closed and default world retires old card runtime',()=>vm(setup+`

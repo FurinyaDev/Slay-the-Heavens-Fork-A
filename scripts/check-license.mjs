@@ -4,11 +4,13 @@ import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { resolve, extname } from 'node:path';
 import { pathToFileURL } from 'node:url';
+import {mediaByPath} from './ci-media-lfs.mjs';
+import {eventArtRegistry} from './lowcost-art.mjs';
 
 const media = new Set(['.png', '.jpg', '.jpeg', '.webp', '.gif', '.svg', '.ico',
   '.gia', '.gil', '.blend', '.glb', '.gltf', '.obj', '.fbx', '.wav', '.mp3',
   '.ogg', '.flac', '.mp4', '.webm', '.ttf', '.otf', '.ttc', '.woff', '.woff2']);
-export const sensitive = path => media.has(extname(path).toLowerCase()) ||
+export const sensitive = path => path === eventArtRegistry || mediaByPath.has(path) || media.has(extname(path).toLowerCase()) ||
   (/^(art\/|docs\/experiments\/art-portrait\/)/.test(path) && /\.(lua|json)$/i.test(path));
 export const digest = (bytes, text = false) => createHash('sha256')
   .update(text ? bytes.toString('utf8').replace(/\r\n/g, '\n') : bytes).digest('hex');
@@ -56,7 +58,9 @@ export function checkAssets(root, paths, inventory) {
     const bytes = readFileSync(resolve(root, path));
     if (entry.lfs === true) {
       // Opt-in source identity only: this does not inspect pixels or fetch LFS objects.
-      if (!/^art\/cards\/traveler-geo\/[a-z0-9_]+\/source\.png$/.test(path) ||
+      const archived=entry.storage==='ci-media-lfs-v1'&&mediaByPath.get(path);
+      const archiveIdentity=archived&&archived.sha256===entry.sha256&&archived.bytes===entry.bytes&&archived.category===entry.category;
+      if ((!archiveIdentity&&!/^art\/cards\/traveler-geo\/[a-z0-9_]+\/source\.png$/.test(path)) ||
           /^art\/cards\/traveler-geo\/(armaments|cleave|heavy_blade)\/source\.png$/.test(path) ||
           !/^[0-9a-f]{64}$/.test(entry.sha256) || !Number.isSafeInteger(entry.bytes) || entry.bytes <= 0) {
         errors.push(`Invalid LFS source provenance record: ${path}`);

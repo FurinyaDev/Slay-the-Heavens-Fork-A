@@ -11,7 +11,7 @@ local IntentView = require("abyss_battle_intent_view")
 local UnitView = require("abyss_battle_unit_view")
 local InfoContent = require("abyss_battle_info_content")
 local InfoView = require("abyss_battle_info_view")
-local Controller = require("abyss_controller")
+local Pointer = require('abyss_pointer_input')
 local M = {}
 local C = Theme.color
 local reasons = { insufficient_energy = "能量不足", invalid_target = "请选择存活的敌人", card_content_unavailable = "此卡牌尚未实装，可选择其他卡牌或跳过。",
@@ -52,6 +52,30 @@ local function connect(links, services)
         end
     end
 end
+local function bindCancelSelectionKey(self, ownership, host, services)
+    local keys = host.platform.keyEvents
+    local keyRoot = host.platform.keyRoot or host.root
+    if keys and keys.KeyboardSprintKeyDown and keyRoot.AddKeyEventListener then
+        -- The official sprint binding defaults to RMB. Listen on the persistent UI root.
+        keyRoot:AddKeyEventListener(keys.KeyboardSprintKeyDown, function()
+            local run, gesture = self.run, self.gesture or self.carry
+            if host.root.visible==false then return false end
+            if not (gesture or self.selected) then return self:openOverflowCard(self.info) end
+            if not self.active or self.busy or not run or run.phase ~= 'combat' or run.combat.phase ~= 'player' then return false end
+            services.cancelCardInputs()
+            services.cancelActionInputs()
+            services.cancelPotionInputs()
+            self.gesture, self.carry, self.selected, self.cardAim = nil, nil, nil, nil
+            self.hover, self.handHover, self.help = nil, nil, nil
+            self.selectionEpoch = (self.selectionEpoch or 0) + 1
+            if gesture then ownership.releasedDragTouch = gesture.touch end
+            self.suppressClick = gesture ~= nil
+            services.notice('')
+            self:render()
+            return true
+        end)
+    end
+end
 function M.new(root, data, presentation, clickEvent, platform, options)
     options = options or {}
     local self = { root = root, data = data, presentation = presentation, target = 1, seed = 1, busy = false, active = true }
@@ -65,7 +89,7 @@ function M.new(root, data, presentation, clickEvent, platform, options)
     })))
     install(services, require("abyss_battle_details").install(self, ownership, host, ports(links, {
         "tint", "ink", "child", "cancelPotionAim", "cancelCardInputs",
-        "cancelPotionInputs", "cancelActionInputs", "consumeReleasedDragClick"
+        "cancelPotionInputs", "cancelActionInputs"
     })))
     install(services, require("abyss_battle_card_layout").install(self, ownership, host, ports(links, {
     })))
@@ -96,40 +120,42 @@ function M.new(root, data, presentation, clickEvent, platform, options)
     install(services, require("abyss_battle_card_gestures").install(self, ownership, host, ports(links, {
         "closeInfo", "cardReady", "dragTarget", "notice", "cancelCardInputs",
         "cancelActionInputs", "cancelPotionInputs", "cancelPotionAim", "refresh", "rewardScreen",
-        "movePotion", "releasePotionDrag"
+        "movePotion", "releasePotionDrag", "aimReady"
     })))
     install(services, require("abyss_battle_action_bindings").install(self, ownership, host, ports(links, {
         "swallowed", "cardReady", "down", "point", "inPlayArea",
-        "child", "controllerReady", "actionReady", "consumeReleasedDragClick"
+        "child", "actionReady", "consumeReleasedDragClick"
     })))
     install(services, require("abyss_battle_potion_bindings").install(self, ownership, host, ports(links, {
         "potionBinding", "cancelPotionAim", "cancelCardInputs", "cancelActionInputs", "refresh",
-        "child", "controllerReady", "swallowed", "potionReady", "down", "consumeReleasedDragClick",
+        "child", "swallowed", "potionReady", "down", "consumeReleasedDragClick",
         "point", "beginPotionAim", "potionDragTarget"
     })))
     install(services, require("abyss_battle_card_bindings").install(self, ownership, host, ports(links, {
-        "point", "child", "controllerReady", "listen", "retireInterruptedPress",
+        "point", "child", "listen", "retireInterruptedPress",
         "down", "cancelPotionAim", "move", "release"
     })))
     install(services, require("abyss_battle_target_bindings").install(self, ownership, host, ports(links, {
-        "child", "enemyAt", "controllerReady", "swallowed", "discardEnemyPointer",
+        "child", "enemyAt", "swallowed", "discardEnemyPointer",
         "enemyReady", "down", "cancelPotionAim", "sameEnemySlot", "consumeReleasedDragClick"
     })))
     install(services, require("abyss_battle_detail_bindings").install(self, ownership, host, ports(links, {
-        "enemyAt", "listen", "child", "closeInfo", "controllerReady",
+        "enemyAt", "listen", "child", "closeInfo",
         "helpActorReady", "swallowed", "down", "consumeReleasedDragClick"
     })))
     connect(links, services)
     -- Runtime bindings keep only their own ports, not the construction registry.
     services = {
-        picture=services.picture, tint=services.tint, ink=services.ink, child=services.child, enemyPosition=services.enemyPosition,
+        picture=services.picture, tint=services.tint, ink=services.ink, child=services.child, enemyPosition=services.enemyPosition, renderEnemies=services.renderEnemies,
         describeInfo=services.describeInfo, show=services.show, placeCard=services.placeCard, placeReward=services.placeReward, dragTarget=services.dragTarget,
         dragPose=services.dragPose, notice=services.notice, refresh=services.refresh, bind=services.bind, cancelPotionAim=services.cancelPotionAim,
         rewardScreen=services.rewardScreen, bindPotionControls=services.bindPotionControls, bindCardControls=services.bindCardControls, bindEnemyControl=services.bindEnemyControl, unbindEnemyControl=services.unbindEnemyControl,
         bindEnemyPowerControl=services.bindEnemyPowerControl, unbindEnemyPowerControl=services.unbindEnemyPowerControl,
         bindEnemyDetailControls=services.bindEnemyDetailControls, unbindEnemyDetailControls=services.unbindEnemyDetailControls, bindDetailControls=services.bindDetailControls,
         potionDragTarget=services.potionDragTarget,
-        cancelCardInputs=services.cancelCardInputs, consumeReleasedDragClick=services.consumeReleasedDragClick
+        down=services.down, swallowed=services.swallowed,
+        cancelCardInputs=services.cancelCardInputs, cancelActionInputs=services.cancelActionInputs,
+        cancelPotionInputs=services.cancelPotionInputs, consumeReleasedDragClick=services.consumeReleasedDragClick
     }
     host.stage = host.options.embedded and host.root or assert(host.root:GetChild("stage"), "missing stage")
     host.cursor = host.platform.cursorEvents
@@ -158,7 +184,7 @@ function M.new(root, data, presentation, clickEvent, platform, options)
         local function cleanup(fn)local ok,why=pcall(fn);if not ok then failure=why end end
         cleanup(function()if host.monsterPowers then host.monsterPowers:release(box,engineDestroyed)end end)
         cleanup(function()if host.monsterIntentParticles then host.monsterIntentParticles:release(box,engineDestroyed)end end)
-        cleanup(function()services.unbindEnemyControl(slot,box,engineDestroyed)end)
+        cleanup(function()services.unbindEnemyControl(slot,box)end)
         cleanup(function()services.unbindEnemyDetailControls(slot,box,engineDestroyed)end)
         cleanup(function()if host.monsterArt and not engineDestroyed then host.monsterArt:release(box)end end)
         if failure then error(failure)end
@@ -169,12 +195,14 @@ function M.new(root, data, presentation, clickEvent, platform, options)
         function(_,box,engineDestroyed)services.unbindEnemyPowerControl(box,engineDestroyed)end)
     host.monsterIntentParticles=require('abyss_monster_intent_particle_view').new(host.platform,services.picture,services.tint)
     function self.releaseMonsterSurfaces(_)
+        if host.cardView then host.cardView.destroy()end
         local ok,why=pcall(host.monsterSurfaces.clear,host.monsterSurfaces)
         local cleared,reason=pcall(host.monsterIntentParticles.clear,host.monsterIntentParticles)
         assert(ok and cleared,why or reason)
     end
     function self.onEngineDestroy(_)
         self.active=false
+        if host.cardView then host.cardView.destroy()end
         local failure
         for _,manager in ipairs({host.monsterSurfaces,host.monsterPowers,host.monsterIntentParticles,host.monsterArt})do
             local ok,why=pcall(manager.onEngineDestroy,manager)
@@ -186,9 +214,10 @@ function M.new(root, data, presentation, clickEvent, platform, options)
     host.lines = InfoContent.lines
     host.infoContent = InfoContent.new(self, {
         statusDetail = statusDetail, statusKind = statusKind, intentView = intentView, potionText = potionText,
+        displayedIntent = function(battle, id) return host.monsterIntentParticles:tooltip(battle, id) end,
         temporaryOps = temporaryOps, stanceNames = stanceNames, orbNames = orbNames,
         kindNames = kindNames, intentColors = intentColors,
-    }, host.lines)
+    })
     host.paginate = InfoView.paginator(host.lines)
     host.renderInfo = InfoView.new(self, services.child, services.enemyPosition, services.describeInfo, host.paginate, services.tint, services.ink, services.picture)
     -- index 0 is the hero. Opening the same unit again closes it.
@@ -199,6 +228,7 @@ function M.new(root, data, presentation, clickEvent, platform, options)
         child = services.child, show = services.show, ink = services.ink, tint = services.tint, picture = services.picture, platform = host.platform,
         placeCard = services.placeCard, placeReward = services.placeReward,
         dragTarget = services.dragTarget, dragPose = services.dragPose, enemyPosition = services.enemyPosition,
+        renderAimActors = services.renderEnemies,
         potionTarget = services.potionDragTarget,
     })
     self.feedback = Feedback.new(host.stage, host.platform, function(battle, acting)
@@ -231,15 +261,17 @@ function M.new(root, data, presentation, clickEvent, platform, options)
     end)
     -- An open detail panel owns the next pointer sequence: its Down closes the panel and
     -- the matching Click is swallowed, so no card, target or button acts underneath it.
-    host.controller=host.platform.controller
     services.bind("start", function() if not self.run or self.run.phase == "defeat" then self:start() end end)
     services.bind("endTurn", function() self:endTurn() end)
     services.bind("playArea", function()
         if services.cancelPotionAim("已取消药水瞄准。") then services.refresh() return end
         local battle = self.run and self.run.phase == "combat" and self.run.combat
-        if not battle then return end
+        if not battle or self.carry and self.carry.aiming then return end
         for _,instance in ipairs(battle.hand) do
-            if instance.uid == self.selected and not needsTarget(battle,instance) then self:playSelected(nil) return end
+            if instance.uid == self.selected then
+                if needsTarget(battle,instance) then return self:cancelAim() end
+                return self:playSelected(nil)
+            end
         end
     end)
     services.bind("skip", function()
@@ -299,8 +331,9 @@ function M.new(root, data, presentation, clickEvent, platform, options)
             if self.rewardScreen ~= "list" then return end
             local ok,reason=Run.leaveCombatRewards(self.run)
             if not ok then services.notice(reasons[reason] or "当前无法离开奖励。") end
-            services.refresh(ok)
-        elseif not host.options.embedded and self.run.phase == "map" then assert(Run.startCombat(self.run, "cultist_solo")) services.refresh(true) end
+            -- The embedded host unmounts and cleans up the old battle.
+            services.refresh(ok,ok and host.options.embedded and host.options.onChange~=nil)
+        elseif not host.options.embedded and self.run.phase == "map" then assert(Run.startCombat(self.run, "raven_adept_solo")) services.refresh(true) end
     end)
     host.potionPopup=PotionPopup.new(host.stage:GetChild('potionHelp'):GetChild('potionPopup'),self,host.platform,host.clickEvent,{
         pointerDown=function(event)
@@ -309,13 +342,25 @@ function M.new(root, data, presentation, clickEvent, platform, options)
                 self.suppressClick=false
             end
         end,
-        pointerClick=function(event)
-            return not services.consumeReleasedDragClick(event) and not self.suppressClick and not self.gesture
+        pointerClick=function(event,token)
+            local origin=token and {touchId=token.touch} or event
+            return not services.consumeReleasedDragClick(origin) and not self.suppressClick and not self.gesture
         end,
-        item=function(slot)return Run.potionView(self.run)[slot]end,
+        pointerConsumed=function(event,token)
+            -- Only a host with neither Down nor Up is truly click-only. Partial
+            -- pointer capabilities still need the attributed tail barrier.
+            if not (host.cursor and (host.cursor.CursorDown or host.cursor.CursorUp)) then return end
+            -- Reuse the finite release barrier after the popup command closes
+            -- its menu. Keep the owned ID and the native Click's one ambiguous
+            -- tail separately when that Click omitted its ID.
+            local touch=token and token.touch or event and event.touchId
+            ownership.releasedDragTouch=touch;self.suppressClick={touch=event and event.touchId}
+        end,
+        item=function(slot)return Run.potionSlotView(self.run,slot)end,
         text=function(item,battle)return potionText(item,battle,true):match("\n(.*)") or ''end,
         use=function(slot)return self:usePotion(slot)end,
         discard=function(slot)
+            if options.inputCovered and options.inputCovered()then return false,'panel_hidden' end
             local ok,reason=Run.discardPotion(self.run,slot)
             if ok then self.potionSlots[slot]=nil end
             services.notice(ok and '已丢弃药水。' or reasons[reason] or '当前不能丢弃此药水。')
@@ -333,27 +378,19 @@ function M.new(root, data, presentation, clickEvent, platform, options)
                 and self.run and self.run.phase=='combat' and self.run.combat.phase=='player'
         end
         local function openPile()
-            if available()then return host.options.onPile(kind)end
+            if available()then
+                return host.options.onPile(kind)
+            end
             return false
         end
-        hit:AddCursorEventListener(host.clickEvent,function()
-            if Controller.pointerBlocked(host.controller)then return false end
+        hit:AddCursorEventListener(host.clickEvent,function(event)
+            if Pointer.blocked(host.platform) or services.swallowed(event)
+                or services.consumeReleasedDragClick(event) or self.suppressClick then return false end
             return openPile()
         end)
-        Controller.bind(host.controller,hit,'battle',openPile,available,80)
+        if self.dragEnabled then hit:AddCursorEventListener(host.cursor.CursorDown,services.down) end
     end
-    local keys = host.platform.keyEvents
-    if keys and keys.KeyboardSprintKeyDown and host.root.AddKeyEventListener then
-        -- The official UI maps SprintKey to the user's right-mouse binding.
-        host.root:AddKeyEventListener(keys.KeyboardSprintKeyDown, function()
-            if not self.active or not (self.gesture or self.carry or self.selected) then return false end
-            services.cancelCardInputs()
-            self.gesture,self.carry,self.selected,self.hover = nil,nil,nil,nil
-            self.suppressClick = true
-            self:render()
-            return true
-        end)
-    end
+    bindCancelSelectionKey(self, ownership, host, services)
     services.refresh()
     return self
 end

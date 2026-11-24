@@ -1,5 +1,7 @@
 -- Read-only detail projection. Combat owns the effects, durations and preview values.
 local Combat = require("abyss_combat")
+local CardDisplay = require("abyss_card_display")
+local CardKeywords = require("abyss_card_keywords")
 local Theme = require("abyss_theme")
 local number = require("abyss_numbers").integer
 local M = {}
@@ -10,15 +12,48 @@ local tailStates={
     blocked_by_mark={name='绽放印记阻断',text='绽放印记阻止复活，保留本局的一次使用机会。',colour=C.danger},
 }
 
+-- AbstractMonster.updateIntentTip and the STS1 Simplified Chinese UI text.
+local attackTips = {
+    ATTACK = {"攻势", "这名敌人将要\n攻击造成 "},
+    ATTACK_BUFF = {"攻势", "这名敌人将要进行强化并攻击造成 "},
+    ATTACK_DEBUFF = {"策略", "这名敌人将要对你施加负面效果并攻击造成 "},
+    ATTACK_DEFEND = {"攻势", "这名敌人将要格挡并攻击造成 "},
+}
+local otherTips = {
+    BUFF = {"策略", "这名敌人将要进行强化。"},
+    DEBUFF = {"策略", "这名敌人将要对你施加一种负面效果。"},
+    STRONG_DEBUFF = {"策略", "这名敌人将要对你施加一种强大的负面效果。"},
+    DEFEND = {"守势", "这名敌人将要在这个回合进行格挡。"},
+    DEFEND_DEBUFF = {"守势", "这名敌人将要进行格挡并对你施加一种负面效果。"},
+    DEFEND_BUFF = {"守势", "这名敌人将要进行格挡并进行强化。"},
+    ESCAPE = {"胆小", "这名敌人将要逃跑。"},
+    MAGIC = {"魔法", "这名敌人将要在这个回合使用神秘的魔法。"},
+    SLEEP = {"熟睡", "这名敌人正在睡觉。"},
+    STUN = {"击晕", "这名敌人在这个回合被击晕了。"},
+    UNKNOWN = {"不明", "这名敌人的意图不明（但不是攻击）。"},
+}
+
+function M.intentTip(enum, damage, times)
+    if not enum or enum == 'NONE' then return end
+    local copy = attackTips[enum] or otherTips[enum]
+    local body = copy[2]
+    if attackTips[enum] then
+        body = body .. number(damage) .. ' 点伤害'
+        if times and enum ~= 'ATTACK_DEBUFF' then body = body .. ' ' .. number(times) .. ' 次' end
+        body = body .. '。'
+    end
+    return {name = copy[1], body = body}
+end
+
 -- CJK glyphs take one font size; ASCII takes about half. Count UTF-8 lead bytes.
-function M.lines(text)
+function M.lines(text, boxWidth, fontSize, inset)
     if not text or text == "" then return 0 end
     local I, width = L.statusInfo, 0
     for i = 1, #text do
         local b = text:byte(i)
         width = width + (b < 128 and 0.55 or b >= 192 and 1 or 0)
     end
-    local per = math.floor((I.width - I.pad * 2 - I.icon - I.gap) / Theme.font.reading)
+    local per = math.max(1,math.floor(((boxWidth or I.width) - (inset or I.pad * 2 + I.icon + I.gap)) / (fontSize or Theme.font.reading)))
     return math.max(1, math.ceil(width / per))
 end
 
@@ -27,7 +62,9 @@ local function find(list, key, value)
 end
 
 local function selectedEntries(entries, info)
-    if info.statusId then
+    if info.position and not info.offset then
+        return {entries[info.position]}
+    elseif info.statusId then
         local selected = find(entries, "id", info.statusId)
         if not selected then return end
         return {selected}
@@ -54,7 +91,7 @@ local function ownedStatusText(self, describe, entry, battle, actor)
 end
 
 -- Fixed presentation dependencies stay with the existing battle description helpers.
-function M.new(self, describe, lines)
+function M.new(self, describe)
     local function projectedIntent(battle,index)
         if require('abyss_boss_relics').hidesIntents(self.run)then return require('abyss_battle_intent_view').hidden()end
         return describe.intentView(battle,index)
@@ -62,17 +99,9 @@ function M.new(self, describe, lines)
     local function statusRow(entry, battle, actor)
         local text, tag, note = ownedStatusText(self, describe, entry, battle, actor)
         local kind = describe.statusKind(entry)
-        return { status = entry.id, icon = Theme.icon.status[entry.icon or entry.id],
+        return { status = entry.id, icon = (Theme.icon.status[entry.id] or Theme.icon.status[entry.id:match('^colorless_bomb_') and 'colorless_bomb' or entry.icon]),
             colour = kind == "buff" and C.buff or C.debuff, tag = tag, text = text, note = note,
             name = entry.name .. (entry.stack == "none" and "" or " " .. number(entry.amount)) }
-    end
-
-    local function intentCard(card, battle, info)
-        local view = projectedIntent(battle, info.index)
-        card.tag, card.accent, card.hp = "下一步行动", describe.intentColors[view.kind] or C.textDim, nil
-        card.subtitle = "尚未执行 · 敌方回合时发生"
-        card.sections[1] = { rows = view.rows }
-        return card
     end
 
     local function potionRows(data, battle, info)
@@ -85,92 +114,40 @@ function M.new(self, describe, lines)
             note = require('abyss_potion_text').note(definition) or (definition.targetPolicy == "enemy_one" and "对选中的一名敌人；先选药水，再点击敌人" or "对自己使用；短按药水生效"), colour = C.goldBright}}
     end
 
-    local function keywordRows(effects, battle, actor, rows)
+    local function potionKeywords(effects, battle, actor, rows)
         for _, effect in ipairs(effects) do
             local id = effect.status or effect.op == "gainTemporaryStrength" and "strength"
             local status = id and battle.catalog.statuses[id]
             if status then
-                local row = statusRow({id = id, name = status.name, amount = effect.value,
-                    temporary = describe.temporaryOps[effect.op] and effect.value or 0,
-                    kind = status.kind, description = status.description, stack = status.stack}, battle, actor)
-                -- A keyword has not been applied: describe its duration rather than remaining turns.
-                if status.stack == "duration" then row.tag = "持续 " .. number(effect.value) .. " 回合" end
-                rows[#rows + 1] = row
+                local row=statusRow({id=id,name=status.name,amount=effect.value,
+                    temporary=describe.temporaryOps[effect.op] and effect.value or 0,
+                    kind=status.kind,description=status.description,stack=status.stack},battle,actor)
+                if status.stack=='duration' then row.tag='持续 '..number(effect.value)..' 回合'end
+                rows[#rows+1]=row
             end
-            if effect["then"] then keywordRows(effect["then"], battle, actor, rows) end
+            if effect["then"] then potionKeywords(effect["then"], battle, actor, rows) end
         end
     end
 
-    local function fullEffectRows(definition, instance, battle, rows,reward)
-        local full
-        local preview = not reward and Combat.cardPreview(battle, instance, self.target) or {}
-        if definition.originalV4 then
-            local original=require('abyss_original_v4_display')
-            full=original.describe(definition,instance.upgraded)
-            local keywords=original.keywordDefinitions(definition,instance.upgraded)
-            if keywords~='' then full=full..'\n'..keywords end
-            if preview.text and preview.text~='' then full=full..'\n'..preview.text end
-        else
-            local display=self.presentation[instance.cardId]
-            local cardDisplay=require('abyss_card_display')
-            full=reward and cardDisplay.permanentText(display,definition,instance)
-                or cardDisplay.combatText(display,definition,instance,preview,battle,self.target)
-        end
-        -- Detail rows use their own colour; never split inline markup across pages.
-        full=full:gsub('<color=[^>]+>',''):gsub('</color>','')
-        local chunk, index = "", 0
-        local function flush()
-            if chunk ~= "" then
-                index = index + 1
-                rows[#rows + 1] = {name = "完整效果 " .. index, text = chunk, colour = C.goldBright, icon = Theme.icon.cardArt[definition.type]}
-                chunk = ""
-            end
-        end
-        for glyph in full:gmatch("[%z\1-\127\194-\244][\128-\191]*") do
-            if lines(chunk .. glyph) > 2 then flush() end
-            chunk = chunk .. glyph
-        end
-        flush()
-    end
-
-    local function cardTraits(definition, rows)
-        if definition.strikeTag then rows[#rows+1]={intent='unknown',colour=C.goldBright,name='打击类',
-            text='带有打击标签',note='计入剑势如虹等效果'} end
-        if definition.exhaust then rows[#rows + 1] = {icon = Theme.icon.exhaust, colour = C.goldBright, name = "消耗",
-            text = "打出后移出本场战斗", note = "不进入弃牌堆"} end
-        if definition.ethereal then rows[#rows + 1] = {intent = "unknown", colour = C.goldBright, name = "虚无",
-            text = "回合结束时若仍在手中，将被消耗"} end
-    end
-
-    local function originRow(info,instance,rows)
-        if info.kind~='card' or not self.run then return end
-        local origin=require('abyss_card_origin_view').describe(self.run,instance,true)
-        if origin~=''then rows[#rows+1]={intent='unknown',colour=C.goldBright,name='升级来源',text=origin}end
-    end
-    local function standardCardEffectRows(kind,definition,instance,battle,rows,reward)
-        if kind~='potion' and not definition.originalV4 then fullEffectRows(definition,instance,battle,rows,reward)end
-    end
-    local function keywordCard(card, data, presentation, battle, info, actor)
+    local function cardKeywords(presentation, battle, info)
         local reward=info.reward
-        if reward and not require('abyss_battle_reward_owner').ready(self,reward) then return end
-        local instance = reward and {cardId=reward.cardId,upgraded=reward.upgraded} or find(battle.hand, "uid", info.uid)
-        local definition, rows
-        if info.kind == "potion" then
-            definition, rows = potionRows(data, battle, info)
-            if not definition then return end
-        else
-            if not instance then return end
-            definition, rows = Combat.cardDefinition(battle, instance), {}
-        end
-        if definition.originalV4 then fullEffectRows(definition,instance,battle,rows,reward)end
-        keywordRows(definition.effects, battle, actor, rows)
-        cardTraits(definition, rows)
-        originRow(info,instance,rows)
-        standardCardEffectRows(info.kind,definition,instance,battle,rows,reward)
-        if #rows == 0 then return end
-        card.title, card.tag, card.hp = info.kind == "potion" and definition.name or presentation[instance.cardId].name, "关键词", nil
-        card.subtitle = info.kind == "potion" and "药水说明，尚未使用 · 查看不消耗" or "卡牌效果说明，尚未生效"
-        card.sections[1] = { rows = rows }
+        local instance = reward and {cardId=reward.cardId,upgraded=reward.upgraded}
+            or battle.hand[info.slot]
+        local display=instance and presentation[instance.cardId]
+        if not display then return end
+        local definition=Combat.cardDefinition(battle,instance)
+        local text=CardDisplay.permanentText(display,definition,instance)
+        return CardKeywords.cardTips(battle.catalog.statuses,definition,instance.upgraded,text)
+    end
+
+    local function keywordCard(card, data, presentation, battle, info, actor)
+        if info.kind~='potion' then return cardKeywords(presentation,battle,info) end
+        local definition,rows=potionRows(data,battle,info)
+        if not definition then return end
+        potionKeywords(definition.effects,battle,actor,rows)
+        card.title,card.tag,card.hp=definition.name,"关键词",nil
+        card.subtitle="药水说明，尚未使用 · 查看不消耗"
+        card.sections[1]={rows=rows}
         return card
     end
 
@@ -252,13 +229,33 @@ function M.new(self, describe, lines)
         end
     end
 
+    local function powerBody(row)
+        local body = row.text or ""
+        if row.tag and row.tag ~= "" and tonumber(row.tag) == nil then body = body .. "。 " .. row.tag end
+        if row.note and row.note ~= "" then body = body .. "。 " .. row.note end
+        return body
+    end
+
+    local function powerRows(battle, info, actor)
+        local rows = {}
+        if info.index > 0 and not info.statusId and not info.offset
+            and not require('abyss_boss_relics').hidesIntents(self.run) then
+            rows[1] = M.intentTip(describe.displayedIntent(battle, actor.id))
+        end
+        for _, entry in ipairs(selectedEntries(Combat.statusView(actor), info) or {}) do
+            local row = statusRow(entry, battle, actor)
+            rows[#rows + 1] = {name = row.name, body = powerBody(row)}
+        end
+        return #rows > 0 and rows or nil
+    end
+
     return function(data, presentation, battle, info, actor)
-        local entries = Combat.statusView(actor)
+        if info.powerTips then return powerRows(battle, info, actor) end
         local card = {title = actor.name or "旅行者", tag = "当前状态", accent = C.gold,
             hp = actor.hp, maxHp = actor.maxHp, block = actor.block, sections = {}}
-        if info.kind == "intent" then return intentCard(card, battle, info) end
         if info.kind == "card" or info.kind == "potion" or info.kind=='rewardCard' then return keywordCard(card, data, presentation, battle, info, actor) end
-        entries = selectedEntries(entries, info)
+        card.actorDetail = true
+        local entries = selectedEntries(Combat.statusView(actor), info)
         if not entries then return end
         if info.index > 0 and not info.statusId and not info.offset then
             local view = projectedIntent(battle, info.index)
@@ -267,7 +264,10 @@ function M.new(self, describe, lines)
         end
         playerResources(card, battle, info, actor)
         statusSections(card, entries, battle, actor)
-        if #card.sections == 0 then card.empty = "暂无状态" end
+        if #card.sections == 0 then
+            if info.transient then return end
+            card.empty = "暂无状态"
+        end
         return card
     end
 end

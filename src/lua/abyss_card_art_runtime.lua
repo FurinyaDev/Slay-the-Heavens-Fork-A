@@ -4,6 +4,8 @@
 local M={}
 local MAX_POOLS,MAX_CREATES,MAX_SLOTS=10,64,2657
 local api,records,order=nil,{},{}
+local presentationPage
+function M.setPresentationPage(page)presentationPage=page end
 local createdLastUpdate,generation,operationDepth=0,0,0
 local updating,clearing=false,false
 local CANCELLED={}
@@ -185,6 +187,23 @@ function M.release(box,fallback,pool)
     if #pending==0 and operationDepth==0 and intent and intents[box]==intent then reconcile(box)end
     return intent
 end
+-- The modal owns the lease budget while its page is visible. Background
+-- battle/shop writers use their existing fallback until the modal closes.
+local leasePage
+function M.setLeasePage(page)
+    if leasePage==page then return end
+    leasePage=page
+    if not page then return end
+    local hidden={}
+    for box,record in pairs(records)do
+        if record.page~=page then hidden[#hidden+1]=box end
+    end
+    for _,box in ipairs(hidden)do
+        if leasePage~=page then break end
+        local record=records[box]
+        if record and record.page~=page then M.release(box,record.fallback,record.pool) end
+    end
+end
 function M.clear()
     if clearing then return end
     clearing=true;generation=generation+1;records={}
@@ -201,7 +220,7 @@ end
 -- Engine teardown owns the entire UI subtree. Calling Destroy here is forbidden
 -- by the native lifecycle and must not be confused with an ordinary page close.
 function M.onEngineDestroy()
-    generation=generation+1;api=nil;records={};intents=setmetatable({},{__mode='k'})
+    generation=generation+1;api=nil;leasePage=nil;records={};intents=setmetatable({},{__mode='k'})
     for _,record in ipairs(order)do
         record.cancelled,record.removed,record.ready=true,true,false
         record.cleanupRequested=false;record.groups={};record.controls={};record.allocated=false
@@ -209,6 +228,7 @@ function M.onEngineDestroy()
     order={};createdLastUpdate=0
 end
 function M.configure(value)
+    presentationPage=nil;leasePage=nil
     if value then
         assert(type(value.instantiate)=='function' and type(value.destroy)=='function','native art creation API missing')
         for _,key in ipairs({'imageTemplateIndex','containerTemplateIndex'})do
@@ -264,8 +284,10 @@ local function drawingSlot(data,index)
 end
 function M.request(box,pool,metadata,platform,fallback,identity,writeSlot)
     if clearing or not api then return false,'native art runtime not configured' end
+    if leasePage and presentationPage~=leasePage then return false,'native art scope covered' end
     local previous=records[box]
     if previous and previous.metadata==metadata and previous.pool==pool and previous.fallback==fallback then
+        previous.page=presentationPage
         previous.identity=identity
         if not previous.failed and operationDepth==0 then work(previous,function()visibility(previous,previous.ready==true)end)end
         return current(previous) and previous.ready==true,previous.reason
@@ -273,7 +295,7 @@ function M.request(box,pool,metadata,platform,fallback,identity,writeSlot)
     local data=drawing(metadata)
     if not data then M.release(box,fallback,pool);return false,'native art drawing rejected' end
     if previous then cancel(previous)end
-    local record={box=box,pool=pool,metadata=metadata,platform=platform,fallback=fallback,identity=identity,
+    local record={box=box,pool=pool,metadata=metadata,platform=platform,fallback=fallback,identity=identity,page=presentationPage,
         generation=generation,groups={},controls={},drawing=data,writeSlot=writeSlot,destroy=api.destroy,
         intent=claim(box,pool,fallback),
         instantiate=api.instantiate,imageTemplateIndex=api.imageTemplateIndex,containerTemplateIndex=api.containerTemplateIndex}
@@ -363,5 +385,20 @@ function M.status()
         end
     end
     return status
+end
+function M.presentationReady(page)
+    local pending,progress=false,0
+    for _,record in pairs(records)do
+        if not record.removed and not record.cancelled and record.page==page then
+            if record.failed then return false,record.reason or 'card artwork preparation failed' end
+            pending=pending or not record.ready
+            progress=progress+#record.controls+#record.groups
+        end
+        if not record.removed and not record.cancelled and not record.ready and not record.page then
+            return false,'UNAVAILABLE card artwork page owner'
+        end
+    end
+    if pending then return false,nil,progress end
+    return true
 end
 return M

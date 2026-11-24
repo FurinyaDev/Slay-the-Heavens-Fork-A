@@ -5,10 +5,11 @@ status: In Progress
 assignee:
   - '@Furinya'
 created_date: '2026-10-27 09:48'
-updated_date: '2026-10-30 01:04'
-due_date: '2026-10-28'
-labels: []
-milestone: m-5
+updated_date: '2026-11-14 06:51'
+labels:
+  - 待验
+  - delivery-verify
+milestone: m-8
 dependencies: []
 parent_task_id: TASK-25
 priority: medium
@@ -47,4 +48,9 @@ ordinal: 119000
 本地交付验证：41源图完整SHA/尺寸/字节与真实contain像素核对；35项怪物/旅行者/已审阅资产/LFS/许可专项通过；完整许可inventory、guidance、Backlog、平台日常负载及engineering通过。全部原生/Owner/运行时/设备批准仍false，完整托管Quality/Licenses与独立审查待PR当前SHA完成。
 
 2026-10-30 Owner最新调整：后续怪物源图制作与原生精修延期，优先把已经可用的原生资产用于本轮人工真机测试，不让PNG源图或继续美术优化阻塞测试。4张已接受源图仅保存方向与方法，生成提示词、真实身份参考/画风参考边界、完整画布小图和原始字节保留见art/monster-benchmarks/genshin-v1；不因此启用运行时。任务保持进行中，原生与真机验收未完成，不标Done。
+2026-11-03 赛后排期：m-5 → M7 产品体验；任务状态与未验 AC 保留。旧比赛期限 '2026-10-28' 取消，未定新截止日。样本质量和真机性能属体验门槛，批量怪物生产属于后续内容扩充。
+
+2026-11-07 看板核对（develop 2c85bc61）：实现类交付已按历史记录保留，剩余 AC 待同候选官方/设备验证；当前无在途 PR，状态由 In Progress 归 To Do（待验）。
+
+2026-11-14第二轮状态纠正：已核对本任务原实施计划、技术附件或已有PR/修复记录；工作已经开展，未勾AC不等于未开始。 状态表示整个任务的完成进展，不表示当前有执行者持续占用；保留原未验AC、负责人、依赖及历史证据。更正过去把已开展待验事项退回To Do的处理。
 <!-- SECTION:NOTES:END -->

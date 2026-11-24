@@ -5,12 +5,13 @@ status: In Progress
 assignee:
   - '@Furinya'
 created_date: '2026-10-24 07:42'
-updated_date: '2026-10-27 15:04'
-due_date: '2026-10-28'
+updated_date: '2026-11-14 06:51'
 labels:
   - ui
   - art
   - awaiting-live
+  - 待验
+  - delivery-verify
 milestone: m-5
 dependencies: []
 references:
@@ -67,4 +68,10 @@ ordinal: 84000
 2026-10-26全面复核：本轮53个原战斗UI用例和card_preview通过，已交付布局/领取/跳过/预览条款补勾；当前版实机截图与设备条款仍保留。
 
 负责人字段规范化：原记录 @Codex 作为历史执行者信息保留；任务负责人为 Furinya。
+
+2026-11-07 看板核对（develop 2c85bc61）：实现类交付已按历史记录保留，剩余 AC 待同候选官方/设备验证；当前无在途 PR，状态由 In Progress 归 To Do（待验）。
+
+2026-11-14清理旧窗口日期：原due_date=2026-10-28保留于历史，不再显示为当前截止；实际未完成AC和审批不变。
+
+2026-11-14第二轮状态纠正：已有2/3项AC通过及既有实施证据，剩余未完成要求属于后续验证或接续。 状态表示整个任务的完成进展，不表示当前有执行者持续占用；保留原未验AC、负责人、依赖及历史证据。更正过去把已开展待验事项退回To Do的处理。
 <!-- SECTION:NOTES:END -->

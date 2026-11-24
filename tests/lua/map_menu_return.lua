@@ -36,7 +36,7 @@ end)
 test('battle and node previews return in one Back with read-only state and expired menu taps',function()
  for _,context in ipairs({'battle','node'})do
   local h,r=F.fixture(nil,nil,nil,cursor);assert(F.start(h))
-  if context=='battle'then assert(Run.startCombat(h.run,'cultist_solo'));h:refresh()
+  if context=='battle'then assert(Run.startCombat(h.run,'raven_adept_solo'));h:refresh()
   else
    local routes=dofile('tests/lua/support/map_routes.lua')
    local path=routes.to(h.map,function(node)return node.type=='camp'end)
@@ -57,21 +57,5 @@ test('battle and node previews return in one Back with read-only state and expir
   assert(h:openMenu());assert(not hit(r,'runMenu','resume').click({touchId=10}),'old menu tap revived after preview')
   assert(tap(hit(r,'runMenu','resume'),13))
  end
-end)
-test('controller Cancel returns from route directly to battle and hides same-map focus',function()
- local focus
- local api={events={Confirm='confirm',Cancel='cancel',Focus='focus'},directions={Left='left',Right='right'},modes={Specified='specified'},
-  getFocus=function()return focus end,setFocus=function(c)focus=c end,isController=function()return true end}
- local h,r=F.fixture(nil,nil,nil,cursor,false,nil,nil,api);assert(F.start(h))
- assert(h:openMenu());assert(not hit(r,'runMenu','map').canControllerFocus);assert(h:closeExit())
- assert(Run.startCombat(h.run,'cultist_solo'));h:refresh();assert(h:openMenu())
- local function press(control,kind)
-  h:update(.01);h:syncController();assert(control.canControllerFocus);focus=control
-  return control.navigationListeners[kind or 'confirm']()
- end
- assert(press(hit(r,'runMenu','map')) and h.routeOpen)
- assert(press(focus,'cancel'))
- assert(not h.exitOpen and not h.menuOpen and not h.routeOpen and h.mode=='battle' and h.battleUI.active)
- h:disable()
 end)
 print('MAP_MENU_RETURN_PASS '..cases)

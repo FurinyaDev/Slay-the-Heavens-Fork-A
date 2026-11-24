@@ -2,7 +2,7 @@ local H=dofile('tests/lua/support/battle_gesture_fixture.lua')
 local EnemyView=require('abyss_battle_enemy_view')
 local Powers=require('abyss_monster_power_surfaces')
 local Theme=require('abyss_theme')
-local host,ui,panel=H.setup({'defend'},{'cultist','red_louse','green_louse','jaw_worm','sentry'})
+local host,ui,panel=H.setup({'defend'},{'raven_adept','red_louse','green_louse','jaw_worm','sentry'})
 local battle=host.run.combat
 local function near(a,b,message)assert(math.abs(a-b)<1e-8,message..': '..tostring(a)..' ~= '..tostring(b))end
 local surfaces=assert(require('abyss_monster_surfaces').get(panel))
@@ -25,7 +25,7 @@ near(hero.x,430/1.5-640,'hero source center x');near(hero.y,360-425/1.5,'hero so
 near(hero:GetChild('portrait').sizeDeltaX,200/1.5,'hero source silhouette')
 assert(not hero:GetChild('plate').visible and not hero:GetChild('border').visible)
 local first=enemy(1)
--- Cultist source: hbX=-8, hbY=10, width=230, height=240.
+-- Raven Adept source: hbX=-8, hbY=10, width=230, height=240.
 near(first:GetChild('intentIcon').x,-8/1.5,'intent follows source hitbox center')
 -- Native full-bleed glyph and horizontal damage clear both square art and source hitbox.
 -- Original constructor, help width, HP anchors and ordered source powers stay below.
@@ -36,7 +36,7 @@ near(first:GetChild('intentIcon').y,intentY,'native intent anchor clears full ar
 near(first:GetChild('intentIcon').sizeDeltaX,glyph,'readable intent glyph size')
 assert(first:GetChild('intentIcon').y-glyph/2>=nativeTop+Theme.space.xs-1e-8,'full glyph body clearance')
 near(first:GetChild('intentHit').sizeDeltaX,64/1.5,'source intent hitbox size')
-near(first:GetChild('hpFill').y,(10-18)/1.5-240/3,'source health anchor below hitbox')
+near(first:GetChild('hpFill').y,-18/1.5-240/3,'health anchor clears art when hitbox is raised')
 near(first:GetChild('hpFill').sizeDeltaY,20/1.5,'source health bar height')
 near(first:GetChild('hpFill').x,-8/1.5,'health bar follows source hitbox center')
 near(first:GetChild('hpFill').sizeDeltaX,230/1.5,'enemy source health width')
@@ -54,7 +54,7 @@ local chip=assert(Powers.get(row):find('strength'))
 near(chip:GetChild('icon').sizeDeltaX,48/1.5,'source status icon size')
 near(chip.x,(-8-230/2+10)/1.5,'source power row starts at health left plus ten')
 -- Full-bleed status images need explicit HP clearance, not source atlas padding.
-local powerY=(10-18)/1.5-240/3-math.max(20/1.5,Theme.font.small)/2-Theme.space.s-(48/1.5)/2
+local powerY=-18/1.5-240/3-math.max(20/1.5,Theme.font.small)/2-Theme.space.s-(48/1.5)/2
 near(chip.y,powerY,'native power row below full HP bar')
 assert(chip.y+chip:GetChild('icon').sizeDeltaY/2<=first:GetChild('hpFill').y-first:GetChild('hpFill').sizeDeltaY/2-Theme.space.s+1e-8,'power never covers HP')
 print('APPROVED_MAIN_UNIT_PASS')
@@ -104,7 +104,7 @@ print('APPROVED_MAIN_CLEARANCE_PASS')
 
 -- Explicit repeated-definition fixtures must not invent count-dependent spacing/scale.
 for count=1,4 do
- local members={};for i=1,count do members[i]='cultist'end
+ local members={};for i=1,count do members[i]='raven_adept'end
  local short=H.F.Combat.new(H.F.Data,{deck={'defend'},enemies=members})
  host.run.combat=short
  for _,actor in ipairs(short.enemies)do actor.statuses={strength=2};actor.powerOrder={'strength'}end
@@ -112,7 +112,7 @@ for count=1,4 do
  local positions={}
  for slot,actor in ipairs(short.enemies)do
   local box=assert(surfaces:find(actor.id));positions[slot]={box.x,box.y}
-  near(box.x,320,'cultist original default x');near(box.y,(EnemyView.floorY-10)/1.5-360+240/3,'cultist original default y')
+  near(box.x,320,'raven_adept original default x');near(box.y,(EnemyView.floorY-10)/1.5-360+240/3,'raven_adept original default y')
   actor.statuses={};actor.powerOrder={}
  end
  ui:render()

@@ -1,0 +1,672 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {createHash} from 'node:crypto';
+import {gameLayout} from '../scripts/game-ui-layout.mjs';
+import {withViewport} from '../scripts/viewport-layout.mjs';
+import {nativeTheme} from '../scripts/native-ui-theme.mjs';
+import {attachOfficialPortraits} from '../scripts/official-portraits.mjs';
+import {toLua} from '../scripts/build-lua-data.mjs';
+import {withPortraitVm} from './helpers/portrait-runtime-vm.mjs';
+import {applyV25PortraitProfile,v25PortraitRuntimeProfile} from '../scripts/v25-portrait-profile.mjs';
+
+const sourceHash='4851e4aae6c43799ec31e2b2ebd06f9b00cf07161f26e71d72a6ec89191ad98e';
+const find=(node,name)=>(node.controls??node.children??[]).find(child=>child.name===name);
+const build=()=>{const layout=withViewport(gameLayout(),nativeTheme);attachOfficialPortraits(layout,{selectionAvatar:true,battlePortrait:true});return layout;};
+
+test('V25 uses the existing full-body source and frozen 133 artwork, never a replacement silhouette',()=>{
+ const folder='art/characters/traveler-geo/portraits/battle133/';
+ assert.equal(createHash('sha256').update(readFileSync(folder+'source.png')).digest('hex'),sourceHash);
+ assert.equal(createHash('sha256').update(readFileSync(folder+'native-art.json')).digest('hex'),'f8a7af7b079aa5bbb7e16b502b222f1fd7dbfaa2c30f6eef1bf0d76af0a0a248');
+ const recipe=JSON.parse(readFileSync(folder+'redraw-recipe.json','utf8'));
+ assert.deepEqual(recipe.sourceSize,[1024,1536]);assert.equal(recipe.imageControls,4315);
+ assert.equal(recipe.paletteColors,64); // A sampled native drawing, not full-resolution source pixels.
+});
+
+test('V25 portrait transform aligns official hosts without changing hit/HUD, readiness or tree membership',()=>{
+ const layout=build(),stage=find(layout,'stage'),battle=find(stage,'battlePanel'),hero=find(battle,'hero');
+ const details=find(find(stage,'characterPanel'),'details');
+ const figure=find(hero,'officialFigure'),selection=find(details,'officialSelectionFigure');
+ const before=structuredClone(layout),runtime=v25PortraitRuntimeProfile(nativeTheme);
+ applyV25PortraitProfile(layout,nativeTheme);
+ assert.deepEqual(figure.position,runtime.battlePosition);assert.deepEqual(figure.scale,[210/133,210/133]);
+ assert.deepEqual(selection.position,[273,-239]);assert.deepEqual(selection.scale,[1380/133,1380/133]);
+ for(const node of [figure,selection]){assert.deepEqual(node.size,[133,133]);assert.equal(node.visible,false);assert.deepEqual(node.children,[]);}
+ // Compare every node after restoring only the explicitly owned presentation fields.
+ const restored=structuredClone(layout),restoredStage=find(restored,'stage');
+ const restoredHero=find(find(restoredStage,'battlePanel'),'hero'),oldHero=find(find(find(before,'stage'),'battlePanel'),'hero');
+ const restoredDetails=find(find(restoredStage,'characterPanel'),'details'),oldDetails=find(find(find(before,'stage'),'characterPanel'),'details');
+ for(const [now,old,names] of [[restoredHero,oldHero,['officialFigure','border','plate']],[restoredDetails,oldDetails,['officialSelectionFigure','portraitFrame','floorShadow']]]){
+  for(const name of names)now.children[now.children.findIndex(child=>child.name===name)]=structuredClone(find(old,name));
+ }
+ assert.deepEqual(restored,before);
+ assert.equal(find(hero,'border').visible,false);assert.equal(find(hero,'plate').visible,false);
+ assert.equal(find(details,'portraitFrame').visible,false);assert.equal(find(details,'floorShadow').visible,false);
+});
+
+test('portrait contract is clone-safe, idempotent and disabled hosts are left absent',()=>{
+ const layout=build();applyV25PortraitProfile(layout,nativeTheme);const first=structuredClone(layout);
+ applyV25PortraitProfile(layout,nativeTheme);assert.deepEqual(layout,first);
+ const a=v25PortraitRuntimeProfile(nativeTheme);a.battlePosition[0]=10000;
+ assert.notEqual(v25PortraitRuntimeProfile(nativeTheme).battlePosition[0],10000);
+ const disabled=withViewport(gameLayout(),nativeTheme),before=structuredClone(disabled);
+ applyV25PortraitProfile(disabled,nativeTheme);assert.deepEqual(disabled,before);
+});
+
+test('V25 runtime keeps reference offset/scale through begin, attack pose, cancel, pause and next battle',()=>{
+ const profile=v25PortraitRuntimeProfile(nativeTheme);
+ withPortraitVm(`
+Asset.v25PortraitProfile=${toLua(profile)}
+a=Portraits.new(stage,nil,{battlePortrait=true})
+a:sync('battle',false,false,'ironclad')
+assert(figure.SetAnchoredPositionValue[1]==Asset.v25PortraitProfile.battlePosition[1] and figure.SetAnchoredPositionValue[2]==Asset.v25PortraitProfile.battlePosition[2],'begin lost V25 base')
+assert(math.abs(figure.SetLocalScaleValue[1]-210/133)<.000001,'begin restored old portrait size')
+for i=1,500 do a:tick();if a:status().battle.phase=='ready'then break end end
+assert(a:status().battle.phase=='ready')
+a:battlePose(12,-4,1.2,.9)
+assert(figure.SetAnchoredPositionValue[1]==Asset.v25PortraitProfile.battlePosition[1]+12 and figure.SetAnchoredPositionValue[2]==Asset.v25PortraitProfile.battlePosition[2]-4)
+assert(math.abs(figure.SetLocalScaleValue[1]-1.2*210/133)<.000001)
+a:battlePose(0,0,1,1)
+assert(figure.SetAnchoredPositionValue[1]==Asset.v25PortraitProfile.battlePosition[1] and figure.SetAnchoredPositionValue[2]==Asset.v25PortraitProfile.battlePosition[2])
+a:battlePose(7,5,1.1,1.1)
+a:sync('map',false,false,'ironclad');assert(not figure.visible)
+a:sync('battle',false,false,'ironclad')
+assert(math.abs(figure.SetLocalScaleValue[1]-210/133)<.000001 and figure.visible)
+assert(figure.SetAnchoredPositionValue[1]==Asset.v25PortraitProfile.battlePosition[1] and figure.SetAnchoredPositionValue[2]==Asset.v25PortraitProfile.battlePosition[2],'cached begin retained previous battle pose')
+`,{runtimeV2:true});
+});
+
+test('V25 selection uses the same frozen full-body drawing even when legacy lowpoly and budget assets exist',()=>{
+ withPortraitVm(`
+Asset.v25PortraitProfile=${toLua(v25PortraitRuntimeProfile(nativeTheme))}
+local selectionHost=tree();stage.children.characterPanel.children.lumineSelectionBackground=selectionHost;local frame=tree();frame:SetSizeDelta(440,440)
+local note=tree();note.text=''
+stage.children.characterPanel.children.details=tree({officialSelectionFigure=selectionHost,portraitFrame=frame,
+ portraits=tree({traveler_ironclad=tree()}),portraitNote=note})
+a=Portraits.new(stage,nil,{selectionAvatar=true})
+a:sync('menu',true,false,'ironclad')
+assert(a:status().selection.total==#Asset.battle133.rows,'V25 selected lowpoly/budget replacement')
+assert(selectionHost.SetAnchoredPositionValue[1]==273 and selectionHost.SetAnchoredPositionValue[2]==-239)
+assert(math.abs(selectionHost.SetLocalScaleValue[1]-1380/133)<.000001,'legacy portraitFrame size overwrote V25 selection')
+`);
+});
+
+test('V25 title never preloads hidden selection figures even when the legacy host requests warming',()=>{
+ withPortraitVm(`
+Asset.v25PortraitProfile=${toLua(v25PortraitRuntimeProfile(nativeTheme))}
+local selectionHost=tree();stage.children.characterPanel.children.lumineSelectionBackground=selectionHost;local frame=tree();frame:SetSizeDelta(440,440)
+local note=tree();note.text=''
+stage.children.characterPanel.children.details=tree({officialSelectionFigure=selectionHost,portraitFrame=frame,
+ portraits=tree({traveler_ironclad=tree()}),portraitNote=note})
+local a=Portraits.new(stage,nil,{selectionAvatar=true})
+assert(a:sync('menu',false,false,'ironclad',true))
+for _=1,20 do a:tick()end
+assert(a:status().selection.owned==0 and a:status().avatar.owned==0 and LiveCount()==0,'hidden selection was eagerly built')
+assert(a:sync('menu',true,false,'ironclad',true));a:tick()
+assert(a:status().selection.owned>0,'visible selection did not begin source drawing')
+assert(a:release() and LiveCount()==0)
+`,{runtimeV2:true});
+});
+
+test('combined native page readiness waits for the complete 1600 background and ignores the hidden legacy avatar',()=>{
+ withPortraitVm(`
+local selectionHost=tree();stage.children.characterPanel.children.lumineSelectionBackground=selectionHost
+local frame=tree();rawset(frame,'sizeDeltaX',440)
+stage.children.characterPanel.children.details=tree({officialSelectionFigure=selectionHost,portraitFrame=frame,
+ portraits=tree({traveler_ironclad=tree()}),portraitNote=tree()})
+traveler:SetVisible(false)
+local a=Portraits.new(stage,nil,{selectionAvatar=true,battlePortrait=true})
+assert(a:sync('menu',true,false,'ironclad'))
+assert(not a:readyForPage('menu',true,'ironclad','characterPanel'),'partial background passed readiness')
+for _=1,1000 do a:tick();if a:status().selection.phase=='ready' then break end end
+assert(a:status().selection.total==1600 and a:status().selection.phase=='ready')
+assert(a:status().avatar.owned==0 and a:readyForPage('menu',true,'ironclad','characterPanel'),
+ 'hidden legacy avatar blocked the complete native page')
+traveler:SetVisible(true);assert(a:sync('menu',true,false,'ironclad'))
+assert(not a:readyForPage('menu',true,'ironclad','characterPanel'),'visible incomplete avatar passed readiness')
+for _=1,1000 do a:tick();if a:status().avatar.phase=='ready' then break end end
+assert(a:readyForPage('menu',true,'ironclad','characterPanel'))
+assert(a:sync('battle',false,false,'ironclad'))
+assert(not a:readyForPage('battle',false,'ironclad','battlePanel'),'unbuilt battle passed readiness')
+for _=1,1000 do a:tick();if a:status().battle.phase=='ready' then break end end
+assert(a:readyForPage('battle',false,'ironclad','battlePanel'),'hidden selection blocked battle readiness')
+a:release();figure.SetSizeDelta=function()error('native figure rejected')end
+a:sync('battle',false,false,'ironclad')
+local ready,reason=a:readyForPage('battle',false,'ironclad','battlePanel')
+assert(not ready and reason,'failed native owner passed readiness without its reason')
+a:onEngineDestroy();assert(not a:readyForPage('menu',true,'ironclad','characterPanel'))
+`,{runtimeV2:true,officialAssets:true});
+});
+
+test('the legacy title hint does not start the official worker and partial cancel retains the cache',()=>{
+ withPortraitVm(`
+Theme.presentationProfile='official-assets-first'
+local originalClock=os.clock;local tickClock=0;os.clock=function()tickClock=tickClock+.009;return tickClock end
+traveler:SetVisible(true) -- Full-source roster is visible; competition hides this parent.
+local selectionHost=tree();stage.children.characterPanel.children.lumineSelectionBackground=selectionHost;local frame=tree();rawset(frame,'sizeDeltaX',440)
+local note=tree();note.text=''
+stage.children.characterPanel.children.details=tree({officialSelectionFigure=selectionHost,portraitFrame=frame,
+ portraits=tree({traveler_ironclad=tree()}),portraitNote=note})
+local a=Portraits.new(stage,nil,{selectionAvatar=true})
+assert(a:sync('menu',false,false,'ironclad',true))
+for _=1,120 do a:tick()end
+assert(a:status().selection.owned==0 and a:status().avatar.owned==0 and LiveCount()==0,
+ 'official title eagerly built hidden selection')
+assert(a:sync('menu',true,false,'ironclad',true));a:tick()
+local partial=a:status().selection;local allocated=LiveCount()
+assert(partial.owned>0 and partial.phase=='building' and partial.total==#Asset.lowpolyLumine.rows)
+assert(not selectionHost.visible,'partial official selection was exposed')
+assert(a:sync('menu',false,false,'ironclad',true))
+for _=1,20 do a:tick()end
+assert(LiveCount()==allocated and a:status().selection.nextIndex==partial.nextIndex,
+ 'cancelled official selection kept building or discarded its cached partial drawing')
+assert(not selectionHost.visible and not avatar.visible)
+assert(a:sync('menu',true,false,'ironclad',true))
+for _=1,1000 do a:tick();if a:status().selection.phase=='ready' and a:status().avatar.phase=='ready' then break end end
+assert(a:status().selection.phase=='ready' and a:status().avatar.phase=='ready')
+local complete=LiveCount();local generation=a:status().selection.generation
+assert(selectionHost.visible and avatar.visible)
+for _=1,5 do
+ assert(a:sync('menu',false,false,'ironclad',true));for _=1,5 do a:tick()end
+ assert(not selectionHost.visible and not avatar.visible and LiveCount()==complete)
+ assert(a:sync('menu',true,false,'ironclad',true));a:tick()
+ assert(selectionHost.visible and avatar.visible and LiveCount()==complete)
+ assert(a:status().selection.generation==generation,'cached official selection was rebuilt')
+end
+assert(a:release() and LiveCount()==0)
+os.clock=originalClock
+`,{runtimeV2:true,officialAssets:true});
+});
+
+test('one title worker warms the default across four role slots and switching never publishes an older role',()=>{
+ withPortraitVm(`
+local panel=stage.children.characterPanel
+local keys={'ironclad','hutao','arlecchino','watcher'}
+local hosts={}
+for i,id in ipairs(keys)do
+ local host=tree();host:SetVisible(false);hosts[id]=host
+ panel.children[i==1 and 'lumineSelectionBackground' or id]=host
+end
+local backing=tree();backing:SetVisible(true);panel.children.v25Background=backing
+panel.children.details=tree({})
+traveler:SetVisible(false)
+local rows={}
+for i=1,130 do rows[i]=Asset.lowpolyLumine.rows[i]end
+local drawing={rows=rows,count=#rows,width=1280,height=720,renderProfile='lowpoly-v1',
+ jsonSha256=Asset.lowpolyLumine.jsonSha256,runtimeV2=true,cache=true}
+Asset.selectionVariants={}
+for i=2,#keys do
+ local id=keys[i];Asset.selectionVariants[i-1]={id=id,host=id,drawing=drawing}
+end
+local a=Portraits.new(stage,nil,{selectionAvatar=true})
+local previousClock=os.clock;os.clock=function()return 0 end
+local function warm(eligible,dt,frameStarted)a:warmSelection(eligible,dt or 1/60,frameStarted or 0)end
+local function visible(role)
+ for id,host in pairs(hosts)do assert(host.visible==(id==role),id..' visibility')end
+ assert(backing.visible==(role==nil))
+end
+a:sync('menu',false,false,nil,true);warm(true)
+assert(LiveCount()==0)
+warm(true,.06);warm(true,1/60,-.01);warm(true,'invalid');warm(true,-1);warm(true,0/0)
+assert(LiveCount()==0,'busy frames warmed a portrait')
+warm(true)
+assert(LiveCount()==24)
+for _=1,100 do warm(true)end
+assert(LiveCount()==1628 and not hosts.ironclad.active,'title warmed multiple roles or activated an offscreen host')
+visible(nil)
+a:sync('menu',true,false,nil);visible(nil)
+a:sync('menu',true,false,'ironclad');visible('ironclad')
+assert(LiveCount()==1628,'warm selection created new controls in the click')
+a:sync('menu',true,false,'hutao');a:tick(1/60,false)
+assert(a:status().selection.owned==0);visible(nil)
+a:tick(1/60);local b=a:status().selection.owned
+assert(b>0 and b<=64)
+a:sync('menu',true,false,'arlecchino');visible(nil)
+for _=1,4 do a:tick(1/60)end
+assert(a:status().selection.phase=='ready');visible('arlecchino')
+assert(LiveCount()==1628+b+134,'superseded B or speculative fourth role kept building')
+a:sync('battle',false,false,'ironclad');visible(nil)
+assert(not hosts.arlecchino.active);a:tick(1/60)
+local resident=LiveCount();a:sync('menu',true,false,'arlecchino');visible('arlecchino')
+a:sync('menu',true,false,'ironclad');visible('ironclad')
+assert(LiveCount()==resident)
+a:sync('menu',true,false,nil);visible(nil)
+local native=hosts.ironclad.SetVisible
+hosts.ironclad.SetVisible=function(self,value)
+ if value then assert(a:release())end
+ return native(self,value)
+end
+a:sync('menu',true,false,'ironclad')
+visible(nil);assert(LiveCount()==0 and not hosts.ironclad.active)
+os.clock=previousClock
+`,{runtimeV2:true,officialAssets:true});
+});
+
+test('a native setter can refresh the same cold selection before its first artwork publication',()=>{
+ withPortraitVm(`
+local panel=stage.children.characterPanel
+local selectionHost=tree()
+selectionHost:SetVisible(false);panel.children.lumineSelectionBackground=selectionHost
+local backing=tree();backing:SetVisible(true);panel.children.v25Background=backing
+panel.children.details=tree({})
+traveler:SetVisible(false)
+local a=Portraits.new(stage,nil,{selectionAvatar=true})
+local resize=selectionHost.SetSizeDelta
+local refreshed=0
+selectionHost.SetSizeDelta=function(self,...)
+ refreshed=refreshed+1
+ a:sync('menu',true,false,'ironclad')
+ return resize(self,...)
+end
+assert(a:sync('menu',true,false,'ironclad'))
+for _=1,120 do a:tick(1/60)end
+assert(refreshed==1 and a:status().selection.phase=='ready')
+assert(selectionHost.visible and not backing.visible and LiveCount()==1628,
+ 'the queued same-role refresh stranded a completed but hidden portrait')
+assert(a:release() and LiveCount()==0)
+`,{runtimeV2:true,officialAssets:true});
+});
+
+test('official hidden roster does not build its avatar and visible roster can prepare cancel and resume',()=>{
+ withPortraitVm(`
+Theme.presentationProfile='official-assets-first'
+local selectionHost=tree();stage.children.characterPanel.children.lumineSelectionBackground=selectionHost;local frame=tree();rawset(frame,'sizeDeltaX',440)
+local note=tree();note.text=''
+stage.children.characterPanel.children.details=tree({officialSelectionFigure=selectionHost,portraitFrame=frame,
+ portraits=tree({traveler_ironclad=tree()}),portraitNote=note})
+traveler:SetVisible(false)
+local a=Portraits.new(stage,nil,{selectionAvatar=true})
+assert(a:sync('menu',true,false,'ironclad',true))
+for _=1,1000 do a:tick();if a:status().selection.phase=='ready' then break end end
+for _=1,20 do a:tick()end
+assert(a:status().selection.phase=='ready' and selectionHost.visible)
+assert(a:status().avatar.phase=='idle' and a:status().avatar.owned==0,
+ 'official hidden roster allocated an invisible avatar')
+assert(LiveCount()==a:status().selection.owned)
+traveler:SetVisible(true);assert(a:sync('menu',true,false,'ironclad',true));a:tick()
+local partial=a:status().avatar;local count=LiveCount()
+assert(partial.phase=='building' and partial.owned>0,'visible full-source roster did not begin its avatar')
+traveler:SetVisible(false);assert(a:sync('menu',true,false,'ironclad',true))
+for _=1,20 do a:tick()end
+assert(not avatar.visible and LiveCount()==count and a:status().avatar.nextIndex==partial.nextIndex,
+ 'hiding roster did not pause and retain its partial avatar')
+assert(a:status().selection.phase=='ready' and selectionHost.visible,'avatar visibility disturbed main art')
+traveler:SetVisible(true);assert(a:sync('menu',true,false,'ironclad',true))
+for _=1,1000 do a:tick();if a:status().avatar.phase=='ready' then break end end
+assert(a:status().avatar.phase=='ready' and avatar.visible)
+local complete=LiveCount();local generation=a:status().avatar.generation
+traveler:SetVisible(false);assert(a:sync('menu',true,false,'ironclad',true));a:tick()
+assert(not avatar.visible and LiveCount()==complete)
+traveler:SetVisible(true);assert(a:sync('menu',true,false,'ironclad',true));a:tick()
+assert(avatar.visible and LiveCount()==complete and a:status().avatar.generation==generation)
+assert(a:release() and LiveCount()==0)
+`,{runtimeV2:true,officialAssets:true});
+});
+
+test('official selection retains its bounded cache beside the approved combat figure',()=>{
+ withPortraitVm(`
+local selectionHost=tree();stage.children.characterPanel.children.lumineSelectionBackground=selectionHost;local frame=tree();rawset(frame,'sizeDeltaX',440)
+local note=tree();note.text=''
+stage.children.characterPanel.children.details=tree({officialSelectionFigure=selectionHost,portraitFrame=frame,
+ portraits=tree({traveler_ironclad=tree()}),portraitNote=note})
+traveler:SetVisible(false)
+assert(Asset.battle133==nil,'production loaded the separate legacy full-body source')
+assert(Asset.battlePixel.count==57 and #Asset.battlePixel.rows==57)
+local native=assert(Asset.battleApprovedNative)
+assert(native.renderProfile=='lowpoly-v1' and native.count==464 and #native.rows==464)
+assert(native.literalSha256=='73070e14234502e7a61b0be601b9ada017bb4d90b0f58cccd305673cd2fddfef')
+assert(native.runtimeV2 and native.cache and not native.bandByRow)
+local a=Portraits.new(stage,nil,{selectionAvatar=true,battlePortrait=true})
+assert(a:sync('menu',true,false,'ironclad'))
+for _=1,1000 do a:tick();if a:status().selection.phase=='ready' then break end end
+assert(a:status().selection.total==1600 and a:status().selection.owned==1628,
+ 'official selection did not retain its explicit bounded source')
+assert(#Images()==1600 and a:status().avatar.owned==0)
+local selected=Images();local selectedTraces={}
+for i,image in ipairs(selected)do
+ selectedTraces[i]={};for j,record in ipairs(image.trace)do selectedTraces[i][j]={table.unpack(record)}end
+end
+assert(a:sync('battle',false,false,'ironclad'))
+for _=1,1000 do a:tick();if a:status().battle.phase=='ready' then break end end
+local both=Images();local battle=a:status().battle
+assert(battle.phase=='ready' and battle.total==464 and battle.owned==473,'approved source did not reach its measured native cache')
+assert(#both==1600+464,'selection and approved combat did not keep their exact independent image counts')
+for i=1,1600 do assert(both[i]==selected[i],'battle replaced the selection cache');Equal(selectedTraces[i],selected[i].trace)end
+local generation=battle.generation;local complete=LiveCount()
+assert(a:sync('menu',true,false,'ironclad'));a:tick()
+assert(a:sync('battle',false,false,'ironclad'));a:tick()
+assert(a:status().battle.phase=='ready' and a:status().battle.generation==generation and LiveCount()==complete,'scene reentry rebuilt the approved cache')
+local resumed=Images();for i,image in ipairs(both)do assert(resumed[i]==image,'scene reentry replaced a cached image')end
+assert(a:release() and LiveCount()==0)
+`,{runtimeV2:true,officialAssets:true});
+});
+
+test('official selection retains its static fallback when the approved source is missing',()=>{
+ withPortraitVm(`
+local selectionHost=tree();stage.children.characterPanel.children.lumineSelectionBackground=selectionHost;local frame=tree();rawset(frame,'sizeDeltaX',440)
+local note=tree();note.text=''
+stage.children.characterPanel.children.details=tree({officialSelectionFigure=selectionHost,portraitFrame=frame,
+ portraits=tree({traveler_ironclad=tree()}),portraitNote=note})
+Asset.lowpolyLumine=nil
+local reason
+local owner=assert(Portraits.new(stage,function(line)reason=line end,{selectionAvatar=true}))
+assert(reason:find('approved 1600 background',1,true))
+owner:sync('menu',true,false,'ironclad');owner:tick()
+assert(not owner:status().selection and LiveCount()==0,'missing source built a different portrait')
+`,{runtimeV2:true,officialAssets:true});
+});
+
+test('official selection rejects unmarked or foreign source schema without building a fallback',()=>{
+ for(const marker of ['nil',"'battle133'"]){
+  withPortraitVm(`
+local selectionHost=tree();stage.children.characterPanel.children.lumineSelectionBackground=selectionHost;local frame=tree();rawset(frame,'sizeDeltaX',440)
+local note=tree();note.text=''
+stage.children.characterPanel.children.details=tree({officialSelectionFigure=selectionHost,portraitFrame=frame,
+ portraits=tree({traveler_ironclad=tree()}),portraitNote=note})
+Asset.selectionUses=${marker}
+assert(Asset.battlePixel and Asset.battlePixel.count==57)
+local reason
+local owner=assert(Portraits.new(stage,function(line)reason=line end,{selectionAvatar=true}))
+assert(reason:find('approved background schema',1,true))
+owner:sync('menu',true,false,'ironclad');owner:tick()
+assert(not owner:status().selection and LiveCount()==0,'unmarked official source was accepted')
+`,{runtimeV2:true,officialAssets:true});
+ }
+});
+
+test('legacy explicit title warming remains available without the official or V25 profile',()=>{
+ withPortraitVm(`
+Theme.presentationProfile='legacy'
+local selectionHost=tree();stage.children.characterPanel.children.lumineSelectionBackground=selectionHost;local frame=tree();rawset(frame,'sizeDeltaX',440)
+local note=tree();note.text=''
+stage.children.characterPanel.children.details=tree({officialSelectionFigure=selectionHost,portraitFrame=frame,
+ portraits=tree({traveler_ironclad=tree()}),portraitNote=note})
+local a=Portraits.new(stage,nil,{selectionAvatar=true})
+assert(a:sync('menu',false,false,'ironclad',true));a:tick()
+assert(LiveCount()>0 and a:status().selection.owned>0,'legacy explicit warming was removed')
+assert(not selectionHost.visible and not avatar.visible)
+assert(a:release() and LiveCount()==0)
+`,{runtimeV2:true});
+});
+
+test('invalid V25 reference identity and bounded replacement fail before host allocation',()=>{
+ for(const extra of ["Asset.v25PortraitProfile.sourceSha256=string.rep('0',64)","Asset.v25PortraitProfile.battleDisplay=0", "Asset.battle133.renderProfile='bounded-2d-v1'"]){
+  withPortraitVm(`Asset.v25PortraitProfile=${toLua(v25PortraitRuntimeProfile(nativeTheme))}\n${extra}\nlocal ok=pcall(Portraits.new,stage,nil,{battlePortrait=true});assert(not ok,'invalid V25 config accepted');assert(LiveCount()==0)`);
+ }
+});
+
+test('V25 decorative hosts report actual native activity and retain cached allocations across pause',()=>{
+ withPortraitVm(`
+Asset.v25PortraitProfile=${toLua(v25PortraitRuntimeProfile(nativeTheme))}
+local selectionHost=tree();stage.children.characterPanel.children.lumineSelectionBackground=selectionHost;local frame=tree();rawset(frame,'sizeDeltaX',440)
+local note=tree();note.text=''
+stage.children.characterPanel.children.details=tree({officialSelectionFigure=selectionHost,portraitFrame=frame,
+ portraits=tree({traveler_ironclad=tree()}),portraitNote=note})
+local calls={};for _,host in ipairs({figure,selectionHost,avatar})do
+ local original=host.SetActive;calls[host]=0
+ host.SetActive=function(self,value)calls[self]=calls[self]+1;return original(self,value)end
+end
+a=Portraits.new(stage,nil,{battlePortrait=true,selectionAvatar=true})
+assert(a:sync('menu',true,false,'ironclad'))
+for i=1,1000 do a:tick();if a:status().selection.phase=='ready' and a:status().avatar.phase=='ready'then break end end
+assert(a:status().selection.phase=='ready' and a:status().avatar.phase=='ready')
+local owned=LiveCount();assert(owned>0 and selectionHost.active and avatar.active and not figure.active)
+assert(a:status().selection.nativeActive==true and a:status().avatar.nativeActive==true)
+assert(a:sync('map',false,false,'ironclad'))
+assert(not selectionHost.active and not avatar.active and LiveCount()==owned,'pause destroyed cached drawing')
+assert(a:status().selection.nativeActive==false and a:status().selection.nativePaused==true)
+local total=calls[selectionHost]+calls[avatar]
+for i=1,10 do assert(a:sync('map',false,false,'ironclad'));a:tick()end
+assert(calls[selectionHost]+calls[avatar]==total and LiveCount()==owned,'inactive global tick rewrote/rebuilt decorative hosts')
+assert(a:sync('battle',false,false,'ironclad'));assert(figure.active and not selectionHost.active and not avatar.active)
+for i=1,1000 do a:tick();if a:status().battle.phase=='ready'then break end end
+assert(a:status().battle.phase=='ready' and a:status().battle.nativeActive==true)
+local battleOwned=a:status().battle.owned;assert(battleOwned>0)
+assert(a:sync('map',false,false,'ironclad'));assert(not figure.active and a:status().battle.owned==battleOwned)
+assert(a:release() and LiveCount()==0,'explicit release lost ownership')
+`,{runtimeV2:true});
+});
+
+test('V25 skips an already inactive host setter but still reads back the native state',()=>{
+ withPortraitVm(`
+Asset.v25PortraitProfile=${toLua(v25PortraitRuntimeProfile(nativeTheme))}
+a=Portraits.new(stage,nil,{battlePortrait=true});assert(a:sync('battle',false,false,'ironclad'))
+for i=1,1000 do a:tick();if a:status().battle.phase=='ready'then break end end
+figure:SetActive(false)
+local original,calls=figure.SetActive,0
+figure.SetActive=function(self,value)calls=calls+1;return original(self,value)end
+assert(a:sync('map',false,false,'ironclad'))
+assert(calls==0 and a:status().battle.nativeActive==false,'native state was not reconciled before writing')
+`,{runtimeV2:true});
+});
+
+for(const behavior of ['false','mismatch','throw'])test(`V25 activation ${behavior} cannot claim a successful begin`,()=>{
+ withPortraitVm(`
+Asset.v25PortraitProfile=${toLua(v25PortraitRuntimeProfile(nativeTheme))}
+figure.SetActive=function()${behavior==='false'?'return false':behavior==='throw'?"error('activation rejected')":'return nil'} end
+a=Portraits.new(stage,nil,{battlePortrait=true})
+assert(a:sync('battle',false,false,'ironclad')==false,'activation failure reported success')
+local status=a:status().battle
+assert(status.phase=='failed' and status.reason and status.reason~='' and LiveCount()==0)
+assert(not figure.visible and status.nativeActive==false)
+`,{runtimeV2:true});
+});
+
+test('V25 missing native active readback fails before allocating instead of guessing',()=>{
+ withPortraitVm(`
+Asset.v25PortraitProfile=${toLua(v25PortraitRuntimeProfile(nativeTheme))}
+local mt=getmetatable(figure);local index=mt.__index
+mt.__index=function(self,key)if key=='active'then return nil end;if type(index)=='function'then return index(self,key)end;return index[key]end
+a=Portraits.new(stage,nil,{battlePortrait=true})
+assert(a:sync('battle',false,false,'ironclad')==false)
+assert(a:status().battle.phase=='failed' and LiveCount()==0 and not figure.visible)
+assert(a:status().battle.nativeActive==nil,'unknown native state was fabricated')
+`,{runtimeV2:true});
+});
+
+test('V25 cached begin cannot resurrect a host after activation setter synchronously releases its owner',()=>{
+ withPortraitVm(`
+Asset.v25PortraitProfile=${toLua(v25PortraitRuntimeProfile(nativeTheme))}
+a=Portraits.new(stage,nil,{battlePortrait=true});assert(a:sync('battle',false,false,'ironclad'))
+for i=1,1000 do a:tick();if a:status().battle.phase=='ready'then break end end
+assert(a:sync('map',false,false,'ironclad'))
+local setter,once=figure.SetActive,false
+figure.SetActive=function(self,value)
+ if value and not once then once=true;assert(a:release())end
+ return setter(self,value)
+end
+assert(a:sync('battle',false,false,'ironclad')==false)
+assert(a:status().battle.phase=='released' and LiveCount()==0)
+assert(not figure.visible and not figure.active,'late setter resurrected a released host')
+`,{runtimeV2:true});
+});
+
+test('V25 rejected pause does not claim inactive or stop the owner global update',()=>{
+ withPortraitVm(`
+Asset.v25PortraitProfile=${toLua(v25PortraitRuntimeProfile(nativeTheme))}
+a=Portraits.new(stage,nil,{battlePortrait=true});assert(a:sync('battle',false,false,'ironclad'))
+for i=1,1000 do a:tick();if a:status().battle.phase=='ready'then break end end
+local setter=figure.SetActive
+figure.SetActive=function(self,value)if not value then return false end;return setter(self,value)end
+assert(a:sync('map',false,false,'ironclad')==false,'rejected native pause reported success')
+assert(a:status().battle.phase=='failed' and a:status().battle.nativeActive==true,'failed setter was reported inactive')
+figure.SetActive=setter;assert(a:release())
+assert(a:sync('battle',false,false,'ironclad'))
+for i=1,1000 do a:tick();if a:status().battle.phase=='ready'then break end end
+assert(a:status().battle.phase=='ready','global update was stopped by decorative host pause')
+`,{runtimeV2:true});
+});
+
+test('V25 fresh activation cannot leave a released decorative host active after a late setter return',()=>{
+ withPortraitVm(`
+Asset.v25PortraitProfile=${toLua(v25PortraitRuntimeProfile(nativeTheme))}
+a=Portraits.new(stage,nil,{battlePortrait=true})
+local setter,once=figure.SetActive,false
+figure.SetActive=function(self,value)
+ if value and not once then once=true;assert(a:release())end
+ return setter(self,value)
+end
+assert(a:sync('battle',false,false,'ironclad')==false)
+assert(a:status().battle.phase=='released' and LiveCount()==0)
+assert(not figure.active and not figure.visible,'fresh begin left released decoration active')
+`,{runtimeV2:true});
+});
+
+const resultHost=`
+subject=tree()
+stage.children.menuPanel=tree({result=tree({v25ResultChrome=tree({subject=subject})})})
+`;
+test('V25 result binds frozen fullbody with shared batch budget and retains an inactive cache on pause',()=>{
+ withPortraitVm(`
+Asset.v25PortraitProfile=${toLua(v25PortraitRuntimeProfile(nativeTheme))}
+${resultHost}
+a=Portraits.new(stage,nil,{battlePortrait=true})
+assert(a:syncResult('victory'))
+assert(a:status().result.total==4315 and subject.active and not subject.visible)
+local old=LiveCount();a:tick();assert(LiveCount()-old<=64,'result escaped shared per-tick creation budget')
+for i=1,1000 do a:tick();if a:status().result.phase=='ready'then break end end
+assert(a:status().result.phase=='ready' and subject.visible)
+Equal(subject.SetAnchoredPositionValue,{-342.5,-56});Equal(subject.SetLocalRotationValue,{0,0,0})
+assert(math.abs(subject.SetLocalScaleValue[1]-260/133)<.000001)
+assert(#Images()==4315,'result substituted a bounded/lowpoly figure')
+local r=Asset.battle133.rows[1];local luminance=.2126*r[15]+.7152*r[16]+.0722*r[17]
+local c=Images()[1].imageColor
+assert(c[1]==math.floor((luminance+(r[15]-luminance)*.45)*.45+.5) and c[4]==math.floor(r[18]*.38+.5),'reference dim/opacity was not applied to native images')
+local cached=LiveCount();assert(a:syncResult('menu'));assert(not subject.active and not subject.visible and LiveCount()==cached)
+assert(a:syncResult('victory'));assert(subject.active and subject.visible and LiveCount()==cached)
+assert(a:release() and LiveCount()==0)
+`,{runtimeV2:true});
+});
+
+test('V25 result outcome changes release old tint safely and rebuild defeat under the same bounded owner',()=>{
+ withPortraitVm(`
+Asset.v25PortraitProfile=${toLua(v25PortraitRuntimeProfile(nativeTheme))}
+${resultHost}
+a=Portraits.new(stage,nil,{battlePortrait=true});assert(a:syncResult('victory'))
+for i=1,1000 do a:tick();if a:status().result.phase=='ready'then break end end
+local old=Images()[1];assert(a:syncResult('defeat'))
+assert(not old.alive and not subject.visible and a:status().result.phase=='building')
+for i=1,1000 do a:tick();if a:status().result.phase=='ready'then break end end
+Equal(subject.SetAnchoredPositionValue,{-342.5,-157});Equal(subject.SetLocalRotationValue,{0,0,83})
+local r=Asset.battle133.rows[1];assert(Images()[1].imageColor[4]==math.floor(r[18]*.3+.5))
+assert(a:sync('map',false,false,'ironclad'));assert(not subject.active and not subject.visible)
+local cached=LiveCount();a:tick();assert(LiveCount()==cached,'result pause stopped ownership accounting')
+assert(a:release() and LiveCount()==0)
+`,{runtimeV2:true});
+});
+
+test('missing host and legacy profiles never allocate or enable a replacement result subject',()=>{
+ withPortraitVm(`
+a=Portraits.new(stage,nil,{battlePortrait=true});assert(a:syncResult('victory')==false and a:status().result==nil)
+assert(LiveCount()==0)
+`);
+ withPortraitVm(`
+Asset.v25PortraitProfile=${toLua(v25PortraitRuntimeProfile(nativeTheme))}
+a=Portraits.new(stage,nil,{battlePortrait=true});assert(a:syncResult('defeat')==false and a:status().result==nil)
+assert(LiveCount()==0)
+`);
+});
+
+for(const transition of ['release','onEngineDestroy'])test(`V25 result activation cannot resurrect after synchronous ${transition}`,()=>{
+ withPortraitVm(`
+Asset.v25PortraitProfile=${toLua(v25PortraitRuntimeProfile(nativeTheme))}
+${resultHost}
+a=Portraits.new(stage,nil,{battlePortrait=true})
+local original,once=subject.SetActive,false
+subject.SetActive=function(self,value)
+ if value and not once then once=true;a:${transition}()end
+ return original(self,value)
+end
+assert(a:syncResult('victory')==false);assert(LiveCount()==0)
+assert(a:syncResult('victory')==${transition==='release'?'true':'false'})
+${transition==='release'?'assert(a:release())':''}
+assert(LiveCount()==0)
+`,{runtimeV2:true});
+});
+
+test('V25 result rejected activation remains failed on repeated sync and cannot publish or allocate',()=>{
+ withPortraitVm(`
+Asset.v25PortraitProfile=${toLua(v25PortraitRuntimeProfile(nativeTheme))}
+${resultHost}
+subject.SetActive=function()return false end
+a=Portraits.new(stage,nil,{battlePortrait=true})
+assert(a:syncResult('defeat')==false)
+assert(a:syncResult('defeat')==false,'failed result reported success on repeated sync')
+assert(a:status().result.phase=='failed' and not subject.visible and LiveCount()==0)
+`);
+});
+
+const drawingPath='art/characters/traveler-geo/portraits/battle133/lumine-native-v1.json';
+const pin='a0c792109a74f71be0a52d9a59f39828e1d4818ce8d1bba915606b984d89f831';
+
+test('approved Lumine official battle mounts the exact native drawing and retains its cheap cached lifecycle',()=>{
+ const raw=readFileSync(drawingPath,'utf8').replaceAll('\r\n','\n');
+ assert.equal(createHash('sha256').update(raw).digest('hex'),pin);
+ const data=JSON.parse(raw);
+ assert.equal(data.count,464);
+ assert.equal(data.rows.filter(r=>r[17]!==255).length,20);
+ assert.equal(data.rows.filter(r=>r[18]||r[19]).length,448);
+ withPortraitVm(`
+local data=assert(Asset.battleApprovedNative,'official battle module omitted approved native Lumine')
+local expected=${toLua(data.rows)}
+Equal(data.rows,expected)
+local owner=Portraits.new(stage,nil,{battlePortrait=true,selectionAvatar=false})
+assert(owner:sync('battle',false,false,'ironclad'))
+for i=1,120 do
+ owner:tick()
+ if owner:status().battle.phase=='ready' then break end
+end
+local q=owner:status().battle
+assert(q.phase=='ready' and q.owned==473 and LiveCount()==473,'battle did not mount exactly 464 images, 8 groups, 1 page: '..tostring(q.reason))
+local images=Images()
+Equal(figure.SetAnchoredPositionValue,Theme.officialAssets.battlePortraitPosition)
+local scale=Theme.layout.player.portrait/133
+Equal(figure.SetLocalScaleValue,{scale,scale,1})
+assert(#images==464,'incorrect image count')
+for i,c in ipairs(images)do
+ local r=expected[i]
+ assert(c.imageId==r[1] and c.imageSource=='static' and c.visible and c.active,'asset/state drift at '..i)
+ assert(c.parent.parent.parent==figure and c.parent.parent.isGroup,'render escaped dedicated host')
+ Equal(c.SetAnchoredPositionValue,{r[2],r[3]})
+ Equal(c.SetSizeDeltaValue,{r[4],r[5]})
+ Equal(c.SetPivotValue,{r[6],r[7]})
+ Equal(c.SetAnchorMinValue,{r[8],r[9]})
+ Equal(c.SetAnchorMaxValue,{r[10],r[11]})
+ Equal(c.SetLocalScaleValue,{r[12],r[13],1})
+ Equal(c.SetLocalRotationValue,{r[19],r[20],r[14]})
+ Equal(c.imageColor,{r[15],r[16],r[17],r[18]})
+end
+local writes={}
+for i,c in ipairs(controls)do writes[i]=#c.trace end
+for _=1,120 do owner:battlePose(0,0,1,1,1/60,'idle');owner:tick()end
+assert(#controls==473 and LiveCount()==473,'idle reallocated draw controls')
+for i,c in ipairs(controls)do assert(#c.trace==writes[i],'idle wrote child '..i)end
+assert(owner:sync('map',false,false,'ironclad') and not figure.visible,'leave battle failed to hide portrait')
+assert(LiveCount()==473 and #controls==473,'leave battle discarded its cache')
+assert(owner:sync('battle',false,false,'ironclad') and figure.visible,'return to battle failed to reveal portrait')
+assert(LiveCount()==473 and #controls==473,'return to battle rebuilt its cache')
+assert(owner:release() and LiveCount()==0,'release failed to retire complete native cache')
+`,{officialAssets:true});
+});
+
+test('official constellation input owner suppresses legacy avatar and every fallback without disabling development portraits',()=>{
+ withPortraitVm(`
+local symbol=tree();symbol:SetVisible(true)
+stage.children.characterPanel.children.v25Roster=symbol
+local selectionHost=tree();stage.children.characterPanel.children.lumineSelectionBackground=selectionHost
+local frame=tree();rawset(frame,'sizeDeltaX',440)
+stage.children.characterPanel.children.details=tree({officialSelectionFigure=selectionHost,portraitFrame=frame,
+ portraits=tree({traveler_ironclad=tree()}),portraitNote=tree()})
+traveler:SetVisible(true)
+local a=Portraits.new(stage,nil,{selectionAvatar=true})
+assert(a:sync('menu',true,false,'ironclad'));a:tick()
+assert(a:status().avatar.owned==0 and not avatar.visible,'constellation allocated legacy avatar')
+for _,name in ipairs({'normal','hover','pressed','disabled'})do
+ assert(not traveler:GetChild('hit'):GetChild(name):GetChild('bust').visible,'constellation restored legacy fallback '..name)
+end
+symbol:SetVisible(false);assert(a:sync('menu',true,false,'ironclad'))
+for _=1,1000 do a:tick();if a:status().avatar.owned>0 then break end end
+assert(a:status().avatar.owned>0,'development avatar was suppressed with hidden constellation roster')
+assert(a:release()and LiveCount()==0)
+`,{runtimeV2:true,officialAssets:true});
+});

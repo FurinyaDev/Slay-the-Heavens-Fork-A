@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url';
 import { selectTests, parseGitChanges } from '../scripts/test-affected.mjs';
 import {frozenBattleHandFixtures} from './helpers/battle-life-frozen-hand.mjs';
 import {eventCombatRouteFixtures,eventCombatRouteInput} from './helpers/event-combat-route-input.mjs';
+import {historicalStsStyleFixtures} from './helpers/historical-sts-style-runner.mjs';
 
 const sources = {
   'src/lua/abyss_low.lua': 'return {}',
@@ -239,6 +240,74 @@ for (const name of ['map', 'nodes']) {
   });
 }
 
+test('Run API governance keeps explicit source dependencies in related integration coverage', () => {
+  const governance = 'tests/run-governance.test.mjs';
+  const modules = ['abyss_run', 'abyss_run_initialization', 'abyss_run_transition',
+    'abyss_run_rooms', 'abyss_run_settlement', 'abyss_run_potions'].map(name => `src/lua/${name}.lua`);
+  // Use the real consumer, with inert modules to isolate its six read edges from
+  // the production Run graph. No extra test-side registration supplies an edge.
+  const input = {
+    [governance]: readFileSync(governance, 'utf8'),
+    ...Object.fromEntries(modules.map(path => [path, 'return {}'])),
+    'scripts/unrelated.mjs': 'export const value = 1',
+    'tests/unrelated.test.mjs': 'import {value} from "../scripts/unrelated.mjs"',
+  };
+  for (const path of modules) {
+    const plan = selectTests([path], input);
+    assert.equal(plan.full, false, path);
+    assert.deepEqual(plan.integration, [governance], path);
+    assert.deepEqual(plan.fast, [], 'Lua dependencies retain the existing integration classification');
+    assert.deepEqual(plan.lua, []);
+  }
+  const unrelated = selectTests(['scripts/unrelated.mjs'], input);
+  assert.equal(unrelated.full, false);
+  assert.deepEqual(unrelated.fast, ['tests/unrelated.test.mjs']);
+  assert.deepEqual(unrelated.integration, []);
+  assert.equal(selectTests(['src/lua/unknown.lua'], input).full, true);
+});
+
+const eventSourceConsumer = 'tests/event-combat-routes-source.test.mjs';
+const eventSourceModules = ['abyss_dead_adventurer_event', 'abyss_colosseum_event',
+  'abyss_masked_bandits_event', 'abyss_event_combat_routes', 'abyss_event_combat_enemies']
+  .map(name => `src/lua/${name}.lua`);
+const eventSourceInputs = {
+  [eventSourceConsumer]: repositorySources[eventSourceConsumer],
+  ...Object.fromEntries(eventSourceModules.map(path => [path, 'return {}'])),
+  'scripts/unrelated.mjs': 'export const value = 1',
+  'tests/unrelated.test.mjs': 'import {value} from "../scripts/unrelated.mjs"',
+};
+for (const path of eventSourceModules) {
+  test(`event source contract retains its actual reader for ${path}`, () => {
+    // A separate literal Lua consumer already maps the change. Full fallback
+    // must not conceal the real source-contract reader's missing dependency.
+    const fixture = 'tests/lua/direct.lua';
+    const input = { ...eventSourceInputs, [fixture]: `return dofile(${JSON.stringify(path)})` };
+    const plan = selectTests([path], input);
+    assert.equal(plan.full, false, path);
+    assert.deepEqual(plan.lua, [fixture], 'the independently mapped regression stays selected');
+    assert.deepEqual(plan.integration, [eventSourceConsumer], path);
+    assert.deepEqual(plan.fast, [], 'the source contract retains its integration classification');
+  });
+}
+
+test('event source contract leaves unrelated selection narrow and unknown or deleted inputs on Full', () => {
+  const unrelated = selectTests(['scripts/unrelated.mjs'], eventSourceInputs);
+  assert.equal(unrelated.full, false);
+  assert.deepEqual(unrelated.fast, ['tests/unrelated.test.mjs']);
+  assert.deepEqual(unrelated.integration, []);
+  assert.deepEqual(unrelated.lua, []);
+  assert.equal(selectTests(['src/lua/unknown.lua'], eventSourceInputs).full, true);
+  assert.equal(selectTests(['scripts/unmapped.mjs'], {
+    ...eventSourceInputs, 'scripts/unmapped.mjs': 'export const unused = 1',
+  }).full, true);
+  for (const path of eventSourceModules) {
+    const input = { ...eventSourceInputs, 'tests/lua/direct.lua': `return dofile(${JSON.stringify(path)})` };
+    delete input[path];
+    assert.equal(selectTests([path], input).full, true, path);
+    assert.equal(selectTests([path, 'src/lua/unknown.lua'], eventSourceInputs).full, true, path);
+  }
+});
+
 const generatedSources = {
   ...luaSources,
   'scripts/node-ui-layout.mjs': 'export const nodeLayout = () => ({})',
@@ -403,11 +472,57 @@ test('real generated node layout changes retain actual host Lua regressions and 
   assert.ok(!plan.integration.includes('tests/reward-upgrades.test.mjs'));
 });
 
+test('conditional low-cost UI preparation retains its actual layout dependency without tainting rule wrappers',()=>{
+  const plan=selectTests(['scripts/node-ui-layout.mjs'],{
+    'scripts/node-ui-layout.mjs':'export const layout={}',
+    'scripts/build-ui.mjs':"import {layout} from './node-ui-layout.mjs'",
+    'scripts/test-lua.mjs':"import {buildUI} from './build-ui.mjs'; export function runLua(){}",
+    'tests/lua/lowcost_art.lua':'return true',
+    'tests/lua/reward_upgrades.lua':'return true',
+    'tests/lowcost.test.mjs':"import {runLua} from '../scripts/test-lua.mjs';runLua('tests/lua/lowcost_art.lua')",
+    'tests/reward-upgrades.test.mjs':"import {runLua} from '../scripts/test-lua.mjs';runLua('tests/lua/reward_upgrades.lua')",
+  });
+  assert.equal(plan.full,false);
+  assert.deepEqual(plan.lua,['tests/lua/lowcost_art.lua']);
+  assert.deepEqual(plan.integration,['tests/lowcost.test.mjs']);
+});
+
 test('the conditional historical replay helper selects its fixture without tainting ordinary Lua wrappers',()=>{
   const plan=selectTests(['tests/helpers/historical-presentation-runner.mjs'],repositorySources);
   assert.equal(plan.full,false);
   assert.ok(plan.lua.includes('tests/lua/presentation_responsibilities_trace.lua'));
   assert.ok(!plan.integration.includes('tests/reward-upgrades.test.mjs'));
+});
+
+const stsStyleRunnerSources={
+  'tests/helpers/historical-sts-style-runner.mjs':'export function runHistoricalStsStyle(){}',
+  'scripts/test-lua.mjs':`import {runHistoricalStsStyle} from '../tests/helpers/historical-sts-style-runner.mjs'; export function runLua(){}`,
+  ...Object.fromEntries(historicalStsStyleFixtures.map(path=>[path,'return true'])),
+  'tests/lua/unrelated.lua':'return true',
+  'tests/sts-style-replay.test.mjs':historicalStsStyleFixtures.map(path=>`runLua('${path}')`).join(';'),
+  'tests/unrelated.test.mjs':`import {runLua} from '../scripts/test-lua.mjs';runLua('tests/lua/unrelated.lua')`,
+};
+
+test('StS style conditional runner selects only the two frozen fixtures without polluting imported runLua wrappers',()=>{
+  assert.deepEqual(historicalStsStyleFixtures,['tests/lua/competition_roster_ui.lua','tests/lua/deck_browse_filters.lua']);
+  const plan=selectTests(['tests/helpers/historical-sts-style-runner.mjs'],stsStyleRunnerSources);
+  assert.equal(plan.full,false);
+  assert.deepEqual(plan.lua,[...historicalStsStyleFixtures].sort());
+  assert.deepEqual(plan.integration,['tests/sts-style-replay.test.mjs']);
+  assert.deepEqual(plan.fast,[]);
+});
+
+test('real StS historical helper retains both complete fixtures and excludes unrelated reward wrappers',()=>{
+  const plan=selectTests(['tests/helpers/historical-sts-style-runner.mjs'],repositorySources);
+  assert.equal(plan.full,false);
+  for(const fixture of historicalStsStyleFixtures)assert.ok(plan.lua.includes(fixture),fixture);
+  assert.ok(!plan.integration.includes('tests/reward-upgrades.test.mjs'));
+});
+
+test('StS conditional boundary keeps shared-runner and unknown helper changes on Full',()=>{
+  assert.equal(selectTests(['scripts/test-lua.mjs'],stsStyleRunnerSources).full,true);
+  const unknown='tests/helpers/historical-sts-style-other.mjs';
+  assert.equal(selectTests([unknown],{...stsStyleRunnerSources,[unknown]:'export const value=1'}).full,true);
 });
 
 const eventRouteSources={

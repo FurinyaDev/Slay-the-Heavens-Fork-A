@@ -1,5 +1,5 @@
 -- Pointer reward ownership follows content and resolution, not just a page slot.
-local Combat = require("abyss_combat")
+local Copy = require("abyss_copy")
 local M = {}
 
 local function captureGold(token, rewards)
@@ -23,9 +23,9 @@ end
 
 local function captureRelics(token,rewards,run)
     token.relics=rewards and rewards.relics
-    token.relicState=rewards and Combat.copy(rewards.relics or {})
+    token.relicState=rewards and Copy.copy(rewards.relics or {})
     token.emerald=rewards and rewards.emeraldKey
-    token.emeraldState=token.emerald and Combat.copy(token.emerald)
+    token.emeraldState=token.emerald and Copy.copy(token.emerald)
     token.emeraldOwned=run and run.keys and run.keys.emerald
 end
 
@@ -37,9 +37,9 @@ function M.capture(token, view, run)
     token.cardResolved = rewards and rewards.cardResolved
     token.manualContinue = rewards and rewards.manualContinue
     token.cards = rewards and rewards.cards
-    token.cardChoices = rewards and Combat.copy(rewards.cards)
+    token.cardChoices = rewards and Copy.copy(rewards.cards)
     token.upgrades = rewards and rewards.cardUpgrades
-    token.cardUpgrades = rewards and Combat.copy(rewards.cardUpgrades or {})
+    token.cardUpgrades = rewards and Copy.copy(rewards.cardUpgrades or {})
     captureRelics(token,rewards,run)
     captureGold(token, rewards)
     capturePotion(token, rewards)
@@ -67,11 +67,11 @@ local function samePotion(token, potion)
         and token.potionUnavailable == (potion and potion.unavailable)
 end
 
-local function sameManualPage(token, view, rewards)
+local function sameManualPage(token, view, rewards, readOnly)
     local item = rewards.stolenGold
     -- A no-loss reward keeps its gesture through a pure redraw. Stolen-gold
     -- pages retain their explicit-redraw boundary and their claimed identity.
-    return not ((item and token.render ~= view.rewardRender) or token.item ~= item
+    return not ((item and not readOnly and token.render ~= view.rewardRender) or token.item ~= item
         or token.claimed ~= (item and item.claimed) or token.cardResolved ~= rewards.cardResolved)
 end
 
@@ -94,7 +94,7 @@ local function sameEmerald(token,rewards,run)
     return true
 end
 
-function M.ready(view, token)
+function M.ready(view, token, readOnly)
     local run = view.run
     if not run or run.phase ~= "reward" or run.rewards ~= token.rewards or run.combat ~= token.battle then return false end
     if token.rewardScreen ~= view.rewardScreen or token.rewardEpoch ~= view.rewardEpoch then return false end
@@ -103,7 +103,7 @@ function M.ready(view, token)
     if not sameEmerald(token,rewards,run)then return false end
     if not sameGoldAndCards(token, rewards) then return false end
     if not samePotion(token, rewards.potion) then return false end
-    if rewards.manualContinue and not sameManualPage(token, view, rewards) then return false end
+    if rewards.manualContinue and not sameManualPage(token, view, rewards, readOnly) then return false end
     return true
 end
 

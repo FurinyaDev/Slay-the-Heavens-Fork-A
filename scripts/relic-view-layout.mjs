@@ -1,4 +1,5 @@
 import { nativeControls, nativeTheme } from './native-ui-theme.mjs';
+import { compactPopupSurface } from './compact-popup-surface.mjs';
 
 // TASK-4.7 owned-relic art slots. Prototype topBar(): owned relics are 32px
 // gold-rimmed discs in a 36px row; shop relics pair the same disc with name and
@@ -9,20 +10,36 @@ export function relicDisc(theme, name, size, ring, iconSize, position = [0, 0]) 
   return { name, kind: 'container', position, size: [size, size], children: [
     disc('rim', size, c.goldDim), disc('face', size - ring * 2, c.panelRaised),
     { ...disc('light', size - ring * 2, c.panelSunken), image: theme.image.discSoft },
-    { name: 'icon', kind: 'image', position: [0, 0], size: [iconSize, iconSize], image: theme.icon.node.treasure.id ?? theme.icon.node.treasure, colour: c.geo },
+    { name: 'icon', kind: 'image', position: [0, 0], size: [iconSize, iconSize], image: theme.icon.node.treasure.id ?? theme.icon.node.treasure, colour: theme.presentationProfile === 'official-assets-first' ? '#FFFFFF' : c.geo },
   ] };
+}
+
+export function relicTooltip(theme) {
+  const {text}=nativeControls(theme),{color:c,font:f}=theme;
+  const line=(name,box,font,colour,valign)=>{
+    const node=text(name,box,'',font,colour);
+    Object.assign(node.text,{align:'left',valign});
+    return {...node,raycastTarget:false};
+  };
+  return {name:'tooltip',kind:'container',size:[360,156],visible:false,raycastTarget:false,children:[
+    ...compactPopupSurface(theme,[360,156],{face:'face',readOnly:true}),
+    line('name',[0,48,324,36],f.label,c.goldBright,'middle'),
+    line('effect',[0,-19,324,94],f.small,c.text,'top'),
+  ]};
 }
 
 export function relicViewControls(theme = nativeTheme) {
   const { plate, text } = nativeControls(theme);
   const { color: c, font: f, layout: l, space: s } = theme, v = l.relicView;
   const left = (control) => ({ ...control, text: { ...control.text, align: 'left' } });
+  const top = (control) => ({ ...control, text: { ...control.text, valign: 'top' } });
+  const right = (control) => ({ ...control, text: { ...control.text, align: 'right' } });
   const button = (name, frame, label) => {
     const size = frame.slice(2), variants = { normal: [c.panelRaised, c.goldBright, c.goldDim],
       hover: [c.panelRaised, c.goldBright, c.goldBright], pressed: [c.buttonPressedFill, c.text, c.goldBright],
       disabled: [c.panelSunken, c.textMuted, c.line] };
     return { name, kind: 'container', position: frame.slice(0, 2), size, children: [
-      { name: 'hit', kind: 'presetButton', size, focusable: true,
+      { name: 'hit', kind: 'presetButton', size,
         states: Object.fromEntries(Object.keys(variants).map(k => [k, k])),
         children: Object.entries(variants).map(([state, [fill, ink, border]]) => ({ name: state, kind: 'container', size, children: [
           plate('border', [0, 0, ...size], border), plate('plate', [0, 0, ...size.map(x => x - s.border * 2)], fill),
@@ -30,8 +47,7 @@ export function relicViewControls(theme = nativeTheme) {
     ] };
   };
   const b = v.bar;
-  // One sunken capsule groups every owned disc so the strip reads as a single
-  // HUD element; the last disc doubles as a +N overflow chip (no wrap/occlusion).
+  // Fixed pooled slots; overflow uses the original horizontal paging arrows.
   const capsule = (name, [w, h], colour) => { const x = (w - h) / 2; return { name, kind: 'container', size: [w, h], children: [
     { ...plate('left', [-x, 0, h, h], colour), image: theme.image.disc }, plate('middle', [0, 0, w - h, h], colour),
     { ...plate('right', [x, 0, h, h], colour), image: theme.image.disc }] }; };
@@ -46,11 +62,12 @@ export function relicViewControls(theme = nativeTheme) {
     slot.children = slot.children.filter(part => part.name !== 'light');
     slot.children.find(part => part.name === 'rim').colour = hud.border;
     slot.children.find(part => part.name === 'face').colour = hud.fill;
-    slot.children.find(part => part.name === 'icon').colour = hud.ink;
+    slot.children.find(part => part.name === 'icon').colour = theme.presentationProfile === 'official-assets-first' ? '#FFFFFF' : hud.ink;
+    slot.children.push({ ...right(text('counter', [0, -10, 40, 36], '', f.small, '#FFFFFF')), visible: false });
     slot.children.push({ ...text('more', b.more, '', f.label, c.goldBright), visible: false });
-    slot.children.push({ name: 'hit', kind: 'cursorArea', size: [b.step, 44], focusable: true });
+    slot.children.push({ name: 'hit', kind: 'cursorArea', size: [b.step, 44] });
     return slot;
-  })];
+  }), button('previous',[-624,292,32,44],'‹'), button('next',[610,292,32,44],'›')];
   const [rw, rh] = v.row, discX = -rw / 2 + s.m + v.disc / 2;
   const rows = [];
   v.rows.forEach((y, r) => v.columns.forEach((x, col) => {
@@ -67,18 +84,28 @@ export function relicViewControls(theme = nativeTheme) {
   }));
   return [
     { name: 'relicBar', kind: 'container', size: [...theme.canvas.base], visible: false, children: bar },
-    { name: 'relicPanel', kind: 'container', size: [...theme.canvas.base], visible: false, isolateNavigation: true, children: [
+    { name: 'relicPanel', kind: 'container', size: [...theme.canvas.base], visible: false, children: [
       { ...plate('veil', [0, 0, ...theme.canvas.base], c.backdropVeil.slice(0, 7)),
         opacity: c.backdropVeil.length === 9 ? parseInt(c.backdropVeil.slice(7), 16) / 255 : 1 },
       { name: 'blocker', kind: 'cursorArea', size: [...theme.canvas.base], focusable: false },
       plate('frame', [0, 0, ...v.panel.slice(2)], c.goldDim),
       plate('plate', [0, 0, ...v.panel.slice(2).map(x => x - s.border * 2)], c.panelSunken),
+      // Above the outside blocker, below all readable content and buttons.
+      { name: 'contentBlocker', kind: 'cursorArea', size: v.panel.slice(2), focusable: false },
       text('title', v.title, '持有遗物', f.heading, c.goldBright),
       ...rows,
+      { name: 'single', kind: 'container', size: v.panel.slice(2), visible: false, children: [
+        { name: 'icon', kind: 'image', position: [0, 144], size: [v.disc * 2, v.disc * 2],
+          image: theme.icon.node.treasure.id ?? theme.icon.node.treasure, colour: '#FFFFFF' },
+        text('name', [0, 42, v.row[0], 48], '', f.heading, c.goldBright),
+        text('rarity', [0, 0, v.row[0], 36], '', f.label, c.textDim),
+        top(text('description', [0, -102, v.row[0]-48, v.description[3]], '', theme.presentationProfile==='official-assets-first'?f.body:f.small, c.text)),
+        text('status', [0, -210, v.row[0], 36], '', f.label, c.goldBright),
+      ] },
       { ...text('placeholder', [0, 0, 600, 48], '本局尚未获得遗物。', f.body, c.textDim), visible: false },
       button('close', v.close, '关闭'),
-      { ...button('previous', v.previous, '上一页'), visible: false },
-      { ...button('next', v.next, '下一页'), visible: false },
+      { ...button('previous', v.previous, '上一件'), visible: false },
+      { ...button('next', v.next, '下一件'), visible: false },
       { ...text('pageHint', v.pageHint, '', f.small, c.textDim), visible: false },
     ] },
   ];

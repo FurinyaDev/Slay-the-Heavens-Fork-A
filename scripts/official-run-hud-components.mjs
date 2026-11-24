@@ -1,0 +1,127 @@
+import {goldBag} from './v25-character-layout.mjs';
+
+// One official run HUD material. Existing pages retain their live writer and
+// input handles; mounting a component never creates another action owner.
+const parts=node=>node?.children??node?.controls??[];
+const child=(node,name)=>parts(node).find(part=>part.name===name);
+const clone=structuredClone;
+
+export function prepareOfficialRunHud(root,theme){
+ const hud=theme.officialAssets.battleHud,bar=child(root,'topBar');
+ for(const [name,key,font]of [['hpIcon','hpIcon'],['player','hp',hud.numberSize],['piles','gold',hud.numberSize]]){
+  const node=child(root,name);node.position=hud[key].slice(0,2);node.size=hud[key].slice(2);
+  if(font&&node.text)Object.assign(node.text,{fontSize:font,minFontSize:font,autoSize:false,align:'left'});
+ }
+ const gold=child(root,'goldIcon'),[x,y,width,height]=hud.goldIcon;
+ delete gold.image;delete gold.colour;
+ // Keep the display bounds for the shared resource hint and layout checks.
+ Object.assign(gold,{kind:'container',position:[x,y],size:[width,height],
+  children:[goldBag('bag',theme,[0,0],[width,height],{compact:true})]});
+ child(root,'floor').visible=false;
+ // Both balance frames reserve a single line at the preferred font for
+ // signed-32-bit game state (max HP includes two values and the slash).
+ const heading=clone(child(root,'player'));heading.name='officialHeroHeading';
+ heading.position=hud.heading.slice(0,2);heading.position[1]-=hud.y;heading.size=hud.heading.slice(2);
+ Object.assign(heading.text,{content:hud.headingText,fontSize:hud.headingSize,minFontSize:hud.headingSize,colour:hud.headingColour});
+ bar.children.push(heading);
+ for(let index=1;index<=theme.layout.battlePotions.count;index++){
+  const x=hud.potionX+(index-1)*hud.potionStep;
+  const button=child(root,'potion'+index)??child(child(root,'potionHelp'),'potion'+index);
+  if(!button)throw Error('Missing battle potion '+index);
+  for(const node of [button,child(child(root,'potionHelp'),'potionHelp'+index)]){
+   if(!node)continue;
+   node.position=[x,hud.y];
+   for(const face of parts(node))if(['normal','hover','pressed','disabled'].includes(face.name)){
+    face.scale=(face.scale??[1,1]).map((value,axis)=>value*(Array.isArray(hud.potionScale)?hud.potionScale[axis]:hud.potionScale));
+    finishOfficialPotionFace(face);
+   }
+  }
+  const caption=child(child(root,'potionHelp'),'potionCaption'+index);
+  if(caption){caption.position=[x,hud.potionCaptionY];caption.visible=false;caption.active=false;caption.text.content='';}
+ }
+}
+
+export function finishOfficialRunBar(root,theme){
+ const hud=theme.officialAssets.battleHud,bar=child(root,'topBar');
+ bar.position=[0,hud.y];bar.size[1]=hud.height;
+ const steel=child(bar,'steel');steel.size[1]=hud.height;steel.colour=hud.barColour;
+ for(const name of ['edge','leftRule','rightRule'])child(bar,name).visible=false;
+ const rgb=hex=>[1,3,5].map(i=>parseInt(hex.slice(i,i+2),16)),top=rgb(hud.barTopColour),bottom=rgb(hud.barColour);
+ bar.children.splice(bar.children.indexOf(steel)+1,0,
+  {name:'topLight',kind:'container',size:[1280,hud.height],children:Array.from({length:8},(_,i)=>({name:'shade'+i,kind:'image',position:[0,hud.height/2-(i+.5)*hud.height/8],size:[1280,hud.height/8+.05],image:100001,colour:'#'+top.map((v,c)=>Math.round(v+(bottom[c]-v)*i/7).toString(16).padStart(2,'0')).join('')}))},
+  {name:'barShadow',kind:'image',position:[0,-hud.height/2-1.5],size:[1280,3],image:100001,colour:'#000000',opacity:.25});
+ const heading=child(bar,'officialHeroHeading');if(heading)heading.text.colour=hud.headingColour;
+ const floorX=hud.potionX+(theme.layout.battlePotions.count-1)*hud.potionStep+hud.floorGap;
+ bar.children.push({name:'officialStairs',kind:'container',position:[floorX,0],size:[24,20],
+  children:[[-7,0,7,18],[0,-3,7,12],[7,-6,7,6]].map(([x,y,width,height],index)=>({
+   name:'step'+(index+1),kind:'image',image:theme.image.rect,position:[x,y],size:[width,height],colour:'#D6CBA5',
+  })),
+ });
+ const title=child(root,'title');
+ title.visible=true;title.position=[floorX+33,hud.y];title.size=[34,36];
+ Object.assign(title.text,{content:'',fontSize:hud.numberSize,minFontSize:hud.numberSize,autoSize:false,align:'left',colour:'#D6CBA5'});
+ const status=child(root,'floor');
+ status.visible=true;status.position=hud.location.slice(0,2);status.size=hud.location.slice(2);
+ mountOfficialResourceHints(root,theme);
+}
+
+export function mountOfficialResourceHints(root,theme){
+ const hud=theme.officialAssets.battleHud,hints=child(root,'resourceHints');
+ if(!hints)return;
+ for(const kind of ['hp','gold']){
+  const icon=hud[kind+'Icon'],value=hud[kind],host=child(hints,kind),hit=child(host,'hit');
+  const left=Math.min(icon[0]-icon[2]/2,value[0]-value[2]/2);
+  const right=Math.min(Math.max(icon[0]+icon[2]/2,value[0]+value[2]/2),kind==='gold'?hud.potionX-26:Infinity);
+  host.position=[(left+right)/2,hud.y];host.size=[Math.max(44,right-left),44];
+  hit.position=[0,0];hit.size=[...host.size];
+ }
+}
+
+export function finishOfficialPotionFace(variant){
+ const empty=child(variant,'emptyShell');if(!empty)return;
+ child(empty,'face').visible=false;
+ // Empty slots use the very same native bottle and frame as an owned one.
+ // Multiplying by black suppresses source RGB and retains its native alpha;
+ // no drawn jar/test tube, extra atlas or imported bitmap is needed.
+ const bottle=child(variant,'bottle'),shadow=child(empty,'dashes');
+ shadow.children=[{name:'bottleShadow',kind:'image',image:bottle.image,
+  position:[...bottle.position],size:[...bottle.size],colour:'#000000',opacity:.5}];
+ for(const name of ['filledShell','fireShell'])for(const node of parts(child(variant,name)))node.visible=false;
+}
+
+export function officialRunHudComponent(battle){
+ const bar=clone(child(battle,'topBar'));bar.name='officialRunBar';
+ bar.children=bar.children.filter(part=>!['battleRoute','floorIcon'].includes(part.name));
+ const resources=Object.fromEntries([['hpIcon','hpIcon'],['hp','player'],['goldIcon','goldIcon'],['gold','piles']]
+  .map(([role,name])=>[role,clone(child(battle,name))]));
+ const title=clone(child(battle,'title'));
+ const button=child(battle,'potion1')??child(child(battle,'potionHelp'),'potion1');
+ const potionFaces=Object.fromEntries(parts(button).filter(part=>['normal','hover','pressed','disabled'].includes(part.name)).map(part=>[part.name,clone(part)]));
+ return {bar,resources,title,potionFaces};
+}
+
+export function mountOfficialResource(node,reference){
+ if(!node)return;
+ const name=node.name,content=node.text?.content;
+ if(node.kind==='image'&&reference.kind==='container'){delete node.image;delete node.colour;}
+ Object.assign(node,clone(reference),{name});
+ if(node.text)node.text.content=content;
+}
+
+export function mountOfficialPotionEntry(open,component,theme){
+ const frame=theme.layout.nativeNode.topBar.potions;
+ open.position=frame.slice(0,2);child(open,'hit').size=frame.slice(2);
+ for(const variant of parts(child(open,'hit'))){
+  const face=component.potionFaces[variant.name];if(!face)continue;
+  // The battle state already includes the approved size and pressed scale.
+  // Apply that scale at each physical slot, never again at the management row.
+  variant.scale=[1,1];
+  for(const name of ['label','entryFace','officialButtonBacking']){
+   const old=child(variant,name);if(old)old.visible=false;
+  }
+  for(const slot of parts(variant).filter(part=>/^slot\d+$/.test(part.name))){
+   slot.size=clone(face.size);slot.scale=clone(face.scale??[1,1]);
+   slot.children=clone(face.children);
+  }
+ }
+}

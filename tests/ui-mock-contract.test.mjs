@@ -19,9 +19,9 @@ test('native grid destruction invalidates handles and deck consumers survive ref
 
 test('native lifecycle gate detects removal of the production dead-item guard',()=>{
  const source=readFileSync('src/lua/abyss_deck_ui.lua','utf8');
- const anchor='if control.alive==false then self.bindings[control]=nil';
+ const anchor='if control.alive==false then';
  assert.equal(source.split(anchor).length,2,'one production lifetime boundary');
- const mutant=source.replace(anchor,'if false then self.bindings[control]=nil');
+ const mutant=source.replace(anchor,'if false then');
  const entry=`build/deck-lifecycle-mutant-${randomUUID()}.lua`;
  writeFileSync(entry,`ABYSS_DECK_LIFECYCLE_MUTANT=${luaString(mutant)}\ndofile('tests/lua/deck_item_lifecycle.lua')\n`);
  try{

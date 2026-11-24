@@ -4,6 +4,9 @@ import { readFileSync as readCurrentFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import {validateLaunchContent as validateCurrentLaunchContent,inspectLaunchRuntime as inspectCurrentLaunchRuntime,validateLaunchRuntimeModules} from '../scripts/verify-launch-content.mjs';
 import {launchBaselineFixture} from './helpers/launch-baseline-fixture.mjs';
+import fs from 'node:fs';
+import {syncBuiltinESMExports} from 'node:module';
+import {createHash} from 'node:crypto';
 
 
 const currentRoot = process.cwd();
@@ -70,6 +73,139 @@ test('frozen formal launch retains its original thirty-one explicit event routes
   const original=JSON.parse(readCurrentFileSync(resolve(root,'data/release/launch-content.json'),'utf8'));
   assert.equal(original.events.filter(row=>row.poolMode==='explicit-only').length,31);
 });
+
+test('frozen launch preparation uses one freshly verified private tree per invocation',()=>{
+  const originalRead=fs.readFileSync,originalTemp=fs.mkdtempSync;
+  let archives=0;const roots=[];
+  fs.readFileSync=function(path,...args){
+    if(String(path).replaceAll('\\','/').endsWith('/tests/fixtures/pr323-historical-fixtures.json.gz'))archives++;
+    return originalRead.call(this,path,...args);
+  };
+  fs.mkdtempSync=function(prefix,...args){
+    const path=originalTemp.call(this,prefix,...args);
+    if(/abyss-(?:source-contract|launch-baseline)-/.test(String(prefix)))roots.push(path);
+    return path;
+  };
+  syncBuiltinESMExports();
+  let first,second;
+  try{
+    first=launchBaselineFixture();
+    const actor=resolve(first,'src/lua/abyss_actor.lua');
+    fs.writeFileSync(actor,originalRead(actor,'utf8')+'\n-- private invocation mutation\n');
+    second=launchBaselineFixture();
+  }finally{
+    fs.readFileSync=originalRead;fs.mkdtempSync=originalTemp;syncBuiltinESMExports();
+  }
+  assert.equal(roots.length,2,'one private filesystem tree, without a second priming copy');
+  assert.equal(archives,2,'each invocation freshly authenticates the complete original archive once');
+  assert.notEqual(first,second);assert.equal(process.cwd(),currentRoot);
+  const privateRoot=fs.realpathSync.native(second);
+  const mounts=new Map(['tests/helpers','tests/fixtures','docs','node_modules']
+    .map(path=>[path,fs.realpathSync.native(resolve(currentRoot,path))]));
+  for(const [path,owner]of mounts){
+    assert.notEqual(fs.realpathSync.native(resolve(second,path)),resolve(privateRoot,path),
+      path+' remains a declared oracle/implementation alias');
+    assert.equal(fs.realpathSync.native(resolve(second,path)),owner,path+' link owner');
+  }
+  const rows=[];
+  function walk(directory,prefix=''){
+    for(const entry of fs.readdirSync(directory,{withFileTypes:true})){
+      const path=prefix+entry.name,target=resolve(directory,entry.name);
+      const actual=fs.realpathSync.native(target);
+      if(mounts.has(path)){
+        assert.notEqual(actual,resolve(privateRoot,path),'declared output alias: '+path);
+        assert.equal(actual,mounts.get(path),'declared output owner: '+path);continue;
+      }
+      assert.equal(actual,resolve(privateRoot,path),'unregistered output alias: '+path);
+      if(entry.isDirectory())walk(target,path+'/');
+      else{const bytes=originalRead(target);rows.push([path,bytes.length,createHash('sha256').update(bytes).digest('hex')]);}
+    }
+  }
+  walk(second);rows.sort((a,b)=>a[0]<b[0]?-1:a[0]>b[0]?1:0);
+  assert.equal(rows.length,1730,'complete original launch executable inventory');
+  assert.equal(createHash('sha256').update(JSON.stringify(rows)).digest('hex'),
+    'a3bb91b1665a36a374e9af68eef0b850041f8fe1765b275f4a0d93e0529ac921',
+    'complete private output remains byte-exact to reviewed 391306af, independent of prior invocation writes');
+});
+
+test('a failed frozen launch construction restores cwd and removes its private tree immediately',()=>{
+  const originalTemp=fs.mkdtempSync,originalWrite=fs.writeFileSync,roots=[],failure={stage:'private historical input write'};
+  fs.mkdtempSync=function(prefix,...args){
+    const path=originalTemp.call(this,prefix,...args);
+    if(/abyss-(?:source-contract|launch-baseline)-/.test(String(prefix)))roots.push(path);
+    return path;
+  };
+  fs.writeFileSync=function(path,...args){
+    const normalized=String(path).replaceAll('\\','/');
+    if(roots.some(root=>normalized.startsWith(root.replaceAll('\\','/')+'/')))throw failure;
+    return originalWrite.call(this,path,...args);
+  };
+  syncBuiltinESMExports();
+  try{assert.throws(()=>launchBaselineFixture(),error=>error===failure);}
+  finally{fs.mkdtempSync=originalTemp;fs.writeFileSync=originalWrite;syncBuiltinESMExports();}
+  assert(roots.length>0,'actual private materialization was attempted');
+  assert.equal(process.cwd(),currentRoot);
+  for(const root of roots)assert.equal(fs.existsSync(root),false,'construction failure cannot leave a partial source root');
+});
+
+for(const mode of ['unregistered file','wrong oracle owner','ordinary directory mount','private source alias']){
+  test(`frozen launch rejects ${mode} before any projection write or deletion`,()=>{
+    const originalTemp=fs.mkdtempSync,originalLink=fs.symlinkSync;
+    const originalWrite=fs.writeFileSync,originalRemove=fs.rmSync;
+    let root,aliasOwner,projecting=false,writes=0,deletions=0;
+    const inside=path=>root&&String(path).replaceAll('\\','/').startsWith(root.replaceAll('\\','/')+'/');
+    fs.mkdtempSync=function(prefix,...args){
+      const value=originalTemp.call(this,prefix,...args);
+      if(String(prefix).includes('abyss-source-contract-'))root=value;
+      return value;
+    };
+    fs.symlinkSync=function(target,path,...args){
+      const wrong=mode==='wrong oracle owner'&&root&&resolve(path)===resolve(root,'tests/fixtures');
+      const ordinary=mode==='ordinary directory mount'&&root&&resolve(path)===resolve(root,'tests/fixtures');
+      const result=ordinary?fs.mkdirSync(path):originalLink.call(this,wrong?resolve(currentRoot,'docs'):target,path,...args);
+      if(root&&resolve(path)===resolve(root,'node_modules')){
+        if(mode==='unregistered file')originalWrite(resolve(root,'src/lua/unregistered-preflight.lua'),'return {}\n');
+        if(mode==='private source alias'){
+          const source=resolve(root,'src/lua');
+          assert(source.startsWith(resolve(root)+(process.platform==='win32'?'\\':'/')));
+          aliasOwner=fs.mkdtempSync(resolve(root,'..','abyss-launch-alias-owner-'));
+          fs.cpSync(source,aliasOwner,{recursive:true});
+          originalRemove(source,{recursive:true,force:true});
+          originalLink(aliasOwner,source,'junction');
+        }
+        projecting=true;
+      }
+      return result;
+    };
+    fs.writeFileSync=function(path,...args){
+      if(projecting&&inside(path))writes++;
+      return originalWrite.call(this,path,...args);
+    };
+    fs.rmSync=function(path,...args){
+      if(projecting&&inside(path))deletions++;
+      return originalRemove.call(this,path,...args);
+    };
+    syncBuiltinESMExports();
+    try{
+      assert.throws(()=>launchBaselineFixture(),mode==='unregistered file'
+        ? /unregistered original launch input/ : mode==='ordinary directory mount'
+          ? /declared historical oracle link/ : mode==='private source alias'
+            ? /original launch source (?:must be a private file|cannot alias another owner)/ : /historical oracle link owner/);
+    }finally{
+      fs.mkdtempSync=originalTemp;fs.symlinkSync=originalLink;
+      fs.writeFileSync=originalWrite;fs.rmSync=originalRemove;syncBuiltinESMExports();
+      if(aliasOwner){
+        assert(aliasOwner.startsWith(resolve(root,'..')+(process.platform==='win32'?'\\':'/')));
+        originalRemove(aliasOwner,{recursive:true,force:true});
+      }
+    }
+    assert.equal(writes,0,'source preflight precedes every projection write');
+    assert.equal(deletions,0,'source preflight precedes every projection deletion');
+    assert.equal(process.cwd(),currentRoot);
+    assert(root,'the real private root was constructed');
+    assert.equal(fs.existsSync(root),false,'failed preflight immediately cleans the private root');
+  });
+}
 
 test('copy and Match production routes preserve separate candidate and pending platform acceptance',()=>{
   const manifest=fresh();
@@ -302,7 +438,7 @@ test('three additional Act2 routes record only mocked-local UI wiring while nati
   const manifest=fresh();
   assert.match(manifest.profiles.events.limitation,/locally wired with mocked/);
   assert.match(manifest.profiles.events.limitation,/Actual native acceptance NOT_RUN/);
-  for(const id of ['beggar','mausoleum','addict']){
+  for(const id of ['beggar','mausoleum','traveling_merchant']){
     const row=manifest.events.find(event=>event.id===id);
     assert.deepEqual(row.channels,['explicit:Nodes.enter']);
     assert.equal(row.poolMode,'explicit-only');
@@ -380,6 +516,6 @@ for (const helper of ['abyss_run_initialization', 'abyss_run_transition', 'abyss
 
 test('formal deployment inventory includes generated art flags and all four art bindings without executing their data',()=>{
   const actual=inspectLaunchRuntime();
-  for(const name of ['abyss_art_features','abyss_menu_background_asset','abyss_ready_card_binding','abyss_ready_card_assets','abyss_traveler_portrait_assets'])
+  for(const name of ['abyss_ui_profile','abyss_art_features','abyss_menu_background_asset','abyss_ready_card_binding','abyss_ready_card_assets','abyss_traveler_portrait_assets'])
     assert.equal(actual.deployment.filter(value=>value===name).length,1,name);
 });

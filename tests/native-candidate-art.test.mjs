@@ -2,6 +2,7 @@ import {prepareMonsterArt} from '../scripts/monster-art.mjs';
 import {portraitInputs} from '../scripts/official-portraits.mjs';
 import {readyArtInputs,readyArtSourceInputs} from '../scripts/art/ready-card-runtime.mjs';
 import {backgroundInputs} from '../scripts/official-background.mjs';
+import {lumineSelectionPath} from '../scripts/lumine-selection-background.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { cpSync, mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync, linkSync, symlinkSync, realpathSync } from 'node:fs';
@@ -36,13 +37,14 @@ export class Client {
  }
 }
 `;
-function fixture(t,{monsterOnly=false}={}) {
+function fixture(t,{monsterOnly=false,officialAssets=false}={}) {
   mkdirSync(join(repo,'build'),{recursive:true});
   const root=mkdtempSync(join(repo,'build/native-art-entry-'));
   t.after(()=>rmSync(root,{recursive:true,force:true}));
   for(const file of ['src/lua','data','scripts','tools','art/monsters/acid_slime_m/native-art-r02','package.json','package-lock.json','CHANGELOG.md','.release-please-manifest.json'])
     cpSync(join(repo,file),join(root,file),{recursive:true});
   const put=(file,bytes)=>{const path=join(root,file);mkdirSync(dirname(path),{recursive:true});writeFileSync(path,bytes);return path;};
+  if(officialAssets)put(lumineSelectionPath,readFileSync(join(repo,lumineSelectionPath)));
   // This isolated experiment exercises the opt-in renderer, not production permission.
   // The explicit test policy remains an ordinary hashed source input.
   if(!monsterOnly)put('data/release/candidate-art-policy.json',JSON.stringify({schemaVersion:1,disabledFeatures:{}}));
@@ -112,7 +114,9 @@ test('MCP mock: formal CLI consumes opt-in art in the actual UI and dynamic pres
   assert.equal(receipt.nativeCardArt.staticPools,1);assert.equal(receipt.nativeCardArt.staticAddedControls,3);
   assert.deepEqual(receipt.nativeCardArt.inputs.map(r=>r.sha256).sort(),[fileRecord(f.literal),...f.registry.sourceInputs.map(r=>fileRecord(r.path))].map(r=>r.sha256).sort());
   assert.equal(receipt.nativeCardArt.inputDigest,payloadDigest(receipt.nativeCardArt.inputs));
-  assert.equal(receipt.payloadDigest,payloadDigest(sourceInputs(f.root,{nativeCardArt:{registry:f.literal,hosts:['battlePanel/card1']}})),'payload contract includes explicitly selected art inputs');
+  assert.equal(receipt.toolchainIdentity.sourceSha256,fileRecord(join(f.root,'tool/src/scene-save.mjs')).sha256);
+  assert.equal(receipt.toolchainIdentity.helperSha256,fileRecord(join(repo,'scripts/native-client-check.mjs')).sha256);
+  assert.equal(receipt.payloadDigest,payloadDigest(sourceInputs(f.root,{nativeCardArt:{registry:f.literal,hosts:['battlePanel/card1']},toolchainIdentity:receipt.toolchainIdentity})),'payload contract includes explicitly selected art inputs and exact encoder inputs');
   assert.equal(receipt.moduleDigests.abyss_presentation,sha256(presentation));
   assert(receipt.nativeCardArt.outputs.some(r=>r.sha256===sha256(presentation)));
   assert.equal(one.calls.find(c=>c.name==='connect').liveWrite,'0');
@@ -121,7 +125,8 @@ test('MCP mock: formal CLI consumes opt-in art in the actual UI and dynamic pres
   assert.deepEqual(one.calls.filter(c=>c.name==='scene_remove_client').map(c=>c.args.script),['abyss_stale']);
   assert.equal(one.calls.find(c=>c.name==='write_graphs').args.graphs[0].graphId,23);
   assert.deepEqual(one.calls.find(c=>c.name==='native_batch_script'&&c.args.name==='abyss_ui').args.variables,
-    [{name:'nativeMonsterArtEnabled',type:'boolean',value:true},{name:'nativeBgmEnabled',type:'boolean',value:false},{name:'experimentalCharacters',type:'boolean',value:false}]);
+    [{name:'nativeMonsterArtEnabled',type:'boolean',value:true},{name:'nativeBgmEnabled',type:'boolean',value:false},{name:'experimentalCharacters',type:'boolean',value:false},
+      {name:'nativeComponentControls',type:'boolean',value:false,public:true}]);
   assert(!one.calls.some(c=>c.name==='scene_add_graph'||c.name==='scene_add_signal'));
   assert.equal(one.calls.filter(c=>c.name==='scene_list_client_scripts').length,0,'full readback uses local map records, asserted above');
   const disabled=f.cli(['--native-card-art-count=0']);success(disabled);
@@ -150,6 +155,11 @@ test('MCP mock: UI acceptance rejects changed art provenance but retains ordinar
   const plain=baseline.receipt();assert.doesNotThrow(()=>verifyUiCandidateInputs(plain,plain.mapPath,{root:f.root}));
   const one=f.cli([`--native-card-art-registry=${f.literal}`,'--native-card-art-count=1']);success(one);
   const receipt=one.receipt();assert.doesNotThrow(()=>verifyUiCandidateInputs(receipt,receipt.mapPath,{root:f.root}));
+  const encoder=receipt.toolchainIdentity.sourcePath,encoderBytes=readFileSync(encoder);
+  try {
+    writeFileSync(encoder,Buffer.concat([encoderBytes,Buffer.from('\n')]));
+    assert.throws(()=>verifyUiCandidateInputs(receipt,receipt.mapPath,{root:f.root}),/Native UI encoder input changed/);
+  } finally {writeFileSync(encoder,encoderBytes);}
   for(const record of [...receipt.nativeCardArt.inputs,...receipt.nativeCardArt.outputs]) {
     const original=readFileSync(record.path);writeFileSync(record.path,Buffer.concat([original,Buffer.from('\n')]));
     assert.throws(()=>verifyUiCandidateInputs(receipt,receipt.mapPath,{root:f.root}),/Native art.*changed/);
@@ -166,14 +176,24 @@ test('MCP mock: audio wrapper preserves full art receipt and rejects input chang
     run:(script,[base,directory])=>{
       runs++;mkdirSync(directory,{recursive:true});const mapPath=join(directory,'audio.gil');writeFileSync(mapPath,'MCP mock audio');
       writeFileSync(join(directory,'candidate.json'),JSON.stringify({mapPath,sha256:fileRecord(mapPath).sha256,candidate:fileRecord(mapPath),
-        baseSha256:full.candidate.sha256,baseAfter:full.candidate.sha256,buildId:full.buildId,artFeatures:full.artFeatures}));
+        baseSha256:full.candidate.sha256,baseAfter:full.candidate.sha256,buildId:full.buildId,artFeatures:full.artFeatures,
+    uiProfile:full.uiProfile,...(full.officialAssetsProfile?{officialAssetsProfile:full.officialAssetsProfile}:{})}));
       mutate?.();
     }});
   const audio=await packageAudio();assert.deepEqual(audio.nativeCardArt,full.nativeCardArt);
+  assert.deepEqual(audio.toolchainIdentity,full.toolchainIdentity);
+  const {verifyUiCandidateInputs}=await import('../scripts/verify-ui-acceptance.mjs');
+  assert.doesNotThrow(()=>verifyUiCandidateInputs(audio,audio.mapPath,{root:f.root}));
   const original=readFileSync(f.literal);writeFileSync(f.literal,Buffer.concat([original,Buffer.from('\n')]));
   await assert.rejects(packageAudio(),/Native art.*changed/);assert.equal(runs,1,'stale art must not start audio packaging');
   writeFileSync(f.literal,original);
-  await assert.rejects(packageAudio(()=>writeFileSync(f.registry.sourceInputs[0].path,'changed during audio')),/Native art.*changed/);
+  const drawing=f.registry.sourceInputs[0].path,drawingBytes=readFileSync(drawing);
+  await assert.rejects(packageAudio(()=>writeFileSync(drawing,'changed during audio')),/Native art.*changed/);
+  writeFileSync(drawing,drawingBytes);
+  const encoder=full.toolchainIdentity.sourcePath,encoderBytes=readFileSync(encoder);
+  try {
+    await assert.rejects(packageAudio(()=>writeFileSync(encoder,Buffer.concat([encoderBytes,Buffer.from('\n')]))),/Native UI encoder input changed/);
+  } finally {writeFileSync(encoder,encoderBytes);}
 });
 
 for(const [label,tail,pattern] of [
@@ -314,9 +334,32 @@ test('MCP mock: explicit monster-only CLI packages approved candidate drawing wh
  const binding=run.calls.find(c=>c.name==='native_batch_script'&&c.args.name==='abyss_monster_actor_binding').args.source;
  assert.match(binding,/templateIndex=1073741849,containerTemplateIndex=1073741848,powerTemplateIndex=1073741850,enabled=true/);
  const {flags}=receipt.artFeatures;
- assert.equal(receipt.payloadDigest,payloadDigest(sourceInputs(f.root,{artFeatures:flags})));
+ assert.equal(receipt.payloadDigest,payloadDigest(sourceInputs(f.root,{artFeatures:flags,toolchainIdentity:receipt.toolchainIdentity})));
  assert.equal(receipt.statuses.playtest,'not_run');assert.equal(receipt.liveWriteEnabled,false);
 });
+
+test('MCP mock: official-assets candidate preserves the complete low-cost actor template',t=>{
+ const f=fixture(t,{officialAssets:true}),run=f.api({officialAssets:true,nativePageLifecycle:true});success(run);
+ const receipt=run.receipt();
+ assert.equal(receipt.statuses.staticCheck,'pass');assert.equal(receipt.artFeatures.flags.monsters,false);
+ assert.equal(receipt.uiProfile.nativePageLifecycle,true);
+ const actor=run.calls.find(c=>c.name==='scene_add_client_template'&&c.args.template.name==='AbyssMonsterActor').args.template;
+ const pool=actor.children.find(n=>n.name==='portraitArt');
+ assert.equal(pool.children.length,32);assert.equal(pool.visible,false);assert.equal(pool.raycastTarget,false);
+ assert.deepEqual(pool.children.map(n=>n.name),Array.from({length:32},(_,i)=>'shape'+i));
+ assert(pool.children.every(n=>n.kind==='image'&&n.image===100001&&n.visible===false&&n.raycastTarget===false));
+ assert.equal(receipt.statuses.officialImport,'not_run');assert.equal(receipt.liveWriteEnabled,false);
+});
+
+for(const [label,edit]of [['missing shape','pool.children.pop()'],['changed shape',"pool.children[0].colour='#FF0000'"]])
+ test(`MCP mock: changed official-assets actor ${label} rejects before connection`,t=>{
+  const f=fixture(t,{officialAssets:true}),path=join(f.root,'scripts/build-ui.mjs');
+  writeFileSync(path,readFileSync(path,'utf8')+`\nconst p=join(process.argv[2],'game-ui-templates.json'),tree=JSON.parse(readFileSync(p,'utf8'));
+const actor=tree.find(n=>n.name==='AbyssMonsterActor'),pool=actor.children.find(n=>n.name==='portraitArt');
+${edit};writeFileSync(p,JSON.stringify(tree));`);
+  const run=f.api({officialAssets:true,nativePageLifecycle:true});
+  assert.notEqual(run.result.status,0);assert.match(run.result.stderr,/Monster actor template differs/);assert.deepEqual(run.calls,[]);
+ });
 
 for(const [label,edit,pattern]of [
  ['payload',"writeFileSync(join(process.argv[2],'abyss_monster_art_data.lua'),'return {}');",/Monster artwork payload differs/],
@@ -334,7 +377,8 @@ test('MCP mock: monster-only audio preserves source receipt and rejects changed 
   run:(script,[base,directory])=>{
    mkdirSync(directory,{recursive:true});const mapPath=join(directory,'audio.gil');writeFileSync(mapPath,'MCP mock audio');
    writeFileSync(join(directory,'candidate.json'),JSON.stringify({mapPath,sha256:fileRecord(mapPath).sha256,candidate:fileRecord(mapPath),
-    baseSha256:full.candidate.sha256,baseAfter:full.candidate.sha256,buildId:full.buildId,artFeatures:full.artFeatures}));
+    baseSha256:full.candidate.sha256,baseAfter:full.candidate.sha256,buildId:full.buildId,artFeatures:full.artFeatures,
+    uiProfile:full.uiProfile,...(full.officialAssetsProfile?{officialAssetsProfile:full.officialAssetsProfile}:{})}));
   }});
  const audio=await run();assert.deepEqual(audio.nativeMonsterArt,full.nativeMonsterArt);
  const path=join(f.root,full.nativeMonsterArt.inputs[0].path);writeFileSync(path,readFileSync(path,'utf8')+'\n-- changed');

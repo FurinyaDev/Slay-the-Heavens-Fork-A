@@ -6,7 +6,7 @@ local M={}
 local faceFields={'glow','shadow','border','plate','roundShadow','roundFrame','roundBody','nameBand','nameRule',
  'artPlate','artWell','skin','name','art_attack','art_skill','art_power','art_status','typeEdge','typeTag',
  'tagEdge','tagBody','type','description','roleRing','roleMark','blockedVeil','blockedPill','blockedLock',
- 'blockedReason','costHalo','costCore','costDisc','cost','costDirection','veil','stampPlate','stamp','artSamples'}
+ 'blockedReason','costHalo','costCore','costDisc','cost','costDirection','veil','stampPlate','stamp','artSamples','stsReferenceBack','stsReferenceChrome','stsReferenceCost'}
 local textFields={name=true,type=true,description=true,cost=true}
 function M.isBoard(event)
  return event and event.id=='match_game'and(event.stage=='play'or event.stage=='resolving'or event.stage=='cleanup')
@@ -106,7 +106,7 @@ function M.install(ctx)
    active=true
   end
   local grid=panel:GetChild('forgeGrid');ctx.show(panel,true);ctx.show(grid,true)
-  for _,name in ipairs({'previous','next','before','after','target','arrow','empty','forgePrevious','forgeNext'})do ctx.show(panel:GetChild(name),false)end
+  for _,name in ipairs({'previous','next','before','after','target','arrow','empty'})do ctx.show(panel:GetChild(name),false)end
   for i=1,6 do ctx.show(panel:GetChild('card'..i),false)end
   local info=assert(event.match,'missing detached Match view')
   local layout=Theme.layout.nativeNode;local top=layout.topBar.plate
@@ -123,7 +123,8 @@ function M.install(ctx)
   for i,slot in ipairs(info.slots)do
    local box=grid:GetChild('card'..i);ctx.show(box,not slot.removed);box:SetLocalScale(1,1,1)
    local back=box:GetChild('matchBack');ctx.show(back,not slot.faceUp and not slot.removed);ctx.inspectCards[box]=nil
-   for _,name in ipairs({'plate','glyph','label'})do back:GetChild(name).raycastTarget=false end
+   -- Native Image/Text have no raycastTarget property. Only the card's existing
+   -- CursorArea receives input; these static decorations cannot intercept it.
    if slot.faceUp and not slot.removed then restoreFace(box);ctx.fillCard(box,slot.cardId,slot.upgraded,{instance=slot})
    else concealFace(box)end
    local owned=ownership(ctx,view,panel,box,grid)

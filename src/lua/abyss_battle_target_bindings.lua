@@ -1,7 +1,7 @@
 -- Read state, issue Run commands. No damage/energy/outcome rules live in this view.
 local Combat = require("abyss_combat")
 local Actors = require("abyss_actor")
-local Controller = require("abyss_controller")
+local Pointer = require('abyss_pointer_input')
 local M = {}
 local function needsTarget(state, instance)
     -- Ask the core to validate the same card with and without a target.
@@ -38,69 +38,67 @@ function M.install(owner, ownership, host, dependencies)
             ownership.enemyInputs[screenSlot] = input
             -- Preview ownership is separate from owner.target (which defaults to 1).
             -- Reuse the same selection/turn/actor checks as the eventual command.
-            local function previewEnemy(token, controller)
+            local function previewEnemy(token)
                 local entry=entryAt()
-                if not entry or not token.uid or token.aim or not dependencies.enemyReady(token) then return end
+                if not entry or not Actors.isActive(entry.actor) or not token.uid or token.aim or not dependencies.enemyReady(token) then return end
                 local selected
                 for _,card in ipairs(token.battle.hand)do if card.uid==token.uid then selected=card end end
                 if not selected or not needsTarget(token.battle,selected) then return end
                 token.previewReady=function()
-                    if owner.gesture or not entryAt() or not dependencies.enemyReady(token) then return false end
-                    if controller then
-                        return Controller.isController(host.controller) and host.controller.api.getFocus()==control
-                    end
+                    if owner.gesture or not Actors.isActive(token.actor) or not entryAt() or not dependencies.enemyReady(token) then return false end
                     return input.held==token or input.released==token
                 end
                 owner.cardAim=token
-                if not controller then owner:render() end
+                owner:render()
+            end
+            local device = host.platform and host.platform.touchScreen
+            local function selectedCard()
+                local battle = owner.run and owner.run.combat
+                for _, instance in ipairs(battle and battle.hand or {}) do
+                    if instance.uid == owner.selected then return instance end
+                end
+            end
+            local function dismissPinnedReader(event, down)
+                local info = owner.info
+                if not info or not info.powerTips or info.index == 0 or info.transient then return false end
+                local selected = selectedCard()
+                if not owner.potionAim and not (selected and needsTarget(owner.run.combat, selected)) then return false end
+                if not owner:dismissActorDetails() then return false end
+                if down then owner.swallow = {touch = event and event.touchId} end
+                dependencies.discardEnemyPointer(input, event)
+                return true
+            end
+            local function inspectEnemy(target)
+                if device and not device() and not owner:canPinPowerTips(control) then return false end
+                return owner:showStatus(target, control, false, true)
             end
             local function chooseEnemy()
             local entry=entryAt()
             if not entry then return false end
             local target=entry.index
             local current=owner.run and owner.run.combat and owner.run.combat.enemies[target]
-            if not current or current.id~=entry.id then return false end
+            if not Actors.isPresent(current) or current.id~=entry.id then return false end
             if owner.potionAim then
+                if not Actors.isActive(current) then return false end
                 local slot = owner.potionAim.slot
                 owner.target = target
                 return owner:commitPotion(slot, target)
             end
-            if owner.active and not owner.busy and owner.run.phase == "combat" and Actors.isActive(current) then
-                owner.target = target
-                local selected
-                for _, instance in ipairs(owner.run.combat.hand) do
-                    if instance.uid == owner.selected then selected = instance break end
+            if owner.active and not owner.busy and owner.run.phase == "combat" then
+                local selected = selectedCard()
+                if selected and needsTarget(owner.run.combat, selected) then
+                    if not Actors.isActive(current) then return false end
+                    owner.target = target
+                    return owner:playSelected(target)
                 end
-                if selected and needsTarget(owner.run.combat, selected) then owner:playSelected(target)
-                else
-                    owner:showStatus(target)
-                end
+                if Actors.isActive(current) then owner.target = target end
+                return inspectEnemy(target)
             end
             end
-            Controller.bind(host.controller,control,function()
-                local selected
-                if owner.run and owner.run.combat then
-                    for _,card in ipairs(owner.run.combat.hand)do if card.uid==owner.selected then selected=card end end
-                end
-                return (owner.potionAim or selected and needsTarget(owner.run.combat,selected)) and "aim" or "battle"
-            end,function()owner.suppressClick=false;return chooseEnemy()end,function()
-                local entry=entryAt()
-                return dependencies.controllerReady() and owner.run.phase=="combat" and entry and Actors.isActive(entry.actor)
-            end,screenSlot,"enemies",function()
-                local entry=entryAt()
-                if entry then
-                    owner.target=entry.index
-                    local battle=owner.run and owner.run.combat
-                    previewEnemy({slot=entry.index,screenSlot=screenSlot,actor=entry.actor,run=owner.run,
-                        battle=battle,turn=battle and battle.turn,uid=owner.selected,
-                        selectionEpoch=owner.selectionEpoch,aim=owner.potionAim},true)
-                    owner:render()
-                end
-            end)
             if not entryAt() then return end
             control:AddCursorEventListener(host.clickEvent, function(event)
-                if not entryAt() or Controller.pointerBlocked(host.controller)then return false end
-                if dependencies.swallowed(event) then
+                if not entryAt() or Pointer.blocked(host.platform)then return false end
+                if dismissPinnedReader(event) or dependencies.swallowed(event, true) then
                     -- Dismissal consumes this pointer too, but cannot consume a
                     -- newer token owned by a different touch on the same actor.
                     dependencies.discardEnemyPointer(input,event)
@@ -117,11 +115,13 @@ function M.install(owner, ownership, host, dependencies)
                 if not dependencies.consumeReleasedDragClick(event) and not owner.suppressClick and not owner.gesture then return chooseEnemy() end
             end)
             if not entryAt() then return end
-            if owner.dragEnabled then
+            local function bindPointer()
                 control:AddCursorEventListener(host.cursor.CursorDown, function(event)
                     if not entryAt() then return false end
                     ownership.enemyPointerObserved = true
-                    local dismissed = dependencies.down(event)
+                    local token = input.held or input.released
+                    if token and dependencies.enemyReady(token) and token.touch ~= (event and event.touchId) then return end
+                    local dismissed = dismissPinnedReader(event, true) or dependencies.down(event, true)
                     input.held, input.released = nil, nil
                     if dismissed then return end
                     local run, battle = owner.run, owner.run and owner.run.combat
@@ -137,8 +137,9 @@ function M.install(owner, ownership, host, dependencies)
                     end
                 end)
                 if not entryAt() then return end
-                local function clearCardAim(token)
-                    if owner.cardAim==token then owner.cardAim=nil;owner:render() end
+                local function retireAim(token)
+                    if owner.cardAim == token then owner.cardAim = nil; owner:render() end
+                    if dependencies.cancelPotionAim("已取消药水瞄准。") then owner:render() end
                 end
                 local function releaseEnemy(event, ended)
                     if not entryAt() then return false end
@@ -146,19 +147,25 @@ function M.install(owner, ownership, host, dependencies)
                     local touch, held = event and event.touchId, input.held
                     if held and held.touch == touch then
                         input.held = nil
-                        input.released = not ended and dependencies.enemyReady(held) and held or nil
-                        if ended then
-                            clearCardAim(held)
-                            if dependencies.cancelPotionAim("已取消药水瞄准。") then owner:render() end
-                        end
+                        if ended then retireAim(held)
+                        elseif not (event and event.dragging) and dependencies.enemyReady(held) then input.released = held end
                     elseif ended and input.released and input.released.touch == touch then
-                        clearCardAim(input.released)
+                        local released = input.released
                         input.released = nil
-                        if dependencies.cancelPotionAim("已取消药水瞄准。") then owner:render() end
+                        retireAim(released)
                     end
                 end
+                if device and host.cursor.CursorEnter and host.cursor.CursorExit then
+                    control:AddCursorEventListener(host.cursor.CursorEnter,function()
+                        if device() or Pointer.blocked(host.platform) or owner.selected then return end
+                        local entry = entryAt()
+                        if entry then return owner:showStatus(entry.index, control, true, true) end
+                    end)
+                end
+                if not entryAt() then return end
                 if host.cursor.CursorExit then
                     control:AddCursorEventListener(host.cursor.CursorExit,function(event)
+                        if device then owner:dismissActorDetails(control) end
                         local aim=owner.cardAim
                         if aim and aim.touch==(event and event.touchId) and (aim==input.held or aim==input.released) then
                             owner.cardAim=nil;owner:render()
@@ -168,15 +175,20 @@ function M.install(owner, ownership, host, dependencies)
                 if not entryAt() then return end
                 control:AddCursorEventListener(host.cursor.CursorUp, releaseEnemy)
                 if not entryAt() then return end
+                if device and host.cursor.CursorDrag then
+                    control:AddCursorEventListener(host.cursor.CursorDrag, function(event) releaseEnemy(event, true) end)
+                end
+                if not entryAt() then return end
                 control:AddCursorEventListener(host.cursor.CursorEndDrag, function(event) releaseEnemy(event, true) end)
             end
+            if owner.dragEnabled then bindPointer() end
     end
-    local function unbindEnemyControl(screenSlot,box,engineDestroyed)
+    local function unbindEnemyControl(screenSlot,box)
         local input=bound[box]
         if not input then return end
         input.retired=true;input.held=nil;input.released=nil
+        if owner.info and owner.info.source == input.control then owner.info = nil end
         if ownership.enemyInputs[screenSlot]==input then ownership.enemyInputs[screenSlot]=nil end
-        Controller.unbind(host.controller,input.control,engineDestroyed)
         bound[box]=nil
     end
     local function bindEnemyControls()

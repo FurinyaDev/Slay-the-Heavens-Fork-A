@@ -4,34 +4,28 @@ local M = {F = F, Run = Run}
 local cursor = {CursorDown='down', CursorUp='up', CursorEndDrag='end', CursorExit='exit'}
 function M.setup(options)
     options = options or {}
-    local calls, focus = 0, nil
-    local api = options.controller and {
-        events={Confirm='confirm', Cancel='cancel', Focus='focus', LostFocus='blur'},
-        directions={Left='left', Right='right'}, modes={Specified='specified', NearestControl='nearest'},
-        getFocus=function() return focus end, setFocus=function(value) focus=value end,
-        isController=function() return true end,
-    } or nil
+    local calls=0
     local ui, root = F.fixture(nil, function(victory)
         calls = calls + 1
         if options.settle then return options.settle(calls, victory) end
         return true
-    end, nil, cursor, false, nil, nil, api)
+    end, nil, cursor, false, nil )
     assert(F.start(ui))
     if options.revive == 'fairy' then assert(Run.obtainPotion(ui.run, 'fairy_in_a_bottle')) end
     if options.revive == 'tail' then assert(Run.obtainRelic(ui.run, 'lizard_tail')) end
     ui.run.hp = options.normal and 80 or 3
     if not options.map then
-        assert(Run.startCombat(ui.run, 'cultist_solo'))
+        assert(Run.startCombat(ui.run, 'raven_adept_solo'))
         local enemy = ui.run.combat.enemies[1]
         local attack
-        for i,intent in ipairs(enemy.intents) do if intent.id=='cultist_1' then attack=i end end
-        assert(attack,'missing published Cultist attack')
+        for i,intent in ipairs(enemy.intents) do if intent.id=='raven_adept_1' then attack=i end end
+        assert(attack,'missing published Raven Adept attack')
         -- Select the real six-damage attack; the controlled three-HP run is
         -- already lethal without inventing source intents or consuming RNG.
         enemy.ai, enemy.intentIndex = nil, attack
     end
     ui:refresh()
-    return ui, root, function() return calls end, api
+    return ui, root, function() return calls end
 end
 function M.hit(root, panel, button)
     return root:GetChild(panel):GetChild(button):GetChild('hit')
@@ -47,12 +41,6 @@ function M.tap(hit, id)
     M.gesture(hit, id)
     return M.fire(hit, 'click', id)
 end
-function M.event(ui, api, hit, event)
-    ui:update(0); ui:syncController()
-    assert(hit.canControllerFocus, 'controller target unavailable')
-    api.setFocus(hit)
-    return assert(hit.navigationListeners[event or 'confirm'])()
-end
 function M.until_(ui, predicate)
     for _=1,600 do if predicate() then return end; ui:update(0.01) end
     error('transition did not reach expected phase')
@@ -64,16 +52,13 @@ end
 function M.finish(ui)
     M.until_(ui, function() return ui.mode == 'defeat' and not ui.motion.deathReveal end)
 end
-function M.open(ui, root, api)
-    if api then
-        assert(M.event(ui, api, M.hit(root, 'exitEntry', 'open')))
-        assert(ui.exitOpen and ui.menuOpen)
-        assert(M.event(ui, api, M.hit(root, 'runMenu', 'abandon')))
-    else
-        assert(M.tap(M.hit(root, 'exitEntry', 'open'), 31))
-        assert(ui.exitOpen and ui.menuOpen)
-        assert(M.tap(M.hit(root, 'runMenu', 'abandon'), 32))
-    end
+function M.open(ui, root)
+    -- Menu visibility is refreshed when opening it. Observe the presented action
+    -- after that command, rather than choosing from the previous hidden frame.
+    local function name()return root:GetChild('runMenu'):GetChild('quit').visible and 'quit' or 'abandon'end
+    assert(M.tap(M.hit(root, 'exitEntry', 'open'), 31))
+    assert(ui.exitOpen and ui.menuOpen)
+    assert(M.tap(M.hit(root, 'runMenu', name()), 32))
     assert(ui.exitOpen and not ui.menuOpen)
 end
 return M

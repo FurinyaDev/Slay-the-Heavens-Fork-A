@@ -1,10 +1,16 @@
 import {existsSync,readFileSync} from 'node:fs';
 import {dirname,join} from 'node:path';
+import {deckBrowserTemplateName} from './deck-ui-layout.mjs';
 import {fileRecord} from './evidence-files.mjs';
-export function reusableUi(base,generated) {
+export function reusableUi(base,generated,{privateTemplates=false,galleryImageTypes}={}) {
+ // The legacy receipt only carries the shared image/group/background bindings.
+ // Re-encode private templates until their complete binding set is cacheable.
+ if(privateTemplates)return null;
  const receiptPath=join(dirname(base.path),'candidate.json');
  if(!existsSync(receiptPath))return null;
  const receipt=JSON.parse(readFileSync(receiptPath,'utf8'));
+ // The same layout could have been encoded before gallery modes were carried.
+ if(galleryImageTypes!==undefined&&galleryImageTypes!==(receipt.toolchainIdentity?.galleryImageTypes===true))return null;
  if(receipt.candidate?.sha256!==base.sha256||receipt.statuses?.staticCheck!=='pass'
   ||receipt.productionManifest?.layout?.sha256!==fileRecord(join(generated,'game-ui.json')).sha256
   ||receipt.productionManifest?.templates?.sha256!==fileRecord(join(generated,'game-ui-templates.json')).sha256)return null;
@@ -13,5 +19,8 @@ export function reusableUi(base,generated) {
  if(![image,group,background].every(n=>Number.isSafeInteger(n)&&n>0)||image===group)return null;
  if(receipt.officialPortraits?.imageTemplateIndex!==image||receipt.officialPortraits?.containerTemplateIndex!==group)return null;
  return {receipt:fileRecord(receiptPath),templateResults:{AbyssReadyCardImage:{templateIndex:image},
-  AbyssReadyCardGroup:{templateIndex:group},AbyssOfficialBackgroundImage:{templateIndex:background}}};
+  AbyssReadyCardGroup:{templateIndex:group},AbyssOfficialBackgroundImage:{templateIndex:background},
+  ...(Number.isSafeInteger(receipt.deckBrowser?.templateIndex)&&receipt.deckBrowser.templateIndex>0?
+    {[deckBrowserTemplateName]:{templateIndex:receipt.deckBrowser.templateIndex},
+      ...Object.fromEntries((receipt.deckBrowser.parts??[]).map(({name,templateIndex})=>[name,{templateIndex}]))}:{})}};
 }

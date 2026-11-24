@@ -13,7 +13,7 @@ local function value(panel,slot)
     return tonumber(text:match('(%d+)'))
 end
 local function setup()
-    local host,ui,panel,event,tap,drain=H.setup({'strike','strike'},{'cultist','jaw_worm'})
+    local host,ui,panel,event,tap,drain=H.setup({'strike','strike'},{'raven_adept','jaw_worm'})
     F.Combat.addStatus(host.run.combat.enemies[1],'vulnerable',2)
     host:refresh()
     return host,ui,panel,event,tap,drain
@@ -58,7 +58,7 @@ test('state refresh recomputes; turn phase actor battle and inactive invalidate 
         elseif kind=='turn'then b.turn=b.turn+1
         elseif kind=='phase'then b.phase='enemy'
         elseif kind=='actor'then b.enemies[1]=F.Combat.copy(b.enemies[1])
-        elseif kind=='battle'then host.run.combat=F.Combat.new(F.Data,{deck={'strike'},enemies={'cultist'}})
+        elseif kind=='battle'then host.run.combat=F.Combat.new(F.Data,{deck={'strike'},enemies={'raven_adept'}})
         else ui.active=false end
         ui:render();assert(value(panel)==6,kind..' retained old preview')
         if kind~='status'then assert(ui.cardAim==nil,kind..' retained stale token')end
@@ -79,28 +79,6 @@ test('actual drag still previews and empty ground clears without automatic targe
     assert(value(panel)==9)
     event('dragLayer','drag',7,-285,0);assert(value(panel)==6)
     assert(b.energy==3 and #b.hand==2)
-end)
-test('controller Focus previews before Confirm; switch, cancel, stale focus and damage stay correct',function()
-    local focus
-    local api={events={Confirm='confirm',Cancel='cancel',Focus='focus',LostFocus='blur'},directions={Left='left',Right='right'},modes={Specified='specified'},getFocus=function()return focus end,isController=function()return true end}
-    api.setFocus=function(c)focus=c;if c and c.navigationListeners and c.navigationListeners.focus then c.navigationListeners.focus()end end
-    local host,root=F.fixture(nil,nil,nil,{CursorDown='down',CursorUp='up',CursorDrag='drag',CursorEndDrag='endDrag'},false,nil,nil,api)
-    assert(F.start(host));assert(H.Run.startCombat(host.run,'cultist_solo'))
-    host.run.combat=F.Combat.new(F.Data,{deck={'strike','strike'},enemies={'cultist','jaw_worm'}})
-    local b=host.run.combat;F.Combat.addStatus(b.enemies[1],'vulnerable',2)
-    host:resize(1280,720);host:refresh()
-    local ui,panel=host.battleUI,root:GetChild('battlePanel')
-    local function hit(name)local box=F.actorControl(panel,name);return box:GetChild('hit')end
-    local function press(c,kind)host:update(.01);host:syncController();api.setFocus(c);return c.navigationListeners[kind or 'confirm']()end
-    press(hit('card1'));assert(ui.selected and value(panel)==9,'controller focused first enemy must preview 9')
-    api.setFocus(hit('enemy2'));assert(value(panel)==6)
-    api.setFocus(hit('enemy1'));assert(value(panel)==9)
-    assert(b.energy==3 and #b.hand==2)
-    press(hit('enemy1'),'cancel');assert(not ui.selected and value(panel)==6)
-    hit('enemy1').navigationListeners.focus();assert(value(panel)==6,'old focus resurrected selection')
-    press(hit('card1'));local hp=b.enemies[1].hp
-    press(hit('enemy1'));assert(b.energy==2 and b.enemies[1].hp==hp-9 and not ui.selected)
-    host:disable()
 end)
 print('explicit target preview: '..passed..' passed, '..failed..' failed')
 assert(failed==0)

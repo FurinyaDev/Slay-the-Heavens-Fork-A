@@ -2,11 +2,47 @@
 local Combat = require("abyss_combat")
 local Actors = require("abyss_actor")
 local Theme = require("abyss_theme")
-local Controller = require("abyss_controller")
+local Pointer = require('abyss_pointer_input')
 local M = {}
 local L = Theme.layout
+local function validPower(value,id)
+    return value and value.id==id and not value.hidden
+end
+local function potionCurrent(spec, run)
+    return spec.kind ~= "potion" or run.potions == spec.inventory and run.potions[spec.slot] == spec.potionId
+end
+local function travelerCombat(run)
+    return not run.combat.originalV4 and (run.character == nil or run.character == "ironclad")
+end
+local function closeSource(owner, closeInfo, control, silent)
+    local info = owner.info
+    if not info or info.source ~= control then return end
+    if silent == true and info.powerTips then owner.info = nil
+    elseif info.powerTips and info.index > 0 then owner:dismissActorDetails(control)
+    elseif info.transient then
+        closeInfo(true)
+        if silent ~= true then owner:renderDetailsOnly() end
+    end
+end
+local function bindEnemyReaders(bindHelp, screenSlot, box, entryAt, guard, cleanups)
+    for _, name in ipairs({"intentHit", "hpHit"}) do
+        if guard and not guard() then return end
+        local control = box:GetChild(name)
+        local function describe()
+            local entry = entryAt()
+            if not entry or control.visible == false or not Actors.isPresent(entry.actor) then return end
+            return {index = entry.index, screenSlot = screenSlot, controlBox = guard and box or nil, powerTips = true}
+        end
+        bindHelp(control, describe, true, nil, guard, cleanups, "enemy")
+    end
+end
+local function helpPressReady(owner, token, run)
+    return token and owner.active and not owner.busy and not owner.gesture and not owner.carry and run == token.run
+        and run.phase == "combat" and run.combat == token.battle and run.combat.turn == token.turn
+end
 -- Explicit ports preserve the approved implementation without a shared constructor closure.
 function M.install(owner, _ownership, host, dependencies)
+    local touchScreen = host.platform and host.platform.touchScreen
     local function statusActorAt(slot)
         local battle=owner.run and owner.run.combat
         if not battle then return end
@@ -24,140 +60,219 @@ function M.install(owner, _ownership, host, dependencies)
         if owner.info and owner.info.source==control then owner.info=nil end
     end
     -- hoverSlot: a reward card also reports pointer enter/exit for its hover pose (one listener per event).
-    local function bindHelp(control,describe,clickable,hoverSlot,guard,cleanups)
+    local function bindHelp(control,describe,clickable,hoverSlot,guard,cleanups,actorControl)
         local function current()return not guard or guard()end
         if not current() then return end
         local input={}
-        local function cancel(silent,engineDestroyed)
+        local enemyReader = actorControl == "enemy"
+        local function keepActor()
+            local info = owner.info
+            return actorControl and (enemyReader or not (info and info.powerTips and info.index > 0 and not info.transient))
+        end
+        local function on(kind, callback) control:AddCursorEventListener(kind, callback) end
+        local function show(spec, transient)
+            if actorControl == "overview" then return owner:showStatus(spec.index, control, transient, spec.powerTips) end
+            return owner:openHelp(spec, control, transient)
+        end
+        local function hoverOnly(spec)
+            return spec and spec.powerTips and touchScreen and not touchScreen() and not owner:canPinPowerTips(control)
+        end
+        local function cancelCardRead(event)
+            local info=owner.info
+            if not (hoverSlot and info and info.press) then return false end
+            if info.source==control and event and info.press.touch==event.touchId then
+                dependencies.closeInfo()
+                owner:render(true)
+            end
+            return true
+        end
+        local function enterCard()
+            local info=owner.info
+            if touchScreen and touchScreen() or info and info.press then return false end
+            if info and info.source~=control and (info.kind=='card' or info.kind=='rewardCard') then
+                dependencies.closeInfo(true)
+            end
+            owner:setHover(hoverSlot)
+            return true
+        end
+        local function cancel(silent,engineDestroyed,event)
             if engineDestroyed then input.engineDestroyed=true end
             if input.engineDestroyed then forgetHelp(control,hoverSlot,input);return end
+            local token = input.held or input.released
+            if event and token and token.touch ~= event.touchId then return end
             input.held,input.released,input.consumed=nil,nil,nil
+            if cancelCardRead(event) then return end
+            closeSource(owner, dependencies.closeInfo, control, silent)
             if hoverSlot and owner.hover==hoverSlot then owner:setHover(nil) end
             if owner.help and owner.help.source==control then owner.help=nil end
-            if owner.info and owner.info.source==control and owner.info.transient then dependencies.closeInfo();if silent~=true then owner:render() end end
         end
         if cleanups then cleanups[#cleanups+1]={control=control,cancel=cancel} end
         if hasCursorPair("CursorEnter","CursorExit") then
-            control:AddCursorEventListener(host.cursor.CursorEnter,function()
+            on(host.cursor.CursorEnter,function()
                 if not current() then return false end
-                if hoverSlot then owner:setHover(hoverSlot) end
-                owner:queueHelp(describe(),control,false)
+                if hoverSlot and not enterCard() then return end
+                local spec = describe()
+                if spec and not spec.kind then
+                    if not Pointer.blocked(host.platform) and not (touchScreen and touchScreen()) then
+                        return show(spec, true)
+                    end
+                else owner:queueHelp(spec,control,false) end
             end)
             if not current() then return end
-            control:AddCursorEventListener(host.cursor.CursorExit,cancel)
-            if not current() then return end
+            on(host.cursor.CursorExit,function(event) cancel(false,false,event) end)
         end
-        if not clickable then return end
-        Controller.bind(host.controller,control,function()return owner.potionAim and "aim" or "battle"end,function()
-            if not current() then return false end
-            local spec=describe()
-            if spec then return owner:openHelp(spec,control,false)end
-        end,function()return current() and dependencies.controllerReady()end,80)
-        if not current() then return end
+        if not clickable or not current() then return end
         local function ready(token)
             local run=owner.run
-            return current() and token and owner.active and not owner.busy and not owner.gesture and run==token.run
-                and run.phase=="combat" and run.combat==token.battle and run.combat.turn==token.turn
+            return current() and helpPressReady(owner, token, run)
                 and dependencies.helpActorReady(token,run)
-                and (token.spec.kind~="potion" or run.potions==token.spec.inventory and run.potions[token.spec.slot]==token.spec.potionId)
+                and (not owner.potionAim or enemyReader and not owner.potionAim.moving or not token.spec.powerTips)
+                and potionCurrent(token.spec,run)
         end
-        control:AddCursorEventListener(host.clickEvent,function(event)
-            if not current() or Controller.pointerBlocked(host.controller)then return false end
-            local touch=event and event.touchId
-            if input.consumed and input.consumed.touch==touch then input.consumed=nil;return end
-            if input.pointerObserved then
-                local token=input.released;input.released=nil
-                if not ready(token) or token.touch~=touch then return end
-            end
-            if dependencies.swallowed(event) then return end
-            local spec=describe()
-            if spec then owner:openHelp(spec,control,false) end
+        local function tappedSpec(touch)
+            if not input.pointerObserved then return describe() end
+            local token = input.released
+            if not token or token.touch ~= touch then return end
+            input.released = nil
+            if not ready(token) then return end
+            local spec = describe()
+            if spec and spec.powerTips == token.spec.powerTips and spec.statusId == token.spec.statusId
+                and spec.offset == token.spec.offset then return spec end
+        end
+        on(host.clickEvent,function(event)
+            if not current() or Pointer.blocked(host.platform) or enemyReader and event and event.dragging then return false end
+            local touch = event and event.touchId
+            if input.consumed and input.consumed.touch == touch then input.consumed = nil; return end
+            if dependencies.consumeReleasedDragClick(event) or owner.suppressClick then return end
+            local spec = tappedSpec(touch)
+            if spec and not hoverOnly(spec) and not dependencies.swallowed(event, keepActor()) then return show(spec, false) end
         end)
-        if not current() then return end
-        if hasCursorPair("CursorDown","CursorUp") then
-            control:AddCursorEventListener(host.cursor.CursorDown,function(event)
+        if not current() or not hasCursorPair("CursorDown","CursorUp") then return end
+        local function bindPress()
+            local function capturePress(spec, event)
+                local run = owner.run
+                if not run or run.phase ~= "combat" or not spec then return end
+                local actor = spec.index == 0 and run.combat.player or run.combat.enemies[spec.index]
+                local press = {run=run,battle=run.combat,turn=run.combat.turn,touch=event and event.touchId,spec=spec,actor=actor}
+                if not ready(press) then return end
+                input.held = press
+                if actorControl ~= "overview" and not spec.powerTips then owner:queueHelp(spec,control,true,press.touch) end
+            end
+            on(host.cursor.CursorDown,function(event)
                 if not current() then return false end
+                local token = input.held or input.released
+                if actorControl and ready(token) and token.touch ~= (event and event.touchId) then return end
                 input.pointerObserved=true;input.held,input.released,input.consumed=nil,nil,nil
-                if dependencies.down(event) then return end
-                local run=owner.run
-                if not run or run.phase~="combat" then return end
-                local spec=describe()
-                if not spec then return end
-                local actor=spec.index==0 and run.combat.player or run.combat.enemies[spec.index]
-                local token={run=run,battle=run.combat,turn=run.combat.turn,touch=event and event.touchId,spec=spec,actor=actor}
-                if ready(token) then input.held=token;owner:queueHelp(describe(),control,true,token.touch) end
+                if hoverOnly(describe()) then return end
+                if dependencies.down(event, keepActor(), enemyReader) then return end
+                capturePress(describe(), event)
             end)
             if not current() then return end
-            control:AddCursorEventListener(host.cursor.CursorUp,function(event)
-                local token=input.held;input.held=nil
-                if not ready(token) or token.touch~=(event and event.touchId) then return end
-                local help=owner.help
-                if help and help.source==control and help.fired then
-                    input.consumed={touch=token.touch}
-                    if owner.info and owner.info.source==control then owner.info.transient=false;owner:render() end
-                else input.released=token end
-                if help and help.source==control then owner.help=nil end
+            local function releaseHelp(token)
+                local help = owner.help
+                owner.help = nil
+                local info = owner.info
+                if not help.fired or not info or info.source ~= control or not info.transient then
+                    input.released = token
+                    return
+                end
+                input.consumed = {touch = token.touch}
+                info.transient = false
+                owner:renderDetailsOnly()
+            end
+            on(host.cursor.CursorUp,function(event)
+                local token = input.held
+                if not token or token.touch ~= (event and event.touchId) then return end
+                input.held = nil
+                if not ready(token) or event and event.dragging then
+                    if owner.help and owner.help.source == control then owner.help = nil end
+                elseif owner.help and owner.help.source == control then releaseHelp(token)
+                else input.released = token end
             end)
             if not current() then return end
-            if host.cursor.CursorEndDrag then control:AddCursorEventListener(host.cursor.CursorEndDrag,cancel) end
+            if host.cursor.CursorEndDrag then
+                on(host.cursor.CursorEndDrag,function(event) cancel(false,false,event) end)
+            end
+            if not current() then return end
+            if actorControl and host.cursor.CursorDrag then
+                on(host.cursor.CursorDrag,function(event) cancel(false,false,event) end)
+            end
+        end
+        bindPress()
+    end
+
+    local function statusSpec(screenSlot, position)
+        local _, index, actor = statusActorAt(screenSlot)
+        if not Actors.isPresent(actor) then return end
+        local entries = Combat.statusView(actor)
+        if not entries[position] then return end
+        local slots = L.statusIcon.perRow * L.statusIcon.rows
+        local overflow = position == slots and #entries >= slots
+        local playerPosition = screenSlot == 0 and touchScreen and travelerCombat(owner.run) and position or nil
+        local spec = {index = index, screenSlot = screenSlot > 0 and screenSlot or nil,
+            powerTips = (screenSlot > 0 or touchScreen ~= nil) and true or nil, position = playerPosition}
+        if overflow then spec.offset = position else spec.statusId = entries[position].id end
+        return spec
+    end
+
+    local function bindActorHelp(screenSlot, box, entryAt, guard, cleanups)
+        if screenSlot > 0 then bindEnemyReaders(bindHelp, screenSlot, box, entryAt, guard, cleanups) end
+        if guard then return end
+        for slot = 1, L.statusIcon.perRow * L.statusIcon.rows do
+            local position = slot
+            bindHelp(box:GetChild("statusRow"):GetChild("hit" .. slot), function()
+                return statusSpec(screenSlot, position)
+            end, true, nil, nil, nil, screenSlot > 0 and "enemy" or "status")
         end
     end
 
-    local function bindActorHelp(screenSlot,box,entryAt,guard,cleanups)
-            if guard and not guard() then return end
-            if screenSlot>0 then bindHelp(box:GetChild("intentHit"),function()
-                local entry=entryAt()
-                return entry and {kind="intent",index=entry.index,screenSlot=screenSlot,controlBox=guard and box or nil}
-            end,true,nil,guard,cleanups) end
-            if guard then return end -- Dynamic monsters own one control per power, not fixed chips.
-            for slot=1,L.statusIcon.perRow*L.statusIcon.rows do
-                if guard and not guard() then return end
-                local position=slot
-                bindHelp(box:GetChild("statusRow"):GetChild("hit"..slot),function()
-                    local index,actor
-                    if guard then
-                        local entry=entryAt();index=entry and entry.index;actor=entry and entry.actor
-                    else
-                        local _;_,index,actor=statusActorAt(screenSlot)
-                    end
-                    if not Actors.isPresent(actor)then return end
-                    local entries=Combat.statusView(actor)
-                    local perRow=L.statusIcon.perRow
-                    local slots=perRow*L.statusIcon.rows
-                    if not entries[position] then return end
-                    local overflow=position==slots and #entries>=slots
-                    return {index=index,screenSlot=screenSlot>0 and screenSlot or nil,controlBox=guard and box or nil,statusId=not overflow and entries[position].id or nil,
-                        offset=overflow and position or nil}
-                end,true,nil,guard,cleanups)
+    local function bindDetailControls()
+        -- Portrait targeting remains on the enemy hit. All other actor controls
+        -- are read-only and use the same status reader as an untargeted portrait.
+        local hero = dependencies.child("hero")
+        hero.disableCursorEventPassthrough = true
+        local row = hero:GetChild("statusRow")
+        row.disableCursorEventPassthrough = true
+        local function player()
+            local _, _, actor = statusActorAt(0)
+            local run = owner.run
+            if not actor then return end
+            return {index = 0, powerTips = touchScreen and travelerCombat(run) or nil}
+        end
+        bindHelp(hero:GetChild("hit"), player, true, nil, nil, nil, "overview")
+        bindHelp(row:GetChild("hit"), player, true, nil, nil, nil, "overview")
+        if touchScreen then
+            local size = L.statusIcon.size + L.statusIcon.gap
+            for slot = 1, L.statusIcon.perRow * L.statusIcon.rows do row:GetChild("hit" .. slot):SetSizeDelta(size, size) end
+        end
+        if not host.monsterSurfaces then
+            for slot = 1, 5 do
+                local control = dependencies.child("enemy"..slot):GetChild("statusRow"):GetChild("hit")
+                bindHelp(control, function()
+                    local entry = dependencies.enemyAt(slot)
+                    return entry and {index = entry.index, screenSlot = slot, powerTips = true}
+                end, true, nil, nil, nil, "enemy")
             end
         end
-
-    local function bindDetailControls()
-        -- Enemy portraits keep targeting; the hero portrait and every status row only open
-        -- details, so a status tap never plays a card or moves the potion target.
-        dependencies.listen(dependencies.child("hero"):GetChild("hit"), function() owner:showStatus(0) end)
-        local names=host.monsterSurfaces and {"hero"} or {"hero", "enemy1", "enemy2", "enemy3", "enemy4", "enemy5"}
-        for i, name in ipairs(names) do
-            local screenSlot = i - 1
-            dependencies.listen(dependencies.child(name):GetChild("statusRow"):GetChild("hit"), function()
-                local entry=screenSlot>0 and dependencies.enemyAt(screenSlot)
-                if screenSlot==0 or entry then owner:showStatus(entry and entry.index or 0) end
-            end)
-        end
+        dependencies.child("statusDismiss"):AddCursorEventListener(host.clickEvent,function(event)
+            if not Pointer.blocked(host.platform) and not (event and event.dragging) then
+                return owner:dismissActorDetails()
+            end
+        end)
         local info = dependencies.child("statusInfo")
         info.disableCursorEventPassthrough = true
-        dependencies.listen(info:GetChild("hit"), function() if dependencies.closeInfo() then owner:render() end end)
+        dependencies.listen(info:GetChild("hit"), function() if dependencies.closeInfo() then owner:renderDetailsOnly() end end)
         -- A tap on the card itself turns to the next page; a single page closes like any tap.
         -- Not routed through listen(): that dismisses the open card before any handler runs.
         local function infoPage()
             local open = owner.info
             if not open then return end
             owner.swallow = nil
-            if (open.pages or 1) > 1 then open.page = open.page % open.pages + 1 owner:render()
-            elseif dependencies.closeInfo() then owner:render() end
+            if (open.pages or 1) > 1 then open.page = open.page % open.pages + 1 owner:renderDetailsOnly()
+            elseif dependencies.closeInfo() then owner:renderDetailsOnly() end
         end
         info:GetChild("page"):AddCursorEventListener(host.clickEvent,function(event)
-            if Controller.pointerBlocked(host.controller)then return false end
+            if Pointer.blocked(host.platform) or event and event.dragging then return false end
             local swallow=owner.swallow
             if swallow and swallow.touch==(event and event.touchId) then owner.swallow=nil;return end
             return infoPage()
@@ -165,7 +280,6 @@ function M.install(owner, _ownership, host, dependencies)
         if host.cursor and host.cursor.CursorDown then
             info:GetChild("page"):AddCursorEventListener(host.cursor.CursorDown,function() owner.swallow=nil end)
         end
-        Controller.bind(host.controller,info:GetChild("page"),"battleInfo",infoPage,nil,1)
         bindActorHelp(0,dependencies.child("hero"),function()end)
         if not host.monsterSurfaces then
             for i=1,5 do
@@ -209,7 +323,6 @@ function M.install(owner, _ownership, host, dependencies)
         binding.retired=true
         for _,item in ipairs(binding.controls)do
             if item.cancel then item.cancel(true,engineDestroyed) end
-            Controller.unbind(host.controller,item.control,engineDestroyed)
         end
         bound[box]=nil
     end
@@ -230,21 +343,32 @@ function M.install(owner, _ownership, host, dependencies)
                 or owner.run~=run or not run or run.combat~=battle
                 or powerManager:control(powerSlot)~=powerBox)
         end
-        local function describe()
+        local function livePower()
             if not surfaceCurrent() then return end
             local entry=manager:entry(actorSlot)
             local power=powerManager:entry(powerSlot)
             local actor=entry and battle and battle.enemies[entry.index]
             if not entry or entry.id~=actorId or not actor or actor.id~=actorId
-                or not Actors.isPresent(actor) or not power or power.id~=powerId then return end
+                or not Actors.isPresent(actor) or not validPower(power,powerId) then return end
+            return entry, power, actor
+        end
+        local function describe()
+            local entry, power, actor = livePower()
+            if not entry then return end
+            local spec = {index=entry.index,screenSlot=actorSlot,controlBox=actorBox,powerTips=true}
+            if power.status and power.status.overflow then
+                spec.offset = power.status.offset
+                return spec
+            end
             -- Resolve by power identity, never the row position or a feedback snapshot.
             for _,status in ipairs(Combat.statusView(actor))do
                 if status.id==powerId then
-                    return {index=entry.index,screenSlot=actorSlot,controlBox=actorBox,statusId=powerId}
+                    spec.statusId = powerId
+                    return spec
                 end
             end
         end
-        bindHelp(powerBox:GetChild("hit"),describe,true,nil,function()return describe()~=nil end,binding.controls)
+        bindHelp(powerBox:GetChild("hit"),describe,true,nil,function()return describe()~=nil end,binding.controls,"enemy")
     end
     local function unbindEnemyPowerControl(powerBox,engineDestroyed)
         local binding=powerBindings[powerBox]
@@ -252,7 +376,6 @@ function M.install(owner, _ownership, host, dependencies)
         binding.retired=true
         for _,item in ipairs(binding.controls)do
             if item.cancel then item.cancel(true,engineDestroyed) end
-            Controller.unbind(host.controller,item.control,engineDestroyed)
         end
         powerBindings[powerBox]=nil
     end

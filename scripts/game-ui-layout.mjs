@@ -17,6 +17,8 @@ export const resultStats = ['floor', 'victories', 'time', 'deck'];
 export function gameLayout(theme = nativeTheme, options = {}) {
   const { text, plate, button, frame, centred } = nativeControls(theme);
   const layout = theme.layout.nativeMenu, { color, font, space, image } = theme;
+  const subtitle = text('subtitle', [0, 0, 1120, 96], '', font.reading, '#F6F2E9');
+  subtitle.text.outline = false;
   const battle = structuredClone(battleLayout());
   const battleControls = battle.controls.find(control => control.name === 'stage').children;
   const map = structuredClone(mapLayout(theme));
@@ -63,7 +65,7 @@ export function gameLayout(theme = nativeTheme, options = {}) {
   };
   const resourceHints = (hp, gold) => ({ name: 'resourceHints', kind: 'container', size: [...theme.canvas.base], children:
     [['hp', hp], ['gold', gold]].map(([name, box]) => ({ name, kind: 'container', position: box.slice(0, 2), size: box.slice(2), children: [
-      { name: 'hit', kind: 'cursorArea', size: box.slice(2), focusable: true },
+      { name: 'hit', kind: 'cursorArea', size: box.slice(2) },
     ] })) });
   const b = theme.layout.topBar;
   battleControls.push(resourceHints(resourceBox([b.hpIcon[0], b.y, b.hpIcon[1], b.hpIcon[1]], [b.hp[0], b.y, b.hp[1], b.height]),
@@ -123,6 +125,11 @@ export function gameLayout(theme = nativeTheme, options = {}) {
         ] },
         button('start', layout.start, '启程', { inset: layout.buttonInset, fontSize: font.heading,
           colour: color.textOnLight, fill: color.gold, border: color.goldBright }),
+        { ...button('continueRun', [layout.start[0], layout.start[1]+64, ...layout.start.slice(2)], '继续本局',
+          { inset: layout.buttonInset, fontSize: font.heading, colour: color.gold, border: color.gold }), visible: false },
+        text('sessionHint', [0,-320,900,36], '', font.small, color.textMuted),
+        button('titleQuit', [layout.start[0], layout.start[1]-96, ...layout.start.slice(2)], '退出游戏',
+          { inset: layout.buttonInset, fontSize: font.heading, colour: color.gold, border: color.gold }),
         { ...button('settle', layout.settle, '结束并结算', { inset: layout.buttonInset, states: true,
           fontSize: font.heading, colour: color.gold, border: color.gold }), visible: false },
         { ...plate('deathShade', layout.backdrop, color.backdrop), visible: false },
@@ -133,10 +140,15 @@ export function gameLayout(theme = nativeTheme, options = {}) {
       ...experimentalCharacterControls(theme),
       prologueControl(theme),
       ...exitControls(theme),
+      { name: 'pageReveal', kind: 'container', size: [...theme.canvas.base], visible: false, children: [
+        plate('veil', [0, 0, ...theme.canvas.base], color.backdrop),
+        { name: 'blocker', kind: 'cursorArea', size: [...theme.canvas.base], focusable: false },
+        { ...subtitle, visible: false, raycastTarget: false },
+        text('message', [0, 24, 600, 56], '正在准备画面…', font.body, color.text),
+        button('cancel', [0, -64, 180, 48], '打开菜单', { inset: [space.s, space.s], fontSize: font.label }),
+      ] },
     ],
   };
-  const overlays = new Set(['deckPanel', 'relicPanel', 'potionPanel', 'choicePanel', 'characterPanel', 'exitPanel', 'runMenu', 'prologuePanel']);
-  for (const control of layoutTree.controls) if (overlays.has(control.name)) control.isolateNavigation = true;
   const menuPanel=layoutTree.controls.find(c=>c.name==='menuPanel');
   for(const name of ['vista','heroArt']){const old=menuPanel.children.find(c=>c.name===name);if(old)old.visible=false;}
   attachOfficialBackdrops(layoutTree,theme);

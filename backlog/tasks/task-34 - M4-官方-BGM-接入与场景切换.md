@@ -5,15 +5,15 @@ status: In Progress
 assignee:
   - '@Furinya'
 created_date: '2026-10-23 07:34'
-updated_date: '2026-10-27 15:04'
-due_date: '2026-10-28'
+updated_date: '2026-11-14 06:51'
 labels:
   - P1
   - bgm
   - awaiting-live
-milestone: m-5
-dependencies:
-  - TASK-29
+  - 待验
+  - delivery-verify
+milestone: m-8
+dependencies: []
 references:
   - 'https://act.mihoyo.com/ys/ugc/tutorial/detail/mhq9b601kh9k'
   - >-
@@ -27,6 +27,7 @@ references:
   - docs/AUDIO_RICHNESS.md
   - docs/evidence/audio-richness-integrated-20261025.json
   - docs/BACKLOG-AUDIT-20261026.md
+  - TASK-29
 priority: medium
 type: enhancement
 ordinal: 46000
@@ -52,6 +53,8 @@ ordinal: 46000
 
 <!-- SECTION:PLAN:BEGIN -->
 2026-10-24用户要求地图和每场战斗有音乐：保留已认可战斗曲，新增默认带BGM的完整构建入口，沿用原生分场景切歌；实际选曲听感和混音继续留待同候选实测。
+
+2026-11-01依赖复核：场景音乐配置与候选读回已交付，与TASK-29/29.1并行复验；最终仍须在同一候选联合听验混音、切歌与演出。TASK-29保留为关联参考，不再以其整体Done作为本任务开工前置。
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -72,4 +75,10 @@ ordinal: 46000
 2026-10-26逐项AC校准：将混合的已实现/已有自动回归与完整池/平台待验拆成独立条款；依据既有合并及验证记录勾选，不新增通过结论。原验收快照保留docs/evidence/backlog-ac-before-20261026.json，全部原范围要求由拆分后条款继续承接。
 
 负责人字段规范化：原记录 @Codex 作为历史执行者信息保留；任务负责人为 Furinya。
+
+2026-11-07 看板核对（develop 2c85bc61）：实现类交付已按历史记录保留，剩余 AC 待同候选官方/设备验证；当前无在途 PR，状态由 In Progress 归 To Do（待验）。
+
+2026-11-14清理旧窗口日期：原due_date=2026-10-28保留于历史，不再显示为当前截止；实际未完成AC和审批不变。
+
+2026-11-14第二轮状态纠正：已有2/6项AC通过及既有实施证据，剩余未完成要求属于后续验证或接续。 状态表示整个任务的完成进展，不表示当前有执行者持续占用；保留原未验AC、负责人、依赖及历史证据。更正过去把已开展待验事项退回To Do的处理。
 <!-- SECTION:NOTES:END -->

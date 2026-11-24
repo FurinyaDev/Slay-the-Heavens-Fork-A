@@ -14,15 +14,16 @@ const fixtureBytes=readFileSync('tests/fixtures/image-editor-103025-checker.cjs'
 assert.equal(createHash('sha1').update(Buffer.from(`blob ${fixtureBytes.length}\0`)).update(fixtureBytes).digest('hex'),'ced76db25cd9e386d9c2dd683ea8f0aeef1b35aa');
 const fixture=fixtureBytes.toString('utf8'),start=fixture.indexOf('function vm(script) {'),end=fixture.indexOf('\nvm(source)(');
 const exactVm=runInThisContext('(function(deps){const {assert,lua,lauxlib,lualib,to_luastring,to_jsstring,maskSlots,controlCount}=deps;'+fixture.slice(start,end)+';return vm;})')({...fengari,assert,maskSlots:[],controlCount:4822});
-export function withPortraitVm(code,{before='',themePlayer={id:1,status:'native'},runtimeV2=false}={}) {
+export function withPortraitVm(code,{before='',themePlayer={id:1,status:'native'},runtimeV2=false,officialAssets=false}={}) {
  const dir=mkdtempSync(join(tmpdir(),'portrait-vm-'));
  let state;const old=lauxlib.luaL_newstate;lauxlib.luaL_newstate=()=>state=old();
  try {
   if(runtimeV2)writeFileSync(join(dir,'art-render-v2.json'),JSON.stringify({profile:'native-v2',hiddenBuild:true,cache:true,revealGroupsPerFrame:4}));
-  const asset=writePortraitModule(dir,{selectionAvatar:true,battlePortrait:true,imageTemplateIndex:1234,containerTemplateIndex:5678});
+  const asset=writePortraitModule(dir,{selectionAvatar:true,battlePortrait:true,imageTemplateIndex:1234,containerTemplateIndex:5678,selectionHalfImageTemplateIndex:4321,officialAssets});
   const run=exactVm(`Asset=(function()\n${asset}\nend)()`);
   run(`
 local instantiate=game.InstantiateClientUIControl
+Enum.ImageFillHorizontalType={Right='Right'}
 local watch={SetImage=true,imageType=true,SetAnchorMin=true,SetAnchorMax=true,SetPivot=true,SetSizeDelta=true,SetLocalScale=true,SetLocalRotation=true,SetAnchoredPosition=true,imageColor=true,SetAsLastSibling=true}
 function watchControl(c)
  rawset(c,'trace',{})
@@ -34,9 +35,16 @@ function watchControl(c)
  return c
 end
 game.InstantiateClientUIControl=function(id,parent)
- assert(id==1234 or id==5678,'real bound template index required')
- local old=script.object;script.object=parent;local c=instantiate(id,parent);script.object=old
- if c then watchControl(c);rawset(c,'isGroup',id==5678)end
+ assert(id==1234 or id==4321 or id==5678,'real bound template index required')
+ local old=script.object;script.object=parent;local c=instantiate(id==4321 and 1234 or id,parent);script.object=old
+ if c then rawset(c,'id',id)end
+ if c then
+  if id==4321 then rawset(c,'SetFillHorizontal',function(self,direction,amount)
+   assert(direction=='Right' and amount==.5 and self.enableMask==true,'native half-triangle mask must be explicitly enabled')
+   self.trace[#self.trace+1]={'SetFillHorizontal',direction,amount}
+  end)end
+  watchControl(c);rawset(c,'isGroup',id==5678)
+ end
  return c
 end
 function tree(children)
@@ -52,8 +60,9 @@ function Images()local out={};for _,c in ipairs(controls)do if c.alive and not c
 function Equal(a,b)assert(type(a)==type(b),'type mismatch');if type(a)=='table'then assert(#a==#b,'length mismatch');for i,v in ipairs(a)do Equal(v,b[i])end else assert(a==b,tostring(a)..' ~= '..tostring(b))end end
 `);
   if(before)run(before);
-  run(`Theme=${toLua({...nativeTheme,icon:{...nativeTheme.icon,player:themePlayer}})}
-PortraitAssetLoads=0;require=function(name)if name=='abyss_theme' then return Theme end;assert(name=='abyss_traveler_portrait_assets');PortraitAssetLoads=PortraitAssetLoads+1;return Asset end\nPortraits=(function()\n${readFileSync('src/lua/abyss_traveler_portraits.lua','utf8')}\nend)()`);
+  run(`Theme=${toLua({...nativeTheme,...(officialAssets?{presentationProfile:'official-assets-first'}:{}),icon:{...nativeTheme.icon,player:themePlayer}})}
+Idle=(function()\n${readFileSync('src/lua/abyss_lumine_idle.lua','utf8')}\nend)()
+PortraitAssetLoads=0;require=function(name)if name=='abyss_theme' then return Theme end;if name=='abyss_lumine_idle'then return Idle end;assert(name=='abyss_traveler_portrait_assets');PortraitAssetLoads=PortraitAssetLoads+1;return Asset end\nPortraits=(function()\n${readFileSync('src/lua/abyss_traveler_portraits.lua','utf8')}\nend)()`);
   run(code);
  } finally {lauxlib.luaL_newstate=old;if(state)lua.lua_close(state);rmSync(dir,{recursive:true,force:true});}
 }

@@ -27,7 +27,7 @@ local cards={
  {id='static_discharge',sourceId='Static Discharge',name='静电释放',type='power',rarity='uncommon',cost=1,effects={power('static_discharge',1)},upgrade={effects={power('static_discharge',2)}},text='每次受到其他单位普通攻击并失去生命时，生成1个闪电球。',upgradeText='每次受到其他单位普通攻击并失去生命时，生成2个闪电球。'},
  {id='rebound',sourceId='Rebound',name='弹回',type='attack',rarity='common',cost=1,effects={{op='damage',value=9},power('rebound',1)},upgrade={effects={{op='damage',value=12},power('rebound',1)}},text='造成9点伤害。本回合下一张牌放回抽牌堆顶。',upgradeText='造成12点伤害。本回合下一张牌放回抽牌堆顶。'},
  {id='force_field',sourceId='Force Field',name='力场',type='skill',rarity='uncommon',cost=4,effects={{op='block',value=12}},upgrade={effects={{op='block',value=16}}},text='获得12点格挡。本场战斗每打出1张能力牌，费用减少1。',upgradeText='获得16点格挡。本场战斗每打出1张能力牌，费用减少1。'},
- {id='equilibrium',sourceId='Undo',name='均衡',type='skill',rarity='uncommon',cost=2,effects={{op='block',value=13},power('equilibrium',1)},upgrade={effects={{op='block',value=16},power('equilibrium',1)}},text='获得13点格挡。本回合保留所有非虚无手牌。',upgradeText='获得16点格挡。本回合保留所有非虚无手牌。'},
+ {id='equilibrium',sourceId='Undo',name='均衡',type='skill',rarity='uncommon',cost=2,effects={{op='block',value=13},power('equilibrium',1)},upgrade={effects={{op='block',value=16},power('equilibrium',1)}},text='获得13点格挡。本回合保留所有非虚无手牌',upgradeText='获得16点格挡。本回合保留所有非虚无手牌。'},
  {id='amplify',sourceId='Amplify',name='增幅',type='skill',rarity='rare',cost=1,effects={power('amplify',1)},upgrade={effects={power('amplify',2)}},text='本回合下一张能力牌额外打出1次。',upgradeText='本回合接下来2张能力牌各额外打出1次。'},
  {id='echo_form',sourceId='Echo Form',name='回响形态',type='power',rarity='rare',cost=3,ethereal=true,effects={power('echo_form',1)},upgrade={ethereal=false},text='虚无。每回合最先打出的1张牌额外打出1次。',upgradeText='每回合最先打出的1张牌额外打出1次。'},
  {id='machine_learning',sourceId='Machine Learning',name='机器学习',type='power',rarity='rare',cost=1,effects={power('machine_learning',1)},upgrade={innate=true},text='每回合正常抽牌额外抽1张。',upgradeText='先天。每回合正常抽牌额外抽1张。'},
@@ -62,15 +62,27 @@ function M.adaptDefinition(_state,instance,definition)
  if instance.cardId=='genetic_algorithm'then definition.effects[2].value=instance.misc or 1 end
  return definition
 end
+local powerBody={
+ rebound='获得%s层弹回。下张非能力且未消耗的牌回抽牌堆顶，能力也消耗次数（本回合有效）',
+ equilibrium='获得%s层均衡。每层在一回合结束时保留所有非虚无手牌',
+ amplify='本回合接下来%s张能力牌各额外打出1次',
+ echo_form='每回合最先打出的%s张牌各额外打出1次，复制牌不再触发',
+ machine_learning='每回合正常抽牌时额外抽%s张',
+ self_repair='战斗胜利时恢复%s点生命',
+ buffer='抵消接下来%s次正数生命损失',
+ static_discharge='受其他单位普通攻击并失去生命时，生成%s个闪电球',
+ hello_world='每回合开始，从当前职业普通池随机加入%s张牌到手牌',
+ creative_ai='每回合开始，从当前职业能力池随机加入%s张非治疗牌到手牌',
+}
 function M.describe(effect)
  local action,n=effect.action,tostring(effect.value)
- if action=='power'then return '获得 '..n..' 层'..assert(powers[effect.status])[1]..'：'..powers[effect.status][2]
+ if action=='power'then return string.format(assert(powerBody[effect.status]),n)
  elseif action=='genetic'then return '永久增加此牌的基础格挡 '..n..' 点'
  elseif action=='scrape'then return '抽 '..n..' 张牌，主动弃掉其中当前费用非0且非免费打出的牌'
  elseif action=='fission'then return (effect.value==1 and '唤起' or '移除')..'所有充能球；每个球获得 1 点能量并抽 1 张牌'
  elseif action=='reboot'then return '将手牌与弃牌堆洗入抽牌堆，抽 '..n..' 张牌'
  end
- return assert(({white_noise='将1张随机非治疗能力牌加入手牌，本回合费用变为0；使用当前职业完整能力池',recursion='唤起最前方充能球，然后将同一个球重新生成',recycle='选择并消耗1张手牌，获得等同其当前费用的能量；X按当前能量计算',all_for_one='将弃牌堆所有基础费用为0或免费打出的牌加入手牌；满手时留在弃牌堆'})[action],'unknown final Defect description')
+ return assert(({white_noise='将1张随机非治疗能力牌加入手牌，本回合费用变为0；使用当前职业完整能力池',recursion='唤起最前方充能球，然后将同一个球重新生成',recycle='选择并消耗1张手牌，获得等同其当前费用的能量；X按当前能量计算',all_for_one='从弃牌堆取回所有基础0费或免费打出的牌，手满则留在弃牌堆'})[action],'unknown final Defect description')
 end
 function M.pool(state,kind)
  local pools=assert(state.sourcePools,'missing class source pools');local list={}
@@ -211,45 +223,48 @@ function M.recycle(state,card,queue)
  if energy>0 then push(queue,state,{op='energy',value=energy})end
  require('abyss_exhaust').move(state,card,'hand',queue,{onExhaustRelics=state.onExhaustRelics or {}})
 end
-function M.execute(combat,state,effect,queue)
- local action=effect.action
- if action=='generate'or action=='white_noise'then
+-- Execute responsibilities retain their original action ordering and mutation boundaries.
+local function generate(combat,state,effect,action)
   local actions=require('abyss_card_actions');local id=assert(effect.cardId,'unprepared generated Power');local card=actions.fresh(combat,state,id)
   if action=='white_noise'then card.costForTurn=0 end
   actions.created(combat,state,card);actions.created(combat,state,card)
   if (state.player.statuses.corruption or 0)~=0 then require('abyss_corruption').created(state,card)end
   local pile=#state.hand<state.rules.player.maxHand and'hand'or'discard'
   actions.toHand(state,card);Events.emit(state,'cards_created',{source=state.player.id,cardId=card.cardId,amount=1,pile=pile})
- elseif action=='power'then
+end
+local function applyFinalPower(state,effect)
   local old=state.player.statuses[effect.status]
   Actor.applyPower(state,state.player,effect.status,effect.value,state.player)
   if effect.status=='rebound'and old==nil then state.reboundJustEvoked=true end
- elseif action=='genetic'then genetic(state,effect.value)
- elseif action=='recursion'then
+end
+local function recurOrb(state,queue)
   local first=assert(state.orbs).balls[1]
   if first then
    push(queue,state,e('rechannel',1,{ball=first}));push(queue,state,{op='evokeOrb',value=1})
   end
- elseif action=='rechannel'then require('abyss_orbs').rechannel(state,effect.ball,combat)
- elseif action=='recycle'then return require('abyss_hand_choice').begin(state,'recycle',1,queue)
- elseif action=='scrape'then
+end
+local function scrapeDrawn(combat,state,effect,queue)
   local drawn=combat.draw(state,effect.value);local discard={}
   for _,c in ipairs(drawn)do if combat.cardDefinition(state,c).cost~=0 and not c.freeToPlayOnce then discard[#discard+1]=c.uid end end
   for i=#discard,1,-1 do push(queue,state,{op='discardSpecific',uid=discard[i],incrementFirst=false})end
- elseif action=='all_for_one'then
+end
+local function recoverZeroCost(combat,state,queue)
   for _,c in ipairs(state.discard)do
    local base=c.combatCost or combat.combatBaseCost(state,c)
    if base==0 or c.freeToPlayOnce then push(queue,state,e('discard_to_hand',1,{uid=c.uid}),true)end
   end
- elseif action=='discard_to_hand'then
+end
+local function recoverDiscard(state,effect)
   if #state.hand<state.rules.player.maxHand then for i,c in ipairs(state.discard)do if c.uid==effect.uid then
    table.remove(state.discard,i);state.hand[#state.hand+1]=c;break
   end end end
- elseif action=='fission'then
+end
+local function fissionOrbs(state,effect,queue)
   local count=#assert(state.orbs).balls;push(queue,state,{op='draw',value=count});push(queue,state,{op='energy',value=count})
   if effect.value==1 then for _=1,state.orbs.slots do push(queue,state,{op='evokeOrb',value=1})end
   else for i=#state.orbs.balls,1,-1 do state.orbs.balls[i]=nil end end
- elseif action=='reboot'then
+end
+local function rebootPiles(state,effect,queue)
   assert(state.shuffleRng and state.cardRandomRng,'Reboot requires source RNG streams')
   Random.shuffle(state.shuffleRng,state.discard)
   for _,c in ipairs(state.discard)do state.draw[#state.draw+1]=c end
@@ -257,6 +272,20 @@ function M.execute(combat,state,effect,queue)
   while #state.hand>0 do state.draw[#state.draw+1]=table.remove(state.hand,Random.randomInt(state.cardRandomRng,#state.hand-1)+1)end
   Random.shuffle(state.shuffleRng,state.draw);push(queue,state,{op='draw',value=effect.value})
   Events.emit(state,'reshuffle')
+end
+function M.execute(combat,state,effect,queue)
+ local action=effect.action
+ if action=='generate'or action=='white_noise'then generate(combat,state,effect,action)
+ elseif action=='power'then applyFinalPower(state,effect)
+ elseif action=='genetic'then genetic(state,effect.value)
+ elseif action=='recursion'then recurOrb(state,queue)
+ elseif action=='rechannel'then require('abyss_orbs').rechannel(state,effect.ball,combat)
+ elseif action=='recycle'then return require('abyss_hand_choice').begin(state,'recycle',1,queue)
+ elseif action=='scrape'then scrapeDrawn(combat,state,effect,queue)
+ elseif action=='all_for_one'then recoverZeroCost(combat,state,queue)
+ elseif action=='discard_to_hand'then recoverDiscard(state,effect)
+ elseif action=='fission'then fissionOrbs(state,effect,queue)
+ elseif action=='reboot'then rebootPiles(state,effect,queue)
  else error('unknown final Defect action: '..tostring(action))end
  return true
 end

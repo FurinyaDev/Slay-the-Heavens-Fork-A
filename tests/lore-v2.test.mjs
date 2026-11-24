@@ -10,12 +10,49 @@ const livingWallCopy = {
   intro: '墙壁上浮现出一张张人脸。它们低声重复着三个词：遗忘、改变、成长。\n\n你可以选择一张卡牌，留下旧日的招式，或让它成为新的力量。',
   choices: ['forget', 'change', 'grow'],
 };
-function assertNarrativeCopy(copy, core, support) {
-  assert.deepEqual(copy.flow, core.flow);
-  assert.deepEqual(copy.merchant, support.merchant);
-  assert.deepEqual(copy.eventCopy, { ...support.eventCopy, living_wall: livingWallCopy });
+// Exact display-name migration reviewed at 48fa66aec0f208ef3d4a8d27f17ce99d388ef5fd;
+// docs/evidence/constellation-gold/README.md records its scope and review.
+// Keep the original user packet; permit only its five reviewed name changes.
+const travelerNames=[
+  [['flow','victory','full'],'荧收起剑','旅行者收起剑'],
+  [['merchant','encounter'],'荧看到','旅行者看到'],
+  [['combatIntros','looter'],'荧腰间','旅行者腰间'],
+  [['combatIntros','raven_adept'],'荧的脚步','旅行者的脚步'],
+  [['eventCopy','purifier','intro'],'当荧靠近时','当旅行者靠近时'],
+];
+// #668 @ f0bb1f342d14f4bf58753c9c2ac88fc9112e9bc1 approved these two event introductions.
+const reviewedEventIntros = {
+  cleric: {
+    prior: "一位披着长袍的陌生人拦住了去路。\n\n「哎呀，旅行者！伤口要治吗？或者有什么不想再带着的招式？我都能帮上忙。」\n\n他笑着指了指身旁的价目表。\n\n「当然，得收一点金币。」",
+    approved: "「要治伤吗？净化也行。」\n\n他往身旁的价目表一指。\n\n「价钱写着呢。」",
+  },
+  purifier: {
+    prior: "破损的石龛静静立在路旁，表面的古老纹路仍散发着微光。\n\n当旅行者靠近时，一股平静的力量从中传来，仿佛能够让人放下一些不再需要的战斗方式。",
+    approved: "路旁是一座破损的神龛，石面上的纹路仍有微光。\n\n你可以在这里舍弃一张不再需要的牌。",
+  },
+};
+function approvedCurrentCopy(core,support){
+  const expected=structuredClone({flow:core.flow,merchant:support.merchant,combatIntros:support.combatIntros,
+    eventCopy:{...support.eventCopy,living_wall:livingWallCopy}});
+  for(const [path,before,after]of travelerNames){
+    const owner=path.slice(0,-1).reduce((row,key)=>row[key],expected),key=path.at(-1);
+    assert.equal(owner[key].split(before).length,2,'exact approved name predecessor: '+path.join('.'));
+    owner[key]=owner[key].replace(before,after);
+  }
+  // #668 @ f0bb1f342d14f4bf58753c9c2ac88fc9112e9bc1: approved merchant.insufficientGold only.
+  assert.equal(expected.merchant.insufficientGold, '这可不够啊，小姑娘。', 'exact archived v2 merchant refusal');
+  expected.merchant.insufficientGold = '还差点钱。';
+  for (const [event, {prior, approved}] of Object.entries(reviewedEventIntros)) {
+    assert.equal(expected.eventCopy[event].intro, prior, 'exact archived introduction: '+event);
+    expected.eventCopy[event].intro = approved;
+  }
+  return expected;
 }
-test('shipped narrative preserves the user packet verbatim and event paragraphs fit without smaller type', () => {
+function assertNarrativeCopy(copy, core, support) {
+  const expected=approvedCurrentCopy(core,support);
+  for(const key of ['flow','merchant','combatIntros','eventCopy'])assert.deepEqual(copy[key],expected[key]);
+}
+test('shipped narrative preserves archived or explicitly reviewed wording; event paragraphs fit without smaller type', () => {
   const copy = read('data/presentation/narrative.zh-CN.json');
   const core = read('docs/lore/v2/04-copy/core.zh-CN.json');
   const support = read('docs/lore/v2/04-copy/supporting.zh-CN.json');
@@ -48,7 +85,7 @@ test('verbatim guard rejects a changed character in every original approved copy
   const copy = read('data/presentation/narrative.zh-CN.json');
   const core = read('docs/lore/v2/04-copy/core.zh-CN.json');
   const support = read('docs/lore/v2/04-copy/supporting.zh-CN.json');
-  const approved = { flow: core.flow, merchant: support.merchant, eventCopy: support.eventCopy };
+  const approved = approvedCurrentCopy(core,support);
   function check(value, path = []) {
     if (typeof value === 'string') {
       const changed = structuredClone(copy);
@@ -60,6 +97,18 @@ test('verbatim guard rejects a changed character in every original approved copy
     }
   }
   check(approved);
+});
+
+test('reviewed display-name migration rejects rollback, broader names and edits around each exact name',()=>{
+  const copy=read('data/presentation/narrative.zh-CN.json');
+  const core=read('docs/lore/v2/04-copy/core.zh-CN.json'),support=read('docs/lore/v2/04-copy/supporting.zh-CN.json');
+  for(const [path,before,after]of travelerNames)for(const replacement of [before,after.replace('旅行者','旅人'),after+'改']){
+    const changed=structuredClone(copy),owner=path.slice(0,-1).reduce((row,key)=>row[key],changed),key=path.at(-1);
+    const earlierCopy = path[0]==='eventCopy' ? reviewedEventIntros[path[1]].prior : owner[key];
+    assert.equal(earlierCopy.split(after).length,2,'reviewed name exists in the applicable copy');
+    owner[key]=earlierCopy.replace(after,replacement);
+    assert.throws(()=>assertNarrativeCopy(changed,core,support),{code:'ERR_ASSERTION'});
+  }
 });
 
 test('event-copy guard rejects unregistered keys and changes to Living Wall intro or choices', () => {

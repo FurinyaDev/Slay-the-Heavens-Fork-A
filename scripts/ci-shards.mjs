@@ -3,8 +3,16 @@ import { spawnSync } from 'node:child_process';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { prepareReviewedAssets, prepareRuntimePreviews, needsRuntimePreviews } from './ci-reviewed-lfs.mjs';
+import {prepareMediaAssets} from './ci-media-lfs.mjs';
 
 export const timings = JSON.parse(readFileSync(new URL('./ci-test-timings.json', import.meta.url), 'utf8'));
+
+// The larger complete per-file observation from Windows Full jobs
+// 136000234494 and 136026191485 keeps the current shard forecast within budget.
+// Build the key from a basename because this is placement metadata. A
+// repository-relative test path literal is parsed as a dependency by test-affected.
+const artFeatureInverseTest = ['tests', 'art-feature-source-inverse.test.mjs'].join('/');
+timings.js.win32[artFeatureInverseTest] = Math.max(timings.js.win32[artFeatureInverseTest] ?? timings.unknownJsMs, 431203);
 
 export function partition(files, value, weights, fallback, initial) {
   const match = /^([1-9]\d*)\/([1-9]\d*)$/.exec(String(value));
@@ -58,6 +66,7 @@ export function main(args) {
   const shard = args[0].split('=')[1], plan = jsShard(discoverJs(), shard);
   console.log(JSON.stringify({ shard, platform: process.platform, ...plan }));
   if (args[0].startsWith('--prepare=')) {
+    console.log(JSON.stringify(prepareMediaAssets()));
     console.log(JSON.stringify(plan.files.includes('tests/reviewed-traveler-geo-assets.test.mjs')
       ? prepareReviewedAssets() : { status: 'not-needed', shard }));
     console.log(JSON.stringify(prepareRuntimePreviews({ needed: needsRuntimePreviews(plan.files) })));

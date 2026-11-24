@@ -5,12 +5,13 @@ status: In Progress
 assignee:
   - '@Furinya'
 created_date: '2026-10-22 15:58'
-updated_date: '2026-10-30 03:38'
-due_date: '2026-10-28'
+updated_date: '2026-11-14 06:51'
 labels:
   - art
   - launch
-milestone: m-5
+  - 待验
+  - delivery-verify
+milestone: m-8
 dependencies:
   - TASK-10.1
   - TASK-25.2
@@ -24,6 +25,7 @@ references:
   - docs/backlog-details/TRAVELER-SCOPE-20261029.md
   - docs/evidence/backlog-merge-20261029.json
   - docs/backlog-details/HERO-VISUAL-M3.md
+  - backlog/tasks/task-95 - 对照验证美术、交互与动效设计工具.md
 priority: medium
 type: task
 ordinal: 27000
@@ -58,6 +60,8 @@ ordinal: 27000
 2026-10-30用户要求立即接通两幕42种敌人：仅补齐主题原生图库绑定并纠正五种小魔为深渊法师；复用现有UIImage与SetImage路径，不改玩法、名字、布局、控件或动画。依据SDK固定照片目录记录资源与角色适配，增加42项查表及实际战斗渲染回归，未知敌人继续安全回退。离线源码与CI验收，官方导入及设备验收保持待用户本地打包测试。
 
 新增单池可用原型：复用CardDisplay与nativeArtPool，独立registry绑定首个可见acid_slime_m任意屏幕槽，其他重复实例保留图库；接入布局、命中反馈、死亡与隐藏清理，不改核心或交互。r02未获最终批准前保持disabled，先通过fixture与生命周期回归。
+
+2026-11-01依赖复核：TASK-25.2样品与TASK-10.1.2容量验证是正式启用、量产和收口门槛，不阻塞独立单资产离线研究。TASK-94离线算法可并行，不作为本任务或其他M4任务的硬前置；正式接入仍须原有质量、负载与设备证据，不放宽默认开关。
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -92,4 +96,11 @@ PR358完整CI首轮发现历史回放以整份主题hash拒绝新增敌人表。
 本轮独立树new-dendro-portrait基于1fd94235，仅单个新画草史莱姆接入，不把42项已有图库覆盖称新画完成；r02 597图形待审，官方导入与设备测试未执行。
 
 单草史莱姆r02已按Owner候选接受接入普通构建：597原生图元、单池609控件，任意槽首个acid_slime_m替换图库，额外副本图库回退。复用CardDisplay并在既有topBar下放置，保持敌人受击/护盾/浮字在上；默认启用并提供nativeMonsterArtEnabled=false。离线真实生成GameUI/规则/反馈、597属性逐项同源、XYZ变异与缺清理负控、边界/层序/生命周期均通过；历史回放以完整哈希固定逆补丁兼容，不改旧见证。官方导入、PC/实体安卓、性能和RC仍未验证，非42种新画全部完成。
+
+2026-11-02最新排期：优先M4非美术、非交互设计工程。新增或重做源美术方案先取TASK-95对应实验结论；已批准卡框还原、现成资产接线、占位/退化缺陷修复及既有设备验收继续，不因工具对照阻塞。原TASK-25.2样品、TASK-10.1.2容量与正式启用门槛保留；TASK-93/94只复用技术实验，不作为全任务前置。 仅对应新增正式设计切片以实验结论为前置；未来纯设计优化子任务显式依赖TASK-95并引用适用Go结论。本混合任务不新增整任务硬依赖，原状态与AC保留。
+2026-11-03 赛后调整：m-5 → M7（产品体验与核心特色）；保留状态和未验 AC；旧截止日期 '2026-10-28' 已移除，不设新期限。
+
+2026-11-07 看板核对（develop 2c85bc61）：实现类交付已按历史记录保留，剩余 AC 待同候选官方/设备验证；当前无在途 PR，状态由 In Progress 归 To Do（待验）。
+
+2026-11-14第二轮状态纠正：已核对本任务原实施计划、技术附件或已有PR/修复记录；工作已经开展，未勾AC不等于未开始。 状态表示整个任务的完成进展，不表示当前有执行者持续占用；保留原未验AC、负责人、依赖及历史证据。更正过去把已开展待验事项退回To Do的处理。
 <!-- SECTION:NOTES:END -->

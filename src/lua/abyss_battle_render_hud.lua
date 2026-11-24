@@ -1,5 +1,6 @@
 -- Read state, issue Run commands. No damage/energy/outcome rules live in this view.
 local Combat = require("abyss_combat")
+local RunHud=require('abyss_run_hud')
 local RewardLayout=require('abyss_battle_reward_layout')
 local Run = require("abyss_run")
 local Theme = require("abyss_theme")
@@ -24,9 +25,27 @@ local function cardRewardCaption(frame)
     if require('abyss_relic_hooks').owns(run,'singing_bowl')then label=label..' / 生命上限+2'end
     return label
 end
+-- STS1 retains the complete empty orb; only the palette and active glow change.
+local energyChromeStates=setmetatable({},{__mode='k'})
+local function renderEnergyChrome(icon,charged,tint)
+    if Theme.presentationProfile~='official-assets-first' then return end
+    charged=charged==true
+    if energyChromeStates[icon]==charged then return end
+    local chrome=icon:GetChild('v25Chrome')
+    chrome:SetVisible(true)
+    local palette=Theme.officialAssets.energyOrb[charged and 'charged' or 'empty']
+    for name,tone in pairs(palette)do tint(chrome:GetChild(name),tone)end
+    energyChromeStates[icon]=charged
+end
 -- Explicit ports preserve the approved implementation without a shared constructor closure.
 function M.install(owner, _ownership, host, dependencies)
     local R = L.rewardPick
+    local rewardSizeOwner = {}
+    local mobile = host.platform.mobileRunHud
+    local mobileRewards = RewardLayout.mobileLayouts(mobile)
+    local showBanner, updateBanner = RewardLayout.banner(dependencies,mobile)
+    host.updateRewardBanner = updateBanner
+    local fullField = false
     local function renderStartControls(frame)
         local run = frame.run
         dependencies.show("start", not owner.busy and not host.options.embedded and (not run or run.phase == "defeat"))
@@ -47,7 +66,7 @@ function M.install(owner, _ownership, host, dependencies)
             frame.manual and L.battleRewards.continue[2] or -S.xxl * 3)
     end
     local function renderRewardRows(frame)
-        RewardLayout.render(frame,dependencies.child)
+        RewardLayout.render(frame,dependencies.child,rewardSizeOwner,mobileRewards)
     end
     local function renderRelicRewards(frame)
         local run=frame.run
@@ -87,24 +106,40 @@ function M.install(owner, _ownership, host, dependencies)
                 and "药水槽已满；点顶部药水入口丢弃旧药水后，再点击奖励领取。" or "")
     end
     local function renderRewardStage(frame)
+        showBanner(frame, owner.active)
         dependencies.show("rewardStage", frame.picking)
         dependencies.show("rewardList", frame.listing)
         dependencies.show("notice", not frame.reward)
         if frame.listing then
-            dependencies.child("rewardList"):GetChild("subtitle").text = owner.rewardNotice ~= "" and owner.rewardNotice
+            local list = dependencies.child("rewardList")
+            local result = frame.run.lastResult
+            list:GetChild("title").text = result and result.allEnemiesEscaped and "敌人已逃跑" or "战斗胜利"
+            list:GetChild("subtitle").text = owner.rewardNotice ~= "" and owner.rewardNotice
                 or (frame.rewardRows == 0 and "奖励已领取" or "点击条目领取奖励")
         end
     end
     local function fieldCardSelected(frame)
-        if not frame.active or owner.gesture then return false end
+        if not frame.active or not owner.selected or owner.gesture or owner.carry and owner.carry.aiming then return false end
         for _, instance in ipairs(frame.battle.hand) do
-            if instance.uid == owner.selected and not needsTarget(frame.battle, instance) then return true end
+            if instance.uid == owner.selected then return true, needsTarget(frame.battle, instance) end
         end
         return false
     end
     local function renderPlayArea(frame)
-        dependencies.show("playArea", fieldCardSelected(frame) or frame.active and owner.potionAim ~= nil)
-        dependencies.child("playArea"):GetChild("label").text = owner.potionAim and "点击空白处取消药水瞄准" or ""
+        local selected, targeted = fieldCardSelected(frame)
+        local area = dependencies.child("playArea")
+        local wide = targeted == true
+        if wide ~= fullField then
+            -- Empty background cancels a tapped attack. Untargeted cards and
+            -- potions retain their ordinary, smaller confirmation area.
+            local hit, bounds = area:GetChild("hit"), L.cardDrag.playArea
+            local width, height = table.unpack(Theme.canvas.base)
+            hit:SetSizeDelta(wide and width or bounds[3], wide and height or bounds[4])
+            hit:SetAnchoredPosition(wide and -bounds[1] or 0, wide and -bounds[2] or 0)
+            fullField = wide
+        end
+        dependencies.show("playArea", selected or frame.active and owner.potionAim ~= nil)
+        area:GetChild("label").text = owner.potionAim and "点击空白处取消药水瞄准" or ""
     end
     local function renderHudVisibility(frame)
         for _, name in ipairs({"energyRing", "energyDisc", "energyIcon", "energy", "drawIcon", "drawBadgeRing", "drawBadge",
@@ -113,21 +148,15 @@ function M.install(owner, _ownership, host, dependencies)
         end
         dependencies.show("result", not frame.fighting and not frame.reward)
         dependencies.show("resultPlate", not frame.fighting and not frame.reward)
-        dependencies.show("hero", frame.fighting and not owner.feedback.deaths.player)
-    end
-    local function playerHealthText(frame)
-        local player, run = frame.player, frame.run
-        return number(player and player.hp or run and run.hp or owner.data.rules.player.maxHp)
-            .. "/" .. number(run and run.maxHp or owner.data.rules.player.maxHp)
+        dependencies.show("hero", (frame.fighting or frame.reward) and not owner.feedback.deaths.player)
     end
     local function renderPlayerTotals(frame)
         frame.player = frame.battle and frame.battle.player
-        dependencies.label("player", playerHealthText(frame))
-        local player, run = frame.player, frame.run
-        -- Render the current rule owner directly: a render-only counter cannot
-        -- finish during idle frames and must not leak a balance across runs.
-        local gold = player and player.gold or run and run.gold or 0
-        dependencies.label("piles", number(gold))
+        -- Explicit playback frames retain their own snapshot. At rest both
+        -- HUD and detail read the same live combat or run state.
+        local hp,gold=RunHud.resourceText(frame.run,frame.player,owner.data.rules.player.maxHp)
+        dependencies.label("player",hp)
+        dependencies.label("piles",gold)
         dependencies.ink(dependencies.child("piles"), C.topPanelGold)
     end
     local function stanceHeading(frame)
@@ -161,11 +190,16 @@ function M.install(owner, _ownership, host, dependencies)
     end
     local function renderSceneHeading(frame)
         local flow = frame.run and frame.run.nodeFlow
+        local suffix=stanceHeading(frame)..orbHeading(frame)..discardHeading(frame)..originalHeading(frame)
+        if Theme.presentationProfile=='official-assets-first' then
+            dependencies.label("title",number(flow and flow.floor or frame.run and frame.run.floor or 0))
+            dependencies.label("floor",(suffix:gsub("^ · ","")))
+            return
+        end
         local kind = flow and ({elite = "精英战斗", boss = "首领战斗"})[flow.type] or "战斗"
-        -- Keep the floor identifiable without a naked number over the first potion slot.
         dependencies.label("floor", "")
         local floor=flow and flow.floor and " · 第"..tostring(flow.floor).."层" or ""
-        dependencies.label("title", kind .. floor .. stanceHeading(frame) .. orbHeading(frame) .. discardHeading(frame) .. originalHeading(frame))
+        dependencies.label("title",kind..floor..suffix)
     end
     local function renderEnergy(frame)
         local battle = frame.battle
@@ -182,6 +216,7 @@ function M.install(owner, _ownership, host, dependencies)
         icon:GetChild("valueShadow").text = value
         dependencies.tint(icon:GetChild("face"), charged and L.energy.faceColour or C.energyEmpty)
         icon:GetChild("light"):SetVisible(charged == true)
+        renderEnergyChrome(icon,charged,dependencies.tint)
         dependencies.tint(icon:GetChild("core"), charged and L.energy.elementColour or C.energyEmpty)
         dependencies.ink(dependencies.child("energy"), L.energy.numberColour)
     end
@@ -215,7 +250,7 @@ function M.install(owner, _ownership, host, dependencies)
     return {
         renderStartControls=renderStartControls, rewardNavigation=rewardNavigation, renderRewardRows=renderRewardRows, renderRelicRewards=renderRelicRewards, renderRewardButtons=renderRewardButtons,
         rewardPotionDefinition=rewardPotionDefinition, rewardPotionCaption=rewardPotionCaption, renderPotionReward=renderPotionReward, renderRewardStage=renderRewardStage, fieldCardSelected=fieldCardSelected,
-        renderPlayArea=renderPlayArea, renderHudVisibility=renderHudVisibility, playerHealthText=playerHealthText, renderPlayerTotals=renderPlayerTotals, stanceHeading=stanceHeading,
+        renderPlayArea=renderPlayArea, renderHudVisibility=renderHudVisibility, renderPlayerTotals=renderPlayerTotals, stanceHeading=stanceHeading,
         orbHeading=orbHeading, discardHeading=discardHeading, originalHeading=originalHeading, renderSceneHeading=renderSceneHeading, renderEnergy=renderEnergy,
         renderPilesAndTurn=renderPilesAndTurn, renderResult=renderResult
     }

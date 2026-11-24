@@ -27,7 +27,7 @@ local function same(a,b,seen)
  for k,v in pairs(a)do same(v,b[k],seen)end;for k in pairs(b)do assert(a[k]~=nil)end
 end
 local r=Run.new(Data,'42');assert(Run.obtainRelic(r,'FossilizedHelix'));assert(Run.obtainRelic(r,'Self Forming Clay'))
-assert(Run.startCombat(r,'cultist_solo'))
+assert(Run.startCombat(r,'raven_adept_solo'))
 local root=control({name='root',size={1280,720},children=Layout})
 local panel=root:GetChild('stage'):GetChild('battlePanel')
 local ui=UI.new(panel,r.data,require('abyss_presentation'),'click',F.withMonsterActors({imageSource='static',color=function(a,b,c,d)return {r=a,g=b,b=c,a=d}end}),{embedded=true})
@@ -70,13 +70,13 @@ require('abyss_card_actions').drain(C,s)
 assert(s.player.statuses.next_turn_block==3,'Self Forming Clay must actually generate next-turn Block')
 renderReadonly()
 local nextIcon=Theme.icon.status.next_turn_block
-assert((type(nextIcon)=='table'and nextIcon.id or nextIcon)==103066,'approved next-turn Block metadata is missing')
-status('next_turn_block',3,103066)
+assert((type(nextIcon)=='table'and nextIcon.id or nextIcon)==105215,'approved next-turn Block metadata is missing')
+status('next_turn_block',3,105215)
 assert(C.endTurn(s));assert(not s.player.statuses.next_turn_block and s.player.block>=3)
 renderReadonly()
 for _,enemy in ipairs(s.enemies)do enemy.hp=0 end
 assert(Run.finishCombat(r));assert(Run.claimCardReward(r,0));dofile('tests/lua/support/finish_combat_rewards.lua')(r)
-assert(Run.startCombat(r,'cultist_solo'));assert(r.combat~=s and r.combat.player.statuses.buffer==1)
+assert(Run.startCombat(r,'raven_adept_solo'));assert(r.combat~=s and r.combat.player.statuses.buffer==1)
 renderReadonly();status('buffer',1,102036);renderReadonly();assert(r.combat.player.statuses.buffer==1)
 assert(calls>0)
 print('RELIC_NATIVE_STATUS_ICONS_PASS strict images, real Helix/Clay lifecycle, numbered chips/tooltips, readonly render')
@@ -97,3 +97,15 @@ for _=1,1000 do if not feedback.busy then break end;feedback:update(0.1)end
 assert(not feedback.busy)
 same(r,unchanged);renderReadonly()
 print('RELIC_NATIVE_STATUS_FEEDBACK_PASS real ApplyPower event and native playback, generated numeric status IDs')
+
+-- Formal colorless powers carry old entry.icon aliases. Their own identity
+-- must win in the hero row, detail popup and real read-only view pipeline.
+for _,id in ipairs({'shackled','panache','no_block','intangible','magnetism','mayhem','sadistic_nature'})do
+ C.addStatus(r.combat.player,id,1)
+ renderReadonly();status(id,1,Theme.icon.status[id])
+end
+print('COLORLESS_DISTINCT_STATUS_PASS')
+
+for _=1,4 do require('abyss_colorless_cards').apply(C,r.combat,{effect={kind='bomb',value=40}})end
+renderReadonly();status('colorless_bomb_4',3,Theme.icon.status.colorless_bomb)
+print('BOMB_FAMILY_DISTINCT_STATUS_PASS')

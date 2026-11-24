@@ -1,9 +1,10 @@
--- Shop merchant portrait and RPG dialogue box. Presentation only: every line is the
+-- Merchant feedback and legacy dialogue. Presentation only: every line is the
 -- approved Lore v2 merchant copy, said in reaction to a transaction the node UI has
 -- already completed or refused. It never blocks, delays or replaces shop input.
 local Theme = require("abyss_theme")
 local Narrative = require("abyss_narrative")
 local Prologue = require("abyss_prologue")
+local Pages = require("abyss_merchant_pages")
 local M = {}
 local L, C = Theme.layout.merchant, Theme.color
 local copy = Narrative.merchant
@@ -13,13 +14,15 @@ local lines = { encounter = copy.encounter, greet = copy.greet, buy = copy.purch
 local cues = { buy = "merchant_buy", poor = "merchant_deny" }
 
 local function clamp(value) return math.max(0, math.min(1, value)) end
-local function pageEnd(current)return math.min(#current.chars,(current.page or 1)*L.pageCharacters)end
+local function pageEnd(current)return current.ends[current.page] end
 
 -- options.color, options.sound. box is the merchant container from merchantControl().
 function M.new(box, options)
     options = options or {}
-    local merchant = { visible = false, queue = {}, met = setmetatable({}, { __mode = "k" }) }
-    local portrait, line = box:GetChild("portrait"), box:GetChild("line")
+    local merchant = { compact = options.compact, visible = false, queue = {}, met = setmetatable({}, { __mode = "k" }) }
+    local portrait = not options.compact and box:GetChild("portrait")
+    local line = box:GetChild("line")
+    local bubble = L.bubble and box:GetChild("bubble")
     local function colour(c, alpha)
         return options.color(c.r, c.g, c.b, math.floor((c.a or 255) * clamp(alpha or 1) + 0.5))
     end
@@ -29,7 +32,8 @@ function M.new(box, options)
     local function begin(kind)
         local narration = kind == "encounter"
         local text = narration and lines[kind] or "「" .. lines[kind] .. "」"
-        merchant.current = { kind = kind, narration = narration, chars = Prologue.chars(text), shown = 0, hold = 0, page=1 }
+        local chars = Prologue.chars(text)
+        merchant.current = { kind = kind, narration = narration, chars = chars, ends = Pages.ends(chars, L.pageCharacters), shown = 0, hold = 0, page=1 }
         merchant.idle = 0
         merchant.nod, merchant.shake = nil, nil
         if cues[kind] and options.sound then pcall(options.sound, cues[kind]) end
@@ -37,6 +41,7 @@ function M.new(box, options)
     end
     -- First visit in a run opens with the scene narration; later shops start at the greeting.
     function merchant:enter(run)
+        if self.compact then self.current=nil;self.queue={};line.text="";if bubble then bubble:SetVisible(false) end;return end
         local first = not self.met[run]
         self.met[run], self.idleUsed = true, false
         self.queue = first and { "greet" } or {}
@@ -45,6 +50,14 @@ function M.new(box, options)
     end
     -- A reaction interrupts whatever is being said so repeated buying always gets instant feedback.
     function merchant:react(kind)
+        if self.compact then
+            local short={buy='谢啦！',poor='金币不够。',leave='再会。'}
+            if not short[kind] then return false end
+            self.current={kind=kind,hold=0,shown=0};line.text=short[kind]
+            if bubble then bubble:SetVisible(true) end;line:SetVisible(true)
+            if cues[kind] and options.sound then pcall(options.sound,cues[kind]) end
+            return true
+        end
         if not lines[kind] then return false end
         self.queue = {}
         begin(kind)
@@ -54,33 +67,40 @@ function M.new(box, options)
     function merchant:tap()
         local current = self.current
         if not self.visible or not current then return false end
-        if current.shown < pageEnd(current) then current.shown = pageEnd(current)
+        if current.dismissed then current.page, current.shown, current.hold, current.dismissed = 1, 0, 0, false
+        elseif current.shown < pageEnd(current) then current.shown = pageEnd(current)
         elseif pageEnd(current)<#current.chars then current.page=current.page+1;current.hold=0
         elseif #self.queue > 0 then begin(table.remove(self.queue, 1))
+        elseif bubble then current.dismissed = true
         else return false end
         self:pose()
         return true
     end
     function merchant:setVisible(value)
-        self.visible = value == true
-        box:SetVisible(self.visible)
-        if self.visible then self:pose() end
+        value = value == true
+        if self.visible == value then return end
+        self.visible = value
+        box:SetVisible(value)
+        if value and not self.compact then self:pose() end
     end
 
-    function merchant:pose()
-        local current = self.current
-        if not self.visible or not current then return end
+    local function paintSpeech(current)
         local count = math.min(pageEnd(current), math.floor(current.shown))
-        line.text = table.concat(current.chars, "", (current.page-1)*L.pageCharacters+1, count)
-        ink(line, current.narration and C.textDim or C.text)
-        box:GetChild("name"):SetVisible(not current.narration)
-        box:GetChild("namePlate"):SetVisible(not current.narration)
-        local more = count >= pageEnd(current) and (pageEnd(current)<#current.chars or #self.queue > 0)
+        line.text = table.concat(current.chars, "", (current.ends[current.page-1] or 0)+1, count)
+        local speaking = not current.dismissed
+        if bubble then bubble:SetVisible(speaking); line:SetVisible(speaking) end
+        ink(line, bubble and L.bubble.ink or (current.narration and C.textDim or C.text))
+        box:GetChild("name"):SetVisible(not bubble and not current.narration)
+        box:GetChild("namePlate"):SetVisible(not bubble and not current.narration)
+        local more = speaking and count >= pageEnd(current) and (pageEnd(current)<#current.chars or #merchant.queue > 0)
         local marker = box:GetChild("next")
         marker:SetVisible(more)
-        if more then
-            marker:SetAnchoredPosition(L.next[1] - L.frame[1], L.next[2] - L.frame[2] + 3 * math.sin((self.clock or 0) * 6))
-        end
+        return marker,more
+    end
+    function merchant:pose()
+        local current = self.current
+        if self.compact or not self.visible or not current then return end
+        local marker,more=paintSpeech(current)
         -- Nod on a sale, a short head shake when the purse is short; both settle back to rest.
         -- Theme frames are node-panel units; the portrait moves inside the merchant frame.
         local x, y = L.portrait[1] - L.frame[1], L.portrait[2] - L.frame[2]
@@ -90,30 +110,57 @@ function M.new(box, options)
             x = x + L.shakeAmplitude * math.sin(p * math.pi * 4) * (1 - p)
         end
         portrait:SetAnchoredPosition(x, y)
+        local dx, dy = x - (L.portrait[1] - L.frame[1]), y - (L.portrait[2] - L.frame[2])
+        if bubble then
+            bubble:SetAnchoredPosition(L.box[1] - L.frame[1] + dx, L.box[2] - L.frame[2] + dy)
+            line:SetAnchoredPosition(L.line[1] - L.frame[1] + dx, L.line[2] - L.frame[2] + dy)
+        end
+        if more then
+            marker:SetAnchoredPosition(L.next[1] - L.frame[1] + dx, L.next[2] - L.frame[2] + dy + 3 * math.sin((self.clock or 0) * 6))
+        end
         local flicker = 0.4 + 0.08 * math.sin((self.clock or 0) * 7) + 0.05 * math.sin((self.clock or 0) * 13)
         tint(portrait:GetChild("lanternGlow"), C.merchant.lantern, flicker)
     end
 
-    function merchant:update(dt)
-        if not self.visible or not self.current then return end
+    local function advanceSpeech(current,dt)
+        if not current.dismissed then
+            if current.shown < pageEnd(current) then
+                current.shown = math.min(pageEnd(current), current.shown + dt * L.typeRate)
+            else
+                current.hold = current.hold + dt
+                if current.hold>=L.hold and pageEnd(current)<#current.chars then current.page=current.page+1;current.hold=0
+                elseif #merchant.queue > 0 and current.hold >= L.hold then begin(table.remove(merchant.queue, 1))
+                elseif bubble and current.hold >= L.hold then current.dismissed = true end
+            end
+        end
+    end
+    local function advanceCompact(current,dt)
+        if current.dismissed then return end
+        current.hold=current.hold+math.max(0,dt)
+        if current.hold>=1.5 then
+            current.dismissed=true
+            if bubble then bubble:SetVisible(false) end
+            line:SetVisible(false)
+        end
+    end
+    local function advanceLegacy(self,dt)
         self.clock = (self.clock or 0) + dt
         local current = self.current
-        if current.shown < pageEnd(current) then
-            current.shown = math.min(pageEnd(current), current.shown + dt * L.typeRate)
-        else
-            current.hold = current.hold + dt
-            if current.hold>=L.hold and pageEnd(current)<#current.chars then current.page=current.page+1;current.hold=0
-            elseif #self.queue > 0 and current.hold >= L.hold then begin(table.remove(self.queue, 1)) end
-        end
+        advanceSpeech(current,dt)
         -- One unprompted remark if the player lingers; never repeated, never a new button.
         self.idle = (self.idle or 0) + dt
-        if not self.idleUsed and #self.queue == 0 and self.idle >= L.idle and current.kind ~= "leave" then
+        if not self.idleUsed and #self.queue == 0 and self.idle >= L.idle and current.kind ~= "leave"
+            and (not bubble or current.dismissed) then
             self.idleUsed = true
             begin("idle")
         end
         if self.nod then self.nod = self.nod + dt; if self.nod >= L.nod then self.nod = nil end end
         if self.shake then self.shake = self.shake + dt; if self.shake >= L.shake then self.shake = nil end end
         self:pose()
+    end
+    function merchant:update(dt)
+        if not self.visible or not self.current then return end
+        if self.compact then advanceCompact(self.current,dt) else advanceLegacy(self,dt) end
     end
     box:SetVisible(false)
     return merchant

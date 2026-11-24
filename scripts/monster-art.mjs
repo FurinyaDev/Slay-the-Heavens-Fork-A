@@ -4,6 +4,38 @@ import {join} from 'node:path';
 import {enemyUnitTemplate,enemyPowerTemplate} from './ui-layout.mjs';
 import {createHash} from 'node:crypto';
 import {nativeArtPool,validateNativeCardArt} from './card-art-samples.mjs';
+import {toLua} from './build-lua-data.mjs';
+
+const compactSlotKeys=['anchorMax','anchorMin','colour','image','imageType','pivot','position','rotation','scale','size'];
+function compactMonsterSlot(slot){
+  const same=(value,expected)=>JSON.stringify(value)===JSON.stringify(expected);
+  const vector=(value,count)=>Array.isArray(value)&&value.length===count&&value.every(Number.isFinite);
+  if(!same(Object.keys(slot).sort(),compactSlotKeys)||!['anchorMax','anchorMin','pivot'].every(key=>same(slot[key],[.5,.5]))
+    ||!same(slot.scale,[1,1])||![100001,100002,100003].includes(slot.image)||!['basic','stretch'].includes(slot.imageType)
+    ||!vector(slot.position,2)||!vector(slot.size,2)||!vector(slot.rotation,3)||!vector(slot.colour,4))throw Error('Unsupported compact monster slot');
+  return [slot.image,slot.imageType==='basic'?0:1,...slot.position,...slot.size,...slot.rotation,...slot.colour].join(',');
+}
+export function monsterArtPayloadSource(art){
+  const header='-- Generated from the bounded native monster registry.\n';
+  if(art?.status!=='refined-release')return `${header}return ${toLua(art??{})}\n`;
+  const packed={...art,assets:Object.fromEntries(Object.entries(art.assets).map(([id,asset])=>
+    [id,{...asset,slots:asset.slots.map(compactMonsterSlot).join(';')}]))};
+  // Retain every numeric spelling and restore independent mutable arrays once
+  // at module load, before the existing renderer receives the original schema.
+  return `${header}local art=${toLua(packed)}
+for _,asset in pairs(art.assets) do
+ local slots={}
+ for row in string.gmatch(asset.slots,"[^;]+") do
+  local v={}
+  for number in string.gmatch(row,"[^,]+") do v[#v+1]=assert(tonumber(number)) end
+  slots[#slots+1]={image=v[1],imageType=v[2]==0 and "basic" or "stretch",
+   position={v[3],v[4]},size={v[5],v[6]},rotation={v[7],v[8],v[9]},colour={v[10],v[11],v[12],v[13]},
+   anchorMin={0.5,0.5},anchorMax={0.5,0.5},pivot={0.5,0.5},scale={1,1}}
+ end
+ asset.slots=slots
+end
+return art\n`;
+}
 export const monsterSourceInputs=Object.freeze(['art/monsters/acid_slime_m/native-art-r02/native-art.lua','art/monsters/acid_slime_m/native-art-r02/native-art.json']);
 export function prepareMonsterArt(input) {
   const registry=input??JSON.parse(readFileSync('data/presentation/native-monster-art.json','utf8'));
@@ -74,6 +106,44 @@ export function monsterActorTemplate(art) {
   }
   return actor;
 }
+// Bounded physical capacities for the refined profile. Legacy fixtures retain
+// monsterActorTemplate() and their historical shared-pool contract.
+export const monsterActorTierCapacities=Object.freeze([41,96,115]);
+export const monsterActorTierNames=Object.freeze(monsterActorTierCapacities.map(n=>monsterActorTemplateName+n));
+export function refinedMonsterTierNames(receipt) {
+  const tiers=receipt?.monsterActors?.tiers;
+  if(!tiers||Object.keys(tiers).length!==monsterActorTierNames.length||
+    monsterActorTierNames.some(name=>!Object.hasOwn(tiers,name)))throw Error('Invalid refined monster tier inventory');
+  return monsterActorTierNames;
+}
+export function monsterActorTiers(art) {
+  const templates=[monsterActorTemplate(null)];
+  if(!art)return {templates,templateByDefinition:{},artData:null};
+  const occupied=new Set();
+  const assets=Object.fromEntries(Object.entries(art.assets).map(([id,asset])=>{
+    const count=asset.slots?.length;
+    const capacity=monsterActorTierCapacities.find(n=>Number.isSafeInteger(count)&&count>0&&count<=n);
+    if(!capacity)throw Error('Invalid refined monster drawing capacity: '+id);
+    return [id,{...asset,capacity}];
+  }));
+  const templateByDefinition=Object.fromEntries(Object.entries(art.bindings).map(([definition,id])=>{
+    if(!Object.hasOwn(assets,id))throw Error('Invalid refined monster template binding: '+definition);
+    const capacity=assets[id].capacity;
+    occupied.add(capacity);
+    return [definition,monsterActorTemplateName+capacity];
+  }));
+  const tiers=monsterActorTierCapacities.filter(n=>occupied.has(n));
+  for(const capacity of tiers) {
+    const template=monsterActorTemplate({...art,poolCapacity:capacity});
+    template.name=monsterActorTemplateName+capacity;
+    templates.push(template);
+  }
+  // CardDisplay iterates metadata.capacity to clear each physical shape. Never
+  // serialize the shared maximum into a smaller tier's selected asset.
+  const artData={...art,assets,poolCapacity:tiers.at(-1)??0};
+  if(art.asset)artData.asset=assets[art.asset.enemyId];
+  return {templates,templateByDefinition,artData};
+}
 export function attachMonsterArt(tree,art) {
   let found=0;
   function visit(node) {
@@ -90,14 +160,22 @@ export function attachMonsterArt(tree,art) {
   if(found!==1)throw Error('Missing or ambiguous monster actor layer');
   if(art)art.hostOrigin=[0,0];
 }
-export function writeMonsterActorBinding(directory,{templateIndex=0,containerTemplateIndex=0,powerTemplateIndex=0,enabled=false}={}) {
+export function writeMonsterActorBinding(directory,{templateIndex=0,containerTemplateIndex=0,powerTemplateIndex=0,enabled=false,templateIndexByDefinition}={}) {
   for(const index of [templateIndex,containerTemplateIndex,powerTemplateIndex])if(!Number.isSafeInteger(index)||index<0)throw Error('Invalid monster actor template index');
   if(enabled&&(!templateIndex||!containerTemplateIndex||!powerTemplateIndex||new Set([templateIndex,containerTemplateIndex,powerTemplateIndex]).size!==3))throw Error('Monster actor binding requires distinct positive template indices');
-  writeFileSync(join(directory,monsterActorBindingModule+'.lua'),`-- Candidate-local bindings; zero is an unbound offline preview, not a playable candidate.\nreturn {templateIndex=${templateIndex},containerTemplateIndex=${containerTemplateIndex},powerTemplateIndex=${powerTemplateIndex},enabled=${enabled?'true':'false'}}\n`);
+  let tierBindings='';
+  if(templateIndexByDefinition!==undefined){
+    if(!enabled||!templateIndexByDefinition||Array.isArray(templateIndexByDefinition)||typeof templateIndexByDefinition!=='object')throw Error('Invalid refined actor binding');
+    const entries=Object.entries(templateIndexByDefinition);
+    if(entries.length!==42||entries.some(([key,index])=>!/^[a-z][a-z0-9_]+$/.test(key)||!Number.isSafeInteger(index)||index<=0||
+      [templateIndex,containerTemplateIndex,powerTemplateIndex].includes(index)))throw Error('Invalid refined actor binding entry');
+    tierBindings=',templateIndexByDefinition={'+entries.map(([key,index])=>`[${JSON.stringify(key)}]=${index}`).join(',')+'}';
+  }
+  writeFileSync(join(directory,monsterActorBindingModule+'.lua'),`-- Candidate-local bindings; zero is an unbound offline preview, not a playable candidate.\nreturn {templateIndex=${templateIndex},containerTemplateIndex=${containerTemplateIndex},powerTemplateIndex=${powerTemplateIndex},enabled=${enabled?'true':'false'}${tierBindings}}\n`);
 }
-export function bindMonsterActorTemplates(directory,{actor,group,power}) {
+export function bindMonsterActorTemplates(directory,{actor,group,power,templateIndexByDefinition}) {
   for(const result of [actor,group,power])if(!Number.isSafeInteger(result?.templateIndex)||result.templateIndex<=0)throw Error('Missing actual monster actor template index');
-  writeMonsterActorBinding(directory,{templateIndex:actor.templateIndex,containerTemplateIndex:group.templateIndex,powerTemplateIndex:power.templateIndex,enabled:true});
+  writeMonsterActorBinding(directory,{templateIndex:actor.templateIndex,containerTemplateIndex:group.templateIndex,powerTemplateIndex:power.templateIndex,enabled:true,templateIndexByDefinition});
 }
 export function monsterActorInventory(template) {
   const count=node=>1+(node.children??[]).reduce((total,child)=>total+count(child),0);

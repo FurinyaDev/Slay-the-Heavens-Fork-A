@@ -6,3 +6,21 @@ test('mobile drag release clears invalid selections and preserves desktop target
  assert.equal(result.status,0,result.stdout+result.stderr);
  assert.match(result.stdout,/MOBILE_CARD_RELEASE 7 passed; 0 failed/);
 });
+
+test('a sparse flick plays exactly once through native mouse and touch controls',()=>{
+ const result=runLua('tests/lua/support/sparse_card_flick.lua');
+ assert.equal(result.status,0,result.stdout+result.stderr);
+ assert.match(result.stdout,/^SPARSE_CARD_FLICK_PASS 12$/m);
+});
+
+test('a sparse flick rejects slow, lateral, cancelled and foreign releases',()=>{
+ const result=runLua('tests/lua/support/sparse_card_flick_safety.lua');
+ assert.equal(result.status,0,result.stdout+result.stderr);
+ assert.match(result.stdout,/^SPARSE_CARD_FLICK_SAFETY_PASS 8$/m);
+});
+
+test('cancelling a selected card clears its previous rejection notice',()=>{
+ const result=runLua('tests/lua/support/card_cancel_notice.lua');
+ assert.equal(result.status,0,result.stdout+result.stderr);
+ assert.match(result.stdout,/CARD_CANCEL_NOTICE_PASS failure\/cancel\/repeat/);
+});

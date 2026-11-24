@@ -65,10 +65,10 @@ end
 Handlers.halt=Handlers.previousCardType
 Handlers.drawToHandSize=Handlers.previousCardType
 
-function Handlers.calculatedGamble(c)
+function Handlers.calculatedExchange(c)
     local state=c.state
     local queue=c.queue
-    local actions=require("abyss_silent_discard_cards").gambleActions(state)
+    local actions=require("abyss_silent_discard_cards").exchangeActions(state)
     for i=#actions,1,-1 do queue.pushTop(state,actions[i]) end
     return true
 end
@@ -113,7 +113,7 @@ end
 function Handlers.discardEndHand(c)
     local M=c.combat
     local state=c.state
-    if require('abyss_boss_relics').retainsHand(state)then return true end
+    if require('abyss_relic_queries').boss.retainsHand(state)then return true end
     while #state.hand>0 do
         local instance=table.remove(state.hand)
         local card=M.cardDefinition(state,instance)

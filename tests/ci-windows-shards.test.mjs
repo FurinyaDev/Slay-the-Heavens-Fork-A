@@ -88,25 +88,55 @@ historicalTest('original required check aggregate rejects every non-success shar
   }
 });
 
-test('current Windows matrix consumes the shared thirteen-shard shape without changing protection or execution gates',()=>{
+test('current Windows matrix consumes the shared eighteen-shard shape without changing protection or execution gates',()=>{
   const rules=job('rules');
-  assert.deepEqual(qualityShardMatrices.windows,[1,2,3,4,5,6,7,8,9,10,11,12,13]);
+  assert.deepEqual(qualityShardMatrices.windows,[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18]);
   assert.ok(rules.includes("shard: ${{ fromJSON(inputs.runner_pool == 'local-special' && '[1]' || needs.impact.outputs.windows_shards) }}"));
-  assert.ok(rules.includes("if: ${{ needs.impact.outputs.mode == 'full' && !cancelled() && (inputs.runner_pool != 'local-special' || github.event_name == 'workflow_dispatch' && (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/master')) }}"));
+  assert.ok(rules.includes("if: ${{ !cancelled() && needs.impact.result == 'success' && needs.impact.outputs.mode == 'full' && (inputs.runner_pool != 'local-special' || github.event_name == 'workflow_dispatch' && (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/master')) }}"));
   assert.ok(rules.includes("runs-on: ${{ github.event_name == 'workflow_dispatch' && inputs.runner_pool == 'local-special' && (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/master') && fromJSON('[\"self-hosted\", \"Windows\", \"X64\", \"slay-the-abyss\"]') || 'windows-2025' }}"));
   assert.match(workflow,/^permissions:\n  contents: read$/m);
   assert.match(rules,/node-version: '24\.18\.0'/);
   assert.ok(rules.includes('Pillow==12.3.0'));
   assert.ok(rules.includes('npm run setup:lua-static'));
   assert.match(rules,/^      fail-fast: false$/m);
-  assert.ok(rules.includes("timeout-minutes: ${{ inputs.runner_pool == 'local-special' && 75 || 30 }}"));
+  assert.doesNotMatch(rules,/max-parallel:/);
+  assert.ok(rules.includes("timeout-minutes: ${{ inputs.runner_pool == 'local-special' && 75 || 45 }}"));
   for(const gate of ['check:network','verify:backlog','check:syntax','validate:data','build:theme','check:engineering'])
     assert.ok(rules.includes(`      - run: npm run ${gate}\n        if: matrix.shard == 1\n`),gate);
   for(const command of ['node scripts/ci-shards.mjs --prepare=','node scripts/ci-shards.mjs --shard='])
     assert.ok(rules.includes(command+'${{ matrix.shard }}/${{ strategy.job-total }}'));
   assert.ok(rules.includes("node scripts/test-lua.mjs --shard ${{ matrix.shard }}/${{ strategy.job-total }} --workers ${{ inputs.runner_pool == 'local-special' && 1 || 2 }}"));
-  assert.match(job('check'),/^    needs: \[impact, rules, fast\]\n    if: always\(\)$/m);
+  assert.match(job('check'),/^    needs: \[impact, rules, fast, presentation, engineering-posix\]\n    if: \$\{\{ !cancelled\(\) && \(github\.event_name != 'pull_request' \|\| github\.event\.pull_request\.draft == false\) \}\}$/m);
   assert.doesNotMatch(rules,/continue-on-error:|--test-name-pattern|--test-skip-pattern/);
+});
+
+test('current check releases cancelled runs and fails closed on every non-success selected result',()=>{
+  // #560 deliberately replaced always() only at the job gate. The historical
+  // always() contract above stays frozen; failure/skip still reaches this shell.
+  const check=job('check');
+  assert.match(check,/^    if: \$\{\{ !cancelled\(\) && \(github\.event_name != 'pull_request' \|\| github\.event\.pull_request\.draft == false\) \}\}$/m);
+  assert.match(check,/^          RULES_RESULT: \$\{\{ needs.rules.result \}\}$/m);
+  assert.doesNotMatch(check,/continue-on-error:|\|\| true/);
+  const command=check.match(/^      - name: Require every regression shard\n        env:\n          RULES_RESULT: [^\n]+\n        run: \|\n((?:          .*\n)+)/m)?.[1];
+  assert.ok(command,'execute the actual aggregate gate, not a substitute predicate');
+  const substitutions={'needs.impact.result':'PLAN','needs.impact.outputs.mode':'MODE','needs.fast.result':'FAST'};
+  const shellCommand=command.replace(/\$\{\{ ([^}]+) \}\}/g,(_,name)=>{assert.ok(Object.hasOwn(substitutions,name),name);return '$'+substitutions[name];});
+  const shell=process.platform==='win32'?join(process.env.ProgramFiles,'Git','bin','bash.exe'):'/bin/sh';
+  const statuses=[undefined,'','skipped','cancelled','failure','timed_out','success'];
+  const execute=values=>{
+    const env={...process.env};for(const name of ['PLAN','MODE','FAST','RULES_RESULT'])delete env[name];
+    for(const [name,value]of Object.entries(values))if(value!==undefined)env[name]=value;
+    const actual=spawnSync(shell,['-e','-c',shellCommand],{env,encoding:'utf8',windowsHide:true,timeout:30000});
+    assert.ifError(actual.error);return actual.status===0;
+  };
+  for(const mode of ['full','fast'])for(const result of statuses){
+    const selected=mode==='full'?'RULES_RESULT':'FAST',unselected=mode==='full'?'FAST':'RULES_RESULT';
+    assert.equal(execute({PLAN:'success',MODE:mode,[selected]:result,[unselected]:'success'}),result==='success',mode+'/'+String(result));
+    assert.equal(execute({PLAN:'success',MODE:mode,[selected]:'success',[unselected]:result}),true,'unselected '+mode+'/'+String(result));
+  }
+  for(const result of statuses)for(const mode of ['full','fast'])
+    assert.equal(execute({PLAN:result,MODE:mode,FAST:'success',RULES_RESULT:'success'}),result==='success','impact '+String(result));
+  for(const mode of [undefined,'','unknown'])assert.equal(execute({PLAN:'success',MODE:mode,FAST:'success',RULES_RESULT:'success'}),false,'unknown routing cannot pass');
 });
 
 test('native Node eight-shard selection executes every current JS file name exactly once', t => {

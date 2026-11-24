@@ -39,6 +39,21 @@ dofile('src/lua/abyss_ui.lua');OnStart();GameUI.new=originalNew
 assert(host and script.updating,'actual native public entry must start')
 local nativeRoot=canvas:GetChild('stage');nativeRoot.ui=host
 assert(F.start(host))
+local function openingReady()
+ -- Both publication gates must settle: the interstitial can finish before the
+ -- destination's native page scheduler. Only advance positive time under cover.
+ for _=1,80 do
+  local opening=host.prologue and host.prologue:covering()
+  local page=host.pageReveal and host.pageReveal:covered()
+  if not opening and not page then
+   assert(host.run and host.run.elapsedSeconds==0,'preparation must not count as playing time')
+   return
+  end
+  OnUpdate(opening and .05 or 0)
+ end
+ error('native opening/page publication never completed')
+end
+openingReady()
 -- Actual OnUpdate path remains internally compatible, but has no verified
 -- foreground/background clock guarantee and therefore must not claim accuracy.
 OnUpdate(60.5);OnUpdate(1.75)
@@ -47,7 +62,7 @@ assert(finish(host,nativeRoot,62.25)=='暂不可用','unverified native clock mu
 for _,value in ipairs({0,3074457345,184467440737.0955,math.huge,-1,0/0})do
  assert(finish(host,nativeRoot,value)=='暂不可用','native values must never leak into the timer display')
 end
-assert(F.start(host) and host.run.elapsedSeconds==0)
+assert(F.start(host));openingReady();assert(host.run.elapsedSeconds==0)
 OnUpdate(3600) -- background/resume-like interval, not a device timing claim
 host.run.phase='victory';host.run.nodeFlow={complete=true,result='boss_treasure_complete'};host:refresh()
 assert(F.statValue(nativeRoot,'time')=='暂不可用','victory shares safe fallback after background-like update')

@@ -3,6 +3,7 @@ local Narrative = require("abyss_narrative")
 local Act1Events = require('abyss_act1_events')
 local Act2Events = require('abyss_act2_events')
 local Act3Events = require('abyss_act3_events')
+local Art = require('abyss_lowcost_art')
 local number = require("abyss_numbers").integer
 local C = Theme.color
 local kinds = { camp = "营地", shop = "商店", event = "未知事件", treasure = "宝箱",ending_proceed='真结局' }
@@ -10,16 +11,16 @@ local kinds = { camp = "营地", shop = "商店", event = "未知事件", treasu
 local addedStaged={dead_adventurer=true,designer=true,face_trader=true,knowing_skull=true,nloth=true}
 local function stagedEvent(id)return addedStaged[id] or id=='match_game' or id=='neow' or id=='mysterious_sphere' or id=='mind_bloom' or Act2Events.ids[id]end
 local events = {
-    designer={name='设计师'},face_trader={name='换脸商'},knowing_skull={name='智者头骨'},nloth={name="N'loth"},
+    designer={name='设计师'},face_trader={name='换脸商'},knowing_skull={name='智者头骨'},nloth={name='恩洛斯'},
     dead_adventurer={name='冒险者遗骸'},colosseum={name='竞技场'},masked_bandits={name='蒙面强盗'},
-    cursed_tome={name='诅咒书本'},forgotten_altar={name='遗忘祭坛'},drug_dealer={name='增幅师'},vampires={name='吸血鬼'},
+    cursed_tome={name='诅咒书本'},forgotten_altar={name='遗忘石台'},augmenter={name='增幅师'},vampires={name='夜巡团'},
     neow={name='高塔恩赐'},
     duplicator={name='映光石龛'},
     match_game={name='留影牌局'},
     joust={name='决斗'},
     beggar={name='乞丐'},
     mausoleum={name='古墓'},
-    addict={name='瘾君子'},
+    traveling_merchant={name='行路商贩'},
     back_to_basics={name='古老文字'},
     the_library={name='图书馆'},
     tomb_red_mask={name='红面具领主之墓',body='面具守护着陵墓中的财宝。',leave='你离开了陵墓。'},
@@ -27,7 +28,7 @@ local events = {
     mind_bloom={name='心灵绽放',body='意识在高塔深处展开。',leave='你离开了这片意识。'},
     mysterious_sphere={name='神秘球体',body='密闭的球形容器中传来机关运转声。',leave='你离开了容器。'},
     winding_halls={name='迷途回廊',body='曲折通道等待着你的选择。',leave='你离开了通道。'},
-    moai_head={name='巨像之首',body='石像等待着你的献祭。',leave='你离开了巨像。'},
+    moai_head={name='巨像之首',body='石像上的符文隐约发亮。',leave='你离开了巨像。'},
     falling={name='坠落',body='落石正在崩塌。你必须在手中的卡牌之间作出取舍。',leave='你重新站稳，继续赶路。'},
     mushrooms={name='蘑菇',body='发光的蘑菇覆盖了通道。',leave='你离开了蘑菇群。'},golden_idol={name='鎏金神像',body='一件遗物摆在古老的石台上。',leave='你离开了石台。'},
     ghosts={name='幽灵'},
@@ -50,7 +51,7 @@ local events = {
         leave = "你婉拒了圣职者的服务，继续赶路。" },
     goop = {name="黏液金币",body="湿滑的泥潭中露出几枚金币。要取回它们，就得忍受黏液的侵蚀；绕道离开也会丢失部分盘缠。",leave="你收好剩下的盘缠，绕过泥潭。"},
     upgrade_shrine = {name="升级神龛",body="一道微光停在石龛上。你可以在此精进一式招数。",leave="你将这次机会留在身后。"},
-    golden_wing = {name="金翼雕像",body="残破的金翼守着山道。献出生命可以舍弃一式招数；足够强的攻击也能击碎外壳，取出金币。",leave="你绕过了雕像。"},
+    golden_wing = {name="金翼雕像",body="残破的金翼守着山道。承受伤害可以舍弃一式招数；足够强的攻击也能击碎外壳，取出金币。",leave="你绕过了雕像。"},
     shining_light = {name="闪耀之光",body="石隙间涌出耀眼的光。靠近它会灼伤身体，也会让尚未精进的招数获得提升。",leave="你避开了光芒。"},
     golden_shrine = {name="鎏金石龛",body="石龛中存着一份馈赠。你可以收下少量金币，也可以取走更多，但未散的执念会随你同行。",leave="你没有取走石龛中的金币。"},
 }
@@ -63,52 +64,149 @@ local M = {}
 -- STS NeowEvent staging (port): Neow stands right, InfiniteSpeechBubble carries name/body,
 -- LargeDialogOptionButtons stack on the left; the generic event plate/caption is not shown.
 local NEOW = layout.event.neow
+local eventArt = Theme.lowCostArt and Theme.lowCostArt.event
+local artOwners = setmetatable({}, {__mode='k'})
 local function place(control, rect)
     control:SetAnchoredPosition(rect[1], rect[2])
     if rect[3] then control:SetSizeDelta(rect[3], rect[4]) end
 end
-local function renderEventFigure(event, id)
+local function alignEventBody(body, neow, alignment)
+    if not alignment or not alignment.horizontal or not alignment.vertical then return end
+    body.horizontalAlignment = neow and alignment.horizontal.Middle or alignment.horizontal.Left
+    body.verticalAlignment = neow and alignment.vertical.Middle or alignment.vertical.Top
+end
+local function renderEventText(event,neow,alignment)
+    if not NEOW then return end
+    local body=event:GetChild('body')
+    event:GetChild('name'):SetVisible(not neow)
+    if not neow or not NEOW.stsChoice then
+        place(body,neow and NEOW.bubbleText or layout.event.body)
+    end
+    alignEventBody(body,neow,alignment)
+end
+
+local function renderEventFigure(event, id, alignment)
     local neow = id == 'neow' and NEOW ~= nil
     local figure, art = event:GetChild('neowFigure'), event:GetChild('art')
     if figure then figure:SetVisible(neow) end
-    if art then art:SetVisible(not neow) end
+    if art and not eventArt then art:SetVisible(not neow) end
     for _, name in ipairs({ 'plate', 'plateBorder', 'glow', 'caption' }) do
-        local c = event:GetChild(name); if c then c:SetVisible(not neow) end
+        local c = event:GetChild(name)
+        if c then c:SetVisible(not neow and (name ~= 'caption' or not layout.event.reference)) end
     end
     if neow then event:GetChild('caption').text = '七天神像' end
     local bubble = event:GetChild('bubble'); if bubble then bubble:SetVisible(neow) end
-    if not NEOW then return end
-    local name, body = event:GetChild('name'), event:GetChild('body')
-    name:SetVisible(not neow)
-    -- talk(): Neow's line lives in the InfiniteSpeechBubble, dark ink on the light bubble.
-    place(body, neow and NEOW.bubbleText or layout.event.body)
+    renderEventText(event,neow,alignment)
+end
+local function renderEventLayout(event,id,options)
+    local mobile=options.mobileRunHud
+    if mobile then event:SetAnchoredPosition(0,id=='neow' and 0 or mobile.roomY) end
+    renderEventFigure(event,id,options.textAlignments)
 end
 -- LargeDialogOptionButton.calculateY (ROOM): bottom-aligned stack, -82px per slot, x = 620.
-local function placeOptions(event, neow, count)
+local function inlineLines(text)
+    local lines, width = 1, 0
+    for _, code in utf8.codes(text) do
+        local advance = code < 128 and 9 or 18
+        if code == 10 then lines, width = lines + 1, 0
+        elseif width + advance > 650 then lines, width = lines + 1, advance
+        else width = width + advance end
+    end
+    return lines
+end
+local function compactFrames(rows)
+    local frames, bottom = {}, -275
+    for i = math.min(#rows, OPTIONS), 1, -1 do
+        local text = rows[i].title .. ' ' .. (rows[i].description or '')
+        local height = 44 + (inlineLines(text) - 1) * 22
+        frames[i] = {225, bottom + height / 2, 700, height}
+        bottom = bottom + height + 11
+    end
+    return frames
+end
+local function sizeOptionInput(box, w, h, neow, mobile)
+    for _, part in ipairs({ 'border', 'hit' }) do
+        local control = box:GetChild(part)
+        if control then control:SetSizeDelta(w, h) end
+    end
+    if neow and NEOW.stsChoice then
+        box:GetChild('hit'):SetSizeDelta(w, mobile and mobile.hit or math.max(h, NEOW.stsChoice.hitHeight))
+    end
+end
+
+local function neowFrame(mobile)
+    local n=NEOW.options
+    if not mobile then return n.bottom,n.spacing,n.size[2] end
+    local frame=mobile.neowOptions
+    return -Theme.canvas.base[2]/2+frame.bottomInset+mobile.hit/2,frame.spacing,frame.faceHeight
+end
+
+local function placeNeowDialog(event,count,mobile)
+    if not NEOW.stsChoice then return end
+    local bottom,spacing,height=neowFrame(mobile)
+    local x,preferred,w,h=table.unpack(NEOW.bubbleText)
+    if mobile then preferred=preferred+mobile.neowOptions.bubbleLift end
+    local bubble=event:GetChild('bubble')
+    local optionTop=bottom+(count-1)*spacing+height/2
+    -- Keep sparse dialogue near its next action while retaining the full
+    -- figure and an uncluttered lane for the four-choice stack.
+    local y=math.min(preferred,math.max(-56,optionTop+bubble.sizeDeltaY/2+56))
+    bubble:SetAnchoredPosition(x,y)
+    place(event:GetChild('body'),{x,y,w,h})
+end
+
+local function neowOption(box, index, count, mobile)
+    local n=NEOW.options
+    local bottom,spacing,height=neowFrame(mobile)
+    if mobile then
+        local frame=mobile.neowOptions
+        box:GetChild('stsNeowChrome'):SetLocalScale(1,height/n.size[2],1)
+        local caption=box:GetChild('stsNeowText')
+        caption:SetSizeDelta(n.title[3],height)
+        caption.fontSize=frame.fontSize
+    end
+    box:SetAnchoredPosition(n.x,bottom+(count-index)*spacing)
+    place(box:GetChild('title'),n.title)
+    place(box:GetChild('description'),n.description)
+    return n.size[1],height
+end
+
+local function placeOptions(event, neow, rows, mobile)
     local o = layout.event.options
+    local count = math.min(#rows, OPTIONS)
+    local frames = layout.event.reference and not neow and compactFrames(rows)
+    if neow then placeNeowDialog(event,count,mobile) end
     for i = 1, OPTIONS do
         local box = event:GetChild('option' .. i)
         if box then
             local w, h = o.size[1], o.size[2]
             if neow then
-                local n = NEOW.options
-                w, h = n.size[1], n.size[2]
-                box:SetAnchoredPosition(n.x, n.bottom + (count - i) * n.spacing)
-                place(box:GetChild('title'), n.title)
-                place(box:GetChild('description'), n.description)
+                w,h=neowOption(box,i,count,mobile)
+            elseif frames and frames[i] then
+                w, h = frames[i][3], frames[i][4]
+                place(box, frames[i]);place(box:GetChild('title'), {0, 0, 650, h - 8})
             elseif o.rows[i] then
                 box:SetAnchoredPosition(o.x, o.rows[i])
                 place(box:GetChild('title'), o.title)
                 place(box:GetChild('description'), o.description)
             end
             box:SetSizeDelta(w, h)
-            for _, part in ipairs({ 'border', 'hit' }) do
-                local c = box:GetChild(part); if c then c:SetSizeDelta(w, h) end
-            end
+            sizeOptionInput(box, w, h, neow, mobile)
             for _, part in ipairs({ 'normal', 'disabled', 'hover', 'pressed', 'selected' }) do
                 local c = box:GetChild(part); if c then c:SetSizeDelta(w - 4, h - 4) end
             end
-            box:GetChild('description'):SetVisible(true)
+            if layout.event.reference and not box:GetChild('roundedButton') then
+                place(box:GetChild('v25BaseMaterial'), {0, 0, w - 4, h - 4})
+                local chrome = box:GetChild('v25StateChrome')
+                chrome:SetSizeDelta(w, h)
+                place(chrome:GetChild('topStitch'), {0, h / 2 - 2, w - 8, 2})
+                place(chrome:GetChild('lowerRim'), {0, -h / 2 + 2, w - 8, 2})
+                place(chrome:GetChild('faceDepth'), {0, 0, w - 6, h - 6})
+                for _, name in ipairs({'v25Corner0_0','v25Corner0_1','v25Corner1_0','v25Corner1_1'}) do
+                    box:GetChild(name):SetSizeDelta(42, h / 2)
+                end
+            end
+            box:GetChild('description'):SetVisible(not frames)
         end
     end
 end
@@ -117,6 +215,132 @@ local function eventNotice(id, copy, result)
     if id == 'neow' then return '' end
     if (stagedEvent(id) or Act3Events.ids[id]) then return copy.name .. ' · 请选择上方选项' end
     return result and copy.name or (copy.name .. " · 选择一项，或直接离开")
+end
+
+function M.resetArt(event)
+    if not eventArt then return end
+    local owner = {}
+    artOwners[event] = owner
+    local icon = event:GetChild('art')
+    Art.hide(icon, false)
+    if artOwners[event] == owner then icon:SetVisible(false) end
+end
+
+local function renderEventArt(ctx, event, id)
+    local reference = layout.event.reference
+    if not reference then return end
+    if id == 'neow' then M.resetArt(event);return end
+    local icon = event:GetChild('art')
+    local illustrations=Theme.icon.eventArt or {}
+    local picture = illustrations[id] or illustrations.default or reference.icon
+    local owner
+    if eventArt then
+        owner = {picture=picture}
+        artOwners[event] = owner
+    end
+    -- Prepare the current event's fallback before pooled native writes can fail.
+    ctx.picture(icon, picture)
+    local active = artOwners[event]
+    if active ~= owner then
+        if active and active.picture and icon.visible ~= false then ctx.picture(icon, active.picture) end
+        return
+    end
+    ctx.tint(icon, reference.figureInk)
+    if eventArt and artOwners[event] == owner
+        and not Art.paint(icon, 'event', id, layout.event.art[3], ctx.options)
+        and artOwners[event] == owner then ctx.show(icon, true) end
+end
+
+local function optionDescription(ctx, selected)
+    local description = ctx.eventOptionText(selected)
+    return description
+end
+
+local function descriptionInk(enabled)
+    local reference = layout.event.reference
+    return reference and (enabled and reference.textInk or reference.disabledInk) or enabled and C.textDim or C.textMuted
+end
+
+local function inlineOption(row)
+    local reference = layout.event.reference
+    local text = row.title:gsub('［', '['):gsub('］', ']') .. ' ' .. (row.description or '')
+    if not row.enabled then return text end
+    local function paint(pattern, colour)
+        local hex = string.format('#%02X%02X%02X', colour.r, colour.g, colour.b)
+        text = text:gsub(pattern, function(value) return '<color=' .. hex .. '>' .. value .. '</color>' end)
+    end
+    paint('支付%s*[%d%.]+%s*金币', reference.costInk)
+    paint('失去%s*[%d%.]+%s*点生命', reference.costInk)
+    paint('回复%s*[%d%.]+%s*点生命', reference.rewardInk)
+    paint('获得%s*[%d%.]+%s*金币', reference.rewardInk)
+    paint('从牌组移除一张卡牌', reference.rewardInk)
+    return text
+end
+
+-- The separators below belong specifically to abyss_neow.description's
+-- current structured offer contract. Unknown formatting stays neutral and full.
+local function neowOfferParts(offer, description)
+    if offer.type == 'BOSS_RELIC' then return description:match('^(.-)，(.+)$') end
+    if offer.drawback ~= 'NONE' then return description:match('^(.-)；(.+)$') end
+    return '', description
+end
+
+local function coloured(text, colour)
+    return '<color=' .. string.format('#%02X%02X%02X', colour.r, colour.g, colour.b) .. '>' .. text .. '</color>'
+end
+
+local function neowInlineOption(row)
+    local token = NEOW.stsChoice
+    local description = (row.description or ''):gsub('。$', '')
+    if row.neowOffer then
+        if not row.enabled then return '[ ' .. description .. ' ]' end
+        local cost, reward = neowOfferParts(row.neowOffer, description)
+        if not reward then return '[ ' .. description .. ' ]' end
+        local penalty = cost ~= '' and coloured(cost, token.costInk) .. ' ' or ''
+        return '[ ' .. penalty .. coloured(reward, token.rewardInk) .. ' ]'
+    end
+    local title = row.title:gsub('［', ''):gsub('］', '')
+    if title == '继续' or title == '启程' or title == '跳过' then return '[ ' .. title .. ' ]' end
+    return '[ ' .. title .. ' ' .. description .. ' ]'
+end
+
+local function neowOffer(info, choice)
+    if info.id ~= 'neow' or not info.rewards then return nil end
+    local index = tonumber(choice:match('^reward_(%d+)$'))
+    return index and info.rewards[index] or nil
+end
+
+local function writeOption(ctx, box, row, id)
+    local line = box:GetChild('stsNeowText')
+    if line then
+        local active = id == 'neow'
+        line:SetVisible(active);box:GetChild('title'):SetVisible(not active)
+        if active then
+            line.text = neowInlineOption(row)
+            ctx.ink(line, row.enabled and NEOW.stsChoice.ink or NEOW.stsChoice.disabledInk)
+            box:GetChild('description'):SetVisible(false)
+            return
+        end
+    end
+    local compact = layout.event.reference and id ~= 'neow'
+    box:GetChild('title').text = compact and inlineOption(row) or row.title
+    box:GetChild('description').text = row.description
+    ctx.ink(box:GetChild('title'), compact and descriptionInk(row.enabled) or row.enabled and C.goldBright or C.textMuted)
+    ctx.ink(box:GetChild('description'), descriptionInk(row.enabled))
+end
+
+-- Every owner of the reused event controls restores the same layout and ink.
+-- Neow changes visibility, geometry and text controls, not only their content.
+function M.renderChoices(ctx,event,id,rows)
+    renderEventLayout(event,id,ctx.options)
+    if eventArt then renderEventArt(ctx, event, id) end
+    ctx.ink(event:GetChild('body'),id=='neow' and C.panelSunken or C.text)
+    if NEOW then placeOptions(event,id=='neow',rows,ctx.options.mobileRunHud) end
+    for i=1,OPTIONS do
+        local row,box=rows[i],event:GetChild('option'..i)
+        ctx.show(box,row)
+        if row then ctx.state(box,row.enabled);writeOption(ctx,box,row,id) end
+    end
 end
 
 -- Installs the events responsibility on one node UI instance.
@@ -132,7 +356,8 @@ function M.install(ctx)
                 or mode=='restricted-six' and "未知事件 · 受限事件池（6种）" or kinds.event
         end
         writeEventHeading()
-        renderEventFigure(event, id)
+        renderEventLayout(event,id,ctx.options)
+        renderEventArt(ctx, event, id)
         local body
         local function eventOutcomeBody()
             body=result and result.text or node.event and node.event.body or copy.body
@@ -170,7 +395,7 @@ function M.install(ctx)
                         for _,option in ipairs(info.options) do
                             local selected=option
                             rows[#rows+1]={title='［'..(selected.rewardCard and ctx.cardName(selected.cardId,selected.upgraded)or selected.title)..'］',
-                                description=ctx.eventOptionText(selected),enabled=selected.enabled,handler=function()
+                                description=optionDescription(ctx,selected),neowOffer=neowOffer(info,selected.choice),enabled=selected.enabled,handler=function()
                                     -- Repeated-search events retain the same command after
                                     -- rendering new odds. An old callback is still stale.
                                     if ctx.self.view~=view or ctx.self.renderRun~=ctx.self.run or ctx.self.renderMap~=ctx.self.map then return false,'stale_action' end
@@ -259,16 +484,13 @@ function M.install(ctx)
             end
         end
         buildEventRows()
-        if NEOW then placeOptions(event, id == 'neow', math.min(#rows, OPTIONS)) end
+        if NEOW then placeOptions(event, id == 'neow', rows, ctx.options.mobileRunHud) end
         for i = 1, OPTIONS do
             local row, box = rows[i], event:GetChild("option" .. i)
             ctx.show(box, row)
             if row then
                 ctx.state(box, row.enabled)
-                box:GetChild("title").text = row.title
-                box:GetChild("description").text = row.description
-                ctx.ink(box:GetChild("title"), row.enabled and C.goldBright or C.textMuted)
-                ctx.ink(box:GetChild("description"), row.enabled and C.textDim or C.textMuted)
+                writeOption(ctx, box, row, id)
                 ctx.action("eventView/option" .. i, row.enabled, row.handler, row.description)
             end
         end

@@ -1,4 +1,259 @@
 {
+  "menuPresentation": {
+    "minimal": true,
+    "fontSize": 28,
+    "labelX": 12,
+    "hoverSeconds": 0.16,
+    "leaveSeconds": 0.10,
+    "pressOffset": 1,
+    "lineRestAlpha": 130,
+    "ink": "#F5E7DF",
+    "muted": "#B9A7A5",
+    "accent": "#FF7867",
+    "start": [-450,-170,280,56],
+    "quit": [-450,-234,280,56]
+  },
+  "officialAssets": {
+    "energyOrb": {
+      "reference": "Owner STS1 screenshots 2026-11-21: 3/3 bright, 0/4 muted; keep complete material and readable numeral",
+      "charged": {
+        "metal": "#C3B4A1",
+        "darkRim": "#852024",
+        "amber": "#F39A24",
+        "gold": "#FFE35D",
+        "warmLight": "#FFF7A6",
+        "centreLight": "#FFFAD5"
+      },
+      "empty": {
+        "metal": "#656462",
+        "darkRim": "#241C1C",
+        "amber": "#615A50",
+        "gold": "#7D7B70",
+        "warmLight": "#87867F",
+        "centreLight": "#898986"
+      }
+    },
+    "choicePage": {
+      "viewport": [0, -17, 960, 516],
+      "title": [0, 297, 1040, 44],
+      "hint": [0, 258, 1040, 36],
+      "status": [0, -338, 960, 32],
+      "confirm": [0, -300, 168, 48],
+      "before": [-400, -300, 128, 48],
+      "after": [400, -300, 128, 48],
+      "optionSize": [360, 126]
+    },
+    "pickerPage": {"columns":[-246,0,246]},
+    "neowGuide": {
+      "scale":0.945,"origin":[739,61.5],
+      "cloak":"#7D827B","cloakBottom":"#222D30","outline":"#182528","void":"#111E24",
+      "fold":"#485455","foldLine":"#9B9E8D","sleeve":"#66716B","sleeveOutline":"#26383B",
+      "staff":"#65584A","gem":"#BFB286","gemOutline":"#3C4238","clasp":"#B4A97C","shadow":"#081316"
+    },
+    "stsCardReference": {
+      "typography":{"title":14,"cost":18,"type":8,"body":12},
+      "character": {"outer":"#5B472A","bevel":"#B99A59","light":"#E6CC8B","shade":"#806537","body":"#423B30"},
+      "rarity": {"common":{"frame":"#959595","frameHighlight":"#BABABA","frameShadow":"#777777","frameSeam":"#3E3E3E","plaque":"#CECECE","plaqueHighlight":"#D4D4D4","banner":"#9E9E9E","bannerFold":"#848484","bannerHighlight":"#A8A8A8","ink":"#F4F1E8"}},
+      "cost": {"rim":"#5D4724","light":"#E9D698","ink":"#FFF5DE"},
+      "text": {"body":"#F2EADB","type":"#373734","outline":"#282722"},
+      "portrait":"#31392C",
+      "portraitInk":"#E8E3D6"
+    },
+    "neowChoice": {
+      "scale": 0.6666666666666666,
+      "sourceSize": [880, 59],
+      "sourceStep": 79,
+      "origin": [-226.66666666666666, -276.3333333333333],
+      "hitHeight": 44,
+      "textSize": 20,
+      "border": "#172D30",
+      "bevel": "#326668",
+      "face": "#29494A",
+      "shadow": "#0C1719",
+      "ink": "#FFFFFF",
+      "outline": "#15191B",
+      "rewardInk": "#7FFF00",
+      "costInk": "#FF6563",
+      "disabledInk": "#8E9690",
+      "hover": "#426B6C",
+      "pressed": "#203A3C",
+      "disabled": "#24383A"
+    },
+    "profile": "official-assets-first-v1",
+    "note": "PR #588 opt-in candidate. Existing 2026-10-13 catalog thumbnails inspected; current-client visual acceptance is UNVERIFIED. Preserve all semantic icon IDs and actual Traveler portraits; no MCP catalog update.",
+    "images": {
+      "cardPanel": 107253,
+      "button": 107231,
+      "costDisc": 107270,
+      "battleBanner": 107192,
+      "battleCoin": 107203
+    },
+    "cardInk": "#FFF6E2",
+    "cardBodyTint": "#273840",
+    "battleCardTrim": "#D1C3A6",
+    "battleCardInset": 4,
+    "battleGlowReference": "CardGlowBorder.java: expanding silhouette, 1.2s lifetime and fading alpha; palette may differ by Owner instruction.",
+    "battleAim": {"segments":20,"idle":"#FFFFFF","locked":"#FF334D","headSize":32,"lockScale":1.2,"bend":[0.25,0.5]},
+    "battleRelicBar": {"origin":[-594,292],"step":44,"icon":42.6666666667,"hit":44,"count":25},
+    "battleRelicIcons": {
+      "burning_blood":{"id":105071,"placeholder":true,"note":"官方石块图标仅在岩脉残晶原生图形不可用时代用。"},
+      "kunai":{"id":105217,"placeholder":true,"note":"官方交叉利刃徽章代用苦无；非原版遗物专图。"},
+      "ink_bottle":{"id":105243,"placeholder":true,"note":"官方紫色液体瓶代用墨水瓶；非原版遗物专图。"},
+      "smiling_mask":{"id":105023,"placeholder":true,"note":"官方笑脸徽章代用面具。"},
+      "anchor":{"id":105065,"placeholder":true,"note":"官方锚形徽章代用石锚。"},
+      "vajra":{"id":105058,"placeholder":true,"note":"官方武器徽章代用金刚杵。"},
+      "bag_of_preparation":{"id":105043,"placeholder":true,"note":"官方行囊图标代用背包。"},
+      "lantern":{"id":105131,"placeholder":true,"note":"官方灯笼代用灯笼遗物。"},
+      "oddly_smooth_stone":{"id":105071,"placeholder":true,"note":"官方石块代用石头。"},
+      "bronze_scales":{"id":105055,"placeholder":true,"note":"官方龟甲徽章代用鳞甲防护。"},
+      "omamori":{"id":105207,"placeholder":true,"note":"官方卷轴代用御守纸符。"},
+      "ceramic_fish":{"id":105194,"placeholder":true,"note":"官方鱼形图标代用陶瓷鱼。"},
+      "potion_belt":{"id":105048,"placeholder":true,"note":"官方药剂瓶徽章代用药水腰带。"},
+      "meal_ticket":{"id":105246,"placeholder":true,"note":"官方票券代用餐券。"},
+      "maw_bank":{"id":105077,"placeholder":true,"note":"官方金币代用储钱罐。"},
+      "blood_vial":{"id":105243,"placeholder":true,"note":"官方液体瓶代用回春瓶；颜色非原版。"},
+      "bag_of_marbles":{"id":105076,"placeholder":true,"note":"官方彩石代用弹珠。"},
+      "orichalcum":{"id":105071,"placeholder":true,"note":"官方石块代用金属矿物。"},
+      "strawberry":{"id":105068,"placeholder":true,"note":"官方浆果代用草莓；品种与颜色非原版。"},
+      "regal_pillow":{"id":105067,"placeholder":true,"note":"官方恢复类花果代用休息遗物；非枕头专图。"},
+      "toy_ornithopter":{"id":105242,"placeholder":true,"note":"官方羽翼代用扑翼飞行玩具。"},
+      "whetstone":{"id":105216,"placeholder":true,"note":"官方刀刃徽章代用磨刀石。"},
+      "war_paint":{"id":105301,"placeholder":true,"note":"官方画笔代用战纹涂料。"},
+      "happy_flower":{"id":105127,"placeholder":true,"note":"官方花朵代用开心小花。"},
+      "ancient_tea_set":{"id":105090,"placeholder":true,"note":"官方容器代用古茶具；非茶具专图。"},
+      "art_of_war":{"id":105207,"placeholder":true,"note":"官方卷轴代用兵法书。"},
+      "boot":{"id":105055,"placeholder":true,"note":"官方护甲徽章代用装备遗物；非靴子专图。"},
+      "akabeko":{"id":105073,"placeholder":true,"note":"官方动物摆件代用赤牛；物种非原版。"},
+      "pen_nib":{"id":105301,"placeholder":true,"note":"官方笔形图标代用钢笔尖。"},
+      "nunchaku":{"id":105099,"placeholder":true,"note":"官方横杆代用双截棍。"},
+      "preserved_insect":{"id":105191,"placeholder":true,"note":"官方动物足印代用动物类遗物；非昆虫专图。"},
+      "red_skull":{"id":102034,"placeholder":true,"note":"官方头骨代用红头骨；颜色非原版。"},
+      "centennial_puzzle":{"id":105046,"placeholder":true,"note":"官方卡片组代用抽牌谜题。"},
+      "tiny_chest":{"id":105078,"placeholder":true,"note":"官方小箱代用宝箱。"},
+      "juzu_bracelet":{"id":105182,"placeholder":true,"note":"官方连环代用佛珠手串。"},
+      "dream_catcher":{"id":105114,"placeholder":true,"note":"官方环形花饰代用捕梦网。"},
+      "snake_skull":{"id":102034,"placeholder":true,"note":"官方头骨代用异蛇头骨。"},
+      "data_disk":{"id":105186,"placeholder":true,"note":"官方蓝色圆盘代用数据磁盘。"},
+      "damaru":{"id":105196,"placeholder":true,"note":"官方铃铛代用打击乐器；非手鼓专图。"},
+      "bottled_flame":{"id":105048,"placeholder":true,"note":"官方药剂瓶组代用瓶装火焰。"},
+      "bottled_lightning":{"id":105243,"placeholder":true,"note":"官方液体瓶代用瓶装闪电。"},
+      "bottled_tornado":{"id":105243,"placeholder":true,"note":"官方液体瓶代用瓶装旋风。"},
+      "shuriken":{"id":102001,"placeholder":true,"note":"官方旋刃代用手里剑。"},
+      "letter_opener":{"id":105216,"placeholder":true,"note":"官方刀刃徽章代用开信刀。"},
+      "eternal_feather":{"id":105242,"placeholder":true,"note":"官方羽毛代用永恒羽毛。"},
+      "ornamental_fan":{"id":105046,"placeholder":true,"note":"官方扇形卡组代用折扇；非折扇专图。"},
+      "mercury_hourglass":{"id":105215,"placeholder":true,"note":"官方沙漏代用水银沙漏。"},
+      "sundial":{"id":105214,"placeholder":true,"note":"官方计时装置代用日晷。"},
+      "meat_on_the_bone":{"id":105204,"placeholder":true,"note":"官方肉腿代用带骨肉。"},
+      "ginger":{"id":105197,"placeholder":true,"note":"官方根茎代用生姜；品种非原版。"},
+      "turnip":{"id":105197,"placeholder":true,"note":"官方根茎代用萝卜。"},
+      "ice_cream":{"id":105070,"placeholder":true,"note":"官方甜点代用冰淇淋。"},
+      "old_coin":{"id":105077,"placeholder":true,"note":"官方金币代用古钱币。"},
+      "black_blood":{"id":105045,"placeholder":true,"note":"官方火焰徽章代用升级恢复遗物；非原版专图。"}
+    },
+    "battleCostMaterial": {"hardSize":34,"offset":[-0.4,0.3],"rim":107270,"soft":106056,"highlight":106057,"rimTint":"#682F33","warm":"#F7B62A","light":"#FFEA70"},
+    "battleGlowSource": {"rgba":[0.2,0.9,1,0.25],"blend":[770,1],"note":"STS AbstractCard BLUE_BORDER_GLOW_COLOR; native RGB uses nearest 8-bit values. Current native Image compositing is not additive."},
+    "battleGlowFocus": {"normal":{"coreSoftness":2,"pulseSoftness":3,"spread":3,"opacity":1},"selected":{"coreSoftness":2,"pulseSoftness":3,"spread":3,"opacity":1}},
+    "battleCardChrome": {"shell":["#713635","#AD4E49"],"ready":"#33E6FF","ribbonHeight":24,"ribbonEdge":"#75644B","ribbonFold":"#71604B","costSize":41,"glow":{"motion":"static","staticFocus":{"normal":{"coreSoftness":2,"pulseSoftness":3,"colours":["#73E5D7","#43C6BD"]},"selected":{"coreSoftness":3,"pulseSoftness":5,"colours":["#88F7E7","#3CE2D0"]}},"duration":1.2,"expansion":[1.03,1.11],"alpha":0.6,"colour":"#33E6FF"},"orb":["#BBAA85","#482E2B","#9A2023","#D96C21","#F4AD2D","#FFF7B4"]},
+    "battleCardBodyTint": "#473936",
+    "battleCardContent": {"art":68,"textBox":[124,92],"bodyPosition":[0,-50],"typePosition":[0,6],"windowHeight":68,"windowPosition":[0,42],"iconPosition":[0,42]},
+    "battleCardBodyGeometry":{"paperBevel":[145,205,7.5,-0.6,0.6],"recessShadow":[137,197,6,0.6,-0.6],"innerWell":[134,194,4.5,0,0]},
+    "battleCardBodyLayerOpacity":{"topCatchlight":0.7,"leftCatchlight":0.45,"bottomShade":0.6},
+    "battleRibbonMaterial":{"shade":{"height":3.2,"colour":"#40362D","y":-7.8,"opacity":0.28},"shine":{"height":2,"colour":"#FFF4CF","y":8.3,"opacity":0.58},"fold":{"size":[23,18],"position":[74,67]}},
+    "battleTypePlaque":{"plate":"#D9C8A8","ink":"#332B25","edgeSize":[45,18],"bodySize":[42,15],"bodyOffset":[0,0.6]},
+    "battleCardBodyMaterials": {
+      "red":{"outerBevel":"#70352E","paperBevel":"#B65B43","recessShadow":"#382821","innerWell":"#403530","topCatchlight":"#E0A176","leftCatchlight":"#D98761","bottomShade":"#45252A"},
+      "status":{"outerBevel":"#646464","paperBevel":"#818181","recessShadow":"#3D3D3D","innerWell":"#404040","topCatchlight":"#9A9A9A","leftCatchlight":"#818181","bottomShade":"#3D3D3D","artWell":"#7C7C7C"},
+      "curse":{"outerBevel":"#1D1D1D","paperBevel":"#343A40","recessShadow":"#150215","innerWell":"#1D1D1D","topCatchlight":"#3B3B3B","leftCatchlight":"#3B3B3B","bottomShade":"#150215","artWell":"#343A40"}
+    },
+    "battleCardBannerTint": "#A4A4A3",
+    "battleBannerByRarity": {"basic":"#A4A4A3","common":"#A4A4A3","uncommon":"#7FB8F2","rare":"#F6D68C","curse":"#A4A4A3"},
+    "battleCardTitleInk": "#F2EADB",
+    "battleCostInk": "#FFF8D8",
+    "battleCostRingOpacity": 0.3,
+    "battleRibbonTilt": 3.5,
+    "battleRibbonFill": 0.514,
+    "battleArtWells": {"attack":"#551C24","skill":"#1A3042","power":"#252536"},
+    "rewardRows": {
+      "reference": {"url":"https://interfaceingame.com/screenshots/slay-the-spire-rewards/","canvas":[1920,1080],"sha256":"24a5f5f4bdd35781811569fd94236e6fa05820d4ebd028b3aa90fb24e938b8c7"},
+      "rowSize":[296,56], "rowStep":67, "rowOrigin":[0,82], "titleY":192, "subtitleY":144,
+      "cornerRadius":3, "panelSize":[358,416], "panelPosition":[0,-47],
+      "normal":"#5A6C6E", "hover":"#4C7474", "panel":"#262F34",
+      "iconSize":28, "iconX":-118, "textX":22, "textWidth":216, "fontSize":16
+    },
+    "buttonBacking": "#17252D",
+    "buttonInk": "#FFF8E7",
+    "roundedCancelStates": {
+      "hover": ["#D9BE60", "#A84D43"],
+      "pressed": ["#C6A858", "#592A2B"],
+      "disabled": ["#716650", "#483332"]
+    },
+    "flagButton": {
+      "cancel": ["#BCA348", "#8C3739", "#B95B4A"],
+      "confirm": ["#A2B4B5", "#477B89", "#77A4AF"],
+      "hoverBrightness": 1.18,
+      "pressedBrightness": 0.92,
+      "fallbackInk": "#FFF0B1",
+      "labelFontSize": 26,
+      "labelMinFontSize": 26
+    },
+    "costInk": "#403829",
+    "battlePortraitDisplay": 210,
+    "battlePortraitPosition": [0, 0],
+    "mobileRunHud": {
+      "height": 88,
+      "y": 298,
+      "hit": 84,
+      "potionX": -161,
+      "potionStep": 92,
+      "potionBottle": [42, 48],
+      "potionPopupBottom": 230,
+      "hpShift": -104,
+      "goldShift": -107,
+      "headingY": 339,
+      "floorGap": 56,
+      "routeX": 356,
+      "deckX": 452,
+      "menuX": 548,
+      "status": [241, 257, 130, 28],
+      "relicBar": {"origin":[-558,210],"step":92,"icon":42.6666666667,"count":11},
+      "neowOptions": {"bottomInset":40,"spacing":92,"faceHeight":58,"bubbleLift":32,"fontSize":21},
+      "rewardList": {"rowY":54,"rowStep":58,"potionLabel":[-398,-214,300,96]},
+      "treasureRewards": {"headingY":208,"rowY":134,"rowStep":110,"noteY":-270,"noteHeight":34}
+    },
+    "battleHud": {
+      "y": 338.5,
+      "barColour": "#30333B",
+      "hpIcon": [-490, 338.5, 12, 12],
+      "hp": [-361, 338.5, 236, 36],
+      "goldIcon": [-230, 338.5, 12, 16],
+      "gold": [-161, 338.5, 116, 36],
+      "numberSize": 18,
+      "heading": [-556, 338.5, 120, 36],
+      "headingText": "旅行者",
+      "headingSize": 16,
+      "potionX": -73,
+      "floorGap": 43,
+      "potionStep": 49,
+      "potionScale": [0.5681818181818182, 0.6363636363636364],
+      "potionCaptionY": 325.5,
+      "exhaustPile": {"position":[593.3333333333,-237.3333333333],"diameter":32,"hit":44,"image":102049,"imageColour":"#D6CBA5","imageOpacity":1,"countOffset":[12,-10],"countSize":[40,32],"countFont":18,"colour":"#EE82EE"},
+      "deck": [517, 338.5, 1],
+      "menu": [594, 338.5, 1],
+      "height": 43,
+      "barTopColour": "#444852",
+      "headingColour": "#C6BBA0",
+      "location": [315, 338.5, 192, 36],
+      "route": [443.8046875, 338.5, 56, 40],
+      "routeBackText": "返回战斗"
+    },
+    "backdropVeil": "#0F1117B8",
+    "catalogSources": [
+      "https://github.com/8itlab/genshin-miliastra-mcp/blob/main/src/scene/image-library/plate-colour_06.jpg",
+      "https://github.com/8itlab/genshin-miliastra-mcp/blob/main/src/scene/image-library/plate-colour_08.jpg",
+      "https://github.com/8itlab/genshin-miliastra-mcp/blob/main/src/scene/image-library/plate-colour_10.jpg"
+    ]
+  },
   "version": "0.1.0",
   "note": "界面主题与布局常数。设计以 1280x720（手机）为基准画布，整棵界面挂在 stage 容器下按 min(宽/1280, 高/720) 等比缩放。颜色为 #RRGGBB 或 #RRGGBBAA，生成 Lua 时转为 0-255 的 {r,g,b,a}。图片编号来自千星图片库（image_catalog），标注 verify 的选型需在编辑器或截图里核对一次。主角为旅行者（岩元素），主色取岩元素琥珀金配深岩灰蓝。规范见 docs/design/UI_DESIGN.md。 Darkstone Periapt 的102031图标明确暂复用既有光滑岩片资源；非新美术批准，原生验收未运行。",
   "canvas": {
@@ -15,7 +270,7 @@
         1280,
         720
       ],
-      "console": [
+      "desktop1080": [
         1920,
         1080
       ]
@@ -231,7 +486,7 @@
   "sound": {
     "card_play": 50916,
     "player_action": 40313,
-    "action_cultist": 20171,
+    "action_raven_adept": 20171,
     "action_jaw_worm": 20089,
     "action_red_louse": 20080,
     "action_green_louse": 20081,
@@ -242,8 +497,8 @@
     "action_spike_slime_m": 20096,
     "action_spike_slime_l": 20097,
     "action_looter": 20146,
-    "action_blue_slaver": 20147,
-    "action_red_slaver": 20148,
+    "action_blue_guard": 20147,
+    "action_red_guard": 20148,
     "action_fungi_beast": 20090,
     "action_mad_gremlin": 20149,
     "action_sneaky_gremlin": 20150,
@@ -281,10 +536,10 @@
     "card_remove": 50928
   },
   "deathSound": {
-    "cultist": "enemy_die_human",
+    "raven_adept": "enemy_die_human",
     "looter": "enemy_die_human",
-    "blue_slaver": "enemy_die_human",
-    "red_slaver": "enemy_die_human",
+    "blue_guard": "enemy_die_human",
+    "red_guard": "enemy_die_human",
     "acid_slime_s": "enemy_die_magic",
     "acid_slime_m": "enemy_die_magic",
     "acid_slime_l": "enemy_die_magic",
@@ -298,7 +553,7 @@
   },
   "image": {
     "officialBackdrops": {
-      "title": 107271,
+      "title": 100001,
       "selection": 107050,
       "act1_1": 107106,
       "act1_2": 107107,
@@ -331,6 +586,15 @@
     "merchant": 112030
   },
   "icon": {
+    "eventArt": {
+      "default":111049,"big_fish":111027,"lab":111046,"woman_in_blue":111048,
+      "we_meet_again":111050,"the_library":111053,"cursed_tome":111055,
+      "mushrooms":111003,"upgrade_shrine":111065,"accursed_blacksmith":111065,
+      "dead_adventurer":111065,"golden_idol":111064,"golden_shrine":111064,
+      "mausoleum":111064,"shining_light":111036,"sensory_stone":111036,
+      "bonfire":111007,"fountain":111048,"cleric":111048,"purifier":111048,
+      "duplicator":111051,"designer":111052
+    },
     "hp": 102018,
     "block": 102014,
     "gold": {
@@ -374,16 +638,22 @@
       "boss": 102033
     },
     "status": {
-      "buffer": {"id":102036,"placeholder":true,"note":"缓冲复用批准防护图标；抵消次数以状态文字显示，设备待验。"},
-      "next_turn_block": {"id":102036,"placeholder":true,"note":"下回合格挡复用批准防护图标；层数以状态文字显示，设备待验。"},
+      "panache": 105127,
+      "no_block": 100108,
+      "intangible": 105242,
+      "magnetism": 105076,
+      "mayhem": 105023,
+      "sadistic_nature": 105048,
+      "colorless_bomb": 102049,
+      "buffer": 102036,
       "time_warp": 102024,
       "draw_reduction": 102045,
-      "flame_barrier": 103055,
-      "evolve": 103056,
-      "fire_breathing": 103055,
+      "flame_barrier": 105131,
+      "evolve": 105068,
+      "fire_breathing": 105045,
       "blur": 103066,
       "choked": 103059,
-      "shackled": 103047,
+      "shackled": 105099,
       "draw_next_turn": 102026,
       "lock_on": 102035,
       "battle_hymn": 102012,
@@ -394,19 +664,19 @@
       "block_return": 103066,
       "wrath_next_turn": 102024,
       "draw_card_next_turn": 102026,
-      "vigor": 103047,
+      "vigor": 102012,
       "mark": 103059,
-      "rupture": 103047,
-      "combust": 103059,
-      "brutality": 103047,
-      "berserk": 103047,
+      "rupture": 105058,
+      "combust": 102002,
+      "brutality": 105204,
+      "berserk": 105191,
       "energized": 102020,
       "energized_blue": 102020,
-      "next_turn_block": 103066,
+      "next_turn_block": 105215,
       "after_image": 103066,
       "thousand_cuts": 102035,
       "envenom": 103059,
-      "rage": 103047,
+      "rage": 102035,
       "heat_sinks": 102026,
       "storm": 102035,
       "accuracy": 102012,
@@ -419,23 +689,23 @@
       "nirvana": 103066,
       "mantra": 102024,
       "devotion": 102024,
-      "metallicize": 103066,
-      "demon_form": 103047,
-      "corruption": 103059,
-      "feel_no_pain": 103066,
-      "dark_embrace": 103056,
+      "metallicize": 105071,
+      "demon_form": 102033,
+      "corruption": 105197,
+      "feel_no_pain": 105067,
+      "dark_embrace": 102026,
       "loop": 102020,
       "electrodynamics": 102035,
       "thievery": 105077,
-      "curl_up": 103066,
-      "spore_cloud": 103059,
-      "entangled": 102045,
-      "artifact": 103066,
-      "mode_shift": 103066,
-      "sharp_hide": 103055,
+      "curl_up": 105073,
+      "spore_cloud": 105243,
+      "entangled": 100169,
+      "artifact": 105182,
+      "mode_shift": 105214,
+      "sharp_hide": 105216,
       "strength": 103047,
-      "enrage": 103047,
-      "angry": 103047,
+      "enrage": 102034,
+      "angry": 102044,
       "dexterity": 103065,
       "vulnerable": 103049,
       "weak": 102045,
@@ -444,13 +714,13 @@
       "thorns": 103055,
       "regen": 103056,
       "barricade": 103066,
-      "ritual": 103047,
-      "pen_nib": 103047,
-      "plated_armor": 103066,
-      "duplication": 103047,
+      "ritual": 105207,
+      "pen_nib": 105301,
+      "plated_armor": 105055,
+      "duplication": 105046,
       "verify": true,
-      "double_tap": 103047,
-      "juggernaut": 103066,
+      "double_tap": 105217,
+      "juggernaut": 105065,
       "split": 100114
     },
     "statusReplacementNotes": {
@@ -477,7 +747,7 @@
       "liquid_bronze": 111046,
       "snecko_oil": 111047,
       "elixir": 111047,
-      "gamblers_brew": 111047,
+      "swap_brew": 111047,
       "liquid_memories": 111047,
       "blood_potion": 111046,
       "fruit_juice": 111047,
@@ -485,7 +755,7 @@
       "explosive_potion": 111046,
       "heart_of_iron": 111048,
       "essence_of_steel": 111048,
-      "cultist_potion": 111046,
+      "raven_potion": 111046,
       "flex_potion": 111046,
       "speed_potion": 111047,
       "duplication_potion": 111047,
@@ -512,13 +782,13 @@
     },
     "relic": {
       "bloody_idol": {"id": 102028, "placeholder": true, "note": "第二幕事件遗物暂沿用批准主题现有宝箱图标；专属美术与设备验收待完成。"},
-      "mutagenic_strength": {"id": 102028, "placeholder": true, "note": "第二幕事件遗物暂沿用批准主题现有宝箱图标；专属美术与设备验收待完成。"},
+      "augmentation_core": {"id": 102028, "placeholder": true, "note": "第二幕事件遗物暂沿用批准主题现有宝箱图标；专属美术与设备验收待完成。"},
       "necronomicon": {"id": 102028, "placeholder": true, "note": "第二幕事件遗物暂沿用批准主题现有宝箱图标；专属美术与设备验收待完成。"},
       "enchiridion": {"id": 102028, "placeholder": true, "note": "第二幕事件遗物暂沿用批准主题现有宝箱图标；专属美术与设备验收待完成。"},
       "nilrys_codex": {"id": 102028, "placeholder": true, "note": "第二幕事件遗物暂沿用批准主题现有宝箱图标；专属美术与设备验收待完成。"},
 
       "nloths_gift": {"id": 102028, "placeholder": true, "note": "事件面孔遗物临时沿用批准主题现有图标；专属美术与实机显示待验。"},
-      "cultist_mask": {"id": 102028, "placeholder": true, "note": "事件面孔遗物临时沿用批准主题现有图标；专属美术与实机显示待验。"},
+      "raven_mask": {"id": 102028, "placeholder": true, "note": "事件面孔遗物临时沿用批准主题现有图标；专属美术与实机显示待验。"},
       "face_of_cleric": {"id": 102028, "placeholder": true, "note": "事件面孔遗物临时沿用批准主题现有图标；专属美术与实机显示待验。"},
       "gremlin_mask": {"id": 102028, "placeholder": true, "note": "事件面孔遗物临时沿用批准主题现有图标；专属美术与实机显示待验。"},
       "nloths_mask": {"id": 102028, "placeholder": true, "note": "事件面孔遗物临时沿用批准主题现有图标；专属美术与实机显示待验。"},
@@ -563,7 +833,7 @@
 "du_vu_doll": {"id":102028,"placeholder":true,"note":"巫毒娃娃复用批准主题遗物图标；专属美术与本轮设备显示待验。"},
 "pocketwatch": {"id":102028,"placeholder":true,"note":"怀表复用批准主题遗物图标；专属美术与本轮设备显示待验。"},
 "incense_burner": {"id":102028,"placeholder":true,"note":"香炉复用批准主题遗物图标；专属美术与本轮设备显示待验。"},
-"gambling_chip": {"id":102028,"placeholder":true,"note":"赌博筹码复用批准主题遗物图标；专属美术与本轮设备显示待验。"},
+"tactical_badge": {"id":102028,"placeholder":true,"note":"战术徽记复用批准主题遗物图标；专属美术与本轮设备显示待验。"},
 "peace_pipe": {"id":102028,"placeholder":true,"note":"宁静烟斗复用批准主题遗物图标；专属美术与本轮设备显示待验。"},
 "captains_wheel": {"id":102028,"placeholder":true,"note":"舵盘复用批准主题遗物图标；专属美术与本轮设备显示待验。"},
 "magic_flower": {"id":102028,"placeholder":true,"note":"魔法花复用批准主题遗物图标；专属美术与本轮设备显示待验。"},
@@ -656,7 +926,7 @@
       "smiling_mask": 102031,
       "burning_blood": 102005,
       "black_blood": 102005,
-      "slavers_collar": 102028,
+      "arena_collar": 102028,
       "sozu": 102028,
       "anchor": 102036,
       "vajra": 102012,
@@ -787,7 +1057,7 @@
       "note": "战斗胸像槽，约 133×133。正式资源由 Dot B 替换 id。禁止再用岩元素图标 102005。"
     },
     "enemy": {
-      "cultist": 112022,
+      "raven_adept": 112022,
       "jaw_worm": 112038,
       "red_louse": 112013,
       "green_louse": 112014,
@@ -798,8 +1068,8 @@
       "spike_slime_m": 112007,
       "spike_slime_l": 112008,
       "looter": 112030,
-      "blue_slaver": 112031,
-      "red_slaver": 112050,
+      "blue_guard": 112031,
+      "red_guard": 112050,
       "fungi_beast": 112033,
       "mad_gremlin": 112022,
       "sneaky_gremlin": 112025,
@@ -1001,6 +1271,22 @@
     }
   },
   "layout": {
+    "stsCharacter": {
+      "reference": {"canvas":[1920,1080],"sourceSha256":"4828bd5150c250e0634fa6999d057ef68accd599187d24015c89b833c038a63d"},
+      "rectangles": {
+        "name":[114,218,430,60],"stats":[144,285,116,32],"gold":[278,285,110,32],
+        "hpIcon":[115,286,22,22],"goldIcon":[248,285,24,25],
+        "story":[115,328,360,50],"relicIcon":[115,389,36,36],
+        "relic":[162,381,355,31],"relicText":[162,402,440,33],
+        "deckTitle":[115,430,360,30],"deckSummary":[115,455,470,35],
+        "deckOpen":[115,491,180,32],"hint":[115,181,480,32],
+        "cancel":[0,565,180,54],"confirm":[1100,573,180,48]
+      },
+      "font":{"name":44,"stats":16,"story":18,"relic":21,"relicText":17,"deckTitle":17,"deckSummary":16,"button":24,"hint":16,"deckOpen":16},
+      "roster":{"origin":[414,586.5],"step":146.667,"size":[100,100]},
+      "colour":{"name":"#F5DE66","text":"#EEE9D2","muted":"#B7B4A8","hp":"#EF7777","gold":"#F1CA67","slot":"#ADC6C3","slotLight":"#D0E5DE","slotDark":"#6E8D90","selected":"#E5C846","buttonInk":"#F4E5AC"},
+      "portrait":{"source":"battleApprovedIdle","sourceSize":[210,192],"crop":{"left":-40,"bottom":0,"right":56,"top":96},"display":210}
+    },
     "battlePotions": {
       "count": 5,
       "origin": [-100, 264],
@@ -1119,6 +1405,13 @@
         116
       ],
       "longTextArt": 32,
+      "reading": {
+        "lineScale": 1.3,
+        "referenceWidth": 128,
+        "referenceHeights": [96, 116, 132],
+        "legacyExtraHeight": 16,
+        "focusScale": 1.9
+      },
       "title": {
         "position": [
           0,
@@ -1308,9 +1601,33 @@
       "perRow": 5,
       "rows": 2
     },
+    "actorDetail": {
+      "width": 392,
+      "font": 18,
+      "pitch": 27,
+      "tagWidth": 104,
+      "fill": "#20292D",
+      "border": "#71848B",
+      "title": "#F5D78A"
+    },
+    "powerTips": {
+      "rows": 48,
+      "width": 248,
+      "minWidth": 176,
+      "font": 18,
+      "minFont": 14,
+      "padding": 8,
+      "gap": 5,
+      "fill": "#20292D",
+      "border": "#71848B",
+      "title": "#F5D78A"
+    },
     "statusInfo": {
       "note": "状态/意图详情卡：左对齐信息层级（单位名 → 生命/格挡 → 增益/减益分组 → 名称与层数 + 右侧持续 → 效果 → 条件）。原生文本框低于 nativeText.lineHeight 整行不渲染，所以每个文本框都按 lineHeight 高，行距用 pitch 叠放（透明框可重叠）。一页最多 rows 项，超出按页翻，任何状态都能看到。",
       "width": 560,
+      "cardHoverWidth": 320,
+      "cardHoverFont": 20,
+      "cardHoverGap": 16,
       "pad": 16,
       "accent": 4,
       "header": 36,
@@ -1468,7 +1785,7 @@
     "relicView": {
       "note": "TASK-4.7 持有遗物站位：顶栏圆形遗物盘沿 prototype topBar() 32px disc / 36 步进；详情每行为图标盘+中文名+状态签+说明，美术位绑定 icon.relic，占位图标待专属美术。",
       "bar": { "origin": [-584, 270], "step": 38, "disc": 34, "face": 30, "icon": 24, "count": 12, "tray": [-376, 270, 456, 38], "trayBorder": 1, "more": [10, 0, 56, 40] },
-      "barNote": "STS TopPanel/RelicPanel 移植：遗物在生命/金币行正下方从左向右单排流动（F 型扫视），每个遗物盘本身就是唯一入口；不再有托盘胶囊与右上角重复的遗物按钮。超过 count 件时末位改为 +N 溢出盘，点开分页详情。",
+      "barNote": "PD-02：持有顺序横向排列，固定尺寸，仅已持有图标；超容量左右箭头分页，PC25/移动端按有效舞台宽度计算。不使用+N或集合入口；详情独立复用单对象。",
       "panel": [0, 0, 1160, 620],
       "title": [0, 268, 760, 48],
       "close": [490, 268, 88, 48],
@@ -1507,7 +1824,18 @@
         560
       ],
       "browseTitle": [-427, 316, 210, 48],
-      "filters": [[-286, 316, 56, 48], [-226, 316, 56, 48], [-166, 316, 56, 48], [-106, 316, 56, 48], [-46, 316, 56, 48], [14, 316, 56, 48]],
+      "browser": {
+        "sort": [0, 282, 856, 36],
+        "legacyDescription": [0, -303, 860, 36],
+        "legacyRarityTip": [0, -336, 650, 30],
+        "footer": {
+          "browserDescription": [0, -282, 900, 36],
+          "rarityTip": [0, -308, 450, 36],
+          "previous": [-330, -316, 200, 48],
+          "next": [330, -316, 200, 48],
+          "pageHint": [0, -334, 240, 36]
+        }
+      },
       "sort": [[118, 316, 140, 48], [242, 316, 96, 48], [344, 316, 96, 48]],
       "upgradePreview": [0, -316, 220, 48],
       "columns": 6,
@@ -2000,9 +2328,9 @@
         "relics": {
           "y": -84,
           "columns": [
-            -50,
-            140,
-            330
+            0,
+            190,
+            380
           ],
           "size": [
             148,
@@ -2013,9 +2341,9 @@
         },
         "potions": {
           "columns": [
-            -50,
-            140,
-            330
+            0,
+            190,
+            380
           ],
           "y": -188,
           "size": [
@@ -2072,7 +2400,7 @@
         ]
       },
       "picker": {
-        "cardY": 116,
+        "cardY": 76,
         "columns": [
           -410,
           -246,
@@ -2083,29 +2411,29 @@
         ],
         "previous": [
           -530,
-          116,
+          76,
           44,
           208
         ],
         "next": [
           530,
-          116,
+          76,
           44,
           208
         ],
         "page": [
-          0,
-          -12,
-          600,
+          -450,
+          -78,
+          340,
           40
         ],
-        "previewY": -150,
+        "previewY": -164,
         "before": -170,
         "after": 170,
         "target": 0,
         "arrow": [
           0,
-          -150,
+          -164,
           48,
           48
         ],
@@ -2123,8 +2451,8 @@
         ],
         "empty": [
           0,
-          -150,
-          480,
+          213,
+          1000,
           40
         ]
       },
@@ -2335,30 +2663,20 @@
           30
         ],
         "hoverScale": 1.08,
-        "previous": [
-          -490,
-          -236,
-          56,
-          44
-        ],
-        "next": [
-          490,
-          -236,
-          56,
-          44
-        ]
+        "viewport": [0, 34, 921, 514],
+        "prompt": [0, -259, 460, 44]
       },
       "rewardList": {
         "x": 190,
         "rows": [
-          152,
-          56,
-          -40,
-          -136
+          142,
+          26,
+          -90,
+          -206
         ],
         "size": [
           620,
-          88
+          108
         ],
         "chest": [
           -350,
@@ -2372,15 +2690,15 @@
         ],
         "note": [
           190,
-          -210,
-          620,
-          40
+          -282,
+          660,
+          44
         ],
         "detail": [
           -350,
-          -60,
+          -30,
           400,
-          280
+          440
         ]
       },
       "roomMotion": {
@@ -2391,7 +2709,7 @@
         "popScale": 1.25,
         "rowStagger": 0.07,
         "restDuration": 1.2,
-        "forgeDuration": 0.9,
+        "forgeDuration": 0.24,
         "sparkCount": 8,
         "sparkRadius": 160,
         "sparkSize": 8
@@ -2406,7 +2724,7 @@
         48
       ],
       "panel": [0, 0, 760, 440],
-      "title": [-90, 172, 500, 48],
+      "title": [0, 172, 500, 48],
       "message": [0, 82, 688, 96],
       "status": [0, -44, 688, 40],
       "cancel": [-180, -142, 320, 64],
@@ -2418,9 +2736,8 @@
       "pressedScale": 0.96,
       "nodeNotice": [-60, 262, 1080, 40],
       "whyText": [0, 10, 688, 40],
-      "help": [254, 172, 160, 48],
       "rule": [0, 138, 688, 2],
-      "hierarchyNote": "TASK-4.11：页眉=标题+操作说明（互不遮挡），金线分隔；后果正文 → 小字存档说明 → 状态 → 取消/确认，逐层不重叠。",
+      "hierarchyNote": "TASK-4.11：页眉居中显示标题，金线分隔；后果正文 → 小字存档说明 → 状态 → 取消/确认，逐层不重叠。",
       "entryVisual": {
         "diameter": 36,
         "border": 1,
@@ -2702,83 +3019,48 @@
       "breathe": 3.6
     },
     "prologue": {
-      "note": "开场电影化演出：黑场淡入、宽银幕黑边、遗迹镜头推拉与逐字叙事。正文按句拆自已批准的 Lore v2 开场原文，不改写；点击先显示整句、再进入下一句，右下角可跳过。",
-      "barHeight": 84,
+      "note": "保留璃月参考构图；七元素跟随真实开局准备阶段做短补间，目标页准备好后自动收尾，不强制8秒，不显示伪造加载百分比。",
+      "shade": "#1C1C22",
+      "ink": "#EBE5D9",
+      "dim": "#303034",
+      "seal": [
+        0,
+        60,
+        200,
+        200
+      ],
+      "symbolBase": 135.656982421875,
+      "title": [
+        0,
+        -120,
+        1000,
+        40
+      ],
       "line": [
         0,
-        -232,
-        1080,
-        56
+        -186.923,
+        800,
+        100
       ],
-      "chapter": [
-        -420,
-        318,
-        360,
-        40
-      ],
-      "hint": [
-        0,
-        -318,
-        360,
-        40
-      ],
-      "dots": {
-        "y": -292,
-        "step": 22,
-        "size": 8
+      "elements": {
+        "y": -260,
+        "step": 60,
+        "size": 60,
+        "images": [
+          102002,
+          102006,
+          102007,
+          102001,
+          102003,
+          102004,
+          102005
+        ]
       },
-      "skip": [
-        526,
-        -318,
-        148,
-        44
-      ],
-      "hero": [
-        -210,
-        -40,
-        132,
-        132
-      ],
-      "heroGlow": 300,
-      "heroRise": 70,
-      "typeRate": 14,
-      "minBeat": 0.35,
-      "hold": 4.2,
-      "fadeIn": 0.9,
-      "fadeOut": 0.45,
-      "reveal": 0.5,
-      "move": 1.6,
-      "shake": 0.6,
-      "shakeAmplitude": 4,
-      "flash": 0.45,
-      "cameras": [
-        {
-          "from": [
-            -360,
-            -30,
-            1
-          ],
-          "to": [
-            -381,
-            -40,
-            1.06
-          ]
-        },
-        {
-          "to": [
-            -486,
-            -232,
-            1.35
-          ]
-        },
-        {
-          "to": [
-            -71,
-            -10,
-            0.92
-          ]
-        }
-      ]
+      "fadeIn": 0.3,
+      "reveal": 0.3,
+      "markIn": 0.3,
+      "markOut": 0.3,
+      "elementStep": 0.12
     },
     "characterSelect": {
       "panel": [
@@ -3094,24 +3376,24 @@
       "pressedScale": 0.96
     },
     "merchant": {
-      "note": "商店底部独立人物对白；右侧取消与购买同排相邻，不覆盖货架、价格或操作，购买期间可继续操作。",
+      "note": "货架旁独立人物与头顶浅色短句气泡；通用位置在无色卡与杂货之间，official 投影同时采用其 shelfColumns 腾出左侧人物空间。对白可自动收起，点击人物重读，不阻断交易。",
       "frame": [
-        15,
-        -300,
-        370,
-        80
+        -158,
+        -180,
+        60,
+        216
       ],
       "box": [
-        15,
-        -300,
-        366,
-        76
+        -158,
+        -124,
+        56,
+        88
       ],
       "portrait": [
-        -130,
-        -300,
-        64,
-        64
+        -158,
+        -204,
+        48,
+        48
       ],
       "name": [
         0,
@@ -3120,17 +3402,27 @@
         40
       ],
       "line": [
-        41,
-        -316,
-        250,
-        40
+        -158,
+        -120,
+        44,
+        64
       ],
       "next": [
-        180,
-        -326,
-        14,
-        14
+        -142,
+        -160,
+        10,
+        10
       ],
+      "bubble": { "radius": 12, "fontSize": 14, "fill": "#F3E8CF", "edge": "#AD8958", "ink": "#3E3026", "tail": [16, 12] },
+      "official": {
+        "frame": [-530, -40, 128, 240],
+        "box": [-530, 30, 120, 80],
+        "portrait": [-530, -80, 104, 104],
+        "line": [-530, 34, 104, 48],
+        "next": [-490, 4, 10, 10],
+        "pageCharacters": 12,
+        "shelfColumns": [-373, -179, 15, 209, 403, -373, -185]
+      },
       "typeRate": 40,
       "hold": 2.6,
       "idle": 14,
@@ -3141,48 +3433,21 @@
       "pageCharacters": 9
     },
     "runMenu": {
-      "panel": [460, 154, 280, 384],
+      "panel": [460, 122, 280, 448],
       "title": [460, 318, 252, 48],
       "resume": [460, 254, 252, 56],
-      "help": [460, 190, 252, 56],
-      "map": [460, 126, 252, 56],
+      "map": [460, 190, 252, 56],
+      "mainMenu": [460, 126, 252, 56],
       "rule": [460, 84, 232, 2],
       "abandon": [460, 42, 252, 56],
-      "dismissHint": [460, -8, 260, 40],
+      "quit": [460, -22, 252, 56],
+      "dismissHint": [460, -72, 260, 40],
       "mapBack": [
         -522,
         -296,
         148,
         44
       ]
-    },
-    "nativeGuide": {
-      "panel": [0, 0, 1080, 680],
-      "title": [0, 282, 820, 48],
-      "columns": [-344, 0, 344],
-      "close": [0, -312, 260, 48],
-      "entry": [
-        184,
-        92,
-        128,
-        48
-      ],
-      "footer": [0, -260, 1000, 40],
-      "sectionY": 8,
-      "sectionSize": [332, 496],
-      "sectionTitle": [0, 224, 300, 40],
-      "sectionRule": [0, 202, 292, 2],
-      "rowTop": 174,
-      "rowStep": 116,
-      "rowHeight": 40,
-      "rowIcon": 28,
-      "rowIconX": -140,
-      "actionX": 0,
-      "actionWidth": 240,
-      "howX": 0,
-      "howDrop": 42,
-      "howWidth": 316,
-      "dismissHint": [344, 282, 300, 40]
     },
     "battleUnit": {
       "nameGap": 9.333333333333334,
@@ -3318,6 +3583,113 @@
       "gap": 4,
       "padding": 7,
       "glyphScale": 1.35
+    }
+  },
+  "v25Result": {
+    "supportHeading": "当前暂无存档功能",
+    "supportBody": "存档功能需作者达到创作者 4 级后开放，喜欢的话欢迎点赞支持。帮助作者提升等级。"
+  },
+  "v25Character": {
+    "constellation": { "sourceSha256": "5780bc541d322b369b61f656908da59bdeee7f3ad83988edca8be23776720ecd", "sourceSize": [512,512], "displaySize": [118,118], "colour": "#202A29" },
+    "story": "失却星辉、与血亲失散的异乡旅人。她与磐岩共鸣，剑势在鏖战中愈发凌厉",
+    "relicImageId": 102005
+  },
+  "v25Battle": {
+    "presentationProfile": "v25-reference",
+    "sourceCommit": "7e40d2d361fff6b9c89d9f409db29a9d8ac44352",
+    "font": { "card": 14, "cardName": 16, "cost": 25 },
+    "motion": { "hoverLift": 80, "hoverScale": 1.22 },
+    "cardSkin": { "text": { "title": "#FFFFFF", "body": "#FFF6E2" }, "costText": "#FFF8E7", "costOutline": { "colour": "#4D4D4D", "opacity": 1 }, "typeInk": "#595959", "artWells": { "attack": "#551C24", "skill": "#1A3042", "power": "#252536" } },
+    "color": {
+      "mapCanvas": {
+        "available": "#17212B",
+        "visited": "#17212B",
+        "far": "#575757",
+        "currentRing": "#25373E",
+        "kind": {
+          "combat": "#26363C",
+          "elite": "#26363C",
+          "camp": "#26363C",
+          "shop": "#26363C",
+          "event": "#26363C",
+          "treasure": "#26363C",
+          "boss": "#26363C"
+        }
+      },
+      "node": {
+        "current": "#17212B",
+        "path": "#5D625E",
+        "pathTaken": "#26373E",
+        "reachable": "#26373E"
+      }
+    },
+    "layout": {
+      "map": {
+        "notice": [0, -324, 820, 48],
+        "emeraldNotice": [0, -316, 820, 48],
+        "presentation": {
+          "lockedIconScale": 0.65,
+          "visitedIconScale": 0.85,
+          "availableScaleFloor": 1.4,
+          "availableScaleCap": 1.6,
+          "noticeHeight": 48,
+          "pathWidth": 2,
+          "lockedPathWidth": 1.85,
+          "takenPathWidth": 2.1,
+          "futureOpacity": 0.72,
+          "farFutureOpacity": 0.72,
+          "takenOpacity": 1,
+          "nextOpacity": 1,
+          "lockedOpacity": 1,
+          "farLockedOpacity": 1
+        }
+      },
+      "v25TurnNotice": { "position": [0, 43], "size": [1280, 100], "duration": 1.7, "enterEnd": 0.2, "exitStart": 0.65, "travel": 40, "titleSize": 37, "subtitleSize": 16, "titleInk": "#ECD193", "subtitleInk": "#C0B9A4", "shadeInk": "#03080CCD", "shadowInk": "#000000CC", "swordInk": { "edge": "#334947", "left": "#8DACA4", "right": "#AFC3B2", "guard": "#829A88", "handle": "#80958B" } },
+      "player": { "position": [-324, -37], "portrait": 210 },
+      "enemyRow": { "floorY": 330, "nativeFloorY": 501, "nativePowerFloorY": -156.5, "nativeStatusColumns": 2 },
+      "hpBar": { "size": [154, 11] },
+      "battleUnit": { "heroFoot": 0, "heroNameGap": 0, "heroNameLine": 0, "heroHealthGap": 5, "heroHealthWidth": 154 },
+      "energy": { "position": [-511, -233], "size": 86, "numberSize": 29, "rimColour": "#514247", "shellColour": "#24262A", "faceColour": "#FFE35DC0", "lightColour": "#FFF7A680", "elementColour": "#FFE35D30" },
+      "endTurn": { "position": [454.5, -220], "size": [143, 56], "numberSize": 18, "faceColour": "#243942", "textColour": "#E2DFD0" },
+      "drawPile": { "position": [-585.5, -311.5], "size": [65, 67] },
+      "hand": { "y": -290, "maxWidth": 694, "spacingMax": 124, "spacingMin": 60 },
+      "pileBadge": { "visual": { "diameter": 28, "offset": [20, -14], "font": 19, "textWidth": 36 } },
+      "card": { "size": [150, 210], "costPosition": [-66.5078125, 95], "nameBand": 37.8, "art": 77.7, "typeLine": 16.8, "textBox": [114, 60.921875], "title": { "position": [0, 79.8046875], "width": 159 }, "artIcon": 44,
+        "v25Content": {
+          "bodyPosition": [0, -59.8515625], "typePosition": [0, -14.6953125],
+          "icons": { "attack": [0, 36.875], "skill": [0, 36.875], "power": [0, 36.84375] },
+          "windows": {
+            "attack": { "position": [0, 32.5625], "size": [126, 86.09375], "shoulder": 0.78 },
+            "skill": { "position": [0, 32.5625], "size": [126, 86.09375], "cornerFraction": 0.06 },
+            "power": { "position": [0, 43.578125], "size": [129, 112.34375], "ellipse": true }
+          }
+        }
+      }
+    }
+  },
+  "v25Nodes": {
+    "referenceButtons": {
+      "ink": "#F4DE8E", "disabledInk": "#A8ABA3",
+      "flag": {"hover": "#A0524C", "pressed": "#5C2828"},
+      "choice": {"hover": "#427D81", "pressed": "#183B40"}
+    },
+    "referenceIdentity": {"ironclad": "旅行者", "silent": "旅行者", "defect": "旅行者", "watcher": "旅行者", "hutao": "胡桃", "arlecchino": "阿蕾奇诺", "furina": "芙宁娜", "raiden": "雷电将军"},
+    "shop": {"referenceRemovalName": "卡牌移除\n服务！", "referenceRemovalInk": "#EED689", "referenceRemovalBorder": "#7D7C81"},
+    "camp": {"reference": {"restEdge": "#85AA68", "forgeEdge": "#96646A", "restHover": "#619E58", "forgeHover": "#B77980"}},
+    "cardReference": {
+      "paperImage": 107253, "costImage": 107270, "paperInk": "#B5A480", "bodyInk": "#2E2828",
+      "costInk": "#FFF0D0", "costOrbInk": "#F3CB68", "ribbonEdge": "#726858",
+      "rarities": {"basic": "#B8AC90", "common": "#B7B4AA", "uncommon": "#71D4D8", "rare": "#E4B855"}
+    },
+    "event": {
+      "art": [-372,-50,330,330],
+      "reference": {
+        "icon": 111049, "figureInk": "#FFFFFF", "figureOpacity": 1,
+        "textInk": "#EDEEDF", "disabledInk": "#777E6E",
+        "costInk": "#D77C7E", "rewardInk": "#9DD740",
+        "hover": "#427D81", "pressed": "#183B40",
+        "border": "#406166", "hoverBorder": "#8EB6B5"
+      }
     }
   }
 }

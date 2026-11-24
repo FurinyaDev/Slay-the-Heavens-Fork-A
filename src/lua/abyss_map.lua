@@ -1,3 +1,4 @@
+local CheckpointIdentities=require('abyss_checkpoint_identities')
 -- Same-run map navigation only; no platform storage, UI or combat dependencies.
 local Rooms = require("abyss_map_rooms")
 local Seed = require("abyss_run_seed")
@@ -84,6 +85,20 @@ local function markEmerald(map,context)
     for _,node in ipairs(map.nodes)do if node.id==selection.nodeId then node.hasEmeraldKey=true end end
 end
 
+local lastRoomSource
+local function roomSource(runSeed,act)
+    local source=lastRoomSource
+    if source and source.runSeed==runSeed and source.act==act then return source end
+    -- The source topology and room assignment depend only on the seed and act.
+    -- Retain one private source, without its working grid, and build fresh map
+    -- nodes and RNG state from it. Restore still replays and compares every path.
+    local generated=Rooms.generate(runSeed,act)
+    source={runSeed=runSeed,act=act,mapSeed=generated.mapSeed,nodes=generated.nodes,edges=generated.edges,
+        topologyState=generated.topologyState,randomState=generated.randomState}
+    lastRoomSource=source
+    return source
+end
+
 function M.generate(data, seed, act, trustedContext)
     emeraldContext(trustedContext)
     if act==nil then act=1 end
@@ -101,7 +116,7 @@ function M.generate(data, seed, act, trustedContext)
         end
         return map
     end
-    local generated=Rooms.generate(runSeed,act)
+    local generated=roomSource(runSeed,act)
     local offset=chapter.first-1
     if act~=1 then signature='map-v4:sts-a0-319009d5:'..chapter.id..':'..signature end
     -- seed preserves the Nodes map-identity ABI; both identities are immutable
@@ -257,6 +272,25 @@ equal = function(actual, expected)
     return true
 end
 
+local function migratedSignature(source)
+    if type(source)~='string' then return source end
+    local header,body=source:match('^([^|]+)|(.+)$')
+    if not header then return source end
+    local entries,original,previous,changed={},{},nil,false
+    for entry in body:gmatch('[^|]+') do
+        local encounterId,limits=entry:match('^([a-z][a-z0-9_]*)(:.*)$')
+        if not encounterId or (previous and previous>=encounterId) then return source end
+        previous=encounterId
+        original[#original+1]=entry
+        local current=CheckpointIdentities.resolve(encounterId)
+        changed=changed or current~=encounterId
+        entries[#entries+1]=current..limits
+    end
+    if not changed or table.concat(original,'|')~=body then return source end
+    table.sort(entries)
+    return header..'|'..table.concat(entries,'|')
+end
+
 -- Strict same-run restoration: regenerate the source graph, then replay legal choices.
 -- Returns an independent state or nil/reason; never mutates the supplied snapshot/data.
 function M.restore(data, snapshot, trustedContext)
@@ -266,7 +300,23 @@ function M.restore(data, snapshot, trustedContext)
     end
     local ok, map = pcall(M.generate, data, snapshot.runSeed, snapshot.version==4 and snapshot.act or 1,trustedContext)
     if not ok then return nil, "invalid_configuration" end
-    if snapshot.sourceSignature ~= map.sourceSignature then return nil, "configuration_mismatch" end
+    if snapshot.sourceSignature ~= map.sourceSignature then
+        local signature=migratedSignature(snapshot.sourceSignature)
+        if signature~=map.sourceSignature then return nil,"configuration_mismatch" end
+        local original=snapshot
+        snapshot={}
+        for key,value in pairs(original)do snapshot[key]=value end
+        snapshot.sourceSignature=signature
+        local boost=original.emeraldBoost
+        if boost~=nil then
+            if type(boost)~='table' or getmetatable(boost)~=nil or boost.mapSignature~=original.sourceSignature then
+                return nil,'invalid_snapshot'
+            end
+            snapshot.emeraldBoost={}
+            for key,value in pairs(boost)do snapshot.emeraldBoost[key]=value end
+            snapshot.emeraldBoost.mapSignature=signature
+        end
+    end
     local jumps={}
     if snapshot.wingedJumps~=nil then
         if not array(snapshot.wingedJumps,3)or #snapshot.wingedJumps==0 then return nil,'invalid_winged_path'end

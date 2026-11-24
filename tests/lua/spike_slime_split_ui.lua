@@ -70,7 +70,7 @@ assert(not recovered,'mixed row feedback must not recover')
 local test,finish=H.suite('SPIKE_SPLIT_STATUS_INPUT')
 local function statusCase(name,sequence)
     test(name,function()
-        local hh,uu,pp,ee,tt,dd=H.setup({'strike'},{'jaw_worm','cultist'})
+        local hh,uu,pp,ee,tt,dd=H.setup({'strike'},{'jaw_worm','raven_adept'})
         local ss=hh.run.combat
         tt('card1',9)
         local hp,energy,hand=ss.enemies[2].hp,ss.energy,#ss.hand
@@ -92,7 +92,7 @@ statusCase('two touches cannot revive a status-dismissal target',function(hh,uu,
 end)
 for _,up in ipairs({true,false}) do
     statusCase('swallowed '..(up and 'released' or 'held')..' pointer is consumed',function(hh,uu,pp,ee,tt)
-        ee('enemy2','down',11);tt('hero',12)
+        ee('enemy2','down',11);statusTap(pp,2,12)
         assert(pp:GetChild('statusInfo').visible)
         if up then ee('enemy2','up',11) end
         ee('enemy2','click',11);assert(not pp:GetChild('statusInfo').visible)
@@ -100,9 +100,9 @@ for _,up in ipairs({true,false}) do
     end)
 end
 statusCase('opening details invalidates an older target even when another touch closes it',function(hh,uu,pp,ee,tt)
-    ee('enemy2','down',11);tt('hero',12)
+    ee('enemy2','down',11);statusTap(pp,2,12)
     assert(pp:GetChild('statusInfo').visible)
-    tt('hero',13);assert(not pp:GetChild('statusInfo').visible)
+    pp:GetChild('statusDismiss').click({touchId=13});assert(not pp:GetChild('statusInfo').visible)
     ee('enemy2','up',11);ee('enemy2','click',11)
 end)
 finish()

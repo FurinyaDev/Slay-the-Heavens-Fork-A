@@ -3,7 +3,7 @@ local testStart=dofile('tests/lua/support/game_ui_fixture.lua').start
 local F = dofile('tests/lua/support/game_ui_fixture.lua')
 local Map, MapUI = require('abyss_map'), require('abyss_map_ui')
 local passed, failed = 0, 0
-local cursor = {CursorDown='down', CursorUp='up', CursorDrag='drag', CursorExit='exit', CursorEndDrag='endDrag'}
+local cursor = {CursorDown='down', CursorUp='up', CursorEnter='enter', CursorDrag='drag', CursorExit='exit', CursorEndDrag='endDrag'}
 local function test(name, fn)
     local ok, why = pcall(fn)
     if ok then passed = passed + 1 else failed = failed + 1 end
@@ -17,7 +17,7 @@ local function same(a, b)
     for k in pairs(b) do if a[k] == nil then return false end end
     return true
 end
-local function setup(events, callback, controller)
+local function setup(events, callback)
     local root = F.control({children=require('abyss_map_controls').controls})
     local panel = root:GetChild('stage'):GetChild('mapPanel')
     local map, calls, ui = Map.generate(F.Data, 42), {}, nil
@@ -27,7 +27,7 @@ local function setup(events, callback, controller)
         calls[#calls+1] = node.id
         if callback then return callback(ui, node) end
         return Map.choose(ui.map, node.id)
-    end, 'click', {imageSource='static', cursor=activeCursor,controller=controller,
+    end, 'click', {imageSource='static', cursor=activeCursor,
         color=function(r,g,b,a) return {r=r,g=g,b=b,a=a} end})
     local function hit(slot)
         return F.mapControl(panel, type(slot)=='number' and ('node'..slot) or slot):GetChild('hit')
@@ -334,20 +334,32 @@ test('repeated node down without a boundary does not secretly reclaim another ow
     assert(emit(1,'click',11) and #calls==1 and map.currentNodeId==map.nodes[1].id)
 end)
 
-test('controller can choose a legal node after input reset without a focus button',function()
-    local focus,device=nil,false
-    local api={events={Confirm='confirm',Cancel='cancel'},directions={Left='left',Right='right'},modes={Specified='specified'},
-        getFocus=function()return focus end,setFocus=function(c)focus=c end,isController=function()return device end}
-    local manager=require('abyss_controller').new(api)
-    local ui,map,calls,emit,tap,hit=setup(nil,nil,manager)
-    emit(1,'down',11) -- intentionally omit Up
+test('a mouse click picks the intended node after an abandoned touch is retired',function()
+    local ui,map,calls,emit,_,hit=setup()
+    emit(1,'down',11)
     ui:setVisible(false);ui:setVisible(true)
-    device=true;ui:update(0);manager:sync('map')
-    focus=hit(2);assert(focus.canControllerFocus)
-    assert(focus.navigationListeners.confirm(),'controller confirm must select the intended room')
+    emit(2,'down',nil)
     emit(1,'up',11);assert(not emit(1,'click',11))
+    emit(2,'up',nil)
+    assert(emit(2,'click',nil),'fresh mouse input must reach its intended room')
+    assert(not hit(2).canControllerFocus and not hit(2).navigationListeners)
     assert(#calls==1 and map.currentNodeId==map.nodes[2].id)
 end)
 
+for _,kind in ipairs({'up','exit','endDrag','enter'})do
+    test('foreign '..kind..' cannot cancel the owning finger press feedback',function()
+        local ui,map,calls,emit=setup()
+        emit(1,'down',11)
+        local fx=ui.roomFx[ui.slots[1]]
+        assert(fx.pressed,'owning finger has no press feedback')
+        emit(1,kind,22)
+        assert(fx.pressed,'foreign input cleared owner press feedback')
+        assert(not emit(1,'click',22) and #calls==0,'foreign input committed a node')
+        emit(1,'up',11)
+        assert(not fx.pressed,'owner release retained press feedback')
+        assert(emit(1,'click',11) and #calls==1 and map.floor==1,'owner lost its commit')
+    end)
+end
+print('LUA_MAP_FEEDBACK_OWNERSHIP_PASS')
 print('LUA_MAP_GESTURE_OWNERSHIP '..passed..' passed; '..failed..' failed')
 assert(failed==0,'map gesture ownership regressions failed')

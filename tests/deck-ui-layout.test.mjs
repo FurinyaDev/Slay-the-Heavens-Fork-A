@@ -4,19 +4,26 @@ import { gameLayout } from '../scripts/game-ui-layout.mjs';
 import { deckCardTemplate } from '../scripts/deck-ui-layout.mjs';
 import { nativeTheme as theme } from '../scripts/native-ui-theme.mjs';
 
+test('read-only piles reserve an empty native host and retain the separate selection Grid', () => {
+  const panel=gameLayout().controls.find(c=>c.name==='deckPanel');
+  const grid=panel.children.find(c=>c.name==='pileGrid');
+  const chrome=panel.children.find(c=>c.name==='pileChrome');
+  const veil=chrome.children.find(c=>c.name==='shade');
+  assert.equal(grid.kind,'container');
+  assert.equal(grid.visible,false);
+  assert.equal(grid.grid,undefined);
+  assert.equal(grid.itemTemplate,undefined);
+  assert.deepEqual(grid.children??[],[]);
+  assert.equal(veil.colour,'#000000');assert.equal(veil.opacity,.85);assert.equal(chrome.visible,false);
+  assert.ok(panel.children.indexOf(chrome)<panel.children.findIndex(c=>c.name==='blocker'));
+  assert.equal(panel.children.find(c=>c.name==='grid').grid.columns,6);
+});
+
 function walk(control, fn) { fn(control); for (const child of control.children ?? []) walk(child, fn); }
 test('approved deck uses a six-column vertical native scroller and a read-only reusable card template', () => {
   const panel = gameLayout().controls.find(c => c.name === 'deckPanel');
   const grid = panel.children.find(c => c.name === 'grid');
-  const filters = ['All','Attack','Skill','Power','Status','Curse'].map(id =>
-    panel.children.find(c => c.name === 'filter' + id));
-  assert.equal(filters.length, 6);
-  for (const control of filters) {
-    assert.ok(control, 'missing native card type filter');
-    assert.equal(control.visible, false, 'filters are gated by the browse lifecycle');
-    assert.equal(control.children.find(c => c.name === 'hit').kind, 'presetButton');
-    assert.equal(control.children.find(c => c.name === 'selected').visible, false);
-  }
+  assert.ok(panel.children.every(control => !control.name.startsWith('filter')));
   assert.equal(panel.children.find(c => c.name === 'sortoriginal').children[0].kind, 'presetButton');
   assert.equal(panel.children.find(c => c.name === 'browseTitle').visible, false);
   assert.equal(panel.visible, false);
@@ -70,7 +77,6 @@ test('deck overlay and close remain inside approved canvas safe areas at every d
     const k = Math.min(device[0] / theme.canvas.base[0], device[1] / theme.canvas.base[1]);
     const panel = layout.controls.find(c => c.name === 'deckPanel');
     for (const c of ['close','grid','browseTitle','sortoriginal','sorttype','sortcost',
-      'filterAll','filterAttack','filterSkill','filterPower','filterStatus','filterCurse',
       'previous','next','pageHint','upgradePreview'].map(name => panel.children.find(c => c.name === name)).concat([
       layout.controls.find(c => c.name === 'deckEntry').children.find(c => c.name === 'open')])) {
       assert.ok((Math.abs(c.position[0]) + c.size[0] / 2 + theme.canvas.safe.x) * k <= device[0] / 2);
@@ -79,45 +85,65 @@ test('deck overlay and close remain inside approved canvas safe areas at every d
   }
 });
 
-test('deck filters fit beside the normal title without covering the native grid or close button', () => {
+test('the simplified-Chinese sort header has three native buttons and clears the shared HUD', () => {
   const panel = gameLayout().controls.find(c => c.name === 'deckPanel');
-  const grid = panel.children.find(c => c.name === 'grid');
-  const browseTitle = panel.children.find(c => c.name === 'browseTitle');
-  const sorts = ['sortoriginal','sorttype','sortcost'].map(name => panel.children.find(c => c.name === name));
-  const buttons = ['filterAll','filterAttack','filterSkill','filterPower','filterStatus','filterCurse']
-    .map(name => panel.children.find(c => c.name === name));
-  const controls = [browseTitle, ...buttons, ...sorts, panel.children.find(c => c.name === 'close')];
-  for (let i = 1; i < controls.length; i++) {
-    const a = controls[i - 1], b = controls[i];
-    assert.ok(a.position[0] + a.size[0] / 2 <= b.position[0] - b.size[0] / 2, a.name + ' overlaps ' + b.name);
-  }
-  assert.ok(Math.min(...buttons.map(c => c.position[1] - c.size[1] / 2)) > grid.position[1] + grid.size[1] / 2);
+  const sort = panel.children.find(c => c.name === 'deckSort');
+  const chrome = panel.children.find(c => c.name === 'pileChrome');
+  const shade = chrome.children.find(c => c.name === 'shade');
+  const {height} = theme.officialAssets.battleHud;
+  assert.deepEqual(sort.children.map(control => control.name), ['plate', 'original', 'type', 'cost']);
+  assert.deepEqual(sort.children.slice(1).map(control => control.children[0].text.content), ['获得顺序', '类型', '耗能']);
+  assert.equal(shade.position[1] + shade.size[1] / 2, theme.canvas.base[1] / 2 - height);
+  assert.ok(sort.position[1] + 22 < shade.position[1] + shade.size[1] / 2);
 });
 
-test('controller overlays isolate nearest-control navigation and deck pages leave the card viewport clear', () => {
+test('pile chrome contains a centered, non-interactive text heading and no bottom badges', () => {
+  const panel = gameLayout().controls.find(c => c.name === 'deckPanel');
+  const chrome = panel.children.find(c => c.name === 'pileChrome');
+  assert.deepEqual(chrome.children.map(c => c.name), ['shade', 'empty', 'heading']);
+  const heading = chrome.children.find(c => c.name === 'heading');
+  assert.equal(heading.kind, 'text');
+  assert.equal(heading.visible, false);
+  assert.equal(heading.raycastTarget, false);
+  assert.equal(heading.position[0], 0);
+  assert.equal(heading.text.align, 'centre');
+  assert.equal(heading.text.fontSize, theme.font.heading);
+  assert.equal(heading.text.colour, theme.color.text);
+  assert.deepEqual(heading.children ?? [], []);
+  assert.equal(heading.states, undefined);
+  assert.equal(theme.layout.deckView.browser.drawBadge, undefined);
+  assert.equal(theme.layout.deckView.browser.discardBadge, undefined);
+});
+
+test('overlays avoid navigation metadata and deck pages leave the card viewport clear', () => {
   const layout = gameLayout(undefined, {originalCharacters: true});
   for (const name of ['deckPanel','potionPanel','choicePanel','characterPanel','exitPanel']) {
-    assert.equal(layout.controls.find(c => c.name === name).isolateNavigation, true, name);
+    assert.equal(layout.controls.find(c => c.name === name).isolateNavigation, undefined, name);
   }
   const deck = layout.controls.find(c => c.name === 'deckPanel');
   const grid = deck.children.find(c => c.name === 'grid');
   for (const name of ['previous','next','pageHint']) {
     const control = deck.children.find(c => c.name === name);
-    assert.equal(control.visible, false, 'controller-only paging starts hidden');
+    assert.equal(control.visible, false, 'paging starts hidden until the browser opens');
     assert.ok(control.position[1] + control.size[1] / 2 < grid.position[1] - grid.size[1] / 2);
   }
 });
 
- test('upgrade preview is an explicit native button outside the text paging hit', () => {
+ test('upgrade preview uses a magnified native card face and a separate focusable switch', () => {
  const panel=gameLayout().controls.find(c=>c.name==='deckPanel');
  const toggle=panel.children.find(c=>c.name==='upgradePreview');
- const textHit=panel.children.find(c=>c.name==='detailHit');
+ const card=panel.children.find(c=>c.name==='cardFocus');
+ const face=card.children[0];
+ assert.equal(card.visible,false);
+ assert.ok(card.scale.every(value=>value>1));
+ assert.deepEqual(face.children,deckCardTemplate().children[0].children);
+ assert.equal(toggle.position[0],card.position[0]);
  assert.equal(toggle.visible,false);
  assert.equal(toggle.children[0].kind,'presetButton');
- assert.equal(toggle.children[0].focusable,true);
+ assert.equal(toggle.children[0].focusable,undefined);
  assert.ok(toggle.size[1]>=48);
- assert.ok(toggle.position[1]+toggle.size[1]/2<textHit.position[1]-textHit.size[1]/2);
- for(const state of toggle.children[0].children)assert.equal(state.children.find(c=>c.name==='label').text.content,'升级预览');
+ assert.ok(toggle.position[1]+toggle.size[1]/2<card.position[1]-card.size[1]*card.scale[1]/2);
+ for(const state of toggle.children[0].children)assert.equal(state.children.find(c=>c.name==='label').text.content,'查看升级');
  });
 
  test('original Chinese sort labels fit in every state without truncation at all reported sizes', () => {

@@ -9,6 +9,7 @@ local Presentation = require("abyss_presentation")
 local Layout = require("abyss_ui_layout")
 local Fixture=dofile('tests/lua/support/game_ui_fixture.lua')
 local monsterControl=dofile('tests/lua/support/monster_control_fixture.lua')
+local readPowers = dofile("tests/lua/support/power_tip_fixture.lua")
 local L = Theme.layout
 -- These are input points on the current visible native actors, not expected
 -- damage values. Every numerical preview oracle below remains unchanged.
@@ -50,7 +51,7 @@ local function setup(deck, enemies, drag)
         cursorEvents=drag and {CursorDown="down",CursorDrag="drag",CursorUp="up",CursorEndDrag="endDrag"} or nil
     }), {embedded=true})
     ui.run = Run.new(Data, 1)
-    assert(Run.startCombat(ui.run, "cultist_solo"))
+    assert(Run.startCombat(ui.run, "raven_adept_solo"))
     ui.run.combat = Combat.new(Data, {deck=deck, enemies=enemies})
     -- This synthetic party has no MonsterHelper formation. Explicit constructor
     -- origins keep real native hitboxes distinct; production never spreads slots.
@@ -112,7 +113,7 @@ local count = 0
 local function test(name, fn) fn(); count = count + 1; print("ok card preview " .. count .. " - " .. name) end
 
 test("single-target damage follows Strength and Weak, and each target's own Vulnerable", function()
-    local s = battle({"strike"}, {"jaw_worm", "cultist"})
+    local s = battle({"strike"}, {"jaw_worm", "raven_adept"})
     local neutral = Combat.cardPreview(s, s.hand[1])[1]
     eq(neutral.low, 6) eq(neutral.high, 6) eq(neutral.op, "damage")
     Combat.addStatus(s.player, "strength", 4) Combat.addStatus(s.player, "weak", 1)
@@ -148,7 +149,7 @@ end)
 
 test("area attacks preview every living enemy and match the core's per-enemy damage", function()
     for _, id in ipairs({"cleave", "thunderclap"}) do
-        local s = battle({id}, {"jaw_worm", "cultist", "jaw_worm"})
+        local s = battle({id}, {"jaw_worm", "raven_adept", "jaw_worm"})
         Combat.addStatus(s.player, "strength", 1)
         Combat.addStatus(s.enemies[2], "vulnerable", 1)
         local preview = Combat.cardPreview(s, s.hand[1], 1)[1] -- aim never narrows an area hit
@@ -188,7 +189,7 @@ test("Iron Wave previews block and damage separately; Body Slam previews its cur
 end)
 
 test("negative Strength floors damage at zero and previews never mutate the battle", function()
-    local s = battle({"strike", "defend", "cleave", "body_slam", "twin_strike"}, {"jaw_worm", "cultist"})
+    local s = battle({"strike", "defend", "cleave", "body_slam", "twin_strike"}, {"jaw_worm", "raven_adept"})
     Combat.addStatus(s.player, "strength", -20) Combat.addStatus(s.player, "dexterity", -20)
     local before = Combat.copy(s)
     for _, instance in ipairs(s.hand) do
@@ -204,7 +205,7 @@ test("negative Strength floors damage at zero and previews never mutate the batt
 end)
 
 test("source-backed hand and aimed values reset when target powers disappear or aiming is cancelled", function()
-    local ui, panel, event = setup({"strike", "strike"}, {"jaw_worm", "cultist"}, true)
+    local ui, panel, event = setup({"strike", "strike"}, {"jaw_worm", "raven_adept"}, true)
     local s = ui.run.combat
     Combat.addStatus(s.player, "strength", 2)
     ui:render(); eq(label(panel), "对目标造成 8 点伤害。")
@@ -230,7 +231,7 @@ test("source-backed hand and aimed values reset when target powers disappear or 
 end)
 
 test("hand labels update live for every modifier and show the aimed target while dragging", function()
-    local ui, panel, event = setup({"strike", "defend", "cleave", "twin_strike", "body_slam"}, {"jaw_worm", "cultist"}, true)
+    local ui, panel, event = setup({"strike", "defend", "cleave", "twin_strike", "body_slam"}, {"jaw_worm", "raven_adept"}, true)
     local s = ui.run.combat
     for _, enemy in ipairs(s.enemies) do enemy.ai, enemy.hp, enemy.maxHp = nil, 200, 200 end
     local slot = {}
@@ -269,7 +270,7 @@ test("hand labels update live for every modifier and show the aimed target while
 end)
 
 test("the reported Weak versus Vulnerable scene shows 4 in hand and 6 only while aimed",function()
-    local ui,panel,event=setup({"strike","defend"},{"jaw_worm","cultist"},true)
+    local ui,panel,event=setup({"strike","defend"},{"jaw_worm","raven_adept"},true)
     local s=ui.run.combat
     Combat.addStatus(s.player,"weak",1)
     Combat.addStatus(s.enemies[2],"vulnerable",1)
@@ -349,7 +350,7 @@ local function info(panel, allPages)
 end
 
 test("player and every enemy show status icons, stacks and full current effects", function()
-    local ui, panel, _, tap = setup({"strike"}, {"jaw_worm", "cultist", "cultist"})
+    local ui, panel, _, tap = setup({"strike"}, {"jaw_worm", "raven_adept", "raven_adept"})
     local s = ui.run.combat
     Combat.addTemporaryStrength(s.player, 2) Combat.addStatus(s.player, "vulnerable", 1)
     Combat.addStatus(s.enemies[1], "weak", 2) Combat.addStatus(s.enemies[1], "poison", 4)
@@ -402,7 +403,7 @@ test("player and every enemy show status icons, stacks and full current effects"
         s.enemies[3].statuses,s.enemies[3].powerOrder={},{}
         Combat.addStatus(s.enemies[3],id,5)
         ui:render()
-        tap({"enemy3", "statusRow", "hit"})
+        assert(ui:openHelp({index=3,statusId=id}))
         open, rows = info(panel,true)
         assert(open and #rows == 1, id)
         local row = rows[1]
@@ -415,11 +416,15 @@ test("player and every enemy show status icons, stacks and full current effects"
         assert(not row.note or utf8.len(row.note) <= perLine * 2, id .. " condition overflows two lines: " .. tostring(row.note))
         assert(utf8.len(row.tag) <= math.floor(I.tagWidth / Theme.font.small), id .. " duration tag too long: " .. row.tag)
         tap({"statusInfo", "hit"})
+        tap({"enemy3", "statusRow", "hit"})
+        local compact, tips = readPowers(panel)
+        assert(#tips == 1 and compact:find(row.name, 1, true) and compact:find(row.text, 1, true), id)
+        panel:GetChild("statusDismiss").click()
     end
 end)
 
 test("player chips overflow to +N, native monster chips preserve the full ordered row, and Details pages every status", function()
-    local ui, panel, _, tap = setup({"strike"}, {"jaw_worm", "cultist", "cultist", "cultist", "jaw_worm"})
+    local ui, panel, _, tap = setup({"strike"}, {"jaw_worm", "raven_adept", "raven_adept", "raven_adept", "jaw_worm"})
     local s = ui.run.combat
     local ids = {"strength", "dexterity", "vulnerable", "weak", "frail", "poison", "thorns", "regen",
         "artifact", "barricade", "ritual", "enrage"}
@@ -471,14 +476,13 @@ end)
 
 for _, drag in ipairs({false, true}) do
     local mode = drag and "pointer" or "click-only"
-    test(mode .. ": status taps never play, target or end the turn, and an open panel swallows the next tap", function()
-        local ui, panel, event, tap = setup({"strike", "strike", "defend"}, {"jaw_worm", "cultist"}, drag)
+    test(mode .. ": status inspection leaves the selected card and battle unchanged", function()
+        local ui, panel, event, tap = setup({"strike", "strike", "defend"}, {"jaw_worm", "raven_adept"}, drag)
         local s = ui.run.combat
         for _, enemy in ipairs(s.enemies) do enemy.ai = nil end
         Combat.addStatus(s.enemies[2],'artifact',1) ui:render() -- A real native power hit area.
         local strike
         for i, instance in ipairs(s.hand) do if instance.cardId == "strike" then strike = strike or i end end
-        local other = strike == 1 and 2 or 1
         local function snapshot() return {energy = s.energy, hand = #s.hand, turn = s.turn, hp1 = s.enemies[1].hp,
             hp2 = s.enemies[2].hp, block = s.player.block, events = #s.events} end
         local before = snapshot()
@@ -492,33 +496,21 @@ for _, drag in ipairs({false, true}) do
         assert(panel:GetChild("statusInfo").visible and ui.selected == s.hand[strike].uid)
         eq(ui.target, 1, "status rows never move the potion/card target")
         unchanged("status row")
-        -- With the panel open, a tap on an enemy, a card or End Turn only closes it.
-        for _, path in ipairs({"enemy2", "card" .. other, "endTurn"}) do
-            tap(path)
-            assert(not panel:GetChild("statusInfo").visible, path .. " closed the panel")
-            unchanged(path)
-            eq(ui.selected, s.hand[strike].uid, path .. " kept the selection")
-            tap({"hero", "hit"}) assert(panel:GetChild("statusInfo").visible)
-        end
-        if drag then
-            -- A drag that starts on a card while the panel is open never becomes a play.
-            local card = panel:GetChild("card" .. other)
-            event("card" .. other, "down", card.x, card.y)
-            assert(not panel:GetChild("statusInfo").visible and ui.gesture == nil)
-            event("card" .. other, "drag", enemyPoint(panel,2))
-            event("card" .. other, "up", enemyPoint(panel,2))
-            event("card" .. other, "click", enemyPoint(panel,2))
-            unchanged("drag")
-        else tap({"statusInfo", "hit"}) end
+        -- The outside dismissal is separate from the enemy's deliberate target tap.
+        event("statusDismiss", "click")
         assert(not panel:GetChild("statusInfo").visible)
-        -- Closed again, the ordinary flow is untouched: the selected Strike hits enemy 2.
+        unchanged("dismissal")
+        eq(ui.selected, s.hand[strike].uid, "dismissal kept the selection")
+        tap({"hero", "hit"})
+        assert(panel:GetChild("statusInfo").visible)
+        unchanged("hero portrait")
         tap("enemy2") drain(ui)
         eq(s.enemies[2].hp, before.hp2 - 6) eq(#s.hand, before.hand - 1)
     end)
 end
 
 test("the panel follows live values and closes for playback, a dead unit or a new battle", function()
-    local ui, panel, _, tap = setup({"strike", "strike", "strike"}, {"jaw_worm", "cultist"})
+    local ui, panel, _, tap = setup({"strike", "strike", "strike"}, {"jaw_worm", "raven_adept"})
     local s = ui.run.combat
     for _, enemy in ipairs(s.enemies) do enemy.ai = nil end
     ui:showStatus(1)
@@ -532,7 +524,7 @@ test("the panel follows live values and closes for playback, a dead unit or a ne
     s.enemies[2].hp = 0 ui:render()
     assert(not panel:GetChild("statusInfo").visible, "a dead unit's panel closes")
     tap({"hero", "hit"}) assert(panel:GetChild("statusInfo").visible)
-    ui.run.combat = Combat.new(Data, {deck={"strike"}, enemies={"cultist"}}) ui:render()
+    ui.run.combat = Combat.new(Data, {deck={"strike"}, enemies={"raven_adept"}}) ui:render()
     assert(not panel:GetChild("statusInfo").visible, "a replacement battle closes stale details")
 end)
 
@@ -553,7 +545,7 @@ test('value feedback: unchanged, increased, decreased, net zero, upgraded base a
         {'defend',{dexterity=3},'8','↑'}, {'defend',{dexterity=3,frail=1},'6','↑'},
         {'defend',{frail=1},'6','↓',true}, {'defend',{dexterity=-20},'0','↓'},
     }) do
-        local ui,panel=setup({{cardId=case[1],upgraded=case[5]}},{'cultist'})
+        local ui,panel=setup({{cardId=case[1],upgraded=case[5]}},{'raven_adept'})
         local s=ui.run.combat
         for id,n in pairs(case[2]) do Combat.addStatus(s.player,id,n) end
         ui:render()
@@ -571,7 +563,7 @@ test('value feedback: unchanged, increased, decreased, net zero, upgraded base a
     end
 end)
 test('value feedback: mixed effects are indexed, multi-hit is per hit, special damage stays neutral', function()
-    local ui,panel=setup({'iron_wave'},{'cultist'})
+    local ui,panel=setup({'iron_wave'},{'raven_adept'})
     Combat.addStatus(ui.run.combat.player,'strength',-1)
     Combat.addStatus(ui.run.combat.player,'dexterity',2)
     ui:render()
@@ -579,16 +571,16 @@ test('value feedback: mixed effects are indexed, multi-hit is per hit, special d
     eq(#marks,2) eq(marks[1].text,'7↑') eq(marks[2].text,'4↓')
     rgb(marks[1].colour,Theme.color.cardValueIncrease)
     rgb(marks[2].colour,Theme.color.cardValueDecrease)
-    ui,panel=setup({'twin_strike'},{'cultist'})
+    ui,panel=setup({'twin_strike'},{'raven_adept'})
     Combat.addStatus(ui.run.combat.player,'strength',2) ui:render()
     marks=spans(panel) eq(#marks,1) eq(marks[1].text,'7↑')
     assert(label(panel):find('2 次',1,true))
-    ui,panel=setup({'body_slam'},{'cultist'})
+    ui,panel=setup({'body_slam'},{'raven_adept'})
     ui.run.combat.player.block=9 Combat.addStatus(ui.run.combat.player,'strength',1) ui:render()
     eq(#spans(panel),0) assert(label(panel):find('当前 10 点',1,true))
 end)
 test('value feedback: aim, target switch, cancellation, slot reuse, removal and disabled cost are independent', function()
-    local ui,panel,event,tap=setup({'strike','strike'},{'jaw_worm','cultist'},true)
+    local ui,panel,event,tap=setup({'strike','strike'},{'jaw_worm','raven_adept'},true)
     local s=ui.run.combat
     Combat.addStatus(s.player,'weak',1) Combat.addStatus(s.enemies[2],'vulnerable',1) ui:render()
     local card=panel:GetChild('card1')
@@ -615,7 +607,7 @@ test('value feedback: aim, target switch, cancellation, slot reuse, removal and 
     eq(inline(panel),Presentation.strike.text)
 end)
 test('value feedback: repeated render reads state only and feedback adds no input listeners',function()
-    local ui,panel=setup({'defend'},{'cultist'})
+    local ui,panel=setup({'defend'},{'raven_adept'})
     local s=ui.run.combat Combat.addStatus(s.player,'frail',1)
     local function stable(v)
         if type(v)~='table' then return tostring(v) end

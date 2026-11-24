@@ -7,7 +7,7 @@ import { candidateScriptFiles } from '../scripts/native-candidate-scripts.mjs';
 import { buildUI } from '../scripts/build-ui.mjs';
 import { buildLuaData } from '../scripts/build-lua-data.mjs';
 
-const generated = ['abyss_art_features','abyss_monster_actor_binding','abyss_monster_art_data', 'abyss_data', 'abyss_original_v4_data', 'abyss_map_layout', 'abyss_narrative', 'abyss_presentation', 'abyss_theme', 'abyss_menu_background_asset', 'abyss_ready_card_binding', 'abyss_ready_card_assets', 'abyss_traveler_portrait_assets'];
+const generated = ['abyss_deck_browser_binding','abyss_component_binding','abyss_v25_card_assets','abyss_ui_profile','abyss_art_features','abyss_monster_actor_binding','abyss_monster_art_data', 'abyss_data', 'abyss_original_v4_data', 'abyss_map_layout', 'abyss_narrative', 'abyss_presentation', 'abyss_theme', 'abyss_menu_background_asset', 'abyss_ready_card_binding', 'abyss_ready_card_assets', 'abyss_traveler_portrait_assets'];
 function fixture(run) {
   const root = mkdtempSync(join(tmpdir(), 'abyss-native-scripts-'));
   const source = join(root, 'src'), build = join(root, 'build');
@@ -39,7 +39,8 @@ test('ordinary native package declares safe default UI parameters', () => fixtur
   const scripts = candidateScriptFiles(source, build);
   assert.deepEqual(scripts.find(item => item.name === 'abyss_ui').variables,
     [{ name: 'nativeMonsterArtEnabled', type: 'boolean', value: true }, { name: 'nativeBgmEnabled', type: 'boolean', value: false },
-      { name: 'experimentalCharacters', type: 'boolean', value: false }]);
+      { name: 'experimentalCharacters', type: 'boolean', value: false },
+      { name: 'nativeComponentControls', type: 'boolean', value: false, public: true }]);
   for (const item of scripts.filter(item => item.name !== 'abyss_ui')) assert.equal(item.variables, undefined);
 }));
 
@@ -48,7 +49,7 @@ test('actual game module set includes current AI and all generated runtime depen
   buildLuaData('data', join(build, 'abyss_data.lua'));
   writeFileSync(join(build, 'sts1_unknown_vectors.lua'), 'error("test fixture")');
   const names = candidateScriptFiles('src/lua', build).map(item => item.name);
-  for (const name of ['abyss_ui', 'abyss_encounter_formation', 'abyss_room_encounters', 'abyss_enemy_random', 'abyss_new_run_seed', 'abyss_encounter_queue', 'abyss_run_seed', 'abyss_map_topology', 'abyss_map_rooms', 'abyss_randomxs128', 'abyss_sts_random', 'abyss_jaw_worm_ai', 'abyss_gremlin_nob_ai', 'abyss_blue_slaver_ai', 'abyss_red_slaver_ai', 'abyss_acid_slime_s_ai', 'abyss_sentry_ai', 'abyss_enemy_ai', ...generated]) assert(names.includes(name), name);
+  for (const name of ['abyss_ui', 'abyss_encounter_formation', 'abyss_room_encounters', 'abyss_enemy_random', 'abyss_new_run_seed', 'abyss_encounter_queue', 'abyss_run_seed', 'abyss_map_topology', 'abyss_map_rooms', 'abyss_randomxs128', 'abyss_sts_random', 'abyss_jaw_worm_ai', 'abyss_gremlin_nob_ai', 'abyss_blue_guard_ai', 'abyss_red_guard_ai', 'abyss_acid_slime_s_ai', 'abyss_sentry_ai', 'abyss_enemy_ai', ...generated]) assert(names.includes(name), name);
   assert(!names.includes('sts1_unknown_vectors'));
   assert.equal(new Set(names).size, names.length);
 }));

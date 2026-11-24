@@ -1,3 +1,4 @@
+import {preLuaTimeoutPolicySource} from './lua-timeout-policy-source-inverse.mjs';
 import {preCardOriginSource} from './card-origin-source-inverse.mjs';
 import {preMultiHistoricalUiTest} from './multi-historical-ui-tests.mjs';
 import {preIntegrationSource,prepareIntegrationRetirement} from './pr372-integration-source.mjs';
@@ -40,6 +41,7 @@ function preRunScoreArchitecture(path,source){
  }catch{return source;}
 }
 export function normalizePr323CompositionSource(path,source){
+ source=preLuaTimeoutPolicySource(path,source);
  source=preRunScoreArchitecture(path,preCardOriginSource(path,source));
  source=preMultiHistoricalUiTest(path,source);
  source=preIntegrationSource(path,source);
@@ -95,7 +97,17 @@ function project(path,source,target){
 }
 // Expose the existing full composition step so one materialization can validate
 // and project the same normalized bytes without running that step twice.
+// Restore the exact original fixture before the immutable PR323 proof.
+function beforeShopV4Fixture(path,source){
+ if(path!=="tests/lua/original_v4_ui.lua"||typeof source!=='string'||source.includes('\r\r\n'))return source;
+ const lf=normalize(source);
+ if(hash(lf)!=='71356bd2162f34c375ccf3de38413f5764ebc53e3b44c3910fae263bd2b2459d')return source;
+ const prior=lf.replace("local advanceShop=dofile('tests/lua/support/shop_timeline.lua')\n",'').replace("local room=path(ui.root,'nodePanel/shopRoom')\nlocal shelf=path(ui.root,'nodePanel/shopView')\nassert(room.visible and not shelf.visible, 'the complete shop room appears before the shelf')\nassert(path(ui.root,'nodePanel/merchant/talk/hit').click())\nassert(room.visible and not shelf.visible, 'cold shelf preparation must stay behind the room')\nadvanceShop(ui)\nassert(shelf.visible and not room.visible and not ui.nodeUI.shopBusy, 'the staged shelf must become interactive')\n",'');
+ assert.equal(hash(prior),'672033876fabe45c44bdb5fd0cb47f53353c332bd948ad7ce670141d6e25ea9b','exact original shop fixture predecessor');
+ return source.includes('\r\n')?prior.replaceAll('\n','\r\n'):prior;
+}
 export function normalizePr323HistoryInput(path,source){
+ source=beforeShopV4Fixture(path,source);
  source=preCardOriginSource(path,source);
  source=preMultiHistoricalUiTest(path,source);
  source=preBattleLifeSource(path,preCardDescOverflowSource(path,source));

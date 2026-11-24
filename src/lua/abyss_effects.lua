@@ -3,7 +3,7 @@ local M = {}
 local Actors = require("abyss_actor")
 local CardActions = require("abyss_card_actions")
 local extensionOps={defectFinal=true,gainMantra=true,applyMantra=true,removeMantra=true,gainDevotion=true,gainExhaustPower=true,gainOrbPower=true,
-    gainEnergyIfDiscard=true,calculatedGamble=true}
+    gainEnergyIfDiscard=true,calculatedExchange=true}
 for op in pairs(require('abyss_build_actions').ops) do extensionOps[op]=true end
 for op in pairs(require('abyss_flow_actions').ops) do extensionOps[op]=true end
 for op in pairs(require('abyss_watcher_final_cards').ops) do extensionOps[op]=true end
@@ -26,7 +26,7 @@ local clearsOnFinalDamage = { damage=true, damageAll=true, damageEqualToBlock=tr
 -- the entire input before any effect, including holes and unreachable branches.
 -- Unmarked inputs deliberately keep their old validation/error timing.
 coreOps.reptomancerSummon=true
-coreOps.daggerSacrifice=true
+coreOps.daggerExpenditure=true
 coreOps.enemyHealAll=true
 coreOps.enemyStrengthAll=true
 coreOps.enemyCleanse=true
@@ -43,58 +43,102 @@ coreOps.enemyDazedDraw=true
 clearedAfterDamage.enemyDazedDraw=true
 clearedAfterDamage.awakenedVoid=true
 
-local function targetGroup(effects)
-    local found, misplaced, cyclic = false, false, false
-    local seen, active = {}, {}
-    local pending = {{value=effects}}
-    while #pending > 0 do
-        local visit = table.remove(pending)
-        local value = visit.value
-        if type(value) == "table" then
-            if visit.leaving then active[value] = nil
-            else
-                if value.targetGroup ~= nil then
-                    found = true
-                    if not visit.topMember then misplaced = true end
-                end
-                if active[value] then cyclic = true
-                elseif not seen[value] then
-                    seen[value], active[value] = true, true
-                    pending[#pending + 1] = {value=value, leaving=true}
-                    for key, child in pairs(value) do
-                        pending[#pending + 1] = {value=key}
-                        pending[#pending + 1] = {value=child, topMember=value == effects and type(key) == "number"}
-                    end
-                end
+local function visitTargetGroup(effects, visit, graph)
+    local value = visit.value
+    if type(value) ~= "table" then return end
+    if visit.leaving then graph.active[value] = nil
+    else
+        if value.targetGroup ~= nil then
+            graph.found = true
+            if not visit.topMember then graph.misplaced = true end
+        end
+        if graph.active[value] then graph.cyclic = true
+        elseif not graph.seen[value] then
+            graph.seen[value], graph.active[value] = true, true
+            graph.pending[#graph.pending + 1] = {value=value, leaving=true}
+            for key, child in pairs(value) do
+                graph.pending[#graph.pending + 1] = {value=key}
+                graph.pending[#graph.pending + 1] = {value=child, topMember=value == effects and type(key) == "number"}
             end
         end
     end
-    if not found then return nil end
-    if misplaced or cyclic then return nil, "invalid_target_group" end
+end
+
+local function discoverTargetGroup(effects)
+    local graph = {found=false, misplaced=false, cyclic=false, seen={}, active={}, pending={{value=effects}}}
+    while #graph.pending > 0 do
+        visitTargetGroup(effects, table.remove(graph.pending), graph)
+    end
+    return graph
+end
+
+local function targetGroupCount(effects)
     local count = 0
     for key in pairs(effects) do
-        if type(key) ~= "number" or key % 1 ~= 0 or key < 1 then return nil, "invalid_target_group" end
+        if type(key) ~= "number" or key % 1 ~= 0 or key < 1 then return nil end
         count = count + 1
     end
+    return count
+end
+
+local function validTargetGroupMember(effect, allowed)
+    if effect.targetGroup ~= "weak_then_vulnerable" or effect.op ~= "applyStatusAll"
+        or type(effect.value) ~= "number" or effect.value < 1 or effect.value > 2147483647
+        or effect.value % 1 ~= 0 then return false end
+    for key in pairs(effect) do if not allowed[key] then return false end end
+    return true
+end
+
+local function targetGroupMembers(effects, count)
     local members = {}
     local allowed = { op=true, status=true, value=true, targetGroup=true }
     for i = 1, count do
         local effect = effects[i]
-        if type(effect) ~= "table" then return nil, "invalid_target_group" end
+        if type(effect) ~= "table" then return nil end
         if effect.targetGroup ~= nil then
-            if effect.targetGroup ~= "weak_then_vulnerable" or effect.op ~= "applyStatusAll"
-                or type(effect.value) ~= "number" or effect.value < 1 or effect.value > 2147483647
-                or effect.value % 1 ~= 0 then return nil, "invalid_target_group" end
-            for key in pairs(effect) do if not allowed[key] then return nil, "invalid_target_group" end end
+            if not validTargetGroupMember(effect, allowed) then return nil end
             members[#members + 1] = i
         end
     end
-    if #members ~= 2 or members[2] ~= members[1] + 1 then return nil, "invalid_target_group" end
+    return members
+end
+
+local function validTargetGroupPair(effects, members)
+    if #members ~= 2 or members[2] ~= members[1] + 1 then return false end
     local first, second = effects[members[1]], effects[members[2]]
     if first.status ~= "weak" or second.status ~= "vulnerable" or first.value ~= second.value then
-        return nil, "invalid_target_group"
+        return false
     end
+    return true
+end
+
+local function targetGroup(effects)
+    local graph = discoverTargetGroup(effects)
+    if not graph.found then return nil end
+    if graph.misplaced or graph.cyclic then return nil, "invalid_target_group" end
+    local count = targetGroupCount(effects)
+    if not count then return nil, "invalid_target_group" end
+    local members = targetGroupMembers(effects, count)
+    if not members or not validTargetGroupPair(effects, members) then return nil, "invalid_target_group" end
     return members[1]
+end
+
+-- Queue preparation can split ordinary effects. A validated target group is
+-- one action and its members must reach the interpreter together, untouched.
+function M.queueItems(effects)
+    local start, invalid = targetGroup(effects)
+    assert(not invalid, invalid)
+    if not start then return effects end
+
+    local items = {}
+    for index, effect in ipairs(effects) do
+        if index == start then
+            items[#items + 1] = {op='effectBatch', effects={effect, effects[index + 1]}}
+        elseif index ~= start + 1 then
+            items[#items + 1] = effect
+        end
+    end
+    return items
 end
 
 function M.requiresQueue(effects)
@@ -105,7 +149,7 @@ function M.requiresQueue(effects)
         if type(effect)=='table' and require('abyss_build_actions').ops[effect.op] then return true end
         if type(effect)=='table' and require('abyss_flow_actions').ops[effect.op] then return true end
         if type(effect)=="table" and (effect.op=="gainMantra" or effect.op=="applyMantra" or effect.op=="removeMantra"
-            or effect.op=="gainExhaustPower" or effect.op=="calculatedGamble") then return true end
+            or effect.op=="gainExhaustPower" or effect.op=="calculatedExchange") then return true end
     end
     for _, effect in ipairs(effects) do if type(effect) == "table" and (effect.op == "scry" or effect.op == "handChoice" or effect.op == "whirlwind" or effect.op == "reaperDamage") then return true end end
     return false
@@ -113,7 +157,7 @@ end
 function M.allowedAfterVictory(effect)
     if effect.op=='rareRelicDamageAll'then return true end
     if require('abyss_time_eater').retained(effect)then return true end
-    if effect.op=='daggerSacrifice'then return true end
+    if effect.op=='daggerExpenditure'then return true end
     if effect.op=='capturedSharpHide' then return true end
     if effect.op=='orbStart' then return effect.action.kind=='frost' end
     if effect.op=='engineEvokeRounds' or effect.op=='evokeOrb' or effect.op=='evokeWithoutRemovingOrb' then return true end
@@ -122,17 +166,21 @@ function M.allowedAfterVictory(effect)
         or effect.op == "damageEqualToBlock" or effect.op == "loseHp"
 end
 
-local function supported(effects, branch)
-    if type(effects) ~= "table" then return false, "invalid_effect" end
+local function denseEffectCount(effects)
+    if type(effects) ~= "table" then return nil, "invalid_effect" end
     -- Both levels must be nonempty dense arrays: ipairs alone would silently
     -- accept objects, empty branches or unknown operations after a hole.
     local count = 0
     for key in pairs(effects) do
-        if type(key) ~= "number" or key % 1 ~= 0 or key < 1 then return false, "invalid_effect" end
+        if type(key) ~= "number" or key % 1 ~= 0 or key < 1 then return nil, "invalid_effect" end
         count = count + 1
     end
-    if count == 0 then return false, "invalid_effect" end
-    for i = 1, count do if effects[i] == nil then return false, "invalid_effect" end end
+    if count == 0 then return nil, "invalid_effect" end
+    for i = 1, count do if effects[i] == nil then return nil, "invalid_effect" end end
+    return count
+end
+
+local function scrySequenceSupported(effects)
     local hasScry = false
     for _,effect in ipairs(effects) do if type(effect)=="table" and effect.op=="scry" then hasScry=true end end
     if hasScry then
@@ -141,37 +189,77 @@ local function supported(effects, branch)
             if type(effect) ~= "table" or not allowed[effect.op] then return false, "unsupported_scry_sequence" end
         end
     end
+    return true
+end
+
+local function supportedEffectOp(effect)
+    if type(effect) ~= "table" then return nil, "invalid_effect" end
+    local op = effect.op
+    if type(op) ~= "string" then return nil, "invalid_effect" end
+    if op=='defectFinal' and not require('abyss_defect_final_cards').supports(effect) then return nil,'invalid_defect_final' end
+    return op
+end
+
+local function conditionalAllowed(effect, branch, targetChecked)
+    -- Combat preflights top-level damage targets; never enable a
+    -- conditional-only card or recursively hidden target requirement.
+    return not (branch or not targetChecked or (effect["if"] ~= "target_vulnerable" and effect['if']~='target_poison')
+        or effect["else"] ~= nil)
+end
+
+local function nonConditionalOpSupported(op, branch)
+    return (coreOps[op] or extensionOps[op] or CardActions.supports(op))
+        and not (branch and not (branch=='target_poison' and op=='damage') and op ~= "energy" and op ~= "draw")
+end
+
+local function selectionAmountsSupported(effect, op, branch, effectIndex, count)
+    if op == "requestDiscard" and (branch or effectIndex ~= count
+        or type(effect.value) ~= "number" or effect.value % 1 ~= 0 or effect.value < 0 or effect.value > 10) then
+        return false, "discard_must_end_card"
+    end
+    if op == "scry" and (type(effect.value) ~= "number" or effect.value % 1 ~= 0
+        or effect.value < 0 or effect.value > 2147483647) then return false, "invalid_scry_amount" end
+    return true
+end
+
+local function mantraAmountSupported(effect, op)
+    if (op=="gainMantra" or op=="gainDevotion") and (type(effect.value)~="number" or effect.value%1~=0
+        or effect.value<0 or effect.value>2147483647) then return false,"invalid_mantra_amount" end
+    return true
+end
+
+local function effectMetadataSupported(effect, op)
+    if effect.fixed ~= nil and (type(effect.fixed) ~= "boolean"
+        or not (op=="block" or op=="damage" or op=="damageAll" or CardActions.supports(op))) then
+        return false, "invalid_fixed_block"
+    end
+    if effect.target ~= nil and (op ~= "block" or effect.target ~= "random_ally" and effect.target~='automaton' and effect.target~='all_allies') then
+        return false, "invalid_effect_target"
+    end
+    return true
+end
+
+local function supported(effects, branch)
+    local count, invalid = denseEffectCount(effects)
+    if not count then return false, invalid end
+    local ok, unsupported = scrySequenceSupported(effects)
+    if not ok then return false, unsupported end
     local targetChecked = false
     for effectIndex, effect in ipairs(effects) do
-        if type(effect) ~= "table" then return false, "invalid_effect" end
-        local op = effect.op
-        if type(op) ~= "string" then return false, "invalid_effect" end; if op=='defectFinal' and not require('abyss_defect_final_cards').supports(effect)then return false,'invalid_defect_final' end
+        local op
+        op, unsupported = supportedEffectOp(effect)
+        if not op then return false, unsupported end
         if op == "conditional" then
-            -- Combat preflights top-level damage targets; never enable a
-            -- conditional-only card or recursively hidden target requirement.
-            if branch or not targetChecked or (effect["if"] ~= "target_vulnerable" and effect['if']~='target_poison')
-                or effect["else"] ~= nil then return false, "conditional" end
-            local ok, unsupported = supported(effect["then"], effect['if'])
+            if not conditionalAllowed(effect, branch, targetChecked) then return false, "conditional" end
+            ok, unsupported = supported(effect["then"], effect['if'])
             if not ok then return false, unsupported end
-        elseif not (coreOps[op] or extensionOps[op] or CardActions.supports(op))
-            or (branch and not (branch=='target_poison' and op=='damage') and op ~= "energy" and op ~= "draw") then
-            return false, op or "invalid_effect"
-        end
-        if op == "requestDiscard" and (branch or effectIndex ~= count
-            or type(effect.value) ~= "number" or effect.value % 1 ~= 0 or effect.value < 0 or effect.value > 10) then
-            return false, "discard_must_end_card"
-        end
-        if op == "scry" and (type(effect.value) ~= "number" or effect.value % 1 ~= 0
-            or effect.value < 0 or effect.value > 2147483647) then return false, "invalid_scry_amount" end
-        if (op=="gainMantra" or op=="gainDevotion") and (type(effect.value)~="number" or effect.value%1~=0
-            or effect.value<0 or effect.value>2147483647) then return false,"invalid_mantra_amount" end
-        if effect.fixed ~= nil and (type(effect.fixed) ~= "boolean"
-            or not (op=="block" or op=="damage" or op=="damageAll" or CardActions.supports(op))) then
-            return false, "invalid_fixed_block"
-        end
-        if effect.target ~= nil and (op ~= "block" or effect.target ~= "random_ally" and effect.target~='automaton' and effect.target~='all_allies') then
-            return false, "invalid_effect_target"
-        end
+        elseif not nonConditionalOpSupported(op, branch) then return false, op or "invalid_effect" end
+        ok, unsupported = selectionAmountsSupported(effect, op, branch, effectIndex, count)
+        if not ok then return false, unsupported end
+        ok, unsupported = mantraAmountSupported(effect, op)
+        if not ok then return false, unsupported end
+        ok, unsupported = effectMetadataSupported(effect, op)
+        if not ok then return false, unsupported end
         if op == "damage" then targetChecked = true end
     end
     return true

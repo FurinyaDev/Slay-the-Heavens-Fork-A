@@ -18,16 +18,28 @@ test('UI proof accepts complete decoded fixture and rejects missing fields, chan
     const manifest={schemaVersion:1,buildId:expected.buildId,runId:expected.runId,payloadDigest:expected.payloadDigest,baselineRevision:expected.baselineRevision,
       screens:Object.fromEntries(Object.entries(criticalUiChecks).map(([screen,fields])=>[screen,{
         status:'pass',candidateHash:hash,buildId:'fixture',runId:'fixture-run',baseline:'actual.png',baselineHash:imageHash,
+        captureSource:'official-client',deviceClass:'phone',inputMethod:'touch',deviceModel:'synthetic validator fixture only',
         screenshot:'actual.png',screenshotHash:imageHash,reviewer:'fixture only',reviewedAt:'2026-10-01T00:00:00Z',
         reviewScope:'validator fixture, not real game acceptance',operations:['fixture click'],unresolved:[],sharedScreenshotReason:'synthetic shared fixture for validator only',
         checks:Object.fromEntries(fields.map(field=>[field,true])),
       }]))};
     const options={evidenceRoot:dir,baselineRoot:dir},check=m=>reviewUiAcceptance(m,expected,options);
     assert.deepEqual(check(manifest),[]);
+    const oldMenu=structuredClone(manifest);
+    delete oldMenu.screens.menu.checks.title;
+    delete oldMenu.screens.menu.checks.quit;
+    oldMenu.screens.menu.checks.instructions=true;
+    for(const field of ['title','quit'])assert(check(oldMenu).includes(`menu: ${field} not verified in game`));
+    const selection = {targetVersion:'v2.0.0', status:'APPROVED', acceptanceScreen:'menu', reference:{sha256:imageHash}};
+    assert.deepEqual(reviewUiAcceptance(manifest,expected,{...options,references:[selection]}),[]);
+    const stale = {...selection, status:'SUPERSEDED'};
+    assert(reviewUiAcceptance(manifest,expected,{...options,references:[stale]}).some(e=>e.includes('retired design reference')));
+    const mismatched = {...selection, reference:{sha256:'f'.repeat(64)}};
+    assert(reviewUiAcceptance(manifest,expected,{...options,references:[mismatched]}).some(e=>e.startsWith('menu:')&&e.includes('approved screen reference required')));
     for(const [field,value,match] of [['reviewedAt','bad date',/reviewed/],['reviewedAt','2026-02-31T00:00:00Z',/reviewed/],['reviewer','',/reviewed/],['screenshot','missing.png',/screenshot/],['screenshotHash','f'.repeat(64),/hash mismatch/],['runId','other',/another build/]]) {
       const bad=structuredClone(manifest);bad.screens.battle[field]=value;assert(check(bad).some(e=>match.test(e)),field);
     }
-    for (const screen of ['character','potions','exit']) {
+    for (const screen of ['character','potions','exit','battleHud','battleMobileAim']) {
       assert.ok(criticalUiChecks[screen]?.length, screen);
       const absent = structuredClone(manifest); delete absent.screens[screen];
       assert(check(absent).some(error => error.startsWith(`${screen}:`)), screen);
@@ -38,6 +50,10 @@ test('UI proof accepts complete decoded fixture and rejects missing fields, chan
     }
     const missing=structuredClone(manifest);delete missing.screens.battle.checks.actorHpAndMaxHp;
     assert(check(missing).some(e=>e.includes('actorHpAndMaxHp')));
+    for(const [field,value,match]of [['captureSource','simulator',/official client capture/],['deviceClass','pc',/actual phone/],['inputMethod','mouse',/actual phone/],['deviceModel','',/actual phone/]]){
+      const bad=structuredClone(manifest);bad.screens.battleMobileAim[field]=value;
+      assert(check(bad).some(e=>match.test(e)),field);
+    }
     for(const field of ['gold','hpAndMaxHp']) {
       assert(criticalUiChecks.map.includes(field));
       const absent=structuredClone(manifest);delete absent.screens.map.checks[field];
@@ -57,20 +73,37 @@ test('UI proof accepts complete decoded fixture and rejects missing fields, chan
 });
 
 
-test('approved baseline binds active canvas bytes while leaving retired PatchNotes historical', () => {
-  const dir = mkdtempSync(join(tmpdir(), 'abyss-current-ui-baseline-'));
+test('approved baseline binds only active approvals for the candidate version', () => {
+  const root = mkdtempSync(join(tmpdir(), 'abyss-current-ui-baseline-'));
   try {
-    for (const name of ['prototype', 'screens', 'ui-canvas']) mkdirSync(join(dir, name));
-    writeFileSync(join(dir, 'UI_DESIGN.md'), 'PR19');
-    writeFileSync(join(dir, 'ui-canvas', 'Main.dc.html'), 'approved battle');
-    writeFileSync(join(dir, 'ui-canvas', 'PatchNotes.dc.html'), 'retired');
-    const before = approvedDesignDigest(dir);
-    writeFileSync(join(dir, 'ui-canvas', 'PatchNotes.dc.html'), 'historical edits do not restore it');
-    assert.equal(approvedDesignDigest(dir), before);
-    writeFileSync(join(dir, 'ui-canvas', 'Main.dc.html'), 'different battle');
-    assert.notEqual(approvedDesignDigest(dir), before);
-    for (const checks of Object.values(criticalUiChecks)) {
-      for (const check of ['native1280x720', 'pcSafeArea', 'mobileSafeArea', 'fontAndLayers', 'input', 'capacityAndPerformance']) assert.ok(checks.includes(check));
+    const design = join(root,'docs','design');
+    for (const name of ['prototype', 'screens', 'ui-canvas']) mkdirSync(join(design,name),{recursive:true});
+    const codePath = 'scripts/menu-layout.mjs', state = 'menuPanel';
+    mkdirSync(join(root,'scripts')); writeFileSync(join(root,codePath),'export {};');
+    const create = (revision,status,path,text) => {
+      writeFileSync(join(root,path),text);
+      return {codePath,state,targetVersion:'v2.0.0',revision,status,backlogTask:'TASK-103',
+        reference:{path,sha256:sha256(text)},supersedes:[]};
+    };
+    const path = 'docs/design/approved.png', archive = 'docs/design/ui-canvas/PatchNotes.dc.html';
+    const active = create('current','APPROVED',path,'approved menu');
+    const old = create('historical','SUPERSEDED',archive,'retired canvas');
+    function writeIndex(references) {
+      writeFileSync(join(design,'ui-references.json'),JSON.stringify({references}));
     }
-  } finally { rmSync(dir, {recursive: true, force: true}); }
+    writeIndex([active,old]);
+    const before = approvedDesignDigest(design);
+    writeFileSync(join(design,'prototype','menu.html'),'old HTML');
+    writeFileSync(join(design,'screens','menu.png'),'old image');
+    writeIndex([active,create('historical','SUPERSEDED',archive,'retired update')]);
+    assert.equal(approvedDesignDigest(design),before);
+    writeFileSync(join(root,path),'changed');
+    assert.throws(()=>approvedDesignDigest(design),/SHA-256 mismatch/);
+    writeIndex([create('next','APPROVED',path,'changed'),old]);
+    writeFileSync(join(root,archive),'retired canvas');
+    assert.notEqual(approvedDesignDigest(design),before);
+    for (const checks of Object.values(criticalUiChecks)) {
+      for (const check of ['native1280x720','pcSafeArea','mobileSafeArea','fontAndLayers','input','capacityAndPerformance']) assert.ok(checks.includes(check));
+    }
+  } finally { rmSync(root,{recursive:true,force:true}); }
 });

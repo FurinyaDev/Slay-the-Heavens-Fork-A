@@ -1,4 +1,10 @@
-import {monsterSourceInputs,prepareMonsterArt,monsterActorTemplate,monsterPowerTemplateName,monsterActorTemplateName,monsterActorBindingModule,bindMonsterActorTemplates,monsterActorInventory} from './monster-art.mjs';
+import {prepareRefinedReleaseMonsterArt,refinedReleaseMonsterRegistry} from './refined-release-monsters.mjs';
+import {packNativeScript,nativeScriptStorageProfile} from './native-script-storage.mjs';
+import {validateOfficialAssets,candidateAssetsArgs,matchesOfficialAssetFlags,officialAssetsProfile,refinedReleaseOfficialAssetsProfile,officialAssetFlagsFor} from './official-assets-profile.mjs';
+import {deckBrowserTemplateName,deckBrowserBindingModule,deckBrowserBindingSource,deckBrowserParts} from './deck-ui-layout.mjs';
+import {selectionHalfTemplate} from './lumine-selection-background.mjs';
+import {attachLowCostArt} from './lowcost-art.mjs';
+import {monsterSourceInputs,prepareMonsterArt,monsterActorTemplate,monsterActorTiers,monsterPowerTemplateName,monsterActorTemplateName,monsterActorBindingModule,bindMonsterActorTemplates,monsterActorInventory,monsterArtPayloadSource} from './monster-art.mjs';
 import {resolveArtFeatures,artFeatureArgs,artFeatureBuildArgs,artFeatureReceipt,artFeaturesSource,artFeatureModule,withCandidateArtDefaults} from './art-features.mjs';
 import {portraitSourceInputs,portraitRuntimeInputs,lowpolySelectPath,portraitModule,bindPortraitTemplates,portraitRuntimeInventory} from './official-portraits.mjs';
 import {readyArtSourceInputs,readyArtImageTemplate,readyArtGroupTemplate,bindReadyArtTemplates,readyArtRuntimeInventory} from './art/ready-card-runtime.mjs';
@@ -17,16 +23,28 @@ import { toLua } from './build-lua-data.mjs';
 import { nativeCardArtArgs, prepareNativeCardArt, nativeCardArtBuildReceipt, verifyNativeCardArtReceipt } from './card-art-samples.mjs';
 import {reusableUi} from './native-candidate-ui-cache.mjs';
 import {embeddedScripts} from './native-script-inventory.mjs';
+import {assertClientScriptText} from './check-release-text.mjs';
 import {runNativeClientCheck} from './native-client-check.mjs';
-import {writeScriptBatch} from './native-script-batch.mjs';
 import {assertCandidateArtPolicy,assertCandidateArtReceipt} from './candidate-art-policy.mjs';
+import {lightweightProfile} from './lightweight-2d-profile.mjs';
+import {validateUiProfileOptions,uiProfileArgs,uiProfileModule,uiProfileSource,uiProfileReceipt} from './ui-profile.mjs';
+import {validateV25Chrome,v25ChromeArgs,v25ChromeProfile,v25UiMasksFromReceipt} from './v25-profile.mjs';
+import {prepareV25UiMasks,v25UiMaskInputs,assertV25UiMaskPreparation,v25UiMaskTemplate} from './v25-ui-mask-assets.mjs';
+import {prepareV25CardTemplates} from './v25-card-templates.mjs';
+import {v25CardModule,v25PrivateInputs,writeV25CardBinding,assertV25CardPreparation} from './v25-card-binding.mjs';
+import {loadNativeUiEncoder} from './native-ui-encoder.mjs';
+import {prepareComponentControlLayout,assertComponentControlOutput,componentBindingSource} from './native-component-profile.mjs';
 
 export const generatedRuntimeModules = {
+  [deckBrowserBindingModule]:'scripts/build-ui.mjs',
+  abyss_component_binding:'scripts/build-ui.mjs',
+  [v25CardModule]:'scripts/build-ui.mjs',
+  [uiProfileModule]:'scripts/build-ui.mjs',
   abyss_data:'scripts/build-lua-data.mjs', abyss_original_v4_data:'scripts/build-lua-data.mjs', abyss_theme:'scripts/build-ui.mjs',
   [artFeatureModule]:'scripts/build-ui.mjs', [backgroundModule]:'scripts/build-ui.mjs', [portraitModule]:'scripts/build-ui.mjs', abyss_ready_card_binding:'scripts/build-ui.mjs', abyss_ready_card_assets:'scripts/build-ui.mjs',
   abyss_monster_actor_binding:'scripts/build-ui.mjs', abyss_monster_art_data:'scripts/build-ui.mjs', abyss_presentation:'scripts/build-ui.mjs', abyss_map_layout:'scripts/build-ui.mjs', abyss_narrative:'scripts/build-ui.mjs',
 };
-export function sourceInputs(root,{artFeatures,nativeCardArt,readyCardArt}={}) {
+export function sourceInputs(root,{artFeatures,nativeCardArt,readyCardArt,lightweight2d=false,v25CardAssets,v25UiMasks,toolchainIdentity,refinedReleaseMonsterArt=false}={}) {
   const flags=resolveArtFeatures({artFeatures,nativeCardArt,readyCardArt});
   const staticOptions=nativeCardArt?.count>0?{registry:nativeCardArt.registry,hosts:Array.from({length:nativeCardArt.count},(_,i)=>`battlePanel/card${i+1}`)}:nativeCardArt;
   const staticInputs=flags.cards&&staticOptions?prepareNativeCardArt(staticOptions,{root}).inputPaths.map(path=>relative(root,path).replaceAll('\\','/')):[];
@@ -34,7 +52,7 @@ export function sourceInputs(root,{artFeatures,nativeCardArt,readyCardArt}={}) {
   function walk(dir) {
     for(const entry of readdirSync(join(root,dir),{withFileTypes:true}).sort((a,b)=>a.name.localeCompare(b.name))) {
       const name=`${dir}/${entry.name}`;
-      if(name==='data/presentation/native-monster-art.json'&&!flags.monsters)continue;
+      if(name==='data/presentation/native-monster-art.json'&&(!flags.monsters||refinedReleaseMonsterArt)||name===refinedReleaseMonsterRegistry&&!refinedReleaseMonsterArt)continue;
       if(entry.isDirectory())walk(name);
       else if(/\.(lua|json|mjs|py)$/.test(name))files.push(name);
     }
@@ -46,18 +64,25 @@ export function sourceInputs(root,{artFeatures,nativeCardArt,readyCardArt}={}) {
     'release-please-config.json','tools/render_traveler_cards.py','config/architecture.json', ...(flags.menuBackground?backgroundInputs:[]), ...(flags.cards&&!nativeCardArt?readyArtSourceInputs(root):[]),...portraitSourceInputs(flags),...(flags.selectionAvatar||flags.cards||flags.menuBackground?[lowpolySelectPath]:[]),...staticInputs]) {
     try { fileRecord(join(root,file)); files.push(file); } catch(error) { if(error.code!=='ENOENT')throw error; }
   }
-  if(flags.monsters){
+  if(flags.monsters&&!refinedReleaseMonsterArt){
     const registry=prepareMonsterArt(JSON.parse(readFileSync(join(root,'data/presentation/native-monster-art.json'),'utf8')));
     files.push(...monsterSourceInputs,...Object.values(registry.additionalAssets??{}).flatMap(asset=>asset.sourceInputs.map(record=>record.path)));
   }
-  return files.sort().map(path=>{const {sha256,bytes}=fileRecord(join(root,path),root);return {path,sha256,bytes};});
+  const encoderInputs=toolchainIdentity?['source','helper'].map(key=>{
+    const actual=fileRecord(toolchainIdentity[key+'Path']);
+    if(actual.sha256!==toolchainIdentity[key+'Sha256']||actual.bytes!==toolchainIdentity[key+'Bytes'])throw Error('Native UI encoder input changed: '+key);
+    return actual;
+  }):[];
+  return [...files.sort().map(path=>{const {sha256,bytes}=fileRecord(join(root,path),root);return {path,sha256,bytes};}),...encoderInputs,...(v25UiMasks?v25UiMaskInputs(v25UiMasks,root):[]),...(v25CardAssets?v25PrivateInputs(v25CardAssets,root):[])];
 }
 export const payloadDigest = inputs => sha256(JSON.stringify(inputs));
-function prepareBuild(root, directory, {releaseCandidate,workKey,nativeCardArt,readyCardArt,artFeatures}) {
+function prepareBuild(root, directory, {releaseCandidate,workKey,nativeCardArt,readyCardArt,artFeatures,lightweight2d,legacyCardFrames,nativePageLifecycle,v25BattleChrome,v25CardAssets,v25UiMasks,officialAssets,refinedReleaseMonsterArt}) {
   for(const args of [['scripts/build-lua-data.mjs','data',join(directory,'abyss_data.lua')],
-    ['scripts/build-ui.mjs',directory,...artFeatureBuildArgs(artFeatures),`--work-key=${workKey}`,...(readyCardArt===false?['--no-ready-card-art']:[]),...(releaseCandidate?['--release-candidate']:[]),
+    ['scripts/build-ui.mjs',directory,...artFeatureBuildArgs(artFeatures),`--work-key=${workKey}`,...(officialAssets?['--official-assets']:[]),...(refinedReleaseMonsterArt?['--refined-release-monsters']:[]),...(v25BattleChrome?['--v25-battle-chrome']:[]),...(nativePageLifecycle?['--native-page-lifecycle']:[]),...(lightweight2d?['--lightweight-2d']:[]),...(legacyCardFrames?['--legacy-card-frames']:[]),...(readyCardArt===false?['--no-ready-card-art']:[]),...(releaseCandidate?['--release-candidate']:[]),
       ...(nativeCardArt?[`--native-card-art-registry=${nativeCardArt.registry}`,
         ...nativeCardArt.hosts.map(host=>`--native-card-art-host=${host}`)]:[])]]) {
+    if(args[0]==='scripts/build-ui.mjs'&&v25CardAssets)args.push(`--v25-card-assets=${v25CardAssets}`);
+    if(args[0]==='scripts/build-ui.mjs'&&v25UiMasks)args.push(`--v25-ui-masks=${v25UiMasks}`);
     const result=spawnSync(process.execPath,args,{cwd:root,encoding:'utf8',timeout:60000,maxBuffer:4*1024*1024});
     if(result.error || result.status!==0)throw new Error(`Rebuild failed: ${result.error?.message || result.stderr}`);
   }
@@ -68,9 +93,21 @@ function checkTree(control) {
 }
 export async function buildNativeCandidate({baseMap,output='build/candidates',root=process.cwd(),client,createClient,
   prepare,writeScripts,generatedModules=generatedRuntimeModules,sourceCommit,mcpVersion='injected-test-client',playtest=false,decodeLog,
-  releaseCandidate=false,workKey='alpha-test',nativeCardArt,readyCardArt,artFeatures}={}) {
+  releaseCandidate=false,workKey='alpha-test',nativeCardArt,readyCardArt,artFeatures,lightweight2d=false,legacyCardFrames=false,nativePageLifecycle=false,v25BattleChrome=false,v25CardAssets,v25UiMasks,toolchainIdentity,componentWidgets,officialAssets=false,refinedReleaseMonsterArt=false}={}) {
+  validateOfficialAssets({officialAssets,releaseCandidate,lightweight2d,v25BattleChrome,v25CardAssets,v25UiMasks,nativeCardArt,readyCardArt,artFeatures,componentWidgets,prepare,refinedReleaseMonsterArt});
+  if(officialAssets)artFeatures={...officialAssetFlagsFor({refinedReleaseMonsterArt})};
+  validateV25Chrome({v25BattleChrome,lightweight2d,releaseCandidate,v25CardAssets,v25UiMasks});
+  if(v25BattleChrome&&prepare)throw Error('V25 battle chrome requires the actual UI builder');
+  validateUiProfileOptions({nativePageLifecycle,lightweight2d,releaseCandidate,v25BattleChrome,officialAssets});
+  if(nativePageLifecycle&&!Object.hasOwn(generatedModules,uiProfileModule))throw Error('Native page lifecycle requires its generated policy module');
   root=resolve(root);
+  const v25Cards=v25CardAssets?prepareV25CardTemplates(v25CardAssets,{root}):null;
+  const v25Masks=v25UiMasks?prepareV25UiMasks(v25UiMasks,{root}):null;
   const flags=resolveArtFeatures({artFeatures,readyCardArt,nativeCardArt});
+  if(componentWidgets && (!prepare || releaseCandidate || Object.values(flags).some(Boolean) || lightweight2d || v25BattleChrome || nativePageLifecycle))throw Error('Original components require a dedicated non-release prepare with all legacy artwork disabled');
+  if(v25BattleChrome&&flags.selectionAvatar!==flags.battlePortrait)throw Error('V25 portraits require paired selection and battle source assets');
+  if(typeof lightweight2d!=='boolean'||lightweight2d&&(releaseCandidate||prepare||nativeCardArt||!flags.menuBackground||!flags.selectionAvatar||!flags.battlePortrait||flags.cards||flags.monsters))throw Error('Bounded 2D is a fixed-flags non-release experiment');
+  if(typeof legacyCardFrames!=='boolean'||legacyCardFrames&&!lightweight2d)throw Error('Legacy card comparison requires the bounded 2D experiment');
   if(prepare && nativeCardArt!==undefined)throw new Error('Custom prepare cannot be combined with native art options');
   if(nativeCardArt!==undefined) {
     if(!nativeCardArt || typeof nativeCardArt!=='object' || Array.isArray(nativeCardArt)
@@ -92,14 +129,22 @@ export async function buildNativeCandidate({baseMap,output='build/candidates',ro
   const outputRoot=prepareOutputDirectory(root,output);
   const buildId=randomUUID(),workspace=join(outputRoot,buildId); mkdirSync(workspace); inside(root,workspace);
   const generated=join(workspace,'generated'),payload=join(workspace,'payload'); mkdirSync(generated);mkdirSync(payload);
-  const inputOptions={artFeatures:flags,nativeCardArt,readyCardArt};
+  if(toolchainIdentity)toolchainIdentity=structuredClone(toolchainIdentity);
+  const inputOptions={artFeatures:flags,nativeCardArt,readyCardArt,lightweight2d,v25CardAssets,v25UiMasks,toolchainIdentity,refinedReleaseMonsterArt};
   const inputs=sourceInputs(root,inputOptions),digest=payloadDigest(inputs);
+  assertV25CardPreparation(v25Cards,inputs);
+  assertV25UiMaskPreparation(v25Masks,inputs);
   sourceCommit??=spawnSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8'}).stdout?.trim();
   if(!/^[a-f0-9]{40}$/.test(sourceCommit??''))throw new Error('Unknown source commit');
   const dirtyResult=spawnSync('git',['status','--porcelain'],{cwd:root,encoding:'utf8'});
-  const receipt={schemaVersion:1,buildId,artFeatures:artFeatureReceipt(flags),sourceCommit,sourceDirty:dirtyResult.status===0?Boolean(dirtyResult.stdout.trim()):null,
+  const receipt={schemaVersion:1,buildId,artFeatures:artFeatureReceipt(flags),uiProfile:uiProfileReceipt(nativePageLifecycle),sourceCommit,sourceDirty:dirtyResult.status===0?Boolean(dirtyResult.stdout.trim()):null,
     payloadDigest:digest,startedAt:new Date().toISOString(),mcpVersion,inputs,baseMap:base,outputs:[],
     liveWriteEnabled:false,statuses:{staticCheck:'not_run',officialImport:'not_run',playtest:'not_run'}};
+  if(lightweight2d){receipt.experimentalProfile=lightweightProfile;receipt.experimentalUi=legacyCardFrames?'legacy-card-frames':'flat-card-frames';}
+  if(v25BattleChrome)receipt.experimentalBattleChrome=v25ChromeProfile;
+  if(officialAssets)receipt.officialAssetsProfile=refinedReleaseMonsterArt?refinedReleaseOfficialAssetsProfile:officialAssetsProfile;
+  if(refinedReleaseMonsterArt)receipt.refinedReleaseMonsterArt=true;
+  if(toolchainIdentity)receipt.toolchainIdentity=toolchainIdentity;
   let releaseNotes;
   if(releaseCandidate || existsSync(join(root,'package.json'))) {
     if(releaseCandidate && !Object.hasOwn(generatedModules,'abyss_narrative'))throw new Error('Release candidate must package the generated narrative module');
@@ -120,7 +165,8 @@ export async function buildNativeCandidate({baseMap,output='build/candidates',ro
     return data;
   }
   try {
-    if(prepare)await prepare(generated);else prepareBuild(root,generated,{releaseCandidate,workKey,nativeCardArt,readyCardArt,artFeatures:flags});
+    if(prepare)await prepare(generated);else prepareBuild(root,generated,{releaseCandidate,workKey,nativeCardArt,readyCardArt,artFeatures:flags,lightweight2d,legacyCardFrames,nativePageLifecycle,v25BattleChrome,v25CardAssets,v25UiMasks,officialAssets,refinedReleaseMonsterArt});
+    if(Object.hasOwn(generatedModules,uiProfileModule)&&readFileSync(join(generated,uiProfileModule+'.lua'),'utf8')!==uiProfileSource(nativePageLifecycle))throw Error('Generated UI profile differs from candidate');
     if(Object.hasOwn(generatedModules,artFeatureModule)&&readFileSync(join(generated,artFeatureModule+'.lua'),'utf8')!==artFeaturesSource(flags))throw Error('Generated art feature configuration differs from candidate');
     if(art) {
       if(payloadDigest(art.inputPaths.map(path=>fileRecord(path,root)))!==payloadDigest(artInputs))throw new Error('Native art input changed during preparation');
@@ -130,12 +176,19 @@ export async function buildNativeCandidate({baseMap,output='build/candidates',ro
       .includes(`["codeVersion"]=${toLua(releaseNotes.build.version)}`))throw new Error('Bundled code version differs from candidate provenance');
     const layout=JSON.parse(readFileSync(join(generated,'game-ui.json'),'utf8'));
     const templates=JSON.parse(readFileSync(join(generated,'game-ui-templates.json'),'utf8'));
+    if(componentWidgets){
+      const binding=JSON.parse(readFileSync(join(generated,'native-component-binding.json'),'utf8'));
+      assertComponentControlOutput(layout,templates,binding,componentWidgets);
+      if(readFileSync(join(generated,'abyss_component_binding.lua'),'utf8')!==componentBindingSource(binding))throw Error('Original-component Lua binding differs from validated semantic contract');
+    }
+    assertV25CardPreparation(v25Cards,inputs,templates);
+    assertV25UiMaskPreparation(v25Masks,inputs,templates);
     layout.controls.forEach(checkTree);templates.forEach(checkTree);
     const modules=new Map(candidateScriptFiles(join(root,'src/lua'),generated,Object.keys(generatedModules))
       .map(({name,sourceFile})=>[name,sourceFile]));
     if(!modules.has('abyss_ui'))throw new Error('Missing entry module abyss_ui');
     const dynamicCards=flags.cards&&!art,portraits=flags.selectionAvatar||flags.battlePortrait;
-    const sharedTemplates=flags.cards||portraits||flags.menuBackground;
+    const sharedTemplates=flags.cards||portraits||flags.menuBackground||!!v25Cards||!!v25Masks;
     const blockedTemplates=[...(!flags.menuBackground?[backgroundTemplate]:[]),...(!sharedTemplates?[readyArtImageTemplate]:[])];
     if(templates.some(template=>blockedTemplates.includes(template.name)))throw Error('Disabled artwork must not register templates');
     const blockedHosts=[...(!flags.monsters?['monsterArt','monsterSamples']:[]),...(!flags.cards?['artSamples']:[]),...(!flags.menuBackground?['officialBackground','lowpolyScene']:[]),...(!flags.selectionAvatar?['officialAvatar']:[]),...(!flags.battlePortrait?['officialFigure']:[])];
@@ -148,9 +201,18 @@ export async function buildNativeCandidate({baseMap,output='build/candidates',ro
       ...(flags.monsters?['abyss_monster_art_data']:[]),...(dynamicCards?['abyss_ready_card_binding','abyss_ready_card_assets']:[]),...(portraits?[portraitModule]:[])];
     for(const name of requiredArtModules)if(!modules.has(name))throw Error('Enabled artwork missing runtime module: '+name);
 
+    let refinedTiers=null;
     if(Object.hasOwn(generatedModules,'abyss_monster_art_data')) {
       let monster=null;
-      if(flags.monsters){
+      if(refinedReleaseMonsterArt){
+        const path=refinedReleaseMonsterRegistry;
+        monster=prepareRefinedReleaseMonsterArt(JSON.parse(readFileSync(join(root,path),'utf8')));
+        monster.hostOrigin=[0,0];
+        refinedTiers=monsterActorTiers(monster);
+        monster=refinedTiers.artData;
+        receipt.nativeMonsterArt={enabled:true,assetCount:Object.keys(monster.assets).length,bindingCount:Object.keys(monster.bindings).length,
+          capacity:monster.poolCapacity,allocation:'per-drawable-actor-instance',inputs:[{...fileRecord(join(root,path),root),path}]};
+      }else if(flags.monsters){
         const registry=JSON.parse(readFileSync(join(root,'data/presentation/native-monster-art.json'),'utf8'));
         monster=prepareMonsterArt(registry);
         if(!monster)throw Error('Enabled monster artwork requires its registry');
@@ -163,9 +225,13 @@ export async function buildNativeCandidate({baseMap,output='build/candidates',ro
           capacity:monster.poolCapacity,allocation:'per-drawable-actor-instance',
           inputs:records.map(({path})=>({...fileRecord(join(root,path),root),path}))};
       }
-      const actorTemplates=templates.filter(template=>template.name===monsterActorTemplateName);
-      if(actorTemplates.length!==1||JSON.stringify(actorTemplates[0])!==JSON.stringify(monsterActorTemplate(monster)))throw Error('Monster actor template differs from candidate features or source');
-      const expected=`-- Generated from the bounded native monster registry.\nreturn ${toLua(monster??{})}\n`;
+      const actorTemplates=templates.filter(template=>template.name.startsWith(monsterActorTemplateName));
+      const expectedActors=(refinedTiers?.templates??[monsterActorTemplate(monster)]).map(actor=>{
+        if(officialAssets)attachLowCostArt(actor);
+        return componentWidgets?prepareComponentControlLayout({controls:[{name:'stage',kind:'container',children:[]}]},[actor],componentWidgets).templates[0]:actor;
+      });
+      if(JSON.stringify(actorTemplates)!==JSON.stringify(expectedActors))throw Error('Monster actor template differs from candidate features or source');
+      const expected=monsterArtPayloadSource(monster);
       if(readFileSync(join(generated,'abyss_monster_art_data.lua'),'utf8')!==expected)throw Error('Monster artwork payload differs from candidate features or source');
     }
 
@@ -181,30 +247,69 @@ export async function buildNativeCandidate({baseMap,output='build/candidates',ro
     for(const source of modules.values())fileRecord(source);
     client??=await createClient(workspace);
     for(const uri of ['miliastra://workflow','miliastra://platform-rules'])writeExclusive(join(workspace,`${uri.split('//')[1]}.json`),await client.readResource({uri}));
-    const readyTemplates={};let monsterTemplate,monsterPowerTemplate,cachedUi=reusableUi(base,generated);
+    const browserTemplateIndices={},readyTemplates={},v25TemplateIndices={},maskTemplateIndices={},allTemplateIds=[],monsterTierResults={};let deckTemplate,monsterTemplate,monsterPowerTemplate,cachedUi=refinedTiers?null:reusableUi(base,generated,{privateTemplates:!!(v25Cards||v25Masks||officialAssets&&flags.selectionAvatar),galleryImageTypes:toolchainIdentity?.galleryImageTypes});
     if(cachedUi){
       const cached=JSON.parse(readFileSync(cachedUi.receipt.path,'utf8')), actors=cached.monsterActors;
       if(!actors||![actors.templateIndex,actors.powerTemplateIndex,actors.containerTemplateIndex].every(n=>Number.isSafeInteger(n)&&n>0)
         ||new Set([actors.templateIndex,actors.powerTemplateIndex,actors.containerTemplateIndex]).size!==3
-        ||actors.containerTemplateIndex!==cachedUi.templateResults[readyArtGroupTemplate]?.templateIndex)cachedUi=null;
+        ||actors.containerTemplateIndex!==cachedUi.templateResults[readyArtGroupTemplate]?.templateIndex
+        ||(modules.has(deckBrowserBindingModule)&&(!cachedUi.templateResults[deckBrowserTemplateName]||
+          deckBrowserParts.some(part=>templates.some(t=>t.name===part.name)&&!cachedUi.templateResults[part.name]))))cachedUi=null;
       else {cachedUi.templateResults[monsterActorTemplateName]={templateIndex:actors.templateIndex};cachedUi.templateResults[monsterPowerTemplateName]={templateIndex:actors.powerTemplateIndex};}
     }
     if(cachedUi)receipt.reusedUi=cachedUi.receipt;
     for(const template of templates) {
       const result=cachedUi?(cachedUi.templateResults[template.name]??{reused:true}):await call('scene_add_client_template',{template,mapPath,replace:true,outputName:'abyss-full-game-test'});
+      allTemplateIds.push(result.templateIndex);
+      if(v25Masks&&template.name===v25UiMaskTemplate)maskTemplateIndices[template.name]=result.templateIndex;
+      if(v25Cards?.templates.some(row=>row.name===template.name))v25TemplateIndices[template.name]=result.templateIndex;
+      if(template.name===deckBrowserTemplateName)deckTemplate=result;
+      if(deckBrowserParts.some(part=>part.name===template.name))browserTemplateIndices[template.name]=result.templateIndex;
       if(template.name===monsterActorTemplateName)monsterTemplate=result;
+      if(refinedTiers&&template.name!==monsterActorTemplateName&&template.name.startsWith(monsterActorTemplateName))monsterTierResults[template.name]=result;
       if(template.name===monsterPowerTemplateName)monsterPowerTemplate=result;
       if(template.name===readyArtImageTemplate)readyTemplates.image=result;
       if(template.name===readyArtGroupTemplate)readyTemplates.group=result;
+      if(template.name===selectionHalfTemplate)readyTemplates.half=result;
       if(template.name===backgroundTemplate) {
         if(!modules.has(backgroundModule))throw Error('Official background template has no runtime module');
         readyTemplates.background=result;
       }
     }
+    if(modules.has(deckBrowserBindingModule)){
+      const index=deckTemplate?.templateIndex;
+      if(!Number.isSafeInteger(index)||index<=0||allTemplateIds.filter(id=>id===index).length!==1)
+        throw Error('Deck browser requires one candidate-local template index');
+      const parts=officialAssets&&nativePageLifecycle?deckBrowserParts.map(part=>({...part,templateIndex:browserTemplateIndices[part.name]})):[];
+      if(parts.some(part=>!Number.isSafeInteger(part.templateIndex)||part.templateIndex<=0||
+          allTemplateIds.filter(id=>id===part.templateIndex).length!==1))
+        throw Error('Deck browser chunks require distinct candidate-local template indices');
+      writeFileSync(join(generated,deckBrowserBindingModule+'.lua'),deckBrowserBindingSource(index,parts));
+      receipt.deckBrowser={templateIndex:index,maxFaces:10,parts};
+    }
+    if(refinedTiers&&Object.values(monsterTierResults).some(({templateIndex})=>
+      !Number.isSafeInteger(templateIndex)||templateIndex<=0||allTemplateIds.filter(index=>index===templateIndex).length!==1))
+      throw Error('Refined monster actor templates require distinct candidate-local indices');
     if(readyTemplates.background){
       bindBackgroundTemplate(generated,readyTemplates.background,{root,containerTemplateIndex:readyTemplates.group.templateIndex});
       receipt.officialBackground={...backgroundRuntimeInventory(generated),templateIndex:readyTemplates.background.templateIndex,
         imageTemplateIndex:readyTemplates.image.templateIndex,containerTemplateIndex:readyTemplates.group.templateIndex,inputs:backgroundInputs.map(path=>fileRecord(join(root,path),root))};
+    }
+    if(v25Cards){
+      if(!modules.has(v25CardModule))throw Error('Private V25 card templates lack their binding module');
+      receipt.v25CardAssets={assetFile:fileRecord(resolve(root,v25CardAssets)),inputs:v25Cards.inputs,sourceManifestSha256:v25Cards.sourceManifestSha256,templateIndices:v25TemplateIndices};
+    }
+    if(v25Masks){
+      receipt.v25UiMasks={assetFile:v25Masks.assetFile,inputs:v25Masks.inputs,templateIndices:maskTemplateIndices,verification:v25Masks.verification};
+      v25UiMasksFromReceipt(receipt);
+      if(allTemplateIds.filter(index=>index===maskTemplateIndices[v25UiMaskTemplate]).length!==1)throw Error('Duplicate native V25 UI mask template binding');
+    }
+    if(v25Cards||v25Masks){
+      if(!modules.has(v25CardModule))throw Error('Private V25 textures lack their binding module');
+      writeV25CardBinding(generated,v25Cards,v25TemplateIndices,{masks:v25Masks,maskIndices:maskTemplateIndices,
+        imageTemplateId:readyTemplates.image?.templateIndex,groupTemplateId:readyTemplates.group?.templateIndex});
+      receipt.v25TextureRuntime={profile:'source-rgba-packed-v1',imageTemplateIndex:readyTemplates.image?.templateIndex,
+        containerTemplateIndex:readyTemplates.group?.templateIndex};
     }
     if(flags.menuBackground&&!receipt.officialBackground)throw Error('Official background runtime has no bound template');
     if(readyTemplates.image||readyTemplates.group){
@@ -216,22 +321,31 @@ export async function buildNativeCandidate({baseMap,output='build/candidates',ro
       }
       if(portraits||flags.cards||flags.menuBackground){
         if(!modules.has(portraitModule))throw Error('Portrait templates lack runtime module');
-        bindPortraitTemplates(generated,{image:readyTemplates.image,container:readyTemplates.group},{root,...flags});
+        if(officialAssets&&flags.selectionAvatar&&!readyTemplates.half?.templateIndex)throw Error('Selection half-triangle template has no binding');
+        bindPortraitTemplates(generated,{image:readyTemplates.image,container:readyTemplates.group,half:readyTemplates.half},{root,...flags,v25BattleChrome,officialAssets});
         receipt.officialPortraits={...portraitRuntimeInventory(generated),imageTemplateIndex:readyTemplates.image.templateIndex,containerTemplateIndex:readyTemplates.group.templateIndex,
+          ...(readyTemplates.half?{selectionHalfImageTemplateIndex:readyTemplates.half.templateIndex}:{}),
           inputs:portraitRuntimeInputs(flags).map(path=>fileRecord(join(root,path),root))};
       }
     }
     if((portraits||flags.cards||flags.menuBackground)&&!receipt.officialPortraits)throw Error('Portrait runtime has no bound templates');
-    bindMonsterActorTemplates(generated,{actor:monsterTemplate,group:readyTemplates.group,power:monsterPowerTemplate});
+    const templateIndexByDefinition=refinedTiers?Object.fromEntries(Object.entries(refinedTiers.templateByDefinition).map(([definition,name])=>[definition,monsterTierResults[name]?.templateIndex])):undefined;
+    bindMonsterActorTemplates(generated,{actor:monsterTemplate,group:readyTemplates.group,power:monsterPowerTemplate,templateIndexByDefinition});
     receipt.monsterActors={...monsterActorInventory(templates.find(t=>t.name===monsterActorTemplateName)),
-      powerTemplateIndex:monsterPowerTemplate.templateIndex,templateIndex:monsterTemplate.templateIndex,containerTemplateIndex:readyTemplates.group.templateIndex};
+      powerTemplateIndex:monsterPowerTemplate.templateIndex,templateIndex:monsterTemplate.templateIndex,containerTemplateIndex:readyTemplates.group.templateIndex,
+      ...(refinedTiers?{templateIndexByDefinition,tiers:Object.fromEntries(templates.filter(t=>Object.hasOwn(monsterTierResults,t.name)).map(t=>[t.name,{...monsterActorInventory(t),templateIndex:monsterTierResults[t.name].templateIndex}]))}:{})};
     const reusable=await call('scene_list_client_scripts',{mapPath,includeSource:true});
     const existingSources=new Map((reusable.scripts??[]).filter(row=>typeof row.source==='string').map(row=>[row.name,row.source]));
     receipt.reusedModules=[];
+    if(officialAssets)receipt.nativeScriptStorage={profile:nativeScriptStorageProfile,modules:[]};
     const moduleDigests={},pendingScripts=[];
-    for(const [name,source] of modules) {
-      const bytes=Buffer.from(readFileSync(fileRecord(source).path,'utf8').replace(/^\uFEFF/,'')),destination=join(payload,`${name}.lua`);
-      writeFileSync(destination,name==='abyss_ui'?Buffer.concat([Buffer.from(`print("ABYSS_BUILD ${buildId}")\n`),bytes]):bytes,{flag:'wx'});
+    const scriptInputs=[...modules].map(([name,path])=>({name,source:readFileSync(path,'utf8').replace(/^\uFEFF/,'')}));
+    assertClientScriptText(scriptInputs,'candidate-source');
+    for(const {name,source:original} of scriptInputs) {
+      const compact=packNativeScript(name,original,receipt.nativeScriptStorage?.profile);
+      const bytes=Buffer.from(name==='abyss_ui'?`print("ABYSS_BUILD ${buildId}")\n`+compact:compact),destination=join(payload,`${name}.lua`);
+      receipt.nativeScriptStorage?.modules.push({name,sourceSha256:sha256(original),sourceBytes:Buffer.byteLength(original),packedSha256:sha256(bytes),packedBytes:bytes.length});
+      writeFileSync(destination,bytes,{flag:'wx'});
       receipt.outputs.push(fileRecord(destination,workspace));
       moduleDigests[name]=fileRecord(destination).sha256;
       if(name!=='abyss_ui'&&existingSources.get(name)===readFileSync(destination,'utf8')) {
@@ -287,6 +401,7 @@ export async function buildNativeCandidate({baseMap,output='build/candidates',ro
     const readback=await call('scene_list_client_scripts',{mapPath,includeSource:true});
     if(!Array.isArray(readback.scripts)||JSON.stringify(readback.scripts.map(row=>row.name).sort())!==JSON.stringify(names))throw new Error('Candidate readback module set differs');
     for(const row of readback.scripts)if(typeof row.source!=='string'||sha256(row.source)!==moduleDigests[row.name])throw new Error(`Candidate content digest mismatch: ${row.name}`);
+    receipt.scriptText=assertClientScriptText(readback.scripts,'candidate.gil');
     for(const record of receipt.outputs)if(fileRecord(record.path,workspace).sha256!==record.sha256)throw new Error('Packaged output changed during build');
     receipt.moduleDigests=moduleDigests;
     receipt.productionManifest={modules:[...modules.keys()].map(name=>({name,...fileRecord(join(payload,`${name}.lua`),workspace)})),
@@ -319,14 +434,19 @@ export async function buildNativeCandidate({baseMap,output='build/candidates',ro
 export async function buildNativeCandidateFromToolchain(options) {
     const root=options?.root??process.cwd();
     assertCandidateArtPolicy(resolveArtFeatures(options),{root});
+    // The zero-art layout CLI imports this module without npm dependencies.
+    // Load the Lua parser only when actual native-script writing is requested.
+    const {writeScriptBatch}=await import('./native-script-batch.mjs');
     const toolRoot=process.env.MILIASTRA_MCP_ROOT||'D:/MiliastraTools/genshin-miliastra-mcp';
     const sdk=join(toolRoot,'node_modules/@modelcontextprotocol/sdk/dist/esm/client');
     const {Client}=await import(pathToFileURL(join(sdk,'index.js'))),{StdioClientTransport}=await import(pathToFileURL(join(sdk,'stdio.js')));
     const {inspectDebugLog}=await import(pathToFileURL(join(toolRoot,'src/debug-log.mjs')));
     const {luaSyntaxError}=await import(pathToFileURL(join(toolRoot,'src/client-check.mjs')));
-    const {clientScriptRecord,addClientUi}=await import(pathToFileURL(join(toolRoot,'src/scene-save.mjs')));
+    const {native,identity}=await loadNativeUiEncoder(toolRoot);
+    const {clientScriptRecord,addClientUi,addClientTemplate}=native;
     const {container,fields,field,one,replace,wrap}=await import(pathToFileURL(join(toolRoot,'src/scene/wire.mjs')));
     const receipt=await buildNativeCandidate({...options,
+      toolchainIdentity:identity,
       writeScripts:async(mapPath,updates,workspace)=>{
         return writeScriptBatch(mapPath,updates,workspace,{container,fields,field,one,replace,wrap,clientScriptRecord,luaSyntaxError});
       },
@@ -343,21 +463,43 @@ export async function buildNativeCandidateFromToolchain(options) {
           // Full UI trees exceed the installed core HTTP request limit. Use the
           // same official-toolchain encoder in process, including its checks.
           if(request.name==='scene_add_client_ui')return Promise.resolve({structuredContent:addClientUi(request.arguments,workspace)});
+          if(request.name==='scene_add_client_template'){
+            const {template,...options}=request.arguments;
+            return Promise.resolve({structuredContent:addClientTemplate({...options,...template},workspace)});
+          }
           return remoteCall(request,...args);
         };
         return client;}});
     assertCandidateArtReceipt(receipt,{root});
     return receipt;
 }
+export function nativeCandidateBuildArgs(argv) {
+  const official=candidateAssetsArgs(argv);
+  const chrome=v25ChromeArgs(official.args);
+  const profile=uiProfileArgs(chrome.args),args=profile.args;
+  const playtest=args.includes('--playtest'),lightweight2d=args.includes('--lightweight-2d'),legacyCardFrames=args.includes('--legacy-card-frames');
+  const features=artFeatureArgs(args.filter(arg=>!['--playtest','--lightweight-2d','--legacy-card-frames'].includes(arg)));
+  const native=nativeCardArtArgs(features.args);
+  const {paths,options}=releaseBuildArgs(native.args);
+  const [baseMap,output]=paths;
+  const explicitLifecycle=profile.args.length!==chrome.args.length;
+  const custom=lightweight2d||legacyCardFrames||chrome.v25BattleChrome||chrome.v25CardAssets!==undefined||
+    chrome.v25UiMasks!==undefined||explicitLifecycle||!matchesOfficialAssetFlags(features.artFeatures,{refinedReleaseMonsterArt:official.refinedReleaseMonsterArt===true})||
+    native.nativeCardArt!==undefined;
+  const officialAssets=official.officialAssets||!official.legacy&&!custom;
+  const refinedReleaseMonsterArt=official.refinedReleaseMonsterArt===true||officialAssets&&!official.officialAssets&&features.artFeatures.monsters!==false;
+  const nativePageLifecycle=explicitLifecycle?profile.nativePageLifecycle:officialAssets;
+  const artFeatures=officialAssets?features.artFeatures:withCandidateArtDefaults(features.artFeatures,
+    {cardsDecided:native.nativeCardArt!==undefined||native.readyCardArt!==undefined});
+  return {baseMap,output,paths,options:{...options,officialAssets,refinedReleaseMonsterArt,nativePageLifecycle,playtest,lightweight2d,
+    legacyCardFrames,v25BattleChrome:chrome.v25BattleChrome,v25CardAssets:chrome.v25CardAssets,
+    v25UiMasks:chrome.v25UiMasks,artFeatures,nativeCardArt:native.nativeCardArt,readyCardArt:native.readyCardArt}};
+}
 if(process.argv[1]&&import.meta.url===pathToFileURL(resolve(process.argv[1])).href) {
   try {
-    const args=process.argv.slice(2),playtest=args.includes('--playtest');
-    const features=artFeatureArgs(args.filter(arg=>arg!=='--playtest'));
-    const native=nativeCardArtArgs(features.args);
-    const {paths,options}=releaseBuildArgs(native.args);
-    const [baseMap,output]=paths;
-    if(!baseMap||paths.length>2)throw new Error('Usage: node scripts/build-native-candidate.mjs <base.gil> [output-directory] [--playtest] [--release-candidate] [--work-key=alpha-test] [--native-card-art-registry=<file> --native-card-art-count=0|1|5|10 | --native-card-art-host=<host>]');
-    const receipt=await buildNativeCandidateFromToolchain({baseMap,output,playtest,...options,artFeatures:withCandidateArtDefaults(features.artFeatures,{cardsDecided:native.nativeCardArt!==undefined||native.readyCardArt!==undefined}),nativeCardArt:native.nativeCardArt,readyCardArt:native.readyCardArt});
+    const {baseMap,output,paths,options}=nativeCandidateBuildArgs(process.argv.slice(2));
+    if(!baseMap||paths.length>2)throw new Error('Usage: node scripts/build-native-candidate.mjs <base.gil> [output-directory] [--playtest] [--release-candidate] [--work-key=alpha-test] [--art-version=legacy | --official-assets] [--native-card-art-registry=<file> --native-card-art-count=0|1|5|10 | --native-card-art-host=<host>]');
+    const receipt=await buildNativeCandidateFromToolchain({baseMap,output,...options});
     console.log(`Candidate receipt: ${receipt.receiptPath}\nStatic check passed. Official import/gameplay require separate evidence.`);
   }catch(error){console.error(error.message);process.exitCode=1;}
 }

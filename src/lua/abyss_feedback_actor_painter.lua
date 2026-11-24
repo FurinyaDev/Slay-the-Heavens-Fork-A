@@ -1,4 +1,5 @@
 local MonsterArt=require('abyss_monster_art')
+local LowCostArt=require('abyss_lowcost_art')
 local Escape=require('abyss_monster_escape')
 -- Composes committed actor feedback into native portrait/effect controls only.
 -- Queue timing, completion and battle ownership remain with abyss_feedback.
@@ -238,7 +239,13 @@ function M.advanceDeaths(ctx,dt)
         if id ~= "player" then
             dying.age=dying.age+dt
             dying.alpha=clamp((dying.alpha or 1)*(1-3*dt))
-            if dying.age>dying.lifetime then
+            local lifetime=dying.lifetime
+            if ctx.state.rewardTransition then
+                -- The final fade runs alongside the remaining battle feedback.
+                lifetime=math.min(lifetime,T.slow)
+                dying.alpha=math.min(dying.alpha,clamp(1-dying.age/lifetime))
+            end
+            if dying.age>lifetime then
                 local _,box=ctx.actor(id)
                 if box then box:SetVisible(false) MonsterArt.clearBox(box) end
                 ctx.state.dying[id]=nil
@@ -249,7 +256,7 @@ function M.advanceDeaths(ctx,dt)
 end
 function M.advanceEscapes(ctx,dt)
     for id,escaping in pairs(ctx.state.escaping)do
-        if Escape.advance(escaping,dt,Theme.canvas.base[1]/1920)then
+        if Escape.advance(escaping,dt,Theme.canvas.base[1]/1920,ctx.state.rewardTransition)then
             local _,box=ctx.actor(id)
             if box then box:SetVisible(false);MonsterArt.clearBox(box)end
             ctx.state.escaped[id]=true
@@ -302,9 +309,10 @@ function M.paint(ctx,id, dt, shakes)
     local portrait = box:GetChild("portrait")
     portrait:SetAnchoredPosition(x, y)
     portrait:SetLocalScale(sx, sy, 1)
-    if id == "player" and ctx.platform.portraits then ctx.platform.portraits:battlePose(x,y,sx,sy) end
+    if id == "player" and ctx.platform.portraits then ctx.platform.portraits:battlePose(x,y,sx,sy,dt,motionState) end
     local tone=portraitTone(ctx,id,base,ink,flash)
     tint(ctx,portrait,tone,alpha)
     MonsterArt.pose(box,x,y,sx,sy,tone,alpha)
+    LowCostArt.pose(box,x,y,sx,sy,tone,alpha,ctx.platform)
 end
 return M

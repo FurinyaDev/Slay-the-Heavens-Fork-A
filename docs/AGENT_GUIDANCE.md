@@ -1,16 +1,32 @@
 # 指引维护与机械门禁
 
-默认上下文只保留入口和无法由仓库工具完整执行的边界。操作流程按需读已有文档；历史决定留在 Git、任务与专项证据，不再追加到 AGENTS。
+根指引是按任务导航和授权边界。Claude、Cursor 只转到同一个入口。维护时用 `npm run check:guidance` 与受影响测试验证；操作细节留在既有领域文档，历史证据随原提交和任务保留。
 
-| 要求 | 已有执行机制 |
+| 要求 | 实际执行位置 |
 | --- | --- |
-| 模块职责、函数规模、依赖与静态告警 | config/architecture.json、check:architecture、check:lua-static |
-| 测试有效性与原生 UI 合同 | check:test-strength、check:native-ui-contract |
-| 任务范围、负责人及优先级 | verify:backlog |
-| 候选身份、截图与 UI 检查项 | verify:delivery、verify:ui；按各自接受的证据范围判定 |
-| 许可、流量、PR 历史及合并检查 | Licenses/inventory、check:network、Quality、GitHub Rulesets，见 CI.md |
-| 默认指引保持精简且入口可用 | check:guidance；在 npm run check 和 Quality impact 中执行 |
+| 指引入口预算、入口链接、npm 命令、适配器结构 | [指引检查](../scripts/check-agent-guidance.mjs)，由本地完整检查和 Quality impact 调用 |
+| PR 尺寸和例外格式 | [尺寸检查](../scripts/check-pr-slice.mjs)；Quality impact 经 `check:guidance` 调用，事件覆盖取决于检查器、工作流和实际目标分支 |
+| Lua 模块分类、依赖、静态诊断和质量棘轮 | [架构配置](../config/architecture.json)和 [工程命令](ENGINEERING.md) |
+| 回归范围、代码集成 | [选测与 Full](CI-FAST.md)、[实时保护与交付](CI.md#核心分支原生保护) |
+| 任务数据、诊断任务与合后收口 | `verify:backlog`、`verify:outcome`、`verify:delivery --merged`；适用范围见 [任务执行](TASK_EXECUTION.md) 和 [CI](CI.md) |
+| 发布冻结、候选身份与证据形式 | [CI-FAST](CI-FAST.md)、[工程收据](ENGINEERING.md)、[官方负载证据](PLATFORM_LOAD.md) |
 
-check:guidance 将 AGENTS 限为 80 行 / 5000 个 Unicode 字符，Claude 及 Cursor 适配器各限 16 行 / 1000 字符；检查 Markdown 本地链接不越出仓库且目标存在、npm run 命令存在、适配器链接 AGENTS，拒绝额外二级规则章节。新规则优先加入现有检查或回归测试，再用一个入口指向其事实来源。预算只约束默认加载文件，不限制产品或技术文档；不通过拆分成默认必读附件规避预算。
+独立会话真实性、尺寸例外理由、任务写入范围与审批、WIP、授权和实机体验仍需判断。已有脚本可核对输入与证据，合并绿灯不授予桌面控制、产品变更或正式发布权限。Fork 诊断无正式准入门禁。
 
-这些检查不能证明自然语言承诺已被遵守。键鼠窗口必须由用户本轮明确授权；实机体验与设备覆盖需对应候选证据；应急合并仍遵循 CI.md 的指定 PR/SHA 批准流程。保留这些短边界，不声称它们已被自动化。
+## 工程规范与验证
+
+重要契约、复杂功能和重构先在现有 Backlog 任务或附件记录意图与验收、状态拥有者及写入入口、设计取舍、依赖方向、实施步骤和验证边界。小修复直接引用任务范围与验收。公共模板参考本轮已独立核验的 [OpenHarness 固定源码](https://github.com/FurinyaDev/OpenHarness/blob/98826145a59452401e19b93bfa2af264fedeecb8/docs/engineering.md)。
+
+| 目标 | 项目权威来源和命令 | 结果范围 |
+| --- | --- | --- |
+| 依赖边界 | [模块与组合位置](ARCHITECTURE.md)、[架构配置](../config/architecture.json)；`npm run check:architecture` | 实际 Lua AST 依赖，包含函数内的可解析加载；配置定义边界、例外与生成物范围 |
+| 复杂度、模块规模和循环增量 | [质量验收](ENGINEERING_QUALITY.md)、[棘轮策略](../scripts/quality-ratchet-policy.mjs)；`node scripts/check-quality-ratchet.mjs --base "$BASE_SHA"` | 用精确 40 位 BASE 和已提交 HEAD 比较，沿用函数身份、移动和 SCC 规则；历史观测快照用于工程报告 |
+| 工程集成 | [工程检查](ENGINEERING.md)；首次运行 `npm run setup:lua-static`；执行 `npm run build:data`、`npm run build:ui` 后执行 `npm run check:engineering` | 当前架构、静态与指定硬门槛、真实变异场景和原生 UI 合同 |
+| PR 尺寸 | [任务执行](TASK_EXECUTION.md#小批量集成)；`node scripts/check-pr-slice.mjs "$BASE_SHA" HEAD` | 统计当前比较的总变更和生产变更；有例外时按既有流程附 PR 正文及独立核验 |
+| 分支交付 | [原生合并与交付](CI.md#常规使用)、[分支收口](BRANCH_LIFECYCLE.md) | 独立会话、当前 HEAD/BASE/合并树、正式检查和合后证据 |
+
+先从更新后的目标分支确认本轮 `BASE_SHA`，按项目合同核对候选和正式 CI。在涉及业务的时候，用需求、领域规则或已经确认的样例复核测试预期；状态归属、动态边界、例外理由和设备验收仍由对应评审或验收确认。
+
+## 维护指引时的使用效果核验
+
+沿实际任务从根入口走到工具、配置或源码，记录必要步骤、验证结果和仍未覆盖的边界。优先用正常 PR 和现有测试留痕；历史背景见 [TASK-87](backlog-details/AGENT-HARNESS-20261104.md)。

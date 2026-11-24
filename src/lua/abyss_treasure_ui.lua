@@ -99,7 +99,7 @@ function M.render(c)
   row:GetChild('description').text=item.kind=='sapphire' and ('放弃关联遗物「'..c.relicName(item.relicId)..'」；保留金币和额外遗物。')
    or item.kind=='gold' and '独立领取宝箱金币。'
    or available and c.relicText(item.id) or RewardList.unavailableDescription(item,items)
-  c.picture(row:GetChild('icon'),item.kind=='gold' and Theme.icon.gold or Theme.icon.relic[item.id] or Theme.icon.node.treasure)
+  RewardList.paintPicture(c,row,item,Theme.layout.nativeNode.treasure.rewardDisc)
   take:GetChild('label').text=linked and item.origin=='base' and '领取遗物' or item.kind=='sapphire' and '选择蓝钥匙' or '领取奖励'
   c.state(take,available,false,true)
   panel:GetChild('page').text=(kinds[chest.kind] or '宝箱')..' · '..self.treasureChoice..' / '..#items

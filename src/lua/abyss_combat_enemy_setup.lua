@@ -83,6 +83,12 @@ function M.make(state,id,serial,explicitHp,hpRandom)
  end
  return enemy
 end
+function M.splitPosition(parent,childIndex)
+ if parent.ai.splitPositions then return Copy(parent.ai.splitPositions[childIndex])end
+ -- Large slime takeTurn places medium children +/-134 source pixels from the parent.
+ local origin=parent.sourcePosition or {x=0,y=0}
+ return {x=origin.x+(childIndex==1 and -134 or 134),y=origin.y}
+end
 local function sourceSpec(options)
  if options.sourceEncounter~=nil then
   assert(Formation.supports(options.sourceEncounter),'unknown source formation')
@@ -103,7 +109,7 @@ function M.group(state,options,construct)
   for i,enemy in ipairs(state.enemies)do enemy.id=enemy.definitionId..'_'..i end
   state.nextEnemyId=#state.enemies+1
  else
-  local ids=options.enemies or {'cultist'};assert(#ids>0,'empty encounter')
+  local ids=options.enemies or {'raven_adept'};assert(#ids>0,'empty encounter')
   local positions=SourcePositions.positions(options.encounterSource,options.encounterVisualFloat)
   if positions then assert(#positions==#ids,'source formation size mismatch')end
   for i,id in ipairs(ids)do

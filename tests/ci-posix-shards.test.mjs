@@ -70,12 +70,13 @@ historicalTest('original required engineering-posix aggregate runs always and re
   }
 });
 
-test('current POSIX matrix consumes nine shared shards with serial full regression and the original gate budget',()=>{
-  assert.deepEqual(qualityShardMatrices.posix,[1,2,3,4,5,6,7,8,9]);
+test('current POSIX matrix consumes fifteen shared shards with serial full regression and the authorized execution guard',()=>{
+  assert.deepEqual(qualityShardMatrices.posix,[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15]);
   assert.ok(shards.includes('shard: ${{ fromJSON(needs.impact.outputs.posix_shards) }}'));
-  assert.match(shards,/^    needs: impact\n    if: needs.impact.outputs.mode == 'full'$/m);
-  assert.match(shards,/^    runs-on: ubuntu-24\.04\n    timeout-minutes: 20$/m);
+  assert.match(shards,/^    needs: impact\n    if: \$\{\{ !cancelled\(\) && needs\.impact\.result == 'success' && needs\.impact\.outputs\.mode == 'full' \}\}$/m);
+  assert.match(shards,/^    runs-on: ubuntu-24\.04\n    timeout-minutes: 30$/m);
   assert.match(shards,/^      fail-fast: false$/m);
+  assert.match(shards,/^      max-parallel: 12$/m);
   assert.match(workflow,/^permissions:\n  contents: read$/m);
   assert.match(shards,/node-version: '24\.18\.0'/);
   assert.ok(shards.includes('Pillow==12.3.0'));
@@ -86,7 +87,7 @@ test('current POSIX matrix consumes nine shared shards with serial full regressi
   assert.ok(shards.includes('          npm run build:data\n          npm run build:ui\n          node scripts/ci-shards.mjs --shard='));
   assert.ok(shards.includes('      - run: npm run check:engineering\n        if: matrix.shard == 1\n'));
   assert.ok(shards.includes('        if: always() && matrix.shard == 1\n'));
-  assert.match(aggregate,/^    needs: \[impact, engineering-posix-shards, fast\]\n    if: always\(\)$/m);
+  assert.match(aggregate,/^    needs: \[impact, engineering-posix-shards, fast\]\n    if: \$\{\{ !cancelled\(\) && \(github\.event_name != 'pull_request' \|\| github\.event\.pull_request\.draft == false\) \}\}$/m);
 });
 
 test('native Node four-shard selection executes every current JS file name exactly once', t => {
@@ -104,7 +105,7 @@ test('native Node four-shard selection executes every current JS file name exact
   // the contract's own runner (Node otherwise disables nested CLI discovery).
   delete env.NODE_TEST_CONTEXT;
   for (let shard = 1; shard <= 4; shard++) {
-    // This contract also runs on Windows, where repeated roots exceed argv limits.
+    // This contract also runs on Windows, where repeated roots exceed Windows' argv limits.
     const args = ['--test', '--test-isolation=none', '--test-concurrency=1', `--test-shard=${shard}/4`, '--test-reporter=tap', ...files];
     assert.deepEqual(args.filter(arg => arg.endsWith('.test.mjs')), files, 'native probe argv must retain sorted basenames');
     const result = spawnSync(process.execPath, args, { cwd: root, env, encoding: 'utf8', windowsHide: true, timeout: 30000, maxBuffer: 2 * 1024 * 1024 });

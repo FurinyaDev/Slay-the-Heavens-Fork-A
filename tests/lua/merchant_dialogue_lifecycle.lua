@@ -1,6 +1,8 @@
+local advanceShop = dofile('tests/lua/support/shop_timeline.lua')
 local _,control=dofile('tests/lua/support/node_ui_cases.lua')(math.huge,math.huge)
 local UI,Run,Map,Nodes=require('abyss_node_ui'),require('abyss_run'),require('abyss_map'),require('abyss_nodes')
 local data,Layout=require('abyss_data'),require('abyss_ui_layout')
+local Theme,Narrative=require('abyss_theme'),require('abyss_narrative')
 local function find(nodes,name)for _,n in ipairs(nodes)do if n.name==name then return n end local v=n.children and find(n.children,name);if v then return v end end end
 local function setup()
  local run,map=Run.new(data,42),Map.generate(data,42)
@@ -16,27 +18,31 @@ local function setup()
  ui:setVisible(true)
  return ui,root
 end
-local failures=0
-local function test(name,fn)local ok,err=pcall(fn);print((ok and 'ok 'or'FAIL ')..name);if not ok then print(err);failures=failures+1 end end
-test('hidden shop rejects delayed merchant tap and resumes same dialogue',function()
- local ui,root=setup();ui:update(.05)
- local merchant=ui.merchant;local old=merchant.current;local shown=old.shown
+
+for _,action in ipairs({'hide','resize','restart'})do
+ local ui,root=setup()
  local tap=root:GetChild('merchant'):GetChild('talk'):GetChild('hit').click
- ui:setVisible(false)
- assert(not tap(),'hidden shop consumed delayed dialogue tap')
- ui:update(1);assert(merchant.current==old and old.shown==shown,'hidden dialogue advanced')
- ui:setVisible(true);ui:update(.05)
- assert(merchant.current==old and old.shown>shown,'reopen must resume without restarting narration')
- assert(ui:press('shopView/card1'));assert(ui:press('confirm'),'dialogue must not block buying')
-end)
-test('new transaction replaces prior portrait gesture',function()
- local ui=setup()
- assert(ui:press('shopView/card1'));assert(ui:press('confirm'));ui:update(.05)
- assert(ui.merchant.nod~=nil)
- ui.run.gold=0;ui:render();assert(not ui:press('shopView/card2'))
- assert(ui.merchant.current.kind=='poor' and ui.merchant.shake~=nil)
- assert(ui.merchant.nod==nil,'refusal still nods for previous purchase')
- ui.run.gold=10000;ui:render();assert(ui:press('shopView/card2'));assert(ui:press('confirm'))
- assert(ui.merchant.current.kind=='buy' and ui.merchant.nod~=nil and ui.merchant.shake==nil,'purchase still shakes for previous refusal')
-end)
-assert(failures==0,tostring(failures)..' merchant lifecycle failures')
+ advanceShop(ui) -- Stage the concealed shelf before testing interruption of its visible slide.
+ assert(ui.merchant.current==nil and tap())
+ ui:update(.1);assert(ui.shopBusy)
+ if action=='hide' then ui:setVisible(false);assert(not tap());ui:update(5);ui:setVisible(true)
+ elseif action=='resize' then ui:resize(1920,1080)
+ else
+  local replacement=setup();ui.run,ui.map=replacement.run,replacement.map;ui:render()
+  assert(not ui.shopOpen and not root:GetChild('shopView').visible)
+  assert(tap());advanceShop(ui)
+ end
+ assert(not ui.shopBusy,'cancelled entry retained input lock')
+ assert(ui:press('shopView/card1') and ui:press('confirm'))
+ assert(ui.merchant.current.kind=='buy' and root:GetChild('merchant'):GetChild('bubble').visible)
+ local current=ui.merchant.current
+ ui:setVisible(false);ui:update(10);assert(current.hold==0)
+ ui:setVisible(true);ui:update(2)
+ assert(not root:GetChild('merchant'):GetChild('bubble').visible)
+ ui:render();ui:update(30);assert(ui.merchant.current==current)
+ assert(not root:GetChild('shopRoom').visible)
+ assert(ui:press('back'));ui:update(.1);ui:setVisible(false);ui:setVisible(true)
+ assert(not ui.shopBusy and not ui.run.nodeFlow.complete,'cancelled exit committed in background')
+ assert(ui:press('back'));ui:update(.31);assert(ui.run.nodeFlow.complete)
+ print('ok merchant lifecycle '..action)
+end

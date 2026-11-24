@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { cardFaceChildren } from './card-face.mjs';
 import { potionSlotVisual } from './potion-slot-visual.mjs';
 import { nativeFontSize } from './native-ui-theme.mjs';
+import { compactPopupSurface } from './compact-popup-surface.mjs';
 
 // One source of tokens for both the native tree and its Lua controller.
 export const theme = JSON.parse(readFileSync(new URL('../data/presentation/ui_theme.json', import.meta.url), 'utf8'));
@@ -16,7 +17,7 @@ const picture = (name, x, y, w, h, image, colour = c.text) => ({ name, kind: 'im
     ? { colour: colour.slice(0, 7), opacity: parseInt(colour.slice(7), 16) / 255 } : { colour }),
 });
 const panel = (name, x, y, w, h, colour) => picture(name, x, y, w, h, im.rect, colour);
-const hit = (w, h) => ({ name: 'hit', kind: 'cursorArea', size: [w, h], focusable: true });
+const hit = (w, h) => ({ name: 'hit', kind: 'cursorArea', size: [w, h] });
 const clickableImage = (image, target) => {
   const { name, position, size } = image;
   return { name, kind: 'container', position, size, children: [
@@ -31,7 +32,7 @@ function button(name, position, size, label, primary = false, fontSize = f.headi
     hover: [primary ? c.goldBright : c.panelRaised, primary ? c.textOnLight : c.goldBright, c.goldBright],
     pressed: [c.buttonPressedFill, c.text, c.goldBright], disabled: [c.panelSunken, c.textMuted, c.line],
   };
-  return { name, kind: 'presetButton', position, size, focusable: true,
+  return { name, kind: 'presetButton', position, size,
     states: Object.fromEntries(Object.keys(variants).map(key => [key, key])),
     children: Object.entries(variants).map(([state, [bg, ink, border]]) => ({ name: state, kind: 'container', size,
       scale: state === 'pressed' ? [0.96, 0.96] : [1, 1], children: [
@@ -68,7 +69,8 @@ function unit(name, position, portrait, player = false) {
     { ...picture('impact', 0, 0, portrait, portrait, im.diamond, c.geo), visible: false },
     { ...picture('shield', 0, 0, portrait, portrait, theme.icon.block, c.block), visible: false },
     { ...text('floating', 0, portrait / 2, bw + s.xxl, l.nativeText.lineHeight * 2, '', f.number, c.goldBright), visible: false },
-    ...(!player ? [picture('intentIcon', -s.xl, l.intent.offsetY, l.intent.size, l.intent.size, theme.icon.intent.unknown, c.textDim),
+    ...(!player ? [{ ...hit(bw, bh), name: 'hpHit', visible: false },
+      picture('intentIcon', -s.xl, l.intent.offsetY, l.intent.size, l.intent.size, theme.icon.intent.unknown, c.textDim),
       // Keep the existing secondary path, with full-sized horizontal peers.
       { ...picture('intentBadge', 0, l.intent.offsetY, l.intent.size, l.intent.size, theme.icon.intent.debuff, c.debuff), visible: false },
       { ...picture('intentExtra', 0, l.intent.offsetY, l.intent.size, l.intent.size, theme.icon.intent.buff, c.buff), visible: false },
@@ -83,6 +85,7 @@ function unit(name, position, portrait, player = false) {
 
 export function enemyUnitTemplate(name = 'AbyssMonsterActor') {
   const actor = unit(name, [0, 0], l.enemyRow.crowdPortrait);
+  actor.blockCursor = true;
   // Original intent effects draw behind the icon, then above it but below damage text.
   for (const [name, before] of [['intentVfxBehind', 'intentIcon'], ['intentVfxAfter', 'intent']]) {
     actor.children.splice(actor.children.findIndex(child => child.name === before), 0,
@@ -119,7 +122,8 @@ function statusRow(top) {
       { ...panel(`body${i + 1}`, x, y, si.size, si.size, c.panelSunken), visible: false });
     icons.push({ ...picture(`icon${i + 1}`, x, y, si.size, si.size, theme.icon.status.strength, c.text), visible: false });
     badges.push({ ...picture(`badge${i + 1}`, x, y, si.size, si.size, im.disc, c.panelSunken), visible: false });
-    counts.push({ ...text(`count${i + 1}`, x + si.size / 2, y - si.size / 2 + si.gap, si.size, l.nativeText.lineHeight, '', f.small, c.text), visible: false });
+    counts.push({ ...text(`count${i + 1}`, x + si.size / 2, y - si.size / 2 + si.gap,
+      Math.max(si.size, l.nativeText.lineHeight), l.nativeText.lineHeight, '', f.small, c.text), visible: false });
     targets.push({ ...hit(si.minimumTouch, si.minimumTouch), name: `hit${i + 1}`, position: [0, 0], visible: false });
   }
   return { name: 'statusRow', kind: 'container', position: [0, top - (si.rows - 1) * pitch / 2], size: [bw, height],
@@ -163,9 +167,24 @@ function statusInfo() {
     panel('rule', 0, 0, inner, s.hairline, c.line),
     ...sections,
     ...rows,
+    powerTips(),
     text('more', 0, 0, inner, line, '', f.small, c.textDim),
     { ...hit(si.width, si.width), name: 'page' },
   ] };
+}
+
+function powerTips() {
+  const tip = l.powerTips;
+  const copyHeight = 2 * l.nativeText.lineHeight;
+  const height = copyHeight + 2 * tip.padding;
+  return { name: 'powerTips', kind: 'container', size: [...theme.canvas.base], visible: false,
+    children: Array.from({ length: tip.rows }, (_, i) => ({
+      name: `tip${i + 1}`, kind: 'container', size: [tip.width, height], visible: false, children: [
+        panel('edge', 0, 0, tip.width, height, tip.border),
+        panel('face', 0, 0, tip.width - 2, height - 2, tip.fill),
+        aligned(text('copy', 0, 0, tip.width - 2 * tip.padding, copyHeight, '', tip.font, c.text)),
+      ],
+    })) };
 }
 
 export function handPose(count, index, selected = false) {
@@ -230,16 +249,20 @@ export function battleLayout() {
     ];
   };
   const controls = [
+    // Empty ground only. Actors, hand and combat actions are above this hit.
+    { ...hit(width - theme.canvas.safe.x * 2, height - bar.height - theme.canvas.safe.y), name: 'statusDismiss',
+      position: [0, (theme.canvas.safe.y - bar.height) / 2], focusable: false, visible: false },
     // Behind actors and hand: a distinct C-mode confirmation surface on open ground.
     { name: 'playArea', kind: 'container', position: l.cardDrag.playArea.slice(0, 2), size: l.cardDrag.playArea.slice(2), visible: false, children: [
-      panel('line', 0, -l.cardDrag.playArea[3] / 2, l.cardDrag.playArea[2], s.border, c.goldBright),
-      text('label', 0, -l.cardDrag.playArea[3] / 2 + s.xl, l.cardDrag.playArea[2], l.nativeText.lineHeight, '出牌区域 · 点击出牌', f.body, c.goldBright),
+      text('label', 0, -l.cardDrag.playArea[3] / 2 + s.xl, l.cardDrag.playArea[2], l.nativeText.lineHeight, '', f.body, c.goldBright),
       hit(...l.cardDrag.playArea.slice(2)),
     ] },
     {name: 'topBar', kind: 'container', position: [0,y], size: [width,bar.height], children: [
       panel('steel',0,0,width,bar.height,c.panelSunken),
       panel('edge',0,-bar.height/2,width-80,1,c.goldDim),
       panel('leftRule',-156,0,32,1,c.gold), panel('rightRule',156,0,32,1,c.gold),
+      // The retired map pin remains hidden inside its HUD owner.
+      { ...glyph('floorIcon', bar.floorIcon, theme.icon.map, c.topPanelCream), position: [bar.floorIcon[0], 0], visible: false },
     ]},
     // Post-battle card pick: a framed stage that separates reward choosing from playing the hand.
     { name: 'rewardStage', kind: 'container', position: l.rewardPick.stage.slice(0, 2), size: l.rewardPick.stage.slice(2), visible: false, children: [
@@ -260,8 +283,7 @@ export function battleLayout() {
     // STS TopPanel.renderHP: SALMON cur/max; renderDungeonInfo: floor icon + CREAM floor number.
     glyph('hpIcon', bar.hpIcon, theme.icon.hp, c.hp), chip('player', bar.hp, c.topPanelHp),
     glyph('goldIcon', bar.goldIcon, theme.icon.gold, c.text), chip('piles', bar.gold, c.topPanelGold),
-    // Owner 2026-10-31: the white map-pin read as a stray non-potion slot beside the potion row; keep the node (contract) but never show it.
-    { ...glyph('floorIcon', bar.floorIcon, theme.icon.map, c.topPanelCream), visible: false }, chip('floor', bar.floor, c.topPanelCream),
+    chip('floor', bar.floor, c.topPanelCream),
     clickableImage(glyph('exhaustIcon', bar.exhaustIcon, theme.icon.exhaust, c.textDim),
       { ...hit(bar.exhaust[0] + bar.exhaust[1] / 2 - bar.exhaustIcon[0] + bar.exhaustIcon[1] / 2, Math.max(44,bar.height)),
         position: [(bar.exhaust[0] + bar.exhaust[1] / 2 - bar.exhaustIcon[0] - bar.exhaustIcon[1] / 2) / 2,
@@ -317,21 +339,23 @@ export function battleLayout() {
     potionHelp.push(help);
   }
   const pop=l.potionPopup, ph=pop.minimumHeight;
-  const potionAction=(name,width,label,primary)=>{
-    const action=button(name,[0,0],[width,pop.actionHeight],label,primary,pop.font);
+  const actionWidth=(pop.width-pop.padding*2-pop.buttonGap)/2;
+  const potionAction=(name,direction,label,primary)=>{
+    const action=button(name,[direction*(actionWidth+pop.buttonGap)/2,-ph/2+pop.padding+pop.actionHeight/2],
+      [actionWidth,pop.actionHeight],label,primary,pop.font);
     for(const state of action.children)state.children.find(c=>c.name==='label').size[1]=l.nativeText.lineHeight;
     return action;
   };
   potionHelp.push({name:'potionPopup',kind:'container',position:[l.battlePotions.origin[0],pop.top-ph/2],
     size:[pop.width,ph],visible:false,children:[
       {...hit(...theme.canvas.base),name:'dismiss',position:[-l.battlePotions.origin[0],-(pop.top-ph/2)]},
-      panel('border',0,0,pop.width,ph,c.goldDim),panel('plate',0,0,pop.width-2,ph-2,c.panelSunken),
+      ...compactPopupSurface(theme,[pop.width,ph]),
       hit(pop.width,ph),
       aligned(text('title',0,0,pop.width-pop.padding*2,l.nativeText.lineHeight,'',pop.font,c.goldBright)),
       aligned(text('target',0,0,pop.targetWidth,l.nativeText.lineHeight,'',pop.font,c.textDim),'right'),
       aligned(text('effect',0,0,pop.width-pop.padding*2,l.nativeText.lineHeight,'',pop.font,c.text)),
-      potionAction('use',120,'使用',true),
-      potionAction('discard',64,'丢弃',false),
+      potionAction('use',-1,'使用',true),
+      potionAction('discard',1,'丢弃',false),
     ]});
   // Keep potion explanations in the existing full-canvas group. This avoids
   // exceeding the platform's 60 direct children when rewards and aiming coexist.
@@ -380,9 +404,10 @@ export function battleLayout() {
     button('stolenGold', l.battleRewards.rowOrigin, l.battleRewards.rowSize, '取回失金', false, f.body));
   controls.push({ name: 'dragLayer', kind: 'container', size: [width, height], visible: false, children: [
     { ...hit(width, height), focusable: false },
-    panel('line', l.cardDrag.playArea[0], l.cardDrag.lineY, l.cardDrag.playArea[2], s.border, c.goldBright),
+    // The drag renderer positions this anchor at its computed release boundary.
+    { name: 'line', kind: 'container', position: [l.cardDrag.playArea[0], l.cardDrag.lineY], size: [0, 0], visible: false },
     text('hint', 0, l.cardDrag.lineY + s.xl, l.cardDrag.playArea[2], l.nativeText.lineHeight, '', f.body, c.goldBright),
-    // Targeted cards dock below the line and aim with a dotted arc that ends on a reticle.
+    // Targeted cards dock below the play boundary and aim with a dotted arc.
     ...Array.from({ length: l.cardDrag.aimDots }, (_, i) =>
       ({ ...picture(`aim${i + 1}`, 0, 0, l.cardDrag.aimDot[0], l.cardDrag.aimDot[0], im.diamond, c.goldBright), visible: false })),
     { ...picture('reticle', 0, 0, l.enemyRow.portrait, l.enemyRow.portrait, im.ring, c.goldBright), visible: false },

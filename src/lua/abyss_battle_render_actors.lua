@@ -7,19 +7,97 @@ local DamageView = require('abyss_battle_damage_view')
 local PotionView = require("abyss_battle_potion_view")
 local IntentView = require("abyss_battle_intent_view")
 local RewardOwner = require("abyss_battle_reward_owner")
+local LowCostArt=require('abyss_lowcost_art')
 local M = {}
 local C, L, S = Theme.color, Theme.layout, Theme.space
 local number = require("abyss_numbers").integer
 local potionText = PotionView.potionText
 local intentView = IntentView.intentView
+-- Last successful geometry writer per native handle; tokens hold no view references.
+local intentSizes=setmetatable({},{__mode='k'})
+local intentPositions=setmetatable({},{__mode='k'})
+local function intentSize(control,width,height,owner)
+    local painted=intentSizes[control]
+    if painted and painted.owner==owner and painted.width==width
+        and painted.height==height and control.alive~=false then return end
+    -- Revoke the old promise before a setter can partially apply or re-enter.
+    local pending={};intentSizes[control]=pending
+    local ok,result=pcall(control.SetSizeDelta,control,width,height)
+    local current=intentSizes[control]==pending
+    intentSizes[control]=nil
+    if not ok then error(result,0) end
+    if result~=false and current then intentSizes[control]={owner=owner,width=width,height=height} end
+end
+local function intentPosition(control,x,y,owner)
+    local painted=intentPositions[control]
+    if painted and painted.owner==owner and painted.x==x
+        and painted.y==y and control.alive~=false then return end
+    local pending={};intentPositions[control]=pending
+    local ok,result=pcall(control.SetAnchoredPosition,control,x,y)
+    local current=intentPositions[control]==pending
+    intentPositions[control]=nil
+    if not ok then error(result,0) end
+    -- Overlapping native setters have unknown completion order: retry next time.
+    if result~=false and current then intentPositions[control]={owner=owner,x=x,y=y} end
+end
+-- Only the six intent controls have exclusive visibility writers in this module.
+-- Name visibility is also owned by UnitView, so it is deliberately not cached.
+local intentVisibilities=setmetatable({},{__mode='k'})
+local function intentVisible(control,value,binding)
+    local saved=intentVisibilities[control]
+    if saved and saved.binding==binding and saved.value==value and control.alive~=false then return end
+    local pending={};intentVisibilities[control]=pending
+    local ok,accepted=pcall(control.SetVisible,control,value)
+    local ownsWrite=intentVisibilities[control]==pending
+    intentVisibilities[control]=nil
+    if not ok then error(accepted,0) end
+    if accepted~=false and ownsWrite then intentVisibilities[control]={binding=binding,value=value} end
+end
 local function needsTarget(state, instance)
     -- Ask the core to validate the same card with and without a target.
     local _, reason = Combat.canPlay(state, instance.uid, nil)
     return reason == "invalid_target"
 end
+local function aimsAtAllEnemies(battle,uid)
+    for _,instance in ipairs(battle.hand) do
+        if instance.uid==uid then return Combat.cardDefinition(battle,instance).target=='ALL_ENEMY' end
+    end
+    return false
+end
+local function enemyPortraitIcon(enemy)
+    return Theme.icon.enemy[enemy.definitionId] or Theme.icon.node[enemy.tier == 'normal' and 'combat' or enemy.tier]
+end
+local function paintEnemyArt(host,box,enemy,x,y,portrait,tone,dim)
+    local icon=box:GetChild('portrait')
+    if host.monsterArt:write(box,x,y,portrait,tone)then LowCostArt.hide(icon,false);return end
+    LowCostArt.paint(icon,'enemy',enemy.definitionId,portrait,host.platform)
+    LowCostArt.dim(icon,dim and .4 or 1)
+    LowCostArt.refresh(box,{r=tone.r,g=tone.g,b=tone.b,a=255})
+end
+local function intentTone(alpha,kind)
+    -- STS intent atlases are colour-coded (attack red, defend blue, buff gold,
+    -- debuff violet); white-tinted silhouettes read as one undifferentiated blob.
+    local ink=({attack=C.danger,defend=C.block,buff=C.buff,debuff=C.debuff,strong_debuff=C.debuff})[kind] or C.text
+    return {r=ink.r,g=ink.g,b=ink.b,a=255*(alpha or 1)}
+end
+local function renderIntentBadge(box,face,x,y,size,allowed,alpha,binding,picture,tint)
+    local badge=box:GetChild('intentBadge')
+    local kind=face.badge
+    local visible=allowed~=false and kind~=nil and (not face.sourceEnum or face.worldVisible==true)
+    intentVisible(badge,visible,binding)
+    if not visible then return end
+    local glyph=math.min(size,L.intent.size)
+    -- Attack damage owns the right side of the main icon, including multi-hit text.
+    local side=(face.worldKind or face.kind)=='attack' and -1 or 1
+    intentSize(badge,L.intent.badge,L.intent.badge,binding)
+    intentPosition(badge,x+side*(glyph/2+S.xs+L.intent.badge/2),y,binding)
+    picture(badge,Theme.icon.intent[kind])
+    tint(badge,intentTone(alpha,kind))
+end
 -- Explicit ports preserve the approved implementation without a shared constructor closure.
 function M.install(owner, ownership, host, dependencies)
     -- A new view binding starts fresh; weak native keys cannot retain retired actors.
+    local intentGeometryOwner={}
     local intentImages=setmetatable({},{__mode='k'})
     local intentTexts=setmetatable({},{__mode='k'})
     local potionCaptions=setmetatable({},{__mode='k'})
@@ -58,14 +136,16 @@ function M.install(owner, ownership, host, dependencies)
         return targetable == true or potionHighlighted(enemy,index,pendingTarget) or owner.acting == enemy.id
     end
     local function enemyIntentFace(frame,enemy,index)
-        local face
+        local view, face = host.monsterIntentParticles
         if IntentView.hasSourceIntent(enemy)then
-            local view=host.monsterIntentParticles
             local selected=view:needsSelected(enemy.id) and IntentView.selectedDescriptor(frame.battle,index) or nil
             face=view:face(enemy.id,selected,function(base)
                 return Combat.intentAttackAmount(frame.battle,enemy,frame.battle.player,base)
             end)
-        else face=intentView(frame.battle,index)end
+        else
+            face=intentView(frame.battle,index)
+            view:rememberPreview(enemy.id,face)
+        end
         -- Dome changes visibility, never the source selected/displayed state.
         if require('abyss_boss_relics').hidesIntents(owner.run)then face.hidden=true;face.value=''end
         return face
@@ -74,20 +154,14 @@ function M.install(owner, ownership, host, dependencies)
         if geometry then return geometry.intentX,geometry.intentY,geometry.intentWidth end
         return 0,portrait/2,128*Theme.canvas.base[1]/1920
     end
-    local function intentTone(alpha,kind)
-        -- STS intent atlases are colour-coded (attack red, defend blue, buff gold,
-        -- debuff violet); white-tinted silhouettes read as one undifferentiated blob.
-        local ink=({attack=C.danger,defend=C.block,buff=C.buff,debuff=C.debuff,strong_debuff=C.debuff})[kind] or C.text
-        return {r=ink.r,g=ink.g,b=ink.b,a=255*(alpha or 1)}
-    end
     local function renderIntentIcon(box,face,x,y,size,allowed,alpha)
         local kind=face.worldKind or face.kind
         local visible=allowed~=false and (face.sourceEnum and face.worldVisible or not face.sourceEnum)
-        local icon=box:GetChild('intentIcon');icon:SetVisible(visible==true)
+        local icon=box:GetChild('intentIcon');intentVisible(icon,visible==true,intentGeometryOwner)
         -- STS 128px intent frames are mostly transparent padding; the official glyphs here
         -- are full-bleed, so draw them at the glyph size and float them clear of the head.
         local glyph=math.min(size,L.intent.size)
-        icon:SetSizeDelta(glyph,glyph);icon:SetAnchoredPosition(x,y)
+        intentSize(icon,glyph,glyph,intentGeometryOwner);intentPosition(icon,x,y,intentGeometryOwner)
         if visible then
             intentPicture(icon,Theme.icon.intent[kind] or Theme.icon.intent.unknown)
             dependencies.tint(icon,intentTone(alpha,kind))
@@ -97,7 +171,7 @@ function M.install(owner, ownership, host, dependencies)
         local kind=face.worldKind or face.kind
         local value=box:GetChild('intent')
         local attack=face.sourceEnum and face.sourceEnum:sub(1,6)=='ATTACK' or not face.sourceEnum and kind=='attack'
-        value:SetVisible(allowed~=false and attack and face.value~='')
+        intentVisible(value,allowed~=false and attack and face.value~='',intentGeometryOwner)
         local text=face.value and face.value:gsub('×','x') or ''
         if intentTexts[value]~=text or value.alive==false then
             intentTexts[value]=nil
@@ -105,18 +179,19 @@ function M.install(owner, ownership, host, dependencies)
             intentTexts[value]=text
         end
         local width=math.max(L.intent.valueWidth,utf8.len(text)*L.intent.numberSize)
-        value:SetSizeDelta(width,L.nativeText.lineHeight)
-        value:SetAnchoredPosition(x+L.intent.size/2+S.xs+width/2,y)
+        intentSize(value,width,L.nativeText.lineHeight,intentGeometryOwner)
+        intentPosition(value,x+L.intent.size/2+S.xs+width/2,y,intentGeometryOwner)
         dependencies.ink(value,intentTone(alpha))
     end
     local function renderEnemyIntent(box,face,portrait,geometry,allowed,alpha)
         local x,y,size=intentGeometry(portrait,geometry)
         renderIntentIcon(box,face,x,y,size,allowed,alpha)
-        for _,name in ipairs({'intentBadge','intentExtra','intentLabel'})do box:GetChild(name):SetVisible(false)end
+        renderIntentBadge(box,face,x,y,size,allowed,alpha,intentGeometryOwner,intentPicture,dependencies.tint)
+        for _,name in ipairs({'intentExtra','intentLabel'})do intentVisible(box:GetChild(name),false,intentGeometryOwner)end
         renderIntentValue(box,face,x,y,allowed,alpha)
         local sx,sy=Theme.canvas.base[1]/1920,Theme.canvas.base[2]/1080
-        local hit=box:GetChild('intentHit');hit:SetVisible(allowed~=false)
-        hit:SetAnchoredPosition(x,y);hit:SetSizeDelta(64*sx,64*sy)
+        local hit=box:GetChild('intentHit');intentVisible(hit,allowed~=false,intentGeometryOwner)
+        intentPosition(hit,x,y,intentGeometryOwner);intentSize(hit,64*sx,64*sy,intentGeometryOwner)
     end
     local function enemyIntentAllowed(actor,battle)
         return not require('abyss_boss_relics').hidesIntents(owner.run) and Actors.isPresent(actor) and not owner.feedback.dying[actor.id]
@@ -126,11 +201,16 @@ function M.install(owner, ownership, host, dependencies)
         local aimed = owner.gesture or owner.carry
         local projection = { pendingTarget = pendingCardTarget(frame) }
         if aimed and aimed.moving then projection.valid, projection.target = dependencies.dragTarget(aimed) end
-        if projection.valid then projection.losses = DamageView.preview(frame.battle, aimed.uid, projection.target) end
+        -- Original targeting updates card damage, not future enemy HP. Keep the
+        -- legacy preview outside this profile; cloning and playing a detached
+        -- battle on pointer input is both unnecessary and expensive here.
+        local futureHp = Theme.presentationProfile ~= 'official-assets-first'
+        if projection.valid and not futureHp then projection.allEnemies=aimsAtAllEnemies(frame.battle,aimed.uid) end
+        if projection.valid and futureHp then projection.losses = DamageView.preview(frame.battle, aimed.uid, projection.target) end
         local potion=owner.potionAim
         if potion and potion.moving then
             projection.valid,projection.target=dependencies.potionDragTarget(potion)
-            if projection.valid then projection.losses=DamageView.potionPreview(owner.run,potion.slot,projection.target) end
+            if projection.valid and futureHp then projection.losses=DamageView.potionPreview(owner.run,potion.slot,projection.target) end
         end
         return projection
     end
@@ -142,26 +222,28 @@ function M.install(owner, ownership, host, dependencies)
         preview.text = loss and loss.loss > 0 and (loss.hp <= 0 and '击杀' or '−' .. number(loss.loss)) or ''
         if loss and loss.loss > 0 then box:GetChild('hpFill').fillAmount = math.max(0, loss.hp / enemy.maxHp) end
     end
-    local function enemyPortraitIcon(enemy)
-        return Theme.icon.enemy[enemy.definitionId] or Theme.icon.node[enemy.tier == 'normal' and 'combat' or enemy.tier]
-    end
     local function renderEnemySlot(frame, box, entry, slot, count, aim)
         local enemy = entry.actor
         local x, width, portrait, step, y = dependencies.enemySlot(count, slot, enemy)
         box:SetAnchoredPosition(x, y)
         local selected = enemyHighlighted(frame, enemy, entry.index, aim.pendingTarget)
+            or aim.allEnemies==true and Actors.isActive(enemy)
         local loss = aim.losses and aim.losses[entry.index]
         if aim.valid and not aim.target and loss and loss.loss > 0 then selected = true end
         local geometry=EnemyView.geometry(enemy)
         host.unit(box, enemy, portrait, enemyPortraitIcon(enemy), width, selected,step,geometry)
         host.monsterPowers:render(box,entry.controlSlot,enemy,geometry)
+        local hpHit = box:GetChild('hpHit')
+        hpHit:SetAnchoredPosition(geometry.healthX, geometry.healthY)
+        hpHit:SetSizeDelta(geometry.hitWidth + S.border * 2, geometry.healthHeight + S.border * 2)
+        hpHit:SetVisible(Actors.isPresent(enemy))
         box:GetChild('hit'):SetSizeDelta(geometry.hitWidth,geometry.hitHeight)
         box:GetChild('hit'):SetAnchoredPosition(geometry.hitX-x,geometry.hitY-y)
         local dim = (aim.pendingTarget or owner.potionAim ~= nil) and not selected
         local portraitTone = C.text
         local tone={r=portraitTone.r,g=portraitTone.g,b=portraitTone.b,a=dim and 102 or 255}
         dependencies.tint(box:GetChild('portrait'),tone)
-        host.monsterArt:write(box,x,y,portrait,tone)
+        paintEnemyArt(host,box,enemy,x,y,portrait,tone,dim)
         renderDamagePreview(box, enemy, portrait, width, loss)
         renderEnemyIntent(box, enemyIntentFace(frame, enemy, entry.index), portrait,geometry,
             enemyIntentAllowed(enemy,frame.battle),host.monsterIntentParticles:alpha(enemy.id))
@@ -221,14 +303,39 @@ function M.install(owner, ownership, host, dependencies)
     end
     local function hideEscapingHud(box,id)
         if not owner.feedback.escaping[id] then return end
-        for _,name in ipairs({'hpBorder','hpTrack','hpGhost','hpFill','hp','blockEdge','blockIcon','block','name','statusRow','intentIcon','intentBadge','intentExtra','intent','intentHit'})do
-            box:GetChild(name):SetVisible(false)
+        for _,name in ipairs({'hpBorder','hpTrack','hpGhost','hpFill','hp','hpHit','blockEdge','blockIcon','block','name','statusRow','intentIcon','intentBadge','intentExtra','intent','intentHit'})do
+            local control=box:GetChild(name)
+            intentVisibilities[control]=nil
+            local ok,why=pcall(control.SetVisible,control,false)
+            intentVisibilities[control]=nil
+            if not ok then error(why,0) end
         end
+    end
+    local function suspendEnemies(rows)
+        local ok,why=pcall(function()
+            host.monsterSurfaces:select(rows,owner.run.combat)
+            host.monsterArt:select(rows)
+            host.monsterSurfaces:each(function(box)
+                assert(box:SetVisible(false)~=false,'suspended monster visibility rejected')
+                host.monsterIntentParticles:release(box)
+            end)
+        end)
+        if not ok then
+            local cleaned,reason=pcall(owner.releaseMonsterSurfaces,owner)
+            error(tostring(why)..(cleaned and '' or '; cleanup: '..tostring(reason)))
+        end
+    end
+    local function canSuspendEnemies(frame)
+        return not owner.active and frame.fighting and owner.run and owner.run.phase=='combat'
+            and owner.suspendedBattle==owner.run.combat and host.monsterSurfaces.battle==owner.run.combat
     end
     local function renderEnemies(frame)
         local rows = frame.fighting and EnemyView.slots(frame.battle, owner.feedback) or {}
+        local suspended=canSuspendEnemies(frame)
+        local retained=rows
         if not owner.active then rows={}end
         host.monsterIntentParticles:sync(rows,owner.run and owner.run.combat,owner.feedback.current,owner.active and frame.fighting)
+        if suspended then owner.feedback.enemyRows={};suspendEnemies(retained);return end
         host.monsterSurfaces:select(rows,owner.run and owner.run.combat)
         owner.feedback.enemyRows = rows
         local aim = enemyAimProjection(frame)
@@ -303,8 +410,9 @@ function M.install(owner, ownership, host, dependencies)
     end
     local function paintPotionCaption(slot,item,visible)
         local caption=dependencies.child('potionCaption'..slot)
-        local shown=visible==true and item~=nil
-        local text=item and PotionView.slotLabel(item)or ''
+        local original=Theme.presentationProfile=='official-assets-first'
+        local shown=not original and visible==true and item~=nil
+        local text=not original and item and PotionView.slotLabel(item)or ''
         local prior=potionCaptions[caption]
         if not prior or prior.shown~=shown or prior.text~=text then
             potionCaptions[caption]=nil

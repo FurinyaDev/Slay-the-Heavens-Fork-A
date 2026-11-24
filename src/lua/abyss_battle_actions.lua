@@ -4,22 +4,42 @@ local Actors = require("abyss_actor")
 local Run = require("abyss_run")
 local Theme = require("abyss_theme")
 local Events = require("abyss_events")
-local Controller = require("abyss_controller")
 local RewardOwner = require("abyss_battle_reward_owner")
 local M = {}
 local L = Theme.layout
 local reasons = { insufficient_energy = "能量不足", invalid_target = "请选择存活的敌人", card_content_unavailable = "此卡牌尚未实装，可选择其他卡牌或跳过。",
     card_not_in_hand = "这张牌已离开手牌", not_player_turn = "敌方行动中",
     normality_limit = "平庸：本回合已打出三张牌",
+    velvet_choker_limit = "天鹅绒颈圈：本回合已打出六张牌",
+    unplayable_card = "这张牌不能打出", entangled = "被缠绕时无法打出攻击牌",
+    selection_pending = "请先完成当前选牌", discard_choice_pending = "请先完成弃牌选择",
+    card_choice_pending = "请先完成当前选牌",
+    requires_empty_draw_pile = "抽牌堆为空时才能打出", requires_only_attacks = "手牌均为攻击牌时才能打出",
+    requires_no_other_attack = "手中没有其他攻击牌时才能打出", no_matching_draw_card = "抽牌堆中没有符合条件的牌",
+    command_failed = "战斗操作发生错误，请重试。若再次失败，请反馈游戏日志。",
     advanced_card_not_enabled = "此牌效果尚未接入", not_in_combat = "战斗已经结束",
     empty_potion_slot = "此药水已使用", invalid_potion_slot = "请选择有效药水",
     smoke_not_allowed = '此战斗不能使用烟雾弹',
     effect_overflow = "当前状态已达上限", potion_slots_full = "药水槽已满，请先丢弃旧药水。",
     potion_content_unavailable = "该稀有度药水尚未实装。", potion_blocked_by_sozu = "遗物阻止获得药水。" }
+local function feedbackPresented(owner,battle)
+    local feedback=owner.feedback
+    return owner.busy==true and feedback and feedback.busy==true and owner.run and owner.feedbackRun==owner.run and owner.run.combat==battle
+        and owner.feedbackBattle==battle and feedback.battle==battle and owner.displayBattle==feedback.shadow
+end
+local function selectedPotionView(run,slot)
+    if Theme.presentationProfile=='official-assets-first' then return Run.potionSlotView(run,slot) end
+    return Run.potionView(run)[slot]
+end
 -- Explicit ports preserve the approved implementation without a shared constructor closure.
-function M.install(owner, _ownership, host, dependencies)
+function M.install(owner, ownership, host, dependencies)
     local R = L.rewardPick
-    local function refresh(changed)
+    local function inputCovered()return host.options.inputCovered and host.options.inputCovered()end
+    local function combatInputReady()
+        return owner.active and not owner.busy and not owner.gesture and not owner.suppressClick
+            and owner.run and owner.run.phase=='combat' and not inputCovered()
+    end
+    local function reconcileSelection()
         if owner.run and owner.run.phase == "combat" then
             local battle, found = owner.run.combat, false
             if not battle.enemies[owner.target] or not Actors.isActive(battle.enemies[owner.target]) then
@@ -28,10 +48,14 @@ function M.install(owner, _ownership, host, dependencies)
             for _, card in ipairs(battle.hand) do if card.uid == owner.selected then found = true break end end
             if not found then owner.selected = nil end
         else owner.selected = nil end
-        owner:render()
+    end
+    local function refresh(changed, deferRender)
+        reconcileSelection()
+        if not deferRender then owner:render() end
         if changed and host.options.onChange then host.options.onChange(owner) end
     end
-    local function perform(command, origin)
+    local function perform(command, origin, clearPlayedSelection, commandContext)
+        if inputCovered()then return false,'panel_hidden' end
         local battle = owner.run.combat
         local before, first = Events.frame(battle), #battle.events + 1
         owner.busy, owner.feedbackRun, owner.feedbackBattle = true, owner.run, battle
@@ -47,15 +71,24 @@ function M.install(owner, _ownership, host, dependencies)
         local called, ok, reason = pcall(command)
         if not called or not ok then
             owner.busy, owner.displayBattle = false, nil
-            if not called then print("ABYSS_FEEDBACK command_failed " .. tostring(ok)) end
+            if not called then
+                print("ABYSS_FEEDBACK command_failed " .. tostring(ok) .. " turn=" .. tostring(battle.turn)
+                    .. (commandContext or ""))
+            end
             refresh()
             return false, called and reason or "command_failed"
+        end
+        if clearPlayedSelection then
+            -- Publish UI-only selection before feedback's mandatory first frame;
+            -- that frame can then serve as the post-command refresh as well.
+            owner.selected=nil
+            reconcileSelection()
         end
         -- No core callback is retained by playback. The committed result is immutable to it.
         owner.feedbackLast = #battle.events
         owner.feedback:setFastMode(owner.fastMode==true)
-        owner.feedback:begin(before, battle, first, owner.presentation, origin)
-        return ok, reason
+        owner.feedback:begin(before, battle, first, owner.presentation, origin, owner.run.phase == "reward")
+        return ok, reason, clearPlayedSelection and feedbackPresented(owner,battle)
     end
     function owner:chooseCards(kind, uids, token, generation,battle)
         if self.busy or not self.run or self.run.phase~="combat" then return false, "not_in_combat" end
@@ -73,22 +106,23 @@ function M.install(owner, _ownership, host, dependencies)
             or help.spec.kind=='rewardCard' and not RewardOwner.ready(owner,help.spec)
     end
     local function helpPointerChanged(help)
-        return owner.gesture and owner.gesture.moving
-            or help.card and (help.card.input.held ~= help.card or not dependencies.cardReady(help.card))
+        if owner.gesture and owner.gesture.moving then return true end
+        local card=help.card
+        return card and (card.input.held~=card or card.browsed or not dependencies.cardReady(card))
     end
     local function fireHelp(help, dt)
         help.t = help.t + dt
         if help.t + 0.000001 >= L.statusInfo.delay then
             help.fired = true
-            if help.held and (help.spec.kind == "card" or help.spec.kind=='rewardCard') then
-                owner.gesture = nil
+            if help.held and help.card then
+                owner.gesture,owner.carry,owner.selected=nil,nil,nil
                 dependencies.cancelCardInputs()
-                owner.suppressClick = true
+                owner.suppressClick=help.card
+                owner.swallow={touch=help.touch}
+                ownership.releasedDragTouch=help.touch
+                help.spec.press=help.card
             end
-            -- A deliberate card hold opens a pageable reader; hover stays transient.
-            local heldCard=help.held and (help.spec.kind=='card' or help.spec.kind=='rewardCard')
-            if heldCard then owner.swallow={touch=help.touch}end
-            owner:openHelp(help.spec, help.source, not heldCard)
+            owner:openHelp(help.spec,help.source,not help.held or not help.card)
         end
     end
     local function updateHelp(dt)
@@ -131,23 +165,33 @@ function M.install(owner, _ownership, host, dependencies)
         end
         dependencies.updateEnemyIntents(dt)
         self.feedback:update(dt)
+        if host.updateRewardBanner then host.updateRewardBanner(dt) end
         dependencies.updateEnemyNames(dt)
         updateRewardCards(dt)
         host.cardView.update(dt)
+        local info=self.info
+        if info and (info.kind=='card' or info.kind=='rewardCard') then
+            if self:cardHelpReady(info) then host.renderInfo(info.battle,true)
+            else self:render(true) end
+        end
     end
-    function owner:setActive(active)
+    function owner:setActive(active, suspend, deferRender)
         assert(type(active) == "boolean", "active must be boolean")
         self.active = active
+        -- Only the host may request a temporary same-battle cover. Plain false still unmounts.
+        self.suspendedBattle = not active and suspend == true and self.run and self.run.combat or nil
         if not active then self.help=nil;dependencies.cancelPotionAim("已取消药水瞄准。") end
         host.root:SetVisible(active)
-        self:render()
+        -- GameUI can commit its battle render after all page visibility writes.
+        -- Other callers retain immediate rendering, including plain false.
+        if not deferRender then self:render() end
     end
     function owner:start()
         if not self.active or host.options.embedded or self.busy then return false end
         self.feedback:cancel()
         self.run = Run.new(self.data, self.seed)
         self.seed = (self.seed + 1) % 65536
-        assert(Run.startCombat(self.run, "cultist_solo"))
+        assert(Run.startCombat(self.run, "raven_adept_solo"))
         self.target, self.selected = 1, nil
         dependencies.notice("") refresh(true)
         print("ABYSS_UI combat_started")
@@ -155,10 +199,11 @@ function M.install(owner, _ownership, host, dependencies)
     function owner:playSelected(target)
         if not self.active or not self.selected or self.busy or self.gesture or not self.run or self.run.phase ~= "combat" then return end
         local uid, origin = self.selected, self.cardPositions[self.selected]
-        local ok, reason = perform(function() return Run.play(self.run, uid, target) end, origin)
+        local ok, reason, presented = perform(function() return Run.play(self.run, uid, target) end, origin,
+            Theme.presentationProfile=='official-assets-first', " play uid=" .. tostring(uid) .. " target=" .. tostring(target))
         if ok then self.selected = nil end
         dependencies.notice(ok and "" or reasons[reason] or "当前无法使用这张牌。")
-        if reason ~= "presentation_unavailable" then refresh() end
+        if reason ~= "presentation_unavailable" and not presented then refresh() end
     end
     function owner:chooseCard(token,uid)
         if self.busy or not self.run or self.run.phase~="combat" then return false end
@@ -193,13 +238,13 @@ function M.install(owner, _ownership, host, dependencies)
     end
     function owner:playSlot(index)
         local run = self.run
-        if not self.active or not run or self.busy or self.gesture or self.suppressClick then return end
+        if inputCovered() or not self.active or not run or self.busy or self.gesture or self.suppressClick then return end
         if run.phase == "reward" then return claimCard(index, run)
         elseif run.phase == "combat" then return selectCombatCard(index, run) end
         refresh()
     end
     function owner:endTurn()
-        if not self.active or not self.run or self.busy or self.gesture or self.suppressClick or self.run.phase ~= "combat" or self.run.combat.phase ~= "player" then return end
+        if inputCovered() or not self.active or not self.run or self.busy or self.gesture or self.suppressClick or self.run.phase ~= "combat" or self.run.combat.phase ~= "player" then return end
         self.selected = nil
         perform(function() return Run.endTurn(self.run) end)
     end
@@ -219,17 +264,15 @@ function M.install(owner, _ownership, host, dependencies)
             slot=binding.slot,id=binding.id,actors={},living={}}
         for i, actor in ipairs(battle.enemies) do aim.actors[i],aim.living[i]=actor,Actors.isActive(actor) end
         owner.potionAim = aim
-        dependencies.notice(item.name .. (Controller.isController(host.platform.controller)
-            and " · 摇杆选择敌人 · 确认使用 · 返回取消"
-            or " · 对一名敌人：点击敌人使用；再点药水或空白取消；点说明查看效果。"))
+        dependencies.notice(item.name .. " · 对一名敌人：点击敌人使用；再点药水或空白取消；点说明查看效果。")
         refresh()
         return true
     end
     function owner:usePotion(index)
-        if not self.active or self.busy or self.gesture or self.suppressClick or not self.run or self.run.phase ~= "combat" then return false end
+        if not combatInputReady() then return false end
         local binding = potionBinding(index)
         if not binding then return false end
-        local item = Run.potionView(self.run)[binding.slot]
+        local item = selectedPotionView(self.run,binding.slot)
         if not item or not item.canUse then dependencies.notice(reasons[item and item.reason] or "当前无法使用此药水。") return false end
         local previous = self.potionAim
         dependencies.cancelPotionAim()
@@ -242,7 +285,7 @@ function M.install(owner, _ownership, host, dependencies)
         return not target or aim and aim.slot == slot and dependencies.aimReady(aim)
     end
     function owner:commitPotion(slot, target)
-        if not self.active or self.busy or self.gesture or self.suppressClick or not self.run or self.run.phase ~= "combat" then return false end
+        if not combatInputReady() then return false end
         if not potionTargetReady(slot, target) then
             dependencies.cancelPotionAim("药水瞄准已失效，已取消。") refresh() return false
         end

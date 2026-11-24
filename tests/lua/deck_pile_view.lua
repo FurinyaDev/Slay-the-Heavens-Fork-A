@@ -26,14 +26,14 @@ local function checkDetailAndScroll(host,root,grid)
     assert(not hit.click({dragging=true}),'pile drag must not open detail')
     assert(not hit.click({dragging=false,GetPressUIPos=function()return 100,100 end,
         GetUIPos=function()return 100,180 end}),'released pile drag must not open detail')
-    assert(not host.deckUI.detailPages and grid.visible and grid.scrollProgress==.35)
+    assert(not host.deckUI.cardDetail and grid.visible and grid.scrollProgress==.35)
     assert(hit.click(),'ordinary pile tap must open detail')
-    assert(host.deckUI.detailPages and not grid.visible)
+    assert(host.deckUI.cardDetail and not grid.visible)
     assert(host.deckUI.cardDetail.instance.uid==uid and host.deckUI.cardDetail.combat,
         'pile detail must use the selected combat instance')
     assert(root:GetChild('deckPanel'):GetChild('close'):GetChild('hit').click())
     host.deckUI:update()
-    assert(not host.deckUI.detailPages and grid.visible and grid.scrollProgress==.35,
+    assert(not host.deckUI.cardDetail and grid.visible and grid.scrollProgress==.35,
         'detail return must preserve the native scroll offset')
     assert(host.deckUI.bindings[grid.items[0]].uid==uid,'detail return changed selected pile UID')
     assert(#host.deckUI.cards==#order,'detail return changed the pile view count')
@@ -67,10 +67,13 @@ test('discard view keeps group order and Frozen Eye permits the original reverse
     assert(same(before,host.run),'discard detail changed rules or RNG')
     for i,c in ipairs(cards) do assert(host.deckUI.cards[i].uid==c.uid) end
     host.deckUI:close();host.run.relics[#host.run.relics+1]='frozen_eye'
-    host.run.combat.draw=Combat.copy(cards)
-    open(host,root,'draw')
-    for i=1,#cards do assert(host.deckUI.cards[i].uid==cards[#cards-i+1].uid) end
-    host.deckUI:close()
+    for _,kind in ipairs({'draw','exhaust'})do
+        host.run.combat[kind]=Combat.copy(cards)
+        open(host,root,kind)
+        assert(not root:GetChild('deckPanel'):GetChild('rarityTip').visible)
+        for i=1,#cards do assert(host.deckUI.cards[i].uid==cards[#cards-i+1].uid) end
+        host.deckUI:close()
+    end
 end)
 
 test('combat pile faces retain temporary cost and growth while permanent deck remains unchanged',function()
@@ -96,5 +99,16 @@ test('empty piles open and invalid contexts cannot replace a visible snapshot',f
     assert(not host.deckUI:openPile(host.run,'hand'))
     host.run.combat.phase='enemy';assert(not host.deckUI:openPile(host.run,'draw'))
     host.run.phase='map';assert(not host.deckUI:openPile(host.run,'draw'))
+end)
+
+test('default pile browsing retains the normal card template without filters or sort controls',function()
+    local host,_,_,_,_,_,_,root=H.setup()
+    host.run.combat.draw={instance(105,'defend')}
+    local grid=open(host,root,'draw')
+    local panel=root:GetChild('deckPanel')
+    assert(not host.deckUI.pileView and grid==panel:GetChild('grid'))
+    assert(not panel:GetChild('pileGrid').visible and not panel:GetChild('deckSort').visible and host.deckUI.setFilter==nil)
+    assert(not grid.items[0]:GetChild('face'):GetChild('nativeRibbon'))
+    host.deckUI:close()
 end)
 print('LUA_DECK_PILE_VIEW_PASS '..count)

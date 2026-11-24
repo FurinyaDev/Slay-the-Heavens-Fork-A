@@ -69,7 +69,7 @@ test("new encounter resets stale target before the first attack-card tap", funct
     click(root, "battlePanel", "cardReward");click(root, "battlePanel", "skip")
     leavePotionRewards(ui, root)
     assert(run.phase == "map")
-    assert(Run.startCombat(run, "cultist_solo"))
+    assert(Run.startCombat(run, "raven_adept_solo"))
     ui:refresh() -- This is the same host refresh used after Nodes.enter.
     local battle = run.combat
     local slot
@@ -178,8 +178,7 @@ test("node panels compose through Boss16, independent treasure17 then restart", 
         seen[node.type] = true
         if node.type == "boss" then
             local notice = root:GetChild("battlePanel"):GetChild("notice")
-            assert(notice.text == "石门缓缓开启。昔日的封印守卫仍在履行职责，只是漆黑的力量已令它分不清敌友。")
-            preview("boss", notice.text)
+            assert(notice.text == "", "boss narrative must stay out of the battle HUD")
             notice.text = "操作提示优先"
             ui:refresh()
             assert(notice.text == "操作提示优先", "entry copy must not overwrite interaction notices")
@@ -196,7 +195,7 @@ test("node panels compose through Boss16, independent treasure17 then restart", 
                 click(root, "nodePanel", "confirm")
                 assert(ui.run.gold < before)
             end
-            click(root, "nodePanel", "confirm")
+            click(root, "nodePanel", "back");ui:update(.31)
             -- The merchant's farewell holds the shop panel until the player continues.
             assert(ui.mode == "node" and ui.run.phase == "map" and not ui.mapUI.navigationEnabled)
             assert(root:GetChild("nodePanel"):GetChild("merchant").visible)
@@ -237,7 +236,7 @@ test("node panels compose through Boss16, independent treasure17 then restart", 
                 end
             elseif ui.nodeUI.actions["campView/rest"].enabled then click(root, "nodePanel", "campView/rest")
             else
-                click(root, "nodePanel", "campView/forge"); click(root, "nodePanel", "pickerView/forgeGrid/card1")
+                click(root, "nodePanel", "campView/forge"); assert(root:GetChild('nodePanel'):GetChild('pickerView'):GetChild('forgeFit').items[0]:GetChild('hit').click())
                 click(root, "nodePanel", "confirm")
             end
             if node.type == "camp" or node.type == "event" then
@@ -256,7 +255,7 @@ test("node panels compose through Boss16, independent treasure17 then restart", 
     assert(eventCount>=2,'same real map route must reach multiple different events')
     assert(root:GetChild("menuPanel"):GetChild("title").text == "深渊已被封印")
     assert(statValue(root, "floor") == data.rules.map.floors .. " / " .. data.rules.map.floors)
-    assert(resultText(root, "subtitle") == "随着守卫倒下，岩元素的光芒重新沿着石纹蔓延。裂隙逐渐闭合，遗迹恢复了往日的寂静。荧收起剑，继续自己的旅途。")
+    assert(resultText(root, "subtitle") == "随着守卫倒下，岩元素的光芒重新沿着石纹蔓延。裂隙逐渐闭合，遗迹恢复了往日的寂静。旅行者收起剑，继续自己的旅途。")
     preview("victory", resultText(root, "subtitle"))
     local previous=ui.run
     testStartButton(root)
@@ -391,7 +390,7 @@ test("result page shows only the recorded run stats in the approved four cells",
     assert(resultText(root, "status"):find("不会提交", 1, true))
     ui.run.phase = "victory" ui.run.nodeFlow = {complete=true, result="boss_treasure_complete"} ui:refresh()
     assert(menu:GetChild("title").text == "深渊已被封印" and resultText(root, "detail"):find("生命 33 / ", 1, true))
-    assert(resultText(root, "subtitle") == "随着守卫倒下，岩元素的光芒重新沿着石纹蔓延。裂隙逐渐闭合，遗迹恢复了往日的寂静。荧收起剑，继续自己的旅途。")
+    assert(resultText(root, "subtitle") == "随着守卫倒下，岩元素的光芒重新沿着石纹蔓延。裂隙逐渐闭合，遗迹恢复了往日的寂静。旅行者收起剑，继续自己的旅途。")
 end)
 
 test("repeated settlement clicks, clicks during reveal and restart attempts submit exactly once", function()
@@ -533,8 +532,9 @@ test("native lifecycle loads every composed control and registers its listeners 
         "ordinary native entry can confirm the preselected Geo loadout")
     assert(root:GetChild("characterPanel").visible and not root:GetChild("mapPanel").visible)
     click(root, "characterPanel", "confirm")
-    assert(not root:GetChild("characterPanel").visible)
-    for _ = 1, 8 do OnUpdate(0.25) end
+    assert(root:GetChild("characterPanel").visible and root:GetChild("prologuePanel").visible,
+        "selection remains behind the short opening fade until full cover")
+    for _ = 1, 33 do OnUpdate(0.25) end
     assert(not root:GetChild("mapPanel").visible and not root:GetChild("prologuePanel").visible)
     assert(root:GetChild('nodePanel').visible and root:GetChild('nodePanel'):GetChild('eventView').visible)
     for _ = 1, 8 do OnUpdate(0.25) end

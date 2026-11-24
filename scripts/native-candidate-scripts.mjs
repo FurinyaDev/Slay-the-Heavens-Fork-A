@@ -1,9 +1,10 @@
 import { readdirSync, statSync } from 'node:fs';
 import { resolve, basename } from 'node:path';
+import {deckBrowserBindingModule} from './deck-ui-layout.mjs';
 
 // Only outputs consumed by the game are deployable. Test bridges also write
 // Lua into build/lua; discovering every .lua there ships test fixtures.
-const generatedModules = ['abyss_art_features','abyss_monster_actor_binding','abyss_monster_art_data', 'abyss_data', 'abyss_original_v4_data', 'abyss_map_layout', 'abyss_narrative', 'abyss_presentation', 'abyss_theme', 'abyss_menu_background_asset', 'abyss_ready_card_binding', 'abyss_ready_card_assets', 'abyss_traveler_portrait_assets'];
+export const generatedModules = [deckBrowserBindingModule, 'abyss_component_binding','abyss_v25_card_assets','abyss_ui_profile','abyss_art_features','abyss_monster_actor_binding','abyss_monster_art_data', 'abyss_data', 'abyss_original_v4_data', 'abyss_map_layout', 'abyss_narrative', 'abyss_presentation', 'abyss_theme', 'abyss_menu_background_asset', 'abyss_ready_card_binding', 'abyss_ready_card_assets', 'abyss_traveler_portrait_assets'];
 // Legacy LCG is superseded by the StS RNG modules. Keep its source/tests;
 // check:platform-load proves no production import references this exclusion.
 export const excludedProductionModules = ['abyss_random'];
@@ -13,6 +14,7 @@ export function nativeUiVariables() {
     {name:'nativeMonsterArtEnabled',type:'boolean',value:true},
     {name:'nativeBgmEnabled',type:'boolean',value:false},
     {name:'experimentalCharacters',type:'boolean',value:false},
+    {name:'nativeComponentControls',type:'boolean',value:false,public:true},
   ];
 }
 

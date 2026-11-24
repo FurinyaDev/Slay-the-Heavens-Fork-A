@@ -5,6 +5,7 @@ local Acts=require("abyss_acts")
 local Run=require("abyss_run")
 local number=require("abyss_numbers").integer
 local M={}
+local V25=require('abyss_v25_menu_view')
 local L,C,T=Theme.layout.nativeMenu,Theme.color,Theme.motion
 local R=L.reveal
 local function colour(ctx,c) return ctx.platform.color(c.r,c.g,c.b,c.a) end
@@ -33,6 +34,7 @@ local function paintVeil(ctx)
     end
 end
 local function paintEntrance(ctx)
+    if V25.entrance(ctx)then return end
     local m,emblem,risers,cards=ctx.owner.motion,ctx.emblem,ctx.risers,ctx.cards
     if not m.entranceDone then
         local p = easeOut(clamp(m.t / T.slow))
@@ -57,7 +59,7 @@ local function paintSettlement(ctx)
         x = x + T.shakeAmplitude * math.sin(s * math.pi * 4) * (1 - s)
     end
     if m.paintedSettleX ~= x then
-        settlement:SetAnchoredPosition(x,L.settle[2])
+        settlement:SetAnchoredPosition(x,V25.settlementFrame(ctx,L.settle)[2])
         m.paintedSettleX = x
     end
 end
@@ -80,8 +82,10 @@ local function pose(ctx)
     paintVeil(ctx)
     paintEntrance(ctx)
     local m=ctx.owner.motion
-    local breathe=1+R.breatheScale*math.sin(2*math.pi*math.max(0,m.t-T.slow)/R.breathe)
-    ctx.emblem:GetChild("glow"):SetLocalScale(breathe,breathe,1)
+    if ctx.emblem.visible then
+        local breathe=1+R.breatheScale*math.sin(2*math.pi*math.max(0,m.t-T.slow)/R.breathe)
+        ctx.emblem:GetChild("glow"):SetLocalScale(breathe,breathe,1)
+    end
     paintSettlement(ctx)
     paintVista(ctx)
 end
@@ -147,7 +151,7 @@ local function presentSettlement(ctx,outcome,available)
     settlement:GetChild('label').text=self.settlementRequested and '已发送结算请求' or '结束并结算'
     settlement:GetChild('label').fontColor=colour(ctx,enabled and C.gold or C.textDim)
     local m=self.motion
-    local targetX=self.settlementRequested and 0 or L.settle[1]
+    local targetX=self.settlementRequested and 0 or V25.settlementFrame(ctx,L.settle)[1]
     if targetX~=m.settleX then m.slide,m.settleX={from=m.settleX,to=targetX,t=0},targetX end
 end
 function M.present(ctx)
@@ -173,9 +177,12 @@ function M.present(ctx)
     presentSettlement(ctx,outcome,available)
     if outcome then presentStats(ctx,victory,mode,available)
     else menu:GetChild('tagline').text=Narrative.title;menu:GetChild('summary').text='' end
+    V25.present(ctx,outcome)
+    require('abyss_game_ui_navigation_view').title(self,menu,outcome,V25)
     pose(ctx)
 end
 function M.animate(ctx, dt)
+    V25.animateMenu(ctx,dt)
     local self=ctx.owner
     local m = self.motion
     if not m.mode then return end

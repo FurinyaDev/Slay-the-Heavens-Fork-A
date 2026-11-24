@@ -1,6 +1,6 @@
 -- Read state, issue Run commands. No damage/energy/outcome rules live in this view.
 local Theme = require("abyss_theme")
-local Controller = require("abyss_controller")
+local Pointer = require('abyss_pointer_input')
 local Run = require("abyss_run")
 local M = {}
 local L = Theme.layout
@@ -33,7 +33,7 @@ function M.install(owner, ownership, host, dependencies)
         return x,y
     end
     local function prepareMovingPotion(held)
-        local item=Run.potionView(owner.run)[held.slot]
+        local item=Run.potionSlotView(owner.run,held.slot)
         if not item or not item.canUse or item.targetPolicy~='enemy_one' then return false end
         if not held.aim then
             owner.help,owner.info=nil,nil
@@ -126,12 +126,8 @@ function M.install(owner, ownership, host, dependencies)
           for _,helpOnly in ipairs({false,true})do
             local slot, control, input = i, dependencies.child((helpOnly and 'potionHelp' or 'potion') .. i), {}
             ownership.potionInputs[#ownership.potionInputs+1] = input
-            Controller.bind(host.controller,control,"battle",function()
-                if helpOnly then return owner:openHelp(owner:potionHelpSpec(slot),control,false) end
-                owner.suppressClick=false;return owner:openPotionMenu(slot)
-            end,dependencies.controllerReady,30+slot,"potions")
             control:AddCursorEventListener(host.clickEvent, function(event)
-                if Controller.pointerBlocked(host.controller)then return false end
+                if Pointer.blocked(host.platform)then return false end
                 if input.consumed and input.consumed.touch == (event and event.touchId) then input.consumed=nil return end
                 if dependencies.swallowed(event) then return end
                 if ownership.potionPointerObserved then
@@ -150,6 +146,17 @@ function M.install(owner, ownership, host, dependencies)
                     beginPotionPress(slot,control,input,event,helpOnly)
                 end)
                 control:AddCursorEventListener(host.cursor.CursorDrag,function(event)
+                    if Theme.presentationProfile=='official-assets-first' then
+                        local touch=event and event.touchId
+                        local held,released=input.held,input.released
+                        -- One dragged origin cannot become a new click on Up or EndDrag.
+                        if held and held.touch==touch then
+                            input.held=nil
+                            releasePotionHelp(control,input,touch)
+                        end
+                        if released and released.touch==touch then input.released=nil end
+                        return
+                    end
                     if not helpOnly then return movePotion(event,input) end
                 end)
                 local function releasePotion(event, ended)

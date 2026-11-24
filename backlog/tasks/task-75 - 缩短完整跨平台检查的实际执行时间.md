@@ -1,13 +1,18 @@
 ---
 id: TASK-75
-title: 缩短完整跨平台检查的实际执行时间
+title: 验收当前CI吞吐（既有调度优化已交付）
 status: In Progress
 assignee:
-  - '@Furinya'
+  - Furinya
 created_date: '2026-10-28 03:47'
-updated_date: '2026-10-30 06:22'
-labels: []
+updated_date: '2026-11-20 23:55'
+labels:
+  - 待验
+  - delivery-verify
 dependencies: []
+references:
+  - docs/plans/2026-11-03-m9-engineering-foundation.md
+  - 'https://github.com/FurinyaWorks/Slay-the-Heavens/pull/769'
 priority: medium
 ordinal: 120000
 ---
@@ -20,9 +25,10 @@ ordinal: 120000
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Windows和POSIX完整文件精确覆盖且断言超时保持
-- [ ] #2 合入提交全部Required Checks通过
-- [ ] #3 记录优化前后官方执行耗时
+- [x] #1 Windows和POSIX完整文件精确覆盖且断言超时保持
+- [x] #2 合入提交全部Required Checks通过
+- [x] #3 记录优化前后官方执行耗时
+- [ ] #4 稳定Full不超过30分钟的目标有真实Runner证据；未达标则保持待验，不以旧AC已勾或M7归档宣称通过。
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -43,6 +49,16 @@ ordinal: 120000
 第三轮仅改变check与engineering-posix两个纯汇总的Runner为ubuntu-slim，保留原完整覆盖和预算；当前HEAD门禁通过再合并并核实实际执行和排队。
 
 真实入口排队736秒、执行17秒，进一步将同样轻量的impact元数据规划作业迁至slim；保留checkout/setup-node/npm/guidance/API/上传、原权限和3分钟预算。一次更新原PR，原生concurrency取消被替代运行，避免新增实验PR。
+
+2026-11-03 M9持续收口：从当前hosted原始runs/jobs采集wall、queue、runner-minutes和取消执行，先定位无损去重/权重偏差，保留全部文件覆盖与原deadline；实现、独审、精确HEAD Full和实际合入后CI及真实前后耗时均完成才收口。
+
+2026-11-05复采同SHA队列/push原始run/jobs与最新100个Quality样本，区分已证明的工程AC与稳定Full30分钟/自然Fast20样本剩余出口；保持In Progress。
+
+2026-11-09 辅助切片：在已公开#571组合上定位#564 Full暴露的三个历史来源合同慢测，仅优化可证明等价的重复计算；完整断言、鲜读owner、原预算与矩阵保持，定向前后测量和独立审查后及时发布，不重复Full或占用用户电脑。
+
+2026-11-15协助切片：从origin/develop独立feat/source-proof-cost-followup-1115，仅将relic-query来源合同的不可变expected按consume/host派生一次；先做同源有界读序与防护差分，再只跑原owner-matrix命名合同一次。全部实际fresh-reader、失败恢复、nested及same-call混读断言保持；不改生产、CI权重、并发、预算、超时，不提交或发PR。
+
+2026-11-15 用户明确接管本地非release接续：独立树.worktrees/source-proof-integration-1115、分支feat/source-proof-integration-1115，以origin/develop c2409ad750c15124b7b843c6bbfa5b222537cb75承接ef42f018f34f34e12df06364e780ad0c8fe89251（cherry-pick -x）。核对原始成本/逐字节证据，选最小现有专项合同及Backlog/diff检查，保留原矩阵与完整向量未重跑的边界；本轮独审由主控另发。保持In Progress/Furinya及未验AC，不新领、不推送、不建PR。
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -79,4 +95,31 @@ unknown路由修复：原110种子独占在Node22复现原30s超时；简单55�
 PR370首头5d66abfc的run41009713098 impact 05:40:13创建、05:52:29开始、05:52:46完成UTC。追加入口迁移的Node24原八文件59/59通过87.768秒；新hosted排队结果待。
 
 资源收敛：CI已审两提交线性整合进PR371，实验PR370关闭保留；只验一个最终完整组合再核验develop，不复用取消/旧SHA的绿灯。slim impact已真实成功：job123920658929 runner排队346秒、执行28秒；另419秒旧run级concurrency阻塞单列，不能据runner队列单项宣称端到端提速。
+
+第二批精确纯投影去重与真实成本采集见docs/backlog-details/TASK-75-81-M9-CI-20261103.md；原Task77本机66.238→11.695秒但不外推托管Full。保留完整矩阵、断言、原预算和关联源每次重读；当前组合及合后官方CI继续核对。
+
+2026-11-05已复核PR514最终a245、base a308、实际squash78e4e746及相同tree；PR Full41914042810、merge_group41918738466及push41923895912和对应Licenses成功。本轮独立复审40项/35语义变异及新增scry负例PASS；主控原工程门禁和119项CI合同通过。证据见docs/backlog-details/M7-CLOSEOUT-20261105.md及docs/evidence/m7-closeout-20261105/。本轮新独审不补造合前reviewId或schema5历史收据；M7稳定耗时/Fast样本与设备仍未完成。 原三个AC证据齐全；章程稳定Full≤30min仍未达（1802s/1984s），保持In Progress，不冒称M7性能达标。
+
+2026-11-09 来源纯计算去重：三个原慢测7/7通过且测试体未动；同机core原2项447.719s→47.035s（原轮带CPU采样），Max HP本轮61.419s，architecture-format仍464.486s。仅缓存完整字符串LF摘要与token计算，每次48-owner鲜读、所有旧oracle/预算/矩阵保持。独审9/9及8208差分通过，剩余慢点定位冻结旧epoch，不扩大本片。远端先保全4cd0697a；证据见docs/backlog-details/CI-SOURCE-CALCULATION-20261109.md。只完成本地定向验证，未重复Full、未准入或合并，TASK75仍In Progress。
+
+2026-11-14逐项对账：既有3项AC历史已通过，原任务因稳定30分钟目标未达而久挂进行中。本轮把该未达出口显式列为AC4；现行调度不按旧13/14分片重做。
+
+2026-11-14第二轮状态纠正：调度优化及3项AC已完成，稳定Full目标尚缺真实证据；属于验收阶段进行中，不重新实现调度。 更正上一轮将待验统一退回To Do的处理；未勾AC及独立审批保持，In Progress表示工作已开展，不表示有人正持续占用执行窗口。
+
+2026-11-13对账：原AC1–3均已勾但仍In Progress；M7章程稳定Full≤30分钟及自然Fast样本未有通过证据，因此补AC4作为剩余出口，保留原三项真实通过与原始耗时。
+PR269合后Windows日志确认两类合同错误：新快反馈工作流CRLF未归一，三份fixture合同冻结旧runner整文件hash未识别已批准的调度编辑。修复保留原63ec1495全runner SHA，通过严格校验新调度block的SHA64f2b495后仅逆转该block和单一import；原runLua、全部超时、进程参数、输出/失败路径仍由原hash保护。新增LF/CRLF等价、任意deadline/进程修改仍拒绝、调度改写仍拒绝负例。精确Node24.18.0在已构建数据/UI上18/18过0skip，165.697秒；含真实7UI片/53case/6播放种子与原全部负例。用户已明确授权先合并后完整CI，未宣称远端通过。复用现有TASK75，不再建重复任务。
+
+本轮以已完成push Full43615128387的rules7历史实测584077.3832ms定位，不触发或轮询CI；历史实测不能充作本地前后提速对照。原TASK75保持In Progress/Furinya。
+
+2026-11-15来源fixture单点切片：独立feat/source-proof-cost-followup-1115基线e65，仅将不可变expected从owner内层移至consume/host一次。先跑同源有界前后probe，69条返回/owner读序/失败恢复/nested/mixed轨迹相同，计数小矩阵4到2、完整静态2170到62；原named owner-matrix仅执行一次，1/1通过0skip，测试体11413.3658ms、进程28178.7303ms。证据在该独立树.artifacts/source-proof-cost-followup-1115/handoff.json、exact.diff、probe.json及named-owner-matrix.log；LF after SHA603020d5d29e8c3d66886609f2dd7e3a142321ec63bb7465c23adf575db4a77e。没有本地旧版同named墙钟基线，不与历史CI整文件584077ms计算提速倍数。未改生产、pipeline、权重、并发、预算或timeout，未跑Full，未commit/PR/push；TASK75继续In Progress，等待主控统一独审收尾。
+
+2026-11-15 主控收尾独审通过：/root/engineering_queue_audit:task75-pure-expected-hoist:20261115，绑定LF SHA603020d5d29e8c3d66886609f2dd7e3a142321ec63bb7465c23adf575db4a77e，unresolved=[]。原始源码/探针/named日志逐字节归档于docs/evidence/task75-source-proof-cost-20261115/raw-evidence.json.gz并有hash清单。只保全现有单点切片，不新增优化、不建PR或入发版队列，TASK75及稳定Full目标保持未完成。
+
+2026-11-15 收尾检查：原依赖junction指向空的根node_modules，Backlog检查报缺luaparse；仅保留本树junction到.artifacts/dependency-link-before-closeout，再离线npm ci恢复锁定11包，未改根目录。精确Node24.18.0执行verify:backlog及git diff --check通过；不重复named测试或Full。
+
+2026-11-15 用户明确接管的非release本地接续：独立树F:/New folder/.worktrees/source-proof-integration-1115，分支feat/source-proof-integration-1115；基线origin/develop c2409ad750c15124b7b843c6bbfa5b222537cb75，经cherry-pick -x ef42f018f34f34e12df06364e780ad0c8fe89251生成f4df9d124dfbd141bdcaeb13e33826775e9e9634，无冲突。原树只读保留，保持IP/Furinya，不新领、不改AC。已核原run43615128387整文件584077.3832ms成本与10份原始证据全部字节/hash；当前测试LF SHA603020d5d29e8c3d66886609f2dd7e3a142321ec63bb7465c23adf575db4a77e仍等同原独审版本。必要npm ci --ignore-scripts后，Node24.18.0现有来源身份/负例/当前facade专项7/7通过、0fail/0skip、27054.4309ms，Backlog/语法/diff检查通过。Fast仅规划因TASK75未建模输入要求Full，本轮按授权未执行Full、长期named、完整detached/current矩阵及其余历史向量；69条probe及原named测量只核原档不重跑，不声称新墙钟提速或稳定Full目标完成。技术证据与完整命令见docs/evidence/task75-source-proof-cost-20261115/README.md接续节。只保留原5文件，无helper摘要级联；新精确HEAD/base独审、Required CI与准入待主控，本轮仅本地提交，不推送/建PR/合并或改release。
+
+2026-11-20 附属切片仅离线回放 Queue 风险。开发基线 9e3b22dc，复用原队列连续前缀、判定器和选测器。以 #758 已红基线、#762 修复、#535 双平台纯文档及 44198319515 真实三成员组合核对；缺证据保留 Full。另消除 Full／明示纯文档路由的无用源码读取。Queue 实际分流和合后 Full 去重尚未启用，任务及未验 AC 保持。
+
+2026-11-21 发版对账：#764 已交付超大 Fast 选集转 Full 的分流。#769 接续队列净差与逐成员差异的离线回放，保持队列和 develop push 的 Full 门禁。没有稳定 Full 30 分钟以内的真实 Runner 证据，AC4 继续待验。
 <!-- SECTION:NOTES:END -->

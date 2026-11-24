@@ -1,6 +1,6 @@
 -- Detached development display adaptation; rules remain owned by Combat.
 local M={}
-local names={corruption='腐化',feel_no_pain='无惧疼痛',dark_embrace='黑暗之拥',sentinel='哨卫',burning_pact='燃烧契约',sneaky_strike='潜袭',eviscerate='剔骨',calculated_gamble='筹谋',loop='循环',electrodynamics='电动力学',protect='护身',perseverance='坚韧',windmill_strike='风车打击',sands_of_time='化沙',accuracy='精准',infinite_blades='无限刀刃',prostrate='伏身',worship='礼拜',devotion='供奉',deadly_poison='毒液',shiv='飞刃',blade_dance='刃舞',survivor='撤身',acrobatics='翻找',
+local names={corruption='腐化',feel_no_pain='无惧疼痛',dark_embrace='黑暗之拥',sentinel='哨卫',burning_pact='燃烧契约',sneaky_strike='潜袭',eviscerate='剔骨',calculated_exchange='筹谋',loop='循环',electrodynamics='电动力学',protect='护身',perseverance='坚韧',windmill_strike='风车打击',sands_of_time='化沙',accuracy='精准',infinite_blades='无限刀刃',prostrate='伏身',worship='礼拜',devotion='供奉',deadly_poison='毒液',shiv='飞刃',blade_dance='刃舞',survivor='撤身',acrobatics='翻找',
     tactician='战术储备',reflex='灵思',footwork='步法',backflip='闪避翻滚',dagger_throw='掷刃',
     dagger_spray='双刃扫射',cloak_and_dagger='藏刃',prepared='预备',quick_slash='疾斩',catalyst='毒性催化',
     bouncing_flask='弹跳毒瓶',noxious_fumes='毒雾',neutralize='牵制',
@@ -52,41 +52,33 @@ local function same(a,b)
     for k,v in pairs(b) do if not same(v,a[k]) then return false end end
     return true
 end
-local function nativeDisplay(card,upgraded,current)
-    local spec=nativeOnly[card.id]
-    if not spec or card.target==nil or card.experimental==true then return false end
+local function validateNativeIdentity(card,upgraded,spec)
     assert(card.sourceId==spec[1] and card.target==spec[2] and card.type==spec[3]
         and card.cost==spec[4] and upgraded.cost==spec[5],'incompatible native display: '..card.id)
     assert(card.condition==nil and upgraded.condition==nil and card.costMode==nil and upgraded.costMode==nil
         and card.requiresNoOtherAttack==nil and upgraded.requiresNoOtherAttack==nil,'unknown native display condition')
+end
+local function validateNativeKeywords(card,upgraded,spec)
     for _,key in ipairs({'exhaust','healing','repeatable','selfRetain','innate','ethereal'}) do
         local expected=spec[8] and spec[8][key]==true or false
         assert((card[key]==true)==expected and (upgraded[key]==true)==expected,'unknown native display keyword')
     end
+end
+local function validateExisting(current,id,message)
+    assert(current and type(current.name)=='string' and current.name~='' and type(current.text)=='string' and current.text~=''
+        and type(current.upgradeText)=='string' and current.upgradeText~='',message..id)
+end
+local function nativeDisplay(card,upgraded,current)
+    local spec=nativeOnly[card.id]
+    if not spec or card.target==nil or card.experimental==true then return false end
+    validateNativeIdentity(card,upgraded,spec)
+    validateNativeKeywords(card,upgraded,spec)
     dense(card.effects);dense(upgraded.effects)
     assert(same(card.effects,spec[6]) and same(upgraded.effects,spec[7] or spec[6]),'unknown native presentation effect')
-    assert(current and type(current.name)=='string' and current.name~='' and type(current.text)=='string' and current.text~=''
-        and type(current.upgradeText)=='string' and current.upgradeText~='','missing native presentation: '..card.id)
+    validateExisting(current,card.id,'missing native presentation: ')
     return true
 end
-function M.prepare(existing,prepared)
-    assert(type(existing)=='table' and type(prepared)=='table' and prepared.cards and type(prepared.cards.cards)=='table','invalid presentation inputs')
-    local out=copy(existing)
-    local nativeBundle=prepared.originalV4Role or not prepared.runCardCatalog and not prepared.experimentalCharacter and prepared.cards.sourcePools~=nil
-    local seen={}
-    for _,card in ipairs(prepared.cards.cards) do
-        assert(type(card.id)=='string' and not seen[card.id],'duplicate or invalid card id');seen[card.id]=true
-        assert(card.type=='attack' or card.type=='skill' or card.type=='power' or card.type=='status' or card.type=='curse','unknown card type')
-        local upgraded=copy(card);for k,v in pairs(card.upgrade or {}) do upgraded[k]=copy(v) end;upgraded._upgraded=true
-        local current=out[card.id]
-        if card.originalV4 then
-            local describe=require('abyss_original_v4_display').describe
-            current={id=card.id,name=card.name,text=describe(card,false),upgradeText=describe(card,true)}
-            out[card.id]=current
-        elseif current and not card.colorlessNative and nativeBundle then
-            -- Original profiles retain the already approved native pool unchanged.
-            assert(type(current.name)=='string' and type(current.text)=='string' and type(current.upgradeText)=='string','incomplete native presentation')
-        elseif not nativeDisplay(card,upgraded,current) then
+local function experimentalDisplay(out,card,upgraded,current)
           local text,upgradeText=fragments(card,false),fragments(upgraded,false)
           local combat,upgradeCombat=fragments(card,true),fragments(upgraded,true)
           if not current or rebuilt[card.id] or card.id=='burn' and card.burnDamage~=nil then
@@ -96,19 +88,51 @@ function M.prepare(existing,prepared)
             if combat~=text or upgradeCombat~=upgradeText then current.combatText=combat;current.upgradeCombatText=upgradeCombat end
             out[card.id]=current
           else
-            assert(type(current.name)=='string' and current.name~='' and type(current.text)=='string' and current.text~=''
-                and type(current.upgradeText)=='string' and current.upgradeText~='','incomplete existing display: '..card.id)
+            validateExisting(current,card.id,'incomplete existing display: ')
           end
-        end
-        current.id=card.id
+    return current
+end
+local function prepareDisplay(out,card,upgraded,current,nativeBundle)
+    if card.originalV4 then
+        local describe=require('abyss_original_v4_display').describe
+        current={id=card.id,name=card.name,text=describe(card,false),upgradeText=describe(card,true)}
+        out[card.id]=current
+    elseif current and not card.colorlessNative and nativeBundle then
+        assert(type(current.name)=='string' and type(current.text)=='string' and type(current.upgradeText)=='string','incomplete native presentation')
+    elseif not nativeDisplay(card,upgraded,current) then
+        current=experimentalDisplay(out,card,upgraded,current)
+    end
+    return current
+end
+local function displayCosts(current,card,upgraded,nativeBundle)
         if nativeBundle and not card.originalV4 then
             -- Native content retains its registered ABI, including all-energy
             -- cards with numeric cost 0. Do not pass it through experimental cost().
             current.cost=card.costMode=='all_energy' and 'X' or card.cost==-2 and '—' or number(card.cost)
             current.upgradeCost=upgraded.costMode=='all_energy' and 'X' or upgraded.cost==-2 and '—' or number(upgraded.cost)
         else current.cost=cost(card);current.upgradeCost=cost(upgraded) end
+end
+local function validateCard(card,seen)
+    assert(type(card.id)=='string' and not seen[card.id],'duplicate or invalid card id');seen[card.id]=true
+    assert(card.type=='attack' or card.type=='skill' or card.type=='power' or card.type=='status' or card.type=='curse','unknown card type')
+end
+local function prepare(existing,prepared,starterOnly)
+    assert(type(existing)=='table' and type(prepared)=='table' and prepared.cards and type(prepared.cards.cards)=='table','invalid presentation inputs')
+    local out=starterOnly and {} or copy(existing)
+    local nativeBundle=prepared.originalV4Role or not prepared.runCardCatalog and not prepared.experimentalCharacter and prepared.cards.sourcePools~=nil
+    local seen={}
+    for _,card in ipairs(prepared.cards.cards) do
+        validateCard(card,seen)
+        local upgraded=copy(card);for k,v in pairs(card.upgrade or {}) do upgraded[k]=copy(v) end;upgraded._upgraded=true
+        local existingCard=starterOnly and copy(existing[card.id]) or out[card.id]
+        local current=prepareDisplay(out,card,upgraded,existingCard,nativeBundle)
+        current.id=card.id
+        displayCosts(current,card,upgraded,nativeBundle)
         current.type=card.type
+        out[card.id]=current
     end
     return out
 end
+function M.prepare(existing,prepared)return prepare(existing,prepared,false)end
+function M.preparePreview(existing,prepared)return prepare(existing,prepared,true)end
 return M

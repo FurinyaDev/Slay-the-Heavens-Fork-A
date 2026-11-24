@@ -5,14 +5,15 @@ status: In Progress
 assignee:
   - '@Furinya'
 created_date: '2026-10-23 01:56'
-updated_date: '2026-10-31 21:40'
-due_date: '2026-10-28'
+updated_date: '2026-11-14 06:51'
 labels:
   - required
   - rule-parity
   - implementation-gap
   - partially-implemented
-milestone: m-4
+  - 待验
+  - delivery-verify
+milestone: m-6
 dependencies:
   - TASK-13
   - TASK-14
@@ -100,4 +101,12 @@ M2组合复用PR163；其快递员同名卡错槽问题已由4bf1786改为精确
 2026-10-31 最终纯离线合证：获准两幕事件42身份公开全可见选项、具体结果与共享事务合同，未知房独立向量及完整原池路由，营地rest/smith与Girya/Pipe/Shovel、宝箱完整partition及实际owner/hook均有可执行证据；原目录/概率与持久Save延期不变。独立逐字核对后只勾AC4。新商店四链76次及完整卡奖身份93次、全部精准负控已非作者复核及本地组合66/66，仍不据此勾宽泛商店/全掉落/严格平台AC5/6/7。精确源证据见机制目录closing-audits与final-slices，最终HEAD CI和正常合并另核。
 
 2026-10-31 最后纯离线验收收口：原77经济专项与完整货架/删除/折扣、独立merchant76及card93/Prism275身份重试和升级、药水共享流、源遗物队列/金币稀有度及领取原子性可合理合证；唯一Prism逐long证明已9ab非作者4/4核准，完整320含HEALING不删池。逐字复核后勾纯离线5/6；严格平台7仍未验。 依据及原始运行/源身份见docs/evidence/m3-final-acceptance-20261031/，最终精确HEAD CI及正常PR合并另核，不代替官方或设备。
+
+2026-11-01阶段收尾：用户明确确认本轮已打Tag并进入master，发版阶段到此结束。已交付的M3核心实现不重做；本任务仅将剩余未验要求转由M5遗留严格验收承接，保留原状态、范围、全部AC及历史证据，不把发版确认等同逐条严格验收通过，也不重新阻塞已接受的v1.0.0。本次不打包、不追发布回执、不创建新门禁或新期限。
+
+2026-11-07 看板核对（develop 2c85bc61）：实现类交付已按历史记录保留，剩余 AC 待同候选官方/设备验证；当前无在途 PR，状态由 In Progress 归 To Do（待验）。
+
+2026-11-14清理旧窗口日期：原due_date=2026-10-28保留于历史，不再显示为当前截止；实际未完成AC和审批不变。
+
+2026-11-14第二轮状态纠正：已有6/7项AC通过及既有实施证据，剩余未完成要求属于后续验证或接续。 状态表示整个任务的完成进展，不表示当前有执行者持续占用；保留原未验AC、负责人、依赖及历史证据。更正过去把已开展待验事项退回To Do的处理。
 <!-- SECTION:NOTES:END -->

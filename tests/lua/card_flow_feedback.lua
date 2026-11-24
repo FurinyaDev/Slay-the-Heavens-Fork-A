@@ -38,7 +38,7 @@ local function test(id,destination)
  local stage,platform,bind=nativeStage()
  local completions=0
  local feedback=Feedback.new(stage,platform,function()end,function(failure)assert(not failure,tostring(failure));completions=completions+1 end)
- local battle=Combat.new(Data,{deck={id},enemies={'cultist'},seed=11})
+ local battle=Combat.new(Data,{deck={id},enemies={'raven_adept'},seed=11})
  bind(battle)
  local before,first=Events.frame(battle),#battle.events+1
  local uid=battle.hand[1].uid
@@ -46,11 +46,18 @@ local function test(id,destination)
  local committed=Combat.copy(battle)
  feedback:begin(before,battle,first,Presentation,{0,-200})
  local observed,endpoint=false,false
+ local contact
  for _=1,500 do
   feedback:update(.01)
+  local played=stage:GetChild('feedback'):GetChild('playedCard')
+  if not contact and feedback.current and feedback.current.kind~='play' and played.visible then
+   contact={played.x,played.y}
+  end
   for slot,entry in pairs(feedback.cardFlow and feedback.cardFlow.active or{})do if entry.uid==uid then
    assert(entry.to==destination,'played UID sent to the wrong destination')
    assert(stage:GetChild('feedback'):GetChild('cardTrail'..slot).visible)
+   assert(contact and math.abs(entry.start[1]-contact[1])<1e-8 and math.abs(entry.start[2]-contact[2])<1e-8,
+    'pile trail must start at the visible card contact')
    observed=true
    if entry.arrived then
     local expected=destination=='discard'and Theme.layout.discardPile.position or destination=='exhaust'and{Theme.layout.topBar.exhaustIcon[1],Theme.layout.topBar.y}or Theme.layout.player.position
@@ -71,7 +78,7 @@ test('inflame','power')
 -- A normal owner turn discards every old hand UID before the shuffle brings them back.
 local stage,platform,bind=nativeStage()
 local feedback=Feedback.new(stage,platform,function()end,function(failure)assert(not failure,tostring(failure))end)
-local battle=Combat.new(Data,{deck={'strike','defend','strike','defend','strike'},enemies={'cultist'},seed=11})
+local battle=Combat.new(Data,{deck={'strike','defend','strike','defend','strike'},enemies={'raven_adept'},seed=11})
 bind(battle)
 local before,first=Events.frame(battle),#battle.events+1
 assert(Combat.endTurn(battle))

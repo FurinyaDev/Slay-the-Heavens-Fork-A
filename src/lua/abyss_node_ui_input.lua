@@ -1,5 +1,5 @@
 local Theme = require("abyss_theme")
-local Controller = require('abyss_controller')
+local Pointer = require('abyss_pointer_input')
 local layout = Theme.layout.nativeNode
 local SHOP_PAGE, RELIC_PAGE, PICK_PAGE = #layout.shop.columns, #layout.shop.relics.columns, #layout.picker.columns
 local OPTIONS = #layout.event.options.rows
@@ -19,10 +19,6 @@ function M.install(ctx)
 
         for _,path in ipairs(require('abyss_match_event_ui').inputPaths())do ctx.targets[#ctx.targets+1]=path end
 
-        ctx.targets[#ctx.targets+1]='pickerView/forgePrevious'
-
-        ctx.targets[#ctx.targets+1]='pickerView/forgeNext'
-
         for i = 1, SHOP_PAGE do ctx.targets[#ctx.targets + 1] = "shopView/card" .. i end
 
         for i = 1, RELIC_PAGE do ctx.targets[#ctx.targets + 1] = "shopView/relic" .. i end
@@ -39,6 +35,7 @@ function M.install(ctx)
     end
     buildInputTargets()
     ctx.cursor = ctx.options.cursorEvents or (Enum and Enum.CursorEventType)
+    ctx.bindShopEntry(ctx.cursor)
 
     ctx.dispatch = {}
 
@@ -103,14 +100,18 @@ function M.install(ctx)
         local box = ctx.path(name)
         local hit = box:GetChild("hit")
         ctx.actionInputs[name] = {box=box,hit=hit}
+        if ctx.cursor and ctx.cursor.CursorDown and ctx.cursor.CursorUp then
+            ctx.listen(hit,ctx.cursor.CursorDown,ctx.shopSelection.foregroundDown)
+            ctx.listen(hit,ctx.cursor.CursorUp,ctx.shopSelection.foregroundUp)
+            for _,kind in ipairs({'CursorExit','CursorEndDrag'})do
+                if ctx.cursor[kind] then ctx.listen(hit,ctx.cursor[kind],ctx.shopSelection.foregroundCancel) end
+            end
+        end
         local input
-        Controller.bind(ctx.options.controller,hit,'node',function()return ctx.self:press(name)end,function()
-            local entry=ctx.self.actions[name]
-            return ctx.self.visible and not ctx.self.busy and entry and entry.enabled
-        end,name=='confirm' and 90 or name=='back' and 100 or 10)
         hit:AddCursorEventListener(ctx.clickEvent, function(event)
+            ctx.shopSelection.foregroundClick(event)
             if ctx.rewardDetail:consume(name,event)then return false,'inspected' end
-            if Controller.pointerBlocked(ctx.options.controller)then return false end
+            if Pointer.blocked(ctx.options)then return false end
             if ctx.swallow and (event == nil or event.touchId == nil or event.touchId == ctx.swallow.touch) then
                 ctx.swallow = nil
                 return false, "swiped"
@@ -239,10 +240,6 @@ function M.install(ctx)
                     if ctx.cursor and ctx.cursor.CursorEnter then ctx.listen(hit,ctx.cursor.CursorEnter,function()ctx.shopSelection:enter(name)end) end
                     if ctx.cursor and ctx.cursor.CursorExit then ctx.listen(hit,ctx.cursor.CursorExit,function()ctx.shopSelection:exit(name)end) end
                 end
-                if name:match('^pickerView/forgeGrid/card%d+$') and ctx.cursor then
-                    if ctx.cursor.CursorEnter then ctx.listen(hit,ctx.cursor.CursorEnter,function()ctx.campUI:hover(box,true)end)end
-                    if ctx.cursor.CursorExit then ctx.listen(hit,ctx.cursor.CursorExit,function()ctx.campUI:hover(box,false)end)end
-                end
                 local function bindRewardInspection()
                     if name:match('^treasureView/rewardItem%d+$') and ctx.cursor then
                         if ctx.cursor.CursorEnter then ctx.listen(hit,ctx.cursor.CursorEnter,function()ctx.rewardDetail:enter(name)end)end
@@ -289,6 +286,7 @@ function M.install(ctx)
         bindCardInspection()
 
     end
+    ctx.shopSelection:bindOutside(ctx.child('shopDismiss'),ctx.clickEvent,ctx.cursor,ctx.options)
     for _, key in ipairs(ctx.targets) do bindControl(key) end
 end
 return M

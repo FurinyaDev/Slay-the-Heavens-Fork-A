@@ -5,12 +5,13 @@ status: In Progress
 assignee:
   - '@Furinya'
 created_date: '2026-10-23 03:53'
-updated_date: '2026-10-29 16:51'
-due_date: '2026-10-28'
+updated_date: '2026-11-14 06:51'
 labels:
   - enhancement
   - awaiting-live
-milestone: m-5
+  - 待验
+  - delivery-verify
+milestone: m-8
 dependencies: []
 references:
   - docs/backlog-details/TASK-29.1.md
@@ -18,6 +19,7 @@ references:
   - docs/AUDIO_RICHNESS.md
   - docs/BACKLOG-AUDIT-20261026.md
   - docs/plans/2026-10-30-battle-life.md
+  - backlog/tasks/task-95 - 对照验证美术、交互与动效设计工具.md
 parent_task_id: TASK-29
 priority: medium
 ordinal: 44000
@@ -63,4 +65,11 @@ ordinal: 44000
 负责人字段规范化：原记录 @Codex 作为历史执行者信息保留；任务负责人为 Furinya。
 
 2026-10-29已按实际接受330的1dc33fe7重缩331：本地产物只新增共享结算入口的一行phase=defeat且busy保护及已审查14回归/强证明；已接受的演出/5+5/共享等待/11输入JSON与helper逐字不动。新一文件精确外层先还原guard，再进入冻结accepteddeath和旧PR323；只改中央及两个直接证明读点，原断言/种子/预算不改，2bc有效未知输入证明完整保留。实际1dc上独立原生两阶段先RED（提前结算各1次）再GREEN2/2；6阶段、8生命周期、原5+5、动作8/卡牌11/药水9手势全部通过（各原30秒内，包含真实重开/mini-Neow/旧指针尾断言）。56项逆层/布局/严格79543/79757/81392写入合同零skip通过；语法与完整工程门禁通过：258模块/1440边/3955测量/948职责/37旧警告零新增/4变异/原生4项。ee39/2bc/cd104恢复引用及证据保留。未推送/强推/另建或关闭PR，未导入/键鼠/实机听验，平台AC不勾；根任务继续新实际base/head独立审查、Full及既有331发布。
+
+2026-11-02最新排期：优先M4非美术、非交互设计工程。新增动效设计方案先取TASK-95对应实验结论；既有5项已完成AC及剩余同候选试听/设备验收不等待工具实验，已知错播、生命周期或性能缺陷继续修复，不重做已交付演出。 仅对应新增正式设计切片以实验结论为前置；未来纯设计优化子任务显式依赖TASK-95并引用适用Go结论。本混合任务不新增整任务硬依赖，原状态与AC保留。
+2026-11-03 赛后排期：m-5 → M7 产品体验；任务状态与未验 AC 保留。旧比赛期限 '2026-10-28' 取消，未定新截止日。
+
+2026-11-07 看板核对（develop 2c85bc61）：实现类交付已按历史记录保留，剩余 AC 待同候选官方/设备验证；当前无在途 PR，状态由 In Progress 归 To Do（待验）。
+
+2026-11-14第二轮状态纠正：已有5/6项AC通过及既有实施证据，剩余未完成要求属于后续验证或接续。 状态表示整个任务的完成进展，不表示当前有执行者持续占用；保留原未验AC、负责人、依赖及历史证据。更正过去把已开展待验事项退回To Do的处理。
 <!-- SECTION:NOTES:END -->

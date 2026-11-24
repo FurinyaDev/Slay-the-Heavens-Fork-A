@@ -1,15 +1,57 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, mkdtempSync, writeFileSync, rmSync } from 'node:fs';
+import {releaseBootstrapWorkflowBefore} from './helpers/release-bootstrap-ci-source.mjs';
 import { spawnSync } from 'node:child_process';
+import { join } from 'node:path';
+import { tmpdir } from 'node:os';
+import { pathToFileURL } from 'node:url';
 import { selectTests, selectQuickFeedback, selectQuickPlan, executeQuickFeedback } from '../scripts/test-affected.mjs';
 import { historicalMonsterUiFixtures } from './helpers/historical-monster-ui-runner.mjs';
 import { historicalCardInputFixtures } from './helpers/historical-card-input.mjs';
 import { historicalPresentationFixtures } from './helpers/historical-presentation-runner.mjs';
+import { eventCombatRouteFixtures, eventCombatRouteInput } from './helpers/event-combat-route-input.mjs';
 
 const plan = { full: false, fast: ['tests/pure.test.mjs'], integration: ['tests/heavy.test.mjs'],
   lua: ['tests/lua/slow.lua', 'tests/lua/direct.lua', 'tests/lua/small.lua', 'tests/lua/new.lua'] };
 const timings = { lua: { 'tests/lua/slow.lua': 120000, 'tests/lua/direct.lua': 60000, 'tests/lua/small.lua': 10000 } };
+
+// Exercise the real CLI with normal dependency resolution, observing only graph
+// root enumeration. Rejection makes unnecessary corpus IO a deterministic failure.
+function probeGraphReads(context, args, { reject = false } = {}) {
+  const root = mkdtempSync(join(tmpdir(), 'abyss-quick-io-'));
+  context.after(() => rmSync(root, { recursive: true, force: true }));
+  const bootstrap = join(root, 'graph-io.mjs');
+  writeFileSync(bootstrap, `
+    import fs from 'node:fs';
+    import { resolve } from 'node:path';
+    import { syncBuiltinESMExports } from 'node:module';
+    const roots = new Map(['src/lua', 'scripts', 'tests'].map(path => [resolve(path), path]));
+    const reads = [], original = fs.readdirSync;
+    fs.readdirSync = function(path, ...args) {
+      const root = roots.get(resolve(path));
+      if (root) {
+        reads.push(root);
+        if (${reject}) throw new Error('Unneeded graph enumeration: ' + root);
+      }
+      return original.call(this, path, ...args);
+    };
+    syncBuiltinESMExports();
+    process.once('exit', () => console.error('Graph root reads: ' + JSON.stringify(reads)));
+  `);
+  const env = { ...process.env }; delete env.NODE_TEST_CONTEXT; delete env.GITHUB_STEP_SUMMARY;
+  const result = spawnSync(process.execPath,
+    ['--import', pathToFileURL(bootstrap).href, 'scripts/test-affected.mjs', ...args],
+    { encoding: 'utf8', env, windowsHide: true, timeout: 30000 });
+  assert.ifError(result.error);
+  const observed = result.stderr.match(/^Graph root reads: (.*)$/m);
+  assert.ok(observed, result.stderr);
+  return { ...result, reads: JSON.parse(observed[1]) };
+}
+
+const graphRoots = ['src/lua', 'scripts', 'tests'];
+const noInputsReason = 'No explicit change set; run the complete check';
+const unmodelledReason = path => `Unmodelled or deleted input: ${path}`;
 
 test('direct changed Lua runs before JS and remaining Lua without duplicate execution', () => {
   const calls = [];
@@ -45,6 +87,30 @@ test('unknown or unusable timings use a finite conservative scheduling estimate'
 
 test('full fallback does not become a partial success plan', () => {
   assert.deepEqual(selectQuickFeedback({ ...plan, full: true }, [], timings), { fast: [], lua: [], estimatedLuaMs: 0 });
+});
+
+test('event route mapping remains complete when transitive feedback exceeds the advisory estimate', () => {
+  const [reducers, enemies] = eventCombatRouteFixtures;
+  const sources = { [eventCombatRouteInput]: '{}', [reducers]: 'return true', [enemies]: 'return true' };
+  const changed = [eventCombatRouteInput, 'tests/fixtures/unknown.json'];
+  const weights = { lua: { [reducers]: 17135, [enemies]: 10000 } };
+  assert.deepEqual(selectQuickFeedback(selectQuickPlan(changed, sources), changed, weights),
+    { fast: [], lua: [enemies, reducers], estimatedLuaMs: 27135 });
+
+  const related = Array.from({ length: 10 }, (_, index) => `tests/lua/related-${index}.lua`);
+  for (const path of related) {
+    sources[path] = `return dofile('${enemies}')`;
+    weights.lua[path] = 8000;
+  }
+  const full = selectTests(changed, sources);
+  assert.equal(full.full, true, 'unknown input still requires the complete gate');
+  assert.deepEqual([full.fast, full.integration, full.lua], [[], [], []]);
+  const mapped = selectQuickPlan(changed, sources, full);
+  assert.deepEqual(mapped, selectTests([eventCombatRouteInput], sources));
+  assert.deepEqual(mapped.lua, [reducers, enemies, ...related], 'no mapped fixture is dropped before scheduling');
+  const feedback = selectQuickFeedback(mapped, changed, weights);
+  assert.deepEqual(feedback, { fast: [], lua: [...related, enemies], estimatedLuaMs: 90000 });
+  assert.ok(mapped.lua.includes(reducers), 'the complete route fixture remains deferred, not unmapped');
 });
 
 test('CI mapped subset remains useful beside unknown inputs while the normal selector still requires full regression', () => {
@@ -117,24 +183,87 @@ for (const [helper, fixtures] of [
   assert.deepEqual(plan.integration, ['tests/conditional.test.mjs']);
   if(helper==='historical-presentation-runner') {
     const archive='tests/fixtures/pr323-historical-fixtures.json.gz';
-    assert.equal(fixtures.length,6,'trace, wording and all four Sapphire entries');
+    assert.equal(fixtures.length,7,'trace, wording and all five Sapphire entries');
     assert.equal(selectTests([archive,path],sources).full,true,'archive changes still require Full');
     assert.deepEqual(selectQuickPlan([archive,path],sources).lua,fixtures,'mixed advisory retains every mapped runtime entry');
     assert.equal(selectQuickPlan([archive],sources).full,true,'archive-only advisory cannot claim a partial test pass');
   }
 });
 
-for (const flag of ['--fast', '--ci-fast']) test(`${flag} unmapped fallback reports the full gate without launching a duplicate suite`, () => {
-  const env = { ...process.env }; delete env.NODE_TEST_CONTEXT; delete env.GITHUB_STEP_SUMMARY;
-  const result = spawnSync(process.execPath, ['scripts/test-affected.mjs', flag, '--files', 'docs/HANDOFF.md'],
-    { encoding: 'utf8', env, windowsHide: true, timeout: 30000 });
-  assert.ifError(result.error);
+for (const flag of ['--fast', '--ci-fast']) for (const changed of [[], ['docs/HANDOFF.md']]) {
+test(`${flag} ${changed.length ? 'unmapped' : 'empty'} fallback reports the full gate without graph IO or a duplicate suite`, context => {
+  const result = probeGraphReads(context, [flag, '--files', ...changed], { reject: true });
   assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stdout, /Complete Quality required: Unmodelled or deleted input: docs\/HANDOFF.md/);
+  assert.deepEqual(result.reads, []);
+  assert.ok(result.stdout.includes(`Complete Quality required: ${changed.length ? unmodelledReason(changed[0]) : noInputsReason}.`));
+  const plan = JSON.parse(result.stdout.slice(0, result.stdout.indexOf('\nFeedback timing:')));
+  assert.equal(plan.full, true);
+  assert.deepEqual(plan.changed, changed);
+  assert.deepEqual([plan.fast, plan.integration, plan.lua], [[], [], []]);
+  assert.deepEqual(plan.feedback, { fast: [], lua: [], estimatedLuaMs: 0 });
   assert.match(result.stdout, /Quick feedback unavailable. No tests run here; parallel complete Quality is required/);
   assert.match(result.stdout, /not a regression pass/);
   assert.match(result.stdout, /Feedback timing: plan \d+ ms\./);
   assert.doesNotMatch(result.stdout, /Completed|> slay-the-abyss/);
+});
+}
+
+for (const changed of [[], ['docs/HANDOFF.md'], ['docs\\HANDOFF.md', 'data/cards.json', 'tests/fixtures/unknown.json']]) {
+test(`related plan avoids graph IO for wholly unmodelled inputs: ${JSON.stringify(changed)}`, context => {
+  const result = probeGraphReads(context, ['--plan', '--files', ...changed], { reject: true });
+  assert.equal(result.status, 0, result.stderr);
+  assert.deepEqual(result.reads, []);
+  const normalized = changed.map(path => path.replaceAll('\\', '/'));
+  assert.deepEqual(JSON.parse(result.stdout), { tier: 'related', changed: normalized, full: true,
+    reason: changed.length ? unmodelledReason(normalized[0]) : noInputsReason, fast: [], integration: [], lua: [] });
+});
+}
+
+test('mixed inputs retain mapped feedback and complete-gate fallback with real graph IO', context => {
+  const input = 'tests/lua/combat.lua', args = ['--ci-fast', '--plan', '--files'];
+  const alone = probeGraphReads(context, [...args, input]);
+  const mixed = probeGraphReads(context, [...args, 'docs/HANDOFF.md', input, 'src/lua/deleted-preflight.lua']);
+  for (const result of [alone, mixed]) {
+    assert.equal(result.status, 0, result.stderr);
+    assert.deepEqual(result.reads, graphRoots);
+  }
+  const direct = JSON.parse(alone.stdout), plan = JSON.parse(mixed.stdout);
+  assert.equal(direct.full, false);
+  assert.ok(direct.lua.includes(input));
+  assert.equal(plan.full, true);
+  assert.equal(plan.reason, unmodelledReason('docs/HANDOFF.md'));
+  assert.deepEqual([plan.fast, plan.integration, plan.lua], [[], [], []]);
+  assert.ok(direct.feedback.lua.includes(input));
+  assert.deepEqual(plan.feedback, direct.feedback);
+});
+
+test('special event route JSON still loads its graph and retains feedback beside unknown input', context => {
+  const unknown = 'tests/fixtures/unknown.json';
+  const alone = probeGraphReads(context, ['--ci-fast', '--plan', '--files', eventCombatRouteInput]);
+  const result = probeGraphReads(context, ['--ci-fast', '--plan', '--files', eventCombatRouteInput, unknown]);
+  for (const observed of [alone, result]) {
+    assert.equal(observed.status, 0, observed.stderr);
+    assert.deepEqual(observed.reads, graphRoots);
+  }
+  const direct = JSON.parse(alone.stdout), plan = JSON.parse(result.stdout);
+  assert.equal(direct.full, false);
+  // The complete mapping retains both routes. Advisory scheduling may defer
+  // them when cheaper transitive fixtures fill its unchanged 90-second estimate.
+  for (const fixture of eventCombatRouteFixtures) assert.ok(direct.lua.includes(fixture), fixture);
+  assert.equal(plan.full, true);
+  assert.equal(plan.reason, unmodelledReason(unknown));
+  assert.deepEqual([plan.fast, plan.integration, plan.lua], [[], [], []]);
+  assert.deepEqual(plan.feedback, direct.feedback, 'unknown input cannot remove independently mapped feedback');
+  assert.ok(plan.feedback.lua.length > 0, 'the actual mapped subset remains available');
+  assert.equal(new Set(plan.feedback.lua).size, plan.feedback.lua.length);
+  for (const fixture of plan.feedback.lua) assert.ok(direct.lua.includes(fixture), fixture);
+  const measured = JSON.parse(readFileSync('scripts/ci-test-timings.json', 'utf8'));
+  const estimate = plan.feedback.lua.reduce((sum, fixture) => {
+    const weight = measured.lua[fixture];
+    return sum + (Number.isFinite(weight) && weight > 0 ? weight : 30000);
+  }, 0);
+  assert.equal(plan.feedback.estimatedLuaMs, estimate);
+  assert.ok(estimate <= 90000, 'feedback keeps the original advisory estimate');
 });
 
 test('local and CI advisory plans select the same real Lua feedback', () => {
@@ -150,10 +279,10 @@ test('local and CI advisory plans select the same real Lua feedback', () => {
   assert.ok(plans[0].feedback.lua.includes('tests/lua/combat.lua'));
 });
 
-test('quick workflow is independent, read-only, exact-revision and cancels only superseded PR feedback', () => {
+test('quick preflight is manual, read-only, exact-revision and cancels superseded branch work', () => {
   const workflow = readFileSync('.github/workflows/quick-feedback.yml', 'utf8').replaceAll('\r\n', '\n');
   assert.match(workflow, /workflow_dispatch:/);
-  assert.match(workflow, /  pull_request:\n    branches: \[develop\]/);
+  assert.doesNotMatch(workflow, /^  pull_request:/m);
   assert.match(workflow, /permissions:\n  contents: read/);
   assert.match(workflow, /group: quick-feedback-\$\{\{ github.ref \}\}\n  cancel-in-progress: true/);
   assert.match(workflow, /ref: \$\{\{ github.sha \}\}/);
@@ -162,6 +291,146 @@ test('quick workflow is independent, read-only, exact-revision and cancels only 
   assert.match(workflow, /timeout-minutes: 2\n        env:\n          BASE_SHA:/);
   assert.match(workflow, /GIT_TERMINAL_PROMPT: '0'/);
   assert.match(workflow, /if ! git cat-file -e "\$\{BASE_SHA\}\^\{commit\}" 2>\/dev\/null; then\n            git -c credential.helper= -c http.lowSpeedLimit=1024 -c http.lowSpeedTime=30 fetch --depth=1 --no-auto-maintenance --no-tags origin "\$BASE_SHA"\n          fi\n          git cat-file -e/);
-  assert.match(workflow, /node scripts\/test-affected.mjs --ci-fast --base "\$BASE_SHA"/);
-  assert.doesNotMatch(workflow, /pull_request_target|self-hosted|needs:|continue-on-error|npm run check/);
+  assert.match(workflow, /node scripts\/test-affected.mjs --preflight --base "\$BASE_SHA"/);
+  assert.doesNotMatch(workflow, /pull_request_target|self-hosted|needs:|continue-on-error/);
+  assert.match(workflow, /npm run check:guidance && npm run verify:backlog && npm run check:syntax/);
+  assert.match(workflow, /node scripts\/check-quality-ratchet.mjs/);
+  assert.match(workflow, /node scripts\/write-ci-receipt.mjs/);
+});
+
+import {describe} from 'node:test';
+import {validPreflight,preflightTitle,newestPreflight} from '../scripts/fork-preflight.mjs';
+import {completePreflight} from '../scripts/test-affected.mjs';
+describe('Fork preflight before formal tests',()=>{
+const head='a'.repeat(40), base='b'.repeat(40);
+const run={head_sha:head,event:'workflow_dispatch',status:'completed',conclusion:'success',
+ display_title:`Preflight / ${head} / ${base}`,updated_at:'2026-11-17T04:00:00Z',path:'.github/workflows/quick-feedback.yml',run_attempt:1};
+test('admission binds head, base, configuration workflow and completed outcome',()=>{
+ assert.equal(preflightTitle('Preflight',head,base),run.display_title);
+ assert.ok(validPreflight(run,{head,base}));
+ for(const patch of [{head_sha:base},{display_title:`Preflight / ${head} / ${head}`},{event:'pull_request'},
+ {status:'in_progress'},{conclusion:'cancelled'},
+ {path:'.github/workflows/other.yml'}])
+  assert.equal(validPreflight({...run,...patch},{head,base}),false,JSON.stringify(patch));
+ assert.ok(validPreflight({...run,path:'.github/workflows/quality.yml',display_title:`Full / ${head} / ${base}`},{head,base}));
+});
+test('unknown preflight fails instead of silently passing or starting local Full',()=>{
+ const r=spawnSync(process.execPath,['scripts/test-affected.mjs','--preflight','--files','unknown.txt'],{encoding:'utf8'});
+ assert.notEqual(r.status,0); assert.match(r.stderr,/Full required/);
+});
+test('formal Quality retains required jobs and runs independently of Fork dispatch',()=>{
+ const q=readFileSync('.github/workflows/quality.yml','utf8').replaceAll('\r\n','\n');
+ const jobs=[...q.slice(q.indexOf('\njobs:\n')).matchAll(/^  ([\w-]+):$/gm)].map(m=>m[1]);
+ assert.deepEqual(jobs,['impact','fast','rules','check','presentation','engineering-posix-shards','engineering-posix']);
+ assert.doesNotMatch(q,/needs: admission/);
+ const impact=q.slice(q.indexOf('  impact:'),q.indexOf('  fast:'));
+ assert.doesNotMatch(q,/node scripts\/fork-preflight\.mjs/);
+ for(const name of ['Check feature branch history','npm ci','node scripts/ci-impact.mjs'])assert(impact.includes(name));
+ assert.match(impact,/actions: read/);
+ assert.doesNotMatch(impact,/continue-on-error:/);
+ assert.match(q,/  presentation:\n    needs: impact\n    if: \$\{\{ !cancelled\(\) && needs\.impact\.result == 'success' \}\}/);
+ assert.match(q,/merge_group:/);assert.match(q,/branches: \[develop, master, 'release\/\*\*'\]/);
+ const quick=readFileSync('.github/workflows/quick-feedback.yml','utf8').replaceAll('\r\n','\n');
+ assert.match(quick,/--preflight --base/); assert.doesNotMatch(quick,/--ci-fast --base/);
+});
+
+test('combined Release routing retains frozen publication Full and manual-only Fork preflight',async()=>{
+ const workflow=readFileSync('.github/workflows/quality.yml','utf8').replaceAll('\r\n','\n');
+ const licenses=readFileSync('.github/workflows/licenses.yml','utf8').replaceAll('\r\n','\n');
+ for(const source of [workflow,licenses])assert.match(source,/  pull_request:\n    branches: \[develop, master, 'release\/\*\*'\]/);
+ const publication=workflow.indexOf('run: node scripts/release-ci.mjs verify-pr');
+ assert.doesNotMatch(workflow+licenses,/node scripts\/fork-preflight\.mjs/);
+ assert(publication<workflow.indexOf('Check feature branch history'));
+ assert.equal(workflow.split('run: node scripts/release-ci.mjs verify-pr').length,2);
+ assert.match(workflow,/github.event.pull_request.base.ref == 'master' && startsWith\(github.event.pull_request.head.ref, 'release\/'\)/);
+ const quick=readFileSync('.github/workflows/quick-feedback.yml','utf8').replaceAll('\r\n','\n');
+ assert.doesNotMatch(quick,/^  pull_request:|Verify affected Release CI contracts explicitly/m);
+ assert.match(quick,/--preflight --base/);
+ const {impact}=await import('../scripts/ci-impact.mjs');
+ for(const base of ['develop','release/v2.0.0'])for(const name of ['release-ci','fork-preflight'])
+  assert.equal(impact(['scripts/'+name+'.mjs'],{}, {eventName:'pull_request',base},{}).mode,'full');
+});
+
+test('preflight retains integration JS and every slow Lua without duplicated execution',()=>{
+ assert.deepEqual(completePreflight({full:false, fast:['a','b'],integration:['b','heavy'],lua:['slow','slow','direct']}),
+ {tests:['a','b','heavy'],fixtures:['slow','direct']});
+ assert.throws(()=>completePreflight({full:false,fast:[],integration:[],lua:[]}),/Full required/);
+});
+
+test('newer failed or active dispatch invalidates older success across forks',()=>{
+ const old={...run,id:1,created_at:'2026-11-17T03:00:00Z'};
+ assert.equal(newestPreflight([old],{head,base}),old);
+ for(const patch of [{conclusion:'failure'},{status:'in_progress',conclusion:null}])
+  assert.equal(newestPreflight([old,{...old,...patch,id:2,created_at:'2026-11-17T04:00:00Z'}],{head,base}),null);
+});
+
+test('license inventory stays independent of Fork dispatch and retries on ready',()=>{
+ const licenses=readFileSync('.github/workflows/licenses.yml','utf8').replaceAll('\r\n','\n');
+ assert.doesNotMatch(licenses,/^  admission:|needs: admission|draft == false/m);
+ assert.deepEqual([...licenses.slice(licenses.indexOf('\njobs:\n')).matchAll(/^  ([\w-]+):$/gm)].map(m=>m[1]),['inventory','independent-ai-review','cancel-obsolete-queue']);
+ assert.match(licenses,/types: \[opened, synchronize, reopened, ready_for_review\]/);
+ assert.match(licenses,/  inventory:[\s\S]*?    permissions:\n      contents: read\n      actions: read/);
+ assert.match(licenses,/license-audit-not-requested/);
+ assert.match(licenses,/if: github.event_name != 'pull_request_target' && github.event_name != 'workflow_run'/);
+ assert.doesNotMatch(licenses,/node scripts\/fork-preflight\.mjs/);
+ assert(licenses.indexOf('uses: actions/setup-node@')<licenses.indexOf('node scripts/ci-media-lfs.mjs'));
+ assert.doesNotMatch(licenses,/continue-on-error:/);
+});
+test('dequeued cleanup uses a separate trusted-base job without executing PR code',()=>{
+ const licenses=readFileSync('.github/workflows/licenses.yml','utf8').replaceAll('\r\n','\n');
+ assert.match(licenses,/pull_request_target:\n    branches: \[develop\]\n    types: \[dequeued\]/);
+ assert.match(licenses,/format\('queue-cleanup-\{0\}', github.repository_id\)/);
+ const cleanup=licenses.slice(licenses.indexOf('\n  cancel-obsolete-queue:\n'));
+ assert.match(cleanup,/github.repository_id == '1429751262' && github.event_name == 'pull_request_target'/);
+ assert.match(cleanup,/github.event.action == 'dequeued' && github.event.pull_request.base.ref == 'develop' && github.ref == 'refs\/heads\/develop'/);
+ assert.match(cleanup,/permissions:\n      contents: read\n      actions: write\n      pull-requests: read/);
+ assert.match(cleanup,/ref: \$\{\{ github\.sha \}\}/);
+ assert.match(cleanup,/persist-credentials: false/);
+ assert.match(cleanup,/run: node scripts\/publish-merge-group\.mjs --cancel-obsolete/);
+ assert.doesNotMatch(cleanup,/pull_request\.head|npm ci|persist-credentials: true/);
+});
+test('admission implementation always requires Full even with a tiny proven mapping',async()=>{
+ const {impact}=await import('../scripts/ci-impact.mjs');
+ const path='scripts/fork-preflight.mjs';
+ const plan=impact([path],{[path]:'export const value=1;','tests/a.test.mjs':`import '../${path}';`},
+ {eventName:'pull_request',base:'develop'},{js:{win32:{},linux:{}},lua:{},unknownJsMs:1,unknownLuaMs:1});
+ assert.equal(plan.mode,'full');assert.equal(plan.reason,'High risk or shared infrastructure');
+});
+
+test('native successful reruns are valid preflight without making a new commit',()=>{
+ assert.ok(validPreflight({...run,run_attempt:2},{head,base}));
+});
+
+});
+
+import {runInNewContext as evaluateJobIf} from 'node:vm';
+test('Fast, Windows and POSIX reject incomplete impact even if it emitted a plan',()=>{
+ const workflow=readFileSync('.github/workflows/quality.yml','utf8').replaceAll('\r\n','\n');
+ for(const [job,mode]of [['fast','fast'],['rules','full'],['engineering-posix-shards','full']]){
+  const section=workflow.slice(workflow.indexOf('  '+job+':\n')).split(/\n  [a-z][\w-]*:\n/)[0];
+  const expression=section.match(/^    if: (.+)$/m)?.[1];
+  assert(expression,'required consumer condition exists: '+job);
+  assert.match(expression,/!cancelled\(\)/,'explicit status check removes default success(): '+job);
+  const js=expression.replace(/^\$\{\{\s*|\s*\}\}$/g,'');
+  const invoke=(result,cancelled=false,selected=mode)=>evaluateJobIf(js,{
+   cancelled:()=>cancelled,needs:{impact:{result,outputs:{mode:selected}}},
+   inputs:{runner_pool:'hosted'},github:{event_name:'pull_request'}
+  });
+  assert.equal(invoke('success'),true,job+' runs after a successful impact');
+  for(const result of ['failure','cancelled','skipped'])assert.equal(invoke(result),false,job+' rejects '+result);
+  assert.equal(invoke('success',true),false,job+' rejects cancellation');
+  assert.equal(invoke('success',false,mode==='full'?'fast':'full'),false,job+' respects route');
+ }
+});
+
+test('drafts and failed impact never start presentation',()=>{
+ const quality=readFileSync('.github/workflows/quality.yml','utf8').replaceAll('\r\n','\n');
+ const impact=quality.slice(quality.indexOf('  impact:'),quality.indexOf('  fast:'));
+ const impactIf=impact.match(/^    if: (.+)$/m)[1];
+ assert.equal(evaluateJobIf(impactIf,{github:{event_name:'pull_request',event:{pull_request:{draft:true}}}}),false);
+ assert.equal(evaluateJobIf(impactIf,{github:{event_name:'pull_request',event:{pull_request:{draft:false}}}}),true);
+ const presentation=quality.slice(quality.indexOf('  presentation:'),quality.indexOf('  engineering-posix-shards:'));
+ const downstream=presentation.match(/^    if: (.+)$/m)[1].replace(/^\$\{\{\s*|\s*\}\}$/g,'');
+ for(const result of ['success','failure','cancelled','skipped'])for(const cancelled of [false,true])
+  assert.equal(evaluateJobIf(downstream,{needs:{impact:{result}},cancelled:()=>cancelled}),result==='success'&&!cancelled);
 });

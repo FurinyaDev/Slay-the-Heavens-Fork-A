@@ -1,8 +1,8 @@
 package.path='src/lua/?.lua;build/lua/?.lua;'..package.path
 local C,Run,Map,Nodes,Pool=require('abyss_combat'),require('abyss_run'),require('abyss_map'),require('abyss_nodes'),require('abyss_event_pool')
 local Data=require('abyss_data')
-local function eq(a,b)assert(a==b,tostring(a)..' ~= '..tostring(b))end
-local function same(a,b)eq(type(a),type(b));if type(a)~='table'then eq(a,b);return end;for k,v in pairs(a)do same(v,b[k])end;for k in pairs(b)do assert(a[k]~=nil)end end
+local function eq(a,b,different)if different or not (a==b)then assert(false,tostring(a)..' ~= '..tostring(b))end end
+local function same(a,b)local ta,tb=type(a),type(b);if ta~=tb then eq(ta,tb,true)end;if ta~='table'then if not (a==b)then eq(a,b,true)end;return end;for k,v in pairs(a)do same(v,b[k])end;for k in pairs(b)do if a[k]==nil then assert(false)end end end
 local function fixture(id,deck)
  local r,m=Run.new(Data,42),Map.generate(Data,42)
  if deck then r.deck=C.copy(deck)end
@@ -154,4 +154,50 @@ test('bonfire curse obtains Spirit Poop then repeatable Circlet and permanently 
  end
  local n=0;for _,id in ipairs(r.relics)do if id=='circlet' then n=n+1 end end;eq(n,1)
 end)
+
+for _,mode in ipairs({'refusal','throw'})do
+test('bonfire '..mode..' restores rewards, state and original owners before retry',function()
+ local R,Curses=require('abyss_sts_random'),require('abyss_curses')
+ local r=fixture('bonfire',{{uid=7,cardId='bludgeon',upgraded=false}});r.hp=10;r.maxHp=80
+ assert(Nodes.chooseEvent(r,'approach'));assert(Nodes.chooseEvent(r,'offer'))
+ local before=C.copy(r)
+ local owners={deck=r.deck,card=r.deck[1],flow=r.nodeFlow,event=r.nodeFlow.event,
+  relics=r.relics,counters=r.relicCounters,potions=r.potions,misc=r.miscRng,
+  pool=r.relicPool,poolRng=r.relicPool.rng,queues=r.relicPool.queues,data=r.data}
+ local remove,onRemove=Run.removeCard,Curses.onRemove
+ local reached
+ local function fail(staged)
+  -- The reward belongs before removal, inside the same permanent command.
+  -- Assert the observations outside the command: a hook assertion itself would
+  -- otherwise be caught as the expected transaction_failed in the throw case.
+  reached={hp=staged.hp,maxHp=staged.maxHp,cards=#staged.deck,stage=staged.nodeFlow.event.stage}
+  staged.gold=staged.gold+99;staged.nodeFlow.event.body='uncommitted Bonfire failure'
+  R.randomInt(staged.miscRng,99);R.randomInt(staged.relicPool.rng,99)
+ end
+ if mode=='refusal'then
+  Run.removeCard=function(staged,uid)
+   local ok,why=remove(staged,uid);assert(ok,why);fail(staged)
+   return false,'bonfire_late_remove_refusal'
+  end
+ else
+  Curses.onRemove=function(staged,card)
+   onRemove(staged,card);fail(staged);error('bonfire late remove hook',0)
+  end
+ end
+ local called,ok,why=pcall(Nodes.chooseEvent,r,'offer',7)
+ Run.removeCard,Curses.onRemove=remove,onRemove
+ assert(called,ok);assert(reached,'[BONFIRE_LATE_REMOVE] failure must follow the reward and real removal')
+ eq(reached.hp,90);eq(reached.maxHp,90);eq(reached.cards,0);eq(reached.stage,'choose_card')
+ eq(ok,false);eq(why,mode=='refusal'and'bonfire_late_remove_refusal'or'transaction_failed')
+ same(r,before)
+ eq(r.deck,owners.deck);eq(r.deck[1],owners.card);eq(r.nodeFlow,owners.flow);eq(r.nodeFlow.event,owners.event)
+ eq(r.relics,owners.relics);eq(r.relicCounters,owners.counters);eq(r.potions,owners.potions)
+ eq(r.miscRng,owners.misc);eq(r.relicPool,owners.pool);eq(r.relicPool.rng,owners.poolRng)
+ eq(r.relicPool.queues,owners.queues);eq(r.data,owners.data)
+ assert(Nodes.chooseEvent(r,'offer',7));eq(#r.deck,0);eq(r.hp,90);eq(r.maxHp,90)
+ eq(r.gold,before.gold);same(r.miscRng,before.miscRng);same(r.relicPool,before.relicPool)
+ eq(r.nodeFlow.event.stage,'result');eq(r.nodeFlow.event.removedUid,7);eq(r.nodeFlow.event.offeredRarity,'rare')
+ assert(Nodes.chooseEvent(r,'leave'));eq(r.phase,'map')
+end)
+end
 print('ACT1_EVENT_CONTENT '..count..' passed')

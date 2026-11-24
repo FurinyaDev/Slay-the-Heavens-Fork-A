@@ -1,4 +1,6 @@
-import {verifyArtFeatureReceipt,artFeaturesSource,artFeatureModule} from './art-features.mjs';
+import {officialAssetsFromReceipt,refinedReleaseMonsterArtFromReceipt} from './official-assets-profile.mjs';
+import {uiProfileFromReceipt,uiProfileSource,uiProfileModule} from './ui-profile.mjs';
+import {verifyArtFeatureReceipt,artFeaturesSource,artFeatureModule,artBuildOptionsFromReceipt} from './art-features.mjs';
 // Explicit audio audition candidate. Never imported or played automatically.
 import { readFileSync, mkdirSync, writeFileSync, copyFileSync, constants, existsSync } from 'node:fs';
 import { resolve, join, dirname } from 'node:path';
@@ -8,9 +10,11 @@ import { nativeBgmGraphSource, nativeBgmSignals } from './native-bgm-graph.mjs';
 import { fileRecord } from './evidence-files.mjs';
 import { nativeUiVariables } from './native-candidate-scripts.mjs';
 import {embeddedScripts} from './native-script-inventory.mjs';
+import {assertClientScriptText} from './check-release-text.mjs';
 import {runNativeClientCheck} from './native-client-check.mjs';
 import {writeScriptBatch} from './native-script-batch.mjs';
 import {assertCandidateArtReceipt} from './candidate-art-policy.mjs';
+import {packNativeScript} from './native-script-storage.mjs';
 
 const [base, directory = '.artifacts/native-bgm-candidate', sourceReceiptFile] = process.argv.slice(2);
 if (!base) throw new Error('Usage: node scripts/build-native-bgm-candidate.mjs <full-game-base.gil> [output-directory] [full-candidate.json]');
@@ -20,11 +24,18 @@ const baseSha256 = hash(baseMap);
 const full = sourceReceiptFile ? JSON.parse(readFileSync(sourceReceiptFile, 'utf8')) : undefined;
 if(!full)throw Error('Candidate artwork policy requires a full source receipt; untracked legacy audition is not a delivery candidate');
 assertCandidateArtReceipt(full);
+officialAssetsFromReceipt(full);
+if(refinedReleaseMonsterArtFromReceipt(full))artBuildOptionsFromReceipt(full);
+const nativePageLifecycle=uiProfileFromReceipt(full);
+if(full.uiProfile){
+ const source=readFileSync(join(dirname(resolve(sourceReceiptFile)),'payload',uiProfileModule+'.lua'),'utf8');
+ if(source!==packNativeScript(uiProfileModule,uiProfileSource(nativePageLifecycle),full.nativeScriptStorage?.profile)||createHash('sha256').update(source).digest('hex')!==full.moduleDigests?.[uiProfileModule])throw Error('Full candidate UI profile configuration mismatch');
+}
 if (full && (full.candidate?.sha256 !== baseSha256 || typeof full.buildId !== 'string' || !full.buildId))
   throw new Error('Full candidate receipt does not match the audio base/build');
 if(full){
  const flags=verifyArtFeatureReceipt(full.artFeatures),source=readFileSync(join(dirname(resolve(sourceReceiptFile)),'payload',artFeatureModule+'.lua'),'utf8');
- if(source!==artFeaturesSource(flags)||createHash('sha256').update(source).digest('hex')!==full.moduleDigests?.[artFeatureModule])throw Error('Full candidate art feature configuration mismatch');
+ if(source!==packNativeScript(artFeatureModule,artFeaturesSource(flags),full.nativeScriptStorage?.profile)||createHash('sha256').update(source).digest('hex')!==full.moduleDigests?.[artFeatureModule])throw Error('Full candidate art feature configuration mismatch');
 }
 const scripts = ['abyss_bgm', 'abyss_game_ui', 'abyss_ui'].map(name => ({ name,
   source: readFileSync(full ? join(dirname(resolve(sourceReceiptFile)), 'payload', `${name}.lua`)
@@ -81,6 +92,7 @@ try {
   if (compiled.failed || compiled.error || compiled.errors?.length || compiled.written?.length !== 1) throw new Error('BGM graph did not compile/write completely');
   const checked = await call('scene_check_client', { mapPath });
   if (!checked.ok || checked.errors) throw new Error('Candidate client check failed');
+  let scriptText;
   if (full) {
     const readback = await call('scene_list_client_scripts', { mapPath, includeSource: true });
     const expected = Object.keys(full.moduleDigests).sort();
@@ -88,6 +100,7 @@ try {
       || readback.scripts.some(row => typeof row.source !== 'string'
         || createHash('sha256').update(row.source).digest('hex') !== full.moduleDigests[row.name]))
       throw new Error('Final audio script readback differs from the full candidate');
+    scriptText = assertClientScriptText(readback.scripts, 'audio/candidate.gil');
   }
   const baseAfter = hash(baseMap);
   if (baseAfter !== baseSha256) throw new Error('Input map hash changed');
@@ -96,10 +109,14 @@ try {
   mapPath = finalMap;
   writeFileSync(join(workspace, 'candidate.json'), JSON.stringify({ mapPath, sha256: hash(mapPath),
     candidate: fileRecord(mapPath), ...(full ? { buildId: full.buildId, artFeatures:full.artFeatures, moduleDigests: full.moduleDigests,
+      ...(full.nativeScriptStorage ? {nativeScriptStorage:full.nativeScriptStorage} : {}),
+      ...(full.officialAssetsProfile ? {officialAssetsProfile:full.officialAssetsProfile} : {}),
+      ...(full.refinedReleaseMonsterArt === true ? {refinedReleaseMonsterArt:true,nativeMonsterArt:full.nativeMonsterArt} : {}),
+      ...(full.uiProfile ? {uiProfile:full.uiProfile} : {}),
       ...(full.officialPortraits ? {officialPortraits:full.officialPortraits} : {}),
     ...(full.readyCardArt ? {readyCardArt:full.readyCardArt} : {}),
     ...(full.officialBackground ? {officialBackground:full.officialBackground} : {}) } : {}),
-    baseMap, baseSha256, baseAfter, liveWriteEnabled: false, compiled, checked,
+    baseMap, baseSha256, baseAfter, liveWriteEnabled: false, compiled, checked, scriptText,
     officialImport: 'NOT_TESTED', playtest: 'NOT_TESTED', listening: 'NOT_TESTED' }, null, 2));
   console.log(`BGM candidate compiled and copy written: ${mapPath}`);
   console.log('Official import, playback and listening for this candidate are NOT TESTED.');

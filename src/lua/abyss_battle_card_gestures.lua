@@ -1,6 +1,7 @@
 -- Read state, issue Run commands. No damage/energy/outcome rules live in this view.
 local Theme = require("abyss_theme")
 local CardInput = require("abyss_card_input")
+local Pointer = require("abyss_pointer_input")
 local Combat = require("abyss_combat")
 local M = {}
 local L = Theme.layout
@@ -95,27 +96,61 @@ function M.install(owner, ownership, host, dependencies)
         if g.moving then host.cardView.renderDrag() end
         return true
     end
-    local function down(event)
-        if owner.potionAim and owner.potionAim.moving and owner.potionAim.touch~=(event and event.touchId) then return true end
-        retireInterruptedPress(event)
-        ownership.pointerObserved = true
-        owner.help=nil
+    local function reclaimPointer(event)
         if owner.active and not owner.busy and not owner.gesture and event and event.touchId == ownership.releasedDragTouch then
             ownership.releasedDragTouch = nil -- a new physical sequence owns this touch again
         end
         if not owner.gesture then owner.suppressClick = false end
-        owner.swallow = nil
-        if owner.gesture or not dependencies.closeInfo() then return false end
+    end
+    local function dismissForPointer(keepActor)
+        if not (keepActor and owner.info and not owner.info.kind) then return dependencies.closeInfo() end
+    end
+    local function pointerOwned(event, readOnly)
+        if owner.potionMenu then return true end
+        local aim = owner.potionAim
+        if readOnly then return owner.gesture or owner.carry or aim and aim.moving end
+        return aim and aim.moving and aim.touch ~= (event and event.touchId)
+    end
+    local function retireStalePotionAim(event)
+        if not owner.active or owner.busy or not owner.potionAim or dependencies.aimReady(owner.potionAim) then return false end
+        dependencies.cancelPotionAim("药水瞄准已失效，已取消；请重新选择药水。")
         owner.swallow = {touch = event and event.touchId}
         owner:render()
         return true
     end
-    local function swallowed(event)
-        local swallow = owner.swallow
-        if swallow and swallow.touch == (event and event.touchId) then owner.swallow = nil return true end
-        if not dependencies.closeInfo() then return false end -- click-only hosts dismiss on the click itself
+    local function prepareDown(event, keepActor, readOnly)
+        if pointerOwned(event, readOnly) then return true end
+        local press=owner.info and owner.info.press
+        if press then
+            if press.touch~=(event and event.touchId) then return true end
+            dependencies.closeInfo()
+            owner:render(true)
+        end
+        if not readOnly then retireInterruptedPress(event) end
+        ownership.pointerObserved = true
+        owner.help = nil
+        reclaimPointer(event)
+        owner.swallow = nil
+        if owner.gesture then return false end
+        -- A stale target press cancels the aim and requires a fresh Down.
+        if not readOnly and retireStalePotionAim(event) then return true end
+        local closed,passThrough=dismissForPointer(keepActor)
+        if not closed or passThrough then return false end
+        owner.swallow = {touch = event and event.touchId}
         owner:render()
         return true
+    end
+    local function swallowed(event, keepActor)
+        if owner.potionMenu or owner.info and owner.info.press then return true end
+        local swallow = owner.swallow
+        if swallow and swallow.touch == (event and event.touchId) then owner.swallow = nil return true end
+        local closed,passThrough=dismissForPointer(keepActor)
+        if not closed or passThrough then return false end -- a passive preview preserves this click
+        owner:render()
+        return true
+    end
+    local function renderAimChange(g,valid,target,aiming)
+        if not host.cardView.refreshAim or not host.cardView.refreshAim(g,valid,target,aiming)then owner:render()end
     end
     local function renderCardMotion(g)
         owner.suppressClick,owner.selected = true,g.uid
@@ -127,7 +162,7 @@ function M.install(owner, ownership, host, dependencies)
             owner:render(); return
         end
         if g.drawnValid ~= valid or g.drawnTarget ~= target or g.drawnAiming ~= aiming then
-            owner:render()
+            renderAimChange(g,valid,target,aiming)
         else host.cardView.renderDrag(valid, target, aiming, true) end
     end
     -- Short EMA of finger velocity, kept on the gesture for a later fling port.
@@ -158,8 +193,10 @@ function M.install(owner, ownership, host, dependencies)
             g.bx = x
         end
         if owner.hover == g.slot then return end
+        local previous=owner.hover
         owner.hover = g.slot
         owner.handHover = {run=g.run,battle=g.battle,turn=g.battle.turn,slot=g.slot,uid=g.uid}
+        if host.cardView.refreshHover and host.cardView.refreshHover(previous,g.slot)then return end
         owner:render(true)
     end
     local function startBrowse(g, x, y)
@@ -215,7 +252,7 @@ function M.install(owner, ownership, host, dependencies)
             owner.carry,owner.selected,owner.hover,owner.handHover = nil,nil,nil,nil
             owner:render()
         elseif g.drawnValid ~= valid or g.drawnTarget ~= target or g.drawnAiming ~= aiming then
-            owner:render()
+            renderAimChange(g,valid,target,aiming)
         else host.cardView.renderDrag(valid,target,aiming,true) end
     end
     local function releaseCardTap(event, input, ended)
@@ -240,6 +277,13 @@ function M.install(owner, ownership, host, dependencies)
         end
         return action
     end
+    local function finishReleaseAction(action,target)
+        -- playSelected retains its mandatory busy preflight. The drawn pose was
+        -- already published by renderDrag; an extra nonbusy full render adds no state.
+        if action=='play' and Theme.presentationProfile=='official-assets-first' then owner:playSelected(target);return end
+        owner:render()
+        if action=='play' then owner:playSelected(target) else dependencies.notice("") end
+    end
     local function finishCardRelease(g, event, ended)
         local x, releaseY = point(event)
         local valid,target = false,nil
@@ -258,14 +302,24 @@ function M.install(owner, ownership, host, dependencies)
         -- Keep the trailing Click bound to this drag, not a persistent global lock.
         ownership.releasedDragTouch = g.touch
         owner.suppressClick,owner.selected = g,action ~= 'cancel' and g.uid or nil
-        owner:render()
-        if action == 'play' then owner:playSelected(target)
-        else dependencies.notice("") end
+        finishReleaseAction(action,target)
+    end
+    local function releaseRead(event,input,ended)
+        local info=owner.info
+        local press=info and info.press
+        if not press then return false end
+        if press.touch==(event and event.touchId) and (not input or input==press.input) then
+            ownership.releasedDragTouch=press.touch
+            dependencies.closeInfo()
+            if ended or Pointer.dragged(event,L.cardDrag.threshold) or not owner:openOverflowCard(info) then owner:render(true) end
+        end
+        return true
     end
     local function release(event, input, ended)
         if owner.potionAim and owner.potionAim.moving and dependencies.releasePotionDrag then return dependencies.releasePotionDrag(event,input) end
         local g = owner.gesture
         local touch = event and event.touchId
+        if not g and releaseRead(event,input,ended) then return end
         if not g then releaseCardTap(event, input, ended) return end
         if touch ~= g.touch or input and input ~= g.input then return end
         if owner.help and owner.help.card == g then owner.help = nil end
@@ -283,24 +337,14 @@ function M.install(owner, ownership, host, dependencies)
         if owner.gesture ~= g then return end
         finishCardRelease(g, event, ended)
     end
-    function owner.cancelControllerPointers(_)
-        local aim=owner.potionAim
-        if aim and aim.moving then ownership.releasedDragTouch=aim.touch end
-        dependencies.cancelCardInputs();dependencies.cancelActionInputs();dependencies.cancelPotionInputs()
-        for _,input in ipairs(ownership.enemyInputs)do input.held,input.released=nil,nil end
-    end
-    local function controllerReady()
-        return owner.active and not owner.busy and not owner.gesture and not owner.potionMenu and owner.run
-            and (owner.run.phase=="reward" or owner.run.phase=="combat" and owner.run.combat.phase=="player")
-    end
-    function owner.controllerBack(_)
+    function owner.cancelAim(_)
         if dependencies.closeInfo() then owner:render();return true end
         if owner.selected or owner.potionAim then
             local movingAim=owner.potionAim and owner.potionAim.moving and owner.potionAim
             dependencies.cancelPotionAim();owner.selected,owner.carry,owner.hover=nil,nil,nil;owner.suppressClick=movingAim or false
             if movingAim then ownership.releasedDragTouch=movingAim.touch end
             owner.selectionEpoch=(owner.selectionEpoch or 0)+1
-            dependencies.cancelCardInputs();dependencies.cancelActionInputs();dependencies.refresh()
+            dependencies.cancelCardInputs();dependencies.cancelActionInputs();dependencies.notice("");dependencies.refresh()
             return true
         end
         if owner.run and owner.run.phase=="reward" and owner.rewardScreen=="cards" then
@@ -310,8 +354,8 @@ function M.install(owner, ownership, host, dependencies)
     end
 
     return {
-        point=point, retireInterruptedPress=retireInterruptedPress, down=down, swallowed=swallowed, move=move,
-        updateCarry=updateCarry, releaseCardTap=releaseCardTap, finishCardRelease=finishCardRelease, release=release, controllerReady=controllerReady
+        point=point, retireInterruptedPress=retireInterruptedPress, down=prepareDown, swallowed=swallowed, move=move,
+        updateCarry=updateCarry, releaseCardTap=releaseCardTap, finishCardRelease=finishCardRelease, release=release
     }
 end
 return M

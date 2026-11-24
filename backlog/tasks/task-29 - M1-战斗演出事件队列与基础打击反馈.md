@@ -5,12 +5,13 @@ status: In Progress
 assignee:
   - '@Furinya'
 created_date: '2026-10-22 23:29'
-updated_date: '2026-10-29 16:51'
-due_date: '2026-10-28'
+updated_date: '2026-11-14 06:51'
 labels:
   - P1
   - battle-feedback
   - awaiting-live
+  - 待验
+  - delivery-verify
 milestone: m-5
 dependencies:
   - TASK-10
@@ -49,3 +50,13 @@ ordinal: 38000
 
 2026-10-30 战斗表现升级：按 docs/plans/2026-10-30-battle-life.md，从最新develop隔离卡牌、待机、技能和独立回归；共享接线由中控统一，规则/RNG不改。复用本任务及29.1，不重复建任务。
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+2026-11-07 看板复审更正：基础反馈实现已随 PR52/79 合入，任务 AC1–3 及 TASK-29 附件、DELIVERY-CLOSEOUT 可追溯；不能记为未开始。状态保持 To Do，标待验，剩余同候选原生画面、声音及设备审阅按原 AC 取证，未执行项不勾选。
+
+2026-11-14清理旧窗口日期：原due_date=2026-10-28保留于历史，不再显示为当前截止；实际未完成AC和审批不变。
+
+2026-11-14第二轮状态纠正：已有3/5项AC通过及既有实施证据，剩余未完成要求属于后续验证或接续。 状态表示整个任务的完成进展，不表示当前有执行者持续占用；保留原未验AC、负责人、依赖及历史证据。更正过去把已开展待验事项退回To Do的处理。
+<!-- SECTION:NOTES:END -->

@@ -1,3 +1,4 @@
+local advanceShop = dofile('tests/lua/support/shop_timeline.lua')
 local function plainCardTitle(text)return (text:gsub('<color=#[%x]+>',''):gsub('</color>',''))end
 local NativeContract = dofile('tests/lua/support/native_ui_contract.lua')
 return function(first,last,cardFirst,cardLast)
@@ -12,19 +13,6 @@ local Presentation = require("abyss_presentation")
 local Layout = require("abyss_ui_layout")
 local Theme = require("abyss_theme")
 local Narrative = require("abyss_narrative")
-local function readMerchantLine(ui,get)
-    local pages={}
-    while true do
-        local current=ui.merchant.current
-        local last=math.min(#current.chars,current.page*Theme.layout.merchant.pageCharacters)
-        if current.shown<last then assert(get('merchant/talk/hit').click()) end
-        pages[#pages+1]=get('merchant/line').text
-        assert(utf8.len(pages[#pages])<=Theme.layout.merchant.pageCharacters)
-        if last==#current.chars then break end
-        assert(get('merchant/talk/hit').click())
-    end
-    return table.concat(pages)
-end
 local C = Theme.color
 local SourceTreasure=dofile('tests/lua/support/source_treasure_claims.lua')
 local cursorEvents = { CursorEnter="enter", CursorExit="exit", CursorDown="down", CursorUp="up", CursorEndDrag="endDrag" }
@@ -104,6 +92,7 @@ local function setup(kind, source, prepare, events, sound,relicSeed)
     assert(math.max(1, math.ceil(width / Theme.layout.nativeNode.notice[3])) * Theme.layout.nativeText.lineHeight
         <= Theme.layout.nativeNode.notice[4], "node notice exceeds existing text capacity")
     ui:setVisible(true) -- the host shows the panel in node mode
+    if kind=="shop" then assert(root:GetChild("merchant"):GetChild("talk"):GetChild("hit").click());advanceShop(ui) end
     local function get(key)
         local node = root
         for part in key:gmatch("[^/]+") do node = assert(node:GetChild(part), "missing " .. key) end
@@ -204,7 +193,7 @@ test("shop shelf shows five colored and two implemented colorless cards without 
         assert(get('shopView/card'..i..'/description').text~='',offer.id..' must describe the card')
         assert(not get('shopView/card'..i..'/veil').visible,offer.id..' must not be sold')
     end
-    assert(get("confirm").children.label.text == "离开商店" and not shown("back"))
+    assert(get("back").children.label.text == "离开" and not shown("confirm"))
 end)
 
 test("unaffordable goods turn the price red, grey the card and explain without charging", function()
@@ -212,17 +201,18 @@ test("unaffordable goods turn the price red, grey the card and explain without c
     local offer = Nodes.view(ui.run, ui.map).node.cards[1]
     ui.run.gold = offer.price - 1 ui:render()
     local box, price = get("shopView/card1"), get("shopView/price1")
+    local bodyInk=Theme.cardSkin.text.body or C.text
     assert(is(price.children.value.fontColor, C.danger) and not box.children.veil.visible)
-    assert(box.children.blockedVeil.visible and box.children.blockedReason.text=='金币不足' and is(box.children.description.fontColor,C.text))
+    assert(box.children.blockedVeil.visible and box.children.blockedReason.text=='金币不足' and is(box.children.description.fontColor,bodyInk))
     local before = Combat.copy(ui.run)
     assert(not click("shopView/card1")) same(ui.run, before)
     -- The notice states the shortfall; the merchant answers in his own dialogue box.
     assert(get("notice").text == "金币不足：需要 " .. offer.price .. "，还差 1" and is(get("notice").fontColor, C.danger))
     ui:update(5)
-    assert(readMerchantLine(ui,get) == "「" .. Narrative.merchant.insufficientGold .. "」" and ui.merchant.shake == nil)
+    assert(get('merchant/line').text=='金币不够。' and not get('merchant/bubble').visible)
     assert(#changes == 0)
     ui.run.gold = offer.price ui:render()
-    assert(is(price.children.value.fontColor, C.goldBright) and is(box.children.description.fontColor, C.text))
+    assert(is(price.children.value.fontColor, C.goldBright) and is(box.children.description.fontColor,bodyInk))
     local size = #ui.run.deck assert(click("shopView/card1"))
     assert(#ui.run.deck==size and ui.run.gold==offer.price)
     assert(click("confirm"))
@@ -275,7 +265,7 @@ test("removal service selects a uid first, confirms with the core price and is s
     local before = Combat.copy(ui.run)
     assert(not shown("pickerView/target") and get("pickerView/empty").text ~= "")
     assert(not click("confirm")) same(ui.run, before)
-    assert(get("notice").text == "请先在上方选择一张卡牌")
+    assert(get("pickerView/empty").text == "请先选择一张卡牌")
     assert(click("pickerView/card2")) same(ui.run, before)
     assert(shown("pickerView/target") and get("pickerView/card2").children.glow.visible)
     assert(get("pickerView/hint").text == "牌组 10 → 9 张")
@@ -311,67 +301,22 @@ test("an external removal invalidates a selected removal before charging gold", 
     local before = Combat.copy(ui.run)
     assert(not click("confirm")) same(ui.run, before)
     assert(ui.run.deck[1].uid == second and ui.run.shopRemoveCount == 1)
-    assert(get("notice").text == "本店删牌服务已使用")
+    assert(get("pickerView/empty").text == "本店删牌服务已使用")
     assert(#changes == 1 and changes[1].reason == "removal_unavailable" and not changes[1].ok)
 end)
 
-test("merchant opens with the scene narration once per run, then greets, and stays out of the way", function()
-    local ui, get, click, shown = setup("shop", nil, function(run) run.gold = 10000 end)
-    local m = Narrative.merchant
-    assert(shown("merchant") and shown("merchant/portrait") and not shown("merchant/namePlate"))
-    assert(get("merchant/line").text == "" and ui.merchant.current.kind == "encounter")
-    ui:update(0.5)
-    local partial = get("merchant/line").text
-    assert(#partial > 0 and #partial < #m.encounter, "narration is typed, not dumped")
-    -- A page may already be complete; tapping then advances instead of skipping text.
-    local pages={}
-    while true do
-        local current=ui.merchant.current
-        local last=math.min(#current.chars,current.page*Theme.layout.merchant.pageCharacters)
-        if current.shown<last then assert(get('merchant/talk/hit').click()) end
-        pages[#pages+1]=get('merchant/line').text
-        assert(utf8.len(pages[#pages])<=Theme.layout.merchant.pageCharacters and is(get('merchant/line').fontColor,C.textDim))
-        if last==#current.chars then break end
-        assert(get('merchant/talk/hit').click())
-    end
-    assert(table.concat(pages)==m.encounter,'compact dialogue must preserve every character across pages')
-    assert(shown("merchant/next"))
-    assert(get("merchant/talk/hit").click() and ui.merchant.current.kind == "greet")
-    ui:update(5)
-    assert(readMerchantLine(ui,get) == "「" .. m.greet .. "」" and shown("merchant/namePlate"))
-    assert(get("merchant/name").text == "旧路商人" and not shown("merchant/next"))
-    assert(not get("merchant/talk/hit").click(), "nothing left to advance")
-    -- Repeated purchases react instantly and never wait for the previous line.
-    assert(click("shopView/card1") and click("confirm") and ui.merchant.current.kind == "buy" and ui.merchant.nod ~= nil)
-    assert(click("shopView/card2") and click("confirm") and ui.merchant.current.kind == "buy")
-    ui:update(5)
-    assert(readMerchantLine(ui,get) == "「" .. m.purchaseSuccess .. "」" and ui.merchant.nod == nil)
-    assert(get("notice").text:find("已购买「", 1, true) and not get("notice").text:find(m.purchaseSuccess, 1, true))
-    -- The merchant steps aside for the removal picker and returns after it.
-    assert(click("shopView/removal") and shown("pickerView") and not shown("merchant"))
-    assert(click("back") and shown("merchant"))
-    -- A lingering player hears the one unprompted remark, once.
-    ui:update(Theme.layout.merchant.idle + 1) ui:update(3)
-    assert(readMerchantLine(ui,get) == "「" .. m.originHint .. "」")
-    ui:update(Theme.layout.merchant.idle + 1)
-    assert(ui.merchant.current.kind == "idle")
-    -- Leaving holds the farewell on screen like a camp/event result; no shelf remains.
-    assert(click("confirm") and ui.merchant.current.kind == "leave" and ui:holding())
-    ui:update(5)
-    assert(shown("merchant") and not shown("shopView") and readMerchantLine(ui,get) == "「" .. m.leave .. "」")
-    assert(get("confirm").children.label.text == "继续" and get("notice").text ~= "")
-    assert(not shown("back"))
-    assert(click("confirm") and not ui:holding())
-    -- The next shop of the same run skips the narration and greets directly.
-    local run = ui.run
-    ui.merchantNode = nil ui:render()
-    assert(ui.merchant.current.kind == "greet" and ui.run == run)
-    -- A restarted run may reach a shop with the same map ID; it must get its own first greeting.
-    local nextRun, nextMap = entered("shop")
-    ui.run, ui.map = nextRun, nextMap
-    ui.merchantNode = Nodes.view(nextRun, nextMap).node.id
-    ui:render()
-    assert(ui.merchant.current.kind == "encounter", "same-ID shop in a new run restores the narration")
+test("merchant only gives short transaction feedback and never idle dialogue", function()
+    local ui,get,click,shown=setup('shop',nil,function(run)run.gold=10000 end)
+    assert(not shown('shopRoom') and ui.merchant.current==nil)
+    assert(click('shopView/card1') and click('confirm'))
+    assert(get('merchant/line').text=='谢啦！' and shown('merchant/bubble'))
+    ui:update(2);assert(not shown('merchant/bubble'))
+    ui:update(20);assert(not shown('merchant/bubble'))
+    assert(click('shopView/card2') and click('confirm'))
+    assert(shown('merchant/bubble') and not shown('shopRoom'))
+    assert(click('back'));ui:update(.31)
+    assert(ui:holding() and not shown('shopView'))
+    assert(click('confirm') and not ui:holding())
 end)
 
 test("merchant reaction sounds are requested only for sales and refusals", function()
@@ -382,6 +327,7 @@ test("merchant reaction sounds are requested only for sales and refusals", funct
     local ui = UI.new(root, run, map, Presentation, "click", nil, { color = colour, imageSource = "static",
         sound = function(cue) cues[#cues + 1] = cue end })
     ui:setVisible(true)
+    assert(root:GetChild("merchant"):GetChild("talk"):GetChild("hit").click());advanceShop(ui)
     assert(#cues == 0, "entering and greeting are silent")
     assert(ui:press("shopView/card1"))
     assert(#cues==0, "preview is not a sale")
@@ -457,7 +403,7 @@ test("forge previews the real before/after card and commits only the confirmed u
     for _, card in ipairs(ui.run.deck) do assert(card.upgraded == (card.uid == target)) end
     assert(ui.run.phase == "map" and ui:holding() and shown("pickerView"))
     assert(shown("pickerView/after") and get("pickerView/label").text == "已升级" and not shown("pickerView/card1"))
-    assert(get("notice").text == "已升级「" .. display.name .. "」→「" .. display.name .. "+」")
+    assert(get("pickerView/empty").text == "已升级「" .. display.name .. "」→「" .. display.name .. "+」")
     assert(click("confirm") and not ui:holding())
 end)
 
@@ -481,9 +427,11 @@ test("Purifier prays for free through the picker and shows the removal result", 
     source.rules.events.encounterId='purifier' -- explicit content fixture, independent of room RNG
     local ui, get, click, shown = setup("event", source)
     assert(get("eventView/name").text == "净化神龛" and get("eventView/body").text == Narrative.eventCopy.purifier.intro:gsub("\n\n", "\n"))
-    assert(get("eventView/option1").children.title.text == "［祈祷］")
+    local prayerTitle=plainCardTitle(get("eventView/option1").children.title.text)
+    assert(Theme.layout.nativeNode.event.reference and prayerTitle=='[祈祷] 免费从牌组移除一张卡牌' or prayerTitle=='［祈祷］')
     assert(get("eventView/option1").children.description.text == "免费从牌组移除一张卡牌")
-    assert(get("eventView/option2").children.title.text == "［离开］" and not shown("eventView/option3"))
+    local leaveTitle=plainCardTitle(get("eventView/option2").children.title.text)
+    assert((Theme.layout.nativeNode.event.reference and leaveTitle=='[离开] 什么也不会发生。' or leaveTitle=='［离开］')and not shown("eventView/option3"))
     assert(click("eventView/option1") and shown("pickerView") and get("confirm").children.label.text == "祈祷 · 移除")
     local second = ui.run.deck[2]
     local name = Presentation[second.cardId].name
@@ -538,7 +486,7 @@ test("Cleric stale affordability is revalidated by Nodes without consuming the e
     assert(click("eventView/option2") and click("pickerView/card1")) ui.run.gold = 49
     local before = Combat.copy(ui.run)
     assert(not click("confirm")) same(ui.run, before)
-    assert(get("notice").text == "金币不足" and is(get("notice").fontColor, C.danger))
+    assert(get("pickerView/empty").text == "金币不足" and is(get("pickerView/empty").fontColor, C.danger))
     assert(click("back") and click("eventView/option3") and ui.run.phase == "map")
 end)
 
@@ -638,7 +586,8 @@ test("hover down up and exit paint the real framed button without executing a co
 end)
 
 test("primary press uses white ink and drag-out or end-drag restores the complete button", function()
-    local ui, get = setup("shop")
+    local ui, get, click = setup("shop")
+    assert(click("shopView/card1"))
     local box, before = get("confirm"), Combat.copy(ui.run)
     local hit = box:GetChild("hit")
     hit:emit("enter",1)

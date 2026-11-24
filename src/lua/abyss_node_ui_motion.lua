@@ -3,6 +3,7 @@ local Theme=require('abyss_theme')
 local L=Theme.layout.nativeNode
 local T=L.roomMotion
 local M={}
+local RewardList=require('abyss_node_ui_treasure_list')
 local integer=require('abyss_numbers').integer
 local function clamp(n)return math.max(0,math.min(1,n))end
 local durations={openTreasure=T.shakeDuration+T.burstDuration+T.revealDuration+3*T.rowStagger,rest=T.restDuration,upgrade=T.forgeDuration}
@@ -42,14 +43,15 @@ function M.new(owner,child,options)
   panel:GetChild('open'):SetVisible(t>=T.shakeDuration)
  end
  local function chestRewards(a)
-  for i,y in ipairs(L.rewardList.rows)do
+  for i in ipairs(L.rewardList.rows)do
+   local y=RewardList.rowY(i,options.mobileRunHud)
    local box=panel:GetChild('rewardItem'..i)
    local p=clamp((a.time-T.shakeDuration-T.burstDuration-(i-1)*T.rowStagger)/T.revealDuration)
    box:SetVisible(a.rows[i] and p>0)
    box:SetLocalScale(.9+.1*p,.9+.1*p,1)
    box:SetAnchoredPosition(L.rewardList.x,y-(1-p)*20)
   end
-  for _,key in ipairs({'page','bossDescription'})do panel:GetChild(key):SetVisible(a.time>=T.shakeDuration+T.burstDuration)end
+  RewardList.showHeading(panel,a.time>=T.shakeDuration+T.burstDuration)
  end
  local function sparks(a,p)
   local burst=clamp((p-.2)/.4)
@@ -93,6 +95,7 @@ function M.new(owner,child,options)
   self.active=a;owner.presentationBusy=true
   configureEffect(command,before)
   self:paint()
+  if command=='upgrade' then a.sounded=true;sound('forge') end
  end
  function state:update(dt)
   local a=self.active;if not a then return end
@@ -100,9 +103,13 @@ function M.new(owner,child,options)
   a.time=a.time+math.max(0,dt)
   local cueTime=a.kind=='openTreasure' and T.shakeDuration or a.duration*.3
   if not a.sounded and a.time>=cueTime then
-   a.sounded=true;sound(a.kind=='openTreasure' and 'treasure_open' or a.kind=='rest' and 'rest' or 'forge')
+   a.sounded=true;sound(a.kind=='openTreasure' and 'treasure_open' or 'rest')
   end
-  if a.time>=a.duration then self:cancel();owner:render();return end
+  if a.time>=a.duration then
+   self:cancel()
+   if a.kind~='upgrade' then owner:render() end
+   return
+  end
   self:paint()
  end
  return state

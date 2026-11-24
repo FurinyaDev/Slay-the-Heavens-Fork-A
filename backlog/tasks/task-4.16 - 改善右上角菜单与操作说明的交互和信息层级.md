@@ -5,17 +5,21 @@ status: In Progress
 assignee:
   - '@Furinya'
 created_date: '2026-10-30 21:58'
-updated_date: '2026-11-01 04:03'
+updated_date: '2026-11-15 20:14'
 labels:
   - playtest-20261030
   - p1
   - grok
-milestone: m-5
+  - 待验
+  - delivery-verify
+milestone: m-8
 dependencies: []
 references:
+  - docs/backlog-details/PC-QA-20261115.md
   - docs/backlog-details/PLAYTEST-20261030.md
   - docs/backlog-details/MOBILE-QA-20261029.md
   - docs/backlog-details/TASK-4.16-map-menu-return-20261101.md
+  - backlog/tasks/task-95 - 对照验证美术、交互与动效设计工具.md
 parent_task_id: TASK-4
 priority: medium
 type: enhancement
@@ -33,6 +37,7 @@ Owner反馈：菜单只能点「继续游戏」关闭；未启程时仍显示不
 - [ ] #2 未启程地图入口不误导玩家；已可用时正常进入。
 - [ ] #3 操作说明层次清楚、能快速找到出牌/取消/详情/药水/地图等信息；基础资源含义易获知。
 - [x] #4 QA-R2-06本地真实Host回归：地图模式隐藏并拒绝查看同一地图；战斗或节点的只读路线预览一次返回即恢复原页面，无残留菜单，旧触点与手柄取消不穿透。
+- [ ] #5 核对顶栏地图与设置菜单重复地图入口、右上角齿轮样式、返回/关闭后的菜单层级；只保留符合当前状态的单一清晰导航，任何取消/返回都不覆盖原运行状态；按当前原版参照与最终设备复核。
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -53,4 +58,11 @@ Owner反馈：菜单只能点「继续游戏」关闭；未启程时仍显示不
 本轮补齐地图与战斗顶栏生命金币点击提示，复用inspectText。专项两项（含手柄、旧tap、外点、只读）通过。既有菜单退出弃牌选角源码逐项证据见 docs/backlog-details/PLAYTEST-20261030-MENU-SOURCE-AUDIT.md；保留设备未验及意图历史断言失败，不勾AC。
 
 2026-11-01 QA-R2-06：地图模式的菜单入口与命令共用准入并隐藏重复地图；预览返回走既有完整菜单关闭路径，保持exitGeneration递增。真实Host新回归覆盖地图旧room tap、战斗/节点只读及单步返回、旧menu tap、手柄Cancel；专项与相邻菜单回归已通过，详见新附件。原AC1-3和TASK-38设备验收未勾，未做官方导入或手机操作。
+
+2026-11-02最新排期：优先M4非美术、非交互设计工程。新增操作说明信息架构与整体交互方案先取TASK-95对应实验结论；关闭菜单、误导入口、返回层级与触点穿透等已有明确缺陷及QA-R2-06回归继续，不因实验回退或延迟已批准修复。 仅对应新增正式设计切片以实验结论为前置；未来纯设计优化子任务显式依赖TASK-95并引用适用Go结论。本混合任务不新增整任务硬依赖，原状态与AC保留。
+
+2026-11-07 看板核对（develop 2c85bc61）：实现类交付已按历史记录保留，剩余 AC 待同候选官方/设备验证；当前无在途 PR，状态由 In Progress 归 To Do（待验）。
+
+2026-11-14第二轮状态纠正：已有1/4项AC通过及既有实施证据，剩余未完成要求属于后续验证或接续。 状态表示整个任务的完成进展，不表示当前有执行者持续占用；保留原未验AC、负责人、依赖及历史证据。更正过去把已开展待验事项退回To Do的处理。
+2026-11-15 PC实机05:26、13:35及截图02指出样式割裂与重复入口；#672已有重复地图入口修复候选，但设备证据欠缺。TASK-107继续处理返回主菜单/继续本局，不在此复工会话规则。
 <!-- SECTION:NOTES:END -->

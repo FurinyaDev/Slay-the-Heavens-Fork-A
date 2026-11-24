@@ -1,19 +1,23 @@
 import {historicalCardInputPrelude} from '../tests/helpers/historical-card-input.mjs';
+import {runHistoricalStsStyle,historicalStsStyleFixtures} from '../tests/helpers/historical-sts-style-runner.mjs';
 import {runHistoricalMonsterUi,historicalMonsterUiFixtures} from '../tests/helpers/historical-monster-ui-runner.mjs';
 import { spawnSync } from 'node:child_process';
 import {runHistoricalPresentation,historicalPresentationFixtures} from '../tests/helpers/historical-presentation-runner.mjs';
 import {frozenBattleHandPrelude} from '../tests/helpers/battle-life-frozen-hand.mjs';
 import {eventCombatRoutePrelude} from '../tests/helpers/event-combat-route-input.mjs';
-import { readdirSync, writeFileSync, unlinkSync } from 'node:fs';
+import {v25TextureBindingPrelude} from '../tests/helpers/v25-texture-binding-fixture.mjs';
+import { readdirSync, writeFileSync, unlinkSync, mkdtempSync, rmSync } from 'node:fs';
 import { randomUUID } from 'node:crypto';
 import { tmpdir } from 'node:os';
 import { createRequire } from 'node:module';
-import { resolve, join } from 'node:path';
+import { resolve, join, dirname, basename } from 'node:path';
 import { pathToFileURL, fileURLToPath } from 'node:url';
 import { luaString, toLua } from './build-lua-data.mjs';
 import { battleLayout } from './ui-layout.mjs';
 import { partition, timings as runtimeTimings, jsShard, discoverJs } from './ci-shards.mjs';
 import { runLuaWorkers, luaSchedulingWeight } from './lua-workers.mjs';
+import { luaTimeoutMs } from './ci-timeout-policy.mjs';
+import { buildUI } from './build-ui.mjs';
 
 const require = createRequire(import.meta.url);
 
@@ -24,27 +28,28 @@ export function runLua(script = 'tests/lua/combat.lua', { timeout, cwd = process
   }
   if (resolve(cwd) === resolve(fileURLToPath(new URL('..', import.meta.url))) && historicalMonsterUiFixtures.includes(script.replaceAll('\\', '/'))) return runHistoricalMonsterUi(script, { timeout, cwd, caseName, maxBuffer });
   if (resolve(cwd) === resolve(fileURLToPath(new URL('..', import.meta.url))) && historicalPresentationFixtures.includes(script.replaceAll('\\', '/'))) return runHistoricalPresentation(runLua, script, { timeout, cwd, caseName, maxBuffer });
+  if (resolve(cwd) === resolve(fileURLToPath(new URL('..', import.meta.url))) && historicalStsStyleFixtures.includes(script.replaceAll('\\', '/'))) return runHistoricalStsStyle(script, { timeout, cwd, caseName, maxBuffer });
   const cli = require.resolve('fengari-node-cli/src/lua-cli.js');
   // The upstream CLI's positional-script path loses Lua errors' exit status.
   // Its -e path explicitly exits nonzero when dofile raises, including syntax errors.
   const normalizedScript = script.replaceAll('\\', '/');
+  // This fixture verifies imported art pools, absent from the default profile.
+  // Prepare its own real production profile; never rewrite shared build/lua.
+  const artProfile = normalizedScript === 'tests/lua/lowcost_art.lua'
+    ? mkdtempSync(join(tmpdir(), 'abyss-lowcost-')) : null;
+  const luaPath = (artProfile ? artProfile.replaceAll('\\','/')+'/?.lua;' : '')+'./build/lua/?.lua;./src/lua/?.lua;;';
   const frozenHand = historicalCardInputPrelude(normalizedScript,{cwd}) + frozenBattleHandPrelude(normalizedScript, {cwd})
-    + eventCombatRoutePrelude(normalizedScript,{cwd});
+    + eventCombatRoutePrelude(normalizedScript,{cwd}) + v25TextureBindingPrelude(normalizedScript,{cwd});
   const fixture = ['tests/lua/battle_ui.lua', 'tests/lua/battle_ui_slice_2.lua', 'tests/lua/battle_ui_slice_3.lua',
     'tests/lua/battle_ui_slice_4.lua', 'tests/lua/battle_ui_slice_5.lua',
     'tests/lua/battle_ui_slice_6.lua', 'tests/lua/battle_ui_slice_7.lua']
     .some(path => normalizedScript.endsWith(path));
   const mapProperties = ['map_floor_boundaries.lua', 'map_no_crossings.lua', 'map_treasure_placement.lua']
     .some(name => normalizedScript.endsWith(`tests/lua/${name}`));
-  // Quality runs 39982640775/39985958741 timed out in three different fixtures
-  // (battle UI, game UI, encounter coverage). Allow 30s per independent script,
-  // 60s for the full battle/host trees; assertions and explicit caller limits remain.
-  // Raw seven-column source maps use limb RNG arithmetic in Fengari. Keep all
-  // 128 seeds and strict restores; these three bounded fixtures need more time.
-  // The composed host runs the real 17-floor route and seven-column/raw-RNG
-  // setup; the unchanged cases exceeded 30s after that production migration.
+  // Default guards include runner overhead and leave generous execution margin.
+  // Explicit caller limits, including deliberate timeout probes, stay unchanged.
   const composedHost = normalizedScript.endsWith('tests/lua/game_ui.lua');
-  timeout ??= normalizedScript.endsWith('tests/lua/encounter_coverage.lua') ? 120000 : mapProperties ? 120000 : fixture || composedHost ? 60000 : 30000;
+  timeout ??= normalizedScript.endsWith('tests/lua/encounter_coverage.lua') || mapProperties ? luaTimeoutMs.veryHeavy : fixture || composedHost ? luaTimeoutMs.heavy : luaTimeoutMs.default;
   const temporary = fixture ? join(tmpdir(), `abyss-ui-test-${randomUUID()}.lua`) : null;
   if (temporary) writeFileSync(temporary, `ABYSS_TEST_LAYOUT=${toLua(battleLayout())}\ndofile(${luaString(resolve(cwd, script))})\n`);
   let result;
@@ -56,10 +61,18 @@ export function runLua(script = 'tests/lua/combat.lua', { timeout, cwd = process
   const args = jawTail
     ? [fileURLToPath(new URL('../tests/helpers/jaw-worm-parallel.mjs', import.meta.url)), String(Date.now() + timeout), String(maxBuffer)]
     : [cli, '-e', `${selection}${frozenHand}dofile(${luaString(temporary || resolve(cwd, script))})`];
-  try { result = spawnSync(process.execPath, args, {
+  try {
+    if (artProfile) buildUI(artProfile, undefined, {officialAssets:true,nativePageLifecycle:true});
+    result = spawnSync(process.execPath, args, {
     cwd, encoding: 'utf8', timeout, maxBuffer,
-    env: { ...process.env, LUA_PATH: './build/lua/?.lua;./src/lua/?.lua;;', LUA_PATH_5_3: './build/lua/?.lua;./src/lua/?.lua;;', LUA_INIT: '', LUA_INIT_5_3: '' }
-  }); } finally { if (temporary) unlinkSync(temporary); }
+    env: { ...process.env, LUA_PATH: luaPath, LUA_PATH_5_3: luaPath, LUA_INIT: '', LUA_INIT_5_3: '' }
+  }); } finally {
+    if (temporary) unlinkSync(temporary);
+    if (artProfile) {
+      if (dirname(resolve(artProfile)) !== resolve(tmpdir()) || !basename(artProfile).startsWith('abyss-lowcost-')) throw Error('Unexpected art fixture temporary path');
+      rmSync(artProfile, {recursive:true,force:true});
+    }
+  }
   if (result.error) {
     // Keep the last completed groups visible on timeout in both CLI and node:test.
     // The child is still a failure, with its original error retained as the cause.
