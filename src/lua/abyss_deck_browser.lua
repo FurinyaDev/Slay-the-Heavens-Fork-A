@@ -181,6 +181,25 @@ local function showContainer(pool,job)
     return true
 end
 
+local function publishEntry(pool,job,entry,model)
+    local i=job.next
+    local x,y=((i-1)%columns-2)*stepX,pool.startY-math.floor((i-1)/columns)*stepY
+    if entry.position~=i then assert(entry.root:SetAnchoredPosition(x,y)~=false,'deck browser position rejected') end
+    if not live(pool,job) then return end
+    entry.position,entry.look,entry.instance=i,model.look,job.cards[i]
+    entry.hit.raycastTarget=true
+    if not live(pool,job) then return end
+    assert(entry.hit:SetVisible(true)~=false,'deck browser hit visibility rejected')
+    if not live(pool,job) then return end
+    assert(entry.root:SetVisible(true)~=false,'deck browser entry visibility rejected')
+    if not live(pool,job) then
+        if entry.root.alive~=false then hide(entry) end
+        return
+    end
+    if i==1 and pool.factory.progressive and not showContainer(pool,job) then return end
+    job.next=i+1
+end
+
 local function prepare(pool,job)
     local i=job.next
     if not job.assigned then
@@ -215,21 +234,7 @@ local function prepare(pool,job)
     pool.paint(entry,model,unchanged,function()return live(pool,job) and entryAlive(entry) end)
     if not live(pool,job) then return end
     assert(entryAlive(entry),'deck browser entry was destroyed while painting')
-    local x,y=((i-1)%columns-2)*stepX,pool.startY-math.floor((i-1)/columns)*stepY
-    if entry.position~=i then assert(entry.root:SetAnchoredPosition(x,y)~=false,'deck browser position rejected') end
-    if not live(pool,job) then return end
-    entry.position,entry.look,entry.instance=i,model.look,job.cards[i]
-    entry.hit.raycastTarget=true
-    if not live(pool,job) then return end
-    assert(entry.hit:SetVisible(true)~=false,'deck browser hit visibility rejected')
-    if not live(pool,job) then return end
-    assert(entry.root:SetVisible(true)~=false,'deck browser entry visibility rejected')
-    if not live(pool,job) then
-        if entry.root.alive~=false then hide(entry) end
-        return
-    end
-    if i==1 and pool.factory.progressive and not showContainer(pool,job) then return end
-    job.next=i+1
+    publishEntry(pool,job,entry,model)
 end
 
 function M.new(container,factory,platform,click,startY,model,paint,pick)

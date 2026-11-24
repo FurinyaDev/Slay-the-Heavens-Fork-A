@@ -365,7 +365,7 @@ const deckProgressiveFiles=Object.freeze({
  'tests/helpers/current-replay-fix-sources.mjs':'16c61a6dabea0d1a7fb9bcfe435df3eb247750b06f669ac6468008358800e8b3',
  'tests/helpers/ui-entrance-source.mjs':'76b2ce70c74dbf4a9aeab066a61ec010595eed859c9d824f8043b4f3ec07b706',
  'tests/helpers/input-retirement-source.mjs':'c155c3dd4ea1ad60474a01288eadd56a12c533dcaa5130f72f767ffe318fe85f',
- 'tests/helpers/deck-progressive-source.mjs':'8da829f3a07b4f033e3ff6725a1df7c7b10f2d03061adfed79e1e913378724bf',
+ 'tests/helpers/deck-progressive-source.mjs':'1dfc704ed824d91344e51364a5099c58483dfff7a85fa01c548ac9cf6c2bc9a0',
 });
 const inside=(root,path)=>{const r=relative(root,path);return r!==''&&!isAbsolute(r)&&r!=='..'&&!r.startsWith('../')&&!r.startsWith('..\\');};
 export function copyIntegrationSourceClosure(directory,{sourceRoot=process.cwd()}={}){

@@ -15,9 +15,21 @@ const bindings = new Map([
   ]
  },
  {
+  "path": "scripts/write-ci-receipt.mjs",
+  "beforeSha256": "909ac35ac7a7ec4eb960b32889347afdfaf9707c5cb536e74cd682dadba4aab5",
+  "afterSha256": "64d4953f2c2031836532911c8bc437c8f631f37c2a967330edda91e6c123a36a",
+  "hunks": [
+   {
+    "at": 5,
+    "before": "const event=JSON.parse(readFileSync(process.env.GITHUB_EVENT_PATH,'utf8')),tested=git('rev-parse','HEAD');\nif(tested!==process.env.GITHUB_SHA)throw new Error('CI checkout SHA mismatch');\nconst receipt={schemaVersion:1,event:process.env.GITHUB_EVENT_NAME,runId:Number(process.env.GITHUB_RUN_ID),attempt:Number(process.env.GITHUB_RUN_ATTEMPT),\n  tested,head:event.pull_request?.head.sha??event.merge_group?.head_sha??tested,\n  base:event.pull_request?.base.sha??event.merge_group?.base_sha??(process.env.GITHUB_EVENT_NAME==='workflow_dispatch'&&process.env.PREFLIGHT_BASE_SHA||event.before),\n  prNumber:event.pull_request?.number,parents:git('show','-s','--format=%P','HEAD').split(' ')};\nmkdirSync('build',{recursive:true});writeFileSync('build/ci-checkout.json',JSON.stringify(receipt,null,2)+'\\n');",
+    "after": "const event=JSON.parse(readFileSync(process.env.GITHUB_EVENT_PATH,'utf8')),tested=git('rev-parse','HEAD');\nif(tested!==process.env.GITHUB_SHA)throw new Error('CI checkout SHA mismatch');\nconst preflight = process.argv.includes('--preflight');\nif (preflight && !/^[a-f0-9]{40}$/.test(process.env.PREFLIGHT_BASE_SHA ?? '')) throw new Error('Exact preflight comparison BASE required');\nconst receipt={schemaVersion:1,event:process.env.GITHUB_EVENT_NAME,runId:Number(process.env.GITHUB_RUN_ID),attempt:Number(process.env.GITHUB_RUN_ATTEMPT),\n  tested,head:event.pull_request?.head.sha??event.merge_group?.head_sha??tested,\n  base:event.pull_request?.base.sha??event.merge_group?.base_sha??((preflight || process.env.GITHUB_EVENT_NAME==='workflow_dispatch')&&process.env.PREFLIGHT_BASE_SHA||event.before),\n  prNumber:event.pull_request?.number,parents:git('show','-s','--format=%P','HEAD').split(' ')};\nmkdirSync('build',{recursive:true});writeFileSync('build/ci-checkout.json',JSON.stringify(receipt,null,2)+'\\n');"
+   }
+  ]
+ },
+ {
   "path": "src/lua/abyss_deck_browser.lua",
   "beforeSha256": "ca0fe78afb9035b2b4ccfa0e2de86d21cb7789a6e28868033259cf89d4bd9d3e",
-  "afterSha256": "3b9514b1b120a7c6d439901cc970448966f7d45866e0384543944db845bbc6a6",
+  "afterSha256": "ba2504abdbcf4b3bf924d1be6eabf5ed94458e7e1f0e1641c62d885419400d30",
   "hunks": [
    {
     "at": 113,
@@ -27,17 +39,17 @@ const bindings = new Map([
    {
     "at": 168,
     "before": "end\n\nlocal function prepare(pool,job)\n    local i=job.next",
-    "after": "end\n\nlocal function showContainer(pool,job)\n    local container=pool.container\n    local accepted=container:SetVisible(true)\n    if not live(pool,job) then\n        -- A native callback can replace the job before the setter writes.\n        -- The replacement cannot step until this call unwinds.\n        if container.alive~=false and container.visible~=false then container:SetVisible(false) end\n        return false\n    end\n    assert(accepted~=false,'deck browser container visibility rejected')\n    return true\nend\n\nlocal function prepare(pool,job)\n    local i=job.next"
+    "after": "end\n\nlocal function showContainer(pool,job)\n    local container=pool.container\n    local accepted=container:SetVisible(true)\n    if not live(pool,job) then\n        -- A native callback can replace the job before the setter writes.\n        -- The replacement cannot step until this call unwinds.\n        if container.alive~=false and container.visible~=false then container:SetVisible(false) end\n        return false\n    end\n    assert(accepted~=false,'deck browser container visibility rejected')\n    return true\nend\n\nlocal function publishEntry(pool,job,entry,model)\n    local i=job.next\n    local x,y=((i-1)%columns-2)*stepX,pool.startY-math.floor((i-1)/columns)*stepY\n    if entry.position~=i then assert(entry.root:SetAnchoredPosition(x,y)~=false,'deck browser position rejected') end\n    if not live(pool,job) then return end\n    entry.position,entry.look,entry.instance=i,model.look,job.cards[i]\n    entry.hit.raycastTarget=true\n    if not live(pool,job) then return end\n    assert(entry.hit:SetVisible(true)~=false,'deck browser hit visibility rejected')\n    if not live(pool,job) then return end\n    assert(entry.root:SetVisible(true)~=false,'deck browser entry visibility rejected')\n    if not live(pool,job) then\n        if entry.root.alive~=false then hide(entry) end\n        return\n    end\n    if i==1 and pool.factory.progressive and not showContainer(pool,job) then return end\n    job.next=i+1\nend\n\nlocal function prepare(pool,job)\n    local i=job.next"
    },
    {
-    "at": 194,
+    "at": 213,
     "before": "    end\n    if i>#job.cards then\n        assert(pool.container:SetVisible(true)~=false,'deck browser container visibility rejected')\n        if not live(pool,job) then return end\n        job.ready=true\n        return\n    end",
     "after": "    end\n    if i>#job.cards then\n        if pool.factory.progressive or showContainer(pool,job) then job.ready=true end\n        return\n    end"
    },
    {
-    "at": 228,
-    "before": "        return\n    end\n    job.next=i+1\nend",
-    "after": "        return\n    end\n    if i==1 and pool.factory.progressive and not showContainer(pool,job) then return end\n    job.next=i+1\nend"
+    "at": 234,
+    "before": "    if not live(pool,job) then return end\n    assert(entryAlive(entry),'deck browser entry was destroyed while painting')\n    local x,y=((i-1)%columns-2)*stepX,pool.startY-math.floor((i-1)/columns)*stepY\n    if entry.position~=i then assert(entry.root:SetAnchoredPosition(x,y)~=false,'deck browser position rejected') end\n    if not live(pool,job) then return end\n    entry.position,entry.look,entry.instance=i,model.look,job.cards[i]\n    entry.hit.raycastTarget=true\n    if not live(pool,job) then return end\n    assert(entry.hit:SetVisible(true)~=false,'deck browser hit visibility rejected')\n    if not live(pool,job) then return end\n    assert(entry.root:SetVisible(true)~=false,'deck browser entry visibility rejected')\n    if not live(pool,job) then\n        if entry.root.alive~=false then hide(entry) end\n        return\n    end\n    job.next=i+1\nend\n",
+    "after": "    if not live(pool,job) then return end\n    assert(entryAlive(entry),'deck browser entry was destroyed while painting')\n    publishEntry(pool,job,entry,model)\nend\n"
    }
   ]
  },
