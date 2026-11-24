@@ -11,7 +11,9 @@ import confirmationPredecessors from './ui-confirmation-predecessors.json' with 
 
 function beforeConfirmation(path,source){
  const row=Object.hasOwn(confirmationPredecessors,path)?confirmationPredecessors[path]:null;
- if(!row||typeof source!=='string')return source;
+ // Live product tests still use the updated sources. Only exact input bytes
+ // can be projected into the older, unchanged test receipt.
+ if(!row||typeof source!=='string'||source.replaceAll('\r\n','\n').length!==row.afterLength)return source;
  const prior=restoreExactFixtureHunks(row,path,source);
  return prior!==source&&source.includes('\r\n')?prior.replaceAll('\n','\r\n'):prior;
 }
