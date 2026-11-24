@@ -113,7 +113,7 @@ local function create(pool,job)
     local entry={root=root,version=0,parts={},nextPart=1}
     -- Track the allocation before child discovery so a failed bind can clean up.
     pool.incomplete=entry
-    root:SetVisible(false)
+    assert(root:SetVisible(false)~=false,'deck browser initial visibility rejected')
     entry.face=assert(root:GetChild('face'),'missing browser face')
     entry.art=assert(entry.face:GetChild('art'),'missing browser artwork')
     entry.hit=assert(root:GetChild('hit'),'missing browser hit area')
@@ -168,6 +168,19 @@ function M.sameLook(a,b)
     return true
 end
 
+local function showContainer(pool,job)
+    local container=pool.container
+    local accepted=container:SetVisible(true)
+    if not live(pool,job) then
+        -- A native callback can replace the job before the setter writes.
+        -- The replacement cannot step until this call unwinds.
+        if container.alive~=false and container.visible~=false then container:SetVisible(false) end
+        return false
+    end
+    assert(accepted~=false,'deck browser container visibility rejected')
+    return true
+end
+
 local function prepare(pool,job)
     local i=job.next
     if not job.assigned then
@@ -181,9 +194,7 @@ local function prepare(pool,job)
         return
     end
     if i>#job.cards then
-        assert(pool.container:SetVisible(true)~=false,'deck browser container visibility rejected')
-        if not live(pool,job) then return end
-        job.ready=true
+        if pool.factory.progressive or showContainer(pool,job) then job.ready=true end
         return
     end
     local entry=job.slots[i]
@@ -217,6 +228,7 @@ local function prepare(pool,job)
         if entry.root.alive~=false then hide(entry) end
         return
     end
+    if i==1 and pool.factory.progressive and not showContainer(pool,job) then return end
     job.next=i+1
 end
 
