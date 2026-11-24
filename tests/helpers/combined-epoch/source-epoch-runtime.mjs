@@ -1,3 +1,4 @@
+import { entrancePredecessor } from '../ui-entrance-source.mjs';
 import {beforeDevelopBackflow,configSourceTokens,isSessionRelicSuccessor,assertCurrentSessionRelicOwner,bindDevelopBackflow} from '../develop-release-backflow-source.mjs';
 import {beforeInputRetirementReader,retiredControllerPath} from '../input-retirement-source.mjs';
 import {authorizeRebasedDevelop,beforeRebasedCi} from '../rebased-release-source.mjs';
@@ -17,7 +18,6 @@ import {projectV2UiHudSource,authorizeV2UiHudSource} from '../v2-ui-hud-source.m
 import {projectFatalBgmSource,authorizeFatalBgmSource} from '../fatal-bgm-source-continuation.mjs';
 import {projectSelectorSource,authorizeSelectorSource} from '../character-selector-source.mjs';
 import {projectPotionTextSource,authorizePotionTextSource} from '../potion-text-source.mjs';
-import {beforeSilentToolsDrawSource,isSilentToolsDrawSuccessor} from '../silent-tools-draw-source.mjs';
 import {readFileSync} from 'node:fs';
 import {createHash} from 'node:crypto';
 import {resolve} from 'node:path';
@@ -98,6 +98,12 @@ function assertReusableFrozenData(value,seen=new WeakSet(),active=new WeakSet())
  }
  active.delete(value);seen.add(value);
 }
+// Composed epochs own their new containers and inherit immutable JSON records.
+// Keep those records shared while the constructor still validates the full graph.
+export function createComposedSourceEpochProjector(proof){
+ return createSourceEpochProjector(freeze(proof),{allowConfigLayout:true,reuseFrozenInput:true});
+}
+
 export function createSourceEpochProjector(input,{root=process.cwd(),allowConfigLayout=false,reuseFrozenInput=false}={}){
  // Clone once to prevent the caller changing proof data after validation.
  assert.equal(typeof reuseFrozenInput,'boolean','source proof reuse policy');
@@ -105,15 +111,17 @@ export function createSourceEpochProjector(input,{root=process.cwd(),allowConfig
  const proof=reuseFrozenInput?input:JSON.parse(JSON.stringify(input));
  assert.equal(proof.schemaVersion,1);assert.equal(proof.normalization,'LF');
  assert.match(proof.currentCommit,/^[a-f0-9]{40}$/);
- assert(Array.isArray(proof.owners));assert.equal(new Set(proof.owners).size,proof.owners.length,'unique owners');
+ assert(Array.isArray(proof.owners));
+ const owners=new Set(proof.owners);assert.equal(owners.size,proof.owners.length,'unique owners');
+ const currentPaths=Object.keys(proof.current).sort();
  for(const [path,binding]of Object.entries(proof.current)){assert(validPath(path),'source path');validateBinding(binding);}
  for(const owner of proof.owners){assert(validPath(owner),'owner path');assert(Object.hasOwn(proof.current,owner),'owner current identity');}
  for(const [name,target]of Object.entries(proof.targets)){
   assert(/^[A-Za-z0-9_-]+$/.test(name),'target name');assert.match(target.commit,/^[a-f0-9]{40}$/);
-  assert.deepEqual(Object.keys(target.files).sort(),Object.keys(proof.current).sort(),'complete target path set');
+  assert.deepEqual(Object.keys(target.files).sort(),currentPaths,'complete target path set');
   for(const [path,binding]of Object.entries(target.files)){
    validateBinding(binding);
-   if(binding?.sha256!==proof.current[path]?.sha256)assert(proof.owners.includes(path),'changed source closure');
+   if(binding?.sha256!==proof.current[path]?.sha256)assert(owners.has(path),'changed source closure');
   }
  }
  freeze(proof);
@@ -126,12 +134,16 @@ export function createSourceEpochProjector(input,{root=process.cwd(),allowConfig
  function requireTarget(target){assert(Object.hasOwn(proof.targets,target),'unknown source target');return proof.targets[target];}
  function rawReader(reader){return readers.get(reader)?.raw??reader;}
  function preCombinedSource(path,source,{target,readSource=readLive}={}){
-  const rawInput=source,toolsPrior=beforeSilentToolsDrawSource(path,source);
-  const backflow=beforeDevelopBackflow(path,toolsPrior,{allowConfigLayout}),rebased=beforeRebasedCi(path,backflow);
+  const destination=requireTarget(target);
+  const liveInput=source;
+  const isLiveReader=liveReaders.has(rawReader(readSource));
+  const projected=entrancePredecessor(path,source,rawReader(readSource),{allowConfigLayout});
+  source=projected.source;readSource=projected.read;
+  const rawInput=source,backflow=beforeDevelopBackflow(path,source,{allowConfigLayout}),rebased=beforeRebasedCi(path,backflow);
   const reconciled=beforeSlimeSplitSource(path,rebased),mapPrior=beforeCardFeedbackOwner(path,beforeSts1MapSource(path,reconciled)),guidePrior=beforeReleaseGuideSource(path,mapPrior);
   const inputSource=beforePc13RewardCover(path,beforeM05ShopSource(path,beforeTinyHouseIntegratedSource(path,guidePrior)));
   source=inputSource;
-  const destination=requireTarget(target),current=proof.current[path],before=destination.files[path];
+  const current=proof.current[path],before=destination.files[path];
   const sessionSuccessor=isSessionRelicSuccessor(path,rawInput,{allowConfigLayout});
   source=projectTinyHouseUiSource(path,projectV2UiHudSource(path,projectPotionPointerSource(path,source,current),current),current);
   source=projectLumineSource(path,projectPotionTextSource(path,projectSelectorSource(path,projectFatalBgmSource(path,source,current),current),current),current);
@@ -139,21 +151,19 @@ export function createSourceEpochProjector(input,{root=process.cwd(),allowConfig
   // materializer. Unknown/original/foreign bytes never authorize owner reads.
   // A registered Develop successor can still need projection when this target
   // records the same precursor as the current receipt.
-  if(typeof source!=='string'||!current||!before||(backflow===rawInput&&reconciled===rebased&&current.sha256===before.sha256)||(sourceHash(source)!==current.sha256&&(!allowConfigLayout||path!=='config/architecture.json'||!sameConfigLayout(source))))return rawInput;
+  if(typeof source!=='string'||!current||!before||(backflow===rawInput&&reconciled===rebased&&current.sha256===before.sha256)||(sourceHash(source)!==current.sha256&&(!allowConfigLayout||path!=='config/architecture.json'||!sameConfigLayout(source))))return rawInput??liveInput;
   assert.equal(typeof readSource,'function','linked owner reader');
   const readRaw=rawReader(readSource);
   // An exact frozen input can be replayed against its owner cohort. Live
   // Develop successors and the default live reader require current owners.
-  const historicalOwners=!liveReaders.has(readRaw)&&backflow===rawInput
+  const historicalOwners=!isLiveReader&&backflow===rawInput
    &&(sourceHash(rawInput)===current.sha256||(path==='config/architecture.json'&&sameConfigLayout(rawInput)))?proof.current:undefined;
   const backflowReader=bindDevelopBackflow(readRaw,historicalOwners);
-  if(toolsPrior!==rawInput)assert(isSilentToolsDrawSuccessor(path,readRaw(path)),
-   'combined linked owner identity: '+path+' changed during owner validation');
-  backflowReader.authenticate(path,toolsPrior,{allowConfigLayout});
+  backflowReader.authenticate(path,rawInput,{allowConfigLayout});
   readSource=owner=>{
    const raw=backflowReader.readOwner(owner);
    if(sessionSuccessor)assertCurrentSessionRelicOwner(owner,raw);
-   return backflowReader.authenticate(owner,beforeSilentToolsDrawSource(owner,raw));
+   return backflowReader.authenticate(owner,raw);
   };
   const readRebased=owner=>beforeRebasedCi(owner,readSource(owner));
   beforeSlimeSplitReceipt(path,rebased,readRebased);
