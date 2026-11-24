@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - Furinya
 created_date: '2026-11-24 05:30'
-updated_date: '2026-11-24 05:42'
+updated_date: '2026-11-24 05:48'
 labels: []
 milestone: m-8
 dependencies: []
@@ -45,7 +45,5 @@ ordinal: 188000
 ## Implementation Notes
 
 <!-- SECTION:NOTES:BEGIN -->
-以 c420b028 对照选定方案 A，正式静态分段牌面沿用 4 ms 软预算。四维独立审查及离线原始记录见 docs/evidence/deck-cold-start-20261124/README.md。10/75 张首卡 P95 为 7/6→2/2 调度轮；暖态整页两组均维持 2 轮，资源循环无增长。官方导入、首反馈 P95≤100 ms、设备暖开及冷开尾部仍待实测。当前任务保持 In Progress。
-
-集成基线推进至 364f43e8（#915，仅 CI 与预检流程变化），对照涉及的运行时代码、生成器及测量夹具字节相同。开发短分支 perf/deck-cold-start；覆盖计划要求一个 Fork Full，按新流程由 Fork B 自动触发。
+集成基线为 364f43e8（#915），与 c420b028 的实际测量输入相同。采用方案 A，正式静态分段牌面沿用 4 ms 软预算。四维独立审查及最终 312 条离线样本见 docs/evidence/deck-cold-start-20261124/README.md。10/75 张首卡 P95 为 7/5→2/2 轮，冷开整页 7/5→9/7 轮，暖态整页两组均为 2 轮、零新增卡面。暖态 CPU P95 分别增加 1.082/0.715 ms。官方导入、首反馈 P95≤100 ms 及设备暖态不退化待验。源码、严格就绪和回放定向验证通过，保留 In Progress。开发短分支 perf/deck-cold-start，Fork A Quick 与 Fork B Full 按新流程自动执行。
 <!-- SECTION:NOTES:END -->
