@@ -1,6 +1,31 @@
 {
   "references": [
     {
+      "codePath": "scripts/exit-ui-layout.mjs",
+      "codePaths": [
+        "scripts/potion-discard-layout.mjs",
+        "scripts/native-rounded-button.mjs",
+        "scripts/official-run-layout.mjs",
+        "src/lua/abyss_game_ui_navigation_view.lua"
+      ],
+      "targetVersion": "v2.0.0",
+      "state": "confirmationShared",
+      "revision": "develop-task-113",
+      "status": "CURRENT_IMPLEMENTATION",
+      "backlogTask": "TASK-113",
+      "reference": {
+        "path": "docs/evidence/task-113-confirmation/comparison-16x9.png",
+        "sha256": "86e66e8a4efa97d1f529d7945e0d1693cd7b971e024445b376de657e8197fef5"
+      },
+      "themeKeys": [
+        "layout.exitMenu",
+        "layout.potionDiscard.actionHeight",
+        "font.confirmationAction"
+      ],
+      "supersedes": [],
+      "note": "Develop 后续改进。退出、覆盖及放弃共用等比确认按钮及四态，官方设备待验。"
+    },
+    {
       "codePath": "scripts/official-map-return-controls.mjs",
       "codePaths": [
         "scripts/native-rounded-button.mjs",

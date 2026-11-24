@@ -145,7 +145,8 @@ test('official host uses direct inventory actions, read-only relic details and e
  for(const [name,sha,focusPaths] of [
   ['menuPanel','0a446fd209492789ac70789eddded2a6c23a8c95441462b580d9d13ce4f7958c',
    [['result','viewEasterEgg','hit'],...['start','continueRun','titleQuit','settle'].map(name=>[name,'hit'])]],
-  ['exitPanel','2f839c0755387aa4131ff9a9b72f886bf516ab715385a78b937117ab4c0adaf5',
+  // TASK-113 confirms the shared action geometry and drops the superseded faces.
+  ['exitPanel','e4e9bfe001d4f37254a84995a3d6fb6215e02c0127d1ff4da6a9e7c8de31999c',
    ['cancel','confirm'].map(name=>[name,'hit'])],
   ['runMenu','d18ff3b4edd0af091727ff52ee370c9db1d2628500c3424b02eb246ca53a04d1',
    ['resume','map','mainMenu','abandon','quit'].map(name=>[name,'hit'])],

@@ -7,6 +7,14 @@ import {gunzipSync} from 'node:zlib';
 import {exactSourceMatches as matches} from './source-fingerprint.mjs';
 import {restoreExactFixtureHunks} from './exact-fixture-hunks.mjs';
 import {beforeCurrentReplayFixes} from './current-replay-fix-sources.mjs';
+import confirmationPredecessors from './ui-confirmation-predecessors.json' with {type:'json'};
+
+function beforeConfirmation(path,source){
+ const row=Object.hasOwn(confirmationPredecessors,path)?confirmationPredecessors[path]:null;
+ if(!row||typeof source!=='string')return source;
+ const prior=restoreExactFixtureHunks(row,path,source);
+ return prior!==source&&source.includes('\r\n')?prior.replaceAll('\n','\r\n'):prior;
+}
 
 const archive=readFileSync(new URL('../fixtures/ui-entrance-source.json.gz',import.meta.url));
 assert.equal(createHash('sha256').update(archive).digest('hex'),
@@ -54,7 +62,7 @@ export function beforeUiEntrance(path,source){
 }
 
 export function beforeUiEntranceWitness(path,source){
- return project(path,source,Object.hasOwn(witnesses,path)?witnesses[path]:undefined);
+ return project(path,beforeConfirmation(path,source),Object.hasOwn(witnesses,path)?witnesses[path]:undefined);
 }
 
 export function authenticateUiEntrance(read){
@@ -87,6 +95,9 @@ export function assertCurrentUiEntrance(path,source){
 }
 
 export function entrancePredecessor(path,source,read=readLive,{allowConfigLayout=false}={}){
+ source=beforeConfirmation(path,source);
+ const readCurrent=read;
+ read=owner=>beforeConfirmation(owner,readCurrent(owner));
  const input=source;
  if(allowConfigLayout&&path==='config/architecture.json'&&typeof source==='string'
   &&!matches(source,files[path].after)){
