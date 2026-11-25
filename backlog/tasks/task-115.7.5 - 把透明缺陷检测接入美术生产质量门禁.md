@@ -1,10 +1,11 @@
 ---
 id: TASK-115.7.5
 title: 把透明缺陷检测接入美术生产质量门禁
-status: To Do
+status: In Progress
 assignee:
   - '@Furinya'
 created_date: '2026-11-25 21:02'
+updated_date: '2026-11-25 23:05'
 labels:
   - v2.2.0
 milestone: m-8
@@ -36,3 +37,9 @@ ordinal: 219000
 <!-- AC:BEGIN -->
 - [ ] #1 正例、真实缺陷负例及预算检查可重复运行，独立评审确认生产入口
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+已实现准入检测及批准输入对照。独立评审确认拒绝未批准的自证掩模。正式 GIL 同包绑定、可信 Simulator 采集回执和对照截图来源仍待复审。
+<!-- SECTION:NOTES:END -->

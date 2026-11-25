@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@Furinya'
 created_date: '2026-11-25 21:01'
-updated_date: '2026-11-25 21:03'
+updated_date: '2026-11-25 23:05'
 labels:
   - v2.2.0
 milestone: m-8
@@ -13,6 +13,8 @@ dependencies: []
 references:
   - >-
     https://github.com/FurinyaDev/Slay-the-Heavens-Fork-A/tree/8d99c0b557129077118480ec99c4ae20f6ea1bff
+  - 'https://github.com/FurinyaWorks/Slay-the-Heavens/pull/984'
+  - 'https://github.com/FurinyaWorks/Slay-the-Heavens/pull/988'
 documentation:
   - docs/versions/V2.2.0-RELEASE.md
 parent_task_id: TASK-115
@@ -43,4 +45,6 @@ ordinal: 213000
 
 <!-- SECTION:NOTES:BEGIN -->
 已派发宿主与坐标探针。复用 Fork A 固定来源 8d99c0b557129077118480ec99c4ae20f6ea1bff，分支旧 TASK-38.9 仅作来源；官方手机安全区能力待验。
+
+#984 已合入统一视口和触控。第二幕联合试制 f245d4c9 由独立评审实际验证 16:9、21:9 点击命中及脚底阴影随动。联合源码、正式手机安全区和最终性能仍待验。
 <!-- SECTION:NOTES:END -->
