@@ -1,11 +1,11 @@
 ---
 id: TASK-38.6
 title: 修复手机商店遗物说明，让点空白可以关闭
-status: To Do
+status: In Progress
 assignee:
   - Furinya
 created_date: '2026-11-15 19:11'
-updated_date: '2026-11-19 03:49'
+updated_date: '2026-11-25 15:27'
 labels:
   - mobile
   - playtest-20261115
@@ -53,10 +53,14 @@ ordinal: 177000
 
 <!-- SECTION:PLAN:BEGIN -->
 先查最新develop、开放PR与现有实现，在真实状态/事件层复现问题并保存RED；仅对证实的根因做最小修复，提供GREEN/负控、独立复审与候选交付。没有同候选实体手机证据时AC保留未勾，遵守独立worktree、Backlog认领、CI与用户发版边界。
+
+在隔离分支 test/task-38.6-shop-dismiss 以 develop 27e2f8304bcbaedffa0efbc02d739bd4aeab38b6 为基线，复用 Fork A 54c282a 的正式布局触点矩阵；定向跑商店、地图往返及历史源码回归，保留层级倒置负控和候选证据。
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
 
 <!-- SECTION:NOTES:BEGIN -->
 依据2026-11-15用户两轮真机录音。P0/P1是体验严重度，非突破High队列上限的授权。逐字时间和截图映射见docs/backlog-details/MOBILE-QA-20261115.md。本PR仅登记任务，不代表Bug已修、代码或手机已验。
+
+本地复用 Fork A 54c282a 的正式布局触点矩阵，保留已有历史源文件。按地图进店、商人开架、点遗物、点空白、选另一件遗物、扣款入库和离店返回路线验证。定向 23 项全过；把关闭触点移到货架上层时断言如预期失败；历史源码投影额外检查的四项失败在原始 develop 同样出现。待独立评审、正式 CI 及同一候选手机实机验收，AC 保持未勾。
 <!-- SECTION:NOTES:END -->

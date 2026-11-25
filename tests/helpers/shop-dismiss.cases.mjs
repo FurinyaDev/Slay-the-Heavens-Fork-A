@@ -1,10 +1,11 @@
 import {buildUI} from '../../scripts/build-ui.mjs';
 import {buildLuaData,luaString} from '../../scripts/build-lua-data.mjs';
-import {mkdtempSync,readdirSync,rmSync} from 'node:fs';
+import {mkdtempSync,readFileSync,readdirSync,rmSync} from 'node:fs';
 import {join} from 'node:path';
 import {tmpdir} from 'node:os';
 import {createRequire} from 'node:module';
 import {spawnSync} from 'node:child_process';
+import {luaTimeoutMs} from '../../scripts/ci-timeout-policy.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {runLua} from '../../scripts/test-lua.mjs';
@@ -33,14 +34,16 @@ test('shop outside dismissal preserves current selection and purchase ownership'
   assert.match(result.stdout,/SHOP_DISMISS_PASS 12/);
 });
 
-test('official shop return rejects stale dismissal, then dismisses only the current item',t=>{
+function runOfficialShop(t,body){
  const directory=mkdtempSync(join(tmpdir(),'shop-dismiss-map-'));
  t.after(()=>rmSync(directory,{recursive:true,force:true}));
  buildLuaData('data',join(directory,'abyss_data.lua'));
  buildUI(directory,undefined,{officialAssets:true,nativePageLifecycle:true});
  const preloads=readdirSync(directory).filter(n=>n.endsWith('.lua')).map(n=>
   `package.preload[${luaString(n.slice(0,-4))}]=assert(loadfile(${luaString(join(directory,n).replaceAll('\\','/'))}))`).join('\n');
- const source=`package.path='./src/lua/?.lua;./build/lua/?.lua'\n${preloads}
+ const source=`package.path='./src/lua/?.lua'\n${preloads}
+local profile=require('abyss_ui_profile')
+assert(profile.nativePageLifecycle,'expected generated native page lifecycle')
 local GameUI=require('abyss_game_ui');local create=GameUI.new;local F
 GameUI.new=function(root,data,presentation,event,platform)
  for _,name in ipairs({'nodePanel','choicePanel'})do
@@ -49,13 +52,31 @@ GameUI.new=function(root,data,presentation,event,platform)
    __newindex=function(c,key,value)assert(key~='active','active is readonly');return prior.__newindex(c,key,value)end})
   page.SetActive=function(c,value)active=value;F.setEngineActive(c,value)end
  end
- platform.nativePageLifecycle=true
+ platform.nativePageLifecycle=profile.nativePageLifecycle
  return create(root,data,presentation,event,platform)
 end
 F=dofile('tests/lua/support/game_ui_fixture.lua')
-dofile('tests/lua/support/shop_dismiss_map.lua')`;
+${body}`;
  const result=spawnSync(process.execPath,[createRequire(import.meta.url).resolve('fengari-node-cli/src/lua-cli.js'),'-e',source],{
-  encoding:'utf8',timeout:30000,maxBuffer:2*1024*1024,env:{...process.env,LUA_INIT:'',LUA_INIT_5_3:''}});
+  encoding:'utf8',timeout:luaTimeoutMs.default,maxBuffer:2*1024*1024,env:{...process.env,LUA_INIT:'',LUA_INIT_5_3:''}});
  assert.equal(result.status,0,result.stdout+result.stderr+String(result.error??''));
- assert.match(result.stdout,/POST697_GAMEUI_MAP_SHOP_PASS 1/);
+ return {stdout:result.stdout,directory};
+}
+
+test('official shop return rejects stale dismissal, then dismisses only the current item',t=>{
+ const {stdout}=runOfficialShop(t,"dofile('tests/lua/support/shop_dismiss_map.lua')");
+ assert.match(stdout,/^POST697_GAMEUI_MAP_SHOP_PASS 1$/m);
+});
+
+test('the release UI profile keeps all shop dismissal and purchase cases',t=>{
+ const {stdout,directory}=runOfficialShop(t,"dofile('tests/lua/shop_dismiss.lua')");
+ assert.match(stdout,/^SHOP_DISMISS_PASS 12$/m);
+ const layout=JSON.parse(readFileSync(join(directory,'game-ui.json'),'utf8'));
+ const stage=layout.controls.find(control=>control.name==='stage');
+ const panel=stage.children.find(control=>control.name==='nodePanel');
+ const order=new Map(panel.children.map((control,index)=>[control.name,index]));
+ assert.ok(order.get('shopShade')<order.get('shopDismiss'),'transition layer would cover the dismissal area');
+ for(const name of ['shopView','merchant','back','confirm']){
+  assert.ok(order.get('shopDismiss')<order.get(name),'lower dismissal area would cover '+name);
+ }
 });

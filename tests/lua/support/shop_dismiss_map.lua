@@ -1,9 +1,11 @@
 local advanceShop = dofile('tests/lua/support/shop_timeline.lua')
 local F=dofile('tests/lua/support/game_ui_fixture.lua')
 local Map=require('abyss_map')
+local RelicHooks=require('abyss_relic_hooks')
 local cursor={CursorDown='down',CursorDrag='drag',CursorUp='up',CursorEnter='enter',CursorExit='exit',CursorEndDrag='endDrag'}
 local h,r=F.fixture(nil,nil,nil,cursor,false,nil,{touchScreen=function()return true end})
 h.seed=42;assert(F.start(h))
+h.run.gold=10000 -- Fund the test run while retaining the real offers and purchase path.
 -- Existing reachable-map fixture policy: use original graph edges, then enter
 -- the actual shop through GameUI's public coordinator, without a fabricated flow.
 local routes=dofile('tests/lua/support/map_routes.lua')
@@ -47,10 +49,27 @@ assert(h.mode=='node' and not h.routeOpen and h.run==run and h.map==map and h.ru
 assert(same(before,h.run),'read-only Map and return must preserve complete Run/RNG')
 -- A pending background press from the covered page cannot dismiss a new item.
 assert(tap(relic,15));assert(get(panel,'shopView/detail').visible)
+local firstName=get(panel,'shopView/detail/name').text
+assert(firstName~='','first relic detail must have a name')
 emit(outside,'up',12);emit(outside,'click',12)
 assert(get(panel,'shopView/detail').visible,'covered-page tail dismissed fresh selection')
 assert(tap(outside,16));assert(not get(panel,'shopView/detail').visible)
+assert(h.mode=='node' and h.nodeUI.visible and panel.active,'outside dismissal closed the shop page')
+assert(not get(panel,'confirm').visible,'dismissal kept the old purchase action visible')
 assert(same(before,h.run),'outside dismissal must not buy, leave or advance RNG')
-assert(tap(relic,17));assert(get(panel,'shopView/detail').visible)
+assert(tap(receiver(panel,'shopView/relic2'),17));assert(get(panel,'shopView/detail').visible)
+assert(get(panel,'shopView/detail/name').text~=firstName,'fresh item reused the dismissed detail')
 assert(same(before,h.run),'fresh item input must retain ordinary inspection')
+local offer=assert(flow.relics[2])
+local id,price,gold=offer.id,offer.price,run.gold
+assert(tap(receiver(panel,'confirm'),18))
+local purchased=assert(run.nodeFlow.relics[2])
+assert(run.gold==gold-price and purchased.id==id and purchased.sold,
+    'fresh confirmation must buy exactly the selected relic')
+assert(RelicHooks.owns(run,id),'the purchased relic must enter the inventory')
+local back=receiver(panel,'back')
+assert(tap(back,19) and not run.nodeFlow.complete,'closing the shelf must keep the shop node open')
+h.nodeUI:update(.7)
+assert(tap(back,20),'fresh exit tap must leave the shop')
+assert(run.nodeFlow.complete and h.mode=='map' and not panel.active,'leaving must return to the map')
 h:disable();print('POST697_GAMEUI_MAP_SHOP_PASS 1')
