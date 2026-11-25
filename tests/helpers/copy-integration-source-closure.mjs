@@ -353,6 +353,8 @@ const entranceFiles=Object.freeze({
  'tests/helpers/current-replay-fix-sources.mjs':'bfef80da2fc30501c3b2e82cd14bdb8130e4a089f2db231ff2587804fa83a08b',
  'tests/helpers/character-preparation-source.mjs':'ae3b89b99224cf8bb86b8e569e6488db68ac2d30bf1233ed6652c90808df1984',
  'tests/helpers/develop-release-backflow-source.mjs':'4ac2a7c073d78f0029d85e9834f6063a4a797f215a529e349bdfc4f19ab5484c',
+ 'tests/helpers/input-retirement-source.mjs':'4a10ba059f0523da4ca1284f4badc7ef618cd8585e1b2a7c8befedf56065f8fc',
+ 'tests/helpers/refined-release-source.mjs':'6a33445c4f4f064db01a19e3b807e49fddbc143a576497cd8ed802569da6884d',
  'tests/helpers/native-fixture-replay-source.mjs':'df4f540848279ae38f6a8518871839641050788a56467808153802a611f71e6f',
  'tests/helpers/native-flow-fixture-source.mjs':'e819e9018419c59161f31d87d1d13613b638b1f5344bf0f5250795d46cb07085',
  'tests/helpers/ui-entrance-source.mjs':'55bbaca21af744a48dff1c5b445160b993bcf0862f813ce328a630408247e315',

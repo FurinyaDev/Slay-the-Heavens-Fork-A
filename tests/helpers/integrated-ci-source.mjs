@@ -17,12 +17,30 @@ for(const [path,row]of Object.entries(integratedCiProof.files))for(const binding
  assert.equal(binding.source,norm(binding.source));assert.equal(hash(binding.source),binding.sha256,path+' complete source');
  assert.equal(createHash('sha1').update(`blob ${Buffer.byteLength(binding.source)}\0`).update(binding.source).digest('hex'),binding.gitBlob);
 }
+// These live fixtures include release backflows for event art, menu guidance,
+// and approved text. The sealed integration receipt keeps its original source.
+const luaFixtureSuccessors=Object.freeze({
+ 'tests/lua/lowcost_art.lua':{
+  sha256:'e8f5c000ae62bb8997c5abf996ed64320cf8a916d0973d37645da19e44ebdf35',gitBlob:'de401a3a1fad9faaa8a71cfaabf02ce850ff6347',
+ },
+ 'tests/lua/session_menu_choices.lua':{
+  sha256:'704f77d7a3a9efd5feffd3659cd2b6d1416d13e5c177bc4c06c89212a24bcaf9',gitBlob:'474b88996f4b6469a5b6dad660b2b6240aba63bb',
+ },
+ 'tests/lua/session_menu_navigation.lua':{
+  sha256:'15e495490244a447d8f9311bce88f03dc3ed30f6282ec108a5b4a4421b88624d',gitBlob:'53a04c8d5e53b4a62c789bc083e385b41bb04255',
+ },
+});
+function beforeIntegrationLuaFixture(path,source){
+ if(!Object.hasOwn(luaFixtureSuccessors,path)||!exactSourceMatches(source,luaFixtureSuccessors[path]))return source;
+ const prior=integratedCiProof.files[path].current.source;
+ return source.includes('\r\n')?prior.replaceAll('\n','\r\n'):prior;
+}
 export function integratedSource(path,source,target){
  source=beforePreflightSource(path,source);
  assert(Object.hasOwn(integratedCiProof.sources,target),'known integration input');
  if(path.startsWith('src/')||path==='config/architecture.json')return source;
  const row=Object.hasOwn(integratedCiProof.files,path)?integratedCiProof.files[path]:null;
- source=releaseBootstrapCiSource(path,source,row?.current);
+ source=releaseBootstrapCiSource(path,beforeIntegrationLuaFixture(path,source),row?.current);
  if(!row?.views[target]||typeof source!=='string'||source.includes('\r\r\n')||hash(norm(source))!==row.current.sha256)return source;
  if(row.views[target].sha256===row.current.sha256)return source;
  return row.views[target].source;
@@ -39,7 +57,7 @@ export function integratedRead(target,{read=readFileSync}={}){read=preflightPrio
 export function assertIntegratedCurrent(read=readFileSync){
  assertReleaseBootstrapCiCurrent(read);
  read=preflightPriorRead(read);
- for(const [path,row]of Object.entries(integratedCiProof.files))assert.equal(hash(norm(releaseBootstrapCiCheckedSource(path,read(path,'utf8'),row.current))),row.current.sha256,'fresh complete integration source: '+path);
+ for(const [path,row]of Object.entries(integratedCiProof.files))assert.equal(hash(norm(releaseBootstrapCiCheckedSource(path,beforeIntegrationLuaFixture(path,read(path,'utf8')),row.current))),row.current.sha256,'fresh complete integration source: '+path);
  for(const [path,row]of Object.entries(integratedCiProof.closure))assert.equal(hash(path.endsWith('.gz')?read(path):norm(releaseBootstrapCiSource(path,read(path,'utf8'),integratedCiProof.files[path]?.current))),row.after,'fresh integration copy owner: '+path);
 }
 export function extendIntegratedHelperClosure(original){
@@ -94,7 +112,8 @@ export function integratedPriorInventory(paths,target,kind='js',read=readFileSyn
   const row=integratedCiProof.files[path];assert(row,'complete added inventory source: '+path);
   const source=read(path,'utf8');
   if(Object.hasOwn(jsInventorySuccessors,path)&&exactSourceMatches(source,jsInventorySuccessors[path]))continue;
-  assert.equal(hash(norm(releaseBootstrapCiSource(path,beforePreflightSource(path,source),row.current))),row.current.sha256,'fresh added inventory source: '+path);
+  const preflight=beforePreflightSource(path,source);
+  assert.equal(hash(norm(releaseBootstrapCiSource(path,beforeIntegrationLuaFixture(path,preflight),row.current))),row.current.sha256,'fresh added inventory source: '+path);
  }
  return [...prior];
 }

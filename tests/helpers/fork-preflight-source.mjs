@@ -564,13 +564,54 @@ const newerTests={
   'tests/lua/traveler_power_tooltip.lua':'eacaefc663ef5800d114a4118546a170ee7c93be09800df02108a223285afda0'
  },
 };
+// These live Lua fixtures retain #981's additional checks and #951's approved
+// runtime IDs. Historical inventories still use the same original paths.
+const currentReleaseLuaFixtures=Object.freeze({
+ 'tests/lua/detail_latency.lua':['0d886fb386da8f6c7b938138bd8dafc935f96abf9a48f608ad89f6f810709654','7b2a025c5005a90919de2d1239e38187dcc14565'],
+ 'tests/lua/traveler_power_tooltip.lua':['7d2684b7c627301cb435af6c2d45040be039a9624cc85e121a7fded90aa006af','1e381500795ccc639100192dd8b513f4dc90edf2'],
+});
+const additionalReleaseLuaFixtures=Object.freeze({
+ 'tests/lua/battle_ui_publication.lua':['73a3d97356202f4943152acaa32fd14bf8e257c5b3229374d76e9a936973a6e2','6aa2a4c9a8c1195a7fda5d118ac0d5d66cfba0c4'],
+ 'tests/lua/card_body_catalog.lua':['9ec720cb8c67c95338f497094a36e894bcefe6c2171954271ba8c73e49f6706b','933398a096b075b6739a2c811318e4d7e0a16033'],
+ 'tests/lua/card_body_focus.lua':['bb5683abf45cb5427fbbd9e40841d54d966f722b2879f84b0dedfebb6a8f9937','5889006b9cc8e4217a098c60dbb21eb431f0f029'],
+ 'tests/lua/traveling_merchant_event_content.lua':['19872217244484f650323e9332ab7bbb3903540dd9ae718e5b28192759a03b60','2e287211403fdb4f0923f387161565389df3fa40'],
+});
+function exactReleaseLuaFixture(source,binding){
+ if(!binding||typeof source!=='string'||source.includes('\r\r\n'))return false;
+ const normalized=normalize(source);
+ return hash(normalized)===binding[0]&&gitBlob(normalized)===binding[1];
+}
+function exactCurrentReleaseLuaFixture(path,source){
+ return exactReleaseLuaFixture(source,currentReleaseLuaFixtures[path]);
+}
+// #940 and #962 added three cases, and #951 renamed the Act 2 event case.
+function beforeCurrentReleaseLuaNames(paths,read,{required=false}={}){
+ const currentPaths=Object.keys(additionalReleaseLuaFixtures);
+ if(!required&&!currentPaths.some(path=>paths.includes(path)))return paths;
+ const names=new Set(paths);
+ assert.equal(names.size,paths.length,'unique live Release Lua inventory');
+ for(const path of currentPaths){
+  const found=names.delete(path);
+  if(required)assert(found,'missing live Release Lua inventory source: '+path);
+  if(found)assert(exactReleaseLuaFixture(read(path,'utf8'),additionalReleaseLuaFixtures[path]),'fresh added inventory source: '+path);
+ }
+ if(paths.includes('tests/lua/traveling_merchant_event_content.lua')){
+  const retired='tests/lua/addict_event_content.lua';
+  assert(!names.has(retired),'retired event fixture must be absent from live Lua inventory');
+  assert.throws(()=>read(retired,'utf8'),{code:'ENOENT'},'retired event fixture must be absent');
+  names.add(retired);
+ }
+ return [...names].sort();
+}
 export function beforeReleaseAdditionalInventory(paths,kind,read=readFileSync){
  paths=beforeM05BackflowInventory(paths,kind,(path,encoding)=>beforeCurrentReplayFixes(path,beforeUiEntranceWitness(path,read(path,encoding))));
  for(const [path,sha] of Object.entries(newerTests[kind])){
   const count=paths.filter(candidate=>candidate===path).length;
   if(!count)continue;
   assert.equal(count,1,'single added Release test: '+path);
-  const source=beforeDevelopBackflow(path,read(path,'utf8'));
+  const live=read(path,'utf8');
+  if(kind==='lua'&&exactCurrentReleaseLuaFixture(path,live))continue;
+  const source=beforeDevelopBackflow(path,live);
   assert(typeof source==='string'&&!source.includes('\r\r\n')&&hash(normalize(source))===sha,'fresh added inventory source: '+path);
  }
  return paths.filter(path=>!Object.hasOwn(newerTests[kind],path));
@@ -578,6 +619,7 @@ export function beforeReleaseAdditionalInventory(paths,kind,read=readFileSync){
 export function beforeShopEntryInventory(paths,kind,read=readFileSync){
  paths=beforeInputRetirementTestInventory(paths,kind,read);
  if(kind==='js')paths=beforeIntegratedStsInventory(paths,(path,encoding)=>beforeNativeFlowFixture(path,read(path,encoding)));
+ else paths=beforeCurrentReleaseLuaNames(paths,read);
  paths=beforeReleaseAdditionalInventory(paths,kind,read);
  const [path,...authenticated]=shopEntryTests[kind];
  const position=paths.indexOf(path);
@@ -598,11 +640,12 @@ export function assertCurrentJsInventory(paths,preceding,read=readFileSync){
 }
 export function assertCurrentLuaInventory(paths,preceding,read=readFileSync){
  paths=beforeInputRetirementTestInventory(paths,'lua',read,{required:true});
+ paths=beforeCurrentReleaseLuaNames(paths,read,{required:true});
  const additions=[...Object.keys(newerTests.lua),shopEntryTests.lua[0],'tests/lua/shop_dismiss.lua'];
  assert.deepEqual([...paths].sort(),[...preceding,...additions].sort(),'complete current raw discovery inventory (Lua)');
  const prior=beforeShopEntryInventory(paths,'lua',(path,encoding)=>{
   const source=beforeForkFirstCi(path,beforeUiEntranceWitness(path,read(path,encoding)));
-  if(developBackflowOwns(path))assertDevelopBackflowCurrent(path,source);
+  if(developBackflowOwns(path)&&!exactCurrentReleaseLuaFixture(path,source))assertDevelopBackflowCurrent(path,source);
   return source;
  });
  assert.deepEqual([...prior].sort(),preceding,'complete Release bootstrap raw discovery inventory');
