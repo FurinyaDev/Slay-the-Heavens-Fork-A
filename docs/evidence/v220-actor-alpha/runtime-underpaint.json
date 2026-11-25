@@ -1,0 +1,154 @@
+{
+  "profile": "official-assets-battle-v3",
+  "scope": "production Lua actor painters on an isolated Simulator runtime scene",
+  "sourceCommit": "27e2f8304bcbaedffa0efbc02d739bd4aeab38b6",
+  "monsterRegistrySha256": "3f1776d04d9e75fdda90c2b428a8637406bbf77254f67baf8066e22c7ee2a75c",
+  "canvas": {
+    "id": "mobile-16-9",
+    "width": 1280,
+    "height": 720
+  },
+  "backdrops": {
+    "black": "#000000",
+    "white": "#FFFFFF",
+    "contrast": "#20F84D"
+  },
+  "pages": [
+    {
+      "captures": {
+        "black": {
+          "canvasId": "mobile-16-9",
+          "frame": 0,
+          "time": 0,
+          "clockMode": "manual",
+          "width": 1280,
+          "height": 720,
+          "pixelWidth": 1280,
+          "pixelHeight": 720,
+          "assetWarnings": [],
+          "screenshot": "page-1-black.png",
+          "saveSha256": "06afcf1e15c4e57e1c86d3bca3adf85088b407ddf620f9fe917867460cdd34f9",
+          "screenshotSha256": "2dd64862d5ddb13c1a7d72de08559ea5845c248e275cd90205ffdd60549aa147"
+        },
+        "white": {
+          "canvasId": "mobile-16-9",
+          "frame": 0,
+          "time": 0,
+          "clockMode": "manual",
+          "width": 1280,
+          "height": 720,
+          "pixelWidth": 1280,
+          "pixelHeight": 720,
+          "assetWarnings": [],
+          "screenshot": "page-1-white.png",
+          "saveSha256": "4a16a930d4448fcd29f3b0a60e1bda45e59ee9eae4db805369517ab3d7d6f501",
+          "screenshotSha256": "b31ac27d8c04a1a6e072433329616a524930172dd770e4e2c103dab344819158"
+        },
+        "contrast": {
+          "canvasId": "mobile-16-9",
+          "frame": 0,
+          "time": 0,
+          "clockMode": "manual",
+          "width": 1280,
+          "height": 720,
+          "pixelWidth": 1280,
+          "pixelHeight": 720,
+          "assetWarnings": [],
+          "screenshot": "page-1-contrast.png",
+          "saveSha256": "e27d11901acf77e035de7f6b94215019912d04665b5fd455ddd876f748497e89",
+          "screenshotSha256": "f1f95cd8afce6e0a743a1d8a53f9b84dcfe3ef98dc109251cf7c69bbde497d6f"
+        },
+        "battle": {
+          "canvasId": "mobile-16-9",
+          "frame": 0,
+          "time": 0,
+          "clockMode": "manual",
+          "width": 1280,
+          "height": 720,
+          "pixelWidth": 1280,
+          "pixelHeight": 720,
+          "assetWarnings": [],
+          "screenshot": "page-1-battle.png",
+          "saveSha256": "598a57bd72c1fff942c1e989d852bed27829b8809ac2cdaa684561ce192f4023",
+          "screenshotSha256": "00ea3171cad5654a0a7624d3eaf8e7ed2eb73de22dfeda43a5cce83d50bc57bc"
+        }
+      },
+      "actors": [
+        {
+          "id": "traveler-geo",
+          "width": 133,
+          "geometry": "a0c792109a74f71be0a52d9a59f39828e1d4818ce8d1bba915606b984d89f831",
+          "shapes": 464,
+          "center": [
+            160,
+            168
+          ]
+        },
+        {
+          "id": "acid_slime_s",
+          "width": 106,
+          "geometry": "00eed78095381e2f4db8650ddd5a07bcee78dac73c9a487a1672616e0934c5d8",
+          "shapes": 32,
+          "center": [
+            352,
+            168
+          ]
+        }
+      ]
+    }
+  ],
+  "experiment": {
+    "heroUnderpaintSha256": "859a7b479083283b9a195e177b3711b5282ad9303d0445466f46a0cade7eaef9",
+    "additionalControls": 12
+  },
+  "simulator": "beyond-simulator-mcp@0.5.2",
+  "coverage": {
+    "captureSha256": "e7a9dda3190b641c3b9e37424382a3cd2e08e897c3276e32bef8a9737250d59f",
+    "sourceCommit": "27e2f8304bcbaedffa0efbc02d739bd4aeab38b6",
+    "actors": {
+      "traveler-geo": {
+        "id": "traveler-geo",
+        "width": 133,
+        "geometry": "a0c792109a74f71be0a52d9a59f39828e1d4818ce8d1bba915606b984d89f831",
+        "shapes": 464,
+        "center": [
+          160,
+          168
+        ],
+        "crop": [
+          94,
+          102,
+          133,
+          133
+        ],
+        "maskSha256": "5d00ee1cd222a2fc038e40b91d17509106beed2cbf545b9594f5549d942ce0fd",
+        "approvalReference": "#751 approved 464-shape fit 9e57c6e4 (not unfitted original)",
+        "basis": "approved-fit-preview",
+        "approvedOpaquePixels": 2341,
+        "approvedTransparentPixels": 14007,
+        "leakingPixels": 224,
+        "fullyOpenPixels": 0,
+        "unexpectedPaintPixels": 0,
+        "status": "fail"
+      },
+      "acid_slime_s": {
+        "id": "acid_slime_s",
+        "width": 106,
+        "geometry": "00eed78095381e2f4db8650ddd5a07bcee78dac73c9a487a1672616e0934c5d8",
+        "shapes": 32,
+        "center": [
+          352,
+          168
+        ],
+        "crop": [
+          299,
+          115,
+          106,
+          106
+        ],
+        "status": "unverified",
+        "reason": "approved independent registered opacity mask unavailable"
+      }
+    }
+  }
+}

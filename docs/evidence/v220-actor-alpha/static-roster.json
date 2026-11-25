@@ -1,0 +1,593 @@
+{
+  "profile": "official-assets-battle-v3",
+  "scope": "production geometry on isolated static controls in Simulator runtime",
+  "sourceCommit": "27e2f8304bcbaedffa0efbc02d739bd4aeab38b6",
+  "monsterRegistrySha256": "3f1776d04d9e75fdda90c2b428a8637406bbf77254f67baf8066e22c7ee2a75c",
+  "canvas": {
+    "id": "mobile-16-9",
+    "width": 1280,
+    "height": 720
+  },
+  "backdrops": {
+    "black": "#000000",
+    "white": "#FFFFFF",
+    "contrast": "#20F84D"
+  },
+  "pages": [
+    {
+      "captures": {
+        "black": {
+          "canvasId": "mobile-16-9",
+          "frame": 0,
+          "time": 0,
+          "clockMode": "manual",
+          "width": 1280,
+          "height": 720,
+          "pixelWidth": 1280,
+          "pixelHeight": 720,
+          "assetWarnings": [],
+          "screenshot": "page-1-black.png",
+          "saveSha256": "28bce2a13a2d191a5ebb61f644a3942af0c0c4e1e7e5e35f30922ffddb3ff188",
+          "screenshotSha256": "f88758af016ec610418d422aecbb0e0c22e23ce8003f1398af67f80420d0f2b2"
+        },
+        "white": {
+          "canvasId": "mobile-16-9",
+          "frame": 0,
+          "time": 0,
+          "clockMode": "manual",
+          "width": 1280,
+          "height": 720,
+          "pixelWidth": 1280,
+          "pixelHeight": 720,
+          "assetWarnings": [],
+          "screenshot": "page-1-white.png",
+          "saveSha256": "7016b7e797aea5ed584083fd3d68ed7e9f85360362d3e3c69d006d897aa7500e",
+          "screenshotSha256": "d2a19d993372790972aa13d860d38649aa2840f4b2856891d87027755f00c561"
+        },
+        "contrast": {
+          "canvasId": "mobile-16-9",
+          "frame": 0,
+          "time": 0,
+          "clockMode": "manual",
+          "width": 1280,
+          "height": 720,
+          "pixelWidth": 1280,
+          "pixelHeight": 720,
+          "assetWarnings": [],
+          "screenshot": "page-1-contrast.png",
+          "saveSha256": "0211f1968246f9f6d7af83e985dc2a2ef61216aa2a9d019e0177a7f273b35a9c",
+          "screenshotSha256": "470263dc7bfa2bb60340e863caa3f82afee864fb58e739b0d678ac70a41ca1a5"
+        }
+      },
+      "actors": [
+        {
+          "id": "traveler-geo",
+          "width": 133,
+          "geometry": "a0c792109a74f71be0a52d9a59f39828e1d4818ce8d1bba915606b984d89f831",
+          "shapes": 464,
+          "center": [
+            160,
+            168
+          ]
+        },
+        {
+          "id": "acid_slime_s",
+          "width": 106,
+          "geometry": "00eed78095381e2f4db8650ddd5a07bcee78dac73c9a487a1672616e0934c5d8",
+          "shapes": 32,
+          "center": [
+            352,
+            168
+          ]
+        },
+        {
+          "id": "acid_slime_m",
+          "width": 106,
+          "geometry": "cafd395483fea352dbf3134f6b6d5f3d29806b356dbf7e172dc1f491b860469d",
+          "shapes": 41,
+          "center": [
+            544,
+            168
+          ]
+        },
+        {
+          "id": "acid_slime_l",
+          "width": 106,
+          "geometry": "70a13bdcb5b66fac27a24e2a3854f46f1526ff87e9d3d7deaa364cc4ff8450ae",
+          "shapes": 41,
+          "center": [
+            736,
+            168
+          ]
+        },
+        {
+          "id": "spike_slime_s",
+          "width": 106,
+          "geometry": "e4e220dbeff4bf6466542e8d1b32ab5d3df0544648f94758f6e80a8fa6abdcfb",
+          "shapes": 41,
+          "center": [
+            928,
+            168
+          ]
+        },
+        {
+          "id": "spike_slime_m",
+          "width": 106,
+          "geometry": "be74e7f13bb61b57a7c2aef3fae60ff438e230190b226f384fef8bb3cbae4a2d",
+          "shapes": 41,
+          "center": [
+            1120,
+            168
+          ]
+        },
+        {
+          "id": "spike_slime_l",
+          "width": 106,
+          "geometry": "98d074cfd482a5dc7d2b77b2e1110b9e84956d7ed533780001662c79a3ecebe2",
+          "shapes": 41,
+          "center": [
+            160,
+            360
+          ]
+        },
+        {
+          "id": "red_louse",
+          "width": 106,
+          "geometry": "5eb6d3ea20bc314c70f7452ab84d9bbccc4538f1f1f99e45fee6d12c0c463909",
+          "shapes": 41,
+          "center": [
+            352,
+            360
+          ]
+        },
+        {
+          "id": "green_louse",
+          "width": 106,
+          "geometry": "c329ab092bd899eb1ba9a3fc0e5669b1ec5dab482ef9078e5697ccea4a6dc944",
+          "shapes": 40,
+          "center": [
+            544,
+            360
+          ]
+        },
+        {
+          "id": "raven_adept",
+          "width": 106,
+          "geometry": "23413092980a34a52a0318493198caae444714a6cb1aaab05ba14ae090a009e9",
+          "shapes": 115,
+          "center": [
+            736,
+            360
+          ]
+        },
+        {
+          "id": "looter",
+          "width": 106,
+          "geometry": "73d8e450c79b236d1f6085d4fe6cc695282dd4d33c73c4234ef2a3a9f00e92dd",
+          "shapes": 113,
+          "center": [
+            928,
+            360
+          ]
+        },
+        {
+          "id": "mugger",
+          "width": 106,
+          "geometry": "1bba974103ecef1a3ebebce4418176331352f67b5a0e7971c2fe2466714d4394",
+          "shapes": 115,
+          "center": [
+            1120,
+            360
+          ]
+        },
+        {
+          "id": "blue_guard",
+          "width": 106,
+          "geometry": "1e3ddb17a0a7525914461560af9899bdd21b8b1a8d475619306db9e68aec1561",
+          "shapes": 115,
+          "center": [
+            160,
+            552
+          ]
+        },
+        {
+          "id": "red_guard",
+          "width": 106,
+          "geometry": "059e0b1b3e61dbeea37159f4ede9e8a696b1e43f6a2129f4eba2e0327ffcdba1",
+          "shapes": 115,
+          "center": [
+            352,
+            552
+          ]
+        },
+        {
+          "id": "taskmaster",
+          "width": 106,
+          "geometry": "963cf33866aa0cf07089e88dee722a0ba3c3c266b858b7156fe0f9942c547f4b",
+          "shapes": 115,
+          "center": [
+            544,
+            552
+          ]
+        },
+        {
+          "id": "sneaky_gremlin",
+          "width": 106,
+          "geometry": "ce84ac71718365a34c192aae161dae3d8443d68276ed23a041e72c874461b89d",
+          "shapes": 89,
+          "center": [
+            736,
+            552
+          ]
+        },
+        {
+          "id": "shield_gremlin",
+          "width": 106,
+          "geometry": "30cf173d3d0983b0971f85cf7bf24ec5c085fbce81b3270d4e93009a41af2865",
+          "shapes": 41,
+          "center": [
+            928,
+            552
+          ]
+        },
+        {
+          "id": "wizard_gremlin",
+          "width": 106,
+          "geometry": "d520bf672c5d0e7130888a1acc28731aa10367d4c5e7613360ee88040a934b7e",
+          "shapes": 86,
+          "center": [
+            1120,
+            552
+          ]
+        }
+      ]
+    },
+    {
+      "captures": {
+        "black": {
+          "canvasId": "mobile-16-9",
+          "frame": 0,
+          "time": 0,
+          "clockMode": "manual",
+          "width": 1280,
+          "height": 720,
+          "pixelWidth": 1280,
+          "pixelHeight": 720,
+          "assetWarnings": [],
+          "screenshot": "page-2-black.png",
+          "saveSha256": "0ee6d483b2b88b4d1be537914dd8a3a2caf96cd9ea927b4f6d8b09c29b3be9c2",
+          "screenshotSha256": "06e727ead7ee4c4bd3044b0d9d171674fe1fabea14d80b0477f6d6a93c1ce1a2"
+        },
+        "white": {
+          "canvasId": "mobile-16-9",
+          "frame": 0,
+          "time": 0,
+          "clockMode": "manual",
+          "width": 1280,
+          "height": 720,
+          "pixelWidth": 1280,
+          "pixelHeight": 720,
+          "assetWarnings": [],
+          "screenshot": "page-2-white.png",
+          "saveSha256": "0475b9d6501d68a5862207f0fec92be7cf55f5d8d093e24bdfc26ac1b96d4e6d",
+          "screenshotSha256": "c48983e57dea53058ffb8e7badbe286cb027d039a406241ca75934096756877d"
+        },
+        "contrast": {
+          "canvasId": "mobile-16-9",
+          "frame": 0,
+          "time": 0,
+          "clockMode": "manual",
+          "width": 1280,
+          "height": 720,
+          "pixelWidth": 1280,
+          "pixelHeight": 720,
+          "assetWarnings": [],
+          "screenshot": "page-2-contrast.png",
+          "saveSha256": "cabdc33dc72ef03ff8fc7d40609447d4eba1473f5ed4398232aa387af098dfc9",
+          "screenshotSha256": "cb632a3c31e518b1d548ff6c9e4b682c7598ce9deaf93ebbb3d92f8f8687a44f"
+        }
+      },
+      "actors": [
+        {
+          "id": "mad_gremlin",
+          "width": 106,
+          "geometry": "7ffc40c3a6f927d74a2f3f1f076217f09fe1624460a8ae630396bbc22441b231",
+          "shapes": 95,
+          "center": [
+            160,
+            168
+          ]
+        },
+        {
+          "id": "fat_gremlin",
+          "width": 106,
+          "geometry": "b4669c9ad2d0e3ae8fde8ab58f04cd6e5b6aded2fd978e51195a25181a2bf9ff",
+          "shapes": 96,
+          "center": [
+            352,
+            168
+          ]
+        },
+        {
+          "id": "gremlin_nob",
+          "width": 106,
+          "geometry": "bb107f8802192a23fe662d06aad3977857882914201160c787bba08212a12827",
+          "shapes": 96,
+          "center": [
+            544,
+            168
+          ]
+        },
+        {
+          "id": "jaw_worm",
+          "width": 106,
+          "geometry": "a56ba3b24c32d50b216fa108ec9f3ed2e6b8166b7eefcad02095ab93a62e5c6e",
+          "shapes": 114,
+          "center": [
+            736,
+            168
+          ]
+        },
+        {
+          "id": "fungi_beast",
+          "width": 106,
+          "geometry": "a7a5e90f3875d371fc9a568e995d441363bb06d55d924a226958b9985177521a",
+          "shapes": 114,
+          "center": [
+            928,
+            168
+          ]
+        },
+        {
+          "id": "lagavulin",
+          "width": 106,
+          "geometry": "50db011080017ca6db932b14345b00b23b640a704f70c5714f1a9123a3a3e1b4",
+          "shapes": 115,
+          "center": [
+            1120,
+            168
+          ]
+        },
+        {
+          "id": "sentry",
+          "width": 106,
+          "geometry": "319d62ee007299bcec0b1112b0650e3122655dbccda41518e8a37b73a367cca7",
+          "shapes": 92,
+          "center": [
+            160,
+            360
+          ]
+        },
+        {
+          "id": "spheric_guardian",
+          "width": 106,
+          "geometry": "fac5518205f540f4fa5c5afe7a5b25dbb3de2d9e85c4f7b63ca24c7aaaa39cfa",
+          "shapes": 94,
+          "center": [
+            352,
+            360
+          ]
+        },
+        {
+          "id": "guardian",
+          "width": 106,
+          "geometry": "dac3eebba1d1d12881b3991f1a7700117fbf002a65fe2326a66aacc1c51ec3ce",
+          "shapes": 96,
+          "center": [
+            544,
+            360
+          ]
+        },
+        {
+          "id": "slime_boss",
+          "width": 106,
+          "geometry": "8df969d8e77a981222f4009ae60f2d4080baa82b25d71b3b2dba6494ca593d76",
+          "shapes": 40,
+          "center": [
+            736,
+            360
+          ]
+        },
+        {
+          "id": "hexaghost",
+          "width": 106,
+          "geometry": "e95d452dc20f3781736e5acb9afb4d6ffc6189bdf24a120382068580d0e5ccfc",
+          "shapes": 95,
+          "center": [
+            928,
+            360
+          ]
+        },
+        {
+          "id": "centurion",
+          "width": 106,
+          "geometry": "417598bdc728d744f77df96872d9d5a6e0685231f31fadd2d2baf097b7921daf",
+          "shapes": 112,
+          "center": [
+            1120,
+            360
+          ]
+        },
+        {
+          "id": "mystic",
+          "width": 106,
+          "geometry": "cf6e59be676c9fec4687d393a56ef303482b9bb26afb2c703ee019603cf41209",
+          "shapes": 96,
+          "center": [
+            160,
+            552
+          ]
+        },
+        {
+          "id": "chosen",
+          "width": 106,
+          "geometry": "2b989714fc72f791ee5c853923d1299be7c621484faeb0f64eeda969d98ef559",
+          "shapes": 84,
+          "center": [
+            352,
+            552
+          ]
+        },
+        {
+          "id": "book_of_stabbing",
+          "width": 106,
+          "geometry": "c0663d5c63501fec366ac4c73dce4b98fd0934193f8a5bcdbf22bd712304e777",
+          "shapes": 36,
+          "center": [
+            544,
+            552
+          ]
+        },
+        {
+          "id": "snake_plant",
+          "width": 106,
+          "geometry": "8cd177e69860f90e9c27b4c8fd97ed8a0c3e7b0ac6519c2bcabbb39b23020755",
+          "shapes": 40,
+          "center": [
+            736,
+            552
+          ]
+        },
+        {
+          "id": "shelled_parasite",
+          "width": 106,
+          "geometry": "66fc9e9769b26b2cf3bdf19a75ff5a2a146ed5abc0cf0e3dbc48c772823b66de",
+          "shapes": 96,
+          "center": [
+            928,
+            552
+          ]
+        },
+        {
+          "id": "byrd",
+          "width": 106,
+          "geometry": "47f5fb43e3102f1763950372319f2d4cc8da68570f7f70f1b92991141e7dd060",
+          "shapes": 41,
+          "center": [
+            1120,
+            552
+          ]
+        }
+      ]
+    },
+    {
+      "captures": {
+        "black": {
+          "canvasId": "mobile-16-9",
+          "frame": 0,
+          "time": 0,
+          "clockMode": "manual",
+          "width": 1280,
+          "height": 720,
+          "pixelWidth": 1280,
+          "pixelHeight": 720,
+          "assetWarnings": [],
+          "screenshot": "page-3-black.png",
+          "saveSha256": "808c01baa5351179859e56c87415aece8e81117be1d89f01601c37037a446ba0",
+          "screenshotSha256": "0c856e2522a5f85a0bfaae4f3420fda1373cdaf9e44749bd26696195c9e955fe"
+        },
+        "white": {
+          "canvasId": "mobile-16-9",
+          "frame": 0,
+          "time": 0,
+          "clockMode": "manual",
+          "width": 1280,
+          "height": 720,
+          "pixelWidth": 1280,
+          "pixelHeight": 720,
+          "assetWarnings": [],
+          "screenshot": "page-3-white.png",
+          "saveSha256": "286eae7da5dd06372e6a67be1cbab86ca82a5f850e36bfecd5889c66a5f9da37",
+          "screenshotSha256": "e55a31c91f79b1738c97487948cd4463689a138ee2491b2dce60c7d6e583153d"
+        },
+        "contrast": {
+          "canvasId": "mobile-16-9",
+          "frame": 0,
+          "time": 0,
+          "clockMode": "manual",
+          "width": 1280,
+          "height": 720,
+          "pixelWidth": 1280,
+          "pixelHeight": 720,
+          "assetWarnings": [],
+          "screenshot": "page-3-contrast.png",
+          "saveSha256": "61d26b9cb3845adcd0a1b68498fd533b70b1a236523e047c99700354c1d11e8d",
+          "screenshotSha256": "04d25a159a32a7b5b5d53ad286f7bd30d17145f862ad58ca57f7054288c52d56"
+        }
+      },
+      "actors": [
+        {
+          "id": "snecko",
+          "width": 106,
+          "geometry": "a3f518cde737bd78d79aeea181bd5b2023787439217d76f4e9f245394bcafb43",
+          "shapes": 113,
+          "center": [
+            160,
+            168
+          ]
+        },
+        {
+          "id": "torch_head",
+          "width": 106,
+          "geometry": "72e8839ba4bbdfb5651201804f599e2b538538f5d74430b14cda306a76d191f9",
+          "shapes": 41,
+          "center": [
+            352,
+            168
+          ]
+        },
+        {
+          "id": "collector",
+          "width": 106,
+          "geometry": "bd883d8084e86bd8cc79333060a27145c6bd6d9fbe3393824966ea4e58b3ad13",
+          "shapes": 115,
+          "center": [
+            544,
+            168
+          ]
+        },
+        {
+          "id": "automaton",
+          "width": 106,
+          "geometry": "0ce2d048401402834d827409287da98a196717e6863f2211c0d55c5f11269732",
+          "shapes": 41,
+          "center": [
+            736,
+            168
+          ]
+        },
+        {
+          "id": "bronze_orb",
+          "width": 106,
+          "geometry": "85b5e330fc09744f06ad46c0e1b3765d2826312706b5b6b15e21ca0902972cca",
+          "shapes": 96,
+          "center": [
+            928,
+            168
+          ]
+        },
+        {
+          "id": "champ",
+          "width": 106,
+          "geometry": "ff1210d945db16aca12b94e52fedef3172e25daf060d5fdd0133ff1b1d58edcc",
+          "shapes": 96,
+          "center": [
+            1120,
+            168
+          ]
+        },
+        {
+          "id": "gremlin_leader",
+          "width": 106,
+          "geometry": "038aced43275f3198a235fb69fab5204afa692a1c05cad36acd4580cf6bf6596",
+          "shapes": 109,
+          "center": [
+            160,
+            360
+          ]
+        }
+      ]
+    }
+  ],
+  "simulator": "beyond-simulator-mcp@0.5.2"
+}
