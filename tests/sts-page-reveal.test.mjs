@@ -335,9 +335,34 @@ for (const [profile, officialAssets, nativePageLifecycle] of [
 
 test('Forethought authenticates its complete Lua and layout owners',async()=>{
  const {beforeDevelopBackflow,authenticateDevelopBackflow}=await import('./helpers/develop-release-backflow-source.mjs');
+ const {exactSourceMatches:matches}=await import('./helpers/source-fingerprint.mjs');
+ const {createHash}=await import('node:crypto');
  const {gunzipSync}=await import('node:zlib');
  const lua='src/lua/abyss_deck_ui.lua',layout='scripts/deck-ui-layout.mjs';
- const read=path=>readFileSync(path,'utf8');
+ const bytes=readFileSync(new URL('./fixtures/forethought-later-deck-owners.json.gz',import.meta.url));
+ assert.equal(createHash('sha256').update(bytes).digest('hex'),
+  '0926f504386bddc938ee479f3dcd26963aa8c64bad557242e518d7eaaff19b3a','exact Forethought owner pair');
+ const {prior,live,owners}=JSON.parse(gunzipSync(bytes));
+ assert.equal(prior,'103aa4072bd3801deb6bf090455bd974181a9647');
+ assert.equal(live,'a111076f1afa0093fbc8e916f5cbd2ee68c7a79b');
+ assert.deepEqual(Object.keys(owners),[lua,layout]);
+ // #907/#940 advanced these two owners beyond the pinned #904 replay.
+ // Authenticate both live sources before exposing the previous pair; the
+ // historical linked-owner checks below still use the original validators.
+ const current=path=>readFileSync(path,'utf8');
+ function replayReader(readLive){
+  for(const path of [lua,layout]){
+   assert(matches(readLive(path),owners[path].after),'linked owner identity: '+path+' at #940');
+   assert(matches(owners[path].before.source,owners[path].before),'exact #904 owner: '+path);
+  }
+  return path=>Object.hasOwn(owners,path)?owners[path].before.source:readLive(path);
+ }
+ const read=replayReader(current);
+ for(const path of [lua,layout]){
+  for(const bad of [read(path),current(path)+'\n']){
+   assert.throws(()=>replayReader(owner=>owner===path?bad:current(owner)),/linked owner identity/);
+  }
+ }
  const crlf=source=>source.replace(/\r?\n/g,'\r\n');
  const priorLua=beforeDevelopBackflow(lua,read(lua));
  const priorLayout=beforeDevelopBackflow(layout,read(layout));
