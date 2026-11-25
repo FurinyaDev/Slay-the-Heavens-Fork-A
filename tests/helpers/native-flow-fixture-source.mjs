@@ -30,7 +30,7 @@ for(const [path,{before,after}] of Object.entries(files)){
  assert.notEqual(before.gitBlob,after.gitBlob);
 }
 
-// Approved release backflows #940, #942 and #951 supersede these witnesses.
+// Approved release backflows #912, #940, #942 and #951 supersede these witnesses.
 const releaseFixtures=Object.freeze({
  'tests/lua/support/native_monster_only_entry.lua':{
   sha256:'0c192425a730c27bab65e5ebc18fc340c9b2414e8558485922041e01fbaf00c1',gitBlob:'29e0bb8b789624f2128780c7711d122bb0687368',
@@ -40,6 +40,9 @@ const releaseFixtures=Object.freeze({
  },
  'tests/sts-character-browser.test.mjs':{
   sha256:'a8c371980710a7824aff8328cf5c041b06b1199eea548cb4e51b17668a7d40dc',gitBlob:'be5b6ad2bc339cfc227818355a4505b94f88ddf9',
+ },
+ 'tests/sts-selection-fade.test.mjs':{
+  sha256:'d8dffaece4dc46ca98ec9c594fdd839d19bfe50d39ce0c9adff1cd3cf2fcea59',gitBlob:'11ff711ede191ccd9d1c73fc1e9cf1a8ae07c1ec',
  },
 });
 
@@ -54,5 +57,8 @@ export function beforeNativeFlowFixture(path,source,{requireCurrent=false}={}){
 }
 
 export function assertNativeFlowFixturesCurrent(read){
- for(const path of Object.keys(files))beforeNativeFlowFixture(path,read(path,'utf8'),{requireCurrent:true});
+ for(const [path,{after}] of Object.entries(files)){
+  const source=read(path,'utf8');
+  assert(exactSourceMatches(source,releaseFixtures[path]??after),'fresh complete native flow fixture: '+path);
+ }
 }
