@@ -1,4 +1,5 @@
 import { beforeUiEntrance, entranceInventory, entrancePredecessor, entranceReader } from './ui-entrance-source.mjs';
+import {battlePeripheryPredecessor,beforeBattlePeriphery} from './battle-periphery-source.mjs';
 // Exact Develop predecessors for historical replay. Live builds read current sources.
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
@@ -199,7 +200,7 @@ function currentRecentBackflowOwner(path,source){
  return matches(source,roomEntry.files[path].after);
 }
 export function assertDevelopBackflowCurrent(path,source){
- source=beforeUiEntrance(path,source);
+ source=beforeUiEntrance(path,beforeBattlePeriphery(path,source));
  source=beforeDevelopUiBackflows(path,source);
  const priorActions=beforeActionButtons(path,source);
  if(actionButtonsOwns(path)&&!recentBackflowOwns(path)&&!priorDevelopBackflowOwns(path)){
@@ -322,7 +323,7 @@ function beforeSessionRelic(path,source,options){
  return source.includes('\r\n')?before.replaceAll('\n','\r\n'):before;
 }
 export function beforeDevelopBackflow(path,source,options){
- source=beforeUiEntrance(path,source);
+ source=beforeUiEntrance(path,beforeBattlePeriphery(path,source));
  source=predecessor(roomEntry.files,path,beforeDeckPages(path,source,options));
  source=beforeRelicDetail(path,source);
  return beforePriorDevelopBackflow(path,beforeSessionRelic(path,source,options));
@@ -341,6 +342,9 @@ function readBackflowOwner(read,path){
  catch(error){assert.fail('combined linked owner missing: '+path+': '+String(error?.message??error));}
 }
 function authenticateDevelopBackflowWithReaders(path,source,readLive,readLinked,options){
+ ({source,read:readLive}=battlePeripheryPredecessor(path,source,readLive));
+ const readLinkedPeriphery=readLinked;
+ readLinked=owner=>beforeBattlePeriphery(owner,readLinkedPeriphery(owner));
  const priorUi=beforeDevelopUiBackflows(path,source);
  if(priorUi!==source){
   const live=readBackflowOwner(readLive,path);

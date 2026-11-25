@@ -4,7 +4,7 @@ import {createHash} from 'node:crypto';
 import {readFileSync} from 'node:fs';
 import {gunzipSync} from 'node:zlib';
 import {exactSourceMatches as matches} from './source-fingerprint.mjs';
-import {battlePeripheryPredecessor} from './battle-periphery-source.mjs';
+import {battlePeripheryPredecessor,beforeBattlePeriphery} from './battle-periphery-source.mjs';
 import {authenticateInputRetirement,beforeInputRetirement} from './input-retirement-source.mjs';
 const hash=(s,algorithm='sha256')=>createHash(algorithm).update(s).digest('hex');
 const archive=readFileSync(new URL('./rebased-release-source.json.gz',import.meta.url));
@@ -46,7 +46,7 @@ const nativeButtonRepair=Object.freeze({
   ],
  },
 });
-export function beforeNativeButtonRepair(path,source){
+function nativeButtonPredecessor(path,source){
  source=beforeInputRetirement(path,source);
  const row=Object.hasOwn(nativeButtonRepair,path)?nativeButtonRepair[path]:null;
  if(!row||typeof source!=='string'||source.includes('\r\r\n'))return source;
@@ -59,6 +59,9 @@ export function beforeNativeButtonRepair(path,source){
  }
  assert.equal(hash(prior),row.before,'exact native button repair predecessor: '+path);
  return source.includes('\r\n')?prior.replaceAll('\n','\r\n'):prior;
+}
+export function beforeNativeButtonRepair(path,source){
+ return nativeButtonPredecessor(path,beforeBattlePeriphery(path,source));
 }
 function historical(rows,path,source){
  const row=Object.hasOwn(rows,path)?rows[path]:null;
@@ -82,15 +85,19 @@ export function authorizeRebasedRelease(samples,read,sources=production){
  const seen=new Set();
  for(const [path,source] of samples){
   if(!Object.hasOwn(sources,path)||seen.has(path))continue;
-  const {after}=sources[path],current=beforeNativeButtonRepair(path,source);
+  const periphery=beforeBattlePeriphery(path,source);
+  const {after}=sources[path],current=nativeButtonPredecessor(path,periphery);
   if(!matches(current,after))continue;
   seen.add(path);
-  authenticateInputRetirement(path,source,read);
-  const retiredInput=beforeInputRetirement(path,source)!==source,repaired=current!==source;
+  authenticateInputRetirement(path,periphery,owner=>beforeBattlePeriphery(owner,read(owner)));
+  const peripheryProjected=periphery!==source;
+  const retiredInput=beforeInputRetirement(path,periphery)!==periphery,repaired=current!==periphery;
   const sameRevision=bytes=>{
-   const before=beforeNativeButtonRepair(path,bytes);
-   return (beforeInputRetirement(path,bytes)!==bytes)===retiredInput
-    &&(before!==bytes)===repaired&&matches(before,after);
+   const peripheryBefore=beforeBattlePeriphery(path,bytes);
+   const before=nativeButtonPredecessor(path,peripheryBefore);
+   return (peripheryBefore!==bytes)===peripheryProjected
+    &&(beforeInputRetirement(path,peripheryBefore)!==peripheryBefore)===retiredInput
+    &&(before!==peripheryBefore)===repaired&&matches(before,after);
   };
   assert(samples.every(([owner,bytes])=>owner!==path||sameRevision(bytes)),'combined linked owner identity: '+path+' mixed live and predecessor sources');
   let live;

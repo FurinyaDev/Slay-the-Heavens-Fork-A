@@ -15,6 +15,7 @@ import {beforeStsFadeCi} from './sts-fade-ci-source.mjs';
 import {beforeCurrentReplayFixes} from './current-replay-fix-sources.mjs';
 import {beforeIntegratedStsInventory} from './sts-selection-fade-source.mjs';
 import {beforeNativeButtonRepair,beforeRebasedCi,beforeRebasedRelease,historicalReleaseCopier} from './rebased-release-source.mjs';
+import {beforeBattlePeriphery} from './battle-periphery-source.mjs';
 import {beforeTinyHouseIntegratedSource} from './tiny-house-integrated-source.mjs';
 import {assertReleaseCapacityCohort,beforeReleaseCapacitySource} from './release-integration-source.mjs';
 import {beforeM05BackflowInventory} from './m05-shop-ci-source.mjs';
@@ -870,7 +871,7 @@ export function assertIntegrationSuccessorsCurrent(read=readFileSync){
  }
 }
 export function beforePreflightSource(path,source,view='prior'){
- source=beforeForkPush(path,source);
+ source=beforeForkPush(path,beforeBattlePeriphery(path,source));
  if(path==='.github/workflows/quality.yml')source=beforePosixDeadlineWorkflow(beforeWindowsDeadlineWorkflow(source));
  source=beforeUiEntranceWitness(path,beforeCurrentReplayCopier(path,source));
  source=beforeCurrentReplayFixes(path,source);
