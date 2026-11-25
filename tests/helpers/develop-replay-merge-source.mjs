@@ -82,11 +82,28 @@ function beforeRunOwnerTracePin(path,source,archive){
  return source.includes('\r\n')?prior.replaceAll('\n','\r\n'):prior;
 }
 
+const audioBuilderPath='scripts/build-native-audio-game.mjs';
+const audioDeckBrowserSuccessor=Object.freeze({
+ sha256:'eb367f8721cb05af1572c26d8953f612119cff84df493c3ccebfb9520e286758',
+ gitBlob:'1640fc369e4f446e919ffb57f3fe975640db4acd',
+});
+function beforeAudioDeckBrowserReceipt(path,source,archive){
+ if(path!==audioBuilderPath||!exactSourceMatches(source,audioDeckBrowserSuccessor))return source;
+ // #963 carries the already-built deck browser receipt into the audio package.
+ const line='    deckBrowser: full.deckBrowser,\n';
+ const current=source.replaceAll('\r\n','\n');
+ assert.equal(current.split(line).length,2,'single approved audio receipt field');
+ const prior=current.replace(line,'');
+ assert(exactSourceMatches(prior,archive.files[path].after),'exact audio packaging replay predecessor');
+ return source.includes('\r\n')?prior.replaceAll('\n','\r\n'):prior;
+}
+
 export function beforeMapRoomReplayCohort(path,source){
  if(!mapRoomCohortPaths.has(path))return source;
  mapRoomReplayCohort??=releaseUiRestoreArchive(readFileSync(new URL('./map-room-replay-cohort-source.json.gz',import.meta.url)),
   '6af29058c13b798d571e11355bca6af33a9912c4363a627a7618f6979ec8a61f','67fc8750dd6ef9a13067c6a43137f910b6a44228');
- return mapRoomReplayCohort.project(path,beforeRunOwnerTracePin(path,source,mapRoomReplayCohort));
+ source=beforeRunOwnerTracePin(path,source,mapRoomReplayCohort);
+ return mapRoomReplayCohort.project(path,beforeAudioDeckBrowserReceipt(path,source,mapRoomReplayCohort));
 }
 
 export function beforeCurrentDevelopReplayMerge(path,source){
