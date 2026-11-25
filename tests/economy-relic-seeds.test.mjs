@@ -5,6 +5,9 @@ import {javaShuffle,tiers} from '../tools/oracles/sts1_relic_queues.mjs';
 import {toLua} from '../scripts/build-lua-data.mjs';
 import {createHash} from 'node:crypto';
 const read=path=>JSON.parse(readFileSync(path,'utf8'));
+// The fixture retains the pinned STS source bytes. Only the two reviewed
+// in-game identities differ in the live catalog; check every slot in order.
+const liveIdentity=new Map([['Gambling Chip','Tactical Badge'],['SlaversCollar','ArenaCollar']]);
 // Independent exact-integer seed -> RandomXS128 words. No production imports.
 function shuffleLongs(seed){
  const mask=(1n<<64n)-1n;
@@ -28,7 +31,8 @@ test('economy effect fixtures use complete pinned queues and independently seede
  for(const sample of [fixture.membership,fixture.stone]){
   assert.deepEqual(sample.shuffleLongHex,shuffleLongs(sample.seed));
   for(const [index,tier]of tiers.entries()){
-   assert.deepEqual(sample.queues[tier],javaShuffle(catalog.queues[tier],sample.shuffleLongHex[index]));
+   const expected=sample.queues[tier].map(id=>liveIdentity.get(id)??id);
+   assert.deepEqual(javaShuffle(catalog.queues[tier],sample.shuffleLongHex[index]),expected);
    assert.equal(sample.queues[tier].length,catalog.queues[tier].length);
   }
   assert.equal(sample.queues[sample.tier].at(-1),sample.target);
