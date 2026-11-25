@@ -26,3 +26,25 @@ test('merchant exact source chain rejects omission of the initial sale-slot draw
   assert.notEqual(r.status,0);assert.match(r.stderr,/initial merchant exact draw count/);
  }finally{rmSync(dir,{recursive:true,force:true});}
 });
+
+for(const [label,rewrite] of [
+ ['retired name',"q[i]='Gambling Chip'"],
+ ['same-size reorder','q[i],q[i+1]=q[i+1],q[i]'],
+])test(`merchant initial relic queue rejects ${label}`,()=>{
+ const r=execute('0/ordinary',`
+local Pool=require('abyss_relic_pool')
+local make=Pool.new
+Pool.new=function(...)
+ local pool=make(...)
+ local q=pool.queues.rare
+ for i,id in ipairs(q)do
+  if id=='Tactical Badge'then
+   ${rewrite}
+   return pool
+  end
+ end
+ error('Tactical Badge mutation precondition')
+end`);
+ assert.notEqual(r.status,0,r.stdout+r.stderr);
+ assert.match(r.stderr,/independent host-Java initial relic queues\.rare\.\d+: .+ ~= Tactical Badge/);
+});
