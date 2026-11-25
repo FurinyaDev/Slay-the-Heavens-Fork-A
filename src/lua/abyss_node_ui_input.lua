@@ -1,5 +1,6 @@
 local Theme = require("abyss_theme")
 local Pointer = require('abyss_pointer_input')
+local Viewport = require('abyss_viewport')
 local layout = Theme.layout.nativeNode
 local SHOP_PAGE, RELIC_PAGE, PICK_PAGE = #layout.shop.columns, #layout.shop.relics.columns, #layout.picker.columns
 local OPTIONS = #layout.event.options.rows
@@ -64,11 +65,9 @@ function M.install(ctx)
     function ctx.point(event)
         if not event or type(event.GetUIPos) ~= "function" then return end
         local x, y = event:GetUIPos()
-        if type(x) ~= "number" or type(y) ~= "number" or x ~= x or y ~= y
-            or math.abs(x) == math.huge or math.abs(y) == math.huge then return end
         local width, height = ctx.self.canvasWidth or Theme.canvas.base[1], ctx.self.canvasHeight or Theme.canvas.base[2]
-        local k = math.min(width / Theme.canvas.base[1], height / Theme.canvas.base[2])
-        return x / k, y / k
+        local sx, sy = Viewport.toStage(x, y, width, height)
+        if sx and sy then return sx, sy end
     end
 
     function ctx.swipeDown(row, event)

@@ -37,11 +37,12 @@ function M.new(panel, options)
     local function changed() if options.onPhase then options.onPhase() end end
     function state:covering() return self.playing end
     function state:opaque() return self.playing and (self.phase=='hold' or self.phase=='close') end
-    function state.resize(_,width,height)
-        local scale=math.min(width/Theme.canvas.base[1],height/Theme.canvas.base[2])
-        fade:SetSizeDelta(width/scale,height/scale)
-        scene:GetChild('shade'):SetSizeDelta(width/scale,height/scale)
-        panel:GetChild('blocker'):SetSizeDelta(width/scale,height/scale)
+    function state.resize(_,width,height,viewport)
+        viewport=viewport or require('abyss_viewport').measure(width,height)
+        local visual,input=viewport.visual,viewport.input
+        fade:SetSizeDelta(visual[3],visual[4])
+        scene:GetChild('shade'):SetSizeDelta(visual[3],visual[4])
+        panel:GetChild('blocker'):SetSizeDelta(input[3],input[4])
     end
     function state:pose()
         local alpha=self.phase=='cover' and smooth(self.t/P.fadeIn)
