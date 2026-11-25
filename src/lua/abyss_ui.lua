@@ -1,6 +1,11 @@
 local view, Viewport, background, cardArt, portraits, v25Textures, nativeStage, componentBridge
 local artFailures={}
 local canvasWidth, canvasHeight
+local function mobileCanvas()
+    local device=game.GetDevice and game.GetDevice()
+    local devices=Enum.Device
+    return device~=nil and devices~=nil and (device==devices.Mobile or device==devices.MobileController)
+end
 local attempted = false
 local fatalMusic
 local function failed(phase, reason)
@@ -159,7 +164,7 @@ function OnStart()
         local Theme = require("abyss_theme")
         Viewport = require("abyss_viewport")
         local width, height = game.GetUICanvasSize()
-        local stage = Viewport.apply(script.object, width, height)
+        local stage, _, viewport = Viewport.apply(script.object, width, height, mobileCanvas())
         nativeStage=stage
         print("ABYSS_UI viewport_ready")
         local flags = artFeatures()
@@ -285,10 +290,7 @@ function OnStart()
               imageFillRight = Enum.ImageFillHorizontalType and Enum.ImageFillHorizontalType.Right,
               textAlignments = {horizontal=Enum.TextHorizontalAlignment,vertical=Enum.TextVerticalAlignment},
               cursorPosition = function() return game.GetCursorUIPos() end,
-              touchScreen = function()
-                  local device=game.GetDevice()
-                  return device==Enum.Device.Mobile or device==Enum.Device.MobileController
-              end,
+              touchScreen = mobileCanvas,
               sound = function(cue)
                 local id = Theme.sound[cue]
                 if id and game.PlayAudio2D then
@@ -301,7 +303,7 @@ function OnStart()
                 print("ABYSS_UI settlement_requested " .. (victory and "victory" or "defeat"))
                 return true
             end })
-        view:resize(width, height)
+        view:resize(width, height, viewport)
         canvasWidth, canvasHeight = width, height
         script:EnableUpdate(true)
         print("ABYSS_UI ready")
@@ -328,8 +330,8 @@ function OnUpdate(dt)
     local ok, reason = pcall(function()
         local width, height = game.GetUICanvasSize()
         if width ~= canvasWidth or height ~= canvasHeight then
-            Viewport.apply(script.object, width, height)
-            view:resize(width, height)
+            local _, _, viewport = Viewport.apply(script.object, width, height, mobileCanvas())
+            view:resize(width, height, viewport)
             canvasWidth, canvasHeight = width, height
         end
         local reveal=require('abyss_page_reveal')

@@ -206,7 +206,7 @@ function M.new(cover,ready,onIntent,frames,motion)
     end
     local function paintBlocker(frame)
         local limited=gate.intent and gate.intent.deckPaged and gate.localFrame and gate.state~='failed'
-        local blockerFrame=limited and frame or frames.size or frames.full
+        local blockerFrame=limited and frame or frames.input or frames.full
         local ticket=gate.epoch
         local blocker=cover:GetChild('blocker')
         if gate.epoch~=ticket or not paintBlockerInput(blocker,limited,ticket) then return false end
@@ -233,11 +233,10 @@ function M.new(cover,ready,onIntent,frames,motion)
         assert(sized~=false,'page cover size rejected')
         paintedFrame=frame;return true
     end
-    function gate.resize(_,width,height)
+    function gate.resize(_,width,height,viewport)
         if not frames then return end
-        local scale=math.min(width/frames.full[3],height/frames.full[4])
-        -- Extend the veil and input hit over the letterboxing of the scaled stage.
-        frames.size={0,0,width/scale,height/scale}
+        viewport=viewport or require('abyss_viewport').measure(width,height)
+        frames.size,frames.input=viewport.visual,viewport.input
         paintFrame()
     end
     function gate:covered()return self.state~='visible' end
