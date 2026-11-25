@@ -5,6 +5,7 @@ import { basename, join, relative, resolve } from 'node:path';
 import { pipeline } from 'node:stream/promises';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { githubRequest, verifyReleaseFull } from './release-ci.mjs';
+import { hostedGilReceipt } from './hosted-gil-receipt.mjs';
 
 const repository = 'FurinyaWorks/Slay-the-Heavens';
 const repositoryId = 1429751262;
@@ -24,12 +25,11 @@ function requireGate(condition, message) {
   if (!condition) throw new GateError(message);
 }
 
-export function candidateTarget(branch, source, dispatchSha) {
+export function candidateTarget(branch, source) {
   requireGate(sha.test(source), 'source_sha must be a 40-character lowercase Git SHA.');
   if (branch === 'develop') return { branch };
   const version = /^hotfix\/(v(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*))$/.exec(branch)?.[1];
   requireGate(version, 'Select develop or a hotfix/vX.Y.Z branch.');
-  requireGate(dispatchSha === source, 'Hotfix source_sha must equal the exact workflow dispatch SHA.');
   return { branch, version };
 }
 
@@ -101,13 +101,12 @@ const artifactName = request => request.version
 
 export async function findArtifact(api, request, runId, now = Date.now()) {
   for (let page = 1; page <= 10; page++) {
-    const { workflow_runs: runs } = await api(`actions/workflows/gil-candidate.yml/runs?branch=${encodeURIComponent(request.branch)}&event=workflow_dispatch&status=success&per_page=100&page=${page}`);
+    const { workflow_runs: runs } = await api(`actions/workflows/gil-candidate.yml/runs?branch=develop&event=workflow_dispatch&status=success&per_page=100&page=${page}`);
     for (const run of runs) {
       if (String(run.id) === runId || run.repository?.id !== repositoryId || run.head_repository?.id !== repositoryId ||
-        run.head_branch !== request.branch || run.event !== 'workflow_dispatch' || run.conclusion !== 'success' ||
-        (request.version && run.head_sha !== request.sourceSha) ||
+        run.head_branch !== 'develop' || run.event !== 'workflow_dispatch' || run.conclusion !== 'success' ||
         run.path !== '.github/workflows/gil-candidate.yml' ||
-        run.display_title?.toLowerCase() !== `gil candidate / ${request.sourceSha}`) continue;
+        run.display_title?.toLowerCase() !== `gil candidate / ${request.branch} / ${request.sourceSha}`) continue;
       const name = artifactName(request);
       const { artifacts } = await api(`actions/runs/${run.id}/artifacts?name=${name}`);
       const artifact = artifacts.find(item => item.name === name && item.expired === false && Date.parse(item.expires_at) > now &&
@@ -136,7 +135,9 @@ export async function api(path, checkDownload = false) {
 
 async function preflight() {
   const source = process.env.SOURCE_SHA;
-  const target = candidateTarget(process.env.GITHUB_REF_NAME, source, process.env.GITHUB_SHA);
+  requireGate(process.env.GITHUB_REF === 'refs/heads/develop' && process.env.GITHUB_REPOSITORY_ID === String(repositoryId),
+    'Run the GIL candidate workflow from the trusted default develop branch.');
+  const target = candidateTarget(process.env.SOURCE_REF, source);
   const policy = [import.meta.url, new URL('../.github/workflows/gil-candidate.yml', import.meta.url)].map(url => hash(readFileSync(new URL(url))));
   const request = approvedRequest(process.env.GIL_CANDIDATE_APPROVAL, source, policy, target);
   const checks = await verifySource(source, api, target);
@@ -250,7 +251,7 @@ function diagnose() {
 
 async function deliver() {
   const { SOURCE_SHA: sourceSha, BASE_SHA256: baseSha256, WORK_KEY: workKey, REQUEST_ID: requestId,
-    MILIASTRA_MCP_ROOT: toolRoot, GIL_BUILD_SECONDS, GIL_RECEIVED_BYTES, GITHUB_REF_NAME: branch,
+    MILIASTRA_MCP_ROOT: toolRoot, GIL_BUILD_SECONDS, GIL_RECEIVED_BYTES, SOURCE_REF: branch,
     RELEASE_VERSION: version } = process.env;
   cleanHead('.', sourceSha, 'Source');
   toolchain(toolRoot);
@@ -274,18 +275,24 @@ async function deliver() {
     graph.name === '_GSTS_ABYSS_BGM' && graph.nodeCount > 0) &&
     Object.values(nativeBgmSignals).every(signal => inspection.signals.some(ref => ref.name === signal)),
   'Final GIL readback has no compiled BGM graph with the expected cue signals.');
-  if (version) await verifyFrozenHead(api, branch, sourceSha);
   const artifact = 'build/gil-artifact';
   mkdirSync(artifact);
   const candidate = { path: 'candidate.gil', bytes: finalGil.bytes, sha256: finalGil.sha256 };
   copyFileSync(mapPath, join(artifact, candidate.path));
   requireGate(fileRecord(join(artifact, candidate.path)).sha256 === candidate.sha256, 'Artifact copy hash mismatch.');
-  const receipt = { sourceCommit: sourceSha, sourceBranch: branch, sourceDirty: false, buildId: full.buildId,
-    startedAt: full.startedAt, payloadDigest: full.payloadDigest, release: { version: full.release.version,
-      ...(version ? { notesSha256: full.release.notesSha256 } : {}) },
-    candidate, staticCheck: 'pass', moduleReadback: 'pass', bgmGraphReadback: { id: graphId, status: 'pass' } };
-  writeFileSync(join(artifact, 'candidate.json'), JSON.stringify(receipt, null, 2) + '\n');
-  writeFileSync(join(artifact, 'manifest.json'), JSON.stringify({ ...receipt, requestId, baseSha256, toolCommit, encoderSha256,
+  const receiptPath = join(artifact, 'candidate.json');
+  const receipt = hostedGilReceipt('.', fullRoot, full, audio, candidate, branch);
+  writeFileSync(receiptPath, JSON.stringify(receipt, null, 2) + '\n');
+  const { auditNativeCandidate } = await moduleAt('.', 'scripts/audit-native-candidate.mjs');
+  const audit = await auditNativeCandidate({ source: sourceSha, candidate: join(artifact, candidate.path), receipt: receiptPath,
+    output: join(out, 'audit'), bgm: true });
+  requireGate(audit.ok && audit.candidate.sha256Before === candidate.sha256 && audit.candidate.sha256After === candidate.sha256,
+    'Final GIL failed the independent native scripts, UI, templates or graph audit.');
+  if (version) await verifyFrozenHead(api, branch, sourceSha);
+  writeFileSync(join(artifact, 'manifest.json'), JSON.stringify({
+    sourceCommit: sourceSha, sourceBranch: branch, version: receipt.release.version, buildId: receipt.buildId,
+    payloadDigest: receipt.payloadDigest, candidate, requestId, baseSha256, toolCommit, encoderSha256,
+    nativeAudit: 'pass',
     platformVersion: null,
     parameters: { workKey, profile, nativePageLifecycle: true, releaseCandidate: Boolean(version), liveWrite: false },
     buildSeconds: Number(GIL_BUILD_SECONDS), runnerReceivedBytesBeforeUpload: Number(GIL_RECEIVED_BYTES) }, null, 2) + '\n');

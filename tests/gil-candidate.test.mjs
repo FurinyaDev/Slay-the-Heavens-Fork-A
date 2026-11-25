@@ -1,8 +1,13 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { test } from 'node:test';
 import { api, approvedRequest, candidateTarget, findArtifact, verifyReceipts, verifySource } from '../scripts/gil-candidate.mjs';
+import { fileRecord } from '../scripts/evidence-files.mjs';
+import { hostedCandidatePath, verifiedPayloadInputs } from '../scripts/hosted-gil-receipt.mjs';
 
 const sourceSha = '1'.repeat(40);
 const baseSha256 = '2'.repeat(64);
@@ -12,7 +17,7 @@ const approval = { sourceSha, baseSha256, workKey, reference: 'owner/42', basePr
 const request = changes => approvedRequest(JSON.stringify({ ...approval, ...changes }), sourceSha, 'policy');
 const branch = 'hotfix/v2.1.1';
 const version = 'v2.1.1';
-const hotfix = candidateTarget(branch, sourceSha, sourceSha);
+const hotfix = candidateTarget(branch, sourceSha);
 
 function formalApi({ comparison = { status: 'ahead', merge_base_commit: { sha: sourceSha } },
   conclusion = 'success', absentJob = '', runAttempt = 1, target = 'develop', event = 'push', refHead = sourceSha } = {}) {
@@ -48,9 +53,9 @@ test('admit only exact merged source with successful current Quality and invento
 
 test('require hotfix dispatch, frozen Full and inventory audit on the same current HEAD', async () => {
   assert.deepEqual(hotfix, { branch, version });
-  assert.throws(() => candidateTarget(branch, sourceSha, '0'.repeat(40)), /exact workflow dispatch SHA/);
+  assert.throws(() => candidateTarget(branch, 'bad'), /40-character lowercase Git SHA/);
   for (const invalid of ['rc/v2.1.1', 'release/v2.1.1', 'hotfix/v2.01.1', 'hotfix/next']) {
-    assert.throws(() => candidateTarget(invalid, sourceSha, sourceSha), /Select develop/);
+    assert.throws(() => candidateTarget(invalid, sourceSha), /Select develop/);
   }
   const verifyFull = async (ref, head) => {
     assert.equal(ref, branch);
@@ -95,7 +100,7 @@ test('reuse only a matching unexpired Artifact on a successful main develop disp
   const candidate = request();
   const now = Date.parse('2026-11-23T00:00:00Z');
   const run = { id: 10, repository: repo, head_repository: repo, event: 'workflow_dispatch', conclusion: 'success',
-    head_branch: 'develop', display_title: `GIL candidate / ${sourceSha}`, path: '.github/workflows/gil-candidate.yml' };
+    head_branch: 'develop', display_title: `GIL candidate / develop / ${sourceSha}`, path: '.github/workflows/gil-candidate.yml' };
   const artifact = { id: 11, name: `gil-candidate-${candidate.id}`, expired: false,
     expires_at: '2026-11-24T00:00:00Z', size_in_bytes: 42, digest: 'sha256:' + baseSha256, workflow_run: { id: run.id } };
   const api = (runChanges = {}, artifactChanges = {}, downloadable = true) => async (path, checkDownload) => {
@@ -111,22 +116,23 @@ test('reuse only a matching unexpired Artifact on a successful main develop disp
   }
 });
 
-test('reuse only a version-named Artifact on the exact frozen hotfix dispatch', async () => {
+test('reuse only a version-named Artifact for the exact hotfix from a default branch dispatch', async () => {
   const request = approvedRequest(JSON.stringify({ ...approval, sourceBranch: branch, version }), sourceSha, 'policy', hotfix);
   const now = Date.parse('2026-11-23T00:00:00Z');
   const run = { id: 10, repository: repo, head_repository: repo, event: 'workflow_dispatch', conclusion: 'success',
-    head_branch: branch, head_sha: sourceSha, display_title: `GIL candidate / ${sourceSha}`, path: '.github/workflows/gil-candidate.yml' };
+    head_branch: 'develop', head_sha: '9'.repeat(40), display_title: `GIL candidate / ${branch} / ${sourceSha}`,
+    path: '.github/workflows/gil-candidate.yml' };
   const artifact = { id: 11, name: `gil-candidate-${version}-${sourceSha}-${request.id}`, expired: false,
     expires_at: '2026-11-24T00:00:00Z', size_in_bytes: 42, digest: 'sha256:' + baseSha256, workflow_run: { id: run.id } };
   const api = changes => async (path, checkDownload) => {
     if (checkDownload) return true;
     if (path.includes('/artifacts?')) return { artifacts: [artifact] };
-    assert.match(path, /branch=hotfix%2Fv2\.1\.1/);
+    assert.match(path, /branch=develop/);
     return { workflow_runs: [{ ...run, ...changes }] };
   };
   assert.match(await findArtifact(api(), request, '20', now), /runs\/10\/artifacts\/11$/);
-  assert.equal(await findArtifact(api({ head_sha: '0'.repeat(40) }), request, '20', now), undefined);
-  assert.equal(await findArtifact(api({ head_branch: 'develop' }), request, '20', now), undefined);
+  assert.equal(await findArtifact(api({ display_title: `GIL candidate / ${branch} / ${'0'.repeat(40)}` }), request, '20', now), undefined);
+  assert.equal(await findArtifact(api({ head_branch: branch }), request, '20', now), undefined);
 });
 
 test('reject missing protected base URL before downloads', () => {
@@ -185,4 +191,30 @@ test('bind the exact full and final audio receipts, final bytes and production p
   assert.doesNotThrow(() => verifyReceipts(received));
   assert.throws(() => verifyReceipts({ ...received, version: 'v2.1.2' }), /release version or notes/);
   assert.throws(() => verifyReceipts({ ...received, audio }), /release version or notes/);
+});
+
+test('verify extracted hosted artifacts without opening the original runner paths', t => {
+  const root = mkdtempSync(join(tmpdir(), 'hosted-native-gil-'));
+  t.after(() => rmSync(root, { recursive: true, force: true }));
+  const repo = join(root, 'project');
+  const mcp = join(root, 'mcp');
+  const artifact = join(root, 'download');
+  for (const dir of [join(repo, 'scripts'), join(mcp, 'src'), artifact]) mkdirSync(dir, { recursive: true });
+  writeFileSync(join(repo, 'scripts/native-client-check.mjs'), 'checker');
+  writeFileSync(join(mcp, 'src/scene-save.mjs'), 'encoder');
+  const candidatePath = join(artifact, 'candidate.gil');
+  writeFileSync(candidatePath, 'candidate');
+  const receipt = {
+    receiptSchema: 'github-actions-gil-v1', candidate: { path: 'candidate.gil' },
+    encoderPayloadPaths: ['D:\\actions\\mcp\\src\\scene-save.mjs', 'D:\\actions\\source\\scripts\\native-client-check.mjs'],
+  };
+  const receiptPath = join(artifact, 'candidate.json');
+  assert.equal(hostedCandidatePath(receiptPath, receipt), fileRecord(candidatePath).path);
+  assert.throws(() => hostedCandidatePath(receiptPath, { ...receipt, candidate: { path: '../candidate.gil' } }), /Unexpected candidate filename/);
+  const options = { toolchainIdentity: { sourcePath: 'src/scene-save.mjs', helperPath: 'scripts/native-client-check.mjs' } };
+  const collect = (_, { toolchainIdentity: { sourcePath, helperPath } }) => [fileRecord(sourcePath), fileRecord(helperPath)];
+  const rows = verifiedPayloadInputs(repo, receipt, options, collect, mcp);
+  assert.deepEqual(rows.map(row => row.path), receipt.encoderPayloadPaths);
+  assert.throws(() => verifiedPayloadInputs(repo, receipt, { toolchainIdentity: { ...options.toolchainIdentity, sourcePath: '../source' } }, collect, mcp),
+    /pinned MCP toolchain/);
 });

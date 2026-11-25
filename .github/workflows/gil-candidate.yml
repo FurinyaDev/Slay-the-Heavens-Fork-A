@@ -1,8 +1,13 @@
 name: GIL candidate
-run-name: GIL candidate / ${{ inputs.source_sha }}
+run-name: GIL candidate / ${{ inputs.source_ref }} / ${{ inputs.source_sha }}
 on:
   workflow_dispatch:
     inputs:
+      source_ref:
+        description: 'Source branch: develop or hotfix/vX.Y.Z'
+        default: develop
+        required: true
+        type: string
       source_sha:
         description: 'Exact CI-verified 40-character develop SHA or frozen hotfix HEAD'
         required: true
@@ -11,11 +16,11 @@ permissions:
   contents: read
   actions: read
 concurrency:
-  group: gil-candidate-${{ github.ref }}-${{ inputs.source_sha }}
+  group: gil-candidate-${{ inputs.source_sha }}
   cancel-in-progress: false
 jobs:
   build:
-    if: github.event_name == 'workflow_dispatch' && github.repository_id == '1429751262' && (github.ref == 'refs/heads/develop' || startsWith(github.ref, 'refs/heads/hotfix/'))
+    if: github.event_name == 'workflow_dispatch' && github.repository_id == '1429751262' && github.ref == 'refs/heads/develop'
     runs-on: windows-2025
     timeout-minutes: 45
     environment: gil-candidate
@@ -43,6 +48,7 @@ jobs:
         id: candidate
         env:
           GH_TOKEN: ${{ github.token }}
+          SOURCE_REF: ${{ inputs.source_ref }}
           SOURCE_SHA: ${{ inputs.source_sha }}
           GIL_CANDIDATE_APPROVAL: ${{ vars.GIL_CANDIDATE_APPROVAL }}
         run: node control/scripts/gil-candidate.mjs preflight
@@ -109,16 +115,13 @@ jobs:
           CI_LFS_TOKEN: ${{ github.token }}
           SOURCE_SHA: ${{ inputs.source_sha }}
         run: node control/scripts/gil-candidate.mjs assets
-      - name: Build, read back and verify the complete game
+      - name: Build the complete game with native audio
         if: steps.candidate.outputs.build == 'true'
         working-directory: source
         env:
           SOURCE_SHA: ${{ inputs.source_sha }}
           WORK_KEY: ${{ steps.candidate.outputs.work_key }}
-          BASE_SHA256: ${{ steps.candidate.outputs.base_sha256 }}
-          REQUEST_ID: ${{ steps.candidate.outputs.request_id }}
           RELEASE_VERSION: ${{ steps.candidate.outputs.release_version }}
-          GH_TOKEN: ${{ github.token }}
           MILIASTRA_PYTHON: python
         run: |
           $PSNativeCommandUseErrorActionPreference = $false
@@ -131,9 +134,22 @@ jobs:
             node ../control/scripts/gil-candidate.mjs diagnose
             exit 1
           }
-          $env:GIL_BUILD_SECONDS = $timer.Elapsed.TotalSeconds.ToString('F1', [Globalization.CultureInfo]::InvariantCulture)
+          $seconds = $timer.Elapsed.TotalSeconds.ToString('F1', [Globalization.CultureInfo]::InvariantCulture)
+          "GIL_BUILD_SECONDS=$seconds" >> $env:GITHUB_ENV
           $received = (Get-NetAdapterStatistics | Measure-Object -Property ReceivedBytes -Sum).Sum
-          $env:GIL_RECEIVED_BYTES = [long]$received - [long]$env:GIL_START_RX
+          "GIL_RECEIVED_BYTES=$([long]$received - [long]$env:GIL_START_RX)" >> $env:GITHUB_ENV
+      - name: Audit the final GIL and prepare the download
+        if: steps.candidate.outputs.build == 'true'
+        working-directory: source
+        env:
+          SOURCE_REF: ${{ inputs.source_ref }}
+          SOURCE_SHA: ${{ inputs.source_sha }}
+          BASE_SHA256: ${{ steps.candidate.outputs.base_sha256 }}
+          REQUEST_ID: ${{ steps.candidate.outputs.request_id }}
+          RELEASE_VERSION: ${{ steps.candidate.outputs.release_version }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $env:MILIASTRA_MCP_ROOT = (Resolve-Path ../miliastra-mcp).Path
           node ../control/scripts/gil-candidate.mjs deliver
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: steps.candidate.outputs.build == 'true'
