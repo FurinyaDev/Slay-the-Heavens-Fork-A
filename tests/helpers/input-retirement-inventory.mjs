@@ -27,17 +27,24 @@ const retiredInputLuaTests=[
  'tests/lua/controller_rooms.lua','tests/lua/deck_controller_lifecycle.lua',
  'tests/lua/potion_controller_cancel_composition.lua','tests/lua/relic_view_controller_click.lua',
 ];
-function assertInputRetirementLuaSources(read){
+function assertInputRetirementLuaSources(read,requireLive=false){
+ let liveEpoch;
  for(const [path,[sha,id]] of Object.entries(inputRetirementLuaTests)){
   const source=read(path,'utf8');
   const message='fresh Lua input retirement inventory source: '+path;
   assert(typeof source==='string'&&!source.includes('\r\r\n'),message);
   const lf=normalize(source),digest=hash(lf),gitBlob=blob(lf);
-  const successor=releaseTextLuaTests[path];
-  assert((digest===sha&&gitBlob===id)||(successor&&digest===successor[0]&&gitBlob===successor[1]),message);
+  const [liveSha,liveBlob]=releaseTextLuaTests[path];
+  const live=digest===liveSha&&gitBlob===liveBlob;
+  assert(live||!requireLive&&digest===sha&&gitBlob===id,message);
+  assert(liveEpoch===undefined||liveEpoch===live,message);
+  liveEpoch=live;
  }
  for(const path of retiredInputLuaTests)
   assert.throws(()=>read(path,'utf8'),{code:'ENOENT'},'retired Lua input inventory source must be absent: '+path);
+}
+export function assertInputRetirementLuaCurrent(read=readFileSync){
+ assertInputRetirementLuaSources(read,true);
 }
 // The live deck test is a browser-backflow successor. Bridge only this
 // historical reader at the leaf; detached callers keep their sealed helper.
@@ -50,7 +57,7 @@ function historicalStsSuite(paths,read){
 }
 // These historical inventories use the prior test names. Current Full
 // inventory, discovery and runners continue to use the tests on disk.
-export function beforeInputRetirementTestInventory(paths,kind,read=readFileSync,{required=false}={}){
+export function beforeInputRetirementTestInventory(paths,kind,read=readFileSync,{required=false,requireLive=false}={}){
  assert(kind==='js'||kind==='lua','known input retirement inventory kind');
  const added=kind==='js'?inputRetirementJsTests:Object.keys(inputRetirementLuaTests);
  if(!required&&!added.some(path=>paths.includes(path)))return paths;
@@ -63,7 +70,7 @@ export function beforeInputRetirementTestInventory(paths,kind,read=readFileSync,
   assert(!names.has(path),'retired Lua input fixture must be absent from discovery inventory: '+path);
   names.add(path);
  }
- assertInputRetirementLuaSources(read);
+ assertInputRetirementLuaSources(read,requireLive);
  return [...names].sort();
 }
 // A frozen receipt can name a retired test only by its complete checked
