@@ -13,6 +13,7 @@ import {bindMonsterActorTemplates, monsterActorTiers} from '../monster-art.mjs';
 import {prepareRefinedReleaseMonsterArt, refinedReleaseMonsterRegistry} from '../refined-release-monsters.mjs';
 import {deckBrowserBindingSource, deckBrowserParts, deckBrowserTemplateName} from '../deck-ui-layout.mjs';
 import {validateSample, percentile} from '../benchmark-runtime-path.mjs';
+import {lfsArguments, lfsEnvironment} from '../ci-reviewed-lfs.mjs';
 import {gitSourceIdentity} from '../release-notes.mjs';
 
 const phases = ['begin', 'cold-start', 'start-map', 'first-fight', 'ten-card-hand', 'consecutive-play',
@@ -24,17 +25,27 @@ rmSync(reportPath, {force: true});
 mkdirSync(dirname(reportPath), {recursive: true});
 const directory = mkdtempSync(join(dirname(reportPath), 'production-'));
 process.on('exit', () => rmSync(directory, {recursive: true, force: true}));
-const source = gitSourceIdentity();
+const {sourceCommit} = gitSourceIdentity();
 const tree = spawnSync('git', ['rev-parse', 'HEAD^{tree}'], {encoding: 'utf8'});
-assert(source.sourceCommit && tree.status === 0 && /^[a-f0-9]{40}$/.test(tree.stdout.trim()),
+assert(sourceCommit && tree.status === 0 && /^[a-f0-9]{40}$/.test(tree.stdout.trim()),
   'Production Host requires a Git source identity');
+const inputs = ['art', 'config', 'data', 'scripts', 'src', 'tests', 'package.json', 'package-lock.json'];
+const env = lfsEnvironment();
+function materialInputsChanged() {
+  // CI restores verified media from its bundle, which changes worktree stat
+  // sizes even when the LFS-clean bytes match the candidate's index pointers.
+  const filters = lfsArguments.slice(0, lfsArguments.indexOf('lfs'));
+  const tracked = spawnSync('git', [...filters, 'diff', '--quiet', 'HEAD', '--', ...inputs], {env});
+  const extra = spawnSync('git', ['ls-files', '--others', '--exclude-standard', '-z', '--', ...inputs], {env});
+  assert([0, 1].includes(tracked.status) && extra.status === 0, 'Unable to check Production Host inputs');
+  return tracked.status === 1 || extra.stdout.length !== 0;
+}
+const source = {sourceCommit, sourceDirty: materialInputsChanged()};
 function verifyCandidate() {
   if (process.env.GITHUB_ACTIONS !== 'true') return;
-  assert.equal(source.sourceCommit, process.env.GITHUB_SHA, 'Production Host ran outside the CI candidate');
-  const status = spawnSync('git', ['status', '--porcelain', '--untracked-files=all', '--',
-    'art', 'config', 'data', 'scripts', 'src', 'tests', 'package.json', 'package-lock.json'], {encoding: 'utf8'});
-  assert(status.status === 0 && status.stdout === '', 'Production Host requires clean CI inputs: ' + status.stdout);
-  assert.equal(gitSourceIdentity().sourceCommit, source.sourceCommit, 'Production Host checkout changed during measurement');
+  assert.equal(sourceCommit, process.env.GITHUB_SHA, 'Production Host ran outside the CI candidate');
+  assert.equal(gitSourceIdentity().sourceCommit, sourceCommit, 'Production Host checkout changed during measurement');
+  assert(!source.sourceDirty && !materialInputsChanged(), 'Production Host requires clean CI inputs');
 }
 verifyCandidate();
 const {options} = nativeAudioBuildArgs(['offline.gil', '--work-key=offline-performance']);
