@@ -1,15 +1,20 @@
 import assert from 'node:assert/strict';
 import {spawnSync} from 'node:child_process';
-import {readFileSync} from 'node:fs';
+import {mkdtempSync, readFileSync, rmSync} from 'node:fs';
+import {tmpdir} from 'node:os';
+import {join} from 'node:path';
 import test from 'node:test';
 
 test('formal native Host protects the player path using the release generation profile', t => {
-  const result = spawnSync(process.execPath, ['scripts/runtime-baseline/production.mjs'], {
+  const directory = mkdtempSync(join(tmpdir(), 'slay-production-host-'));
+  t.after(() => rmSync(directory, {recursive: true, force: true}));
+  const output = join(directory, 'production.json');
+  const result = spawnSync(process.execPath, ['scripts/runtime-baseline/production.mjs', '--output', output], {
     encoding: 'utf8', timeout: 360_000, maxBuffer: 4 * 1024 * 1024, windowsHide: true,
   });
   assert.ifError(result.error);
   assert.equal(result.status, 0, result.stdout + result.stderr);
-  const report = JSON.parse(readFileSync('build/performance-regression/production.json', 'utf8'));
+  const report = JSON.parse(readFileSync(output, 'utf8'));
   assert.equal(report.status, 'OFFLINE_HOST_PASS');
   assert.equal(report.officialClient, 'UNVERIFIED');
   assert.equal(report.samples.length, 3);

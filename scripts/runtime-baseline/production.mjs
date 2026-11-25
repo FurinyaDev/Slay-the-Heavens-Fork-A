@@ -1,9 +1,10 @@
 import assert from 'node:assert/strict';
 import {spawnSync} from 'node:child_process';
 import {createHash} from 'node:crypto';
-import {mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync} from 'node:fs';
+import {mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync} from 'node:fs';
 import {createRequire} from 'node:module';
-import {join, resolve} from 'node:path';
+import {dirname, join, resolve} from 'node:path';
+import {parseArgs} from 'node:util';
 import {buildLuaData, luaString, toLua} from '../build-lua-data.mjs';
 import {buildUI} from '../build-ui.mjs';
 import {nativeAudioBuildArgs} from '../build-native-audio-game.mjs';
@@ -17,17 +18,25 @@ import {gitSourceIdentity} from '../release-notes.mjs';
 const phases = ['begin', 'cold-start', 'start-map', 'first-fight', 'ten-card-hand', 'consecutive-play',
   'deck-cold-open', 'deck-close', 'deck-warm-open', 'pause-resume', 'exit', 'reenter'];
 
-const directory = resolve('build/performance-regression/production');
-const reportPath = resolve(directory, '../production.json');
+const {values} = parseArgs({options: {output: {type: 'string', default: 'build/performance-regression/production.json'}}});
+const reportPath = resolve(values.output);
 rmSync(reportPath, {force: true});
-mkdirSync(directory, {recursive: true});
+mkdirSync(dirname(reportPath), {recursive: true});
+const directory = mkdtempSync(join(dirname(reportPath), 'production-'));
+process.on('exit', () => rmSync(directory, {recursive: true, force: true}));
 const source = gitSourceIdentity();
 const tree = spawnSync('git', ['rev-parse', 'HEAD^{tree}'], {encoding: 'utf8'});
 assert(source.sourceCommit && tree.status === 0 && /^[a-f0-9]{40}$/.test(tree.stdout.trim()),
   'Production Host requires a Git source identity');
-if (process.env.GITHUB_ACTIONS === 'true') {
+function verifyCandidate() {
+  if (process.env.GITHUB_ACTIONS !== 'true') return;
   assert.equal(source.sourceCommit, process.env.GITHUB_SHA, 'Production Host ran outside the CI candidate');
+  const status = spawnSync('git', ['status', '--porcelain', '--untracked-files=all', '--',
+    'art', 'config', 'data', 'scripts', 'src', 'tests', 'package.json', 'package-lock.json'], {encoding: 'utf8'});
+  assert(status.status === 0 && status.stdout === '', 'Production Host requires clean CI inputs: ' + status.stdout);
+  assert.equal(gitSourceIdentity().sourceCommit, source.sourceCommit, 'Production Host checkout changed during measurement');
 }
+verifyCandidate();
 const {options} = nativeAudioBuildArgs(['offline.gil', '--work-key=offline-performance']);
 assert(options.officialAssets && options.refinedReleaseMonsterArt && options.nativePageLifecycle,
   'Production performance requires the refined native audio build preset');
@@ -102,6 +111,7 @@ const report = {
     return [name, {p50Ms: percentile(values, .5), maxMs: Math.max(...values)}];
   })),
 };
+verifyCandidate();
 writeFileSync(reportPath, JSON.stringify(report, null, 2) + '\n');
 console.log(JSON.stringify({status: report.status, ...source, sourceTree: report.sourceTree,
   configuration: options, generatedLuaSha256: report.generatedLuaSha256, environment: report.environment,
