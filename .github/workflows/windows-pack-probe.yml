@@ -1,0 +1,57 @@
+name: Windows checkout and media probe
+on:
+  push:
+    branches: [ci/v211-windows-pack-probe]
+permissions:
+  contents: read
+jobs:
+  probe:
+    if: github.repository_id == '1460097312' && github.ref == 'refs/heads/ci/v211-windows-pack-probe'
+    runs-on: windows-2025
+    timeout-minutes: 10
+    env:
+      CANDIDATE_SHA: e0fcd294fae930f3dbbed6599de6e2c18d1c78ca
+      GIT_LFS_SKIP_SMUDGE: '1'
+    steps:
+      - name: Check empty hosted checkout and tool versions
+        run: |
+          if (Test-Path -LiteralPath '.git') { throw 'Hosted checkout did not start empty' }
+          git version
+          git lfs version
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        env:
+          GIT_CONFIG_COUNT: '1'
+          GIT_CONFIG_KEY_0: fetch.unpackLimit
+          GIT_CONFIG_VALUE_0: '1'
+        with:
+          ref: ${{ env.CANDIDATE_SHA }}
+          fetch-depth: 2
+          filter: blob:none
+          persist-credentials: false
+      - name: Run unchanged comparison preparation and pack guard
+        id: guard
+        env:
+          CI_COMPARISON_TOKEN: ${{ github.token }}
+        run: |
+          $env:CI_COMPARISON_BASE = git rev-parse HEAD^
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node scripts/ci-comparison-blobs.mjs
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node --input-type=module -e "import fs from 'node:fs'; import {checkHostedCheckout} from './scripts/check-network-policy.mjs'; const bytes=checkHostedCheckout({sha:process.env.CANDIDATE_SHA});fs.appendFileSync(process.env.GITHUB_OUTPUT,'pack='+bytes+'\n');"
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24.18.0'
+      - name: Check exact whitespace and restore all hash-bound media
+        env:
+          CI_LFS_TOKEN: ${{ github.token }}
+          EXPECTED_PACK: ${{ steps.guard.outputs.pack }}
+        run: |
+          $base = git rev-parse HEAD^
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node scripts/ci-whitespace.mjs "$base" "$env:CANDIDATE_SHA"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node scripts/ci-media-lfs.mjs
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node --input-type=module -e "import assert from 'node:assert/strict';import {checkHostedCheckout} from './scripts/check-network-policy.mjs';assert.equal(checkHostedCheckout({sha:process.env.CANDIDATE_SHA}),Number(process.env.EXPECTED_PACK));console.log('No new Git packs after complete verified hydration.');"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          if (git status --porcelain) { throw 'Hydrated checkout has a source delta' }
