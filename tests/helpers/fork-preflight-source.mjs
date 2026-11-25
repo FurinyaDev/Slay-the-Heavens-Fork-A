@@ -1,7 +1,7 @@
 import {beforePosixDeadlineWorkflow,beforeWindowsDeadlineWorkflow} from './auto-merge-workflow.mjs';
 import {beforeHotfixPublicationGate} from './release-ci-workflow.mjs';
 import {assertInputRetirementLuaCurrent,beforeInputRetirementTestInventory,readRetiredInputLuaReceipt} from './input-retirement-inventory.mjs';
-import {beforeDeckPagesSuiteSource} from './input-retirement-source.mjs';
+import {assertReleaseCandidateToolsCurrent,beforeDeckPagesSuiteSource} from './input-retirement-source.mjs';
 export {beforeInputRetirementTestInventory} from './input-retirement-inventory.mjs';
 import {assertDevelopBackflowCurrent,authenticateDevelopBackflow,beforeDevelopBackflow,developBackflowOwns} from './develop-release-backflow-source.mjs';
 import {beforeCalibrationReplay,beforeCurrentReplayCopier} from './calibration-replay-sources.mjs';
@@ -10,7 +10,7 @@ import {assertNativeFixturesCurrent,beforeNativeFixtureReplay} from './native-fi
 import {assertNativeFlowFixturesCurrent,beforeNativeFlowFixture} from './native-flow-fixture-source.mjs';
 import {beforeUiEntranceWitness} from './ui-entrance-source.mjs';
 import {beforeOfficialBackgroundFixture} from './official-background-fixture-source.mjs';
-import {beforeMapRoomReplayCohort,beforeDevelopReplayMerge} from './develop-replay-merge-source.mjs';
+import {assertAudioDeckBrowserCurrent,beforeMapRoomReplayCohort,beforeDevelopReplayMerge} from './develop-replay-merge-source.mjs';
 import {beforeStsUiCloseoutSource} from './sts-ui-closeout-source.mjs';
 import {beforeStsFadeCi} from './sts-fade-ci-source.mjs';
 import {beforeCurrentReplayFixes} from './current-replay-fix-sources.mjs';
@@ -22,11 +22,12 @@ import {beforeM05BackflowInventory} from './m05-shop-ci-source.mjs';
 import {beforeReleaseShopEntry,releaseUiRestoreArchive,shopEntryPriorRead} from './release-ui-restore-source.mjs';
 import {beforeCombatVisualSource,combatVisualPriorRead} from './combat-visual-source.mjs';
 import {beforeSts1MenuCiSource} from './sts1-menu-ci-source.mjs';
-import {assertRefinedReleaseSourcesCurrent,beforeRefinedReleaseCiSource,beforeRefinedReleaseJsInventory,refinedReleaseHistoricalInput} from './refined-release-source.mjs';
+import {assertRefinedReleasePackingCurrent,assertRefinedReleaseSourcesCurrent,beforeRefinedReleaseCiSource,beforeRefinedReleaseJsInventory,refinedReleaseHistoricalInput} from './refined-release-source.mjs';
 import {beforeV2UiAdmission} from './v2-ui-admission-ci-source.mjs';
 import {beforeV2UiEvidence,beforeV2UiPreTinyHouseSource,beforeFieldConfirmation,beforeRelicCrystal} from './v2-p1-ci-source.mjs';
 import {beforeCharacterPreparationCiSource} from './character-preparation-source.mjs';
 import {integratedCiBytes} from './integrated-ci-binding.mjs';
+import {assertIntegratedLuaFixturesCurrent} from './integrated-ci-source.mjs';
 import {stsStylePriorRuntime} from './sts-style-prior-runtime.mjs';
 export {exactReviewedBuildInput} from './rebased-release-source.mjs';
 export {beforeM05ShopCiSource} from './m05-shop-ci-source.mjs';
@@ -651,6 +652,7 @@ export function assertCurrentJsInventory(paths,preceding,read=readFileSync){
 export function assertCurrentLuaInventory(paths,preceding,read=readFileSync){
  paths=beforeInputRetirementTestInventory(paths,'lua',read,{required:true,requireLive:true});
  assertCurrentReleaseLuaFixtureSources(read);
+ assertIntegratedLuaFixturesCurrent(read);
  paths=beforeCurrentReleaseLuaNames(paths,read,{required:true});
  const additions=[...Object.keys(newerTests.lua),shopEntryTests.lua[0],'tests/lua/shop_dismiss.lua'];
  assert.deepEqual([...paths].sort(),[...preceding,...additions].sort(),'complete current raw discovery inventory (Lua)');
@@ -732,6 +734,7 @@ const calibrationReplayPaths=Object.freeze([
  'data/presentation/narrative.zh-CN.json',
  'tests/lore-v2.test.mjs',
  'tests/watcher-actor-boundary.test.mjs',
+ 'tests/sts-style-source-epoch.test.mjs',
 ]);
 let calibrationReplayPredecessor;
 function beforeCalibrationReplayOwner(path,source){
@@ -739,7 +742,7 @@ function beforeCalibrationReplayOwner(path,source){
  if(!calibrationReplayPredecessor){
   calibrationReplayPredecessor=releaseUiRestoreArchive(
    readFileSync(new URL('./calibration-v220-replay-owners.json.gz',import.meta.url)),
-   '4bbbce77fb999f53de3de15ffb0a57e8673946b3f3a330ee41aba49d8e01ed2c','8b4172d59779ad9fa21b4ba91ef750ab22fcdaf1');
+   '5fd4b402adcc8e43487579273f75e93d0b79e99917e7a12c9d391e967fcce08a','8b4172d59779ad9fa21b4ba91ef750ab22fcdaf1');
   assert.deepEqual(Object.keys(calibrationReplayPredecessor.files),calibrationReplayPaths,'ordered v2.2 calibration replay owners');
  }
  return calibrationReplayPredecessor.project(path,source);
@@ -908,8 +911,12 @@ function beforeIntegrationSuccessor(path,source){
 export function assertIntegrationSuccessorsCurrent(read=readFileSync){
  const rawRead=read;
  const liveRead=(path,encoding)=>beforeForkPush(path,beforeCalibrationReplayOwner(path,rawRead(path,encoding)));
+ assertReleaseCandidateToolsCurrent(rawRead);
+ assertAudioDeckBrowserCurrent(rawRead);
+ assertRefinedReleasePackingCurrent(rawRead);
  assertInputRetirementLuaCurrent(rawRead);
  assertCurrentReleaseLuaFixtureSources(rawRead);
+ assertIntegratedLuaFixturesCurrent(rawRead);
  assertNativeFixturesCurrent(liveRead);
  assertNativeFlowFixturesCurrent(liveRead);
  read=(path,encoding)=>{

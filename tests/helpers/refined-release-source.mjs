@@ -62,6 +62,10 @@ const reviewedPackingSources=Object.freeze({
   ],
  },
 });
+export function assertRefinedReleasePackingCurrent(read){
+ for(const [path,binding] of Object.entries(reviewedPackingSources))
+  assert(matches(read(path,'utf8'),binding),'fresh current packing source: '+path);
+}
 function beforeReviewedPackingSource(path,source){
  if(!Object.hasOwn(reviewedPackingSources,path))return source;
  const binding=reviewedPackingSources[path];

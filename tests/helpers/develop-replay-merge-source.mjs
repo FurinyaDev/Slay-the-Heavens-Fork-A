@@ -87,6 +87,9 @@ const audioDeckBrowserSuccessor=Object.freeze({
  sha256:'eb367f8721cb05af1572c26d8953f612119cff84df493c3ccebfb9520e286758',
  gitBlob:'1640fc369e4f446e919ffb57f3fe975640db4acd',
 });
+export function assertAudioDeckBrowserCurrent(read){
+ assert(exactSourceMatches(read(audioBuilderPath,'utf8'),audioDeckBrowserSuccessor),'fresh current audio builder source: '+audioBuilderPath);
+}
 function beforeAudioDeckBrowserReceipt(path,source,archive){
  if(path!==audioBuilderPath||!exactSourceMatches(source,audioDeckBrowserSuccessor))return source;
  // #963 carries the already-built deck browser receipt into the audio package.

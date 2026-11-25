@@ -243,6 +243,10 @@ const releaseCandidateTools=Object.freeze({
   gitBlob:'8cdcb2926adb60ca0a1f6f17544fef09c95c81e9',
  },
 });
+export function assertReleaseCandidateToolsCurrent(read){
+ for(const [path,binding] of Object.entries(releaseCandidateTools))
+  assert(matches(read(path,'utf8'),binding),'fresh current candidate tool source: '+path);
+}
 export function beforeDeckPagesSuiteSource(path,source,{requireCurrent=false}={}){
  if(!Object.hasOwn(suite.deck.files,path))return source;
  const {before,after}=suite.deck.files[path];
