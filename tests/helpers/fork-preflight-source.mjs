@@ -55,7 +55,7 @@ for(const [path,row] of Object.entries(transport.files)){
  assert.equal(createHash('sha1').update(`blob ${Buffer.byteLength(row.before)}\0`).update(row.before).digest('hex'),row.gitBlob,path);
 }
 const releasePackBytes=readFileSync(new URL('./release-pack-transport-source.json.gz',import.meta.url));
-assert.equal(hash(releasePackBytes),'12b72e9788ea4191d4cf815e1192742c1e94b76d324b3387dc9d8433df6847f8','complete release pack storage predecessor');
+assert.equal(hash(releasePackBytes),'ef017a287f4e84de4a007c66fb371e509da392d1138b31774aa01673e8a65921','complete release pack storage predecessor');
 const releasePack=JSON.parse(gunzipSync(releasePackBytes));
 assert.equal(releasePack.schemaVersion,1);
 assert.equal(releasePack.base,'6ab89ed1a16fdeea8bf9649cbeecb99aa51fe3fd');

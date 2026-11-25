@@ -1342,6 +1342,7 @@ experiments/art-tech-lab/played.png filter=lfs -diff merge=lfs -text ci-immutabl
 experiments/art-tech-lab/sample.png filter=lfs -diff merge=lfs -text ci-immutable-media
 experiments/art-tech-lab/selected.png filter=lfs -diff merge=lfs -text ci-immutable-media
 config/ci-media-lfs.json text eol=lf
+config/ci-release-pack-media.json text eol=lf
 
 # Exact f347 native state evidence; all blob aliases, no source archives.
 docs/evidence/shared-run-hud-20261113/visual-final-current/battle-discard-pile.state.json.gz filter=lfs -diff merge=lfs -text ci-immutable-media

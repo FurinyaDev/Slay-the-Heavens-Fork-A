@@ -270,6 +270,9 @@ test('complete existing media are freshly authenticated on a cache hit without a
 });
 
 test('release pack transport preserves every original archived byte and Git blob identity',()=>{
+ const attributes=spawnSync('git',['check-attr','--cached','eol','--','config/ci-release-pack-media.json'],{cwd:root,encoding:'utf8'});
+ assert.equal(attributes.status,0);
+ assert.equal(attributes.stdout.trim(),'config/ci-release-pack-media.json: eol: lf');
  const transport=JSON.parse(readFileSync('config/ci-release-pack-media.json','utf8'));
  assert.equal(transport.sourceCommit,'6ab89ed1a16fdeea8bf9649cbeecb99aa51fe3fd');
  assert.equal(transport.maxPayloadBytes,20636068);
