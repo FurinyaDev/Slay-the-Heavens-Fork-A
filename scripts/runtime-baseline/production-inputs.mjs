@@ -3,7 +3,7 @@ import {readFileSync, writeFileSync} from 'node:fs';
 import {join, resolve} from 'node:path';
 import {pathToFileURL} from 'node:url';
 
-export const productionPhases = ['begin', 'cold-start', 'start-map', 'first-fight', 'ten-card-hand', 'consecutive-play',
+export const productionPhases = ['begin', 'cold-start', 'selection-open', 'neow-open', 'start-map', 'first-fight', 'ten-card-hand', 'consecutive-play',
   'deck-cold-open', 'deck-close', 'deck-warm-open', 'pause-resume', 'exit', 'reenter'];
 
 // Build with each worktree's own production generators and source files.
