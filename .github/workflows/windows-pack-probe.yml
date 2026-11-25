@@ -10,7 +10,8 @@ jobs:
     runs-on: windows-2025
     timeout-minutes: 10
     env:
-      CANDIDATE_SHA: e0fcd294fae930f3dbbed6599de6e2c18d1c78ca
+      CANDIDATE_SHA: 9947bab2a9e9cac09d5cfd855e91329f4da78200
+      CANDIDATE_BASE: 6ab89ed1a16fdeea8bf9649cbeecb99aa51fe3fd
       GIT_LFS_SKIP_SMUDGE: '1'
     steps:
       - name: Check empty hosted checkout and tool versions
@@ -32,9 +33,8 @@ jobs:
         id: guard
         env:
           CI_COMPARISON_TOKEN: ${{ github.token }}
+          CI_COMPARISON_BASE: ${{ env.CANDIDATE_BASE }}
         run: |
-          $env:CI_COMPARISON_BASE = git rev-parse HEAD^
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           node scripts/ci-comparison-blobs.mjs
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           node --input-type=module -e "import fs from 'node:fs'; import {checkHostedCheckout} from './scripts/check-network-policy.mjs'; const bytes=checkHostedCheckout({sha:process.env.CANDIDATE_SHA});fs.appendFileSync(process.env.GITHUB_OUTPUT,'pack='+bytes+'\n');"
@@ -46,9 +46,7 @@ jobs:
           CI_LFS_TOKEN: ${{ github.token }}
           EXPECTED_PACK: ${{ steps.guard.outputs.pack }}
         run: |
-          $base = git rev-parse HEAD^
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          node scripts/ci-whitespace.mjs "$base" "$env:CANDIDATE_SHA"
+          node scripts/ci-whitespace.mjs "$env:CANDIDATE_BASE" "$env:CANDIDATE_SHA"
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           node scripts/ci-media-lfs.mjs
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
