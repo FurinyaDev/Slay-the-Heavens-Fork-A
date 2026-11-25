@@ -66,10 +66,27 @@ export function refinedReleaseHistoricalInput(path,read){
  assert(matches(source,files[path].after),'fresh refined Release historical input: '+path);
  return project(path,source);
 }
+// Approved live tests keep their full newer assertions. Historical discovery
+// may remove these paths only when the entire file has a known identity.
+const addedJsSuccessors=Object.freeze({
+ 'tests/refined-monster-tiers.test.mjs':{
+  sha256:'431434c82dc1d6a89c04ac9bb205290a48052cf90c7988517cd2bf931756614e',
+  gitBlob:'5878a55bb1dd129cc4ca9256d09514a621f75671',
+ },
+ 'tests/refined-release-monsters.test.mjs':{
+  sha256:'3f684bd3ff2c78daef7cdb9a5085e1099a70e8798cf913ab755749fe659c5b5d',
+  gitBlob:'13ebb939afc3338c7381873fbea444625b4800c4',
+ },
+});
 export function beforeRefinedReleaseJsInventory(paths,preceding,read,required=false){
  const added=Object.keys(addedJs);
  if(!required&&!added.some(path=>paths.includes(path)))return paths;
  assert.deepEqual([...paths].sort(),[...preceding,...added].sort(),'complete current raw discovery inventory');
- for(const path of added)assert(matches(read(path,'utf8'),addedJs[path]),'fresh added inventory source: '+path);
+ for(const path of added){
+  const source=read(path,'utf8');
+  const successor=Object.hasOwn(addedJsSuccessors,path)?addedJsSuccessors[path]:null;
+  const expected=required&&successor?successor:addedJs[path];
+  assert(matches(source,expected)||!required&&matches(source,successor),'fresh added inventory source: '+path);
+ }
  return paths.filter(path=>!Object.hasOwn(addedJs,path));
 }
