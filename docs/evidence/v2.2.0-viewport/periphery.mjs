@@ -1,12 +1,14 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import fs from 'node:fs';
+import { dirname, join } from 'node:path';
 import { bridge } from '../../../experiments/art-tech-lab/rpc.mjs';
 import { nativeTheme } from '../../../scripts/native-ui-theme.mjs';
 
 const [layoutFile, ...presets] = process.argv.slice(2);
 assert(layoutFile && presets.length, 'Pass the generated game-ui.json and Simulator presets');
 const out = process.env.VIEWPORT_PROOF_OUT ?? '.artifacts/viewport-edge';
+const verifyFlights = process.env.VIEWPORT_VERIFY_FLIGHTS === '1';
 fs.mkdirSync(out, { recursive: true });
 const layoutBytes = fs.readFileSync(layoutFile);
 const layoutSha256 = createHash('sha256').update(layoutBytes).digest('hex');
@@ -69,26 +71,71 @@ function convert(spec) {
   return node;
 }
 const choose = name => parts.find(control => control.name === name);
-const projected = { ...battleSpec, children: parts, visible: true };
+const projected = { ...battleSpec, children: [...parts], visible: true };
+if (verifyFlights) {
+  const feedback = battleSpec.children.find(control => control.name === 'feedback');
+  projected.children.push({ ...feedback, children: feedback.children.filter(control => /^cardTrail\d+$/.test(control.name)) });
+}
 root.children = [
   convert({ ...stageSpec, children: [projected] }),
   convert(layout.controls.find(control => control.name === 'canvasBackdrop')),
 ];
 root.scriptMappingIds = [1073760001];
 const viewport = fs.readFileSync('src/lua/abyss_viewport.lua', 'utf8');
-const program = `
-local require=function(name)
-  assert(name=="abyss_theme")
-  return {canvas={base={${baseWidth},${baseHeight}},mobileBleedX=${nativeTheme.canvas.mobileBleedX}}}
+const theme = verifyFlights
+  ? fs.readFileSync(join(dirname(layoutFile), 'abyss_theme.lua'), 'utf8')
+  : `return {canvas={base={${baseWidth},${baseHeight}},mobileBleedX=${nativeTheme.canvas.mobileBleedX}}}`;
+const flight = verifyFlights ? `
+local Flow=(function()
+${fs.readFileSync('src/lua/abyss_card_flow.lua', 'utf8')}
+end)()
+local function checkFlights(battle,frame)
+  local flow=Flow.new(battle,{color=Color,imageSource=Enum.ImageSource.StaticReference})
+  local catalog={cards={strike={type='attack',name='Strike'}}}
+  local before={hand={{uid=1,cardId='strike'}},catalog=catalog}
+  local trail=battle:GetChild('feedback'):GetChild('cardTrail1')
+  local layout=Theme.layout
+  local bases={draw=layout.drawPile.position,discard=layout.discardPile.position,
+    exhaust={layout.topBar.exhaustIcon[1],layout.topBar.y}}
+  for _,pile in ipairs({'draw','discard','exhaust'})do
+    local after={catalog=catalog,[pile]=before.hand}
+    flow:sync(before,after)
+    local burn=Flow.burn
+    flow:update(pile=='exhaust'and (burn.hold+burn.burn+burn.fly) or Theme.motion.slow,catalog,{})
+    local icon=battle:GetChild(pile..'Icon')
+    local anchor=icon.anchorMinX-.5
+    local expectedX=bases[pile][1]+anchor*(frame.input[3]-Theme.canvas.base[1])
+    local iconX=icon.anchoredPositionX+anchor*frame.input[3]
+    local x,y=trail.anchoredPositionX,trail.anchoredPositionY
+    assert(trail.visible and flow.active[1].arrived and math.abs(x-expectedX)<1e-8,
+      string.format('%s flight landed at %.5f, expected %.5f',pile,x,expectedX))
+    assert(math.abs(y-bases[pile][2])<1e-8)
+    assert(math.abs(x-iconX)<=icon.sizeDeltaX/2 and math.abs(y-icon.anchoredPositionY)<=icon.sizeDeltaY/2)
+    print(string.format('V220_PILE_FLIGHT %s %.5f %.5f %.5f %.5f',pile,x,y,iconX,icon.anchoredPositionY))
+    flow:reset()
+  end
 end
-local Viewport=(function()
+` : '';
+const program = `
+local Theme=(function()
+${theme}
+end)()
+local Viewport
+local require=function(name)
+  if name=="abyss_theme" then return Theme end
+  if name=="abyss_viewport" then return Viewport end
+  error(name)
+end
+Viewport=(function()
 ${viewport}
 end)()
+${flight}
 function OnStart()
   script.object.showCursor=true
   local w,h=game.GetUICanvasSize()
-  local stage=Viewport.apply(script.object,w,h,game.GetDevice()==Enum.Device.Mobile)
+  local stage,_,frame=Viewport.apply(script.object,w,h,game.GetDevice()==Enum.Device.Mobile)
   local battle=stage:GetChild('battlePanel')
+  ${verifyFlights ? 'checkFlights(battle,frame)' : ''}
   for _,name in ipairs({'drawIcon','discardIcon','endTurn'}) do
     local control=battle:GetChild(name)
     local hit=control:GetChild("hit") or control
@@ -134,14 +181,16 @@ try {
     }
     const {logs} = await act('get');
     const hits = logs.filter(row => row.text.startsWith('V220_BATTLE_EDGE'));
+    const flights = logs.filter(row => row.text.startsWith('V220_PILE_FLIGHT'));
     assert(!logs.some(row => row.level === 'lua-error'), JSON.stringify(logs));
     assert.deepEqual(hits.map(row => row.text.split(' ')[1]), points.map(point => point.name));
+    if (verifyFlights) assert.deepEqual(flights.map(row => row.text.split(' ')[1]), ['draw', 'discard', 'exhaust']);
     const shot = await simulator.call('qxqy_studio_play_screenshot', { handle });
     const receipt = unpack(shot);
     assert.deepEqual(receipt.assetWarnings, []);
     const png = Buffer.from(shot.content.find(content => content.type === 'image').data, 'base64');
     fs.writeFileSync(out + '/' + preset + '-periphery.png', png);
-    const report = { layoutSha256, preset, scale, points, hits, receipt,
+    const report = { layoutSha256, preset, scale, points, hits, ...(verifyFlights ? { flights } : {}), receipt,
       pngSha256: createHash('sha256').update(png).digest('hex') };
     fs.writeFileSync(out + '/' + preset + '-periphery.json', JSON.stringify(report, null, 2) + '\n');
     console.log(JSON.stringify(report));
