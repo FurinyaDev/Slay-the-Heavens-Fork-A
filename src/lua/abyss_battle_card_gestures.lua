@@ -3,6 +3,7 @@ local Theme = require("abyss_theme")
 local CardInput = require("abyss_card_input")
 local Pointer = require("abyss_pointer_input")
 local Combat = require("abyss_combat")
+local Viewport = require("abyss_viewport")
 local M = {}
 local L = Theme.layout
 local BROWSE_LIFT = 2 -- 搓牌后提起需 2×threshold 上推（估值，非拷贝）
@@ -71,13 +72,10 @@ function M.install(owner, ownership, host, dependencies)
     local function point(event)
         if not event or type(event.GetUIPos) ~= "function" then return end
         local x,y = event:GetUIPos()
-        -- Keep unavailable coordinates compatible, but let field taps reject explicit bad numbers.
-        if type(x) == "number" and (x ~= x or math.abs(x) == math.huge)
-            or type(y) == "number" and (y ~= y or math.abs(y) == math.huge) then return nil,nil,true end
-        if type(x) ~= "number" or type(y) ~= "number" then return end
         local width,height = owner.canvasWidth or Theme.canvas.base[1],owner.canvasHeight or Theme.canvas.base[2]
-        local k = math.min(width/Theme.canvas.base[1],height/Theme.canvas.base[2])
-        return (x-width/2)/k,(y-height/2)/k
+        local sx,sy,invalid = Viewport.toStage(x,y,width,height)
+        if invalid then return nil,nil,true end
+        if sx and sy then return sx,sy end
     end
     local function retireInterruptedPress(event)
         local potion=owner.potionAim
