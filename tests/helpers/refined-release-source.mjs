@@ -1,4 +1,5 @@
 import {beforeCombatVisualSource,combatVisualPriorRead,assertCombatVisualCurrent} from './combat-visual-source.mjs';
+import {beforeCurrentReplayFixes} from './current-replay-fix-sources.mjs';
 // Historical-only continuation. Production builds and test discovery use live inputs.
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
@@ -30,13 +31,60 @@ function matches(source,binding){
  const lf=normalize(source);
  return hash(lf)===binding.sha256&&blob(lf)===binding.gitBlob;
 }
+// Preserve #951 text readback and #975 hosted evidence in live builds.
+const reviewedPackingSources=Object.freeze({
+ 'scripts/build-native-bgm-candidate.mjs':{
+  sha256:'5f15c4e781dae30aa15322cc3c4bc65540df632caabefcc2c1f3303a9e553dbd',
+  gitBlob:'c5b82cbf75ed633f56d8849c0c3e91c63026bdbe',
+  edits:[
+   ['  let scriptText;\n',''],
+   ["    const {assertClientScriptText}=await import('./check-release-text.mjs');\n    scriptText = assertClientScriptText(readback.scripts, 'audio/candidate.gil');\n",''],
+   ['liveWriteEnabled: false, compiled, checked, scriptText,','liveWriteEnabled: false, compiled, checked,'],
+  ],
+ },
+ 'scripts/platform-load.mjs':{
+  sha256:'ec53aafa9736a439097645448e43ffab28f0d27344e4ee50aa7e7d0cdc97d34d',
+  gitBlob:'218c467c12a5142dec040bcb14498aa056e3a017',
+  edits:[
+   ["import { hostedCandidatePath, verifiedPayloadInputs } from './hosted-gil-receipt.mjs';\n",''],
+   ['readFileSync(hostedCandidatePath(directory, receipt))','readFileSync(receipt.candidate.path)'],
+   ['payloadDigest(verifiedPayloadInputs(process.cwd(), receipt, artOptions, sourceInputs))','payloadDigest(sourceInputs(process.cwd(),artOptions))'],
+  ],
+ },
+ 'tests/native-audio-release-provenance.test.mjs':{
+  sha256:'4b60b47b85569674f9ef93b9c4c9d43a3d3af75296de885a29368e8382f406ac',
+  gitBlob:'5551e91cfed55622e32e6298fc164909f102f950',
+  prior:{sha256:'76ad3a693920e182918eb37bc7f86066b940807e3843f447eeb1ae7d1fb47fac',gitBlob:'b2434c7f4548f1de99f90599bab3cc4b3c01486b'},
+  edits:[
+   ["import {deckBrowserParts} from '../scripts/deck-ui-layout.mjs';\n",''],
+   ['      deckBrowser:{templateIndex:1470123470,maxFaces:10,parts:deckBrowserParts.map((part,i)=>({...part,templateIndex:1470123471+i}))},\n',''],
+   ["  assert.deepEqual(result.deckBrowser,f.full.deckBrowser,'final audio receipt retains candidate-local deck browser bindings');\n  assert.deepEqual(JSON.parse(readFileSync(result.receiptPath)).deckBrowser,f.full.deckBrowser);\n",''],
+  ],
+ },
+});
+function beforeReviewedPackingSource(path,source){
+ if(!Object.hasOwn(reviewedPackingSources,path))return source;
+ const binding=reviewedPackingSources[path];
+ if(!matches(source,binding))return source;
+ let prior=normalize(source);
+ for(const [next,previous] of binding.edits){
+  assert.equal(prior.split(next).length,2,'single approved packing source edit: '+path);
+  prior=prior.replace(next,previous);
+ }
+ if(binding.prior){
+  assert(matches(prior,binding.prior),'complete approved packing fixture predecessor: '+path);
+  prior=beforeCurrentReplayFixes(path,prior);
+ }
+ assert(matches(prior,files[path].after),'exact packing source predecessor: '+path);
+ return source.includes('\r\n')?prior.replaceAll('\n','\r\n'):prior;
+}
 function project(path,source){
  if(!Object.hasOwn(files,path)||!matches(source,files[path].after))return source;
  const prior=files[path].before.source;
  return source.includes('\r\n')?prior.replaceAll('\n','\r\n'):prior;
 }
 export function beforeRefinedReleaseCiSource(path,source){
- return owners.includes(path)?source:project(path,beforeCombatVisualSource(path,source));
+ return owners.includes(path)?source:project(path,beforeCombatVisualSource(path,beforeReviewedPackingSource(path,source)));
 }
 export function beforeRefinedReleaseProduction(path,source){
  source=beforeCombatVisualSource(path,source);
@@ -54,7 +102,7 @@ export function authorizeRefinedReleaseProduction(samples,read){
 }
 export function assertRefinedReleaseSourcesCurrent(read=readFileSync){
  for(const path of paths){
-  const source=read(path,'utf8');
+  const source=beforeReviewedPackingSource(path,read(path,'utf8'));
   assertCombatVisualCurrent(path,source,owner=>read(owner,'utf8'));
   assert(matches(beforeCombatVisualSource(path,source,owner=>read(owner,'utf8')),files[path].after),'fresh complete integration source: refined Release '+path);
  }
@@ -62,7 +110,7 @@ export function assertRefinedReleaseSourcesCurrent(read=readFileSync){
 export function refinedReleaseHistoricalInput(path,read){
  read=combatVisualPriorRead(read);
  if(!Object.hasOwn(files,path)||owners.includes(path))return undefined;
- const source=read(path,'utf8');
+ const source=beforeReviewedPackingSource(path,read(path,'utf8'));
  assert(matches(source,files[path].after),'fresh refined Release historical input: '+path);
  return project(path,source);
 }
