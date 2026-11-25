@@ -37,10 +37,10 @@ function current(source,binding){
 
 // Continue the archived map-deck replay across the later production UI changes.
 const hotfixArchive=readFileSync(new URL('./release-map-deck-hotfix-source.json.gz',import.meta.url));
-assert.equal(hash(hotfixArchive),'225d9e5237b62aa14352cdd2b40177da890198e5550271eb10971a9e461fb35d','exact hotfix map deck archive');
+assert.equal(hash(hotfixArchive),'92bf695ae29b4ecf0765714d99581f434ef687b3a3409242b7dcd8adae344dc0','exact hotfix map deck archive');
 const {base:hotfixBase,current:hotfixHead,files:hotfixFiles}=JSON.parse(gunzipSync(hotfixArchive));
 assert.equal(hotfixBase,'5a972c7371d0217ce4d9806df35ba1464c50f40f');
-assert.equal(hotfixHead,'6492e8dccbcf847a0eba7ad3995da50257032e08');
+assert.equal(hotfixHead,'e45cac3eaecdbe55bd0dfdd9cc17ba27cfe98f7c');
 const deckLayout='scripts/deck-ui-layout.mjs';
 assert.deepEqual(Object.keys(hotfixFiles).sort(),[...Object.keys(files),deckLayout].sort());
 for(const [path,{before}] of Object.entries(hotfixFiles))assert(current(before.source,before),'exact hotfix map deck predecessor: '+path);

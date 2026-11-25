@@ -3,7 +3,7 @@ import {createHash} from 'node:crypto';
 
 const hash=source=>createHash('sha256').update(source).digest('hex');
 const helperPath='tests/helpers/release-map-deck-source.mjs';
-const hotfixHash='be99ed469b62b7f9c3e40a62124dfc51cd9aa17e6bb04852e88a9e9f9bee7a70';
+const hotfixHash='dd43cfb80c2abafca5ce06db1cd6e3b49c367dca8f57056837ae063c0568164c';
 const archivedHash='d76d9d67c6e696d966fe9608a46e66eea0c0e2739c06dd9672151afd4b1f0973';
 
 // Historical helper copies need the exact original module and its original imports.
