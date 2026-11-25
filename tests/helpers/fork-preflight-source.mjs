@@ -550,13 +550,14 @@ const shopEntryTests={
 const currentReleaseTests=Object.freeze({
  'tests/battle-ui-publication.test.mjs':'a2d4d911de18b48f4b01cbaf52384b4d133b77a8e646c15d2149185052fb7759',
  'tests/check-release-text.test.mjs':'1b3d0db323d89b0e6035f504b8c84ac1c564df528cca917ba2c89db29567993a',
+ 'tests/event-readability.test.mjs':'95e888cc87e48e8d6a161eaea9da54a410444c9966cafe1b263cffc66882dbb0',
  'tests/formal-startup-budget.test.mjs':'8a3d66d9b7c963cd3592c92750d6b41cecba2fed3cde933a81f34aee048df2ef',
  'tests/gil-candidate-preflight.test.mjs':'7ec29cdbeaf1572fa9713d37fdc17003e4f7843479c5af5ebe3c3c8787b93068',
  'tests/gil-candidate.test.mjs':'e8a08db32ea8a237575f428566093ab18cc60fd0d0ce4acb0b5e2d7e30b364de',
  'tests/production-performance.test.mjs':'102893c9285fc52693ee9a7d1bae36d8cefef418ecf8da5d40e53b4eb98b2947',
  'tests/release-metadata.test.mjs':'eceb8ab92f616084fdcdac875e69e761cf2c9674a804be9f0295e89213453cb8',
  'tests/release-performance-artifacts.test.mjs':'16048e83d321cd8505e0d1b56bd8707da3ea0ad506f4aa317c44b2ff62722413',
- 'tests/release-performance-verification.test.mjs':'948be43b15e610a3917c497d5a83e75b7dabe159429e662e7279c72aecbd57c0',
+ 'tests/release-performance-verification.test.mjs':'8cd3e37b605735624177c99ff5fa40882d38abf3e68742a4a06f4340dbc81122',
  'tests/release-performance.test.mjs':'7d38cc78989244c395eb8176a1ab6f49e2e055b7527611bc5672ba45414fb550',
 });
 const newerTests={
@@ -742,7 +743,7 @@ function beforeCalibrationReplayOwner(path,source){
  if(!calibrationReplayPredecessor){
   calibrationReplayPredecessor=releaseUiRestoreArchive(
    readFileSync(new URL('./calibration-v220-replay-owners.json.gz',import.meta.url)),
-   '5fd4b402adcc8e43487579273f75e93d0b79e99917e7a12c9d391e967fcce08a','8b4172d59779ad9fa21b4ba91ef750ab22fcdaf1');
+   'bb0bc7f65edd2a4dd74ca43786a841368118db17dd1b2414defcac9344a080d2','8b4172d59779ad9fa21b4ba91ef750ab22fcdaf1');
   assert.deepEqual(Object.keys(calibrationReplayPredecessor.files),calibrationReplayPaths,'ordered v2.2 calibration replay owners');
  }
  return calibrationReplayPredecessor.project(path,source);
