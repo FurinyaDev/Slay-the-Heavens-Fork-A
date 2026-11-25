@@ -2,7 +2,7 @@
 -- values, deliberately unlike any static image gallery ID.
 local Native=dofile('tests/lua/support/native_art_controls.lua')
 local Contract=dofile('tests/lua/support/native_ui_contract.lua')
-local M={created={},destroyed={}}
+local M={}
 function M.install(F,Runtime)
  local dead=setmetatable({},{__mode='k'})
  local function markDead(control)
@@ -11,7 +11,7 @@ function M.install(F,Runtime)
  local function instantiate(index,parent)
   assert(index==41 or index==73,'runtime confused templateIndex and gallery image ID')
   local control=Native.decorate(F.control({name='runtime',kind=index==41 and 'image' or 'container',size={1,1}},parent))
-  parent.children[#parent.children+1]=control;M.created[#M.created+1]=control
+  parent.children[#parent.children+1]=control
   local prior=getmetatable(control)
   setmetatable(control,{__index=function(t,k)
    if k=='alive' and dead[t]then return false end
@@ -24,7 +24,15 @@ function M.install(F,Runtime)
   control.SetLocalRotation=function(self,x,y,z)assert(self.alive);Contract.transform3(x,y,z);self.rotation={x,y,z}end
   return control
  end
- Runtime.configure({instantiate=instantiate,destroy=function(c)markDead(c);M.destroyed[#M.destroyed+1]=c end,
+ local function destroy(control)
+  assert(control.alive,'runtime destroyed the same native control twice')
+  local siblings=control.parent.children
+  for index,child in ipairs(siblings)do
+   if child==control then table.remove(siblings,index);break end
+  end
+  markDead(control)
+ end
+ Runtime.configure({instantiate=instantiate,destroy=destroy,
   imageTemplateIndex=41,containerTemplateIndex=73})
  return M
 end

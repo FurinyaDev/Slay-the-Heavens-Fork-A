@@ -13,13 +13,17 @@ const contexts={
  'deck-capacity':['deck-capacity-refill','deck-close'],
  'deck-scroll':['deck-ready-reuse','deck-invalid-index','deck-close'],
  'deck-details':['deck-hidden-callbacks','deck-return','deck-close','deck-deferred-calibration'],
- 'node-shop':['node-pending-hide','node-hidden-render','node-show-ready'],
+ 'node-shop':['node-pending-hide','node-show-ready'],
+ 'node-hidden':['node-hidden-render','node-visible-resume'],
+ 'node-reuse':['node-slot-reuse'],
+ 'node-reopen':['node-close-reopen','node-leave-new-shop'],
  'node-picker':['node-shop-to-picker'],
  'node-return':['node-picker-to-shop'],
 };
 const requiredPhases=['battle-hand','battle-reward','deck-capacity-refill','deck-ready-reuse',
  'deck-invalid-index','deck-hidden-callbacks','deck-return','deck-close','deck-deferred-calibration',
- 'node-pending-hide','node-hidden-render','node-show-ready','node-shop-to-picker','node-picker-to-shop'];
+ 'node-pending-hide','node-hidden-render','node-show-ready','node-visible-resume','node-slot-reuse','node-close-reopen',
+ 'node-leave-new-shop','node-shop-to-picker','node-picker-to-shop'];
 let directory,generated;
 before(()=>{
  directory=mkdtempSync(join(tmpdir(),'abyss-runtime-card-art-'));
