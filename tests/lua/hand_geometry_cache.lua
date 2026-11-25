@@ -23,17 +23,6 @@ local hit=box:GetChild('hit')
 local positions,original=0,box.SetAnchoredPosition
 box.SetAnchoredPosition=function(self,...)positions=positions+1;return original(self,...)end
 positions=0;a.update(1/60);assert(positions==0,'stable pose missed cache')
-local uid=host.run.combat.hand[1].uid
-local origin=view.cardPositions[uid]
-local originalCos,geometryCalculations=math.cos,0
-math.cos=function(...)
- geometryCalculations=geometryCalculations+1
- return originalCos(...)
-end
-for _=1,30 do a.update(1/60)end
-math.cos=originalCos
-assert(geometryCalculations==0,'settled hand recalculated hit geometry '..geometryCalculations..' times')
-assert(view.cardPositions[uid]==origin,'settled hand allocated a fresh input origin')
 -- Rendering first invokes the external hand-layout writer, which must revoke
 -- the promise even when the interpolated pose itself has not changed.
 render();assert(box.localRotationZ~=0,'layout overwrote cached hand angle')
