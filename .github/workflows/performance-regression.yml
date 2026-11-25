@@ -1,25 +1,37 @@
 name: Performance regression
+run-name: ${{ inputs.mode == 'formal' && format('Formal resource release / {0} / {1}', github.ref_name, github.sha) || github.workflow }}
 on:
   pull_request:
     branches: [develop]
     types: [opened, synchronize, reopened, ready_for_review]
     paths:
       - '.github/workflows/performance-regression.yml'
-      - 'scripts/runtime-baseline/resource-receipt.mjs'
-      - 'scripts/runtime-baseline/resource-suite.mjs'
+      - 'scripts/runtime-baseline/**'
+      - 'scripts/build-ui.mjs'
+      - 'scripts/monster-art.mjs'
+      - 'src/lua/abyss_map_ui.lua'
+      - 'src/lua/abyss_ui.lua'
+      - 'src/lua/abyss_battle*.lua'
+      - 'src/lua/abyss_deck*.lua'
+      - 'src/lua/abyss_page_reveal.lua'
       - 'tests/benchmarks/resource-suite.test.mjs'
+      - 'tests/release-performance*.test.mjs'
   workflow_dispatch:
     inputs:
       mode:
-        description: Resource matrix depth
+        description: Resource matrix depth, or formal for a frozen release
         type: choice
-        options: [fast, full]
+        options: [fast, full, formal]
         default: full
       base_sha:
-        description: Exact optional comparison commit in this repository
+        description: Optional exact comparison commit for Fast or Full diagnostics.
+        type: string
+      gil_artifact_id:
+        description: Archived GIL candidate artifact ID for the same frozen production source.
         type: string
 permissions:
   contents: read
+  actions: read
 concurrency:
   group: performance-regression-${{ github.ref }}
   cancel-in-progress: true
@@ -28,7 +40,7 @@ jobs:
     name: Offline Host resource diagnostics
     if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    timeout-minutes: ${{ inputs.mode == 'formal' && 60 || 30 }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
@@ -47,37 +59,82 @@ jobs:
           PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
           MANUAL_BASE_SHA: ${{ inputs.base_sha }}
           RESOURCE_MODE: ${{ github.event_name == 'pull_request' && 'fast' || inputs.mode }}
+          GIL_ARTIFACT_ID: ${{ inputs.gil_artifact_id }}
+          GH_TOKEN: ${{ github.token }}
           GIT_LFS_SKIP_SMUDGE: '1'
           GIT_TERMINAL_PROMPT: '0'
         run: |
           test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          mode=${RESOURCE_MODE:-full}
+          if [ "$mode" = formal ]; then
+            test "$GITHUB_EVENT_NAME" = workflow_dispatch
+            test "$GITHUB_REPOSITORY_ID" = 1429751262
+            [[ "$GITHUB_REF" == refs/heads/release/* ]]
+            test -z "$MANUAL_BASE_SHA"
+            [[ "$GIL_ARTIFACT_ID" =~ ^[1-9][0-9]*$ ]]
+          fi
           npm_flags=(--ignore-scripts --prefer-offline --no-audit --no-fund --fetch-retries=0 --fetch-timeout=30000)
+          npm ci "${npm_flags[@]}"
+          node --test tests/release-performance*.test.mjs
           BASE_SHA=${MANUAL_BASE_SHA:-${PR_BASE_SHA:-$(git rev-parse --verify HEAD^ 2>/dev/null || true)}}
+          if [ "$mode" = formal ]; then
+            version=$(git show "$GITHUB_SHA:package.json" | node -p "JSON.parse(require('node:fs').readFileSync(0)).version")
+            published=$(node scripts/runtime-baseline/published-baseline.mjs "$version")
+            BASE_SHA=$(node -p 'JSON.parse(process.argv[1]).commit' "$published")
+            BASE_TREE=$(node -p 'JSON.parse(process.argv[1]).tree' "$published")
+          fi
           if [ -n "$BASE_SHA" ]; then
             [[ "$BASE_SHA" =~ ^[0-9a-f]{40}$ ]]
             if ! git cat-file -e "${BASE_SHA}^{commit}"; then
               git -c credential.helper= -c http.lowSpeedLimit=1024 -c http.lowSpeedTime=30 fetch --depth=1 --no-tags origin "$BASE_SHA"
             fi
           fi
-          npm ci "${npm_flags[@]}"
-          npm run build:data
-          npm run build:ui
-          args=(--mode "${RESOURCE_MODE:-full}")
+          if [ "$mode" = formal ]; then
+            test "$(git rev-parse "$BASE_SHA^{tree}")" = "$BASE_TREE"
+          fi
+          prepare() {
+            if [ "$mode" = formal ]; then
+              git -c lfs.transfer.maxretries=0 -c lfs.activitytimeout=30 lfs pull \
+                --include='art/characters/traveler-geo/portraits/avatar96/preview-native-1x.png,art/characters/traveler-geo/portraits/battle133/preview-native-1x.png' --exclude=''
+            else
+              npm run build:data
+              npm run build:ui
+            fi
+          }
+          args=(--mode "$mode")
+          if [ "$mode" = formal ]; then
+            git lfs install --local --skip-smudge
+            args=(--mode full --production --extreme --release)
+          fi
+          prepare
           if [ -n "$BASE_SHA" ] && git cat-file -e "$BASE_SHA:scripts/runtime-baseline/worker.mjs"; then
             reference="$RUNNER_TEMP/performance-reference"
             git worktree add --detach "$reference" "$BASE_SHA"
-            (cd "$reference" && npm ci "${npm_flags[@]}" && npm run build:data && npm run build:ui)
+            (cd "$reference" && npm ci "${npm_flags[@]}" && prepare)
             args+=(--baseline "$reference")
-            if [ -z "$MANUAL_BASE_SHA" ]; then
+            if [ "$mode" != formal ] && [ -z "$MANUAL_BASE_SHA" ]; then
               args+=(--baseline-if-compatible)
             fi
-          elif [ -n "$MANUAL_BASE_SHA" ]; then
+          elif [ "$mode" = formal ] || [ -n "$MANUAL_BASE_SHA" ]; then
             echo '::error::The specified reference does not contain the fixed Host workload.'
             exit 1
           elif [ -n "$BASE_SHA" ]; then
             echo '::warning::Reference has no fixed Host workload. Collecting candidate-only measurements.'
           fi
           node scripts/runtime-baseline/resource-suite.mjs "${args[@]}"
+      - name: Bind formal resource report to audited GIL
+        if: inputs.mode == 'formal'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GIL_ARTIFACT_ID: ${{ inputs.gil_artifact_id }}
+        run: node scripts/runtime-baseline/seal-release-performance.mjs
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: inputs.mode == 'formal'
+        with:
+          name: release-performance-${{ github.run_id }}-${{ github.run_attempt }}
+          path: build/release-performance/
+          if-no-files-found: error
+          retention-days: 30
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
         with:

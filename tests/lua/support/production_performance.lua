@@ -121,17 +121,19 @@ local function assertSelectionDetails(node)
         assertSelectionDetails(control)
     end
 end
-local function enterMap()
+local function enterMap(measureEntry)
     click('menuPanel','start')
     if not host.characterSelection.info then click('characterPanel','traveler') end
     local details=stage:GetChild('characterPanel'):GetChild('details')
     assertSelectionDetails(details)
+    if measureEntry then mark('selection-open') end
     click('characterPanel','confirm')
     assert(host.run.runSeed=='42' and host.run.nodeFlow.event.id=='neow')
+    if measureEntry then mark('neow-open') end
     for _,option in ipairs({1,2,1}) do click('nodePanel','eventView/option'..option) end
     assert(host.run.phase=='map' and host.mapUI.navigationEnabled)
 end
-enterMap()
+enterMap(true)
 assert(decoded(art)==0,'monster drawings were decoded before the first fight')
 local starter={table.unpack(host.run.deck)}
 for i=1,75 do

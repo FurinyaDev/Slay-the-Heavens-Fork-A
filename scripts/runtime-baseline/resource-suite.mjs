@@ -1,114 +1,195 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { createHash, randomUUID } from 'node:crypto';
-import { mkdirSync, readFileSync, readdirSync, realpathSync, renameSync, writeFileSync } from 'node:fs';
+import { randomUUID } from 'node:crypto';
+import { mkdirSync, mkdtempSync, readFileSync, readdirSync, realpathSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import { arch, availableParallelism, cpus, release, totalmem } from 'node:os';
-import { dirname, resolve } from 'node:path';
+import { dirname, relative, resolve } from 'node:path';
 import { performance } from 'node:perf_hooks';
 import { parseArgs } from 'node:util';
 import { counters, phases, validateSample } from '../benchmark-runtime-path.mjs';
-import { compareSamples, lockfileIdentity, matchingResourceCaps, parseResources, profiles, selectResourceReference, summarize } from './resource-receipt.mjs';
+import { compareSamples, formalImageId, guardExtremeCgroup, lockfileIdentity, matchingResourceCaps, parseResources, profiles,
+  productionHeapMiB, productionReportKind, productionWorkload, resourceImage as image, resourceResultStatus, selectResourceReference, summarize,
+  unsupportedFormalProfile, workload, workloadIdentity } from './resource-receipt.mjs';
+import { productionPhases } from './production-inputs.mjs';
+import { lfsArguments, lfsEnvironment } from '../ci-reviewed-lfs.mjs';
 
-const image = 'node:24.19.0-bookworm-slim@sha256:a9f5f7c91a432850b2a8a7797adf5eadb6c733ceed61167806cee7ea7fbc29df';
 const modes = { fast: ['baseline', 'medium'], full: Object.keys(profiles) };
-const workload = ['worker.mjs', 'host.lua', 'observer.lua', 'turn.lua'].map(file => `scripts/runtime-baseline/${file}`);
-workload.push('tests/lua/support/game_ui_fixture.lua', 'tests/lua/support/native_ui_contract.lua', 'tests/lua/support/shop_timeline.lua');
 const sourceInputs = ['src/lua', 'data', 'config', 'package-lock.json', ...workload];
+const lfsFilters = lfsArguments.slice(0, lfsArguments.indexOf('lfs'));
 
 const receipt = String.raw`
 set -eu
+printf 'RESOURCE_EXECUTION_ID %s\n' "$HOSTNAME"
 cg=/sys/fs/cgroup
 for key in cpu.max memory.max memory.swap.max; do
   value=$(cat "$cg/$key")
   printf 'RESOURCE %s %s\n' "$key" "$value"
 done
 status=0
-node scripts/runtime-baseline/worker.mjs || status=$?
+node scripts/runtime-baseline/worker.mjs "$@" || status=$?
 value=$(cat "$cg/memory.peak")
 printf 'RESOURCE memory.peak %s\n' "$value"
 while read -r key value; do printf 'RESOURCE cpu.%s %s\n' "$key" "$value"; done < "$cg/cpu.stat"
 while read -r key value; do printf 'RESOURCE memory.events.%s %s\n' "$key" "$value"; done < "$cg/memory.events"
 exit "$status"
 `;
+const extremeReceipt = String.raw`
+set -eu
+printf 'RESOURCE_EXECUTION_ID %s\n' "$HOSTNAME"
+for key in cpu.max memory.max memory.swap.max; do
+  value=$(cat "/sys/fs/cgroup/$key")
+  printf 'RESOURCE %s %s\n' "$key" "$value"
+done
+exec node scripts/runtime-baseline/worker.mjs "$@"
+`;
 
-function run(command, args, cwd) {
-  const result = spawnSync(command, args, { cwd, encoding: 'utf8', timeout: 120_000, maxBuffer: 4 * 1024 * 1024 });
+function run(command, args, cwd, env) {
+  const result = spawnSync(command, args, { cwd, env, encoding: 'utf8', timeout: 120_000, maxBuffer: 4 * 1024 * 1024 });
   assert(result.status === 0 && !result.error,
     `${command} ${args[0]} failed (${result.error?.message ?? result.status ?? result.signal}): ${result.stderr?.trim() ?? ''}\n${result.stdout?.trim().split('\n').slice(-20).join('\n') ?? ''}`);
   return result.stdout.trim();
 }
 
-function snapshot(root) {
-  const git = (...args) => run('git', args, root);
+function snapshot(root, production, harnessRoot) {
+  const git = (...args) => run('git', [...lfsFilters, ...args], root, lfsEnvironment());
   assert.equal(realpathSync(git('rev-parse', '--show-toplevel')), root, 'use a repository worktree root');
   git('diff', '--quiet', 'HEAD', '--');
-  assert.equal(git('ls-files', '--others', '--exclude-standard', '-z', '--', ...sourceInputs), '', 'runtime inputs have untracked files');
-  const generated = readdirSync(resolve(root, 'build/lua')).filter(file => file.endsWith('.lua')).sort();
+  const inputs = production ? ['art', 'config', 'data', 'docs', 'scripts', 'src', 'tests', 'tools'] : sourceInputs;
+  assert.equal(git('ls-files', '--others', '--exclude-standard', '-z', '--', ...inputs), '', 'runtime inputs have untracked files');
+  const directory = production?.directory ?? resolve(root, 'build/lua');
+  const generated = readdirSync(directory).filter(file => file.endsWith('.lua')).sort();
   assert(generated.includes('abyss_data.lua') && generated.includes('abyss_ui_templates.lua'), 'run build:data and build:ui first');
-  const hashFiles = paths => createHash('sha256').update(JSON.stringify(paths.map(path => ({
-    path, sha256: createHash('sha256').update(readFileSync(resolve(root, path))).digest('hex'),
-  })))).digest('hex');
+  const hashFiles = (from, paths) => workloadIdentity(paths, path => readFileSync(resolve(from, path)));
   return {
     commit: git('rev-parse', 'HEAD'),
     tree: git('rev-parse', 'HEAD^{tree}'),
-    workloadSha256: hashFiles(workload),
+    workloadSha256: production ? hashFiles(harnessRoot, productionWorkload) : hashFiles(root, workload),
     lockfile: lockfileIdentity(readFileSync(resolve(root, 'package-lock.json'))),
-    generatedLuaSha256: hashFiles(generated.map(file => `build/lua/${file}`)),
+    generatedLuaSha256: production ? hashFiles(directory, generated) : hashFiles(root, generated.map(file => `build/lua/${file}`)),
+    ...(production && {configuration: production.configuration}),
   };
 }
 
-function measure(root, profile) {
-  const name = `slay-resource-suite-${randomUUID()}`;
-  const args = ['run', '--rm', '--name', name, '--network', 'none', '--cgroupns', 'private', '--read-only',
+function prepareProduction(root, harnessRoot) {
+  const parent = resolve(root, 'build');
+  mkdirSync(parent, { recursive: true });
+  const directory = mkdtempSync(resolve(parent, 'production-resource-'));
+  process.on('exit', () => rmSync(directory, { recursive: true, force: true }));
+  const prepare = resolve(harnessRoot, 'scripts/runtime-baseline/production-inputs.mjs');
+  const configuration = JSON.parse(run(process.execPath, [prepare, directory], root).split('\n').at(-1));
+  return { directory, configuration };
+}
+
+function containerFlags(root, profile, production) {
+  const args = ['--network', 'none', '--cgroupns', 'private', '--read-only',
     '--user', `${process.getuid()}:${process.getgid()}`,
     '--mount', `type=bind,src=${root},dst=/repo,readonly`, '--workdir', '/repo'];
   if (profile.cpus !== null) args.push('--cpus', String(profile.cpus));
   if (profile.memoryBytes !== null) args.push('--memory', String(profile.memoryBytes), '--memory-swap', String(profile.memoryBytes));
+  if (production) args.push('--env', `NODE_OPTIONS=--max-old-space-size=${productionHeapMiB}`);
+  return args;
+}
+
+function measure(root, profile, production, harnessRoot) {
+  const name = `slay-resource-suite-${randomUUID()}`;
+  const args = ['run', '--rm', '--name', name, ...containerFlags(root, profile, production)];
+  // A/B arms use the same harness and fixtures while loading each arm's own game sources.
+  if (production && root !== harnessRoot) {
+    for (const path of productionWorkload) {
+      args.push('--mount', `type=bind,src=${resolve(harnessRoot, path)},dst=/repo/${path},readonly`);
+    }
+  }
+  const workerArgs = production ? [relative(root, production.directory)] : [];
+  const successMarker = production ? 'PRODUCTION_HOST_PASS seed=42' : 'RUNTIME_BASELINE_PASS seed=1 idleFrames=300';
   const start = performance.now();
   try {
-    const output = run('docker', [...args, image, 'sh', '-c', receipt], root);
+    const output = run('docker', [...args, image, 'sh', '-c', receipt, 'resource-worker', ...workerArgs], root);
     const wallMs = performance.now() - start;
-    assert(output.split('\n').includes('RUNTIME_BASELINE_PASS seed=1 idleFrames=300'), 'Host did not complete the fixed workload');
+    assert(output.split('\n').includes(successMarker), 'Host did not complete the fixed workload');
     const samples = output.split('\n').filter(line => line.startsWith('RUNTIME_BASELINE_JSON '));
     assert.equal(samples.length, 1, 'expected exactly one Host measurement');
-    const sample = validateSample(JSON.parse(samples[0].slice('RUNTIME_BASELINE_JSON '.length)));
+    const sample = validateSample(JSON.parse(samples[0].slice('RUNTIME_BASELINE_JSON '.length)), production ? productionPhases : phases);
     assert(Number.isSafeInteger(sample.maxRssKiB) && sample.maxRssKiB > 0, 'invalid process maxRSS');
-    return { ...sample, wallMs, resources: parseResources(output, profile) };
+    const executionId = /^RESOURCE_EXECUTION_ID ([a-f0-9]{12})$/m.exec(output)?.[1];
+    assert(executionId, 'missing Docker execution identity');
+    return { ...sample, executionId, wallMs, resources: parseResources(output, profile) };
   } catch (error) {
     spawnSync('docker', ['rm', '-f', name], { timeout: 10_000, stdio: 'ignore' });
     return { error: error.message };
   }
 }
 
+function measureExtreme(root, production, candidate) {
+  const name = `slay-resource-suite-extreme-${randomUUID()}`;
+  let probe;
+  try {
+    const caps = containerFlags(root, unsupportedFormalProfile, production);
+    const id = run('docker', ['create', '--name', name, ...caps, image, 'sh', '-c', extremeReceipt,
+      'resource-extreme', relative(root, production.directory)], root);
+    const result = spawnSync('docker', ['start', '-a', id], {cwd: root, encoding: 'utf8', timeout: 45_000, maxBuffer: 4 * 1024 * 1024});
+    const state = JSON.parse(run('docker', ['inspect', '--format', '{{json .State}}', id], root));
+    const report = Object.fromEntries([...result.stdout.matchAll(/^RESOURCE (\S+) (.+)$/gm)].map(match => match.slice(1)));
+    const resources = {cpuMax: report['cpu.max'], memoryMax: report['memory.max'], swapMax: report['memory.swap.max']};
+    const executionId = /^RESOURCE_EXECUTION_ID ([a-f0-9]{12})$/m.exec(result.stdout)?.[1];
+    probe = {containerId: id, executionId, resources, state, stdout: result.stdout, stderr: result.stderr};
+    assert(!result.error, 'Extreme workload did not complete within the probe bound');
+    assert(executionId && id.startsWith(executionId), 'Extreme receipt does not identify the Docker execution');
+    guardExtremeCgroup(resources, state);
+  } catch (error) {
+    return {status: 'FAIL', candidate, probe, error: error.message};
+  } finally {
+    spawnSync('docker', ['rm', '-f', name], {timeout: 10_000, stdio: 'ignore'});
+  }
+  const recovery = measure(root, profiles.stress, production, root);
+  return {status: recovery.error || recovery.executionId === probe.executionId ? 'FAIL' : 'PASS', candidate, probe,
+    recovery: {recordedAt: new Date().toISOString(), sample: recovery}};
+}
+
 function deterministicCounts(sample) {
   return sample.rows.map(row => [counters.map(key => row[key]), row.nativeMethods, row.propertyNames]);
 }
 
-function summarizeSamples(samples, count) {
+function summarizeSamples(samples, count, samplePhases) {
   if (samples.length !== count || samples.some(sample => sample.error)) return { samples, pass: false };
-  for (const sample of samples) assert.deepEqual(deterministicCounts(sample), deterministicCounts(samples[0]), 'nondeterministic Host call counts');
+  // The lightweight worker has fixed-length updates. The production path waits on
+  // the real scheduler and may do a different number of updates before a page settles.
+  if (samplePhases === phases) {
+    for (const sample of samples) assert.deepEqual(deterministicCounts(sample), deterministicCounts(samples[0]), 'nondeterministic Host call counts');
+  }
   return {
     samples, pass: true,
     wallMs: summarize(samples.map(sample => sample.wallMs)),
     peakBytes: summarize(samples.map(sample => sample.resources.peakBytes)),
-    phases: Object.fromEntries(phases.map((phase, i) => [phase, summarize(samples.map(sample => sample.rows[i].elapsedMs))])),
+    phases: Object.fromEntries(samplePhases.map((phase, i) => [phase, summarize(samples.map(sample => sample.rows[i].elapsedMs))])),
   };
 }
 
 function suite(values) {
   assert.equal(process.platform, 'linux', 'use a Linux Docker host');
   assert(Object.hasOwn(modes, values.mode), `unknown mode: ${values.mode}`);
+  assert(!values.extreme || values.production, 'Extreme probe requires the formal configuration');
   const selected = values.profile ?? modes[values.mode];
   assert(selected.every(profile => Object.hasOwn(profiles, profile)) && new Set(selected).size === selected.length, 'unknown or duplicate profile');
   const repetitions = Number(values.samples ?? (values.mode === 'fast' ? 1 : 3));
   assert(Number.isInteger(repetitions) && repetitions >= 1 && repetitions <= 100, 'samples must be an integer from 1 to 100');
   const alertPercent = Number(values['alert-percent']);
   assert(Number.isFinite(alertPercent) && alertPercent > 0, 'alert-percent must be positive');
+  if (values.release) {
+    assert(values.mode === 'full' && values.production && values.extreme && values.baseline && !values['baseline-if-compatible'] &&
+      !values.profile && repetitions >= 3 && alertPercent === 20, 'Release resource gate requires all six fixed paired tiers and independent extreme recovery');
+  }
   const candidatePath = realpathSync('.');
   const baselinePath = values.baseline ? realpathSync(values.baseline) : null;
   assert.notEqual(candidatePath, baselinePath, 'prepare the reference in a separate worktree');
-  const candidate = snapshot(candidatePath);
-  const reference = baselinePath ? snapshot(baselinePath) : null;
+  const candidateProduction = values.production ? prepareProduction(candidatePath, candidatePath) : null;
+  const baselineProduction = values.production && baselinePath ? prepareProduction(baselinePath, candidatePath) : null;
+  const snapshotCandidate = () => snapshot(candidatePath, candidateProduction, candidatePath);
+  const snapshotBaseline = () => snapshot(baselinePath, baselineProduction, candidatePath);
+  const candidate = snapshotCandidate();
+  const reference = baselinePath ? snapshotBaseline() : null;
+  if (candidateProduction && reference) {
+    assert.deepEqual(candidate.configuration, reference.configuration, 'Production generation profiles differ');
+  }
   const {baseline, unpairedReference} = selectResourceReference(candidate, reference, values['baseline-if-compatible']);
   if (unpairedReference) console.log(unpairedReference.reason + ': ' + unpairedReference.commit);
   const docker = run('docker', ['info', '--format', '{{.ServerVersion}} {{.CgroupVersion}} {{.OSType}} {{.Architecture}}'], candidatePath);
@@ -117,24 +198,29 @@ function suite(values) {
     run('docker', ['pull', image], candidatePath);
   }
   const imageId = run('docker', ['image', 'inspect', '--format', '{{.Id}}', image], candidatePath);
+  if (values.release) {
+    assert(arch() === 'x64' && imageId === formalImageId, 'The approved amd64 formal Host image is required');
+  }
   const results = {};
+  const samplePhases = values.production ? productionPhases : phases;
   for (const key of selected) {
     const profile = profiles[key];
     const before = [];
     const after = [];
     const pairOrder = [];
     for (let i = 0; i < repetitions; i++) {
-      const pair = baseline ? [[baselinePath, before, 'baseline'], [candidatePath, after, 'candidate']] : [[candidatePath, after, 'candidate']];
+      const candidateArm = [candidatePath, after, 'candidate', candidateProduction];
+      const pair = baseline ? [[baselinePath, before, 'baseline', baselineProduction], candidateArm] : [candidateArm];
       if (i % 2) pair.reverse();
       pairOrder.push(pair.map(([, , label]) => label));
-      for (const [path, samples, label] of pair) {
-        const record = measure(path, profile);
+      for (const [path, samples, label, production] of pair) {
+        const record = measure(path, profile, production, candidatePath);
         samples.push(record);
         console.log(`${key} ${label} ${i + 1}/${repetitions}: ${record.error ?? 'workload passed'}`);
       }
     }
-    const candidateResult = summarizeSamples(after, repetitions);
-    const baselineResult = baseline ? summarizeSamples(before, repetitions) : null;
+    const candidateResult = summarizeSamples(after, repetitions, samplePhases);
+    const baselineResult = baseline ? summarizeSamples(before, repetitions, samplePhases) : null;
     const bothPassed = baselineResult?.pass && candidateResult.pass;
     const paired = bothPassed && matchingResourceCaps(before, after);
     results[key] = {
@@ -144,16 +230,22 @@ function suite(values) {
       signals: paired ? compareSamples(before, after, alertPercent) : [],
     };
   }
-  assert.deepEqual(snapshot(candidatePath), candidate, 'candidate inputs changed while measuring');
-  if (baseline) assert.deepEqual(snapshot(baselinePath), baseline, 'baseline inputs changed while measuring');
-  const pass = Object.values(results).every(result => result.candidate.pass && (result.baseline?.pass ?? true));
+  const extreme = values.extreme ? measureExtreme(candidatePath, candidateProduction, candidate) : null;
+  assert.deepEqual(snapshotCandidate(), candidate, 'candidate inputs changed while measuring');
+  if (baseline) assert.deepEqual(snapshotBaseline(), baseline, 'baseline inputs changed while measuring');
+  const pass = (!extreme || extreme.status === 'PASS') &&
+    Object.values(results).every(result => result.candidate.pass && (result.baseline?.pass ?? true));
   const paired = Object.values(results).every(result => result.comparisonStatus === 'PAIRED');
+  const signals = Object.values(results).some(result => result.signals.length > 0);
   return {
-    schemaVersion: 1, kind: 'offline-host-resource-pressure', timeUtc: new Date().toISOString(),
-    status: pass ? 'PASS' : 'FAIL', mode: values.mode, repetitions, seed: 1, idleFrames: 300,
-    engine: { image, imageId, docker, kernel: release(), arch: arch(), cpuModel: cpus()[0]?.model, availableCpus: availableParallelism(), hostMemoryBytes: totalmem() },
+    schemaVersion: 1, timeUtc: new Date().toISOString(),
+    status: resourceResultStatus({release: values.release, pass, paired, signals}), mode: values.mode, repetitions,
+    ...(values.release && { release: true }),
+    ...(values.production ? { seed: 42, officialClient: 'UNVERIFIED' } : { seed: 1, idleFrames: 300 }),
+    engine: { image, imageId, docker, kernel: release(), arch: arch(), cpuModel: cpus()[0]?.model, availableCpus: availableParallelism(), hostMemoryBytes: totalmem(),
+      ...(values.production && { productionHeapMiB }) },
     alertPercent, candidate, baseline, comparisonStatus: paired ? 'PAIRED' : 'UNPAIRED',
-    ...(unpairedReference && { unpairedReference }), results,
+    ...(unpairedReference && { unpairedReference }), ...(extreme && {extreme}), results,
   };
 }
 
@@ -167,15 +259,17 @@ function main() {
   const { values } = parseArgs({ options: {
     mode: { type: 'string', default: 'fast' }, profile: { type: 'string', multiple: true },
     samples: { type: 'string' }, baseline: { type: 'string' }, 'baseline-if-compatible': { type: 'boolean' },
+    production: { type: 'boolean' }, extreme: { type: 'boolean' }, release: { type: 'boolean' },
     output: { type: 'string', default: 'build/performance-regression/report.json' },
     'alert-percent': { type: 'string', default: '20' },
   } });
   const destination = resolve(values.output);
   mkdirSync(dirname(destination), { recursive: true });
-  const initial = { schemaVersion: 1, kind: 'offline-host-resource-pressure', timeUtc: new Date().toISOString() };
+  const kind = values.production ? productionReportKind : 'offline-host-resource-pressure';
+  const initial = { schemaVersion: 1, kind, timeUtc: new Date().toISOString() };
   publish(destination, { ...initial, status: 'RUNNING' });
   try {
-    const report = suite(values);
+    const report = { kind, ...suite(values) };
     publish(destination, report);
     console.log(`Performance report ${report.status}: ${destination}`);
     if (report.status !== 'PASS') process.exitCode = 1;

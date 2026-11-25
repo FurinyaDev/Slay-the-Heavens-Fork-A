@@ -9,7 +9,7 @@ import {projectRepositoryMatches} from './repository-identity.mjs';
 const validSha=value=>/^[a-f0-9]{40}$/.test(value??'');
 export const releaseBranch=value=>/^release\/[\w][\w.-]*$/.test(value??'');
 const frozenBranch=value=>releaseBranch(value)||/^hotfix\/v(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)$/.test(value??'');
-async function pages(request,path,key) {
+export async function pages(request,path,key) {
  const rows=[];
  for(let page=1;page<=100;page++) {
   const result=await request(`${path}${path.includes('?')?'&':'?'}per_page=100&page=${page}`);
@@ -18,6 +18,10 @@ async function pages(request,path,key) {
   if(result[key].length<100)return rows;
  }
  throw Error('Release CI pagination incomplete');
+}
+export async function latestFullRun(repo,branch,request) {
+ const path=`/repos/${repo}/actions/workflows/quality.yml/runs?event=workflow_dispatch&branch=${encodeURIComponent(branch)}`;
+ return (await pages(request,path,'workflow_runs')).sort((a,b)=>b.id-a.id)[0];
 }
 // Reuse the real hosted Full matrix. Fast, PR merge tests and local diagnostics
 // cannot attest a frozen Release HEAD. Never select an older successful run.
@@ -34,8 +38,7 @@ export async function verifyReleaseFull(repo,branch,head,request,readCheckout=lo
    throw Error('Release HEAD changed; freeze and run Full again');
  };
  await checkRef();
- const latest=async()=> (await pages(request,`${prefix}/actions/workflows/quality.yml/runs?event=workflow_dispatch&branch=${encodeURIComponent(branch)}`,'workflow_runs'))
-  .sort((a,b)=>b.id-a.id)[0];
+ const latest=()=>latestFullRun(repo,branch,request);
  const run=await latest();
  if(!Number.isSafeInteger(run?.id)||run.id<1||run.head_sha!==head||run.head_branch!==branch||
   run.event!=='workflow_dispatch'||run.path!=='.github/workflows/quality.yml'||
@@ -141,6 +144,12 @@ if(process.argv[1]&&import.meta.url===pathToFileURL(resolve(process.argv[1])).hr
    throw Error('Usage: node scripts/release-ci.mjs freeze|verify <release/name|hotfix/vX.Y.Z> <frozen-HEAD>');
   if(command==='freeze') {
    console.log(JSON.stringify(await freezeReleaseFull(repo,branch,head,githubRequest)));
-  } else console.log(JSON.stringify(await verifyReleaseFull(repo,branch,head,githubRequest),null,2));
+  } else {
+   const full=await verifyReleaseFull(repo,branch,head,githubRequest);
+   const performance=releaseBranch(branch)
+    ? await (await import('./runtime-baseline/require-release-performance.mjs')).requireReleasePerformance(full,githubRequest)
+    : undefined;
+   console.log(JSON.stringify({...full,performance},null,2));
+  }
  } catch(error) {console.error(error.message);process.exitCode=1;}
 }
