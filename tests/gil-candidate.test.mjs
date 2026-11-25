@@ -100,6 +100,11 @@ test('require bound base, work-key and public distribution authorization', () =>
   assert.notEqual(candidate.id, request({ baseSha256: '3'.repeat(64) }).id);
   assert.notEqual(candidate.id, request({ workKey: 'other-work' }).id);
   assert.notEqual(candidate.id, approvedRequest(JSON.stringify(approval), sourceSha, 'new policy').id);
+  const policy = { controllerSha: 'a'.repeat(40), checkedFiles: [baseSha256] };
+  assert.notEqual(
+    approvedRequest(JSON.stringify(approval), sourceSha, policy).id,
+    approvedRequest(JSON.stringify(approval), sourceSha, { ...policy, controllerSha: 'b'.repeat(40) }).id,
+  );
   const hotfixApproval = { ...approval, sourceBranch: branch, version };
   const release = approvedRequest(JSON.stringify(hotfixApproval), sourceSha, 'policy', hotfix);
   assert.equal(release.configuration.releaseCandidate, true);

@@ -138,7 +138,14 @@ async function preflight() {
   requireGate(process.env.GITHUB_REF === 'refs/heads/develop' && process.env.GITHUB_REPOSITORY_ID === String(repositoryId),
     'Run the GIL candidate workflow from the trusted default develop branch.');
   const target = candidateTarget(process.env.SOURCE_REF, source);
-  const policy = [import.meta.url, new URL('../.github/workflows/gil-candidate.yml', import.meta.url)].map(url => hash(readFileSync(new URL(url))));
+  const controllerSha = process.env.GITHUB_SHA;
+  const controlRoot = fileURLToPath(new URL('..', import.meta.url));
+  cleanHead(controlRoot, controllerSha, 'Controller');
+  const policy = {
+    controllerSha,
+    checkedFiles: [import.meta.url, new URL('../.github/workflows/gil-candidate.yml', import.meta.url)]
+      .map(url => hash(readFileSync(new URL(url)))),
+  };
   const request = approvedRequest(process.env.GIL_CANDIDATE_APPROVAL, source, policy, target);
   const checks = await verifySource(source, api, target);
   const existing = await findArtifact(api, request, process.env.GITHUB_RUN_ID);
@@ -292,6 +299,7 @@ async function deliver() {
   writeFileSync(join(artifact, 'manifest.json'), JSON.stringify({
     sourceCommit: sourceSha, sourceBranch: branch, version: receipt.release.version, buildId: receipt.buildId,
     payloadDigest: receipt.payloadDigest, candidate, requestId, baseSha256, toolCommit, encoderSha256,
+    controllerSha: process.env.GITHUB_SHA,
     nativeAudit: 'pass',
     platformVersion: null,
     parameters: { workKey, profile, nativePageLifecycle: true, releaseCandidate: Boolean(version), liveWrite: false },
