@@ -168,6 +168,12 @@ function M.sameLook(a,b)
     return true
 end
 
+local function showHit(hit)
+    if hit.visible~=true then
+        assert(hit:SetVisible(true)~=false,'deck browser hit visibility rejected')
+    end
+end
+
 local function prepare(pool,job)
     local i=job.next
     if not job.assigned then
@@ -210,7 +216,7 @@ local function prepare(pool,job)
     entry.position,entry.look,entry.instance=i,model.look,job.cards[i]
     entry.hit.raycastTarget=true
     if not live(pool,job) then return end
-    assert(entry.hit:SetVisible(true)~=false,'deck browser hit visibility rejected')
+    showHit(entry.hit)
     if not live(pool,job) then return end
     assert(entry.root:SetVisible(true)~=false,'deck browser entry visibility rejected')
     if not live(pool,job) then
