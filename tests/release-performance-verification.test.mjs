@@ -12,13 +12,16 @@ const formalName = 'release-performance-40-2';
 const refPath = '/git/ref/heads/' + branch;
 const workflowPath = '/actions/workflows/performance-regression.yml/runs?event=workflow_dispatch&branch=' +
   encodeURIComponent(branch) + '&head_sha=' + head + '&per_page=100&page=1';
-const full = {repo, branch, head, runId:10};
+const fullPath = '/actions/workflows/quality.yml/runs?event=workflow_dispatch&branch=' +
+  encodeURIComponent(branch) + '&per_page=100&page=1';
+const full = {repo, branch, head, runId:10, attempt:3, checkoutArtifactId:60};
 
 function fixture() {
   const controller = '1'.repeat(40);
-  const gil = {name:'gil-candidate-' + version + '-' + head + '-' + '2'.repeat(64), id:30, runId:20, attempt:1, controllerSha:controller,
+  const gil = {name:'gil-candidate-v' + version + '-' + head + '-' + '2'.repeat(64), id:30, runId:20, attempt:1, controllerSha:controller,
     digest:'sha256:' + '3'.repeat(64), gilSha256:'4'.repeat(64), payloadDigest:'5'.repeat(64), buildId:'f960b8ee-5310-47d9-b21b-3bea1ef578c1',
-    receiptSha256:'6'.repeat(64), manifestSha256:'7'.repeat(64), qualityRun:full.runId};
+    receiptSha256:'6'.repeat(64), manifestSha256:'7'.repeat(64), qualityRun:full.runId, qualityAttempt:full.attempt,
+    qualityCheckoutArtifact:full.checkoutArtifactId};
   const formal = {name:formalName, id:50, runId:40, attempt:2, controllerSha:head, digest:'sha256:' + '8'.repeat(64)};
   const responses = new Map();
   const addPublished = (target, ref, path, display_title, step) => {
@@ -41,6 +44,7 @@ function fixture() {
   addPublished(gil, 'develop', 'gil-candidate.yml', 'GIL candidate / ' + branch + ' / ' + head, 'Verify the archived download');
   responses.set(refPath, {ref:'refs/heads/' + branch, object:{type:'commit', sha:head}});
   responses.set(workflowPath, {workflow_runs:[run]});
+  responses.set(fullPath, {workflow_runs:[{id:full.runId, run_attempt:full.attempt, head_sha:head, status:'completed', conclusion:'success'}]});
   responses.set('/actions/runs/40/artifacts?per_page=100&page=1', {artifacts:[artifact]});
   const report = Buffer.from(JSON.stringify(reportFixture()));
   const evidence = {schemaVersion:1, kind:'release-performance', source:{head, branch, version, tree}, runId:40, attempt:2,
@@ -91,4 +95,12 @@ test('rejects report tampering, a different original GIL, or a moving freeze', a
     return original(locator);
   };
   await assert.rejects(moving.check(), /Release HEAD changed/);
+});
+
+test('a new Full attempt or checkout receipt on the same run and source invalidates the GIL and formal result', async () => {
+  const current = fixture();
+  await assert.rejects(requireReleasePerformance({...full, attempt:4}, current.request, current.options), /current frozen Full run, attempt/);
+  await assert.rejects(requireReleasePerformance({...full, checkoutArtifactId:61}, current.request, current.options), /checkout artifact differ/);
+  current.responses.get(fullPath).workflow_runs[0].run_attempt = 4;
+  await assert.rejects(current.check(), /Frozen Full changed during performance verification/);
 });

@@ -85,7 +85,7 @@ test('formal collection fails closed and its verifier requires the frozen versio
   assert.equal(resourceResultStatus({release:true, pass:true, paired:true, signals:true}), 'REVIEW_REQUIRED');
   assert.equal(resourceResultStatus({release:false, pass:true, paired:false, signals:true}), 'PASS');
   const frozen = '{"version":"2.2.0"}';
-  const receiptVersion = {release:{version:'2.2.0'}};
+  const receiptVersion = {release:{version:'v2.2.0'}};
   assert.equal(frozenReleaseVersion(receiptVersion, frozen, frozen), '2.2.0');
   assert.throws(() => frozenReleaseVersion(receiptVersion, frozen, '{"version":"2.0.0"}'), /versions differ/);
   const wrongEngine = reportFixture();

@@ -31,7 +31,7 @@ export function verifyAuditedBuild(gilBytes, receiptBytes, audit, sourceCommit) 
 
 export function frozenReleaseVersion(receipt, checkoutPackage, currentPackage) {
   const {version} = JSON.parse(checkoutPackage);
-  assert(version === receipt.release?.version && version === JSON.parse(currentPackage).version,
+  assert('v' + version === receipt.release?.version && version === JSON.parse(currentPackage).version,
     'Frozen source and release receipt versions differ');
   return version;
 }

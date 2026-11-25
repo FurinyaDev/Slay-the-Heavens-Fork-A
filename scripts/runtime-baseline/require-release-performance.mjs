@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict';
 import {execFileSync} from 'node:child_process';
-import {releaseBranch, pages} from '../release-ci.mjs';
+import {latestFullRun, releaseBranch, pages} from '../release-ci.mjs';
 import {resolvePublishedBaseline} from './published-baseline.mjs';
 import {productionWorkload, workloadIdentity} from './resource-receipt.mjs';
 import {verifyResourceReport} from './verify-release-performance.mjs';
-import {gilArtifactExpectation, loadArtifact, readRunArtifact, sha256} from './release-performance-artifacts.mjs';
+import {assertFullMatches, gilArtifactExpectation, loadArtifact, readRunArtifact, sha256} from './release-performance-artifacts.mjs';
 
 const repository = 'FurinyaWorks/Slay-the-Heavens';
 const prefix = '/repos/' + repository;
@@ -25,8 +25,9 @@ function frozenSource(head) {
 export async function requireReleasePerformance(fullProof, request, {
   readSource = frozenSource, readArtifact = loadArtifact, readBaseline = resolvePublishedBaseline,
 } = {}) {
-  const {repo, branch, head, runId:qualityRun} = fullProof;
-  assert(repo === repository && releaseBranch(branch) && sha.test(head) && validId(qualityRun), 'Frozen release Full proof required');
+  const {repo, branch, head, runId:qualityRun, attempt:qualityAttempt, checkoutArtifactId} = fullProof;
+  assert(repo === repository && releaseBranch(branch) && sha.test(head) &&
+    [qualityRun, qualityAttempt, checkoutArtifactId].every(validId), 'Frozen release Full proof required');
   const {version, tree, workloadSha256} = readSource(head);
   assert(branch === 'release/v' + version && sha.test(tree) && digest.test(workloadSha256), 'Frozen engineering source identity differs');
   const target = {head, branch, version};
@@ -71,13 +72,17 @@ export async function requireReleasePerformance(fullProof, request, {
   for (const [key, value] of Object.entries(original)) {
     assert.equal(gil[key], value, 'Audited GIL archive changed: ' + key);
   }
-  assert(gil.qualityRun === qualityRun && /^[a-f0-9-]{36}$/.test(gil.buildId) &&
+  assertFullMatches(gil, fullProof);
+  assert(/^[a-f0-9-]{36}$/.test(gil.buildId) &&
     [gil.gilSha256, gil.payloadDigest, gil.receiptSha256, gil.manifestSha256].every(value => digest.test(value)),
-    'Formal evidence is missing the audited GIL or its release Full identity');
+    'Formal evidence is missing the audited GIL identity');
   assert.deepEqual(await readRunArtifact(request, locator.id, formal), locator, 'Formal artifact changed during verification');
   const current = await latest();
   assert(current?.id === run.id && current.run_attempt === run.run_attempt && current.status === 'completed' &&
     current.conclusion === 'success', 'Formal workflow run or attempt changed during verification');
+  const currentFull = await latestFullRun(repo, branch, request);
+  assert(currentFull?.id === qualityRun && currentFull.run_attempt === qualityAttempt && currentFull.head_sha === head &&
+    currentFull.status === 'completed' && currentFull.conclusion === 'success', 'Frozen Full changed during performance verification');
   await checkRef();
   return {schemaVersion:1, kind:'release-performance', branch, head, tree, runId:locator.runId, attempt:locator.attempt,
     artifactId:locator.id, artifactDigest:locator.digest, reportSha256:evidence.reportSha256, gil, published};

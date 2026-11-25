@@ -19,6 +19,10 @@ export async function pages(request,path,key) {
  }
  throw Error('Release CI pagination incomplete');
 }
+export async function latestFullRun(repo,branch,request) {
+ const path=`/repos/${repo}/actions/workflows/quality.yml/runs?event=workflow_dispatch&branch=${encodeURIComponent(branch)}`;
+ return (await pages(request,path,'workflow_runs')).sort((a,b)=>b.id-a.id)[0];
+}
 // Reuse the real hosted Full matrix. Fast, PR merge tests and local diagnostics
 // cannot attest a frozen Release HEAD. Never select an older successful run.
 function loadCheckout(repo,run,jobs) {
@@ -34,8 +38,7 @@ export async function verifyReleaseFull(repo,branch,head,request,readCheckout=lo
    throw Error('Release HEAD changed; freeze and run Full again');
  };
  await checkRef();
- const latest=async()=> (await pages(request,`${prefix}/actions/workflows/quality.yml/runs?event=workflow_dispatch&branch=${encodeURIComponent(branch)}`,'workflow_runs'))
-  .sort((a,b)=>b.id-a.id)[0];
+ const latest=()=>latestFullRun(repo,branch,request);
  const run=await latest();
  if(!Number.isSafeInteger(run?.id)||run.id<1||run.head_sha!==head||run.head_branch!==branch||
   run.event!=='workflow_dispatch'||run.path!=='.github/workflows/quality.yml'||

@@ -1,11 +1,11 @@
 import assert from 'node:assert/strict';
 import {execFileSync} from 'node:child_process';
 import {mkdirSync, readFileSync, writeFileSync} from 'node:fs';
-import {githubRequest, releaseBranch} from '../release-ci.mjs';
+import {githubRequest, releaseBranch, verifyReleaseFull} from '../release-ci.mjs';
 import {productionWorkload, workloadIdentity} from './resource-receipt.mjs';
 import {frozenReleaseVersion, verifyResourceReport} from './verify-release-performance.mjs';
 import {resolvePublishedBaseline} from './published-baseline.mjs';
-import {sha256, verifyGilArtifact} from './release-performance-artifacts.mjs';
+import {assertFullMatches, sha256, verifyGilArtifact} from './release-performance-artifacts.mjs';
 
 try {
   const env = process.env;
@@ -25,6 +25,7 @@ try {
   const version = JSON.parse(checkoutPackage).version;
   const target = {head, branch, version};
   const {receipt, binding:gil} = await verifyGilArtifact(githubRequest, Number(env.GIL_ARTIFACT_ID), target);
+  assertFullMatches(gil, await verifyReleaseFull(env.GITHUB_REPOSITORY, branch, head, githubRequest));
   frozenReleaseVersion(receipt, checkoutPackage, readFileSync('package.json'));
   const published = await resolvePublishedBaseline(version);
   const raw = readFileSync('build/performance-regression/report.json');
