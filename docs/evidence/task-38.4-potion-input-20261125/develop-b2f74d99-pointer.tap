@@ -1,0 +1,12 @@
+✔ Main potion runtime preserves explicit actions, stale ownership, and the real Potion Belt fifth slot (6072.857037ms)
+✔ Main host isolates the small potion card pointer input and keeps global inventory off battle (3903.379637ms)
+✔ Recovered potion ownership rejects competing, stale, and anonymous pointer tails (22345.265691ms)
+✔ A completed neutral potion panel touch releases its pointer without dismissing or suppressing later Use (4639.824164ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 37397.733004

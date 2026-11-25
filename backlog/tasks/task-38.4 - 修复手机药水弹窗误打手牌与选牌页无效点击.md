@@ -1,11 +1,11 @@
 ---
 id: TASK-38.4
 title: 修复手机药水触控，避免误出牌和无效闪屏
-status: To Do
+status: In Progress
 assignee:
   - Furinya
 created_date: '2026-11-15 19:11'
-updated_date: '2026-11-19 03:49'
+updated_date: '2026-11-25 14:54'
 labels:
   - mobile
   - playtest-20261115
@@ -54,10 +54,14 @@ ordinal: 175000
 
 <!-- SECTION:PLAN:BEGIN -->
 先查最新develop、开放PR与现有实现，在真实状态/事件层复现问题并保存RED；仅对证实的根因做最小修复，提供GREEN/负控、独立复审与候选交付。没有同候选实体手机证据时AC保留未勾，遵守独立worktree、Backlog认领、CI与用户发版边界。
+
+从 develop b2f74d99 在 Fork A 的 test/task-38-4-potion-input-verification 复验既有药水触点拦截，未复现缺口前不改生产；验收先跑 approved-main-potions 定向 Host，再核同候选手机触点和画面。
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
 
 <!-- SECTION:NOTES:BEGIN -->
 依据2026-11-15用户两轮真机录音。P0/P1是体验严重度，非突破High队列上限的授权。逐字时间和截图映射见docs/backlog-details/MOBILE-QA-20261115.md。本PR仅登记任务，不代表Bug已修、代码或手机已验。
+
+2026-11-25 隔离云端复验 develop b2f74d99：approved-main-potions 定向 4/4 通过。既有回归覆盖 2/5/10 张手牌、三种药水、弹窗 Use/Discard/Dismiss、两种事件顺序、旧事件尾部、实际远虑强制选牌期间顶栏药水不触发 render/refresh。未改运行时代码；尚无同候选手机真实触点和选牌层级证据，所有原验收项保留。详见 docs/evidence/task-38.4-potion-input-20261125/README.md。
 <!-- SECTION:NOTES:END -->
