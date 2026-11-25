@@ -36,6 +36,16 @@ test('time signals require at least three pairs above threshold and retain workl
   assert.deepEqual(compareSamples(before, [rows(126), rows(105), rows(128)], 25), []);
 });
 
+test('six consistently slower pairs flag a median regression despite a small individual increase', () => {
+  const rows = elapsedMs => ({ rows: [{ phase: 'deck-roundtrip', elapsedMs }] });
+  const before = [100, 200, 300, 400, 500, 600].map(rows);
+  const after = [150.8, 279.6, 362.1, 481.6, 524, 763.8].map(rows);
+  assert.deepEqual(compareSamples(before, after, 20).map(signal => [signal.phase, signal.metric]), [
+    ['deck-roundtrip', 'elapsedMs'],
+  ]);
+  assert.deepEqual(compareSamples(before, [...after.slice(0, -1), rows(595)], 20), []);
+});
+
 
 test('project SemVer bookkeeping alone preserves dependency pairing', () => {
   const lock = (version, fengari) => JSON.stringify({ version, packages: {

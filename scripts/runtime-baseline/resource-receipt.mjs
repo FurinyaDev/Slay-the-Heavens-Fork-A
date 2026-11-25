@@ -71,7 +71,11 @@ export function compareSamples(before, after, alertPercent) {
       const timing = metric === 'elapsedMs';
       const minimumPairs = timing ? 3 : 1;
       const multiplier = timing ? 1 + alertPercent / 100 : 1;
-      if (previous.length >= minimumPairs && current.every((value, i) => value > previous[i] * multiplier)) {
+      const allAboveThreshold = previous.length >= minimumPairs && current.every((value, i) => value > previous[i] * multiplier);
+      const consistentTimingIncrease = timing && previous.length >= 6
+        && previous.every((value, i) => value > 0 && current[i] > value)
+        && percentile(current.map((value, i) => value / previous[i]), 0.5) > multiplier;
+      if (allAboveThreshold || consistentTimingIncrease) {
         signals.push({ phase, metric, before: summarize(previous), after: summarize(current) });
       }
     }
