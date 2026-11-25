@@ -5,10 +5,11 @@ import {assertReleaseCandidateToolsCurrent,beforeDeckPagesSuiteSource} from './i
 export {beforeInputRetirementTestInventory} from './input-retirement-inventory.mjs';
 import {assertDevelopBackflowCurrent,authenticateDevelopBackflow,beforeDevelopBackflow,developBackflowOwns} from './develop-release-backflow-source.mjs';
 import {beforeCalibrationReplay,beforeCurrentReplayCopier} from './calibration-replay-sources.mjs';
+import {assertConfirmationCopierEdition,beforeConfirmationCopier} from './ui-confirmation-copier-source.mjs';
 import {beforeNativeHostReplay} from './native-host-replay-source.mjs';
 import {assertNativeFixturesCurrent,beforeNativeFixtureReplay} from './native-fixture-replay-source.mjs';
 import {assertNativeFlowFixturesCurrent,beforeNativeFlowFixture} from './native-flow-fixture-source.mjs';
-import {beforeUiEntranceWitness} from './ui-entrance-source.mjs';
+import {beforeUiEntranceWitness,confirmationReader} from './ui-entrance-source.mjs';
 import {beforeOfficialBackgroundFixture} from './official-background-fixture-source.mjs';
 import {assertAudioDeckBrowserCurrent,beforeMapRoomReplayCohort,beforeDevelopReplayMerge} from './develop-replay-merge-source.mjs';
 import {beforeStsUiCloseoutSource} from './sts-ui-closeout-source.mjs';
@@ -334,12 +335,14 @@ function beforeRebasedCopier(path,source){
  assert.equal(hash(prior),'fbc236306831104020bf6d83133ab8b978ad9ffd5d6dae1bde13ee12176651e2','exact final develop copier predecessor');
  return source.includes('\r\n')?prior.replaceAll('\n','\r\n'):prior;
 }
-function beforeReleaseUiBuildSource(path,source,read=readFileSync){
+function beforeReleaseUiBuildSource(path,source,read=readFileSync,reuseCombatReader=false){
  source=beforeIntegratedReleaseCopier(path,source);
  source=beforeShopEntryCopier(path,beforeReleaseShopEntry(path,source));
- source=beforeCombatVisualSource(path,source,shopEntryPreflightRead(owner=>beforeIntegratedReleaseCopier(owner,read(owner,'utf8'))));
+ const readCombat=shopEntryPreflightRead(owner=>beforeIntegratedReleaseCopier(owner,read(owner,'utf8')));
+ source=beforeCombatVisualSource(path,source,readCombat);
  source=beforeSts1MenuCiSource(path,source);
- source=beforeRefinedReleaseCiSource(path,beforeRefinedReleaseCopier(path,beforeReleaseCapacitySource(path,source)));
+ source=beforeRefinedReleaseCiSource(path,beforeRefinedReleaseCopier(path,beforeReleaseCapacitySource(path,source)),
+  reuseCombatReader?readCombat:undefined);
  if(!Object.hasOwn(releaseUiBuild.files,path)||typeof source!=='string'||source.includes('\r\r\n'))return source;
  const text=normalize(source),{before,after}=releaseUiBuild.files[path];
  if(hash(text)!==after.sha256||blob(text)!==after.gitBlob)return source;
@@ -521,14 +524,14 @@ function beforeLuaInventoryTest(path,source){
  assert.equal(blob(prior),'dfc38c230b942012183773414d04d5e89ca37315','exact Lua inventory test predecessor blob');
  return source.includes('\r\n')?prior.replaceAll('\n','\r\n'):prior;
 }
-function beforeCoopCiSource(path,source){
+function beforeCoopCiSource(path,source,confirmationRead){
  source=beforeLuaInventoryTest(path,source);
  source=beforeStsFadeCi(path,source);
- source=beforeReleaseUiBuildSource(path,beforeRebasedCi(path,beforeRebasedCopier(path,source)));
+ source=beforeReleaseUiBuildSource(path,beforeRebasedCi(path,beforeRebasedCopier(path,source)),confirmationRead,Boolean(confirmationRead));
  source=beforePowerMembershipConfig(path,beforePowerMembershipHelper(path,source));
  source=beforeFieldConfirmation(path,beforeRewardScreenCiSource(path,beforeCardFeedbackCiSource(path,beforeRelicCrystal(path,beforeMapCiSource(path,source)))));
  source=beforeDevelopCapacityBuildSource(path,beforeTinyHouseIntegratedSource(path,source));
- source=beforeV2UiEvidence(path,beforeLoadingRecoveryCopier(path,source));
+ source=beforeV2UiEvidence(path,beforeLoadingRecoveryCopier(path,source),confirmationRead);
  const row=Object.hasOwn(coopLabCi.files,path)?coopLabCi.files[path]:null;
  if(!row || typeof source!=='string' || source.includes('\r\r\n') || hash(normalize(source))!==row.afterSha)return source;
  return source.includes('\r\n')?row.before.replaceAll('\n','\r\n'):row.before;
@@ -740,6 +743,7 @@ const calibrationReplayPaths=Object.freeze([
 let calibrationReplayPredecessor;
 function beforeCalibrationReplayOwner(path,source){
  if(!calibrationReplayPaths.includes(path))return source;
+ source=beforeConfirmationCopier(path,source);
  if(!calibrationReplayPredecessor){
   calibrationReplayPredecessor=releaseUiRestoreArchive(
    readFileSync(new URL('./calibration-v220-replay-owners.json.gz',import.meta.url)),
@@ -972,10 +976,12 @@ export function assertIntegrationSuccessorsCurrent(read=readFileSync){
   assert(typeof source==='string'&&!source.includes('\r\r\n')&&hash(normalize(source))===sha,'fresh complete integration source: '+path);
  }
 }
-export function beforePreflightSource(path,source,view='prior'){
+export function beforePreflightSource(path,source,view='prior',read=readFileSync){
+ assertConfirmationCopierEdition(path,source,read);
  source=beforeForkPush(path,beforeCalibrationReplayOwner(path,source));
  if(path==='.github/workflows/quality.yml')source=beforePosixDeadlineWorkflow(beforeWindowsDeadlineWorkflow(source));
- source=beforeUiEntranceWitness(path,beforeCurrentReplayCopier(path,source));
+ const confirmation=confirmationReader(path,beforeCurrentReplayCopier(path,source),read);
+ source=beforeUiEntranceWitness(path,confirmation.source);
  source=beforeCurrentReplayFixes(path,source);
  source=beforeNativeFlowFixture(path,source);
  source=beforeOfficialBackgroundFixture(path,source);
@@ -991,7 +997,8 @@ export function beforePreflightSource(path,source,view='prior'){
  source=beforeNativeFixtureReplay(path,source);
  source=beforeNativeButtonRepairCopier(path,beforeNativeButtonRepair(path,source));
  source=beforeStsUiCloseoutSource(path,source);
- source=beforeCharacterPreparationCiSource(path,beforeV2UiAdmission(path,beforeCoopCiSource(path,source)));
+ source=beforeCharacterPreparationCiSource(path,beforeV2UiAdmission(path,beforeCoopCiSource(path,source,
+  confirmation.matched?confirmation.read:undefined)));
  source=beforeIntegrationSuccessor(path,source);
  // Only the exact flag-registry successor enters the earlier Release witness.
  if(view==='release-bootstrap'&&path==='scripts/ui-profile.mjs'&&typeof source==='string'&&!source.includes('\r\r\n')
@@ -1023,6 +1030,6 @@ export function readHistoricalPreflightInput(path,encoding,read=readFileSync){
 export function preflightPriorRead(read=readFileSync,view='prior'){return(path,encoding)=>{
  const raw=readHistoricalPreflightInput(path,encoding,read);
  if(typeof raw!=='string'&&!Buffer.isBuffer(raw))return raw;
- const text=typeof raw==='string'?raw:raw.toString('utf8'),prior=beforePreflightSource(path,text,view);
+ const text=typeof raw==='string'?raw:raw.toString('utf8'),prior=beforePreflightSource(path,text,view,read);
  return typeof raw==='string'?prior:prior===text?raw:Buffer.from(prior);
 };}
