@@ -2,6 +2,12 @@
 
 供人工填写官方更新日志的玩家文案保留在 [CHANGELOG.md](../../CHANGELOG.md)；游戏内不再维护自研公告。这里记录玩家无须了解但开发者需要追溯的 CI、重构、测试、协作及美术实验。**本文件不等于实际平台发布证明**。版本与每段源码提交的可点击 Git Diff 见 [版本一览](README.md)。
 
+## v2.1.1 平台发布确认（2026-11-25）
+
+- Owner 确认千星奇域平台版本 `2.02` 已于 2026-11-25 上线并封板，对应工程 SemVer `2.1.1` 和 GitHub 注释 Tag `v2.1.1`。千星平台只支持两段版本号。正式上传包的源码为 `06c2577ecc6c07593c6bf8b6e79e158dac5b6195`，源码树为 `d3bb8794ee95f97142c986a11aa9f439b5d73984`。已核对 `package.json`、锁文件与 Release Please manifest。[GitHub Release](https://github.com/FurinyaWorks/Slay-the-Heavens/releases/tag/v2.1.1) · [生产收口 PR #961](https://github.com/FurinyaWorks/Slay-the-Heavens/pull/961)
+- Owner 提供的正式 GIL 与远端 Git LFS 归档逐字一致，文件为 23,780,838 字节，SHA-256 为 `afe80c0783d0d4b6046c1f44cba3ef2b71cb8bb34fbc7404d939d12e0f5ff831`。内嵌 buildId 为 `29f48ea1-fa9d-4f76-b124-2bffc83f7594`，与归档构建回执摘要一致。[GIL 和构建回执存档](https://github.com/FurinyaWorks/Slay-the-Heavens/tree/3f79269e90a8f2507f6782135563ecf573b357d7/docs/evidence/v2.1.1-2026-11-25)
+- 工程记录保留粒子同值写入与隐藏战斗页去重、正式配置性能回归和构建审计。确切源码的 Hosted Performance 已通过。官方发布回执、作品 ID、精确上线时间和同包设备验收待补录。玩家更新文案见 [CHANGELOG](../../CHANGELOG.md#v211-2026-11-25)，旧版与 Beta 的对照体验及后续验收见 [TASK-4.21](../backlog-details/TASK-4.21.md#2026-11-25-玩家反馈)。[战斗优化 #956](https://github.com/FurinyaWorks/Slay-the-Heavens/pull/956) · [正式配置回归 #959](https://github.com/FurinyaWorks/Slay-the-Heavens/pull/959) · [Hosted Performance](https://github.com/FurinyaWorks/Slay-the-Heavens/actions/runs/45544260623)
+
 ## v0.11.0 候选（自 v0.10.1 起；2026-10-28）
 
 - **玩法与内容**：四职业卡组与跨章节接线整合（[#238](https://github.com/CHNISam/Slay-the-Abyss/pull/238)）；补齐第三幕敌人（[#252](https://github.com/CHNISam/Slay-the-Abyss/pull/252)）、事件/历史资格（[#259](https://github.com/CHNISam/Slay-the-Abyss/pull/259)）；接入隐藏第四幕、盾矛与心脏、真结局（[#262](https://github.com/CHNISam/Slay-the-Abyss/pull/262)）；蜥蜴尾巴和黑星（[#266](https://github.com/CHNISam/Slay-the-Abyss/pull/266)）；商店/宝箱/营地交互（[#260](https://github.com/CHNISam/Slay-the-Abyss/pull/260)）。
