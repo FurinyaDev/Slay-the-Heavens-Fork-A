@@ -13,6 +13,7 @@ import {checkWhitespace,validateMediaBases} from '../scripts/ci-whitespace.mjs';
 import {prepareComparisonBlobs,comparisonBlobIds} from '../scripts/ci-comparison-blobs.mjs';
 import {checkHostedCheckout,checkNetworkPolicy} from '../scripts/check-network-policy.mjs';
 import {sensitive,checkAssets} from '../scripts/check-license.mjs';
+import {beforeCheckoutStorageSource} from './helpers/checkout-storage-source.mjs';
 
 const root = resolve('.');
 const expectedPaths = ['armaments', 'cleave', 'heavy_blade'].flatMap(id => ['source.png', 'preview-native.png'].map(name => `art/cards/traveler-geo/${id}/${name}`));
@@ -308,7 +309,21 @@ test('checkout storage preserves the reviewed binary fixtures, paths, and origin
   assert.equal(bytes.length,row.bytes);
   assert.equal(createHash('sha256').update(bytes).digest('hex'),row.sha256);
   assert.deepEqual(row.oldBinaryGitBlobs,[createHash('sha1').update(`blob ${bytes.length}\0`).update(bytes).digest('hex')]);
+  assert(bytes.subarray(0,8000).includes(0),'the original Git object was binary');
   assert(sensitive(row.path));
+ }
+});
+
+test('checkout migration admits only exact CI sources into the earlier receipts',()=>{
+ for(const path of ['.gitattributes','config/ci-media-lfs.json','docs/legal/assets.json','scripts/ci-media-lfs.mjs',
+  'tests/ci-reviewed-lfs.test.mjs','tests/helpers/fork-preflight-source.mjs']){
+  const current=readFileSync(path,'utf8').replaceAll('\r\n','\n');
+  const prior=beforeCheckoutStorageSource(path,current);
+  assert.notEqual(prior,current,path);
+  assert.equal(beforeCheckoutStorageSource(path,current.replaceAll('\n','\r\n')),prior.replaceAll('\n','\r\n'),path);
+  const drift=current+'\n';
+  assert.equal(beforeCheckoutStorageSource(path,drift),drift,path);
+  assert.equal(beforeCheckoutStorageSource('foreign/'+path,current),current,path);
  }
 });
 
