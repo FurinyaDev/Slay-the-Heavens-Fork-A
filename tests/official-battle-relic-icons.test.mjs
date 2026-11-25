@@ -163,8 +163,14 @@ if official then
  assert(not detail.visible and battle:GetChild('rewardStage').visible and not run.rewards.cardResolved)
 else
  assert(h:openRelics(1))
- assert(not h.relicUI.selectedIndex)
- assert(panel:GetChild('row1'):GetChild('slot'):GetChild('icon').imageId==baseIcon('burning_blood'),'legacy list restore')
+ local single=panel:GetChild('single')
+ assert(h.relicUI.selectedIndex==1 and h.relicUI.selected.id=='burning_blood','legacy opens the selected single detail')
+ assert(single.visible and not panel:GetChild('row1').visible,'shared entry must not restore the retired list')
+ assert(single:GetChild('icon').visible and single:GetChild('icon').imageId==baseIcon('burning_blood'),
+  'legacy single detail uses its own atlas identity')
+ assert(h:closeDeck())
+ assert(h:openRelics())
+ assert(h.relicUI.selectedIndex==1 and single.visible,'unindexed legacy entry starts at the first relic')
 end
 print('BATTLE_RELIC_ICONS_SCOPE_PASS')`);
   const result=runLua(script);assert.equal(result.status,0,result.stdout+result.stderr);assert.match(result.stdout,/BATTLE_RELIC_ICONS_SCOPE_PASS/);
