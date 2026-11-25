@@ -66,12 +66,16 @@ function M.install(owner, ownership, host, dependencies)
         local info=owner.info
         local automaticCard=info.transient and isCard(info)
         owner.info = nil
+        local handFocus
         if isCard(info) then
-            if not preserveHover and owner.hover==info.slot then owner.hover,owner.handHover=nil,nil end
+            if not preserveHover and owner.hover==info.slot then
+                owner.hover,owner.handHover=nil,nil
+                handFocus=info.kind=='card'
+            end
             if owner.help and owner.help.source==info.source then owner.help=nil end
         end
         dependencies.child("statusInfo"):SetVisible(false)
-        return true,automaticCard
+        return true,automaticCard,handFocus
     end
     function owner:closePowerTip(source)
         if not self.powerTip or source and source ~= self.powerTip.source then return end
@@ -96,9 +100,13 @@ function M.install(owner, ownership, host, dependencies)
         local actor = index == 0 and run.combat.player or run.combat.enemies[index]
         if not Actors.isPresent(actor) then return false end
         local cancelled=dependencies.cancelPotionAim("已取消药水瞄准。")
-        if self.info and self.info.index == index and self.info.id == actor.id then closeInfo()
-        else self.info = {index = index, id = actor.id, battle = run.combat} end
-        self:renderDetailsOnly(cancelled)
+        if self.info and self.info.index == index and self.info.id == actor.id then
+            local _,_,handFocus=closeInfo()
+            self:renderDetailsOnly(cancelled,handFocus)
+        else
+            self.info = {index = index, id = actor.id, battle = run.combat}
+            self:renderDetailsOnly(cancelled)
+        end
         return true
     end
     local function helpContext(spec)
@@ -139,7 +147,7 @@ function M.install(owner, ownership, host, dependencies)
         if not slot or not owner:cardHelpReady(info) then return false end
         local cancelled=dependencies.cancelPotionAim("已取消药水瞄准。")
         owner.info=info
-        if owner.hover~=slot then owner:setHover(slot)
+        if owner.hover~=slot then owner:setHover(slot,cancelled)
         else owner:renderDetailsOnly(cancelled) end
         return owner.info==info
     end

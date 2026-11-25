@@ -34,8 +34,10 @@ local descriptions = {
         return '回合开始时少抽1张牌', v.n..' 回合', '叠加延长持续时间，不额外减少抽牌数。'
     end,
     strength = function(v)
-        return "普通攻击每段伤害 " .. M.signed(v.entry.amount), temporaryDuration(v.entry),
-            temporaryNote(v.entry, "力量", "不影响火焰药水的固定伤害")
+        local direction = v.entry.amount < 0 and "降低" or "提升"
+        local text = "攻击伤害" .. direction .. " " .. number(math.abs(v.entry.amount)) .. " 点"
+        if (v.entry.temporary or 0) == 0 then return text .. "。" end
+        return text, temporaryDuration(v.entry), temporaryNote(v.entry, "力量")
     end,
     dexterity = function(v)
         return "卡牌获得的格挡 " .. M.signed(v.entry.amount), temporaryDuration(v.entry),
@@ -68,6 +70,15 @@ local descriptions = {
     end,
     artifact = function(v)
         return "抵挡接下来 " .. v.n .. " 次减益效果", "剩余 " .. v.n .. " 次", "每抵挡一次减 1；不抵挡塞入的状态牌"
+    end,
+    buffer = function(v)
+        return "抵消接下来 " .. v.n .. " 次生命损失。"
+    end,
+    double_tap = function(v)
+        return "本回合接下来打出的 " .. v.n .. " 张攻击牌各额外打出一次。"
+    end,
+    juggernaut = function(v)
+        return "每次获得格挡，对随机敌人造成 " .. v.n .. " 点伤害。"
     end,
     entangled = function()
         return "本回合不能打出攻击牌", "本回合", "你的回合结束时移除"

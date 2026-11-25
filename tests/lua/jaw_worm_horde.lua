@@ -230,15 +230,23 @@ test('real Host keeps three hard actors HP intent strength help and target owner
  assert(testStart(host));local r=host.run;r.act,r.floor,r.encounters=3,35,Q.new('15',3)
  for _=1,2 do local _,n=Q.consume(r.encounters,'normal');r.encounters=n;r.floor=r.floor+1 end
  assert(Run.startRoomCombat(r,'normal'));host:refresh();local s=r.combat;local panel=root:GetChild('battlePanel')
+ local powerControl=dofile('tests/lua/support/monster_power_control_fixture.lua')
+ local openingDamage={chomp='14',thrash='10',bellow=''}
  for i,e in ipairs(s.enemies)do local box=monsterControl(panel,'enemy'..i)
   assert(box.visible);eq(box:GetChild('name').text,'石颚兽');eq(box:GetChild('hp').text,string.format('%d/%d',e.hp,e.maxHp))
-  eq(box:GetChild('block').text,'6');assert(not box:GetChild('intent').text:find('未知',1,true))
+  eq(box:GetChild('block').text,'6');eq(box:GetChild('intent').text,assert(openingDamage[intent(e)]))
+  local chip=powerControl(box,'strength')
+  local icon,count=chip:GetChild('icon'),chip:GetChild('count')
+  assert(chip.visible and icon.visible and count.visible)
+  eq(icon.imageId,F.Theme.icon.status.strength);eq(count.text,'3')
+  chip:GetChild('hit').click({touchId=70+i})
+  local info=panel:GetChild('statusInfo')
+  local title,body=info:GetChild('name1'),info:GetChild('text1')
+  assert(info.visible and title.visible and body.visible)
+  eq(title.text,'力量');eq(body.text,'攻击伤害提升 3 点。')
+  info:GetChild('hit').click({touchId=70+i})
  end
  assert(not monsterControl(panel,'enemy4'))
- dofile('tests/lua/support/monster_power_control_fixture.lua')(monsterControl(panel,'enemy1'),'strength'):GetChild('hit').click({touchId=71})
- local info=panel:GetChild('statusInfo');assert(info.visible);local text={}
- for i=1,F.Theme.layout.statusInfo.rows do local name=info:GetChild('name'..i);if name.visible then text[#text+1]=name.text end end
- assert(table.concat(text,' '):find('力量 3',1,true));info:GetChild('hit').click({touchId=72})
  local hp={};for i,e in ipairs(s.enemies)do hp[i]=e.hp end
  local uid;for _,c in ipairs(s.hand)do if c.cardId=='strike'or c.cardId=='bash'then uid=c.uid;break end end;assert(uid)
  assert(Run.play(r,uid,2));host:refresh();eq(s.enemies[1].hp,hp[1]);eq(s.enemies[3].hp,hp[3]);eq(s.enemies[2].block,0)

@@ -102,43 +102,49 @@ function M.install(owner, ownership, host, dependencies)
         end
         if not owner.gesture then owner.suppressClick = false end
     end
+    local function repaintDismissed(handFocus,presentationOnly)
+        if handFocus then return owner:renderDetailsOnly(false,true) end
+        owner:render(presentationOnly)
+    end
     local function closeRead(event)
         local press=owner.info and owner.info.press
         if not press then return false end
         if press.touch~=(event and event.touchId) then return true end
-        dependencies.closeInfo()
-        owner:render(true)
+        local _,_,handFocus=dependencies.closeInfo()
+        repaintDismissed(handFocus,true)
         return false
     end
     local function foreignPotionDrag(event)
         local aim=owner.potionAim
         return aim and aim.moving and aim.touch~=(event and event.touchId)
     end
+    local function retireStalePotionAim(event)
+        if not owner.active or owner.busy or not owner.potionAim or dependencies.aimReady(owner.potionAim) then return false end
+        dependencies.cancelPotionAim("药水瞄准已失效，已取消；请重新选择药水。")
+        owner.swallow = {touch = event and event.touchId}
+        owner:render()
+        return true
+    end
     local function prepareDown(event)
         -- The popup owns dismissal as well as Use/Discard. A lower native
         -- callback must not close it before its own action receives this Down.
-        if owner.potionMenu then return true end
-        if foreignPotionDrag(event) then return true end
-        if closeRead(event) then return true end
+        if owner.potionMenu or foreignPotionDrag(event) or closeRead(event) then return true end
         retireInterruptedPress(event)
         ownership.pointerObserved = true
         owner.help=nil
         reclaimPointer(event)
         owner.swallow = nil
         if owner.gesture then return false end
-        -- Retire a changed potion context before the target captures a token.
-        -- This press only cancels; a refreshed actor must need a new Down.
-        if owner.active and not owner.busy and owner.potionAim and not dependencies.aimReady(owner.potionAim) then
-            dependencies.cancelPotionAim("药水瞄准已失效，已取消；请重新选择药水。")
+        -- A changed potion context cancels; a refreshed actor needs a new Down.
+        if retireStalePotionAim(event) then return true end
+        local closed,automaticCard,handFocus=dependencies.closeInfo()
+        if closed and not automaticCard then
             owner.swallow = {touch = event and event.touchId}
-            owner:render()
+            repaintDismissed(handFocus)
             return true
         end
-        local closed,automaticCard=dependencies.closeInfo()
-        if not closed or automaticCard then return false end
-        owner.swallow = {touch = event and event.touchId}
-        owner:render()
-        return true
+        if handFocus then owner:renderDetailsOnly(false,true) end
+        return false
     end
     local function down(event, keepPowerTip)
         if not keepPowerTip then owner:closePowerTip() end
@@ -149,10 +155,10 @@ function M.install(owner, ownership, host, dependencies)
         if owner.potionMenu or owner.info and owner.info.press then return true end
         local swallow = owner.swallow
         if swallow and swallow.touch == (event and event.touchId) then owner.swallow = nil return true end
-        local closed,automaticCard=dependencies.closeInfo()
-        if not closed or automaticCard then return false end -- automatic card hover preserves this click
-        owner:render()
-        return true
+        local closed,automaticCard,handFocus=dependencies.closeInfo()
+        if closed and not automaticCard then repaintDismissed(handFocus);return true end
+        if handFocus then owner:renderDetailsOnly(false,true) end
+        return false -- automatic card hover preserves this click
     end
     local function renderAimChange(g,valid,target,aiming)
         if not host.cardView.refreshAim or not host.cardView.refreshAim(g,valid,target,aiming)then owner:render()end
@@ -198,10 +204,9 @@ function M.install(owner, ownership, host, dependencies)
             g.bx = x
         end
         if owner.hover == g.slot then return end
-        local previous=owner.hover
         owner.hover = g.slot
         owner.handHover = {run=g.run,battle=g.battle,turn=g.battle.turn,slot=g.slot,uid=g.uid}
-        if host.cardView.refreshHover and host.cardView.refreshHover(previous,g.slot)then return end
+        if host.cardView.refreshHover() then return end
         owner:render(true)
     end
     local function startBrowse(g, x, y)
@@ -315,8 +320,10 @@ function M.install(owner, ownership, host, dependencies)
         if not press then return false end
         if press.touch==(event and event.touchId) and (not input or input==press.input) then
             ownership.releasedDragTouch=press.touch
-            dependencies.closeInfo()
-            if ended or Pointer.dragged(event,L.cardDrag.threshold) or not owner:openOverflowCard(info) then owner:render(true) end
+            local _,_,handFocus=dependencies.closeInfo()
+            if ended or Pointer.dragged(event,L.cardDrag.threshold) or not owner:openOverflowCard(info) then
+                if info.kind=='card' then owner:renderDetailsOnly(false,handFocus) else owner:render(true) end
+            end
         end
         return true
     end
@@ -343,7 +350,11 @@ function M.install(owner, ownership, host, dependencies)
         finishCardRelease(g, event, ended)
     end
     function owner.cancelAim(_)
-        if dependencies.closeInfo() then owner:render();return true end
+        local closed,_,handFocus=dependencies.closeInfo()
+        if closed then
+            repaintDismissed(handFocus)
+            return true
+        end
         if owner.selected or owner.potionAim then
             local movingAim=owner.potionAim and owner.potionAim.moving and owner.potionAim
             dependencies.cancelPotionAim();owner.selected,owner.carry,owner.hover=nil,nil,nil;owner.suppressClick=movingAim or false

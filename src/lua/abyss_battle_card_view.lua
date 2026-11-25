@@ -182,7 +182,7 @@ local function handMetadata(battle)
 end
 local function localBattle(view)
     local run=view.run
-    if Theme.presentationProfile~='official-assets-first' or not view.active or view.busy
+    if not view.active or view.busy
         or view.displayBattle or view.potionAim or not run or run.phase~='combat' then return end
     local battle=run.combat
     if not battle or battle.phase~='player'then return end
@@ -197,31 +197,8 @@ local function matchingHand(view,battle,geometry)
     end
     return true
 end
-local function raiseHand(view,battle,poses)
-    local top
-    for i,instance in ipairs(battle.hand)do
-        local box=poses[instance.uid].box;box:SetAsLastSibling()
-        if instance.uid==view.selected or i==view.hover then top=box end
-    end
-    if top then top:SetAsLastSibling()end
-end
-local function refreshHandHover(view,geometry,previous,nextSlot)
-    local battle=localBattle(view)
-    if not battle or not matchingHand(view,battle,geometry) or view.info or view.carry
-        or view.gesture and view.gesture.moving then return false end
-    -- Existing pose entries are UI geometry, never cached combat values.
-    -- Core commands/feedback still use the unchanged full renderer.
-    for _,slot in pairs({previous,nextSlot})do
-        local instance=battle.hand[slot]
-        if instance then
-            local hot=slot==view.hover or instance.uid==view.selected
-            view.cardPositions[instance.uid]=geometry.handPose(geometry.poses[instance.uid].box,instance,#battle.hand,slot-1,hot)
-        end
-    end
-    raiseHand(view,battle,geometry.poses)
-    return true
-end
 local function localAimBattle(view,geometry,g)
+    if Theme.presentationProfile~='official-assets-first' then return end
     local battle=localBattle(view)
     if not g or not battle or not matchingHand(view,battle,geometry)then return end
     if g~=view.gesture and g~=view.carry or g.run~=view.run or g.battle~=battle
@@ -255,6 +232,53 @@ local function bodyText(view,card,battle,aimUid,aimTarget)
     local preview = Combat.cardPreview(battle, instance, target)
     return CardDisplay.combatText(display, definition, instance, preview,battle,target)
 end
+local function writeBorder(box,definition,enabled,hot,tint)
+    tint(box:GetChild("border"), hot and C.goldBright
+        or enabled and (C.rarity[definition.rarity] or C.line) or C.line)
+end
+local function refreshHandCard(view,controls,entry,battle,instance,slot,hot,selected)
+    if entry.hot~=hot then
+        entry.hot=hot
+        local point=controls.placeCard(entry.box,#battle.hand,slot-1,hot,true)
+        entry.target=handTarget(#battle.hand,slot-1,hot,point)
+        entry.box:GetChild('glow'):SetVisible(hot)
+        local definition=Combat.cardDefinition(battle,instance)
+        if not CardSkin.paintFocus(entry.box,definition,hot,controls.tint) then
+            writeBorder(entry.box,definition,Combat.canPlay(battle,instance.uid,view.target),hot,controls.tint)
+        end
+    end
+    if Theme.presentationProfile=='official-assets-first' and entry.selected~=selected then
+        local rim=entry.box:GetChild('nativePlayableRim')
+        CardGlow.bind(entry.box,rim,rim.visible,controls.platform,selected,instance.uid)
+    end
+    entry.selected=selected
+end
+local function reorderHand(hand,poses,previous,top)
+    if previous==top then return end
+    -- Restore the returned card to its fan order, then raise the new focus.
+    for slot=(previous or #hand)+1,#hand do
+        if slot~=top then poses[hand[slot].uid].box:SetAsLastSibling() end
+    end
+    if top then poses[hand[top].uid].box:SetAsLastSibling() end
+end
+-- Only the drawn reading frame is constrained; targeting and release still
+-- use the untouched pointer. Cost/title native lines extend past the body.
+local function readableDragPosition(x, y, scale)
+    local card = L.card
+    local w, h, d = card.size[1], card.size[2], card.costDisc
+    local cx = -w/2+d/2-card.trim.costOverhang
+    local cy = h/2-d/2+card.trim.costOverhang
+    local radius = math.max(d+card.trim.costRing,L.nativeText.lineHeight)/2
+    local tx, ty = card.title.position[1], card.title.position[2]
+    local titleH = math.max(card.nameBand,L.nativeText.lineHeight)/2
+    local left = math.min(-w/2,cx-radius,tx-card.title.width/2)*scale
+    local right = math.max(w/2,cx+radius,tx+card.title.width/2)*scale
+    local bottom = math.min(-h/2,cy-radius,ty-titleH)*scale
+    local top = math.max(h/2,cy+radius,ty+titleH)*scale
+    local sx, sy = Theme.canvas.base[1]/2-Theme.canvas.safe.x, Theme.canvas.base[2]/2-Theme.canvas.safe.y
+    return math.max(-sx-left,math.min(sx-right,x)), math.max(-sy-bottom,math.min(sy-top,y))
+end
+
 function M.new(view, controls)
     local child, show = controls.child, controls.show
     local ink, tint, picture = controls.ink, controls.tint, controls.picture
@@ -265,7 +289,7 @@ function M.new(view, controls)
     -- release. Weak leaf caches alone cannot retire Tweens after userdata GC.
     local glowBoxes={}
     local handGeometryOwner={}
-    local handWidth,handHeight,handTurn,handCount,openingHand,eventTail
+    local handWidth,handHeight,handTurn,handCount,handTop,openingHand,eventTail
     local recentDrawOrigins={}
     local function syncHandViewport(current)
         if current~=handBattle or view.canvasWidth~=handWidth or view.canvasHeight~=handHeight then
@@ -296,7 +320,8 @@ function M.new(view, controls)
             end
             handPoses[instance.uid]=entry
         end
-        entry.box,entry.target,entry.visible=box,target,true
+        entry.box,entry.target,entry.visible,entry.hot=box,target,true,hot
+        entry.selected=instance.uid==view.selected
         applyHandPose(entry,handGeometryOwner)
         return {entry.current.x,entry.current.y}
     end
@@ -320,8 +345,7 @@ function M.new(view, controls)
 
     local function writeFrame(box, card, hovered)
         local definition, enabled = card.definition, card.playable
-        tint(box:GetChild("border"), (card.selected or hovered) and C.goldBright
-            or enabled and (C.rarity[definition.rarity] or C.line) or C.line)
+        writeBorder(box,definition,enabled,card.selected or hovered,tint)
         -- The title banner and its rule carry rarity, as on the original cards.
         M.paintBanner(box,definition,tint)
         tint(box:GetChild("nameRule"), C.rarity[definition.rarity] or C.line)
@@ -407,10 +431,11 @@ function M.new(view, controls)
         for _,entry in pairs(handPoses) do entry.visible=false end
         view.cardPositions = {}
         local playable, selectedBox = false, nil
+        handTop=nil
         for i = 1, 10 do
             local card, hotBox = renderSlot(context, i, aimUid, aimTarget)
             if card then playable = playable or card.enabled end
-            selectedBox = hotBox or selectedBox
+            if hotBox then selectedBox,handTop=hotBox,i end
         end
         for uid,entry in pairs(handPoses) do if not entry.visible then handPoses[uid]=nil end end
         previousPiles=pileMembership(fighting and battle)
@@ -419,28 +444,23 @@ function M.new(view, controls)
         return playable
     end
     local function geometryPorts()
-        return {battle=handBattle,turn=handTurn,count=handCount,width=handWidth,height=handHeight,poses=handPoses,child=child,handPose=handPose}
+        return {battle=handBattle,turn=handTurn,count=handCount,width=handWidth,height=handHeight,poses=handPoses,child=child}
     end
-    local function refreshHover(previous,nextSlot)
-        return refreshHandHover(view,geometryPorts(),previous,nextSlot)
-    end
-
-    -- Only the drawn reading frame is constrained; targeting and release still
-    -- use the untouched pointer. Cost/title native lines extend past the body.
-    local function readableDragPosition(x, y, scale)
-        local card = L.card
-        local w, h, d = card.size[1], card.size[2], card.costDisc
-        local cx = -w/2+d/2-card.trim.costOverhang
-        local cy = h/2-d/2+card.trim.costOverhang
-        local radius = math.max(d+card.trim.costRing,L.nativeText.lineHeight)/2
-        local tx, ty = card.title.position[1], card.title.position[2]
-        local titleH = math.max(card.nameBand,L.nativeText.lineHeight)/2
-        local left = math.min(-w/2,cx-radius,tx-card.title.width/2)*scale
-        local right = math.max(w/2,cx+radius,tx+card.title.width/2)*scale
-        local bottom = math.min(-h/2,cy-radius,ty-titleH)*scale
-        local top = math.max(h/2,cy+radius,ty+titleH)*scale
-        local sx, sy = Theme.canvas.base[1]/2-Theme.canvas.safe.x, Theme.canvas.base[2]/2-Theme.canvas.safe.y
-        return math.max(-sx-left,math.min(sx-right,x)), math.max(-sy-bottom,math.min(sy-top,y))
+    local function refreshHover()
+        local battle=localBattle(view)
+        if not battle or view.carry or view.gesture and (view.gesture.moving or view.info) then return false end
+        -- A fresh hand press can retire carry before hiding its native aim and target preview.
+        if child('dragLayer').visible or not matchingHand(view,battle,geometryPorts()) then return false end
+        local top
+        for slot,instance in ipairs(battle.hand)do
+            local selected=instance.uid==view.selected
+            local hot=slot==view.hover or selected
+            refreshHandCard(view,controls,handPoses[instance.uid],battle,instance,slot,hot,selected)
+            if hot then top=slot end
+        end
+        reorderHand(battle.hand,handPoses,handTop,top)
+        handTop=top
+        return true
     end
 
     local function placeDraggedCard(box, g, aiming, dt)
