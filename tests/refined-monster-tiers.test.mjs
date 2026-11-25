@@ -15,7 +15,10 @@ test('refined templates allocate bounded physical tiers and emit matching data w
  assert.equal(typeof art.monsterActorTiers,'function');
  const result=art.monsterActorTiers(input);
  const counts=result.templates.map(t=>[t.name,art.monsterActorInventory(t).shapesPerActor,descendants(t).length]);
- assert.deepEqual(counts,[['AbyssMonsterActor',0,35],['AbyssMonsterActor41',41,79],['AbyssMonsterActor96',96,135],['AbyssMonsterActor115',115,154]]);
+ assert.deepEqual(counts,[['AbyssMonsterActor',0,36],['AbyssMonsterActor41',41,80],['AbyssMonsterActor96',96,136],['AbyssMonsterActor115',115,155]]);
+ const hpHit=result.templates[0].children.find(child=>child.name==='hpHit');
+ assert.equal(hpHit?.kind,'cursorArea','shared actor base must cover the enemy HP bar');
+ assert.equal(hpHit.visible,false,'the HP bar hit area starts hidden');
  assert.equal(result.artData.poolCapacity,115);
  assert(!Object.hasOwn(result.artData,'asset'));
  assert.deepEqual(Object.values(result.artData.assets).map(a=>a.capacity),[41,96,115]);
