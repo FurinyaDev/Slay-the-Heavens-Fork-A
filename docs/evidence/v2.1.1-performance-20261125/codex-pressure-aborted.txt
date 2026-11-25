@@ -1,0 +1,35 @@
+baseline baseline 1/6: workload passed
+baseline candidate 1/6: workload passed
+baseline candidate 2/6: workload passed
+baseline baseline 2/6: workload passed
+baseline baseline 3/6: workload passed
+baseline candidate 3/6: workload passed
+baseline candidate 4/6: workload passed
+baseline baseline 4/6: workload passed
+baseline baseline 5/6: workload passed
+baseline candidate 5/6: workload passed
+baseline candidate 6/6: workload passed
+baseline baseline 6/6: workload passed
+cpu-only baseline 1/6: CPU quota mismatch
+
+4 !== 0.5
+
+cpu-only candidate 1/6: CPU quota mismatch
+
+4 !== 0.5
+
+cpu-only candidate 2/6: CPU quota mismatch
+
+4 !== 0.5
+
+cpu-only baseline 2/6: CPU quota mismatch
+
+4 !== 0.5
+
+cpu-only baseline 3/6: CPU quota mismatch
+
+4 !== 0.5
+
+cpu-only candidate 3/6: CPU quota mismatch
+
+4 !== 0.5
