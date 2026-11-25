@@ -716,14 +716,23 @@ function closeoutPredecessor(path){
  }
  return closeoutPredecessors.get(path);
 }
-const integrationInventoryHelper='tests/helpers/integrated-ci-source.mjs';
-let integrationInventoryPredecessor;
-function beforeCalibrationInventoryHelper(path,source){
- if(path!==integrationInventoryHelper)return source;
- integrationInventoryPredecessor??=releaseUiRestoreArchive(
-  readFileSync(new URL('./calibration-v220-inventory-source.json.gz',import.meta.url)),
-  '782088c2367c0a9492ec2f8a2a1a3aae3a12da9f726cfb1e635b4f84ebbd3672','8b4172d59779ad9fa21b4ba91ef750ab22fcdaf1');
- return integrationInventoryPredecessor.project(path,source);
+const calibrationReplayPaths=Object.freeze([
+ 'tests/helpers/integrated-ci-source.mjs',
+ 'tests/helpers/copy-integration-source-closure.mjs',
+ 'data/presentation/narrative.zh-CN.json',
+ 'tests/lore-v2.test.mjs',
+ 'tests/watcher-actor-boundary.test.mjs',
+]);
+let calibrationReplayPredecessor;
+function beforeCalibrationReplayOwner(path,source){
+ if(!calibrationReplayPaths.includes(path))return source;
+ if(!calibrationReplayPredecessor){
+  calibrationReplayPredecessor=releaseUiRestoreArchive(
+   readFileSync(new URL('./calibration-v220-replay-owners.json.gz',import.meta.url)),
+   '59f639cfed8e3d6c53cc2de3209d123971c69d97633962865c4b56933a3c5981','8b4172d59779ad9fa21b4ba91ef750ab22fcdaf1');
+  assert.deepEqual(Object.keys(calibrationReplayPredecessor.files),calibrationReplayPaths,'ordered v2.2 calibration replay owners');
+ }
+ return calibrationReplayPredecessor.project(path,source);
 }
 function beforeIntegrationReplayTests(path,source){
  if(path!=='tests/integration-source-epoch.test.mjs'||typeof source!=='string'||source.includes('\r\r\n'))return source;
@@ -888,7 +897,7 @@ function beforeIntegrationSuccessor(path,source){
 }
 export function assertIntegrationSuccessorsCurrent(read=readFileSync){
  const rawRead=read;
- const liveRead=(path,encoding)=>beforeForkPush(path,beforeCalibrationInventoryHelper(path,rawRead(path,encoding)));
+ const liveRead=(path,encoding)=>beforeForkPush(path,beforeCalibrationReplayOwner(path,rawRead(path,encoding)));
  assertNativeFixturesCurrent(liveRead);
  assertNativeFlowFixturesCurrent(liveRead);
  read=(path,encoding)=>{
@@ -944,7 +953,7 @@ export function assertIntegrationSuccessorsCurrent(read=readFileSync){
  }
 }
 export function beforePreflightSource(path,source,view='prior'){
- source=beforeForkPush(path,beforeCalibrationInventoryHelper(path,source));
+ source=beforeForkPush(path,beforeCalibrationReplayOwner(path,source));
  if(path==='.github/workflows/quality.yml')source=beforePosixDeadlineWorkflow(beforeWindowsDeadlineWorkflow(source));
  source=beforeUiEntranceWitness(path,beforeCurrentReplayCopier(path,source));
  source=beforeCurrentReplayFixes(path,source);
