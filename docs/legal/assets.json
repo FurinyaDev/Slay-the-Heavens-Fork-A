@@ -430,7 +430,11 @@
     },
     "experiments/menu-red-fit/input/source.png": {
       "sha256": "16bdf7b614f0fb6fdbc2414271682446c0012a9e8ff8da70abad3b7a0374480d",
-      "category": "menu-red-reference-native"
+      "category": "menu-red-reference-native",
+      "bytes": 1831152,
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "6492e8dccbcf847a0eba7ad3995da50257032e08"
     },
     "docs/evidence/menu-red-20261113/menu.png": {
       "sha256": "b12e36c8cc3e1b127134678b1087f7226b34dab4365cf2ab1bda17b56bdae622",
@@ -569,7 +573,11 @@
     },
     "docs/design/reference-assets/v2.0.0/main-menu-approved-20261119.png": {
       "sha256": "655f4926a86d1135d468b31bf0c225352c65de03ba09a0d684ffa875265741dd",
-      "category": "approved-menu-design-reference"
+      "category": "approved-menu-design-reference",
+      "bytes": 2398093,
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "6492e8dccbcf847a0eba7ad3995da50257032e08"
     },
     "docs/evidence/menu-red-quality-20261114/menu.png": {
       "sha256": "23ac07b19542c110d6bb443a0c56e7477b40a2c6cc4bd38617326b3a59f44b9a",
@@ -10238,11 +10246,19 @@
     },
     "docs/design/reference-assets/v2.0.0/sts1-main-menu-20261121/design-hd.png": {
       "sha256": "0228b36c13b805c1a31eb0cb13d960be2b3b1168d6707412fedee2c7a51c06aa",
-      "category": "sts1-menu-session-reference"
+      "category": "sts1-menu-session-reference",
+      "bytes": 1585970,
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "6492e8dccbcf847a0eba7ad3995da50257032e08"
     },
     "docs/design/reference-assets/v2.0.0/sts1-main-menu-20261121/background-hd.png": {
       "sha256": "780f7428b1389e7ac824a5c2bd086339af19ea284e394ace692a6a4011d57c8c",
-      "category": "sts1-menu-session-reference"
+      "category": "sts1-menu-session-reference",
+      "bytes": 1558535,
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "6492e8dccbcf847a0eba7ad3995da50257032e08"
     },
     "docs/design/reference-assets/v2.0.0/sts1-main-menu-20261121/background-medium.png": {
       "sha256": "7cc1f328257adbcabf47212d4cbe84713193d66f1412566a212c2ca1644bf14f",
@@ -10551,6 +10567,70 @@
     "docs/evidence/release-layout-20261124/screens/before/pc-treasure-rewards.png": {
       "sha256": "ad4f514335901b6509a4e93dca846ea2f92b4157263fc669aa769f2069d498b0",
       "category": "official-assets-offline-diagnostic"
+    },
+    "docs/evidence/map-v25-20261110/raw/game.save.json.gz": {
+      "sha256": "417e18607da2c9363cea607a4b6268d8be2f231eea575002c064f0df49d8977c",
+      "bytes": 1547688,
+      "category": "v25-native-simulator-evidence",
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "6492e8dccbcf847a0eba7ad3995da50257032e08"
+    },
+    "experiments/archive/emergency-20261108/card-upgrade-recovery/original-runtime.patch.gz": {
+      "sha256": "06d046e3a52506490c826c7dfcbedd5d86b75f749e2a7570c8957a9623a0b56e",
+      "bytes": 1166600,
+      "category": "project-ci-history-evidence",
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "6492e8dccbcf847a0eba7ad3995da50257032e08"
+    },
+    "tests/fixtures/integration-ci-epochs.json.gz": {
+      "sha256": "542755e50f64d062f3d407114a58d9b429add0d8bd667b7430ef2b0fc5cf5532",
+      "bytes": 2436891,
+      "category": "project-ci-history-evidence",
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "6492e8dccbcf847a0eba7ad3995da50257032e08"
+    },
+    "tests/fixtures/pr323-historical-fixtures.json.gz": {
+      "sha256": "0016ea0a00171a413c2697329ea87487c19c575b6148a325285e35a24b4e8759",
+      "bytes": 5112323,
+      "category": "project-ci-history-evidence",
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "6492e8dccbcf847a0eba7ad3995da50257032e08"
+    },
+    "tests/helpers/closeout-source-epoch.json.gz": {
+      "sha256": "36aba7fc07f732a191a750d437eefd27e9b9567221811747abf13c97a9ac237a",
+      "bytes": 2240696,
+      "category": "project-ci-history-evidence",
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "6492e8dccbcf847a0eba7ad3995da50257032e08"
+    },
+    "tests/helpers/component-ui-source-epoch.json.gz": {
+      "sha256": "df2a27ff146ecbee4fb01054eb1071458ffe491ece1bb50fa6fb33d19df74d4a",
+      "bytes": 1538232,
+      "category": "project-ci-history-evidence",
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "6492e8dccbcf847a0eba7ad3995da50257032e08"
+    },
+    "tests/helpers/integrated-ci-source.json.gz": {
+      "sha256": "f0b7137f7d0462dff36b78e39a39aab8804ba9a097b1b72bdf6686cf10f15c35",
+      "bytes": 3222350,
+      "category": "project-ci-history-evidence",
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "6492e8dccbcf847a0eba7ad3995da50257032e08"
+    },
+    "tests/helpers/sts-style-prior-runtime.json.gz": {
+      "sha256": "10bf3b7d960e4c02ae2d64e26d8d5f16824439b9396949973f08ccec1c9d9330",
+      "bytes": 4216851,
+      "category": "project-ci-history-evidence",
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "6492e8dccbcf847a0eba7ad3995da50257032e08"
     }
   }
 }
