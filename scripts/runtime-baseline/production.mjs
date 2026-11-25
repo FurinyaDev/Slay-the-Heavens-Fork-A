@@ -29,14 +29,14 @@ const {sourceCommit} = gitSourceIdentity();
 const tree = spawnSync('git', ['rev-parse', 'HEAD^{tree}'], {encoding: 'utf8'});
 assert(sourceCommit && tree.status === 0 && /^[a-f0-9]{40}$/.test(tree.stdout.trim()),
   'Production Host requires a Git source identity');
-const inputs = ['art', 'config', 'data', 'scripts', 'src', 'tests', 'package.json', 'package-lock.json'];
+const inputDirectories = ['art', 'config', 'data', 'docs', 'scripts', 'src', 'tests', 'tools'];
 const env = lfsEnvironment();
 function materialInputsChanged() {
   // CI restores verified media from its bundle, which changes worktree stat
   // sizes even when the LFS-clean bytes match the candidate's index pointers.
   const filters = lfsArguments.slice(0, lfsArguments.indexOf('lfs'));
-  const tracked = spawnSync('git', [...filters, 'diff', '--quiet', 'HEAD', '--', ...inputs], {env});
-  const extra = spawnSync('git', ['ls-files', '--others', '--exclude-standard', '-z', '--', ...inputs], {env});
+  const tracked = spawnSync('git', [...filters, 'diff', '--quiet', 'HEAD', '--'], {env});
+  const extra = spawnSync('git', ['ls-files', '--others', '--exclude-standard', '-z', '--', ...inputDirectories], {env});
   assert([0, 1].includes(tracked.status) && extra.status === 0, 'Unable to check Production Host inputs');
   return tracked.status === 1 || extra.stdout.length !== 0;
 }
