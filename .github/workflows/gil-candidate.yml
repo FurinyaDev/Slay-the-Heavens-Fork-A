@@ -1,19 +1,19 @@
-name: GIL candidate Windows probe
+name: v2.1.1 GIL hosted probe
 on:
   push:
-    branches: [ci/gil-candidate-windows-probe]
+    branches: [ci/v211-gil-hosted-probe]
 permissions:
   contents: read
 jobs:
   probe:
-    if: github.repository_id == '1460097312' && github.ref == 'refs/heads/ci/gil-candidate-windows-probe'
+    if: github.repository_id == '1460097312' && github.ref == 'refs/heads/ci/v211-gil-hosted-probe'
     runs-on: windows-2025
     timeout-minutes: 15
     env:
       MILIASTRA_ALLOW_LIVE_WRITE: '0'
       MILIASTRA_SAVE_ROOTS: '[]'
       GIT_LFS_SKIP_SMUDGE: '1'
-      SOURCE_SHA: '73c21489efaab409d4c0c46bee517d410d3427fc'
+      SOURCE_SHA: '55d6396cf315cf1e30085d9521fdb3bfaadeb2ad'
     steps:
       - run: git config --global core.autocrlf false
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
@@ -23,11 +23,12 @@ jobs:
           sparse-checkout-cone-mode: false
           sparse-checkout: |
             /scripts/gil-candidate.mjs
+            /tests/gil-candidate.test.mjs
             /.github/gil-headless-probe.mjs
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           repository: FurinyaWorks/Slay-the-Heavens
-          ref: '73c21489efaab409d4c0c46bee517d410d3427fc'
+          ref: '55d6396cf315cf1e30085d9521fdb3bfaadeb2ad'
           path: source
           persist-credentials: false
           sparse-checkout: |
@@ -82,3 +83,6 @@ jobs:
           npm run build:ui -- build/gil-ui-check --official-assets --refined-release-monsters --native-page-lifecycle
       - name: Compile, write and read back the project BGM graph on a real upstream fixture
         run: node control/.github/gil-headless-probe.mjs miliastra-mcp source
+      - name: Verify ref resolution, errors, archive checks and receipt constraints
+        working-directory: control
+        run: node --test tests/gil-candidate.test.mjs

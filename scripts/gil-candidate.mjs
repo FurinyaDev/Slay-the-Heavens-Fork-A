@@ -11,6 +11,10 @@ const toolCommit = '70470757d6fcb319c5afec13b178c87f2d8d54b3';
 const encoderSha256 = 'eed054eea9285d1945ec826299e1e9546e36475d708007b2df1952ebca52f805';
 const profile = 'official-assets-battle-v3';
 const sha = /^[a-f0-9]{40}$/;
+const semver = '(?:0|[1-9]\\d*)\\.(?:0|[1-9]\\d*)\\.(?:0|[1-9]\\d*)';
+const versionPattern = new RegExp(`^${semver}$`);
+const releaseRef = new RegExp(`^(?:refs/heads/)?(release/v(${semver}))$`);
+const tagRef = new RegExp(`^(?:refs/tags/)?((?:engine-)?v(${semver}))$`);
 const digest = /^[a-f0-9]{64}$/;
 const uuid = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/;
 const basePath = () => join(process.env.RUNNER_TEMP, 'gil-base.gil');
@@ -23,11 +27,50 @@ function requireGate(condition, message) {
   if (!condition) throw new GateError(message);
 }
 
+export function releaseSourceRef(value) {
+  const release = releaseRef.exec(value);
+  if (release) return { ref: `refs/heads/${release[1]}`, kind: 'release', version: release[2] };
+  const tag = tagRef.exec(value);
+  if (tag) return { ref: `refs/tags/${tag[1]}`, kind: 'tag', version: tag[2] };
+  if (value === 'develop' || value === 'refs/heads/develop' || sha.test(value)) {
+    return { ref: 'refs/heads/develop', kind: 'develop', ...(sha.test(value) ? { sha: value } : {}) };
+  }
+  throw new GateError('Unsupported source ref. Use develop, a verified develop SHA, a release branch or a SemVer tag.');
+}
+
+async function assertAncestor(source, branch, api) {
+  const comparison = await api(`compare/${source}...${encodeURIComponent(branch)}?per_page=1`);
+  requireGate(['ahead', 'identical'].includes(comparison.status) && comparison.merge_base_commit?.sha === source,
+    `Source is not an ancestor of main-repository ${branch}.`);
+}
+
+export async function resolveSource(request, event, eventSha, api) {
+  if (event === 'push') {
+    requireGate(request.kind !== 'develop' && sha.test(eventSha), 'Automatic GIL builds require an exact release or tag SHA.');
+  } else {
+    requireGate(event === 'workflow_dispatch', 'Unsupported GIL candidate event.');
+  }
+  if (request.sha) return request.sha;
+  const ref = await api(`git/ref/${request.ref.slice(5)}`);
+  requireGate(ref.ref === request.ref, 'Requested source ref differs from the repository ref.');
+  requireGate(request.kind !== 'tag' || ref.object?.type === 'tag', 'Formal GIL delivery requires an annotated SemVer tag.');
+  let object = ref.object;
+  for (let depth = 0; depth < 5 && object?.type === 'tag' && sha.test(object.sha); depth++) {
+    object = (await api(`git/tags/${object.sha}`)).object;
+  }
+  requireGate(object?.type === 'commit' && sha.test(object.sha), 'Source ref does not identify a commit.');
+  if (request.kind === 'tag') {
+    if (event === 'push') requireGate(eventSha === object.sha || eventSha === ref.object.sha, 'Tag changed after the push event.');
+    await assertAncestor(object.sha, 'master', api);
+    return object.sha;
+  }
+  if (event === 'push' && eventSha !== object.sha) await assertAncestor(eventSha, request.ref.slice(11), api);
+  return event === 'push' ? eventSha : object.sha;
+}
+
 export async function verifySource(source, api) {
   requireGate(sha.test(source), 'source_sha must be a 40-character lowercase Git SHA.');
-  const comparison = await api(`compare/${source}...develop?per_page=1`);
-  requireGate(['ahead', 'identical'].includes(comparison.status) && comparison.merge_base_commit?.sha === source,
-    'source_sha is not an ancestor of main-repository develop.');
+  await assertAncestor(source, 'develop', api);
   const checks = [['quality', ['impact', 'check', 'presentation', 'engineering-posix']], ['licenses', ['inventory']]];
   return Object.fromEntries(await Promise.all(checks.map(async ([name, required]) => {
     const { workflow_runs: [run] } = await api(`actions/workflows/${name}.yml/runs?branch=develop&event=push&head_sha=${source}&per_page=1`);
@@ -48,62 +91,66 @@ export async function verifySource(source, api) {
   })));
 }
 
-export function approvedRequest(raw, sourceSha, policy) {
+export function approvedRequest(raw, sourceSha, policy, source = releaseSourceRef('develop')) {
   let approval;
   try { approval = JSON.parse(raw); } catch {
     throw new GateError('Set GIL_CANDIDATE_APPROVAL with the authorized base, work-key and public Artifact decision.');
   }
   const { baseSha256, workKey } = approval ?? {};
-  requireGate(approval?.sourceSha === sourceSha && approval.baseProcessingApproved === true &&
+  const coversSource = approval?.sourceSha === undefined ? approval?.sourceRef === source.ref
+    : approval.sourceSha === sourceSha && (approval.sourceRef === undefined || approval.sourceRef === source.ref);
+  requireGate(coversSource && approval.baseProcessingApproved === true &&
     approval.publicArtifactApproved === true && /^[A-Za-z0-9._/-]{1,120}$/.test(approval.reference ?? '') &&
     digest.test(baseSha256) && workKey !== 'alpha-test' && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(workKey ?? ''),
   'Approval must cover this source SHA, base SHA-256, processing, public distribution and the confirmed production work-key.');
-  const configuration = { profile, nativePageLifecycle: true, releaseCandidate: false, workKey, node: '24.18.0', python: '3.12.10' };
-  const identity = { sourceSha, baseSha256, toolCommit, encoderSha256, configuration, policy };
+  const configuration = { profile, nativePageLifecycle: true, releaseCandidate: source.kind !== 'develop', workKey, node: '24.18.0', python: '3.12.10' };
+  const identity = { sourceSha, sourceRef: source.ref, baseSha256, toolCommit, encoderSha256, configuration, policy };
   return { ...identity, id: hash(JSON.stringify(identity)) };
 }
 
-export async function findArtifact(api, request, runId, now = Date.now()) {
-  for (let page = 1; page <= 10; page++) {
-    const { workflow_runs: runs } = await api(`actions/workflows/gil-candidate.yml/runs?branch=develop&event=workflow_dispatch&status=success&per_page=100&page=${page}`);
-    for (const run of runs) {
-      if (String(run.id) === runId || run.repository?.id !== repositoryId || run.head_repository?.id !== repositoryId ||
-        run.head_branch !== 'develop' || run.event !== 'workflow_dispatch' || run.conclusion !== 'success' ||
-        run.path !== '.github/workflows/gil-candidate.yml' ||
-        run.display_title?.toLowerCase() !== `gil candidate / ${request.sourceSha}`) continue;
-      const name = 'gil-candidate-' + request.id;
-      const { artifacts } = await api(`actions/runs/${run.id}/artifacts?name=${name}`);
-      const artifact = artifacts.find(item => item.name === name && item.expired === false && Date.parse(item.expires_at) > now &&
-        item.size_in_bytes > 0 && /^sha256:[a-f0-9]{64}$/.test(item.digest ?? '') && item.workflow_run?.id === run.id);
-      if (artifact) return `https://github.com/${repository}/actions/runs/${run.id}/artifacts/${artifact.id}`;
-    }
-    if (runs.length < 100) return;
-  }
-}
-
-async function api(path) {
+export async function api(path, checkDownload = false) {
   const response = await fetch(`https://api.github.com/repos/${repository}/${path}`, {
     headers: { Authorization: `Bearer ${process.env.GH_TOKEN}`, Accept: 'application/vnd.github+json' },
-    signal: AbortSignal.timeout(20000), redirect: 'error',
+    signal: AbortSignal.timeout(20000), redirect: checkDownload ? 'manual' : 'error',
   });
+  if (checkDownload && [404, 410].includes(response.status)) return false;
+  if (checkDownload) {
+    requireGate(response.status === 302 && response.headers.get('location'), 'GitHub did not return a candidate download redirect.');
+    return true;
+  }
   requireGate(response.ok, path.startsWith('compare/') && response.status === 404
     ? 'source_sha is unknown in the main repository.' : `GitHub API verification failed (HTTP ${response.status}).`);
   return response.json();
 }
 
+export async function verifyUploadedArtifact({ id, runId, name, archiveDigest }, request, now = Date.now()) {
+  requireGate(/^[1-9]\d*$/.test(id) && /^[1-9]\d*$/.test(runId) && digest.test(archiveDigest), 'Missing Artifact upload identity.');
+  const path = `actions/artifacts/${id}`;
+  const artifact = await request(path);
+  requireGate(String(artifact.id) === id && String(artifact.workflow_run?.id) === runId && artifact.name === name &&
+    artifact.expired === false && Date.parse(artifact.expires_at) > now && artifact.size_in_bytes > 0 &&
+    artifact.digest === `sha256:${archiveDigest}`, 'Uploaded Artifact metadata or archive digest does not match.');
+  requireGate(await request(`${path}/zip`, true), 'Uploaded Artifact does not have an accessible download link.');
+  return `https://github.com/${repository}/actions/runs/${runId}/artifacts/${id}`;
+}
+
+async function verifyArtifact() {
+  const { ARTIFACT_ID: id, GITHUB_RUN_ID: runId, ARTIFACT_NAME: name, ARTIFACT_DIGEST: archiveDigest } = process.env;
+  const url = await verifyUploadedArtifact({ id, runId, name, archiveDigest }, api);
+  appendFileSync(process.env.GITHUB_STEP_SUMMARY, `\n[Download the verified GIL archive](${url})\n`);
+}
+
 async function preflight() {
-  const source = process.env.SOURCE_SHA;
-  const checks = await verifySource(source, api);
+  const event = process.env.GITHUB_EVENT_NAME;
+  const source = releaseSourceRef(event === 'push' ? process.env.GITHUB_REF : (process.env.SOURCE_REF || 'develop'));
+  const sourceSha = await resolveSource(source, event, process.env.GITHUB_SHA, api);
+  const checks = source.kind === 'develop' ? await verifySource(sourceSha, api) : undefined;
   const policy = [import.meta.url, new URL('../.github/workflows/gil-candidate.yml', import.meta.url)].map(url => hash(readFileSync(new URL(url))));
-  const request = approvedRequest(process.env.GIL_CANDIDATE_APPROVAL, source, policy);
-  const existing = await findArtifact(api, request, process.env.GITHUB_RUN_ID);
-  const ciSummary = Object.entries(checks).map(([name, id]) => `[${name}](https://github.com/${repository}/actions/runs/${id})`);
-  appendFileSync(process.env.GITHUB_STEP_SUMMARY, `Source \`${source}\`: ${ciSummary.join(' · ')}\n`);
-  if (existing) {
-    appendFileSync(process.env.GITHUB_STEP_SUMMARY, `\n[Download existing GIL candidate](${existing})\n`);
-    return;
-  }
-  appendFileSync(process.env.GITHUB_OUTPUT, `build=true\nbase_sha256=${request.baseSha256}\nwork_key=${request.configuration.workKey}\ntool_commit=${toolCommit}\nrequest_id=${request.id}\n`);
+  const request = approvedRequest(process.env.GIL_CANDIDATE_APPROVAL, sourceSha, policy, source);
+  const ciSummary = checks ? Object.entries(checks).map(([name, id]) => `[${name}](https://github.com/${repository}/actions/runs/${id})`).join(' · ')
+    : 'Release admission must be verified through the existing frozen Full and publication flow.';
+  appendFileSync(process.env.GITHUB_STEP_SUMMARY, `Source \`${source.ref}\` @ \`${sourceSha}\`. ${ciSummary}\n`);
+  appendFileSync(process.env.GITHUB_OUTPUT, `source_sha=${sourceSha}\nsource_ref=${source.ref}\nexpected_version=${source.version ?? ''}\nrelease_candidate=${request.configuration.releaseCandidate}\nbase_sha256=${request.baseSha256}\nwork_key=${request.configuration.workKey}\ntool_commit=${toolCommit}\nrequest_id=${request.id}\nquality_run=${checks?.quality ?? ''}\nlicenses_run=${checks?.licenses ?? ''}\n`);
 }
 
 async function downloadBase() {
@@ -136,6 +183,7 @@ function toolchain(root = 'miliastra-mcp') {
 
 async function assets() {
   const root = resolve('source');
+  sourceVersion(root, process.env.EXPECTED_VERSION);
   const { lfsEnvironment, lfsArguments } = await moduleAt(root, 'scripts/ci-reviewed-lfs.mjs');
   const { mediaByPath, mediaPointer } = await moduleAt(root, 'scripts/ci-media-lfs.mjs');
   const { sourceInputs } = await moduleAt(root, 'scripts/build-native-candidate.mjs');
@@ -168,11 +216,21 @@ async function assets() {
   console.log(`Verified production LFS assets: ${files.length} files, ${files.reduce((sum, row) => sum + row.bytes, 0)} bytes.`);
 }
 
-export function verifyReceipts({ full, audio, fullReceipt, fullGil, finalGil, sourceSha, baseSha256, workKey }) {
+function sourceVersion(root, expectedVersion) {
+  const { version } = json(join(root, 'package.json'));
+  requireGate(versionPattern.test(version) && (!expectedVersion || version === expectedVersion),
+    'Source package version does not match the release ref.');
+  return version;
+}
+
+export function verifyReceipts({ full, audio, fullReceipt, fullGil, finalGil, sourceSha, baseSha256, workKey, version, releaseCandidate = false }) {
   requireGate(uuid.test(full.buildId) && audio.buildId === full.buildId && digest.test(full.payloadDigest) &&
     audio.payloadDigest === full.payloadDigest && [full, audio].every(row => row.sourceCommit === sourceSha &&
       row.sourceDirty === false && row.liveWriteEnabled === false && row.release?.workKey === workKey &&
-      !row.release?.notesSha256 && row.officialAssetsProfile === profile && row.uiProfile?.nativePageLifecycle === true &&
+      (version === undefined || row.release?.version === `v${version}`) &&
+      (releaseCandidate ? digest.test(row.release?.notesSha256) : !row.release?.notesSha256) &&
+      row.release?.notesSha256 === full.release?.notesSha256 &&
+      row.officialAssetsProfile === profile && row.uiProfile?.nativePageLifecycle === true &&
       row.nativeMonsterArt?.assetCount === 42 && row.nativeMonsterArt?.bindingCount === 42 &&
       row.toolchainIdentity?.sourceSha256 === encoderSha256), 'Candidate source, production preset or toolchain receipt mismatch.');
   requireGate(full.baseMap?.sha256 === baseSha256 && full.statuses?.staticCheck === 'pass' &&
@@ -198,8 +256,11 @@ function diagnose() {
 }
 
 async function deliver() {
-  const { SOURCE_SHA: sourceSha, BASE_SHA256: baseSha256, WORK_KEY: workKey, REQUEST_ID: requestId,
-    MILIASTRA_MCP_ROOT: toolRoot, GIL_BUILD_SECONDS, GIL_RECEIVED_BYTES } = process.env;
+  const { SOURCE_SHA: sourceSha, SOURCE_REF: sourceRef, BASE_SHA256: baseSha256, WORK_KEY: workKey, REQUEST_ID: requestId,
+    EXPECTED_VERSION: expectedVersion, MILIASTRA_MCP_ROOT: toolRoot, GIL_BUILD_SECONDS, GIL_RECEIVED_BYTES,
+    GITHUB_RUN_ID: runId, GITHUB_RUN_ATTEMPT: runAttempt, QUALITY_RUN: qualityRun, LICENSES_RUN: licensesRun } = process.env;
+  const releaseCandidate = process.env.RELEASE_CANDIDATE === 'true';
+  const version = sourceVersion('.', expectedVersion);
   cleanHead('.', sourceSha, 'Source');
   toolchain(toolRoot);
   requireGate(hash(readFileSync(basePath())) === baseSha256, 'Approved base GIL changed during the build.');
@@ -213,7 +274,7 @@ async function deliver() {
   const mapPath = resolve(out, 'audio/candidate.gil');
   const finalGil = fileRecord(mapPath, out);
   const fullGil = fileRecord(join(fullRoot, basename(full.mapPath)), fullRoot);
-  verifyReceipts({ full, audio, fullReceipt, fullGil, finalGil, sourceSha, baseSha256, workKey });
+  verifyReceipts({ full, audio, fullReceipt, fullGil, finalGil, sourceSha, baseSha256, workKey, version, releaseCandidate });
   const { inspectFile } = await moduleAt(toolRoot, 'src/adapter.mjs');
   const { nativeBgmSignals } = await moduleAt('.', 'scripts/native-bgm-graph.mjs');
   const inspection = inspectFile(mapPath);
@@ -224,24 +285,43 @@ async function deliver() {
   'Final GIL readback has no compiled BGM graph with the expected cue signals.');
   const artifact = 'build/gil-artifact';
   mkdirSync(artifact);
-  const candidate = { path: 'candidate.gil', bytes: finalGil.bytes, sha256: finalGil.sha256 };
+  const stem = `slay-the-heavens-v${version}-${sourceSha.slice(0, 12)}`;
+  const candidate = { path: `${stem}.gil`, bytes: finalGil.bytes, sha256: finalGil.sha256 };
   copyFileSync(mapPath, join(artifact, candidate.path));
   requireGate(fileRecord(join(artifact, candidate.path)).sha256 === candidate.sha256, 'Artifact copy hash mismatch.');
+  const { helperPath, sourcePath, ...encoderIdentity } = full.toolchainIdentity;
+  requireGate(encoderIdentity.payloadPathFormat === 'portable-v1', 'Hosted candidate requires portable encoder provenance.');
+  const officialPortraits = { ...full.officialPortraits, inputs: full.officialPortraits.inputs.map(row => ({
+    ...row, path: relative(process.cwd(), row.path).replaceAll('\\', '/'),
+  })) };
+  requireGate(officialPortraits.inputs.every(row => row.path.startsWith('art/') || row.path.startsWith('experiments/')),
+    'Portable receipt contains an out-of-tree portrait input.');
   const receipt = { sourceCommit: sourceSha, sourceDirty: false, buildId: full.buildId, payloadDigest: full.payloadDigest,
-    candidate, staticCheck: 'pass', moduleReadback: 'pass', bgmGraphReadback: { id: graphId, status: 'pass' } };
+    candidate, startedAt: full.startedAt, release: full.release, officialAssetsProfile: full.officialAssetsProfile,
+    refinedReleaseMonsterArt: true, nativeMonsterArt: full.nativeMonsterArt, officialPortraits,
+    artFeatures: full.artFeatures, uiProfile: full.uiProfile, toolchainIdentity: encoderIdentity,
+    staticCheck: 'PASS', moduleReadback: 'PASS', bgmGraphReadback: { id: graphId, status: 'PASS' } };
   writeFileSync(join(artifact, 'candidate.json'), JSON.stringify(receipt, null, 2) + '\n');
-  writeFileSync(join(artifact, 'manifest.json'), JSON.stringify({ ...receipt, requestId, baseSha256, toolCommit, encoderSha256,
-    parameters: { workKey, profile, nativePageLifecycle: true, releaseCandidate: false, liveWrite: false },
+  writeFileSync(join(artifact, 'manifest.json'), JSON.stringify({ schemaVersion: 1, ...receipt,
+    engineeringVersion: version, platformVersion: null, platformMappingStatus: 'PENDING_PLATFORM_PUBLICATION',
+    sourceRef, builtAt: new Date().toISOString(), requestId, baseSha256,
+    github: { runId, runAttempt, runUrl: `https://github.com/${repository}/actions/runs/${runId}`,
+      ...(qualityRun && licensesRun ? { qualityRun, licensesRun } : {}) },
+    toolchain: { toolCommit, encoderSha256, node: process.version, python: '3.12.10', runner: 'windows-2025' },
+    parameters: { workKey, profile, nativePageLifecycle: true, releaseCandidate, liveWrite: false },
+    gates: { build: 'PASS', readback: 'PASS', officialImport: 'UNVERIFIED', officialCapacity: 'UNVERIFIED',
+      releaseAdmission: 'UNVERIFIED', publishable: false },
     buildSeconds: Number(GIL_BUILD_SECONDS), runnerReceivedBytesBeforeUpload: Number(GIL_RECEIVED_BYTES) }, null, 2) + '\n');
-  const files = ['candidate.gil', 'candidate.json', 'manifest.json'];
+  const files = [candidate.path, 'candidate.json', 'manifest.json'];
   writeFileSync(join(artifact, 'SHA256SUMS'), files.map(name => `${fileRecord(join(artifact, name)).sha256}  ${name}\n`).join(''));
-  appendFileSync(process.env.GITHUB_STEP_SUMMARY, `\nGIL: \`${finalGil.sha256}\` · ${finalGil.bytes} bytes · native build ${GIL_BUILD_SECONDS} s · runner received ${GIL_RECEIVED_BYTES} bytes before upload\n`);
+  appendFileSync(process.env.GITHUB_OUTPUT, `artifact_name=${stem}-attempt-${runAttempt}\n`);
+  appendFileSync(process.env.GITHUB_STEP_SUMMARY, `\nGIL: \`${finalGil.sha256}\` · ${finalGil.bytes} file bytes · native build ${GIL_BUILD_SECONDS} s. Official import, capacity and release admission are pending.\n`);
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const phase = process.argv[2];
   try {
-    await ({ preflight, base: downloadBase, toolchain, assets, diagnose, deliver })[phase]();
+    await ({ preflight, base: downloadBase, toolchain, assets, diagnose, deliver, 'verify-upload': verifyArtifact })[phase]();
   } catch (error) {
     console.error(error instanceof GateError ? error.message : `GIL candidate ${phase} failed. Raw tool output may contain private input data.`);
     process.exitCode = 1;

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { test } from 'node:test';
-import { approvedRequest, findArtifact, verifyReceipts, verifySource } from '../scripts/gil-candidate.mjs';
+import { api, approvedRequest, releaseSourceRef, resolveSource, verifyReceipts, verifySource, verifyUploadedArtifact } from '../scripts/gil-candidate.mjs';
 
 const sourceSha = '1'.repeat(40);
 const baseSha256 = '2'.repeat(64);
@@ -55,21 +55,19 @@ test('require bound base, work-key and public distribution authorization', () =>
   assert.notEqual(candidate.id, approvedRequest(JSON.stringify(approval), sourceSha, 'new policy').id);
 });
 
-test('reuse only a matching unexpired Artifact on a successful main develop dispatch', async () => {
-  const candidate = request();
+test('verify the exact uploaded artifact archive and its download link', async () => {
   const now = Date.parse('2026-11-23T00:00:00Z');
-  const run = { id: 10, repository: repo, head_repository: repo, event: 'workflow_dispatch', conclusion: 'success',
-    head_branch: 'develop', display_title: `GIL candidate / ${sourceSha}`, path: '.github/workflows/gil-candidate.yml' };
-  const artifact = { id: 11, name: `gil-candidate-${candidate.id}`, expired: false,
-    expires_at: '2026-11-24T00:00:00Z', size_in_bytes: 42, digest: 'sha256:' + baseSha256, workflow_run: { id: run.id } };
-  const api = (runChanges = {}, artifactChanges = {}) => async path => path.includes('/artifacts?')
-    ? { artifacts: [{ ...artifact, ...artifactChanges }] } : { workflow_runs: [{ ...run, ...runChanges }] };
-  assert.match(await findArtifact(api(), candidate, '20', now), /runs\/10\/artifacts\/11$/);
-  assert.equal(await findArtifact(api(), candidate, '10', now), undefined);
-  assert.equal(await findArtifact(api({ head_repository: { id: 3 } }), candidate, '20', now), undefined);
-  for (const changes of [{ expired: true }, { expires_at: '2026-11-22T00:00:00Z' }, { digest: null }, { name: 'other' }]) {
-    assert.equal(await findArtifact(api({}, changes), candidate, '20', now), undefined);
+  const expected = { id: '11', runId: '10', name: 'versioned-archive', archiveDigest: baseSha256 };
+  const artifact = { id: 11, name: expected.name, expired: false, expires_at: '2026-11-24T00:00:00Z',
+    size_in_bytes: 42, digest: 'sha256:' + baseSha256, workflow_run: { id: 10 } };
+  const request = (changes = {}, downloadable = true) => async (_path, checkDownload) =>
+    checkDownload ? downloadable : { ...artifact, ...changes };
+  assert.match(await verifyUploadedArtifact(expected, request(), now), /runs\/10\/artifacts\/11$/);
+  for (const changes of [{ expired: true }, { expires_at: '2026-11-22T00:00:00Z' }, { digest: null },
+    { name: 'other' }, { workflow_run: { id: 20 } }]) {
+    await assert.rejects(verifyUploadedArtifact(expected, request(changes), now), /metadata or archive digest/);
   }
+  await assert.rejects(verifyUploadedArtifact(expected, request({}, false), now), /accessible download link/);
 });
 
 test('reject missing protected base URL before downloads', () => {
@@ -78,6 +76,19 @@ test('reject missing protected base URL before downloads', () => {
   });
   assert.equal(result.status, 1);
   assert.match(result.stderr, /Missing protected GIL_BASE_URL/);
+});
+
+test('check the download redirect without fetching the archive', async ({ mock }) => {
+  const path = 'actions/artifacts/11/zip';
+  const fetch = mock.method(globalThis, 'fetch', async () => new Response('{}'));
+  await assert.rejects(api(path, true), /download redirect/);
+  fetch.mock.mockImplementation(async () => new Response(null, { status: 410 }));
+  assert.equal(await api(path, true), false);
+  fetch.mock.mockImplementation(async (_url, options) => {
+    assert.equal(options.redirect, 'manual');
+    return new Response(null, { status: 302, headers: { location: 'https://example.com/archive' } });
+  });
+  assert.equal(await api(path, true), true);
 });
 
 test('bind the exact full and final audio receipts, final bytes and production profile', () => {
@@ -105,4 +116,50 @@ test('bind the exact full and final audio receipts, final bytes and production p
     assert.throws(() => verifyReceipts({ ...claimed, audio: { ...audio, ...change } }));
   }
   assert.throws(() => verifyReceipts({ ...claimed, finalGil: { ...finalGil, bytes: 10 } }), /size or SHA-256/);
+});
+
+test('classify approved branch and SemVer refs while rejecting arbitrary ref names', () => {
+  assert.deepEqual(releaseSourceRef('refs/heads/release/v2.1.1'), {
+    ref: 'refs/heads/release/v2.1.1', kind: 'release', version: '2.1.1',
+  });
+  assert.equal(releaseSourceRef('engine-v2.1.1').kind, 'tag');
+  assert.equal(releaseSourceRef('refs/tags/v2.1.1').version, '2.1.1');
+  assert.equal(releaseSourceRef('develop').kind, 'develop');
+  assert.equal(releaseSourceRef(sourceSha).kind, 'develop');
+  for (const ref of ['release/v02.1.1', 'v2.1.1-rc.1', 'refs/pull/1/merge', 'feature/anything', 'master^', 'a b']) {
+    assert.throws(() => releaseSourceRef(ref), /Unsupported source ref/);
+  }
+});
+
+test('release and tag requests bind only an approved immutable commit or explicit source ref', () => {
+  const release = releaseSourceRef('release/v2.1.1');
+  const approved = approvedRequest(JSON.stringify({ ...approval, sourceSha: undefined, sourceRef: release.ref }), sourceSha, 'policy', release);
+  assert.equal(approved.configuration.releaseCandidate, true);
+  assert.equal(approved.sourceRef, release.ref);
+  assert.throws(() => approvedRequest(JSON.stringify({ ...approval, sourceSha: undefined, sourceRef: 'refs/heads/develop' }), sourceSha, 'policy', release), /Approval must cover/);
+  assert.throws(() => approvedRequest(JSON.stringify({ ...approval, sourceSha: '3'.repeat(40), sourceRef: release.ref }), sourceSha, 'policy', release), /Approval must cover/);
+});
+
+
+test('bind a release push to its event commit through fast-forward and peel annotated official tags', async () => {
+  const release = releaseSourceRef('release/v2.1.1');
+  const branchTip = '3'.repeat(40);
+  const mockRelease = async path => {
+    if (path === 'git/ref/heads/release/v2.1.1') return { ref: release.ref, object: { type: 'commit', sha: branchTip } };
+    assert.equal(path, `compare/${sourceSha}...release%2Fv2.1.1?per_page=1`);
+    return { status: 'ahead', merge_base_commit: { sha: sourceSha } };
+  };
+  assert.equal(await resolveSource(release, 'push', sourceSha, mockRelease), sourceSha);
+  assert.equal(await resolveSource(release, 'workflow_dispatch', undefined, mockRelease), branchTip);
+  const tag = releaseSourceRef('engine-v2.1.1');
+  const tagObjectSha = '4'.repeat(40);
+  const mockTag = async path => {
+    if (path === 'git/ref/tags/engine-v2.1.1') return { ref: tag.ref, object: { type: 'tag', sha: tagObjectSha } };
+    if (path === `git/tags/${tagObjectSha}`) return { object: { type: 'commit', sha: sourceSha } };
+    assert.equal(path, `compare/${sourceSha}...master?per_page=1`);
+    return { status: 'identical', merge_base_commit: { sha: sourceSha } };
+  };
+  assert.equal(await resolveSource(tag, 'push', tagObjectSha, mockTag), sourceSha);
+  await assert.rejects(resolveSource(tag, 'push', branchTip, mockTag), /Tag changed/);
+  await assert.rejects(resolveSource(releaseSourceRef('develop'), 'push', sourceSha, () => assert.fail()), /exact release or tag SHA/);
 });
