@@ -1,0 +1,64 @@
+name: v2.1.1 ubuntu-slim direct Host probe
+on:
+  push:
+    branches: ['perf/v2.1.1-pressure-slim-probe']
+permissions:
+  contents: read
+jobs:
+  smoke:
+    runs-on: ubuntu-slim
+    timeout-minutes: 10
+    env:
+      GIT_LFS_SKIP_SMUDGE: '1'
+      BASE_SHA: 55d6396cf315cf1e30085d9521fdb3bfaadeb2ad
+      CANDIDATE_SHA: 6ab89ed1a16fdeea8bf9649cbeecb99aa51fe3fd
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 2
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '24.19.0'
+      - name: Run exact source pair directly without Docker
+        run: |
+          report="$GITHUB_WORKSPACE/build/probe-reports"
+          mkdir -p "$report"
+          {
+            uname -sr
+            node -p 'JSON.stringify({node:process.version,hostReportedMemoryBytes:require("node:os").totalmem(),parallelism:require("node:os").availableParallelism()})'
+            cat /proc/self/cgroup
+            for file in cpu.max memory.max memory.swap.max; do
+              if [ -r "/sys/fs/cgroup/$file" ]; then
+                printf '%s: ' "$file"
+                cat "/sys/fs/cgroup/$file"
+              fi
+            done
+            if command -v docker >/dev/null; then
+              docker version || true
+            else
+              echo 'Docker executable unavailable'
+            fi
+          } | tee "$report/runner.txt"
+          git -c http.lowSpeedLimit=1024 -c http.lowSpeedTime=30 fetch --depth=1 --no-tags origin "$BASE_SHA"
+          for sha in "$BASE_SHA" "$CANDIDATE_SHA"; do
+            checkout="$RUNNER_TEMP/$sha"
+            git worktree add --detach "$checkout" "$sha"
+            (
+              cd "$checkout"
+              test "$(git rev-parse HEAD)" = "$sha"
+              npm ci --ignore-scripts --prefer-offline --no-audit --no-fund --fetch-retries=0 --fetch-timeout=30000
+              npm run build:data
+              npm run build:ui
+              node scripts/runtime-baseline/worker.mjs > "$report/$sha.log"
+              grep -Fx 'RUNTIME_BASELINE_PASS seed=1 idleFrames=300' "$report/$sha.log"
+              node --input-type=module -e 'import { readFileSync } from "node:fs"; import {validateSample} from "./scripts/benchmark-runtime-path.mjs"; const line=readFileSync(process.argv[1],"utf8").split("\n").find(line=>line.startsWith("RUNTIME_BASELINE_JSON ")); validateSample(JSON.parse(line.slice(22)));' "$report/$sha.log"
+            )
+          done
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: ubuntu-slim-direct-host-${{ github.run_id }}-${{ github.run_attempt }}
+          path: build/probe-reports/
+          if-no-files-found: warn
+          retention-days: 30
