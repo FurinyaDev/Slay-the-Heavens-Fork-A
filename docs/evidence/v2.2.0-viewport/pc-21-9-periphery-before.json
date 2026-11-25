@@ -1,0 +1,54 @@
+{
+  "layoutSha256": "714ee99f671ac08169a734e83e0793ea4e678a6e2f5b8154aaea1ad91549fffc",
+  "preset": "pc-21-9",
+  "scale": 1.25,
+  "points": [
+    {
+      "name": "drawIcon",
+      "x": 318.125,
+      "y": 60.625
+    },
+    {
+      "name": "discardIcon",
+      "x": 1781.875,
+      "y": 60.625
+    },
+    {
+      "name": "endTurn",
+      "x": 1618.125,
+      "y": 175
+    }
+  ],
+  "hits": [
+    {
+      "source": "client",
+      "level": "info",
+      "text": "V220_BATTLE_EDGE drawIcon 318.12500 60.62500 -585.50000 -311.50000",
+      "time": 0
+    },
+    {
+      "source": "client",
+      "level": "info",
+      "text": "V220_BATTLE_EDGE discardIcon 1781.87500 60.62500 585.50000 -311.50000",
+      "time": 0
+    },
+    {
+      "source": "client",
+      "level": "info",
+      "text": "V220_BATTLE_EDGE endTurn 1618.12500 175.00000 454.50000 -220.00000",
+      "time": 0
+    }
+  ],
+  "receipt": {
+    "canvasId": "pc-21-9",
+    "frame": 0,
+    "time": 0,
+    "clockMode": "manual",
+    "width": 2100,
+    "height": 900,
+    "pixelWidth": 2100,
+    "pixelHeight": 900,
+    "assetWarnings": []
+  },
+  "pngSha256": "771b660ae682aba468c0184edd1b2287ef1707e27ee734c9b611c0cc96ca4098"
+}
