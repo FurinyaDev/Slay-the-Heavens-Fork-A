@@ -1,4 +1,5 @@
 // Reverse the current input retirement for exact legacy presentation replays.
+import {beforeChapterBattleScene} from './chapter-battle-scene-source.mjs';
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import {readFileSync} from 'node:fs';
@@ -223,8 +224,9 @@ function suitePredecessor(path,source,layer){
 export function beforeDeckPagesSuiteSource(path,source,{requireCurrent=false}={}){
  if(!Object.hasOwn(suite.deck.files,path))return source;
  const {before,after}=suite.deck.files[path];
- const current=matches(beforeInputRetirement(path,source),after);
- if(requireCurrent)assert(current&&(!inputRetirementOwns(path)||isCurrentInputRetirementSource(path,source)),
+ const chapter=beforeChapterBattleScene(path,source);
+ const current=matches(beforeInputRetirement(path,chapter),after);
+ if(requireCurrent)assert(current&&(!inputRetirementOwns(path)||isCurrentInputRetirementSource(path,chapter)),
   'fresh complete integration source: '+path);
  if(!current)return source;
  return source.includes('\r\n')?before.source.replaceAll('\n','\r\n'):before.source;
