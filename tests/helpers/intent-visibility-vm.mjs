@@ -39,7 +39,7 @@ lua.lua_pushjsfunction(L,state=>{
 let observer=readFileSync('scripts/runtime-baseline/observer.lua','utf8');
 observer=observer.replace('for k in pairs(fields)do',"VISIBILITY_STATE_CONTROL(control,fields)\n for k in pairs(fields)do");
 let host=readFileSync('scripts/runtime-baseline/host.lua','utf8');
-host=host.replace("local observe=dofile('scripts/runtime-baseline/observer.lua')",`local observe=assert(load(${JSON.stringify(observer)},'@visibility-observer'))()`);
+host=host.replace("local observe=dofile('scripts/runtime-baseline/observer.lua')",()=>`local observe=assert(load(${JSON.stringify(observer)},'@visibility-observer'))()`);
 // Compare every reachable final Host/run/native field, aliases and metatables.
 if(!timed)host+="\nVISIBILITY_STATE_WRITE({host=host,root=root},'final')\n";
 execute(host);
