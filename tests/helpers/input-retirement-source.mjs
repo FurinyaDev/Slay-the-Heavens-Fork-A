@@ -233,10 +233,22 @@ function suitePredecessor(path,source,layer){
 }
 
 // Release and StS receipts share the same signed deck-pages predecessors.
+const releaseCandidateTools=Object.freeze({
+ 'scripts/build-native-candidate.mjs':{
+  sha256:'da36fc09e30e5c64e248dbe5a8e00e9d2cacbfbb93275f676d0aa7b0ee1e8aab',
+  gitBlob:'5d9a0c2a7efa71b1b547d9ada4b4bff374166b05',
+ },
+ 'scripts/audit-native-candidate.mjs':{
+  sha256:'b6c423fb947a8071459d5954ec5f35b5aad28f1455ae49251692d96d1237d35d',
+  gitBlob:'8cdcb2926adb60ca0a1f6f17544fef09c95c81e9',
+ },
+});
 export function beforeDeckPagesSuiteSource(path,source,{requireCurrent=false}={}){
  if(!Object.hasOwn(suite.deck.files,path))return source;
  const {before,after}=suite.deck.files[path];
- const current=matches(beforeInputRetirement(path,source),after);
+ // #951 adds Lua text audits and #975 adds exact hosted candidate provenance.
+ const current=matches(beforeInputRetirement(path,source),after)||
+  Object.hasOwn(releaseCandidateTools,path)&&matches(source,releaseCandidateTools[path]);
  if(requireCurrent)assert(current&&(!inputRetirementOwns(path)||isCurrentInputRetirementSource(path,source)),
   'fresh complete integration source: '+path);
  if(!current)return source;
