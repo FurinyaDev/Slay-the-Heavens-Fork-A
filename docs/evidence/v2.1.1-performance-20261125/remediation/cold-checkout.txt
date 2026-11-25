@@ -1,0 +1,6 @@
+metadataPack=399218
+checkoutPack=127837527
+{"parents":["e502dc216e4033260db2e011fa03f9845dc3f88e"],"base":"eb64f4e6cd45198118e123b6640dc491f186e329","objects":9895,"fetched":35,"bytes":1392836}
+comparisonReadyPack=128558065
+Hosted checkout Git pack payload: 128558065 bytes
+::warning::Hosted checkout received over 32 MiB; check whether this is an expected first download

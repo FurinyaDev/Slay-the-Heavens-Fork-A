@@ -94,3 +94,25 @@ Hosted run `45526278709` 对 `b6ba4614` 与 `eb64f4e6` 成功完成 6 档各 3 �
 精确最终头 `8cff1cb8` 独立定向运行 CD、平台 gate 和原生音频回执 **34/34**，`git diff --check` 通过。日志见 `8cff1cb8-targeted.log`。
 
 [最终定向回归日志](attestations/8cff1cb8-targeted.log.gz)。
+## 后续回归修复与注册复审
+
+- **历史映射已恢复。** `4ad98b27fafb2fe7ffd416e8196d38ba2bff8f0a` 的五个生产 owner 在投影前逐一经完整 SHA-256 和 Git blob 认证。初次定向测试通过，但实际隔离拷贝还要求旧 helper 的 `d76d9d67c6e696d966fe9608a46e66eea0c0e2739c06dd9672151afd4b1f0973`，旧调用会因新 helper 被拒。后续 `a7ee7ac7` 仅从精确当前 helper 投影原有完整字节。对牌组变更后的 `ec5605a9ded874c73bc54eaa02e1603b64ae81c8` 再核实五个新旧 owner 与实际 Git 完全一致，100 次缺失、变更、旧字节混入和异常换行负对照全部拒绝，LF、CRLF、Buffer 入口保留。3 项原有/新增回放定向测试通过，实际整份闭包拷贝还原相同旧 SHA-256。
+- **牌组补丁定向通过。** `581d066538e4aee1bbd5735eaecd4bf58ee9af1a` 只跳过稳定可见 hit 和隐藏 legacy 排序控制的冗余操作。唯一排序调用已排除牌堆和正式新壳，重新显示 legacy 时先写当前标签。正式牌面仍复读实际 `visible`，展示失败进入原失败及收尾路径，恢复能重新展示。现有输入代次、过期触点、页与十张实例测试执行成功。独立执行的正式 `deck-pages` 通过。运行耗时改善仍需要单独实测。
+- **存储迁移定向通过。** `f4d060d905b269213da1864b3090714b03c29b1e` 的 12 份现有图像及历史二进制素材合计 28,855,381 字节。逐项从 6492e8dc 和实际线上 master 读取原 Git blob，与新版完全一致的内容 SHA-256、长度、标准指针及合法清单核对。上代媒体清单完整字节保留。新扩展有独立预算与固定文件清单，Quality 及 128 MiB 硬阈值字节未改。跟进 `846c3c0d` 的六个历史源持有者还原到实际 6492e8dc 的完整 Git 源码，错误路径、字节漂移、异常换行无法投影。128,228,015 字节为本地冷传输含比较对象读数。正式 Hosted 值、新对象实际可取回以及完整矩阵仍待证。
+- **同意更新 #917 已存在的源分支。** `e86db61bcd612996b3ecb678ed1b55c9cecafce1` 同时继承旧 PR head `238e2350` 和实时 develop `b2f74d99`。现行历史检查允许源分支的同步 merge，develop 的 PR、required statuses、线性历史和原生 merge queue 不变。在原 `ci/gil-candidate` 正常快进后，按新 HEAD/实际 BASE 重跑、独审及走原队列。新 CD 接线单测 10/10。只有受保护 develop 的受信 workflow 可调度，工作树源独立按精确 SHA、已有 Full 和 inventory 证据校验。正式环境配置和 Production 审批仍应在部署前实际复核。[#917](https://github.com/FurinyaWorks/Slay-the-Heavens/pull/917)
+
+### Hosted POSIX 失败归因
+
+使用同仓真实 v2.1.0 master `eb64f4e6` 的 Quality 归档与上一轮 v2.1.1 `55d0bf58` Full 原始日志，按失败测试标题而非分片编号交叉核对。候选五个已完成失败分片 202 个失败条目中，176 个同名失败也在 v2.1.0 观察到。基线其余分片包含取消，26 个未配对项仍需实际重跑或具体定位。
+
+| 候选 POSIX 分片 | 失败 | 已在 v2.1.0 同名复现 |
+|---|---:|---:|
+| 2 | 5 | 5 |
+| 4 | 58 | 48 |
+| 8 | 77 | 68 |
+| 11 | 38 | 31 |
+| 12 | 24 | 24 |
+
+Prismatic 卡名 `Calculated Exchange ~= Calculated Gamble` 在独立 v2.1.0 重放也出现。正面 HOTFIX 关联包括 `Release capacity history…` 拒绝已改变的 `scripts/audit-native-candidate.mjs` 精确 owner，以及新版范围/资产清单引起的完整发现/回放合同变化。Windows 的既有 128 MiB 阈值失败发生在原分片正式产品回归之前。两条证据链均需保留原门禁，实现修复后再看精确新候选实际状态。[线上基线 Full](https://github.com/FurinyaWorks/Slay-the-Heavens/actions/runs/45420513338) · [前一候选 Full](https://github.com/FurinyaWorks/Slay-the-Heavens/actions/runs/45528401329)
+
+补读 v2.1.0 被取消分片中已经输出的失败行，并补读候选后续完成的第 9、13 分片。按每分片标题去重，七个候选分片总计 280 个失败标题，250 个也出现在 v2.1.0 日志。分片 2、4、8、9、11、12、13 分别为 5/5、53/58、71/77、41/57、36/38、24/24、20/21。余下 30 个没有建立两边同名证据。该统计涵盖已经读到的日志，不能推断未运行场景。读取远端分支确认 #917 源已快进到 `e86db61b`，develop 的正常合并门禁仍需依对应运行执行。

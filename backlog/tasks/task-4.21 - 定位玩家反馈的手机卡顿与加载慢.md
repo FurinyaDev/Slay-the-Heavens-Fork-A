@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - Furinya
 created_date: '2026-10-31T23:38:00Z'
-updated_date: '2026-11-25T01:46:40Z'
+updated_date: '2026-11-25T02:19:05Z'
 labels:
   - 待验
   - delivery-verify
@@ -112,4 +112,6 @@ Release 营地锻造切片：可操作后的空闲帧预热原生网格与首窗
 Owner 明确要求将 #899 回流 release/v2.0.0。从 #901 Release HEAD 38a2cd87 搭接只读五列两行持久卡面和全项目手柄退役，保留 Release 放大卡面、圆角返回、房间进出与选角。正式设备验收继续待验。
 
 2026-11-25 v2.1.1 P0 热修：唯一正式分支 hotfix/v2.1.1 从线上 v2.1.0 master eb64f4e6 同树基线建立。已回接 #953/#955 怪物按需解码及 #954 地图查找，保留敌名优化并恢复未通过回归取舍的手牌快路径至线上字节。六幅图、原始数据及独立评审见 docs/evidence/v2.1.1-performance-20261125/README.md。GitHub Actions run 45526278709 六档 36/36；组合压力卡组长尾、同包实机、负载与正式有声 CD 保持待验。取消 v2.1.2 发版目标。
+
+v2.1.1 后续修复：官方牌库暖开和翻页少 55 次 SDK 调用，默认执行不改变。收口 Lua 解析依赖及精绘、云端下载与历史回归，现有原 128 MiB 门槛冷检出已通过。原 T0–T3 实机及正式有声生产包仍待验。证据 docs/evidence/v2.1.1-performance-20261125/remediation/README.md。
 <!-- SECTION:NOTES:END -->
