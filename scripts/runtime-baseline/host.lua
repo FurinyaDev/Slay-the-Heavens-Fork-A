@@ -1,6 +1,11 @@
 -- Opt-in offline Host measurement, not official client/device performance.
 local generated=BASELINE_GENERATED or './build/lua'
-package.path=generated..'/?.lua;./src/lua/?.lua;'..package.path
+if BASELINE_GIL then
+ -- Formal samples resolve each Lua module exclusively from native readback.
+ package.path=generated..'/?.lua'
+else
+ package.path=generated..'/?.lua;./src/lua/?.lua;'..package.path
+end
 local counts={requireCalls=0,moduleLoads=0,nativeCalls=0,propertyWrites=0,snapshots=0,methods={},properties={}}
 local originalRequire=require
 require=function(name)

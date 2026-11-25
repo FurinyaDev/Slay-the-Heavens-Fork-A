@@ -9,6 +9,8 @@ import {compareSamples, formalImageId, guardExtremeCgroup, matchingResourceCaps,
   productionReportKind, productionWorkload, resourceImage, workloadIdentity} from './resource-receipt.mjs';
 import {productionPhases} from './production-inputs.mjs';
 import {resolvePublishedBaseline} from './published-baseline.mjs';
+import {gilModuleInventoryHash, gilRuntimeKind} from './gil-inputs.mjs';
+import {encoderSha256, toolCommit} from '../gil-candidate-preflight.mjs';
 
 const sha256 = bytes => createHash('sha256').update(bytes).digest('hex');
 const hash = /^[a-f0-9]{64}$/;
@@ -36,8 +38,10 @@ export function frozenReleaseVersion(receipt, checkoutPackage, currentPackage) {
   return version;
 }
 
-function verifySample(sample, profile, executions) {
+function verifySample(sample, profile, executions, runtime, artFeatures) {
   validateSample(sample, productionPhases);
+  assert.deepEqual(sample.runtime, runtime, 'Sample did not execute its exact GIL readback');
+  assert.deepEqual(sample.artFeatures, artFeatures, 'GIL and measured art flags differ');
   assert(Number.isFinite(sample.wallMs) && sample.wallMs > 0, 'Missing sample wall time');
   assert(/^[a-f0-9]{12}$/.test(sample.executionId) && !executions.has(sample.executionId), 'Sample execution is missing or duplicated');
   executions.add(sample.executionId);
@@ -52,7 +56,7 @@ function verifySample(sample, profile, executions) {
   ].map(([key, value]) => `RESOURCE ${key} ${value}`).join('\n'), profile);
 }
 
-function verifyExtreme(extreme, candidate, executions) {
+function verifyExtreme(extreme, candidate, executions, artFeatures) {
   assert(extreme?.status === 'PASS' && extreme.probe && extreme.recovery, 'Independent extreme failure and recovery proof required');
   assert.deepEqual(extreme.candidate, candidate, 'Extreme probe and formal source/configuration differ');
   const {containerId, executionId, resources, state, stdout} = extreme.probe;
@@ -66,7 +70,18 @@ function verifyExtreme(extreme, candidate, executions) {
     assert.deepEqual(lines, ['RESOURCE ' + key + ' ' + value], 'Extreme raw cgroup readback differs');
   }
   assert(Date.parse(extreme.recovery.recordedAt) >= Date.parse(state.FinishedAt), 'Recovery must follow the observed extreme failure');
-  verifySample(extreme.recovery.sample, profiles.stress, executions);
+  verifySample(extreme.recovery.sample, profiles.stress, executions, candidate.runtime, artFeatures);
+}
+
+function verifyRuntime(runtime, gilSha256) {
+  assert(runtime?.kind === gilRuntimeKind && hash.test(gilSha256) && runtime.gilSha256 === gilSha256,
+    'Exact audited and published GIL readback required for both arms');
+  assert(runtime.readerCommit === toolCommit && runtime.encoderSha256 === encoderSha256 &&
+    Number.isSafeInteger(runtime.moduleCount) && runtime.moduleCount > 0 && hash.test(runtime.moduleDigestsSha256) &&
+    Number.isSafeInteger(runtime.templateCount) && runtime.templateCount > 0 && runtime.nativeBgmEnabled === true &&
+    Object.keys(runtime.fixtureDigests ?? {}).length === 3 &&
+    ['abyss_ui_layout','abyss_ui_templates','performance_templates'].every(name => hash.test(runtime.fixtureDigests[name])),
+  'Native script, UI, template or audio readback identity is incomplete');
 }
 
 export function verifyResourceReport(report, sourceCommit, sourceTree, published, receipt, expectedWorkload) {
@@ -88,17 +103,22 @@ export function verifyResourceReport(report, sourceCommit, sourceTree, published
   assert.equal(report.baseline?.commit, published.commit, 'Comparison is not the published build source');
   assert.equal(report.baseline?.tree, published.tree, 'Comparison is not the published build tree');
   for (const arm of [report.candidate, report.baseline]) {
-    assert(commit.test(arm.tree) && hash.test(arm.workloadSha256) && hash.test(arm.generatedLuaSha256) &&
+    assert(commit.test(arm.tree) && hash.test(arm.workloadSha256) && hash.test(arm.readbackLuaSha256) &&
       hash.test(arm.lockfile?.dependencies), 'Incomplete source, workload or dependency evidence');
   }
   assert.equal(report.candidate.workloadSha256, report.baseline.workloadSha256, 'Host workloads differ');
   assert.equal(report.candidate.workloadSha256, expectedWorkload, 'Host workload differs from the frozen source');
   assert.equal(report.candidate.lockfile.dependencies, report.baseline.lockfile.dependencies, 'Dependency graphs differ');
-  assert.deepEqual(report.candidate.configuration, report.baseline.configuration, 'Production profiles differ');
-  const config = report.candidate.configuration;
-  assert(config?.officialAssets && config.refinedReleaseMonsterArt && config.nativePageLifecycle,
-    'Formal native production profile required');
-  assert.deepEqual(config.artFeatures, receipt.artFeatures?.flags, 'GIL and resource art flags differ');
+  const candidateGil = receipt.candidate?.sha256 ?? receipt.gil?.gilSha256;
+  assert.notEqual(candidateGil, published.gilSha256, 'Use a distinct previously published GIL');
+  verifyRuntime(report.candidate.runtime, candidateGil);
+  verifyRuntime(report.baseline.runtime, published.gilSha256);
+  assert.equal(report.candidate.runtime.moduleDigestsSha256,
+    receipt.moduleDigests ? gilModuleInventoryHash(receipt.moduleDigests) : receipt.moduleDigestsSha256,
+    'Measured packed Lua module inventory differs from the audited GIL receipt');
+  const artFeatures = receipt.artFeatures?.flags;
+  assert(artFeatures?.selectionAvatar === true && artFeatures.battlePortrait === true && artFeatures.monsters === true,
+    'GIL and resource art flags differ from the formal native production profile');
 
   assert.deepEqual(Object.keys(report.results).sort(), Object.keys(profiles).sort(), 'Six-tier coverage is incomplete');
   const signals = {};
@@ -115,13 +135,14 @@ export function verifyResourceReport(report, sourceCommit, sourceTree, published
     const after = result.candidate.samples;
     assert.equal(before.length, report.repetitions, 'Incomplete reference samples: ' + name);
     assert.equal(after.length, report.repetitions, 'Incomplete candidate samples: ' + name);
-    for (const sample of [...before, ...after]) verifySample(sample, profile, executions);
+    for (const sample of before) verifySample(sample, profile, executions, report.baseline.runtime, artFeatures);
+    for (const sample of after) verifySample(sample, profile, executions, report.candidate.runtime, artFeatures);
     assert(matchingResourceCaps(before, after), 'Measured cgroup limits differ: ' + name);
     const observed = compareSamples(before, after, report.alertPercent);
     assert.deepEqual(result.signals, observed, 'Source evidence signals differ from samples: ' + name);
     if (observed.length) signals[name] = observed;
   }
-  verifyExtreme(report.extreme, report.candidate, executions);
+  verifyExtreme(report.extreme, report.candidate, executions, artFeatures);
   return signals;
 }
 
@@ -152,7 +173,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
     const signals = verifyResourceReport(raw, sourceCommit, sourceTree, published, receipt, expectedWorkload);
     const status = Object.keys(signals).length ? 'REVIEW_REQUIRED' : 'OFFLINE_RESOURCE_VERIFIED';
     write({status, sourceCommit, sourceTree, gilSha256, buildId: receipt.buildId, payloadDigest: receipt.payloadDigest,
-      published, configuration: raw.candidate.configuration, environment: raw.engine,
+      published, runtime:raw.candidate.runtime, environment: raw.engine,
       strictAudioAuditSha256: sha256(auditBytes), rawReportSha256: sha256(bytes), signals});
     if (status === 'REVIEW_REQUIRED') process.exitCode = 1;
   } catch (error) {

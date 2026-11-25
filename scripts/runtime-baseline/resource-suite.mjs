@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { mkdirSync, mkdtempSync, readFileSync, readdirSync, realpathSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import { arch, availableParallelism, cpus, release, totalmem } from 'node:os';
 import { dirname, relative, resolve } from 'node:path';
@@ -11,6 +11,7 @@ import { compareSamples, formalImageId, guardExtremeCgroup, lockfileIdentity, ma
   productionHeapMiB, productionReportKind, productionWorkload, resourceImage as image, resourceResultStatus, selectResourceReference, summarize,
   unsupportedFormalProfile, workload, workloadIdentity } from './resource-receipt.mjs';
 import { productionPhases } from './production-inputs.mjs';
+import { gilModuleInventoryHash, gilRuntimeKind } from './gil-inputs.mjs';
 import { lfsArguments, lfsEnvironment } from '../ci-reviewed-lfs.mjs';
 
 const modes = { fast: ['baseline', 'medium'], full: Object.keys(profiles) };
@@ -43,8 +44,8 @@ done
 exec node scripts/runtime-baseline/worker.mjs "$@"
 `;
 
-function run(command, args, cwd, env) {
-  const result = spawnSync(command, args, { cwd, env, encoding: 'utf8', timeout: 120_000, maxBuffer: 4 * 1024 * 1024 });
+function run(command, args, cwd, env, timeout = 120_000) {
+  const result = spawnSync(command, args, { cwd, env, encoding: 'utf8', timeout, maxBuffer: 4 * 1024 * 1024 });
   assert(result.status === 0 && !result.error,
     `${command} ${args[0]} failed (${result.error?.message ?? result.status ?? result.signal}): ${result.stderr?.trim() ?? ''}\n${result.stdout?.trim().split('\n').slice(-20).join('\n') ?? ''}`);
   return result.stdout.trim();
@@ -60,24 +61,51 @@ function snapshot(root, production, harnessRoot) {
   const generated = readdirSync(directory).filter(file => file.endsWith('.lua')).sort();
   assert(generated.includes('abyss_data.lua') && generated.includes('abyss_ui_templates.lua'), 'run build:data and build:ui first');
   const hashFiles = (from, paths) => workloadIdentity(paths, path => readFileSync(resolve(from, path)));
+  const runtime = production?.runtime;
+  if (runtime) {
+    const modules = {};
+    for (const file of generated) {
+      const name = file.slice(0, -4);
+      const digest = createHash('sha256').update(readFileSync(resolve(directory, file))).digest('hex');
+      if (Object.hasOwn(runtime.fixtureDigests, name)) assert.equal(digest, runtime.fixtureDigests[name], 'Native Host fixture changed: ' + name);
+      else Object.defineProperty(modules, name, {value:digest, enumerable:true});
+    }
+    assert.equal(Object.keys(modules).length, runtime.moduleCount, 'Native Lua module inventory changed');
+    assert.equal(gilModuleInventoryHash(modules), runtime.moduleDigestsSha256, 'Native Lua source changed');
+    assert.deepEqual(JSON.parse(readFileSync(resolve(directory, 'performance-readback.json'))), runtime, 'Native readback receipt changed');
+  }
   return {
     commit: git('rev-parse', 'HEAD'),
     tree: git('rev-parse', 'HEAD^{tree}'),
     workloadSha256: production ? hashFiles(harnessRoot, productionWorkload) : hashFiles(root, workload),
     lockfile: lockfileIdentity(readFileSync(resolve(root, 'package-lock.json'))),
-    generatedLuaSha256: production ? hashFiles(directory, generated) : hashFiles(root, generated.map(file => `build/lua/${file}`)),
-    ...(production && {configuration: production.configuration}),
+    ...(runtime ? {runtime, readbackLuaSha256:hashFiles(directory, generated)} : {
+      generatedLuaSha256:production ? hashFiles(directory, generated) : hashFiles(root, generated.map(file => `build/lua/${file}`)),
+      ...(production && {configuration:production.configuration}),
+    }),
   };
 }
 
-function prepareProduction(root, harnessRoot) {
+function prepareProduction(root, harnessRoot, gil, nativeTool) {
   const parent = resolve(root, 'build');
   mkdirSync(parent, { recursive: true });
   const directory = mkdtempSync(resolve(parent, 'production-resource-'));
   process.on('exit', () => rmSync(directory, { recursive: true, force: true }));
+  if (gil) {
+    const prepare = resolve(harnessRoot, 'scripts/runtime-baseline/gil-inputs.mjs');
+    const runtime = JSON.parse(run(process.execPath, [prepare, directory, gil, nativeTool], root, undefined, 240_000).split('\n').at(-1));
+    return {directory, runtime};
+  }
   const prepare = resolve(harnessRoot, 'scripts/runtime-baseline/production-inputs.mjs');
   const configuration = JSON.parse(run(process.execPath, [prepare, directory], root).split('\n').at(-1));
   return { directory, configuration };
+}
+
+function productionWorkerArguments(root, production) {
+  if (!production) return [];
+  const args = [relative(root, production.directory)];
+  if (production.runtime) args.push(gilRuntimeKind);
+  return args;
 }
 
 function containerFlags(root, profile, production) {
@@ -99,7 +127,7 @@ function measure(root, profile, production, harnessRoot) {
       args.push('--mount', `type=bind,src=${resolve(harnessRoot, path)},dst=/repo/${path},readonly`);
     }
   }
-  const workerArgs = production ? [relative(root, production.directory)] : [];
+  const workerArgs = productionWorkerArguments(root, production);
   const successMarker = production ? 'PRODUCTION_HOST_PASS seed=42' : 'RUNTIME_BASELINE_PASS seed=1 idleFrames=300';
   const start = performance.now();
   try {
@@ -109,6 +137,7 @@ function measure(root, profile, production, harnessRoot) {
     const samples = output.split('\n').filter(line => line.startsWith('RUNTIME_BASELINE_JSON '));
     assert.equal(samples.length, 1, 'expected exactly one Host measurement');
     const sample = validateSample(JSON.parse(samples[0].slice('RUNTIME_BASELINE_JSON '.length)), production ? productionPhases : phases);
+    if (production?.runtime) assert.deepEqual(sample.runtime, production.runtime, 'Measured Host did not load its exact GIL readback');
     assert(Number.isSafeInteger(sample.maxRssKiB) && sample.maxRssKiB > 0, 'invalid process maxRSS');
     const executionId = /^RESOURCE_EXECUTION_ID ([a-f0-9]{12})$/m.exec(output)?.[1];
     assert(executionId, 'missing Docker execution identity');
@@ -125,7 +154,7 @@ function measureExtreme(root, production, candidate) {
   try {
     const caps = containerFlags(root, unsupportedFormalProfile, production);
     const id = run('docker', ['create', '--name', name, ...caps, image, 'sh', '-c', extremeReceipt,
-      'resource-extreme', relative(root, production.directory)], root);
+      'resource-extreme', ...productionWorkerArguments(root, production)], root);
     const result = spawnSync('docker', ['start', '-a', id], {cwd: root, encoding: 'utf8', timeout: 45_000, maxBuffer: 4 * 1024 * 1024});
     const state = JSON.parse(run('docker', ['inspect', '--format', '{{json .State}}', id], root));
     const report = Object.fromEntries([...result.stdout.matchAll(/^RESOURCE (\S+) (.+)$/gm)].map(match => match.slice(1)));
@@ -177,19 +206,26 @@ function suite(values) {
   if (values.release) {
     assert(values.mode === 'full' && values.production && values.extreme && values.baseline && !values['baseline-if-compatible'] &&
       !values.profile && repetitions >= 3 && alertPercent === 20, 'Release resource gate requires all six fixed paired tiers and independent extreme recovery');
+    assert(values['candidate-gil'] && values['baseline-gil'] && values['native-reader'], 'Release resource gate requires both exact GILs and the pinned native reader');
+  } else {
+    assert(!values['candidate-gil'] && !values['baseline-gil'] && !values['native-reader'], 'GIL readback is reserved for formal release workloads');
   }
   const candidatePath = realpathSync('.');
   const baselinePath = values.baseline ? realpathSync(values.baseline) : null;
   assert.notEqual(candidatePath, baselinePath, 'prepare the reference in a separate worktree');
-  const candidateProduction = values.production ? prepareProduction(candidatePath, candidatePath) : null;
-  const baselineProduction = values.production && baselinePath ? prepareProduction(baselinePath, candidatePath) : null;
+  const nativeTool = values.release ? realpathSync(values['native-reader']) : undefined;
+  const candidateProduction = values.production ? prepareProduction(candidatePath, candidatePath,
+    values.release ? realpathSync(values['candidate-gil']) : undefined, nativeTool) : null;
+  const baselineProduction = values.production && baselinePath ? prepareProduction(baselinePath, candidatePath,
+    values.release ? realpathSync(values['baseline-gil']) : undefined, nativeTool) : null;
   const snapshotCandidate = () => snapshot(candidatePath, candidateProduction, candidatePath);
   const snapshotBaseline = () => snapshot(baselinePath, baselineProduction, candidatePath);
   const candidate = snapshotCandidate();
   const reference = baselinePath ? snapshotBaseline() : null;
-  if (candidateProduction && reference) {
+  if (candidateProduction && reference && !values.release) {
     assert.deepEqual(candidate.configuration, reference.configuration, 'Production generation profiles differ');
   }
+  if (values.release) assert.notEqual(candidate.runtime.gilSha256, reference.runtime.gilSha256, 'A distinct published GIL is required');
   const {baseline, unpairedReference} = selectResourceReference(candidate, reference, values['baseline-if-compatible']);
   if (unpairedReference) console.log(unpairedReference.reason + ': ' + unpairedReference.commit);
   const docker = run('docker', ['info', '--format', '{{.ServerVersion}} {{.CgroupVersion}} {{.OSType}} {{.Architecture}}'], candidatePath);
@@ -260,6 +296,7 @@ function main() {
     mode: { type: 'string', default: 'fast' }, profile: { type: 'string', multiple: true },
     samples: { type: 'string' }, baseline: { type: 'string' }, 'baseline-if-compatible': { type: 'boolean' },
     production: { type: 'boolean' }, extreme: { type: 'boolean' }, release: { type: 'boolean' },
+    'candidate-gil':{type:'string'}, 'baseline-gil':{type:'string'}, 'native-reader':{type:'string'},
     output: { type: 'string', default: 'build/performance-regression/report.json' },
     'alert-percent': { type: 'string', default: '20' },
   } });

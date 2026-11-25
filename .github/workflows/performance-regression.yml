@@ -54,6 +54,13 @@ jobs:
           cache-dependency-path: package-lock.json
       - name: Verify report and limit parser contracts
         run: node --test tests/benchmarks/resource-suite.test.mjs
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        if: inputs.mode == 'formal'
+        with:
+          repository: 8itlab/genshin-miliastra-mcp
+          ref: 70470757d6fcb319c5afec13b178c87f2d8d54b3
+          path: build/formal-native-reader
+          persist-credentials: false
       - name: Build and measure the exact checkout
         env:
           PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
@@ -78,8 +85,11 @@ jobs:
           node --test tests/release-performance*.test.mjs
           BASE_SHA=${MANUAL_BASE_SHA:-${PR_BASE_SHA:-$(git rev-parse --verify HEAD^ 2>/dev/null || true)}}
           if [ "$mode" = formal ]; then
-            version=$(git show "$GITHUB_SHA:package.json" | node -p "JSON.parse(require('node:fs').readFileSync(0)).version")
-            published=$(node scripts/runtime-baseline/published-baseline.mjs "$version")
+            git lfs install --local --skip-smudge
+            native_reader="$PWD/build/formal-native-reader"
+            (cd "$native_reader" && npm ci "${npm_flags[@]}")
+            formal_inputs="$RUNNER_TEMP/formal-performance-gils"
+            published=$(node scripts/runtime-baseline/frozen-performance-inputs.mjs "$formal_inputs")
             BASE_SHA=$(node -p 'JSON.parse(process.argv[1]).commit' "$published")
             BASE_TREE=$(node -p 'JSON.parse(process.argv[1]).tree' "$published")
           fi
@@ -93,18 +103,15 @@ jobs:
             test "$(git rev-parse "$BASE_SHA^{tree}")" = "$BASE_TREE"
           fi
           prepare() {
-            if [ "$mode" = formal ]; then
-              git -c lfs.transfer.maxretries=0 -c lfs.activitytimeout=30 lfs pull \
-                --include='art/characters/traveler-geo/portraits/avatar96/preview-native-1x.png,art/characters/traveler-geo/portraits/battle133/preview-native-1x.png' --exclude=''
-            else
+            if [ "$mode" != formal ]; then
               npm run build:data
               npm run build:ui
             fi
           }
           args=(--mode "$mode")
           if [ "$mode" = formal ]; then
-            git lfs install --local --skip-smudge
-            args=(--mode full --production --extreme --release)
+            args=(--mode full --production --extreme --release --candidate-gil "$formal_inputs/candidate.gil"
+              --baseline-gil "$formal_inputs/baseline.gil" --native-reader "$native_reader")
           fi
           prepare
           if [ -n "$BASE_SHA" ] && git cat-file -e "$BASE_SHA:scripts/runtime-baseline/worker.mjs"; then

@@ -93,7 +93,7 @@ function verifyGilFiles(files, locator, target) {
     validId(manifest.sourceChecks?.qualityRun) && validId(manifest.sourceChecks?.qualityAttempt) &&
     validId(manifest.sourceChecks?.qualityCheckoutArtifact) && validId(manifest.sourceChecks?.licensesRun),
     'Production GIL receipt is missing approved build, audio or CI identity');
-  return {receipt, binding:{...locator, gilSha256, buildId:receipt.buildId, payloadDigest:receipt.payloadDigest,
+  return {receipt, gilBytes:files['candidate.gil'], binding:{...locator, gilSha256, buildId:receipt.buildId, payloadDigest:receipt.payloadDigest,
     receiptSha256:sha256(files['candidate.json']), manifestSha256:sha256(files['manifest.json']),
     qualityRun:manifest.sourceChecks.qualityRun, qualityAttempt:manifest.sourceChecks.qualityAttempt,
     qualityCheckoutArtifact:manifest.sourceChecks.qualityCheckoutArtifact}};

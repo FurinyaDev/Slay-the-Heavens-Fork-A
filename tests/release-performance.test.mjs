@@ -22,7 +22,25 @@ test('rejects the wrong published source, release tree, missing tier, or changed
   const report = reportFixture();
   delete report.results.light;
   assert.throws(() => verifyResourceReport(report, head, tree, published, receipt), /coverage is incomplete/);
-  assert.throws(() => verifyResourceReport(reportFixture(), head, tree, published, {artFeatures:{flags:{}}}), /art flags differ/);
+  assert.throws(() => verifyResourceReport(reportFixture(), head, tree, published, {...receipt, artFeatures:{flags:{}}}), /art flags differ/);
+});
+
+test('rejects regenerated, swapped, altered and unexecuted GIL payloads', () => {
+  const regenerated = reportFixture();
+  delete regenerated.candidate.runtime;
+  assert.throws(() => verifyResourceReport(regenerated, head, tree, published, receipt), /GIL readback required/);
+  const swapped = reportFixture();
+  swapped.baseline.runtime.gilSha256 = swapped.candidate.runtime.gilSha256;
+  assert.throws(() => verifyResourceReport(swapped, head, tree, published, receipt), /GIL readback required/);
+  const changed = reportFixture();
+  changed.candidate.runtime.moduleDigestsSha256 = sha256;
+  assert.throws(() => verifyResourceReport(changed, head, tree, published, receipt), /inventory differs/);
+  const missing = reportFixture();
+  delete missing.results.baseline.candidate.samples[0].runtime;
+  assert.throws(() => verifyResourceReport(missing, head, tree, published, receipt), /did not execute/);
+  const different = reportFixture();
+  different.results.baseline.baseline.samples[0].artFeatures.monsters = false;
+  assert.throws(() => verifyResourceReport(different, head, tree, published, receipt), /measured art flags differ/);
 });
 
 test('rejects weaker limits and cleared performance signals', () => {
