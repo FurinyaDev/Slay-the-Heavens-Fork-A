@@ -6,6 +6,7 @@ import {join} from 'node:path';
 import {tmpdir} from 'node:os';
 import {toLua} from '../scripts/build-lua-data.mjs';
 import {runLua} from '../scripts/test-lua.mjs';
+import {currentEnemyId} from './helpers/released-encounter-identities.mjs';
 
 const vectors=JSON.parse(readFileSync('tests/fixtures/sts1-encounter-runtime-vectors.json','utf8'));
 test('room construction vectors preserve independently authored source interpretation',()=>{
@@ -21,9 +22,6 @@ test('all seventeen bindings and Guardian match independent HP/Bite/AI/CurlUp an
   const encounterNames=new Map([
    ['Cultist','Raven Adept'],['Blue Slaver','Blue Guard'],['Red Slaver','Red Guard'],
   ]);
-  const enemyIds=new Map([
-   ['cultist','raven_adept'],['blue_slaver','blue_guard'],['red_slaver','red_guard'],
-  ]);
   const intentIds=new Map([
    ['cultist_1','raven_adept_1'],['cultist_2','raven_adept_2'],
    ['blue_slaver_1','blue_guard_1'],['blue_slaver_2','blue_guard_2'],
@@ -33,7 +31,7 @@ test('all seventeen bindings and Guardian match independent HP/Bite/AI/CurlUp an
    ...entry,
    source:encounterNames.get(entry.source)??entry.source,
    actors:entry.actors.map(actor=>({
-    ...actor,id:enemyIds.get(actor.id)??actor.id,intent:intentIds.get(actor.intent)??actor.intent,
+    ...actor,id:currentEnemyId(actor.id),intent:intentIds.get(actor.intent)??actor.intent,
    })),
   }));
   const file=join(dir,'vectors.lua');
