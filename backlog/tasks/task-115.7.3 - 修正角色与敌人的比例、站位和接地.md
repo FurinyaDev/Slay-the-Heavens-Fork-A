@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@Furinya'
 created_date: '2026-11-25 21:02'
-updated_date: '2026-11-25 22:09'
+updated_date: '2026-11-25 22:22'
 labels:
   - v2.2.0
 milestone: m-8
@@ -48,4 +48,6 @@ ordinal: 217000
 
 <!-- SECTION:NOTES:BEGIN -->
 Owner 在阶段图中仍看到悬浮。独立评审发现站位调整后鞋底与石板仍缺少局部接触明暗，第二幕部分敌人血条距脚底约 5–8 像素。接触阴影保留为同场景实验，待实渲、交互与独立验收。
+
+独立评审复看 b7e2d4c1 的实际 Simulator 画面。第一、第二幕 16:9 与第一幕 21:9 的接触暗部、地砖交线和血条间距已逐张核对。第二幕实际选牌后蓝色守卫生命 47→41，能量 3→2。攻击位移、退场、大型和有意浮空敌人的整体验收继续进行，AC 未勾。
 <!-- SECTION:NOTES:END -->
