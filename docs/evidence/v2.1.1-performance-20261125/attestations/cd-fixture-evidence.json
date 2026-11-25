@@ -1,0 +1,21 @@
+{
+  "sourceCommit": "8e7d94feb1158752a91b1728d002d360a4a00169",
+  "candidateSha256": "2d23e72f6c1ed873c546e5dadd5b3992f1f270c7d1b77bfa32bcea91a0423ce2",
+  "candidateBytes": 23777692,
+  "buildId": "c40b1a93-9666-4ed7-9676-a2c6e9c78b81",
+  "modules": 375,
+  "fixture": "public sanitized offline test base; not production",
+  "strictUiBefore": false,
+  "strictUiWithExplicitOpacity": true,
+  "controls": 24127,
+  "changes": [
+    "/stage/menuPanel/start/label.text.outlineOpacity",
+    "/stage/menuPanel/continueRun/label.text.outlineOpacity",
+    "/stage/menuPanel/titleQuit/label.text.outlineOpacity"
+  ],
+  "findings": [
+    "Exact MCP default 1 is serialized explicitly; native audit comparator unchanged",
+    "Strict graph gate blocked the fixture because its base contains _GSTS_CgStage"
+  ],
+  "platformLoad": "UNVERIFIED"
+}

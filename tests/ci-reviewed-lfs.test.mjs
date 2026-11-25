@@ -8,11 +8,12 @@ import { pathToFileURL } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import * as lfs from '../scripts/ci-reviewed-lfs.mjs';
 import { reviewedPngPaths, needsReviewedAssets, verifyReviewedPngs, prepareReviewedAssets, lfsEnvironment, lfsArguments } from '../scripts/ci-reviewed-lfs.mjs';
-import {mediaFiles,originalMediaFiles,evidenceFiles,archiveFiles,helperArchiveFiles,mediaPointer,maxMediaPayloadBytes,maxEvidencePayloadBytes,maxArchivePayloadBytes,maxHelperArchivePayloadBytes,validateMediaPointers,prepareMediaAssets} from '../scripts/ci-media-lfs.mjs';
+import {mediaFiles,originalMediaFiles,evidenceFiles,archiveFiles,helperArchiveFiles,checkoutFiles,mediaPointer,maxMediaPayloadBytes,maxEvidencePayloadBytes,maxArchivePayloadBytes,maxHelperArchivePayloadBytes,maxCheckoutPayloadBytes,validateMediaPointers,prepareMediaAssets} from '../scripts/ci-media-lfs.mjs';
 import {checkWhitespace,validateMediaBases} from '../scripts/ci-whitespace.mjs';
 import {prepareComparisonBlobs,comparisonBlobIds} from '../scripts/ci-comparison-blobs.mjs';
 import {checkHostedCheckout,checkNetworkPolicy} from '../scripts/check-network-policy.mjs';
 import {sensitive,checkAssets} from '../scripts/check-license.mjs';
+import {beforeCheckoutStorageSource} from './helpers/checkout-storage-source.mjs';
 
 const root = resolve('.');
 const expectedPaths = ['armaments', 'cleave', 'heavy_blade'].flatMap(id => ['source.png', 'preview-native.png'].map(name => `art/cards/traveler-geo/${id}/${name}`));
@@ -232,7 +233,7 @@ test('state evidence storage extension freezes all aliases and leaves the origin
  assert.equal(extension.files.length,76);
  assert.equal(new Set(extension.files.map(row=>row.sha256)).size,58);
  assert.equal(extension.files.filter(row=>row.path.includes('/inspection-')).length,18);
- const original={...manifest};delete original.evidenceExtension;delete original.archiveExtension;delete original.helperExtension;
+ const original={...manifest};delete original.evidenceExtension;delete original.archiveExtension;delete original.helperExtension;delete original.checkoutExtension;
  assert.equal(createHash('sha256').update(JSON.stringify(original,null,2)+'\n').digest('hex'),'732a8b8b64611a2a3f714bf41a7c2bc1f458b1a6f9dfb86f5d37d0dc0c3a715a','all original manifest records, categories, OIDs and budget are byte-preserved');
  const ids=new Set(extension.files.flatMap(row=>row.oldBinaryGitBlobs));assert.equal(ids.size,58);
  const ledger=JSON.parse(readFileSync('docs/legal/assets.json','utf8'));
@@ -254,7 +255,7 @@ test('existing media pointers retain their exact original ledger identities and 
  const pointers=new Map(mediaFiles.map(row=>[row.path,mediaPointer(row)]));
  assert.equal(originalMediaFiles.length,738);assert.equal(new Set(originalMediaFiles.map(row=>row.sha256)).size,705);
  assert.equal([...new Map(originalMediaFiles.map(row=>[row.sha256,row.bytes])).values()].reduce((a,b)=>a+b,0),117369505);
- assert.deepEqual(validateMediaPointers(pointers),{files:819,objects:768,bytes:166884443});
+ assert.deepEqual(validateMediaPointers(pointers),{files:830,objects:779,bytes:193341731});
  assert.equal(maxMediaPayloadBytes,117369505);assert.equal(maxEvidencePayloadBytes,37495268);assert.equal(lfs.maxReviewedPngBytes,5983528);
  for(const row of mediaFiles){const entry=ledger.files[row.path];assert.equal(entry.sha256,row.sha256);assert.equal(entry.bytes,row.bytes);assert.equal(entry.category,row.category);assert.equal(entry.storage,'ci-media-lfs-v1');}
  const first=mediaFiles[0],wrong=new Map(pointers);wrong.set(first.path,Buffer.from(mediaPointer(first).toString().replace(first.sha256,'0'.repeat(64))));
@@ -265,7 +266,7 @@ test('existing media pointers retain their exact original ledger identities and 
 });
 
 test('complete existing media are freshly authenticated on a cache hit without a transfer token',()=>{
- assert.deepEqual(prepareMediaAssets({env:{...process.env,CI_LFS_TOKEN:''}}),{status:'cached',files:819,objects:768,bytes:166884443});
+ assert.deepEqual(prepareMediaAssets({env:{...process.env,CI_LFS_TOKEN:''}}),{status:'cached',files:830,objects:779,bytes:193341731});
 });
 
 test('three existing CI archives retain complete bytes and original Git blob identities under exact storage',()=>{
@@ -297,6 +298,35 @@ test('two frozen helper archives preserve complete historical views under exact 
  assert.equal(sensitive('tests/helpers/foreign-unregistered.json.gz'),false);
 });
 
+test('checkout storage preserves the reviewed binary fixtures, paths, and original comparison identities',()=>{
+ assert.equal(checkoutFiles.length,11);
+ assert.equal(maxCheckoutPayloadBytes,26457288);
+ assert.equal(new Set(checkoutFiles.map(row=>row.sha256)).size,11);
+ assert.equal(checkoutFiles.reduce((sum,row)=>sum+row.bytes,0),maxCheckoutPayloadBytes);
+ for(const row of checkoutFiles){
+  assert.equal(row.sourceCommit,'6492e8dccbcf847a0eba7ad3995da50257032e08');
+  const bytes=readFileSync(row.path);
+  assert.equal(bytes.length,row.bytes);
+  assert.equal(createHash('sha256').update(bytes).digest('hex'),row.sha256);
+  assert.deepEqual(row.oldBinaryGitBlobs,[createHash('sha1').update(`blob ${bytes.length}\0`).update(bytes).digest('hex')]);
+  assert(bytes.subarray(0,8000).includes(0),'the original Git object was binary');
+  assert(sensitive(row.path));
+ }
+});
+
+test('checkout migration admits only exact CI sources into the earlier receipts',()=>{
+ for(const path of ['.gitattributes','config/ci-media-lfs.json','docs/legal/assets.json','scripts/ci-media-lfs.mjs',
+  'tests/ci-reviewed-lfs.test.mjs','tests/helpers/fork-preflight-source.mjs']){
+  const current=readFileSync(path,'utf8').replaceAll('\r\n','\n');
+  const prior=beforeCheckoutStorageSource(path,current);
+  assert.notEqual(prior,current,path);
+  assert.equal(beforeCheckoutStorageSource(path,current.replaceAll('\n','\r\n')),prior.replaceAll('\n','\r\n'),path);
+  const drift=current+'\n';
+  assert.equal(beforeCheckoutStorageSource(path,drift),drift,path);
+  assert.equal(beforeCheckoutStorageSource('foreign/'+path,current),current,path);
+ }
+});
+
 test('cold partial checkout checks all text and exact media pointers without downloading old binary',async t=>{
  const directory=mkdtempSync(join(tmpdir(),'media-ws-'));t.after(()=>rmSync(directory,{recursive:true,force:true}));
  const source=join(directory,'source'),clone=join(directory,'clone');mkdirSync(source);
@@ -317,7 +347,7 @@ test('cold partial checkout checks all text and exact media pointers without dow
  assert.equal(originalEvidence.length,evidenceFiles.length);
  for(const [i,row]of evidenceFiles.entries())assert.deepEqual(row.oldBinaryGitBlobs,[originalEvidence[i]]);
  run(source,['update-index','--index-info'],evidenceFiles.map((row,i)=>'100644 '+originalEvidence[i]+'\t'+row.path).join('\n')+'\n');
- const storedArchives=[...archiveFiles,...helperArchiveFiles];
+ const storedArchives=[...archiveFiles,...helperArchiveFiles,...checkoutFiles];
  const originalArchives=run(source,['hash-object','-w','--no-filters','--stdin-paths'],storedArchives.map(row=>JSON.stringify(resolve(root,row.path))).join('\n')+'\n').split('\n');
  for(const [i,row]of storedArchives.entries())assert(row.oldBinaryGitBlobs.includes(originalArchives[i]));
  run(source,['update-index','--index-info'],storedArchives.map((row,i)=>'100644 '+originalArchives[i]+'\t'+row.path).join('\n')+'\n');

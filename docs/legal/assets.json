@@ -3,6 +3,10 @@
   "baseCommit": "4c75a31fafcd27c204b957cd7dbc75ac6d9f5ab0",
   "hashRule": "SHA256 raw binary bytes; Lua/JSON/SVG CRLF normalized to LF. Categories record provenance, not clearance. Update manually after rights review.",
   "categories": {
+    "performance-profiling-evidence": {
+      "status": "Project-generated diagnostic charts drawn from measured Host, Lua and native readback data. Chart text uses system fonts. The SVGs contain no original font binaries, platform textures or screenshot images.",
+      "evidence": "docs/evidence/v2.1.1-performance-20261125/README.md and accompanying numeric receipts, generation scripts and archives."
+    },
     "native-event-illustrations": {
       "status": "The project owner confirmed authority on 2026-11-22 to distribute these redrawn event illustrations through the public GitHub repository and the Miliastra Wonderland level. The approved payload contains fitted native primitive IDs, colors and transforms. Underlying game and platform IP rights remain with their respective owners.",
       "evidence": "Owner distribution confirmation and reviewed precision-fix handoff for the 49 event IDs in data/release/launch-content.json. The contour refinements use the same artwork from the owner-supplied 330px WebP review previews. The fit records retain source artwork and review preview hashes. The sphere has a transparent output reconstructed from its RGB preview."
@@ -253,6 +257,38 @@
     }
   },
   "files": {
+    "docs/evidence/v2.1.1-performance-20261125/05-resource-sensitivity.svg": {
+      "category": "performance-profiling-evidence",
+      "sha256": "768016fd0e4afe2c9c49604b50b0ef10c34d7f090716fa88aa8f6238811afe1c"
+    },
+    "docs/evidence/v2.1.1-performance-20261125/06-fault-tree.svg": {
+      "category": "performance-profiling-evidence",
+      "sha256": "3c4465675450f396a9e307c1c509c48a1e3a9009c7fcb5b3378964bcb763f975"
+    },
+    "docs/evidence/v2.1.1-performance-20261125/capacity/capacity-treemap.svg": {
+      "category": "performance-profiling-evidence",
+      "sha256": "d96d88c131377d2653a9d52eea5c22f269a5352f6214a785c70e7b2abd3460e7"
+    },
+    "docs/evidence/v2.1.1-performance-20261125/capacity/dose/static-ui-dose.svg": {
+      "category": "performance-profiling-evidence",
+      "sha256": "63e5132fbd163868395d6f1149a9890540ffd7f3e59d84aa30aa59dae3a32fc0"
+    },
+    "docs/evidence/v2.1.1-performance-20261125/runtime/cpu-lua-call-tree.svg": {
+      "category": "performance-profiling-evidence",
+      "sha256": "db3fecb70f34db305afa4a9f0c12fa988c3d65e1a16c64f37a8181216e5ee47a"
+    },
+    "docs/evidence/v2.1.1-performance-20261125/runtime/resource-trace-live.svg": {
+      "category": "performance-profiling-evidence",
+      "sha256": "8b2a3f9b6526201486f41124aa03b591bd066bf064fbd24649a8041db2fb8b5e"
+    },
+    "docs/evidence/v2.1.1-performance-20261125/runtime/resource-trace.svg": {
+      "category": "performance-profiling-evidence",
+      "sha256": "e4dcff941a6296adf813283f99dfac0e37a46f13c81b0a54b1e1afc5451a64c5"
+    },
+    "docs/evidence/v2.1.1-performance-20261125/startup/startup-waterfall.svg": {
+      "category": "performance-profiling-evidence",
+      "sha256": "12a90327e93917fad8c5e75507b8644b0f350337d23529c94dce0853fbf4e275"
+    },
     "docs/evidence/run-hud-20261124/after/after-pc-detail-return.png": {
       "sha256": "5639cb61c376938a6ba5a43c1136369082a5ab6c1f85b7c0e1d9d715c6e63987",
       "category": "official-assets-offline-diagnostic"
@@ -394,7 +430,11 @@
     },
     "experiments/menu-red-fit/input/source.png": {
       "sha256": "16bdf7b614f0fb6fdbc2414271682446c0012a9e8ff8da70abad3b7a0374480d",
-      "category": "menu-red-reference-native"
+      "category": "menu-red-reference-native",
+      "bytes": 1831152,
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "6492e8dccbcf847a0eba7ad3995da50257032e08"
     },
     "docs/evidence/menu-red-20261113/menu.png": {
       "sha256": "b12e36c8cc3e1b127134678b1087f7226b34dab4365cf2ab1bda17b56bdae622",
@@ -10202,11 +10242,19 @@
     },
     "docs/design/reference-assets/v2.0.0/sts1-main-menu-20261121/design-hd.png": {
       "sha256": "0228b36c13b805c1a31eb0cb13d960be2b3b1168d6707412fedee2c7a51c06aa",
-      "category": "sts1-menu-session-reference"
+      "category": "sts1-menu-session-reference",
+      "bytes": 1585970,
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "6492e8dccbcf847a0eba7ad3995da50257032e08"
     },
     "docs/design/reference-assets/v2.0.0/sts1-main-menu-20261121/background-hd.png": {
       "sha256": "780f7428b1389e7ac824a5c2bd086339af19ea284e394ace692a6a4011d57c8c",
-      "category": "sts1-menu-session-reference"
+      "category": "sts1-menu-session-reference",
+      "bytes": 1558535,
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "6492e8dccbcf847a0eba7ad3995da50257032e08"
     },
     "docs/design/reference-assets/v2.0.0/sts1-main-menu-20261121/background-medium.png": {
       "sha256": "7cc1f328257adbcabf47212d4cbe84713193d66f1412566a212c2ca1644bf14f",
@@ -10515,6 +10563,70 @@
     "docs/evidence/release-layout-20261124/screens/before/pc-treasure-rewards.png": {
       "sha256": "ad4f514335901b6509a4e93dca846ea2f92b4157263fc669aa769f2069d498b0",
       "category": "official-assets-offline-diagnostic"
+    },
+    "docs/evidence/map-v25-20261110/raw/game.save.json.gz": {
+      "sha256": "417e18607da2c9363cea607a4b6268d8be2f231eea575002c064f0df49d8977c",
+      "bytes": 1547688,
+      "category": "v25-native-simulator-evidence",
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "6492e8dccbcf847a0eba7ad3995da50257032e08"
+    },
+    "experiments/archive/emergency-20261108/card-upgrade-recovery/original-runtime.patch.gz": {
+      "sha256": "06d046e3a52506490c826c7dfcbedd5d86b75f749e2a7570c8957a9623a0b56e",
+      "bytes": 1166600,
+      "category": "project-ci-history-evidence",
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "6492e8dccbcf847a0eba7ad3995da50257032e08"
+    },
+    "tests/fixtures/integration-ci-epochs.json.gz": {
+      "sha256": "542755e50f64d062f3d407114a58d9b429add0d8bd667b7430ef2b0fc5cf5532",
+      "bytes": 2436891,
+      "category": "project-ci-history-evidence",
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "6492e8dccbcf847a0eba7ad3995da50257032e08"
+    },
+    "tests/fixtures/pr323-historical-fixtures.json.gz": {
+      "sha256": "0016ea0a00171a413c2697329ea87487c19c575b6148a325285e35a24b4e8759",
+      "bytes": 5112323,
+      "category": "project-ci-history-evidence",
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "6492e8dccbcf847a0eba7ad3995da50257032e08"
+    },
+    "tests/helpers/closeout-source-epoch.json.gz": {
+      "sha256": "36aba7fc07f732a191a750d437eefd27e9b9567221811747abf13c97a9ac237a",
+      "bytes": 2240696,
+      "category": "project-ci-history-evidence",
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "6492e8dccbcf847a0eba7ad3995da50257032e08"
+    },
+    "tests/helpers/component-ui-source-epoch.json.gz": {
+      "sha256": "df2a27ff146ecbee4fb01054eb1071458ffe491ece1bb50fa6fb33d19df74d4a",
+      "bytes": 1538232,
+      "category": "project-ci-history-evidence",
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "6492e8dccbcf847a0eba7ad3995da50257032e08"
+    },
+    "tests/helpers/integrated-ci-source.json.gz": {
+      "sha256": "f0b7137f7d0462dff36b78e39a39aab8804ba9a097b1b72bdf6686cf10f15c35",
+      "bytes": 3222350,
+      "category": "project-ci-history-evidence",
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "6492e8dccbcf847a0eba7ad3995da50257032e08"
+    },
+    "tests/helpers/sts-style-prior-runtime.json.gz": {
+      "sha256": "10bf3b7d960e4c02ae2d64e26d8d5f16824439b9396949973f08ccec1c9d9330",
+      "bytes": 4216851,
+      "category": "project-ci-history-evidence",
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "6492e8dccbcf847a0eba7ad3995da50257032e08"
     }
   }
 }

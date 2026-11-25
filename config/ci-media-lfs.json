@@ -7477,5 +7477,121 @@
         "sourceCommit": "dfd45d6ce3f466592700aea94d224b4c660be960"
       }
     ]
+  },
+  "checkoutExtension": {
+    "sourceCommit": "6492e8dccbcf847a0eba7ad3995da50257032e08",
+    "maxPayloadBytes": 26457288,
+    "files": [
+      {
+        "path": "docs/design/reference-assets/v2.0.0/sts1-main-menu-20261121/background-hd.png",
+        "sha256": "780f7428b1389e7ac824a5c2bd086339af19ea284e394ace692a6a4011d57c8c",
+        "bytes": 1558535,
+        "category": "sts1-menu-session-reference",
+        "oldBinaryGitBlobs": [
+          "9322390b5c631cc4c2b6be21b4cd76a1f4f9a5a3"
+        ],
+        "sourceCommit": "6492e8dccbcf847a0eba7ad3995da50257032e08"
+      },
+      {
+        "path": "docs/design/reference-assets/v2.0.0/sts1-main-menu-20261121/design-hd.png",
+        "sha256": "0228b36c13b805c1a31eb0cb13d960be2b3b1168d6707412fedee2c7a51c06aa",
+        "bytes": 1585970,
+        "category": "sts1-menu-session-reference",
+        "oldBinaryGitBlobs": [
+          "b016172f96762c604064a727d377d5f3c86b8e6d"
+        ],
+        "sourceCommit": "6492e8dccbcf847a0eba7ad3995da50257032e08"
+      },
+      {
+        "path": "docs/evidence/map-v25-20261110/raw/game.save.json.gz",
+        "sha256": "417e18607da2c9363cea607a4b6268d8be2f231eea575002c064f0df49d8977c",
+        "bytes": 1547688,
+        "category": "v25-native-simulator-evidence",
+        "oldBinaryGitBlobs": [
+          "ebd590bfe169107b6c28c9d53ba9b9670d61ddb7"
+        ],
+        "sourceCommit": "6492e8dccbcf847a0eba7ad3995da50257032e08"
+      },
+      {
+        "path": "experiments/archive/emergency-20261108/card-upgrade-recovery/original-runtime.patch.gz",
+        "sha256": "06d046e3a52506490c826c7dfcbedd5d86b75f749e2a7570c8957a9623a0b56e",
+        "bytes": 1166600,
+        "category": "project-ci-history-evidence",
+        "oldBinaryGitBlobs": [
+          "357e52802ebbf1a06ebafdb21f01967a70cc2517"
+        ],
+        "sourceCommit": "6492e8dccbcf847a0eba7ad3995da50257032e08"
+      },
+      {
+        "path": "experiments/menu-red-fit/input/source.png",
+        "sha256": "16bdf7b614f0fb6fdbc2414271682446c0012a9e8ff8da70abad3b7a0374480d",
+        "bytes": 1831152,
+        "category": "menu-red-reference-native",
+        "oldBinaryGitBlobs": [
+          "f7fb1da19c28c3d68f03313c90dd2227b0b275c5"
+        ],
+        "sourceCommit": "6492e8dccbcf847a0eba7ad3995da50257032e08"
+      },
+      {
+        "path": "tests/fixtures/integration-ci-epochs.json.gz",
+        "sha256": "542755e50f64d062f3d407114a58d9b429add0d8bd667b7430ef2b0fc5cf5532",
+        "bytes": 2436891,
+        "category": "project-ci-history-evidence",
+        "oldBinaryGitBlobs": [
+          "03b23f9c08167f93b9fe02e1f7855d2fe5056c67"
+        ],
+        "sourceCommit": "6492e8dccbcf847a0eba7ad3995da50257032e08"
+      },
+      {
+        "path": "tests/fixtures/pr323-historical-fixtures.json.gz",
+        "sha256": "0016ea0a00171a413c2697329ea87487c19c575b6148a325285e35a24b4e8759",
+        "bytes": 5112323,
+        "category": "project-ci-history-evidence",
+        "oldBinaryGitBlobs": [
+          "16ce40fae511b39072f695159a60f8bc6a818bb7"
+        ],
+        "sourceCommit": "6492e8dccbcf847a0eba7ad3995da50257032e08"
+      },
+      {
+        "path": "tests/helpers/closeout-source-epoch.json.gz",
+        "sha256": "36aba7fc07f732a191a750d437eefd27e9b9567221811747abf13c97a9ac237a",
+        "bytes": 2240696,
+        "category": "project-ci-history-evidence",
+        "oldBinaryGitBlobs": [
+          "593584fcb830fe26d63dac58a68533ba8ed4a80f"
+        ],
+        "sourceCommit": "6492e8dccbcf847a0eba7ad3995da50257032e08"
+      },
+      {
+        "path": "tests/helpers/component-ui-source-epoch.json.gz",
+        "sha256": "df2a27ff146ecbee4fb01054eb1071458ffe491ece1bb50fa6fb33d19df74d4a",
+        "bytes": 1538232,
+        "category": "project-ci-history-evidence",
+        "oldBinaryGitBlobs": [
+          "e75bbd58d0a386837be52d84d8f42424f34e71bb"
+        ],
+        "sourceCommit": "6492e8dccbcf847a0eba7ad3995da50257032e08"
+      },
+      {
+        "path": "tests/helpers/integrated-ci-source.json.gz",
+        "sha256": "f0b7137f7d0462dff36b78e39a39aab8804ba9a097b1b72bdf6686cf10f15c35",
+        "bytes": 3222350,
+        "category": "project-ci-history-evidence",
+        "oldBinaryGitBlobs": [
+          "7507dd9dadee24535388a3cf3493313564612a1c"
+        ],
+        "sourceCommit": "6492e8dccbcf847a0eba7ad3995da50257032e08"
+      },
+      {
+        "path": "tests/helpers/sts-style-prior-runtime.json.gz",
+        "sha256": "10bf3b7d960e4c02ae2d64e26d8d5f16824439b9396949973f08ccec1c9d9330",
+        "bytes": 4216851,
+        "category": "project-ci-history-evidence",
+        "oldBinaryGitBlobs": [
+          "d790bd83f77ef44eb682aca5c08617b0b06f9c2c"
+        ],
+        "sourceCommit": "6492e8dccbcf847a0eba7ad3995da50257032e08"
+      }
+    ]
   }
 }

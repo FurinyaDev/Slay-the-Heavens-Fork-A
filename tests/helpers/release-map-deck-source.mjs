@@ -4,6 +4,7 @@ import {createHash} from 'node:crypto';
 import {readFileSync} from 'node:fs';
 import {gunzipSync} from 'node:zlib';
 import {beforeLoadingRecoverySource} from './loading-recovery-source.mjs';
+import {beforeHotfixMapDeckHelperSource} from './hotfix-map-deck-helper-source.mjs';
 
 const hash=(bytes,algorithm='sha256')=>createHash(algorithm).update(bytes).digest('hex');
 const normalize=source=>source.replaceAll('\r\n','\n');
@@ -32,6 +33,31 @@ function current(source,binding){
   if(typeof source!=='string'||source.includes('\r\r\n'))return false;
   const text=normalize(source);
   return hash(text)===binding.sha256&&blob(text)===binding.gitBlob;
+}
+
+// Continue the archived map-deck replay across the later production UI changes.
+const hotfixArchive=readFileSync(new URL('./release-map-deck-hotfix-source.json.gz',import.meta.url));
+assert.equal(hash(hotfixArchive),'d7eb0367f9c7e44137da2d2b12b174867b54c86f9d3969e015bf85a0c5be33e4','exact hotfix map deck archive');
+const {base:hotfixBase,current:hotfixHead,files:hotfixFiles}=JSON.parse(gunzipSync(hotfixArchive));
+assert.equal(hotfixBase,'5a972c7371d0217ce4d9806df35ba1464c50f40f');
+assert.equal(hotfixHead,'3a183740e22de90a01d809cca13f92bc1ee345c1');
+const deckLayout='scripts/deck-ui-layout.mjs';
+assert.deepEqual(Object.keys(hotfixFiles).sort(),[...Object.keys(files),deckLayout].sort());
+for(const [path,{before}] of Object.entries(hotfixFiles))assert(current(before.source,before),'exact hotfix map deck predecessor: '+path);
+
+function hotfixPriorRead(read){
+  for(const [owner,{after}] of Object.entries(hotfixFiles)){
+    let live;
+    try{live=read(owner,'utf8');}catch{assert.fail('map deck linked owner missing: '+owner);}
+    const source=Buffer.isBuffer(live)?live.toString('utf8'):live;
+    const label=owner===deckLayout?'Forethought':'map deck';
+    assert(current(source,after),label+' linked owner identity: '+owner);
+  }
+  return (path,encoding)=>{
+    if(!Object.hasOwn(hotfixFiles,path))return read(path,encoding);
+    const source=hotfixFiles[path].before.source;
+    return encoding?source:Buffer.from(source);
+  };
 }
 
 const forethoughtSources=Object.freeze({
@@ -76,6 +102,13 @@ export function beforeMapRoomSource(path,source){
 }
 
 export function beforeMapDeckSource(path,source,read){
+  const helper=beforeHotfixMapDeckHelperSource(path,source);
+  if(helper!==source)return helper;
+  if(Object.hasOwn(hotfixFiles,path)&&current(source,hotfixFiles[path].after)){
+    const priorRead=hotfixPriorRead(read);
+    const prior=beforeMapDeckSource(path,priorRead(path,'utf8'),priorRead);
+    return source.includes('\r\n')?prior.replaceAll('\n','\r\n'):prior;
+  }
   const closeout=beforeReleaseUiCloseoutSource(path,source,read);
   const currentCloseout=closeout!==source;
   const closeoutRead=releaseUiCloseoutPriorRead(read,currentCloseout?path:undefined);

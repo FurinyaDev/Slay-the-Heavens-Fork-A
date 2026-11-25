@@ -15,7 +15,10 @@ test('refined templates allocate bounded physical tiers and emit matching data w
  assert.equal(typeof art.monsterActorTiers,'function');
  const result=art.monsterActorTiers(input);
  const counts=result.templates.map(t=>[t.name,art.monsterActorInventory(t).shapesPerActor,descendants(t).length]);
- assert.deepEqual(counts,[['AbyssMonsterActor',0,35],['AbyssMonsterActor41',41,79],['AbyssMonsterActor96',96,135],['AbyssMonsterActor115',115,154]]);
+ assert.deepEqual(counts,[['AbyssMonsterActor',0,36],['AbyssMonsterActor41',41,80],['AbyssMonsterActor96',96,136],['AbyssMonsterActor115',115,155]]);
+ const hpHit=result.templates[0].children.find(child=>child.name==='hpHit');
+ assert.equal(hpHit?.kind,'cursorArea','shared actor base must cover the enemy HP bar');
+ assert.equal(hpHit.visible,false,'the HP bar hit area starts hidden');
  assert.equal(result.artData.poolCapacity,115);
  assert(!Object.hasOwn(result.artData,'asset'));
  assert.deepEqual(Object.values(result.artData.assets).map(a=>a.capacity),[41,96,115]);
@@ -40,6 +43,29 @@ test('legacy allocation remains explicit and the refined no-art variant has no p
  assert.equal(art.monsterActorInventory(old).shapesPerActor,600);
  const off=art.monsterActorTiers(null);
  assert.deepEqual(off,{templates:[art.monsterActorTemplate(null)],templateByDefinition:{},artData:null});
+});
+
+test('refined payload decodes and caches only the requested drawing',()=>{
+ const slot={image:100002,imageType:'stretch',position:[-1.25,2],size:[8,7],pivot:[.5,.5],
+  anchorMin:[.5,.5],anchorMax:[.5,.5],scale:[1,1],rotation:[0,35.5,-22],colour:[120,180,90,128]};
+ const payload=art.monsterArtPayloadSource({status:'refined-release',assets:{first:{slots:[slot]},second:{slots:[slot]}}});
+ const temp=mkdtempSync(join(tmpdir(),'abyss-lazy-monster-art-'));
+ try {
+  const entry=join(temp,'entry.lua');
+  writeFileSync(entry,`
+local art=assert(load(${luaString(payload)}))()
+local first,second=art.assets.first,art.assets.second
+assert(rawget(first,'slots')==nil and rawget(second,'slots')==nil,'catalogue decoded during load')
+local slots=first.slots
+assert(slots==first.slots and slots==rawget(first,'slots'),'selected drawing was not cached')
+assert(#slots==1 and slots[1].image==100002 and slots[1].imageType=='stretch')
+assert(slots[1].position[1]==-1.25 and slots[1].rotation[2]==35.5 and slots[1].colour[4]==128)
+assert(rawget(second,'slots')==nil,'request decoded unrelated drawing')
+assert(second.slots~=slots and second.slots[1].rotation~=slots[1].rotation)
+`);
+  const result=runLua(entry);
+  assert.equal(result.status,0,result.stdout+result.stderr);
+ }finally{rmSync(temp,{recursive:true,force:true});}
 });
 
 test('real native art writer renders three tiers, leaves no-art fallback, and reclaims cross-tier actor',()=>{

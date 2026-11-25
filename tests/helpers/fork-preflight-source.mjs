@@ -9,6 +9,7 @@ import {beforeV2UiEvidence,beforeV2UiPreTinyHouseSource} from './v2-p1-ci-source
 import {beforeCharacterPreparationCiSource} from './character-preparation-source.mjs';
 import {integratedCiBytes} from './integrated-ci-binding.mjs';
 import {stsStylePriorRuntime} from './sts-style-prior-runtime.mjs';
+import {beforeCheckoutStorageSource} from './checkout-storage-source.mjs';
 // Full-source continuation for historical contracts; no partial/foreign projection.
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
@@ -279,6 +280,12 @@ function beforeShopPurchaseRegression(path,source){
  return source.includes('\r\n')?prior.replaceAll('\n','\r\n'):prior;
 }
 function beforeReleaseUiBuildSource(path,source){
+ source=beforeCheckoutStorageSource(path,source);
+ if(path==='tests/build-ui-input-protection.test.mjs'&&typeof source==='string'&&!source.includes('\r\r\n')&&hash(normalize(source))==='350b6053009eb11736bca1646c4193d15413e7a3d3971ac7de55250f78d01138'){
+  const prior=normalize(source).replace("'abyss_ui_templates.lua', 'abyss_deck_browser_binding.lua', 'abyss_ui_profile.lua'","'abyss_ui_templates.lua', 'abyss_ui_profile.lua'");
+  assert.equal(hash(prior),'ee2171a48378827f623bed2795c7924c5cf1c2548fecc1dfce016cb4e9620318','exact output inventory before deck browser coverage');
+  source=source.includes('\r\n')?prior.replaceAll('\n','\r\n'):prior;
+ }
  source=beforeCharacterSelectionSource(path,source);
  source=menuProofSuccessor.project(path,source);
  source=beforeSelectionReplaySuccessor(path,source);
