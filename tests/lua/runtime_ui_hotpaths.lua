@@ -50,6 +50,16 @@ assert(not name.visible and nameWrites==0,'hidden enemy name resubmitted '..name
 setNameVisible(name,true)
 ui:update(1/60)
 assert(not name.visible and nameWrites==1,'enemy name visibility did not recover after an external change')
+local reject=true
+name.SetVisible=function(self,value)
+ if reject then reject=false;return false end
+ return setNameVisible(self,value)
+end
+setNameVisible(name,true)
+ui:update(1/60)
+assert(name.visible and not reject,'native rejection fixture did not attempt the hide')
+ui:update(1/60)
+assert(not name.visible,'enemy name visibility was not retried after a rejected write')
 name.SetVisible=setNameVisible
 -- Native visibility writes occur between activation and the final battle paint.
 -- Exercise a public command at that exact boundary; a first-paint-only shortcut

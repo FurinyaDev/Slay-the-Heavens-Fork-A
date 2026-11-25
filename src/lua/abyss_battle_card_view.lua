@@ -80,13 +80,6 @@ local function sameHandValues(first,second)
     for i=1,8 do if first[i]~=second[i] then return false end end
     return true
 end
-local function samePaintedPose(pose,values)
-    return pose.x==values[1] and pose.y==values[2] and pose.scale==values[3] and pose.angle==values[4]
-end
--- These are the target fields read by handValues; the others only drive motion.
-local function sameHandTarget(first,second)
-    return first.restAngle==second.restAngle and first.baseY==second.baseY and first.hitWidth==second.hitWidth
-end
 local function writeHandValues(box,hit,v)
     local accepted=box:SetAnchoredPosition(v[1],v[2])~=false
     accepted=box:SetLocalScale(v[3],v[3],1)~=false and accepted
@@ -100,11 +93,10 @@ end
 local function applyHandPose(entry,owner)
     local box,pose=entry.box,entry.current
     local hit=box:GetChild('hit')
-    local painted=handGeometry[box]
-    if painted and painted.values and painted.owner==owner and painted.hit[1]==hit and box.alive~=false
-        and hit.alive~=false and sameHandTarget(painted.target,entry.target)
-        and samePaintedPose(pose,painted.values) then return end
     local values=handValues(pose,entry.target)
+    local painted=handGeometry[box]
+    if painted and painted.owner==owner and painted.hit[1]==hit and box.alive~=false
+        and hit.alive~=false and sameHandValues(painted.values,values) then return end
     local pending={};handGeometry[box]=pending
     local ok,accepted=pcall(writeHandValues,box,hit,values)
     local current=handGeometry[box]==pending
@@ -112,15 +104,7 @@ local function applyHandPose(entry,owner)
     if not ok then error(accepted,0) end
     -- A nested setter may replace the pose or finish in a different order.
     if accepted and current and sameHandValues(values,handValues(entry.current,entry.target)) then
-        handGeometry[box]={owner=owner,target=entry.target,values=values,hit=setmetatable({hit},{__mode='v'})}
-    end
-end
-
-local function rememberPosition(positions,uid,current)
-    local prior=positions[uid]
-    if not prior or prior[1]~=current.x or prior[2]~=current.y then
-        -- Gestures and feedback may still own the previous position.
-        positions[uid]={current.x,current.y}
+        handGeometry[box]={owner=owner,values=values,hit=setmetatable({hit},{__mode='v'})}
     end
 end
 
@@ -622,7 +606,7 @@ function M.new(view, controls)
             if not (held and held.moving and held.uid==uid) then
                 advancePose(entry,dt,view.fastMode==true)
                 applyHandPose(entry,handGeometryOwner)
-                rememberPosition(view.cardPositions,uid,entry.current)
+                view.cardPositions[uid]={entry.current.x,entry.current.y}
             end
         end
     end
