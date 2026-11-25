@@ -113,7 +113,11 @@ function deterministicCounts(sample) {
 
 function summarizeSamples(samples, count, samplePhases) {
   if (samples.length !== count || samples.some(sample => sample.error)) return { samples, pass: false };
-  for (const sample of samples) assert.deepEqual(deterministicCounts(sample), deterministicCounts(samples[0]), 'nondeterministic Host call counts');
+  // The lightweight worker has fixed-length updates. The production path waits on
+  // the real scheduler and may do a different number of updates before a page settles.
+  if (samplePhases === phases) {
+    for (const sample of samples) assert.deepEqual(deterministicCounts(sample), deterministicCounts(samples[0]), 'nondeterministic Host call counts');
+  }
   return {
     samples, pass: true,
     wallMs: summarize(samples.map(sample => sample.wallMs)),
