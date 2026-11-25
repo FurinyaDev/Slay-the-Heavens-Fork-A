@@ -114,14 +114,18 @@ local function click(panel,button)
     assert(accepted,'native input rejected: '..panel..'/'..button)
     return settle()
 end
+local retiredSelection={deckTitle=true,deckSummary=true,deckRule=true,deckOpen=true,deckView=true}
+local function assertSelectionDetails(node)
+    for _,control in ipairs(node:GetChildren()) do
+        assert(not retiredSelection[control.name],'FORMAL_RETIRED_SELECTION_CONTROL '..control.name)
+        assertSelectionDetails(control)
+    end
+end
 local function enterMap()
     click('menuPanel','start')
     if not host.characterSelection.info then click('characterPanel','traveler') end
     local details=stage:GetChild('characterPanel'):GetChild('details')
-    local retired={deckTitle=true,deckSummary=true,deckRule=true,deckOpen=true,deckView=true}
-    for _,control in ipairs(details:GetChildren()) do
-        assert(not retired[control.name],'FORMAL_RETIRED_SELECTION_CONTROL '..control.name)
-    end
+    assertSelectionDetails(details)
     click('characterPanel','confirm')
     assert(host.run.runSeed=='42' and host.run.nodeFlow.event.id=='neow')
     for _,option in ipairs({1,2,1}) do click('nodePanel','eventView/option'..option) end
