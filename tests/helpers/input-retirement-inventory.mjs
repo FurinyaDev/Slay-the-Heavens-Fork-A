@@ -17,6 +17,11 @@ const inputRetirementLuaTests=Object.freeze({
  'tests/lua/pointer_cover_ownership.lua':['eb14e1f188aa70fb74dfc3095f20e77878568d415c2d847d49d30584b2a835f2','ac0a41487871098126b45c7df0ba2d4737ebe127'],
  'tests/lua/relic_view_input.lua':['8e9ee14e9294e7ab4245964673024361733963f959900b8ea72cc52a9de14525','58909591f427a365c40e2a05d3fe607412b4b83f'],
 });
+// #951 changes the live encounter/monster references in both input fixtures.
+const releaseTextLuaTests=Object.freeze({
+ 'tests/lua/pointer_cover_ownership.lua':['e2e18e5a78cfbe453baf7cac36a078a4a799ddba27f1d8608e47b03a48ee4c6d','242a7b4b930715aaf1a514b9ef66c92777674678'],
+ 'tests/lua/relic_view_input.lua':['ccb71a4413a589eb0e9e6900abb28d4182360bf00136980027d9ec364a9b8361','bb983e8616bc39f986c920a8a38cfc6678d13912'],
+});
 const retiredInputLuaTests=[
  'tests/lua/controller.lua','tests/lua/controller_current.lua','tests/lua/controller_host.lua',
  'tests/lua/controller_rooms.lua','tests/lua/deck_controller_lifecycle.lua',
@@ -25,8 +30,11 @@ const retiredInputLuaTests=[
 function assertInputRetirementLuaSources(read){
  for(const [path,[sha,id]] of Object.entries(inputRetirementLuaTests)){
   const source=read(path,'utf8');
-  assert(typeof source==='string'&&!source.includes('\r\r\n')&&hash(normalize(source))===sha&&blob(normalize(source))===id,
-   'fresh Lua input retirement inventory source: '+path);
+  const message='fresh Lua input retirement inventory source: '+path;
+  assert(typeof source==='string'&&!source.includes('\r\r\n'),message);
+  const lf=normalize(source),digest=hash(lf),gitBlob=blob(lf);
+  const successor=releaseTextLuaTests[path];
+  assert((digest===sha&&gitBlob===id)||(successor&&digest===successor[0]&&gitBlob===successor[1]),message);
  }
  for(const path of retiredInputLuaTests)
   assert.throws(()=>read(path,'utf8'),{code:'ENOENT'},'retired Lua input inventory source must be absent: '+path);
