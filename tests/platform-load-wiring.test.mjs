@@ -30,7 +30,8 @@ function assertCurrentWiring(source, packageSource) {
   }
   assert.equal((source.match(/run: npm run check:platform-load/g)||[]).length,1,'one fast platform gate');
   const {scripts}=JSON.parse(packageSource);
-  assert.equal(scripts['check:platform-load'],'npm run build:data && npm run build:ui && node scripts/platform-load.mjs daily');
+  assert.equal(scripts['check:platform-load'],
+    'npm run build:data && npm run build:ui && npm run check:release-text -- --generated=build/lua && node scripts/platform-load.mjs daily');
   assert.equal(scripts['verify:platform-load'],'node scripts/platform-load.mjs release');
   assert.equal(scripts['check:rules'].split(' && ').filter(command=>command==='npm run check:platform-load').length,1,'ordinary complete check retains daily platform acceptance');
   assert.equal(scripts.check,'npm run check:rules && npm run test:presentation');
@@ -48,6 +49,10 @@ test('current fast and Full platform gates retain their package commands, owners
     normalized.replace('name: platform-load-posix-','name: platform-load-other-'),
   ]){assert.notEqual(drift,normalized,'current negative control changes real wiring');assert.throws(()=>assertCurrentWiring(drift,currentPackage));}
   const changed=JSON.parse(currentPackage);changed.scripts['check:platform-load']='node scripts/platform-load.mjs daily';
+  assert.throws(()=>assertCurrentWiring(source,JSON.stringify(changed)));
+  changed.scripts['check:platform-load']=JSON.parse(currentPackage).scripts['check:platform-load']
+    .replace('npm run check:release-text -- --generated=build/lua && ','');
+  assert.notEqual(changed.scripts['check:platform-load'],JSON.parse(currentPackage).scripts['check:platform-load']);
   assert.throws(()=>assertCurrentWiring(source,JSON.stringify(changed)));
   changed.scripts['check:platform-load']=JSON.parse(currentPackage).scripts['check:platform-load'];
   changed.scripts['check:rules']=changed.scripts['check:rules'].replace('npm run check:platform-load && ','');
