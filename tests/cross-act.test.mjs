@@ -25,6 +25,18 @@ test('consecutive chapter queues, full-unlock boss shuffles and card counter sta
   const vectors=JSON.parse(readFileSync('tests/fixtures/sts1-chapter-queues.json','utf8'));
   const dir=mkdtempSync(join(tmpdir(),'abyss-chapter-vectors-'));
   try {
+    // The pinned source vectors keep the original encounter names. #951
+    // renamed only these chapter-2 labels; never normalize production output.
+    const liveEncounter = new Map([
+      ['Cultist and Chosen', 'Raven Adept and Chosen'],
+      ['3 Cultists', '3 Raven Adepts'],
+      ['Slavers', 'Arena Guards'],
+    ]);
+    const expectedCases = vectors.cases.map(v => ({ ...v, acts: v.acts.map(a => a.act !== 2 ? a : ({
+      ...a,
+      normal: a.normal.map(id => liveEncounter.get(id) ?? id),
+      elite: a.elite.map(id => liveEncounter.get(id) ?? id),
+    })) }));
     const file=join(dir,'check.lua');
     writeFileSync(file,`local Q=require('abyss_encounter_queue')
 local R=require('abyss_sts_random')
@@ -36,7 +48,7 @@ local function same(a,b,path)
  for k,v in pairs(a)do same(v,b[k],path..'.'..tostring(k))end
  for k in pairs(b)do assert(a[k]~=nil,path..' missing '..tostring(k))end
 end
-for _,v in ipairs(${toLua(vectors.cases)})do
+for _,v in ipairs(${toLua(expectedCases)})do
  local prior=Q.new(v.seed)
  for _,a in ipairs(v.acts)do
   same(R.snapshot(prior.monsterRng),a.before)
