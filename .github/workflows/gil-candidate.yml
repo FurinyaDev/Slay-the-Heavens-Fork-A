@@ -144,6 +144,7 @@ jobs:
         env:
           SOURCE_REF: ${{ inputs.source_ref }}
           SOURCE_SHA: ${{ inputs.source_sha }}
+          WORK_KEY: ${{ steps.candidate.outputs.work_key }}
           BASE_SHA256: ${{ steps.candidate.outputs.base_sha256 }}
           REQUEST_ID: ${{ steps.candidate.outputs.request_id }}
           RELEASE_VERSION: ${{ steps.candidate.outputs.release_version }}

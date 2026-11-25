@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
@@ -18,6 +18,19 @@ const request = changes => approvedRequest(JSON.stringify({ ...approval, ...chan
 const branch = 'hotfix/v2.1.1';
 const version = 'v2.1.1';
 const hotfix = candidateTarget(branch, sourceSha);
+
+test('trusted develop owns protection, while audit receives the bound build context', () => {
+  const workflow = readFileSync(new URL('../.github/workflows/gil-candidate.yml', import.meta.url), 'utf8').replaceAll('\r\n', '\n');
+  assert.match(workflow, /^    if: github\.event_name == 'workflow_dispatch' && github\.repository_id == '1429751262' && github\.ref == 'refs\/heads\/develop'$/m);
+  assert.match(workflow, /^          GIL_BASE_URL: \$\{\{ secrets\.GIL_BASE_URL \}\}$/m);
+  assert.equal(workflow.match(/secrets\./g).length, 1);
+  const audit = workflow.slice(workflow.indexOf('- name: Audit the final GIL'), workflow.indexOf('- uses: actions/upload-artifact'));
+  for (const [name, expression] of Object.entries({
+    SOURCE_REF: 'inputs.source_ref', SOURCE_SHA: 'inputs.source_sha', WORK_KEY: 'steps.candidate.outputs.work_key',
+    BASE_SHA256: 'steps.candidate.outputs.base_sha256', REQUEST_ID: 'steps.candidate.outputs.request_id',
+    RELEASE_VERSION: 'steps.candidate.outputs.release_version',
+  })) assert(audit.includes(`          ${name}: ${'${{'} ${expression} }}\n`), `audit requires ${name}`);
+});
 
 function formalApi({ comparison = { status: 'ahead', merge_base_commit: { sha: sourceSha } },
   conclusion = 'success', absentJob = '', runAttempt = 1, target = 'develop', event = 'push', refHead = sourceSha } = {}) {
