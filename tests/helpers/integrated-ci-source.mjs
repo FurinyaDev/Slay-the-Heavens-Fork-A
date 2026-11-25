@@ -50,6 +50,10 @@ const integratedEvidenceSuccessors=Object.freeze({
  'data/presentation/ui_theme.json':{
   sha256:'72cae11890ce1a018fa145152188cd6ff6779f899db201f9d3799171db7abb4e',gitBlob:'2d5262e17653444c27bba75679748ccc06ea1d09',
  },
+ // #951 adds release-text checks to the active syntax and platform scripts.
+ 'package.json':{
+  sha256:'ba29a08fc203195bba8c9acd047274167f2de046f8a29e54a681f72faa314e77',gitBlob:'8b3f35c25c42aa7276a5ab334ae7112fe9dbe01b',
+ },
 });
 export function assertIntegratedLuaFixturesCurrent(read){
  for(const [path,binding] of Object.entries(luaFixtureSuccessors))
