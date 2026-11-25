@@ -12,7 +12,9 @@
 
 ## Windows Full 冷检出
 
-精确迁移 12 份既有二进制的存储方式，继续使用现有有界 CI 媒体清单。原 Git blob、实际字节、SHA-256 及来源均有收据。认证空 LFS 缓存从 GitHub 读回 28,855,381 字节，逐项一致。真实冷 Git fetch/checkout 与原比较代码在集成提交 `3a183740` 上总 pack 为 128,558,065 字节，较基线 156,036,676 字节减少 27,478,611 字节，低于 128 MiB门槛 5,659,663 字节。保留原工作流分片、上限和字节验证。 [冷检出收据](cold-checkout.txt) · [对象身份](lfs-selected.tsv)
+初试迁移 12 份既有二进制的存储方式，继续使用现有有界 CI 媒体清单。原 Git blob、实际字节、SHA-256 及来源均有收据。认证空 LFS 缓存从 GitHub 读回 28,855,381 字节，逐项一致。真实冷 Git fetch/checkout 与原比较代码在集成提交 `3a183740` 上总 pack 为 128,558,065 字节，较基线 156,036,676 字节减少 27,478,611 字节，低于 128 MiB门槛 5,659,663 字节。保留原工作流分片、上限和字节验证。 [冷检出收据](cold-checkout.txt) · [对象身份](lfs-selected.tsv)
+
+首次 Hosted 预检发现初试清单引用了已退役的菜单图。该图已恢复到原 Git blob 与原来源记录，最终只迁移其余 11 份。`ea8eab9a` 通过现有 UI 引用比较及冷 Git 复测，pack 为 131,992,819 字节，低于 128 MiB 2,224,909 字节。 [首次预检日志](https://github.com/FurinyaWorks/Slay-the-Heavens/actions/runs/45532312603/job/138930380080) · [冷检出收据](cold-checkout.txt)
 
 ## 有声包和注册
 

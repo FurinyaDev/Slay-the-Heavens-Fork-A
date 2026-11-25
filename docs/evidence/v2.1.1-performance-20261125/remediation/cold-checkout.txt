@@ -4,3 +4,11 @@ checkoutPack=127837527
 comparisonReadyPack=128558065
 Hosted checkout Git pack payload: 128558065 bytes
 ::warning::Hosted checkout received over 32 MiB; check whether this is an expected first download
+
+ea8eab9a, retired reference preserved
+metadataPack=400119
+checkoutPack=131092643
+{"parents":["fe60c81154004f244aafb4401e33b8095004a6ec"],"base":"eb64f4e6cd45198118e123b6640dc491f186e329","objects":9913,"fetched":42,"bytes":2534546}
+comparisonReadyPack=131992819
+Hosted checkout Git pack payload: 131992819 bytes
+::warning::Hosted checkout received over 32 MiB; check whether this is an expected first download
