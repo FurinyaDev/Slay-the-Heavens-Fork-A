@@ -16,7 +16,7 @@ import { toLua } from './build-lua-data.mjs';
 import { battleLayout, enemyPowerTemplate } from './ui-layout.mjs';
 import { attachEntranceLayers } from './ui-entrance-layout.mjs';
 import { gameLayout } from './game-ui-layout.mjs';
-import { withViewport } from './viewport-layout.mjs';
+import { withViewport, anchorBattlePeriphery } from './viewport-layout.mjs';
 import { buildUiTheme } from './build-ui-theme.mjs';
 import { buildMapUI } from './map-ui-layout.mjs';
 import { deckCardTemplate, battlePileCardTemplate, plainBrowserCardTemplate, deckBrowserBindingModule, deckBrowserBindingSource, deckBrowserParts, splitDeckBrowserCard } from './deck-ui-layout.mjs';
@@ -214,6 +214,7 @@ export function buildUI(outputDirectory = 'build/lua', python = process.env.ABYS
   forgeCard.children = forgeCard.children.filter(control => control.name !== 'matchBack');
   templates.push(forgeCard);
   if (officialAssets) assertOfficialRunContracts([battle, layout, ...templates]);
+  anchorBattlePeriphery(stage, theme.canvas.base[0], officialAssets);
   const browserParts=officialAssets&&nativePageLifecycle?deckBrowserParts:[];
   if(browserParts.length)templates.push(...splitDeckBrowserCard(templates.find(t=>t.name==='AbyssBattlePileCard')));
   for (const tree of [battle, layout, ...templates]) assertNativeUiCapacity(tree);
