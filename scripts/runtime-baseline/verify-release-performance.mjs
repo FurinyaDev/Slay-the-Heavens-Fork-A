@@ -7,6 +7,7 @@ import {pathToFileURL} from 'node:url';
 import {validateSample} from '../benchmark-runtime-path.mjs';
 import {compareSamples, matchingResourceCaps, parseResources, profiles} from './resource-receipt.mjs';
 import {productionPhases} from './production-inputs.mjs';
+import {resolvePublishedBaseline} from './published-baseline.mjs';
 
 const sha256 = bytes => createHash('sha256').update(bytes).digest('hex');
 const hash = /^[a-f0-9]{64}$/;
@@ -38,7 +39,7 @@ function verifySample(sample, profile) {
   ].map(([key, value]) => `RESOURCE ${key} ${value}`).join('\n'), profile);
 }
 
-export function verifyResourceReport(report, sourceCommit, sourceTree, publishedCommit, receipt) {
+export function verifyResourceReport(report, sourceCommit, sourceTree, published, receipt) {
   assert.equal(report.kind, 'offline-production-host-resource-pressure', 'Formal production resource report required');
   assert.equal(report.status, 'PASS', 'Resource workload failed');
   assert.equal(report.mode, 'full', 'All six tiers required');
@@ -50,8 +51,9 @@ export function verifyResourceReport(report, sourceCommit, sourceTree, published
     'Missing raw run environment');
   assert.equal(report.candidate?.commit, sourceCommit, 'Report and frozen source differ');
   assert.equal(report.candidate?.tree, sourceTree, 'Report and frozen source tree differ');
-  assert.notEqual(publishedCommit, sourceCommit, 'Use a distinct previously published reference');
-  assert.equal(report.baseline?.commit, publishedCommit, 'Comparison is not the published build source');
+  assert.notEqual(published.commit, sourceCommit, 'Use a distinct previously published reference');
+  assert.equal(report.baseline?.commit, published.commit, 'Comparison is not the published build source');
+  assert.equal(report.baseline?.tree, published.tree, 'Comparison is not the published build tree');
   for (const arm of [report.candidate, report.baseline]) {
     assert(commit.test(arm.tree) && hash.test(arm.workloadSha256) && hash.test(arm.generatedLuaSha256) &&
       hash.test(arm.lockfile?.dependencies), 'Incomplete source, workload or dependency evidence');
@@ -92,9 +94,11 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
     console.log(JSON.stringify(result));
   };
   try {
-    const [gil, candidate, auditPath, evidence, publishedCommit, ...extra] = process.argv.slice(2);
-    assert(gil && candidate && auditPath && evidence && commit.test(publishedCommit) && !extra.length,
-      'Use verify-release-performance.mjs <final.gil> <candidate.json> <audit.json> <report.json> <published-source-sha>');
+    mkdirSync('build', {recursive: true});
+    writeFileSync(destination, JSON.stringify({status: 'RUNNING'}) + '\n');
+    const [gil, candidate, auditPath, evidence, ...extra] = process.argv.slice(2);
+    assert(gil && candidate && auditPath && evidence && !extra.length,
+      'Use verify-release-performance.mjs <final.gil> <candidate.json> <audit.json> <report.json>');
     const head = ref => execFileSync('git', ['rev-parse', ref], {encoding: 'utf8'}).trim();
     const sourceCommit = head('HEAD');
     const sourceTree = head('HEAD^{tree}');
@@ -102,10 +106,12 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
     const {receipt, gilSha256} = verifyAuditedBuild(readFileSync(gil), readFileSync(candidate), JSON.parse(auditBytes), sourceCommit);
     const bytes = readFileSync(evidence);
     const raw = JSON.parse(bytes);
-    const signals = verifyResourceReport(raw, sourceCommit, sourceTree, publishedCommit, receipt);
+    const {version} = JSON.parse(readFileSync('package.json'));
+    const published = await resolvePublishedBaseline(version);
+    const signals = verifyResourceReport(raw, sourceCommit, sourceTree, published, receipt);
     const status = Object.keys(signals).length ? 'REVIEW_REQUIRED' : 'OFFLINE_RESOURCE_VERIFIED';
     write({status, sourceCommit, sourceTree, gilSha256, buildId: receipt.buildId, payloadDigest: receipt.payloadDigest,
-      publishedCommit, configuration: raw.candidate.configuration, environment: raw.engine,
+      published, configuration: raw.candidate.configuration, environment: raw.engine,
       strictAudioAuditSha256: sha256(auditBytes), rawReportSha256: sha256(bytes), signals});
     if (status === 'REVIEW_REQUIRED') process.exitCode = 1;
   } catch (error) {

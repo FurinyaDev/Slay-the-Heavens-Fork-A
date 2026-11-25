@@ -23,7 +23,7 @@ on:
         options: [fast, full, formal]
         default: full
       base_sha:
-        description: Exact comparison commit. Formal mode requires the last published build source.
+        description: Optional exact comparison commit for Fast or Full diagnostics.
         type: string
 permissions:
   contents: read
@@ -54,6 +54,7 @@ jobs:
           PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
           MANUAL_BASE_SHA: ${{ inputs.base_sha }}
           RESOURCE_MODE: ${{ github.event_name == 'pull_request' && 'fast' || inputs.mode }}
+          GH_TOKEN: ${{ github.token }}
           GIT_LFS_SKIP_SMUDGE: '1'
           GIT_TERMINAL_PROMPT: '0'
         run: |
@@ -62,18 +63,27 @@ jobs:
           if [ "$mode" = formal ]; then
             test "$GITHUB_EVENT_NAME" = workflow_dispatch
             [[ "$GITHUB_REF" == refs/heads/release/* ]]
-            [[ "$MANUAL_BASE_SHA" =~ ^[0-9a-f]{40}$ ]]
+            test -z "$MANUAL_BASE_SHA"
           fi
           npm_flags=(--ignore-scripts --prefer-offline --no-audit --no-fund --fetch-retries=0 --fetch-timeout=30000)
+          npm ci "${npm_flags[@]}"
+          node --test tests/release-performance.test.mjs
           BASE_SHA=${MANUAL_BASE_SHA:-${PR_BASE_SHA:-$(git rev-parse --verify HEAD^ 2>/dev/null || true)}}
+          if [ "$mode" = formal ]; then
+            version=$(node -p "require('./package.json').version")
+            published=$(node scripts/runtime-baseline/published-baseline.mjs "$version")
+            BASE_SHA=$(node -p 'JSON.parse(process.argv[1]).commit' "$published")
+            BASE_TREE=$(node -p 'JSON.parse(process.argv[1]).tree' "$published")
+          fi
           if [ -n "$BASE_SHA" ]; then
             [[ "$BASE_SHA" =~ ^[0-9a-f]{40}$ ]]
             if ! git cat-file -e "${BASE_SHA}^{commit}"; then
               git -c credential.helper= -c http.lowSpeedLimit=1024 -c http.lowSpeedTime=30 fetch --depth=1 --no-tags origin "$BASE_SHA"
             fi
           fi
-          npm ci "${npm_flags[@]}"
-          node --test tests/release-performance.test.mjs
+          if [ "$mode" = formal ]; then
+            test "$(git rev-parse "$BASE_SHA^{tree}")" = "$BASE_TREE"
+          fi
           prepare() {
             if [ "$mode" = formal ]; then
               git -c lfs.transfer.maxretries=0 -c lfs.activitytimeout=30 lfs pull \
@@ -94,7 +104,7 @@ jobs:
             git worktree add --detach "$reference" "$BASE_SHA"
             (cd "$reference" && npm ci "${npm_flags[@]}" && prepare)
             args+=(--baseline "$reference")
-            if [ -z "$MANUAL_BASE_SHA" ]; then
+            if [ "$mode" != formal ] && [ -z "$MANUAL_BASE_SHA" ]; then
               args+=(--baseline-if-compatible)
             fi
           elif [ -n "$MANUAL_BASE_SHA" ]; then
