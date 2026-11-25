@@ -105,9 +105,9 @@ function M.install(owner, _ownership, host, dependencies)
     local function hasCursorPair(first,second)
         return host.cursor and host.cursor[first] and host.cursor[second]
     end
-    local function closeTransientCard(control)
+    local function closeTransientHelp(control)
         local info=owner.info
-        if info and info.source==control and info.transient and info.kind then
+        if info and info.source==control and info.transient then
             dependencies.closeInfo(true)
             return true
         end
@@ -138,8 +138,8 @@ function M.install(owner, _ownership, host, dependencies)
             local info=owner.info
             if not (hoverSlot and info and info.press) then return false end
             if info.source==control and event and info.press.touch==event.touchId then
-                dependencies.closeInfo()
-                owner:render(true)
+                local _,_,handFocus=dependencies.closeInfo()
+                if info.kind=='card' then owner:renderDetailsOnly(false,handFocus) else owner:render(true) end
             end
             return true
         end
@@ -157,7 +157,7 @@ function M.install(owner, _ownership, host, dependencies)
             if input.engineDestroyed then forgetHelp(control,hoverSlot,input);return end
             input.held,input.released,input.consumed=nil,nil,nil
             if cancelCardRead(event) then return end
-            local closed=closeTransientCard(control)
+            local closed=closeTransientHelp(control)
             if hoverSlot and owner.hover==hoverSlot then owner:setHover(nil) end
             if owner.help and owner.help.source==control then owner.help=nil end
             if closed and not silent then owner:renderDetailsOnly() end
@@ -288,7 +288,11 @@ function M.install(owner, _ownership, host, dependencies)
         end
         local info = dependencies.child("statusInfo")
         info.disableCursorEventPassthrough = true
-        dependencies.listen(info:GetChild("hit"), function() if dependencies.closeInfo() then owner:renderDetailsOnly() end end)
+        local function dismissInfo()
+            local closed,_,handFocus=dependencies.closeInfo()
+            if closed then owner:renderDetailsOnly(false,handFocus) end
+        end
+        dependencies.listen(info:GetChild("hit"),dismissInfo)
         -- A tap on the card itself turns to the next page; a single page closes like any tap.
         -- Not routed through listen(): that dismisses the open card before any handler runs.
         local function infoPage()
@@ -296,7 +300,7 @@ function M.install(owner, _ownership, host, dependencies)
             if not open then return end
             owner.swallow = nil
             if (open.pages or 1) > 1 then open.page = open.page % open.pages + 1 owner:renderDetailsOnly()
-            elseif dependencies.closeInfo() then owner:renderDetailsOnly() end
+            else dismissInfo() end
         end
         info:GetChild("page"):AddCursorEventListener(host.clickEvent,function(event)
             if Pointer.blocked(host.platform)then return false end

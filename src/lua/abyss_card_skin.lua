@@ -223,13 +223,21 @@ local function identity(definition)
     if definition.color=='colorless' then return 'colorless' end
     return 'traveler'
 end
+local function frameEdge(box,rarity,selected,tint)
+    local edge=rarity[1]
+    if selected then edge=premium and premium.selected or Theme.color.goldBright end
+    tint(box:GetChild('border'),edge);paint(box:GetChild('roundFrame'),roundNames,edge,tint)
+end
+function M.paintFocus(box,definition,selected,tint)
+    if referenceRoot(box) then return false end
+    frameEdge(box,config.rarities[definition.rarity] or config.rarities.basic,selected,tint)
+    decorations[box]=nil
+    return true
+end
 -- Premium chrome must not replace the grey/blue/gold rarity language.
 local function frame(box,definition,look,tint)
-    local rarities=config.rarities
-    local rarity=rarities[definition.rarity] or rarities.basic
-    local edge=rarity[1]
-    if look.selected then edge=premium and premium.selected or Theme.color.goldBright end
-    tint(box:GetChild('border'),edge);paint(box:GetChild('roundFrame'),roundNames,edge,tint)
+    local rarity=config.rarities[definition.rarity] or config.rarities.basic
+    frameEdge(box,rarity,look.selected,tint)
     tint(box:GetChild('nameRule'),rarity[4])
     local skin=box:GetChild('skin');tint(skin:GetChild('gloss'),rarity[4])
     for i=1,config.bandSteps do tint(skin:GetChild('band'..i),mix(rarity[2],rarity[3],(i-1)/(config.bandSteps-1)))end

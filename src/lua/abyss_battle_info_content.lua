@@ -72,7 +72,7 @@ function M.new(self, describe)
         local kind = describe.statusKind(entry)
         return { status = entry.id, icon = (Theme.icon.status[entry.id] or Theme.icon.status[entry.id:match('^colorless_bomb_') and 'colorless_bomb' or entry.icon]),
             colour = kind == "buff" and C.buff or C.debuff, tag = tag, text = text, note = note,
-            name = entry.name .. (entry.stack == "none" and "" or " " .. number(entry.amount)) }
+            name = entry.name .. ((entry.id == "strength" or entry.stack == "none") and "" or " " .. number(entry.amount)) }
     end
 
     local function intentCard(card, battle, info)
@@ -215,7 +215,7 @@ function M.new(self, describe)
             local body = row.text or ""
             if row.tag and row.tag ~= "" and tonumber(row.tag) == nil then body = body .. "。 " .. row.tag end
             if row.note and row.note ~= "" then body = body .. "。 " .. row.note end
-            rows[#rows + 1] = {name = row.name, body = body}
+            rows[#rows + 1] = {name = entry.originalV4 and row.name or entry.name, body = body}
         end
         return #rows > 0 and rows or nil
     end
