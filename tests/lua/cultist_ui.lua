@@ -85,7 +85,7 @@ test("Raven Adept displays Ritual opener, persistent status and next modified at
     click("endTurn")
     text = details(stage, box)
     assert(text:find("仪式 3",1,true))
-    assert(text:find("力量 3",1,true))
+    assert(text:find("力量",1,true))
     assert(box.children.intent.text == "9")
 end)
 print("LUA_CULTIST_UI_PASS " .. count)

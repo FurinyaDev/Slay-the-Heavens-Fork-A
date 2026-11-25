@@ -25,7 +25,7 @@ function M.install(owner, _ownership, host, _dependencies)
         hit:SetLocalScale(1,1,1)
         hit.localRotationZ = -box.localRotationZ
     end
-    local function placeCard(box, count, index, selected)
+    local function placeCard(box, count, index, selected, measureOnly)
         local w, h = L.card.size[1], L.card.size[2]
         local spacing = count <= 1 and 0 or math.max(L.hand.spacingMin, math.min(L.hand.spacingMax, (L.hand.maxWidth - w) / (count - 1)))
         local distance = index - (count - 1) / 2
@@ -36,15 +36,17 @@ function M.install(owner, _ownership, host, _dependencies)
         local baseY = math.max(floor,L.hand.y-math.abs(distance)*L.hand.arcDrop)
         local hotY = math.max(baseY+Theme.motion.hoverLift,-Theme.canvas.base[2]/2+Theme.canvas.safe.y+h*Theme.motion.hoverScale/2)
         local x, y = distance * spacing, selected and hotY or baseY
+        local laneWidth=count>1 and spacing or nil
+        local point={x, y, baseY=baseY,hitWidth=laneWidth}
+        if measureOnly then return point end
         box:SetAnchoredPosition(x, y)
         local scale = selected and Theme.motion.hoverScale or 1
         box:SetLocalScale(scale, scale, 1)
         box.localRotationZ = selected and 0 or angle
-        local laneWidth=count>1 and spacing or nil
         placeHandHit(box,w,h,angle,baseY,y,scale,laneWidth)
         box:GetChild("glow"):SetVisible(selected)
         box:SetAsLastSibling()
-        return {x, y, baseY=baseY,hitWidth=laneWidth}
+        return point
     end
     local function rewardTarget(slot)
         local hot = owner.hover == slot
@@ -68,21 +70,21 @@ function M.install(owner, _ownership, host, _dependencies)
     local function canHover()
         return owner.active and not owner.busy and not owner.gesture and not owner.carry
     end
-    local function refreshHover(previous,slot)
-        local view=host.cardView
-        return view and view.refreshHover and view.refreshHover(previous,slot)
+    local function hoverCard(run,slot)
+        if not run or not slot then return end
+        if run.phase=='combat' and run.combat.phase=='player' then return run.combat.hand[slot] end
+        if run.phase=='reward' and owner.rewardScreen=='cards' then return nil,Run.rewardOptions(run)[slot] end
     end
-    function owner:setHover(slot)
+    function owner:setHover(slot, full)
         local run = self.run
-        local reward = run and run.phase == 'reward' and self.rewardScreen == 'cards' and Run.rewardOptions(run)[slot]
-        local hand = run and run.phase == 'combat' and run.combat.phase == 'player' and run.combat.hand[slot]
+        local hand,reward = hoverCard(run,slot)
         if slot and not (canHover() and (reward or hand)) then slot,hand = nil,nil end
         if self.hover == slot then return end
-        local previous=self.hover
         self.hover = slot
         self.handHover = hand and {run=run,battle=run.combat,turn=run.combat.turn,slot=slot,uid=hand.uid}
-        if refreshHover(previous,slot)then return end
-        self:render(true)
+        if full then return self:render() end
+        if not host.cardView.refreshHover() then return self:render(true) end
+        if self.info then self:renderDetailsOnly() end
     end
     return {
         placeHandHit=placeHandHit, placeCard=placeCard, rewardTarget=rewardTarget, placeReward=placeReward, canHover=canHover

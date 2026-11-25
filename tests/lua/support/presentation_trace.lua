@@ -12,7 +12,9 @@ function M.serialize(value,seen)
     for _,key in ipairs(keys)do out[#out+1]=tostring(key)..'='..M.serialize(value[key],seen)end
     seen[value]=nil;return '{'..table.concat(out,',')..'}'
 end
-function M.new()
+function M.new(nativeWrites)
+    -- Setter backing fields and the historical trace's button projection are
+    -- fixture bookkeeping. Keep only SDK boundary calls in native write mode.
     local recorder={hash=0.0,count=0,nativeButtons={}}
     local transforms={}
     function recorder:add(value)
@@ -44,6 +46,7 @@ function M.new()
         local pile=kind=='cursorArea' and (path=='root/battlePanel/drawIcon/hit'
             or path=='root/battlePanel/discardIcon/hit' or path=='root/battlePanel/exhaustIcon/hit')
         local fields={}
+        local inSetter=false
         for key,value in pairs(control)do
             if type(value)~='function' and key~='children' and key~='parent' and key~='ui' and key~='kind' then
                 fields[key]=value;control[key]=nil
@@ -64,6 +67,10 @@ function M.new()
             end
             fields[key]=value
             if type(value)~='function' and key~='listeners' and key~='refreshCallback' then
+                if nativeWrites then
+                    if not inSetter then recorder:add({path,key,value}) end
+                    return
+                end
                 -- Exact inverse of the approved P0 API correction: presets now
                 -- mirror interactable into raycastTarget; three pile CursorAreas
                 -- use the supported raycastTarget in place of the old bad field.
@@ -72,10 +79,24 @@ function M.new()
                 recorder:add({path,pile and key=='raycastTarget' and 'interactable' or key,value})
             end
         end})
-        for _,name in ipairs({'SetVisible','SetImage','SetSizeDelta','SetLocalScale','SetAnchoredPosition','SetAsLastSibling'})do
+        local methods={'SetVisible','SetImage','SetSizeDelta','SetLocalScale','SetAnchoredPosition','SetAsLastSibling'}
+        if nativeWrites then
+            for _,name in ipairs({'SetActive','SetAnchorMin','SetAnchorMax','SetPivot','SetLocalRotation','SetAsFirstSibling','SetControllerNavigation'})do
+                methods[#methods+1]=name
+            end
+        end
+        for _,name in ipairs(methods)do
             local method=control[name]
             if method then rawset(control,name,function(owner,...)
                 recorder:add({path,name,{...}})
+                if nativeWrites then
+                    local previouslyInSetter=inSetter
+                    inSetter=true
+                    local ok,result=pcall(method,owner,...)
+                    inSetter=previouslyInSetter
+                    if not ok then error(result,0) end
+                    return result
+                end
                 return method(owner,...)
             end)end
         end

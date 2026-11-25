@@ -1,6 +1,5 @@
 local G = dofile("tests/lua/support/battle_gesture_fixture.lua")
 local Combat, L = G.F.Combat, G.F.Theme.layout
-local number = require("abyss_numbers").integer
 
 local function scene(mobile)
     local host, ui, panel, event, tap, drain = G.setup({"strike", "defend", "defend"}, nil,
@@ -32,7 +31,7 @@ do
     assert(not info.visible and #descriptions() == 0, "empty hover opens nothing")
     Combat.addStatus(actor, "strength", 3)
     ui:render()
-    contains(descriptions()[1], "力量 3")
+    contains(descriptions()[1], "攻击伤害提升 3 点。")
     assert(#descriptions() == 1 and not info:GetChild("hit").visible and not info:GetChild("page").visible)
     assert(info.disableCursorEventPassthrough == false)
     for _, name in ipairs({"title", "tag", "summary", "guard", "more", "plate"}) do
@@ -44,7 +43,7 @@ do
     local ordered = Combat.statusView(actor)
     local weak, strength
     for i, entry in ipairs(ordered) do
-        contains(descriptions()[i], entry.name .. " " .. number(entry.amount))
+        contains(descriptions()[i], ">" .. entry.name .. "</color>")
         if entry.id == "weak" then weak = i else strength = i end
     end
     contains(descriptions()[weak], "2 回合")
@@ -52,10 +51,10 @@ do
         icon(weak).enter()
         hero.exit()
         assert(#descriptions() == 1)
-        contains(descriptions()[1], "虚弱 2")
+        contains(descriptions()[1], ">虚弱</color>")
         icon(strength).enter()
         icon(weak).exit()
-        contains(descriptions()[1], "力量 2")
+        contains(descriptions()[1], "攻击伤害提升 2 点。")
         hero.enter()
         icon(strength).exit()
         assert(#descriptions() == 2)
@@ -68,7 +67,7 @@ do
     actor.statuses.weak = nil
     ui:render()
     assert(not panel:GetChild("hero"):GetChild("statusRow"):GetChild("hit2").visible)
-    if weak == 1 then contains(descriptions()[1], "力量 2") else assert(not info.visible) end
+    if weak == 1 then contains(descriptions()[1], "攻击伤害提升 2 点。") else assert(not info.visible) end
     hero.enter()
     actor.statuses.strength = nil
     ui:render()
@@ -119,9 +118,9 @@ do
     local entries = Combat.statusView(actor)
     touch(icon(2), 7)
     assert(#descriptions() == 1)
-    contains(descriptions()[1], entries[2].name .. " " .. number(entries[2].amount))
+    contains(descriptions()[1], ">" .. entries[2].name .. "</color>")
     touch(icon(1), 7)
-    contains(descriptions()[1], entries[1].name .. " " .. number(entries[1].amount))
+    contains(descriptions()[1], ">" .. entries[1].name .. "</color>")
     ground.click({touchId = 7})
     assert(not info.visible and not ground.visible)
     assert(hp == actor.hp and energy == battle.energy and hand == #battle.hand)
@@ -206,7 +205,8 @@ for _, mobile in ipairs({false, true}) do
     if mobile then power.down(event) else power.enter() end
     ui:update(L.statusInfo.delay)
     assert(info.visible and ui.info and #descriptions() == 0, "non-traveler icons retain the shared readout")
-    contains(info:GetChild("name1").text, "力量 3")
+    assert(info:GetChild("name1").text == "力量")
+    contains(info:GetChild("text1").text, "攻击伤害提升 3 点。")
     if mobile then
         power.up(event)
         power.click(event)
@@ -238,7 +238,14 @@ for _, from in ipairs({"silent", "ironclad"}) do
     icon(1).click(e)
     local info = panel:GetChild("statusInfo")
     assert(info.visible, "a fresh tap still opens the current status")
-    contains(ui.info and info:GetChild("name1").text or descriptions()[1], "虚弱 2")
+    local copy = descriptions()[1]
+    if copy then
+        contains(copy, ">虚弱</color>")
+        contains(copy, "剩余 2 回合")
+    else
+        assert(info:GetChild("name1").visible)
+        contains(info:GetChild("name1").text, "虚弱 2")
+    end
 end
 
 print("TRAVELER_POWER_TOOLTIP_PASS")
