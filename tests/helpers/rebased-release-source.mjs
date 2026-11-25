@@ -4,6 +4,7 @@ import {createHash} from 'node:crypto';
 import {readFileSync} from 'node:fs';
 import {gunzipSync} from 'node:zlib';
 import {exactSourceMatches as matches} from './source-fingerprint.mjs';
+import {battlePeripheryPredecessor} from './battle-periphery-source.mjs';
 import {authenticateInputRetirement,beforeInputRetirement} from './input-retirement-source.mjs';
 const hash=(s,algorithm='sha256')=>createHash(algorithm).update(s).digest('hex');
 const archive=readFileSync(new URL('./rebased-release-source.json.gz',import.meta.url));
@@ -66,10 +67,10 @@ function historical(rows,path,source){
 }
 export function exactReviewedBuildInput(path,read,{beforeReviewedInput}={}){
  if(!Object.hasOwn(reviewedBuild.files,path))return undefined;
- const source=read(path,'utf8');
+ const {source,read:historicalRead}=battlePeripheryPredecessor(path,read(path,'utf8'),read);
  const {after,before}=reviewedBuild.files[path];
  let current=beforeNativeButtonRepair(path,source);
- if(!matches(current,after)&&beforeReviewedInput)current=beforeNativeButtonRepair(path,beforeReviewedInput(path,source,read));
+ if(!matches(current,after)&&beforeReviewedInput)current=beforeNativeButtonRepair(path,beforeReviewedInput(path,source,historicalRead));
  assert(matches(current,after),'fresh reviewed build input: '+path);
  return before.source;
 }
