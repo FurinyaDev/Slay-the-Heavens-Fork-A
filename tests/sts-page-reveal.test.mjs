@@ -304,38 +304,82 @@ print('PAGE_REVEAL_PASS native map departure')`);
  }
 });
 
-for (const officialAssets of [false, true]) {
-  test(`${officialAssets ? 'official' : 'default'} Forethought stays open on selection and confirms once`, t => {
+for (const [profile, officialAssets, nativePageLifecycle] of [
+  ['default', false, false], ['official', true, false], ['formal narrow-screen', true, true],
+]) {
+  test(`${profile} Forethought stays open on selection and confirms once`, t => {
     const base=resolve('.artifacts/test-tmp');mkdirSync(base,{recursive:true});
     const out = mkdtempSync(join(base, 'forethought-host-'));
     t.after(() => rmSync(out, { recursive: true, force: true }));
     buildLuaData('data', join(out, 'abyss_data.lua'));
-    buildUI(out, undefined, { officialAssets });
+    buildUI(out, undefined, { officialAssets, nativePageLifecycle });
     const layout = JSON.parse(readFileSync(join(out, 'game-ui.json'), 'utf8'));
     const child = (node, name) => (node.children ?? node.controls).find(value => value.name === name);
-    const close = child(child(child(child(layout, 'stage'), 'deckPanel'), 'close'), 'hit');
+    const stage = child(layout, 'stage');
+    const deck = child(stage, 'deckPanel');
+    const button = child(deck, 'close');
+    const close = child(button, 'hit');
+    const [width, height] = [650, 360];
+    const scale = Math.min(width / stage.size[0], height / stage.size[1]);
     for (const state of close.children) {
       const label = child(state, 'label');
-      assert.ok(label.size[0] >= 4 * label.text.minFontSize, `${state.name} must fit 确认选择`);
+      const [stateScaleX, stateScaleY] = state.scale;
+      const [labelWidth, labelHeight] = label.size;
+      const glyphs = [...'确认选择'].length;
+      assert.ok(labelWidth >= glyphs * label.text.fontSize, `${state.name} must fit 确认选择 at its configured size`);
+      assert.ok(labelHeight >= label.text.fontSize, `${state.name} must fit a full line`);
+      const x = (deck.position?.[0] ?? 0) + button.position[0] + label.position[0] * stateScaleX;
+      const y = (deck.position?.[1] ?? 0) + button.position[1] + label.position[1] * stateScaleY;
+      assert.ok((Math.abs(x) + labelWidth * stateScaleX / 2) * scale <= width / 2,
+        `${state.name} caption is clipped horizontally by the narrow canvas`);
+      assert.ok((Math.abs(y) + labelHeight * stateScaleY / 2) * scale <= height / 2,
+        `${state.name} caption is clipped vertically by the narrow canvas`);
+      if (nativePageLifecycle) t.diagnostic(`${state.name} caption ${labelWidth * stateScaleX * scale} × ${labelHeight * stateScaleY * scale}`);
     }
     const preloads = readdirSync(out).filter(name => name.endsWith('.lua')).map(name =>
       `package.preload[${luaString(name.slice(0, -4))}]=assert(loadfile(${luaString(join(out,name).replaceAll('\\','/'))}))`);
     const script = ["package.path='src/lua/?.lua;'..package.path", ...preloads,
-      "dofile('tests/lua/support/forethought_selection.lua')"].join('\n');
+      `ABYSS_FORETHOUGHT_NATIVE = ${nativePageLifecycle}`, "dofile('tests/lua/support/forethought_selection.lua')"].join('\n');
     const result = spawnSync(process.execPath, [require.resolve('fengari-node-cli/src/lua-cli.js'), '-e', script], {
       encoding: 'utf8', timeout: 90000, maxBuffer: 2 * 1024 * 1024,
       env: { ...process.env, LUA_INIT: '', LUA_INIT_5_3: '' },
     });
     assert.equal(result.status, 0, result.stdout + result.stderr + String(result.error ?? ''));
     assert.match(result.stdout, /FORETHOUGHT_SELECTION_HOST_PASS/);
+    for (const line of result.stdout.split('\n').filter(line => line.startsWith('FORETHOUGHT_TRACE'))) t.diagnostic(line);
   });
 }
 
 test('Forethought authenticates its complete Lua and layout owners',async()=>{
  const {beforeDevelopBackflow,authenticateDevelopBackflow}=await import('./helpers/develop-release-backflow-source.mjs');
+ const {exactSourceMatches:matches}=await import('./helpers/source-fingerprint.mjs');
+ const {createHash}=await import('node:crypto');
  const {gunzipSync}=await import('node:zlib');
  const lua='src/lua/abyss_deck_ui.lua',layout='scripts/deck-ui-layout.mjs';
- const read=path=>readFileSync(path,'utf8');
+ const bytes=readFileSync(new URL('./fixtures/forethought-later-deck-owners.json.gz',import.meta.url));
+ assert.equal(createHash('sha256').update(bytes).digest('hex'),
+  '744525e9e2ebfbf7b70e45f9656311fe015186f23ade0ea5e1d6f1fca4e82542','exact Forethought owner pair');
+ const {prior,live,owners}=JSON.parse(gunzipSync(bytes));
+ assert.equal(prior,'103aa4072bd3801deb6bf090455bd974181a9647');
+ assert.equal(live,'77b7e87ac5abc9ef5c4953cfd47b5d77408e55d2');
+ assert.deepEqual(Object.keys(owners),[lua,layout]);
+ // #907/#940/#962 advanced these owners beyond the pinned #904 replay.
+ // Authenticate both live sources before exposing the previous pair; the
+ // historical linked-owner checks below still use the original validators.
+ const current=path=>readFileSync(path,'utf8');
+ function replayReader(readLive){
+  for(const path of [lua,layout]){
+   assert(matches(readLive(path),owners[path].after),'linked owner identity: '+path+' at #962');
+   assert(matches(owners[path].before.source,owners[path].before),'exact #904 owner: '+path);
+  }
+  return path=>Object.hasOwn(owners,path)?owners[path].before.source:readLive(path);
+ }
+ const read=replayReader(current);
+ for(const path of [lua,layout]){
+  for(const bad of [read(path),current(path)+'\n']){
+   assert.throws(()=>replayReader(owner=>owner===path?bad:current(owner)),/linked owner identity/);
+  }
+ }
  const crlf=source=>source.replace(/\r?\n/g,'\r\n');
  const priorLua=beforeDevelopBackflow(lua,read(lua));
  const priorLayout=beforeDevelopBackflow(layout,read(layout));
