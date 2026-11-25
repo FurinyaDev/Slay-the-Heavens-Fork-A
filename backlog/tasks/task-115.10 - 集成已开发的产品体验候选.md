@@ -5,6 +5,7 @@ status: In Progress
 assignee:
   - '@Furinya'
 created_date: '2026-11-25 21:02'
+updated_date: '2026-11-25 22:56'
 labels:
   - v2.2.0
 milestone: m-8
@@ -17,6 +18,7 @@ references:
   - 'https://github.com/FurinyaWorks/Slay-the-Heavens/pull/958'
   - 'https://github.com/FurinyaWorks/Slay-the-Heavens/pull/964'
   - 'https://github.com/FurinyaWorks/Slay-the-Heavens/pull/965'
+  - 'https://github.com/FurinyaWorks/Slay-the-Heavens/pull/992'
 documentation:
   - docs/versions/V2.2.0-RELEASE.md
 parent_task_id: TASK-115
@@ -41,3 +43,9 @@ ordinal: 222000
 <!-- AC:BEGIN -->
 - [ ] #1 每个 PR 有合入或归档理由、固定来源和验证；已合更新通过相应定向验收，由 TASK-115.13 联合复验
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+#992 接续 #958，合入 develop 114a5c0b739ad8cccbc99e59fe7ba4112014d3cf。独立评审 6066095429，原生事件定向 1/1，Fork Quick 45716478689 通过。正文和长选项的实机字形、整合交互随正式候选验收。
+<!-- SECTION:NOTES:END -->
