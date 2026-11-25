@@ -1,0 +1,49 @@
+{
+  "sourceCommit": "98d227fc6707338829a695f9e73e0a0b2a72f307",
+  "tool": "BeyondSimulator 0.5.2",
+  "simulatorWorkerSha256": "de72d4f80b230cfac330ab0ac6fa9d05e51bb8f51d352f08dd1ee6bcba0fe09d",
+  "simulatorBundleSha256": "5a64b946fac68d29052e387de11cfb64b90bd5c8a559a74b0fe5d90241be1bca",
+  "scope": "source-generated GameUI, real Lua and Simulator software renderer, explicit seed/encounter and 10-card fixture, generated template indices, no imported GIL",
+  "samples": [
+    {
+      "act": 1,
+      "frame": 160,
+      "canvasId": "mobile-16-9",
+      "viewport": [
+        1280,
+        720
+      ],
+      "saveSha256": "ce9189e210500a11224b047f844f40846043f699b3812e09232dba0a6a44a1f3",
+      "rawStateSha256": "fa438f9751353d1e9b7bd2a98318ace69c3c035ab13896408eb121801aa457b4",
+      "pngSha256": "95922cb183ca4d2d8d3a23fafcc3398e7a1163491dcd840f23ae6f2fcdc24b5b",
+      "renderer": {
+        "width": 1280,
+        "height": 720,
+        "pixelWidth": 1280,
+        "pixelHeight": 720,
+        "assetWarnings": []
+      },
+      "gameUiEvidence": "V220_SOURCE_BATTLE_CHAPTER act=1 pause-hidden=true pool-retained=true hand=10 enemies=2"
+    },
+    {
+      "act": 2,
+      "frame": 160,
+      "canvasId": "mobile-16-9",
+      "viewport": [
+        1280,
+        720
+      ],
+      "saveSha256": "bb072d9621b01cb51b8c14754b296210e70895d58f4c2d4f782f84d801526f4a",
+      "rawStateSha256": "4457ec42b53062e1517e0d845f2665185a08c7c96e5d8afaf3a32d71060c2696",
+      "pngSha256": "8f7765f02ab2c8ef2edef0f02df9f43284dadcb3b02d1f63b771a4e45a155fca",
+      "renderer": {
+        "width": 1280,
+        "height": 720,
+        "pixelWidth": 1280,
+        "pixelHeight": 720,
+        "assetWarnings": []
+      },
+      "gameUiEvidence": "V220_SOURCE_BATTLE_CHAPTER act=2 pause-hidden=true pool-retained=true hand=10 enemies=3"
+    }
+  ]
+}
