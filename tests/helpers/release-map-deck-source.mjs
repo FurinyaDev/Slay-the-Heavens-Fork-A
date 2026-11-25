@@ -34,6 +34,31 @@ function current(source,binding){
   return hash(text)===binding.sha256&&blob(text)===binding.gitBlob;
 }
 
+// Continue the archived map-deck replay across the later production UI changes.
+const hotfixArchive=readFileSync(new URL('./release-map-deck-hotfix-source.json.gz',import.meta.url));
+assert.equal(hash(hotfixArchive),'225d9e5237b62aa14352cdd2b40177da890198e5550271eb10971a9e461fb35d','exact hotfix map deck archive');
+const {base:hotfixBase,current:hotfixHead,files:hotfixFiles}=JSON.parse(gunzipSync(hotfixArchive));
+assert.equal(hotfixBase,'5a972c7371d0217ce4d9806df35ba1464c50f40f');
+assert.equal(hotfixHead,'6492e8dccbcf847a0eba7ad3995da50257032e08');
+const deckLayout='scripts/deck-ui-layout.mjs';
+assert.deepEqual(Object.keys(hotfixFiles).sort(),[...Object.keys(files),deckLayout].sort());
+for(const [path,{before}] of Object.entries(hotfixFiles))assert(current(before.source,before),'exact hotfix map deck predecessor: '+path);
+
+function hotfixPriorRead(read){
+  for(const [owner,{after}] of Object.entries(hotfixFiles)){
+    let live;
+    try{live=read(owner,'utf8');}catch{assert.fail('map deck linked owner missing: '+owner);}
+    const source=Buffer.isBuffer(live)?live.toString('utf8'):live;
+    const label=owner===deckLayout?'Forethought':'map deck';
+    assert(current(source,after),label+' linked owner identity: '+owner);
+  }
+  return (path,encoding)=>{
+    if(!Object.hasOwn(hotfixFiles,path))return read(path,encoding);
+    const source=hotfixFiles[path].before.source;
+    return encoding?source:Buffer.from(source);
+  };
+}
+
 const forethoughtSources=Object.freeze({
   "src/lua/abyss_deck_ui.lua": {
     before: {"sha256": "f361dc43c095aa9e4497bda4e758c161a5110978c33b4c0a89792815859aaac2", "gitBlob": "04033812db991fe1e86c8becf1017f4a689033d8"},
@@ -76,6 +101,11 @@ export function beforeMapRoomSource(path,source){
 }
 
 export function beforeMapDeckSource(path,source,read){
+  if(Object.hasOwn(hotfixFiles,path)&&current(source,hotfixFiles[path].after)){
+    const priorRead=hotfixPriorRead(read);
+    const prior=beforeMapDeckSource(path,priorRead(path,'utf8'),priorRead);
+    return source.includes('\r\n')?prior.replaceAll('\n','\r\n'):prior;
+  }
   const closeout=beforeReleaseUiCloseoutSource(path,source,read);
   const currentCloseout=closeout!==source;
   const closeoutRead=releaseUiCloseoutPriorRead(read,currentCloseout?path:undefined);
