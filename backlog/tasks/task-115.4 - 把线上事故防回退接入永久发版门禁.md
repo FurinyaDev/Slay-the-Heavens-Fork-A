@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@Furinya'
 created_date: '2026-11-25 21:00'
-updated_date: '2026-11-25 23:02'
+updated_date: '2026-11-25 23:54'
 labels:
   - v2.2.0
 milestone: m-8
@@ -19,6 +19,7 @@ references:
   - docs/PLATFORM_LOAD.md
   - 'https://github.com/FurinyaWorks/Slay-the-Heavens/pull/991'
   - 'https://github.com/FurinyaWorks/Slay-the-Heavens/pull/993'
+  - 'https://github.com/FurinyaWorks/Slay-the-Heavens/pull/998'
 documentation:
   - docs/versions/V2.2.0-RELEASE.md
 parent_task_id: TASK-115
@@ -55,4 +56,6 @@ ordinal: 211000
 #991 在 develop af77f13e30d38f6547ac4ec6bced53a588a846ee 接入普通 Release 性能门禁。精确源码独立复审、34 项定向和 7 项原冻结合同通过。Fork Quick 素材恢复两次失败，测试步骤未运行。实际中档三对的 c9897afd 修复试验与上线基线对照仍有 5 个耗时告警，保留原始报告摘要 e49b4749a944102ab5b75f051377e4017bd599a496ac2c779ddb6eacaaeda86d。最终 GIL 六档、平台和实机待验。
 
 #993 合入 develop 5e318736e0de5c0a34fb17f2961a5a66cd577a70，独立评审 6066158756、32 项定向和 Fork Quick 45717471692 通过。Hotfix 使用同一冻结 Full、正式 GIL 和既有性能门槛。该 PR 验收源码接线，线上实测及设备门禁仍待完成。
+
+已核对线上 v2.1.1 实际归档 afe80c0783d0d4b6046c1f44cba3ef2b71cb8bb34fbc7404d939d12e0f5ff831，在 1 CPU / 2 GiB / 无 swap 的 cgroup 完成 14 个 Host 阶段。真实包性能接线候选 #998 独立评审 6066612713，37 项定向合约、原 Release Bootstrap 与缺包在 Docker 前失败的负对照通过。Fork Quick 45723780259 两次未完成 Git LFS 恢复。待获取当前候选实际 GIL、正式同包六档配对及设备证据。
 <!-- SECTION:NOTES:END -->

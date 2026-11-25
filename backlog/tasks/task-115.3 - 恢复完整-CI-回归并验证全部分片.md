@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@Furinya'
 created_date: '2026-11-25 21:00'
-updated_date: '2026-11-25 23:23'
+updated_date: '2026-11-25 23:52'
 labels:
   - v2.2.0
 milestone: m-8
@@ -21,6 +21,7 @@ references:
   - 'https://github.com/FurinyaWorks/Slay-the-Heavens/pull/979'
   - 'https://github.com/FurinyaWorks/Slay-the-Heavens/pull/980'
   - 'https://github.com/FurinyaWorks/Slay-the-Heavens/pull/996'
+  - 'https://github.com/FurinyaWorks/Slay-the-Heavens/pull/997'
 documentation:
   - docs/versions/V2.2.0-RELEASE.md
 parent_task_id: TASK-115
@@ -55,4 +56,6 @@ ordinal: 210000
 四条现有测试 PR 由 #976 合并接续。#979 通过 126 项固定源向量，相关 GitHub Fork Quick JS 93/93；同一 Quick 后续 Lua 失败保留。#980 共享预览 PNG 真实制品生产、恢复与负对照通过定向验证。完整 Hosted Full 和 #929 继续。
 
 #996 来源与夹具修复已合入 develop ecce2251ef9dcb9542488ac92ba31de5a62d438a。原 Release Bootstrap 定向通过，899 个 JS、1,426 个 Lua，独立评审 6066337165 和精确 Fork Quick 通过。Linux 原计划为 1,205,366 ms，高于 1,200,000 ms；现行架构旧回执仍待修复。主仓 Full 45720732047 排队。验收项保持未勾。
+
+现行架构与样式回放 #997 已合入 develop 060b13c612bb3d4ad36044939f11ca3f5b2929c7。独立评审 6066545524 及原定向 6/7 通过，原 Linux 预算仍高 5,366 ms。Fork Quick 45722483438 两次在 Git LFS 素材恢复失败，测试步骤未运行。精确主仓 Quality 45723458426、Licenses 45723458427 排队，验收项继续待验。
 <!-- SECTION:NOTES:END -->
