@@ -1,0 +1,88 @@
+name: Performance regression
+on:
+  pull_request:
+    branches: [develop, master, 'release/**']
+    types: [opened, synchronize, reopened, ready_for_review, converted_to_draft, labeled, unlabeled]
+  merge_group:
+    types: [checks_requested]
+    branches: [develop]
+  push:
+    branches: [develop, master, 'release/**']
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Resource matrix depth
+        type: choice
+        options: [fast, full]
+        default: full
+      base_sha:
+        description: Exact optional comparison commit in this repository
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: performance-regression-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  performance:
+    name: Offline Host resource diagnostics
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 2
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '24.19.0'
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - name: Verify report and limit parser contracts
+        run: node --test tests/benchmarks/resource-suite.test.mjs
+      - name: Build and measure the exact checkout
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha || inputs.base_sha || github.event.before }}
+          MANUAL_BASE_SHA: ${{ inputs.base_sha }}
+          MANUAL_MODE: ${{ inputs.mode }}
+          GIT_LFS_SKIP_SMUDGE: '1'
+          GIT_TERMINAL_PROMPT: '0'
+        run: |
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          npm_flags=(--ignore-scripts --prefer-offline --no-audit --no-fund --fetch-retries=0 --fetch-timeout=30000)
+          if [ "$BASE_SHA" = 0000000000000000000000000000000000000000 ]; then
+            BASE_SHA=''
+          fi
+          if [ -n "$BASE_SHA" ]; then
+            [[ "$BASE_SHA" =~ ^[0-9a-f]{40}$ ]]
+            if ! git cat-file -e "${BASE_SHA}^{commit}"; then
+              git -c credential.helper= -c http.lowSpeedLimit=1024 -c http.lowSpeedTime=30 fetch --depth=1 --no-tags origin "$BASE_SHA"
+            fi
+          fi
+          npm ci "${npm_flags[@]}"
+          node scripts/ci-impact.mjs
+          mode=${MANUAL_MODE:-$(node -p 'require("./ci-impact.json").mode')}
+          npm run build:data
+          npm run build:ui
+          args=(--mode "$mode")
+          if [ -n "$BASE_SHA" ] && git cat-file -e "$BASE_SHA:scripts/runtime-baseline/worker.mjs"; then
+            reference="$RUNNER_TEMP/performance-reference"
+            git worktree add --detach "$reference" "$BASE_SHA"
+            (cd "$reference" && npm ci "${npm_flags[@]}" && npm run build:data && npm run build:ui)
+            args+=(--baseline "$reference")
+          elif [ -n "$MANUAL_BASE_SHA" ]; then
+            echo '::error::The specified reference does not contain the fixed Host workload.'
+            exit 1
+          elif [ -n "$BASE_SHA" ]; then
+            echo '::warning::Reference has no fixed Host workload. Collecting candidate-only measurements.'
+          fi
+          node scripts/runtime-baseline/resource-suite.mjs "${args[@]}"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: performance-regression-${{ github.run_id }}-${{ github.run_attempt }}
+          path: build/performance-regression/report.json
+          if-no-files-found: warn
+          retention-days: 30
