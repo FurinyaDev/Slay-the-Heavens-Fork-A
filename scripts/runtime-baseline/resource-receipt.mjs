@@ -3,6 +3,22 @@ import { createHash } from 'node:crypto';
 import { counters, percentile } from '../benchmark-runtime-path.mjs';
 
 const GiB = 1024 ** 3;
+export const resourceImage = 'node:24.19.0-bookworm-slim@sha256:a9f5f7c91a432850b2a8a7797adf5eadb6c733ceed61167806cee7ea7fbc29df';
+export const productionHeapMiB = 768;
+export const workload = ['worker.mjs', 'host.lua', 'observer.lua', 'turn.lua'].map(file => `scripts/runtime-baseline/${file}`);
+workload.push('tests/lua/support/game_ui_fixture.lua', 'tests/lua/support/native_ui_contract.lua', 'tests/lua/support/shop_timeline.lua');
+export const productionWorkload = [...workload, 'tests/lua/support/production_performance.lua'];
+
+export function workloadIdentity(paths, read) {
+  const hash = bytes => createHash('sha256').update(bytes).digest('hex');
+  return hash(JSON.stringify(paths.map(path => ({path, sha256:hash(read(path))}))));
+}
+
+export function resourceResultStatus({release, pass, paired, signals}) {
+  if (!pass || release && !paired) return 'FAIL';
+  return release && signals ? 'REVIEW_REQUIRED' : 'PASS';
+}
+
 export const profiles = {
   baseline: { cpus: null, memoryBytes: null },
   'cpu-only': { cpus: 0.5, memoryBytes: null },

@@ -70,7 +70,7 @@ jobs:
           node --test tests/release-performance.test.mjs
           BASE_SHA=${MANUAL_BASE_SHA:-${PR_BASE_SHA:-$(git rev-parse --verify HEAD^ 2>/dev/null || true)}}
           if [ "$mode" = formal ]; then
-            version=$(node -p "require('./package.json').version")
+            version=$(git show "$GITHUB_SHA:package.json" | node -p "JSON.parse(require('node:fs').readFileSync(0)).version")
             published=$(node scripts/runtime-baseline/published-baseline.mjs "$version")
             BASE_SHA=$(node -p 'JSON.parse(process.argv[1]).commit' "$published")
             BASE_TREE=$(node -p 'JSON.parse(process.argv[1]).tree' "$published")
@@ -96,7 +96,7 @@ jobs:
           args=(--mode "$mode")
           if [ "$mode" = formal ]; then
             git lfs install --local --skip-smudge
-            args=(--mode full --production --extreme)
+            args=(--mode full --production --extreme --release)
           fi
           prepare
           if [ -n "$BASE_SHA" ] && git cat-file -e "$BASE_SHA:scripts/runtime-baseline/worker.mjs"; then
@@ -107,7 +107,7 @@ jobs:
             if [ "$mode" != formal ] && [ -z "$MANUAL_BASE_SHA" ]; then
               args+=(--baseline-if-compatible)
             fi
-          elif [ -n "$MANUAL_BASE_SHA" ]; then
+          elif [ "$mode" = formal ] || [ -n "$MANUAL_BASE_SHA" ]; then
             echo '::error::The specified reference does not contain the fixed Host workload.'
             exit 1
           elif [ -n "$BASE_SHA" ]; then

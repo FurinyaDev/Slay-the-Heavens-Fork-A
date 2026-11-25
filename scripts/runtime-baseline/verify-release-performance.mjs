@@ -5,7 +5,8 @@ import {mkdirSync, readFileSync, writeFileSync} from 'node:fs';
 import {resolve} from 'node:path';
 import {pathToFileURL} from 'node:url';
 import {validateSample} from '../benchmark-runtime-path.mjs';
-import {compareSamples, guardExtremeCgroup, matchingResourceCaps, parseResources, profiles} from './resource-receipt.mjs';
+import {compareSamples, guardExtremeCgroup, matchingResourceCaps, parseResources, profiles, productionHeapMiB,
+  productionWorkload, resourceImage, workloadIdentity} from './resource-receipt.mjs';
 import {productionPhases} from './production-inputs.mjs';
 import {resolvePublishedBaseline} from './published-baseline.mjs';
 
@@ -17,6 +18,7 @@ export function verifyAuditedBuild(gilBytes, receiptBytes, audit, sourceCommit) 
   const receipt = JSON.parse(receiptBytes);
   const gilSha256 = sha256(gilBytes);
   assert.equal(gilSha256, receipt.candidate?.sha256, 'Final GIL bytes do not match the build receipt');
+  assert.equal(gilBytes.length, receipt.candidate?.bytes, 'Final GIL size differs from the build receipt');
   assert(receipt.sourceCommit === sourceCommit && receipt.sourceDirty === false && hash.test(receipt.payloadDigest) &&
     hash.test(receipt.release?.notesSha256) && /^[a-f0-9-]{36}$/.test(receipt.buildId), 'Frozen release candidate receipt required');
   assert(audit.ok === true && audit.sourceCommit === sourceCommit && audit.liveWriteEnabled === false &&
@@ -27,9 +29,18 @@ export function verifyAuditedBuild(gilBytes, receiptBytes, audit, sourceCommit) 
   return {receipt, gilSha256};
 }
 
-function verifySample(sample, profile) {
+export function frozenReleaseVersion(receipt, checkoutPackage, currentPackage) {
+  const {version} = JSON.parse(checkoutPackage);
+  assert(version === receipt.release?.version && version === JSON.parse(currentPackage).version,
+    'Frozen source and release receipt versions differ');
+  return version;
+}
+
+function verifySample(sample, profile, executions) {
   validateSample(sample, productionPhases);
   assert(Number.isFinite(sample.wallMs) && sample.wallMs > 0, 'Missing sample wall time');
+  assert(/^[a-f0-9]{12}$/.test(sample.executionId) && !executions.has(sample.executionId), 'Sample execution is missing or duplicated');
+  executions.add(sample.executionId);
   const caps = sample.resources;
   parseResources([
     ['cpu.max', caps.cpuMax], ['memory.max', caps.memoryMax], ['memory.swap.max', caps.swapMax],
@@ -39,21 +50,26 @@ function verifySample(sample, profile) {
   ].map(([key, value]) => `RESOURCE ${key} ${value}`).join('\n'), profile);
 }
 
-function verifyExtreme(extreme, candidate) {
+function verifyExtreme(extreme, candidate, executions) {
   assert(extreme?.status === 'PASS' && extreme.probe && extreme.recovery, 'Independent extreme failure and recovery proof required');
   assert.deepEqual(extreme.candidate, candidate, 'Extreme probe and formal source/configuration differ');
-  const {resources, state, stdout} = extreme.probe;
+  const {containerId, executionId, resources, state, stdout} = extreme.probe;
+  assert(/^[a-f0-9]{64}$/.test(containerId) && containerId.slice(0, 12) === executionId &&
+    stdout.split('\n').filter(line => line === 'RESOURCE_EXECUTION_ID ' + executionId).length === 1 &&
+    !executions.has(executionId), 'Extreme Docker execution identity missing or duplicated');
+  executions.add(executionId);
   guardExtremeCgroup(resources, state);
   for (const [key, value] of [['cpu.max', resources.cpuMax], ['memory.max', resources.memoryMax], ['memory.swap.max', resources.swapMax]]) {
     const lines = stdout.split('\n').filter(line => line.startsWith('RESOURCE ' + key + ' '));
     assert.deepEqual(lines, ['RESOURCE ' + key + ' ' + value], 'Extreme raw cgroup readback differs');
   }
   assert(Date.parse(extreme.recovery.recordedAt) >= Date.parse(state.FinishedAt), 'Recovery must follow the observed extreme failure');
-  verifySample(extreme.recovery.sample, profiles.stress);
+  verifySample(extreme.recovery.sample, profiles.stress, executions);
 }
 
-export function verifyResourceReport(report, sourceCommit, sourceTree, published, receipt) {
-  assert.equal(report.kind, 'offline-production-host-resource-pressure', 'Formal production resource report required');
+export function verifyResourceReport(report, sourceCommit, sourceTree, published, receipt, expectedWorkload) {
+  assert(report.schemaVersion === 1 && report.release === true && report.kind === 'offline-production-host-resource-pressure',
+    'Formal production release resource report required');
   assert.equal(report.status, 'PASS', 'Resource workload failed');
   assert.equal(report.mode, 'full', 'All six tiers required');
   assert.equal(report.comparisonStatus, 'PAIRED', 'Same-workload cgroup pairs required');
@@ -62,6 +78,7 @@ export function verifyResourceReport(report, sourceCommit, sourceTree, published
   assert(Number.isFinite(Date.parse(report.timeUtc)) && report.engine?.cpuModel && report.engine?.kernel &&
     report.engine?.arch && /^\S+ 2 linux \S+$/.test(report.engine?.docker) && /^sha256:[a-f0-9]{64}$/.test(report.engine?.imageId),
     'Missing raw run environment');
+  assert(report.engine.image === resourceImage && report.engine.productionHeapMiB === productionHeapMiB, 'Formal Host engine or heap differs');
   assert.equal(report.candidate?.commit, sourceCommit, 'Report and frozen source differ');
   assert.equal(report.candidate?.tree, sourceTree, 'Report and frozen source tree differ');
   assert.notEqual(published.commit, sourceCommit, 'Use a distinct previously published reference');
@@ -72,6 +89,7 @@ export function verifyResourceReport(report, sourceCommit, sourceTree, published
       hash.test(arm.lockfile?.dependencies), 'Incomplete source, workload or dependency evidence');
   }
   assert.equal(report.candidate.workloadSha256, report.baseline.workloadSha256, 'Host workloads differ');
+  assert.equal(report.candidate.workloadSha256, expectedWorkload, 'Host workload differs from the frozen source');
   assert.equal(report.candidate.lockfile.dependencies, report.baseline.lockfile.dependencies, 'Dependency graphs differ');
   assert.deepEqual(report.candidate.configuration, report.baseline.configuration, 'Production profiles differ');
   const config = report.candidate.configuration;
@@ -81,6 +99,7 @@ export function verifyResourceReport(report, sourceCommit, sourceTree, published
 
   assert.deepEqual(Object.keys(report.results).sort(), Object.keys(profiles).sort(), 'Six-tier coverage is incomplete');
   const signals = {};
+  const executions = new Set();
   for (const [name, profile] of Object.entries(profiles)) {
     const result = report.results[name];
     assert.deepEqual(result.profile, profile, 'Resource profile changed: ' + name);
@@ -90,13 +109,13 @@ export function verifyResourceReport(report, sourceCommit, sourceTree, published
     const after = result.candidate.samples;
     assert.equal(before.length, report.repetitions, 'Incomplete reference samples: ' + name);
     assert.equal(after.length, report.repetitions, 'Incomplete candidate samples: ' + name);
-    for (const sample of [...before, ...after]) verifySample(sample, profile);
+    for (const sample of [...before, ...after]) verifySample(sample, profile, executions);
     assert(matchingResourceCaps(before, after), 'Measured cgroup limits differ: ' + name);
     const observed = compareSamples(before, after, report.alertPercent);
     assert.deepEqual(result.signals, observed, 'Source evidence signals differ from samples: ' + name);
     if (observed.length) signals[name] = observed;
   }
-  verifyExtreme(report.extreme, report.candidate);
+  verifyExtreme(report.extreme, report.candidate, executions);
   return signals;
 }
 
@@ -120,9 +139,11 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
     const {receipt, gilSha256} = verifyAuditedBuild(readFileSync(gil), readFileSync(candidate), JSON.parse(auditBytes), sourceCommit);
     const bytes = readFileSync(evidence);
     const raw = JSON.parse(bytes);
-    const {version} = JSON.parse(readFileSync('package.json'));
+    const fromHead = path => execFileSync('git', ['show', sourceCommit + ':' + path], {maxBuffer: 4 * 1024 * 1024});
+    const version = frozenReleaseVersion(receipt, fromHead('package.json'), readFileSync('package.json'));
     const published = await resolvePublishedBaseline(version);
-    const signals = verifyResourceReport(raw, sourceCommit, sourceTree, published, receipt);
+    const expectedWorkload = workloadIdentity(productionWorkload, fromHead);
+    const signals = verifyResourceReport(raw, sourceCommit, sourceTree, published, receipt, expectedWorkload);
     const status = Object.keys(signals).length ? 'REVIEW_REQUIRED' : 'OFFLINE_RESOURCE_VERIFIED';
     write({status, sourceCommit, sourceTree, gilSha256, buildId: receipt.buildId, payloadDigest: receipt.payloadDigest,
       published, configuration: raw.candidate.configuration, environment: raw.engine,

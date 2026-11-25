@@ -2,9 +2,9 @@ import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import test from 'node:test';
 import {productionPhases} from '../scripts/runtime-baseline/production-inputs.mjs';
-import {profiles} from '../scripts/runtime-baseline/resource-receipt.mjs';
+import {profiles, productionHeapMiB, resourceImage, resourceResultStatus} from '../scripts/runtime-baseline/resource-receipt.mjs';
 import {resolvePublishedBaseline} from '../scripts/runtime-baseline/published-baseline.mjs';
-import {verifyAuditedBuild, verifyResourceReport} from '../scripts/runtime-baseline/verify-release-performance.mjs';
+import {frozenReleaseVersion, verifyAuditedBuild, verifyResourceReport as verifyFormalReport} from '../scripts/runtime-baseline/verify-release-performance.mjs';
 
 const head = 'a'.repeat(40);
 const tree = 'b'.repeat(40);
@@ -12,12 +12,15 @@ const published = {commit:'c'.repeat(40), tree:'e'.repeat(40)};
 const sha256 = 'd'.repeat(64);
 const flags = {cards:false, menuBackground:false, selectionAvatar:true, battlePortrait:true, monsters:true};
 const receipt = {artFeatures:{flags}};
+const verifyResourceReport = (report, sourceCommit, sourceTree, reference, build) =>
+  verifyFormalReport(report, sourceCommit, sourceTree, reference, build, sha256);
 
 function reportFixture() {
   const evidence = {
     tree, workloadSha256:sha256, generatedLuaSha256:sha256, lockfile:{dependencies:sha256},
     configuration:{officialAssets:true, refinedReleaseMonsterArt:true, nativePageLifecycle:true, artFeatures:flags},
   };
+  let sequence = 0;
   const results = Object.fromEntries(Object.entries(profiles).map(([name, profile]) => {
     const rows = productionPhases.map(phase => ({
       phase, elapsedMs:1, requireCalls:1, moduleLoads:1, nativeCalls:1, propertyWrites:1, snapshots:1,
@@ -28,21 +31,23 @@ function reportFixture() {
       memoryMax:String(profile.memoryBytes ?? 'max'), swapMax:profile.memoryBytes === null ? 'max' : '0',
       oom:0, oomKill:0, peakBytes:100, cpuUsageUsec:1, cpuPeriods:1, throttledPeriods:0, throttledUsec:0,
     };
-    const arm = {samples:Array.from({length:3}, () => ({rows, resources, wallMs:1})), pass:true};
-    return [name, {profile, candidate:structuredClone(arm), baseline:arm, comparisonStatus:'PAIRED', signals:[]}];
+    const arm = () => structuredClone({samples:Array.from({length:3}, () => ({rows, resources, wallMs:1,
+      executionId:(++sequence).toString(16).padStart(12, '0')})), pass:true});
+    return [name, {profile, candidate:arm(), baseline:arm(), comparisonStatus:'PAIRED', signals:[]}];
   }));
   const candidate = {commit:head, ...evidence};
   const extreme = {
     status:'PASS', candidate,
-    probe:{resources:{cpuMax:'50000 100000', memoryMax:'134217728', swapMax:'0'},
+    probe:{containerId:'a'.repeat(64), executionId:'a'.repeat(12), resources:{cpuMax:'50000 100000', memoryMax:'134217728', swapMax:'0'},
       state:{Running:false, OOMKilled:true, ExitCode:137, StartedAt:'2026-11-25T11:02:00Z', FinishedAt:'2026-11-25T11:02:01Z'},
-      stdout:'RESOURCE cpu.max 50000 100000\nRESOURCE memory.max 134217728\nRESOURCE memory.swap.max 0\n'},
-    recovery:{recordedAt:'2026-11-25T11:03:00Z', sample:structuredClone(results.stress.candidate.samples[0])},
+      stdout:'RESOURCE_EXECUTION_ID aaaaaaaaaaaa\nRESOURCE cpu.max 50000 100000\nRESOURCE memory.max 134217728\nRESOURCE memory.swap.max 0\n'},
+    recovery:{recordedAt:'2026-11-25T11:03:00Z', sample:{...structuredClone(results.stress.candidate.samples[0]), executionId:'b'.repeat(12)}},
   };
   return structuredClone({
-    kind:'offline-production-host-resource-pressure', status:'PASS', mode:'full', comparisonStatus:'PAIRED',
+    schemaVersion:1, release:true, kind:'offline-production-host-resource-pressure', status:'PASS', mode:'full', comparisonStatus:'PAIRED',
     seed:42, alertPercent:20, repetitions:3, timeUtc:'2026-11-25T12:00:00Z',
-    engine:{cpuModel:'fixture', kernel:'fixture', arch:'x64', docker:'28.4.0 2 linux amd64', imageId:`sha256:${sha256}`},
+    engine:{cpuModel:'fixture', kernel:'fixture', arch:'x64', docker:'28.4.0 2 linux amd64', imageId:`sha256:${sha256}`,
+      image:resourceImage, productionHeapMiB},
     candidate, baseline:{...evidence, ...published}, results, extreme,
   });
 }
@@ -80,7 +85,7 @@ test('binds strict audio audit to the frozen receipt and downloaded bytes', () =
   const candidateSha256 = digest(gil);
   const buildId = '29f48ea1-fa9d-4f76-b124-2bffc83f7594';
   const candidate = Buffer.from(JSON.stringify({
-    sourceCommit:head, sourceDirty:false, buildId, candidate:{sha256:candidateSha256},
+    sourceCommit:head, sourceDirty:false, buildId, candidate:{sha256:candidateSha256, bytes:gil.length},
     payloadDigest:sha256, release:{notesSha256:sha256},
   }));
   const audit = {
@@ -106,6 +111,25 @@ test('requires an independent extreme failure and a later supported recovery sam
   const early = reportFixture();
   early.extreme.recovery.recordedAt = '2026-11-25T11:01:30Z';
   assert.throws(() => verifyResourceReport(early, head, tree, published, receipt), /follow the observed extreme failure/);
+  const same = reportFixture();
+  same.extreme.recovery.sample.executionId = same.extreme.probe.executionId;
+  assert.throws(() => verifyResourceReport(same, head, tree, published, receipt), /execution is missing or duplicated/);
+});
+
+test('formal collection fails closed and its verifier requires the frozen version, engine and workload', () => {
+  assert.equal(resourceResultStatus({release:true, pass:true, paired:false, signals:false}), 'FAIL');
+  assert.equal(resourceResultStatus({release:true, pass:true, paired:true, signals:true}), 'REVIEW_REQUIRED');
+  assert.equal(resourceResultStatus({release:false, pass:true, paired:false, signals:true}), 'PASS');
+  const frozen = '{"version":"2.2.0"}';
+  const receiptVersion = {release:{version:'2.2.0'}};
+  assert.equal(frozenReleaseVersion(receiptVersion, frozen, frozen), '2.2.0');
+  assert.throws(() => frozenReleaseVersion(receiptVersion, frozen, '{"version":"2.0.0"}'), /versions differ/);
+  const wrongEngine = reportFixture();
+  wrongEngine.engine.productionHeapMiB = 1024;
+  assert.throws(() => verifyResourceReport(wrongEngine, head, tree, published, receipt), /engine or heap differs/);
+  const wrongWorkload = reportFixture();
+  wrongWorkload.candidate.workloadSha256 = wrongWorkload.baseline.workloadSha256 = '7'.repeat(64);
+  assert.throws(() => verifyResourceReport(wrongWorkload, head, tree, published, receipt), /workload differs from the frozen source/);
 });
 
 test('resolves historical publication source and actual annotation tree independently', async () => {

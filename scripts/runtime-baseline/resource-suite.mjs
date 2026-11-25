@@ -1,28 +1,25 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { createHash, randomUUID } from 'node:crypto';
+import { randomUUID } from 'node:crypto';
 import { mkdirSync, mkdtempSync, readFileSync, readdirSync, realpathSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import { arch, availableParallelism, cpus, release, totalmem } from 'node:os';
 import { dirname, relative, resolve } from 'node:path';
 import { performance } from 'node:perf_hooks';
 import { parseArgs } from 'node:util';
 import { counters, phases, validateSample } from '../benchmark-runtime-path.mjs';
-import { compareSamples, guardExtremeCgroup, lockfileIdentity, matchingResourceCaps, parseResources, profiles,
-  selectResourceReference, summarize, unsupportedFormalProfile } from './resource-receipt.mjs';
+import { compareSamples, guardExtremeCgroup, lockfileIdentity, matchingResourceCaps, parseResources, profiles, productionHeapMiB,
+  productionWorkload, resourceImage as image, resourceResultStatus, selectResourceReference, summarize,
+  unsupportedFormalProfile, workload, workloadIdentity } from './resource-receipt.mjs';
 import { productionPhases } from './production-inputs.mjs';
 import { lfsArguments, lfsEnvironment } from '../ci-reviewed-lfs.mjs';
 
-const image = 'node:24.19.0-bookworm-slim@sha256:a9f5f7c91a432850b2a8a7797adf5eadb6c733ceed61167806cee7ea7fbc29df';
 const modes = { fast: ['baseline', 'medium'], full: Object.keys(profiles) };
-const workload = ['worker.mjs', 'host.lua', 'observer.lua', 'turn.lua'].map(file => `scripts/runtime-baseline/${file}`);
-workload.push('tests/lua/support/game_ui_fixture.lua', 'tests/lua/support/native_ui_contract.lua', 'tests/lua/support/shop_timeline.lua');
 const sourceInputs = ['src/lua', 'data', 'config', 'package-lock.json', ...workload];
-const productionWorkload = [...workload, 'tests/lua/support/production_performance.lua'];
 const lfsFilters = lfsArguments.slice(0, lfsArguments.indexOf('lfs'));
-const productionHeapMiB = 768;
 
 const receipt = String.raw`
 set -eu
+printf 'RESOURCE_EXECUTION_ID %s\n' "$HOSTNAME"
 cg=/sys/fs/cgroup
 for key in cpu.max memory.max memory.swap.max; do
   value=$(cat "$cg/$key")
@@ -38,6 +35,7 @@ exit "$status"
 `;
 const extremeReceipt = String.raw`
 set -eu
+printf 'RESOURCE_EXECUTION_ID %s\n' "$HOSTNAME"
 for key in cpu.max memory.max memory.swap.max; do
   value=$(cat "/sys/fs/cgroup/$key")
   printf 'RESOURCE %s %s\n' "$key" "$value"
@@ -61,9 +59,7 @@ function snapshot(root, production, harnessRoot) {
   const directory = production?.directory ?? resolve(root, 'build/lua');
   const generated = readdirSync(directory).filter(file => file.endsWith('.lua')).sort();
   assert(generated.includes('abyss_data.lua') && generated.includes('abyss_ui_templates.lua'), 'run build:data and build:ui first');
-  const hashFiles = (from, paths) => createHash('sha256').update(JSON.stringify(paths.map(path => ({
-    path, sha256: createHash('sha256').update(readFileSync(resolve(from, path))).digest('hex'),
-  })))).digest('hex');
+  const hashFiles = (from, paths) => workloadIdentity(paths, path => readFileSync(resolve(from, path)));
   return {
     commit: git('rev-parse', 'HEAD'),
     tree: git('rev-parse', 'HEAD^{tree}'),
@@ -114,7 +110,9 @@ function measure(root, profile, production, harnessRoot) {
     assert.equal(samples.length, 1, 'expected exactly one Host measurement');
     const sample = validateSample(JSON.parse(samples[0].slice('RUNTIME_BASELINE_JSON '.length)), production ? productionPhases : phases);
     assert(Number.isSafeInteger(sample.maxRssKiB) && sample.maxRssKiB > 0, 'invalid process maxRSS');
-    return { ...sample, wallMs, resources: parseResources(output, profile) };
+    const executionId = /^RESOURCE_EXECUTION_ID ([a-f0-9]{12})$/m.exec(output)?.[1];
+    assert(executionId, 'missing Docker execution identity');
+    return { ...sample, executionId, wallMs, resources: parseResources(output, profile) };
   } catch (error) {
     spawnSync('docker', ['rm', '-f', name], { timeout: 10_000, stdio: 'ignore' });
     return { error: error.message };
@@ -132,8 +130,10 @@ function measureExtreme(root, production, candidate) {
     const state = JSON.parse(run('docker', ['inspect', '--format', '{{json .State}}', id], root));
     const report = Object.fromEntries([...result.stdout.matchAll(/^RESOURCE (\S+) (.+)$/gm)].map(match => match.slice(1)));
     const resources = {cpuMax: report['cpu.max'], memoryMax: report['memory.max'], swapMax: report['memory.swap.max']};
-    probe = {resources, state, stdout: result.stdout, stderr: result.stderr};
+    const executionId = /^RESOURCE_EXECUTION_ID ([a-f0-9]{12})$/m.exec(result.stdout)?.[1];
+    probe = {containerId: id, executionId, resources, state, stdout: result.stdout, stderr: result.stderr};
     assert(!result.error, 'Extreme workload did not complete within the probe bound');
+    assert(executionId && id.startsWith(executionId), 'Extreme receipt does not identify the Docker execution');
     guardExtremeCgroup(resources, state);
   } catch (error) {
     return {status: 'FAIL', candidate, probe, error: error.message};
@@ -141,7 +141,7 @@ function measureExtreme(root, production, candidate) {
     spawnSync('docker', ['rm', '-f', name], {timeout: 10_000, stdio: 'ignore'});
   }
   const recovery = measure(root, profiles.stress, production, root);
-  return {status: recovery.error ? 'FAIL' : 'PASS', candidate, probe,
+  return {status: recovery.error || recovery.executionId === probe.executionId ? 'FAIL' : 'PASS', candidate, probe,
     recovery: {recordedAt: new Date().toISOString(), sample: recovery}};
 }
 
@@ -174,6 +174,10 @@ function suite(values) {
   assert(Number.isInteger(repetitions) && repetitions >= 1 && repetitions <= 100, 'samples must be an integer from 1 to 100');
   const alertPercent = Number(values['alert-percent']);
   assert(Number.isFinite(alertPercent) && alertPercent > 0, 'alert-percent must be positive');
+  if (values.release) {
+    assert(values.mode === 'full' && values.production && values.extreme && values.baseline && !values['baseline-if-compatible'] &&
+      !values.profile && repetitions >= 3 && alertPercent === 20, 'Release resource gate requires all six fixed paired tiers and independent extreme recovery');
+  }
   const candidatePath = realpathSync('.');
   const baselinePath = values.baseline ? realpathSync(values.baseline) : null;
   assert.notEqual(candidatePath, baselinePath, 'prepare the reference in a separate worktree');
@@ -229,9 +233,11 @@ function suite(values) {
   const pass = (!extreme || extreme.status === 'PASS') &&
     Object.values(results).every(result => result.candidate.pass && (result.baseline?.pass ?? true));
   const paired = Object.values(results).every(result => result.comparisonStatus === 'PAIRED');
+  const signals = Object.values(results).some(result => result.signals.length > 0);
   return {
     schemaVersion: 1, timeUtc: new Date().toISOString(),
-    status: pass ? 'PASS' : 'FAIL', mode: values.mode, repetitions,
+    status: resourceResultStatus({release: values.release, pass, paired, signals}), mode: values.mode, repetitions,
+    ...(values.release && { release: true }),
     ...(values.production ? { seed: 42, officialClient: 'UNVERIFIED' } : { seed: 1, idleFrames: 300 }),
     engine: { image, imageId, docker, kernel: release(), arch: arch(), cpuModel: cpus()[0]?.model, availableCpus: availableParallelism(), hostMemoryBytes: totalmem(),
       ...(values.production && { productionHeapMiB }) },
@@ -250,7 +256,7 @@ function main() {
   const { values } = parseArgs({ options: {
     mode: { type: 'string', default: 'fast' }, profile: { type: 'string', multiple: true },
     samples: { type: 'string' }, baseline: { type: 'string' }, 'baseline-if-compatible': { type: 'boolean' },
-    production: { type: 'boolean' }, extreme: { type: 'boolean' },
+    production: { type: 'boolean' }, extreme: { type: 'boolean' }, release: { type: 'boolean' },
     output: { type: 'string', default: 'build/performance-regression/report.json' },
     'alert-percent': { type: 'string', default: '20' },
   } });
