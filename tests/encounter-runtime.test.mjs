@@ -43,8 +43,14 @@ local function same(a,b,path)
  for k,v in pairs(a)do same(v,b[k],path..'.'..tostring(k))end
  for k in pairs(b)do assert(a[k]~=nil,path..' missing '..tostring(k))end
 end
+-- Seed initialization is shared. Every case still asks Run for six fresh room
+-- streams and constructs a fresh combat.
+local runs={}
+local checked=0
 for _,v in ipairs(${toLua(liveCases)})do
- local run=Run.new(Data,v.seed);local streams=Run.roomStreams(run,v.floor)
+ local run=runs[v.seed] or Run.new(Data,v.seed)
+ runs[v.seed]=run
+ local streams=Run.roomStreams(run,v.floor)
  assert(streams.seed==v.roomSeed)
  local tier=v.source=='Gremlin Nob' or v.source=='Lagavulin' or v.source=='3 Sentries'
  local binding=v.source=='The Guardian' and {enemies={'guardian'}} or assert(Bindings.resolve(v.source,tier and 'elite' or 'normal'))
@@ -91,8 +97,9 @@ for _,v in ipairs(${toLua(liveCases)})do
  end
  same(trace,expected,'interleaving '..v.source..' '..v.seed)
  assert(battle.shuffleRng.counter==1 and battle.cardRandomRng.counter==0,'empty initializeDeck shuffles once; cardRandom remains unmigrated')
+ checked=checked+1
 end
-print('SOURCE_ROOM_VECTORS_PASS 126')`);
+print('SOURCE_ROOM_VECTORS_PASS '..checked)`);
   const result=runLua(file,{timeout:60000});assert.equal(result.status,0,result.stderr||result.stdout);
   assert.match(result.stdout,/^SOURCE_ROOM_VECTORS_PASS 126$/m);
  }finally{rmSync(dir,{recursive:true,force:true});}
