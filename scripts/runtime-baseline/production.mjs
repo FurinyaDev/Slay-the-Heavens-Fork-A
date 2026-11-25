@@ -5,19 +5,11 @@ import {mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync
 import {createRequire} from 'node:module';
 import {dirname, join, resolve} from 'node:path';
 import {parseArgs} from 'node:util';
-import {buildLuaData, luaString, toLua} from '../build-lua-data.mjs';
-import {buildUI} from '../build-ui.mjs';
-import {nativeAudioBuildArgs} from '../build-native-audio-game.mjs';
-import {bindPortraitTemplates} from '../official-portraits.mjs';
-import {bindMonsterActorTemplates, monsterActorTiers} from '../monster-art.mjs';
-import {prepareRefinedReleaseMonsterArt, refinedReleaseMonsterRegistry} from '../refined-release-monsters.mjs';
-import {deckBrowserBindingSource, deckBrowserParts, deckBrowserTemplateName} from '../deck-ui-layout.mjs';
+import {prepareProductionInputs, productionPhases} from './production-inputs.mjs';
+import {luaString} from '../build-lua-data.mjs';
 import {validateSample, percentile} from '../benchmark-runtime-path.mjs';
 import {lfsArguments, lfsEnvironment} from '../ci-reviewed-lfs.mjs';
 import {gitSourceIdentity} from '../release-notes.mjs';
-
-const phases = ['begin', 'cold-start', 'start-map', 'first-fight', 'ten-card-hand', 'consecutive-play',
-  'deck-cold-open', 'deck-close', 'deck-warm-open', 'pause-resume', 'exit', 'reenter'];
 
 const {values} = parseArgs({options: {output: {type: 'string', default: 'build/performance-regression/production.json'}}});
 const reportPath = resolve(values.output);
@@ -48,36 +40,7 @@ function verifyCandidate() {
   assert(!source.sourceDirty && !materialInputsChanged(), 'Production Host requires clean CI inputs');
 }
 verifyCandidate();
-const {options} = nativeAudioBuildArgs(['offline.gil', '--work-key=offline-performance']);
-assert(options.officialAssets && options.refinedReleaseMonsterArt && options.nativePageLifecycle,
-  'Production performance requires the refined native audio build preset');
-buildLuaData('data', join(directory, 'abyss_data.lua'));
-buildUI(directory, undefined, options);
-
-// The generator leaves template IDs unbound until import. Use the same binding
-// writers with local IDs, backed by the actual generated template definitions.
-const names = JSON.parse(readFileSync(join(directory, 'game-ui-templates.json'), 'utf8')).map(({name}) => name);
-const indices = new Map(names.map((name, i) => [name, i + 1]));
-const binding = name => ({templateIndex: assertIndex(name)});
-function assertIndex(name) {
-  const index = indices.get(name);
-  assert(index, 'Generated template missing: ' + name);
-  return index;
-}
-const registry = JSON.parse(readFileSync(refinedReleaseMonsterRegistry, 'utf8'));
-const {templateByDefinition} = monsterActorTiers(prepareRefinedReleaseMonsterArt(registry));
-bindMonsterActorTemplates(directory, {
-  actor: binding('AbyssMonsterActor'), group: binding('AbyssReadyCardGroup'), power: binding('AbyssMonsterPower'),
-  templateIndexByDefinition: Object.fromEntries(Object.entries(templateByDefinition)
-    .map(([definition, name]) => [definition, assertIndex(name)])),
-});
-bindPortraitTemplates(directory, {
-  image: binding('AbyssReadyCardImage'), container: binding('AbyssReadyCardGroup'),
-  half: binding('AbyssSelectionHalfTriangle'),
-}, {...options.artFeatures, officialAssets: options.officialAssets});
-writeFileSync(join(directory, 'abyss_deck_browser_binding.lua'), deckBrowserBindingSource(
-  assertIndex(deckBrowserTemplateName), deckBrowserParts.map(part => ({...part, templateIndex: assertIndex(part.name)}))));
-writeFileSync(join(directory, 'performance_templates.lua'), 'return ' + toLua(names) + '\n');
+const options = await prepareProductionInputs(directory);
 
 const samples = [];
 for (let i = 0; i < 3; i++) {
@@ -90,7 +53,7 @@ for (let i = 0; i < 3; i++) {
   const records = lines.filter(line => line.startsWith(prefix));
   assert.equal(records.length, 1);
   assert(lines.includes('PRODUCTION_HOST_PASS seed=42'));
-  const sample = validateSample(JSON.parse(records[0].slice(prefix.length)), phases);
+  const sample = validateSample(JSON.parse(records[0].slice(prefix.length)), productionPhases);
   const cold = sample.rows.find(row => row.phase === 'cold-start');
   assert(cold.nativeMethods.GetChild > 0 && cold.nativeMethods.GetChildren > 0, 'missing startup native query counts');
   samples.push(sample);
@@ -117,7 +80,7 @@ const report = {
   ...source, sourceTree: tree.stdout.trim(), seed: 42, officialClient: 'UNVERIFIED',
   environment: {node: process.version, platform: process.platform, arch: process.arch},
   configuration: options, generatedLuaSha256: generated.digest('hex'),
-  samples, phases: Object.fromEntries(phases.map((name, i) => {
+  samples, phases: Object.fromEntries(productionPhases.map((name, i) => {
     const values = samples.map(sample => sample.rows[i].elapsedMs);
     return [name, {p50Ms: percentile(values, .5), maxMs: Math.max(...values)}];
   })),
