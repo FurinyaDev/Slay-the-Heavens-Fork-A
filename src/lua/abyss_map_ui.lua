@@ -6,6 +6,7 @@ local Theme = require("abyss_theme")
 local Layout = require("abyss_map_layout")
 local Acts = require("abyss_acts")
 local Pointer = require('abyss_pointer_input')
+local Viewport = require('abyss_viewport')
 local M = {}
 -- MapRoomNode.render sizes: glyph 128*scale, MAP_CIRCLE_5 192*(scale*.95+.2).
 function M.drawScale(fx)
@@ -491,7 +492,7 @@ function M.new(root, map, onChoose, clickEvent, options)
         cancelDrag()
         self.canvasWidth, self.canvasHeight = width, height
         if embedded then self.scale = 1 return true end
-        local scale = math.min(width / Theme.canvas.base[1], height / Theme.canvas.base[2])
+        local scale = Viewport.scale(width, height)
         stage.localScaleX, stage.localScaleY = scale, scale
         backdrop:SetSizeDelta(width, height)
         self.scale = scale
@@ -690,10 +691,9 @@ function M.new(root, map, onChoose, clickEvent, options)
     local function point(event)
         if not event or type(event.GetUIPos) ~= "function" then return end
         local x, y = event:GetUIPos()
-        if type(y) ~= "number" or not finite(y) then return end
         local width, height = self.canvasWidth or Theme.canvas.base[1], self.canvasHeight or Theme.canvas.base[2]
-        local scale = math.min(width / Theme.canvas.base[1], height / Theme.canvas.base[2])
-        return finite(x) and x / scale or nil, y / scale
+        local sx, sy = Viewport.toStage(x, y, width, height)
+        if sy then return sx, sy end
     end
     local function press(event, slot)
         pointerObserved = true

@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - Furinya
 created_date: '2026-10-31 23:38'
-updated_date: '2026-11-15 19:11'
+updated_date: '2026-11-25 21:03'
 labels:
   - 待验
   - delivery-verify
@@ -18,7 +18,7 @@ references:
   - docs/backlog-details/TASK-4.20.md
   - docs/evidence/mobile-readability-20261101/
 parent_task_id: TASK-4
-priority: high
+priority: medium
 type: bug
 ordinal: 135000
 ---
@@ -58,4 +58,6 @@ ordinal: 135000
 
 2026-11-14第二轮状态纠正：已有3/5项AC通过及既有实施证据，剩余未完成要求属于后续验证或接续。 状态表示整个任务的完成进展，不表示当前有执行者持续占用；保留原未验AC、负责人、依赖及历史证据。更正过去把已开展待验事项退回To Do的处理。
 2026-11-15手机录音新证据与优先级细节见docs/backlog-details/MOBILE-QA-20261115.md；新增AC待本次候选的定向和移动真机证据，不冒充历史已合实现无效。
+
+v2.2.0 排程将既有可读性继续纳入 TASK-115.6 的宽屏和设备回归。原对比度、字号和实机验收项照常保留。
 <!-- SECTION:NOTES:END -->

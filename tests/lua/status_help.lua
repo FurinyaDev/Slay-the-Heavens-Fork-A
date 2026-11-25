@@ -1,10 +1,11 @@
+local readPowers=dofile('tests/lua/support/power_tip_fixture.lua')
 local monsterControl=dofile('tests/lua/support/monster_control_fixture.lua')
 local H = dofile("tests/lua/support/battle_gesture_fixture.lua")
 local Combat = H.F.Combat
 local count=0
 local function test(name,fn) fn(); count=count+1; print("ok status help "..count.." - "..name) end
-local function setup()
-    local host, ui, panel = H.setup({"bash","strike","defend"},{"spike_slime_m"})
+local function setup(pointer)
+    local host, ui, panel = H.setup({"bash","strike","defend"},{"spike_slime_m"},pointer)
     -- Native cursorArea has no interactable property (observed on CN 7.1).
     local hit=panel:GetChild("statusInfo"):GetChild("hit")
     assert(hit.kind=='cursorArea' and hit.raycastTarget~=false)
@@ -44,7 +45,7 @@ test("actual Vulnerable names its owner, name, stack and effect in visible text 
     Combat.addStatus(s.enemies[1],"vulnerable",1); u:render()
     emit(dofile('tests/lua/support/monster_power_control_fixture.lua')(monsterControl(p,'enemy1'),'vulnerable'):GetChild('hit'),"click")
     local info=p:GetChild("statusInfo")
-    assert(info:GetChild("name1").text=="易伤 1")
+    assert(info.visible and info:GetChild("name1").visible and info:GetChild("name1").text=="易伤 1")
     assert(info:GetChild("text1").text:find("50%",1,true))
     for _,name in ipairs({"title","summary","name1","text1"}) do
         assert(info:GetChild(name).sizeDeltaY>=H.F.Theme.layout.nativeText.lineHeight,name.." would clip on the native client")
@@ -53,15 +54,31 @@ test("actual Vulnerable names its owner, name, stack and effect in visible text 
     local room=theme.canvas.base[2]-theme.layout.topBar.height-theme.space.s-theme.canvas.safe.y
     assert(info:GetChild("plate").sizeDeltaY<=room,"detail panel must fit below the top bar")
 end)
+test("power titles without amounts retain live charges and damage in the body",function()
+    local h,u,p=H.setup({"defend"},{"jaw_worm"},{touchScreen=function()return true end})
+    local player=h.run.combat.player
+    Combat.addStatus(player,"buffer",2)
+    Combat.addStatus(player,"double_tap",3)
+    Combat.addStatus(player,"juggernaut",7)
+    u:render()
+    local hit=p:GetChild("hero"):GetChild("hit")
+    local event={touchId=8}
+    hit.listeners.down(event);hit.listeners.up(event);hit.listeners.click(event)
+    local copy,rows=readPowers(p)
+    assert(#rows==3 and copy:find(">缓冲</color>\n抵消接下来 2 次",1,true),copy)
+    assert(copy:find(">叠势连击</color>\n本回合接下来打出的 3 张攻击牌",1,true),copy)
+    assert(copy:find(">守中有攻</color>\n每次获得格挡，对随机敌人造成 7 点",1,true),copy)
+end)
 test("hover opens a read-only tooltip and exits without changing combat or target",function()
-    local h,u,p,s,emit=setup()
+    local h,u,p,s,emit=setup({touchScreen=function()return false end})
     Combat.addStatus(s.player,"frail",2); u:render()
     local hit=p:GetChild("hero"):GetChild("statusRow"):GetChild("hit1")
     local before=Combat.copy(s);local target=u.target
     emit(hit,"enter");h:update(0.4)
     local info=p:GetChild("statusInfo")
-    assert(info.visible and info:GetChild("name1").text=="脆弱 2")
-    assert(info:GetChild("text1").text:find("25%",1,true))
+    local copy,rows=readPowers(p)
+    assert(#rows==1 and copy:find(">脆弱</color>",1,true) and copy:find("25%",1,true)
+        and copy:find("剩余 2 回合",1,true))
     assert(not info:GetChild("hit").visible,"hover must not cover the play surface with a modal hit")
     emit(hit,"exit");assert(not info.visible)
     assert(s.player.hp==before.player.hp and s.seed==before.seed and #s.events==#before.events and u.target==target)
@@ -84,9 +101,14 @@ test("card keyword hover explains the keyword without granting its status",funct
     local slot
     for i,card in ipairs(s.hand) do if card.cardId=="bash" then slot=i end end
     emit(p:GetChild("card"..slot):GetChild("hit"),"enter");h:update(0.4)
-    local info=p:GetChild("statusInfo")
-    assert(info.visible and info:GetChild("tag").text:find("关键词",1,true))
-    assert(info:GetChild("name1").text:find("易伤",1,true))
+    local copy,rows=readPowers(p)
+    assert(#rows==1 and copy:find(">易伤</color>",1,true) and copy:find("50%",1,true))
+    local tip=p:GetChild("statusInfo"):GetChild("powerTips"):GetChild("tip1")
+    assert(tip:GetChild("copy").sizeDeltaY>=2*H.F.Theme.layout.nativeText.lineHeight)
+    emit(p:GetChild("card"..slot):GetChild("hit"),"exit")
+    for i,card in ipairs(s.hand)do if card.cardId=="strike" then slot=i end end
+    emit(p:GetChild("card"..slot):GetChild("hit"),"enter");h:update(0.4)
+    assert(not p:GetChild("statusInfo").visible,"ordinary Strike has no printed keyword to explain")
     assert((s.enemies[1].statuses.vulnerable or 0)==0 and #s.hand==3 and s.energy==3)
 end)
 test("a pending hold cannot follow a replacement enemy in the same slot",function()

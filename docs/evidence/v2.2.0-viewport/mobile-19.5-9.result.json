@@ -1,0 +1,43 @@
+{
+  "canvasWidth": 1560,
+  "canvasHeight": 720,
+  "platform": "TOUCHSCREEN",
+  "device": "Mobile",
+  "logs": [
+    {
+      "source": "client",
+      "level": "info",
+      "text": "V220_VIEWPORT canvas 1560 720 scale 1.00000000 device EnumItem: 0x1f6",
+      "time": 0
+    },
+    {
+      "source": "client",
+      "level": "info",
+      "text": "V220_VIEWPORT frame logical 1560.0000 720.0000 visual 1960.0000 720.0000",
+      "time": 0
+    },
+    {
+      "source": "client",
+      "level": "info",
+      "text": "V220_VIEWPORT hit 1 ui 60.00000 280.00000 cursor 60.00000 280.00000 local -720.00000 -80.00000",
+      "time": 0
+    },
+    {
+      "source": "client",
+      "level": "info",
+      "text": "V220_VIEWPORT hit 2 ui 1500.00000 280.00000 cursor 1500.00000 280.00000 local 720.00000 -80.00000",
+      "time": 0
+    }
+  ],
+  "receipt": {
+    "canvasId": "mobile-19.5-9",
+    "frame": 0,
+    "time": 0,
+    "clockMode": "manual",
+    "width": 1560,
+    "height": 720,
+    "pixelWidth": 1560,
+    "pixelHeight": 720,
+    "assetWarnings": []
+  }
+}

@@ -87,6 +87,21 @@ test('missing local payload fails closed without leaking token or transport diag
  });
 });
 
+test('a hosted shard restores verified previews from the shared bundle without an LFS download',async t=>{
+ const {root,api}=await fixture(t);const cache=offlineLfs(root);rmSync(cache);
+ const bundle=join(root,'bundle');mkdirSync(bundle);
+ const bundledPreview=join(bundle,oid),env={...process.env,CI_MEDIA_BUNDLE:bundle};
+ const corrupt=Buffer.from(png);corrupt[20]^=1;
+ writeFileSync(bundledPreview,corrupt);
+ assert.throws(()=>api.prepareRuntimePreviews({root,needed:true,env}),/not the frozen runtime preview PNG/);
+ for(const path of paths)assert.equal(readFileSync(join(root,path),'utf8'),pointer);
+
+ writeFileSync(bundledPreview,png);
+ assert.deepEqual(api.prepareRuntimePreviews({root,needed:true,env}),{status:'restored',count:4,bytes:256});
+ for(const path of paths)assert.deepEqual(readFileSync(join(root,path)),png);
+ assert.deepEqual(api.prepareRuntimePreviews({root,needed:true,env}),{status:'cached',count:4,bytes:256});
+});
+
 test('real fast and shard entrypoints dispatch bounded preparation only for selected JS',t=>{
  const root=mkdtempSync(join(tmpdir(),'runtime-routing-'));t.after(()=>rmSync(root,{recursive:true,force:true}));
  mkdirSync(join(root,'scripts'));mkdirSync(join(root,'tests'));mkdirSync(join(root,'tests/lua'));

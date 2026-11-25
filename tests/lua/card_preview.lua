@@ -374,7 +374,7 @@ test("player and every enemy show status icons, stacks and full current effects"
     eq(box:GetChild("guard").text, "格挡 0")
     -- Hierarchy: buff section, then debuff section; name + duration, effect, condition.
     eq(box:GetChild("section1").text, "增益") eq(box:GetChild("section2").text, "减益")
-    eq(rows[1].name, "力量 2") eq(rows[1].tag, "本回合") eq(rows[1].text, "普通攻击每段伤害 +2")
+    eq(rows[1].name, "力量") eq(rows[1].tag, "本回合") eq(rows[1].text, "攻击伤害提升 2 点")
     eq(rows[1].note, "回合结束时失去 2 层力量")
     eq(rows[2].name, "易伤 1") eq(rows[2].tag, "剩余 1 回合") eq(rows[2].text, "受到的普通攻击伤害 +50%")
     tap({"statusInfo", "hit"}) assert(not panel:GetChild("statusInfo").visible)
@@ -383,7 +383,7 @@ test("player and every enemy show status icons, stacks and full current effects"
         -- Weak was inserted before Poison. ApplyPowerAction instead sorts by
         -- Power.priority (Weak=99); this is not a claim about all source actions.
         {{"虚弱 2", "剩余 2 回合", "造成的普通攻击伤害 -25%"}, {"中毒 4", "每回合 -1", "自己的回合开始时失去 4 点生命"}},
-        {{"人工制品 1", "剩余 1 次", "抵挡接下来 1 次减益效果"}, {"力量 -1", "本场战斗", "普通攻击每段伤害 -1"}},
+        {{"人工制品 1", "剩余 1 次", "抵挡接下来 1 次减益效果"}, {"力量", "", "攻击伤害降低 1 点。"}},
         {{"荆棘 3", "本场战斗", "受到攻击时，对攻击者造成 3 点伤害"}},
     }
     for i, lines in ipairs(expected) do
