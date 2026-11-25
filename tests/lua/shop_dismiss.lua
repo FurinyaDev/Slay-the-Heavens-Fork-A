@@ -210,8 +210,11 @@ test('generated dismiss hit stays below item hits and the footer, without replac
     assert(get('shopDismiss').sizeDeltaX==F.Theme.canvas.base[1])
     assert(tap('shopView/relic3',1));assert(get('shopView/detail').visible,'item click fell through to dismissal')
     assert(tap('shopView/potion1',2));assert(get('shopView/detail').visible,'changing item was intercepted')
-    local shopIndex,confirmIndex
-    for i,child in ipairs(spec.children)do if child.name=='shopView'then shopIndex=i elseif child.name=='confirm'then confirmIndex=i end end
-    assert(confirmIndex>shopIndex and spec.children[1].name=='backdrop','bottom surface would cover purchase/leave')
+    local order={}
+    for i,child in ipairs(spec.children)do order[child.name]=i end
+    assert(order.shopShade < order.shopDismiss, 'opaque transition layer would cover the dismissal area')
+    for _,name in ipairs({'shopView','merchant','back','confirm'})do
+        assert(order.shopDismiss < order[name], 'lower dismissal area would cover '..name)
+    end
 end)
 print('SHOP_DISMISS_PASS '..count)

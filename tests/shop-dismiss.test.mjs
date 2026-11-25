@@ -1,5 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {spawnSync} from 'node:child_process';
+import {mkdtempSync,rmSync} from 'node:fs';
+import {createRequire} from 'node:module';
+import {tmpdir} from 'node:os';
+import {join} from 'node:path';
+import {buildLuaData} from '../scripts/build-lua-data.mjs';
+import {buildUI} from '../scripts/build-ui.mjs';
 import {runLua} from '../scripts/test-lua.mjs';
 import {nodeLayout} from '../scripts/node-ui-layout.mjs';
 import {nativeTheme} from '../scripts/native-ui-theme.mjs';
@@ -29,4 +36,19 @@ test('shop outside dismissal preserves current selection and purchase ownership'
   const result=runLua('tests/lua/shop_dismiss.lua');
   assert.equal(result.status,0,result.stderr||result.stdout);
   assert.match(result.stdout,/SHOP_DISMISS_PASS 12/);
+});
+
+test('the release UI profile keeps all shop dismissal and purchase cases',t=>{
+  const out=mkdtempSync(join(tmpdir(),'abyss-release-shop-dismiss-'));
+  t.after(()=>rmSync(out,{recursive:true,force:true}));
+  buildLuaData('data',join(out,'abyss_data.lua'));
+  buildUI(out,undefined,{officialAssets:true,nativePageLifecycle:true});
+  const path=out.replaceAll('\\','/')+'/?.lua;./src/lua/?.lua;;';
+  const lua=createRequire(import.meta.url).resolve('fengari-node-cli/src/lua-cli.js');
+  const result=spawnSync(process.execPath,[lua,'-e',"dofile('tests/lua/shop_dismiss.lua')"],{
+    encoding:'utf8',timeout:30000,env:{...process.env,LUA_PATH:path,LUA_PATH_5_3:path,LUA_INIT:'',LUA_INIT_5_3:''},
+  });
+  assert.ifError(result.error);
+  assert.equal(result.status,0,result.stdout+result.stderr);
+  assert.match(result.stdout,/^SHOP_DISMISS_PASS 12$/m);
 });
