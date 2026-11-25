@@ -718,6 +718,15 @@ function closeoutPredecessor(path){
  }
  return closeoutPredecessors.get(path);
 }
+const integrationInventoryHelper='tests/helpers/integrated-ci-source.mjs';
+let integrationInventoryPredecessor;
+function beforeCalibrationInventoryHelper(path,source){
+ if(path!==integrationInventoryHelper)return source;
+ integrationInventoryPredecessor??=releaseUiRestoreArchive(
+  readFileSync(new URL('./calibration-v220-inventory-source.json.gz',import.meta.url)),
+  '782088c2367c0a9492ec2f8a2a1a3aae3a12da9f726cfb1e635b4f84ebbd3672','8b4172d59779ad9fa21b4ba91ef750ab22fcdaf1');
+ return integrationInventoryPredecessor.project(path,source);
+}
 function beforeIntegrationReplayTests(path,source){
  if(path!=='tests/integration-source-epoch.test.mjs'||typeof source!=='string'||source.includes('\r\r\n'))return source;
  const current=normalize(source);
@@ -783,6 +792,14 @@ function withoutArchiveRecords(current,first,after){
 function beforeDeckBrowserAssetLedger(source){
  if(typeof source!=='string'||source.includes('\r\r\n'))return source;
  let current=normalize(source);
+ // #951 updates the native event manifest hash after its approved text edits.
+ if(hash(current)==='3c4b140e7d432bb1de89289e516723dafa14daecd414b1ffe94b4f39d267f5c2'&&
+    blob(current)==='94e5b7f8a05e190d59e603b7b0760fc968d2a600'){
+  current=current.replace('eac9cfc53f1203d635ba1ed77acee1bfd6d12073be53fcb7b4d0af56262bb1b5',
+   'db7a1393c4fae90fc9d7cc30b2ee762394a8ab041b19a6a9aa33973a263eeb13');
+  assert.equal(hash(current),'5ec27c5274a512ccdf2dfb183f65bd15321c87883e3e4e633e6502f726429353','exact pre-#951 asset ledger');
+  assert.equal(blob(current),'dcd99bd13cf06653847b5ca8eb76748c229f17a4');
+ }
  if(hash(current)==='5ec27c5274a512ccdf2dfb183f65bd15321c87883e3e4e633e6502f726429353'&&
     blob(current)==='dcd99bd13cf06653847b5ca8eb76748c229f17a4'){
   current=withoutArchiveRecords(current,'    "native-event-illustrations": {\n','    "deck-browser-host-evidence": {\n');
@@ -873,7 +890,7 @@ function beforeIntegrationSuccessor(path,source){
 }
 export function assertIntegrationSuccessorsCurrent(read=readFileSync){
  const rawRead=read;
- const liveRead=(path,encoding)=>beforeForkPush(path,rawRead(path,encoding));
+ const liveRead=(path,encoding)=>beforeForkPush(path,beforeCalibrationInventoryHelper(path,rawRead(path,encoding)));
  assertNativeFixturesCurrent(liveRead);
  assertNativeFlowFixturesCurrent(liveRead);
  read=(path,encoding)=>{
@@ -929,7 +946,7 @@ export function assertIntegrationSuccessorsCurrent(read=readFileSync){
  }
 }
 export function beforePreflightSource(path,source,view='prior'){
- source=beforeForkPush(path,source);
+ source=beforeForkPush(path,beforeCalibrationInventoryHelper(path,source));
  if(path==='.github/workflows/quality.yml')source=beforePosixDeadlineWorkflow(beforeWindowsDeadlineWorkflow(source));
  source=beforeUiEntranceWitness(path,beforeCurrentReplayCopier(path,source));
  source=beforeCurrentReplayFixes(path,source);
