@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { test } from 'node:test';
-import { api, approvedRequest, releaseSourceRef, resolveSource, verifyReceipts, verifySource, verifyUploadedArtifact } from '../scripts/gil-candidate.mjs';
+import { api, approvedRequest, digestArtifactDownload, releaseSourceRef, resolveSource, verifyReceipts, verifySource, verifyUploadedArtifact } from '../scripts/gil-candidate.mjs';
 
 const sourceSha = '1'.repeat(40);
 const baseSha256 = '2'.repeat(64);
@@ -61,13 +61,19 @@ test('verify the exact uploaded artifact archive and its download link', async (
   const artifact = { id: 11, name: expected.name, expired: false, expires_at: '2026-11-24T00:00:00Z',
     size_in_bytes: 42, digest: 'sha256:' + baseSha256, workflow_run: { id: 10 } };
   const request = (changes = {}, downloadable = true) => async (_path, checkDownload) =>
-    checkDownload ? downloadable : { ...artifact, ...changes };
-  assert.match(await verifyUploadedArtifact(expected, request(), now), /runs\/10\/artifacts\/11$/);
+    checkDownload ? downloadable && 'https://blob.example/archive' : { ...artifact, ...changes };
+  const download = async location => {
+    assert.equal(location, 'https://blob.example/archive');
+    return { bytes: 42, sha256: baseSha256 };
+  };
+  assert.match(await verifyUploadedArtifact(expected, request(), now, download), /runs\/10\/artifacts\/11$/);
   for (const changes of [{ expired: true }, { expires_at: '2026-11-22T00:00:00Z' }, { digest: null },
     { name: 'other' }, { workflow_run: { id: 20 } }]) {
     await assert.rejects(verifyUploadedArtifact(expected, request(changes), now), /metadata or archive digest/);
   }
   await assert.rejects(verifyUploadedArtifact(expected, request({}, false), now), /accessible download link/);
+  await assert.rejects(verifyUploadedArtifact(expected, request(), now, async () => ({ bytes: 41, sha256: baseSha256 })), /Downloaded Artifact size or archive SHA-256/);
+  await assert.rejects(verifyUploadedArtifact(expected, request(), now, async () => ({ bytes: 42, sha256: '3'.repeat(64) })), /Downloaded Artifact size or archive SHA-256/);
 });
 
 test('reject missing protected base URL before downloads', () => {
@@ -83,12 +89,27 @@ test('check the download redirect without fetching the archive', async ({ mock }
   const fetch = mock.method(globalThis, 'fetch', async () => new Response('{}'));
   await assert.rejects(api(path, true), /download redirect/);
   fetch.mock.mockImplementation(async () => new Response(null, { status: 410 }));
-  assert.equal(await api(path, true), false);
+  assert.equal(await api(path, true), null);
   fetch.mock.mockImplementation(async (_url, options) => {
     assert.equal(options.redirect, 'manual');
     return new Response(null, { status: 302, headers: { location: 'https://example.com/archive' } });
   });
-  assert.equal(await api(path, true), true);
+  assert.equal(await api(path, true), 'https://example.com/archive');
+});
+
+test('stream the signed archive without API credentials and reject additional redirects', async ({ mock }) => {
+  const body = 'fixture archive bytes';
+  const fetch = mock.method(globalThis, 'fetch', async (url, options) => {
+    assert.equal(String(url), 'https://blob.example/archive');
+    assert.equal(options.redirect, 'error');
+    assert.equal(options.headers, undefined);
+    return new Response(body);
+  });
+  assert.deepEqual(await digestArtifactDownload('https://blob.example/archive'),
+    { bytes: Buffer.byteLength(body), sha256: createHash('sha256').update(body).digest('hex') });
+  await assert.rejects(digestArtifactDownload('http://blob.example/archive'), /Invalid GitHub Artifact download URL/);
+  fetch.mock.mockImplementation(async () => { throw TypeError('unexpected redirect'); });
+  await assert.rejects(digestArtifactDownload('https://blob.example/archive'), /did not finish/);
 });
 
 test('bind the exact full and final audio receipts, final bytes and production profile', () => {

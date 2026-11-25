@@ -1,8 +1,8 @@
 # GIL 云端构建与交付
 
-主仓 Actions 的 **GIL candidate** 自动处理 `release/vX.Y.Z` 更新及正式 SemVer Tag（`engine-vX.Y.Z` 或历史命名 `vX.Y.Z`）。日常开发分支、PR 和普通 develop push 不触发打包。安装工作流后，从默认分支 `develop` 的 **Run workflow** 可指定 `develop`、已验收的 develop 40 位 SHA、发布分支或正式 Tag。分支每次触发绑定事件提交，Tag 解引用到 master 已接收的提交。构建前后校验干净源码，产物包含同一源码版本的完整正式内容及有声音频，发布分支和 Tag 均使用 `--release-candidate`。
+主仓 Actions 的 **GIL candidate** 自动处理 `release/vX.Y.Z` 更新及正式工程 SemVer Tag（`engine-vX.Y.Z` 或 `vX.Y.Z`）。日常开发分支、PR 和普通 develop push 不触发打包。安装工作流后，从默认分支 `develop` 的 **Run workflow** 可指定 `develop`、已验收的 develop 40 位 SHA、发布分支或正式 Tag。分支每次触发绑定事件提交，Tag 解引用到 master 已接收的提交，且版本须与源码工程版本一致。只记录平台版号的历史 `v2.1.0` 由既有历史归档追溯。构建前后校验干净源码，产物包含同一源码版本的完整正式内容及有声音频，发布分支和 Tag 均使用 `--release-candidate`。
 
-成功 Run 的 Summary 提供验证过的下载入口。**Artifacts** 保留 30 天，重跑使用新的 attempt 名称。ZIP 中包含一份 `slay-the-heavens-vX.Y.Z-<12 位 SHA>.gil`、`candidate.json`、`manifest.json` 和 `SHA256SUMS`。解压后运行 `sha256sum -c SHA256SUMS`。PowerShell 可用 `Get-FileHash *.gil -Algorithm SHA256` 对照清单。清单记录源码 Ref 和完整 SHA、工程 SemVer、平台版本映射状态、底图及产物摘要、构建配置与时间、工具版本、Run/attempt、文件字节数及读回结果。平台真实版本在官方发布确认前为空。
+成功 Run 的 Summary 提供验证过的下载入口。工作流重新下载上传的 ZIP 并核对完整大小和 SHA-256。**Artifacts** 保留 30 天，重跑使用新的 attempt 名称。ZIP 中包含一份 `slay-the-heavens-vX.Y.Z-<12 位 SHA>.gil`、`candidate.json`、`manifest.json` 和 `SHA256SUMS`。解压后运行 `sha256sum -c SHA256SUMS`。PowerShell 可用 `Get-FileHash *.gil -Algorithm SHA256` 对照清单。清单记录源码 Ref 和完整 SHA、工程 SemVer、平台版本映射状态、底图及产物摘要、构建配置与时间、工具版本、Run/attempt、文件字节数及读回结果。平台真实版本在官方发布确认前为空。
 
 ## 首次配置
 
