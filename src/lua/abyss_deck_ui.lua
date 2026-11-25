@@ -315,13 +315,18 @@ function M.new(root, presentation, clickEvent, platform, onClose)
     local function paintBrowseSort(active)
         for _,mode in ipairs(browseSorts)do
             local control=root:GetChild('sort'..mode)
-            control:SetVisible(active and not self.pileKind)
-            local selected=active and self.sortMode==mode
-            control:GetChild('selected'):SetVisible(selected)
-            local direction=self.sortAscending
-            local label=sortNames[mode]..(selected and (direction and ' ↑' or ' ↓') or '')
-            for _,state in ipairs({'normal','hover','pressed','disabled'})do
-                control:GetChild('hit'):GetChild(state):GetChild('label').text=label
+            if active then
+                local selected=self.sortMode==mode
+                control:GetChild('selected'):SetVisible(selected)
+                local label=sortNames[mode]..(selected and (self.sortAscending and ' ↑' or ' ↓') or '')
+                local hit=control:GetChild('hit')
+                for _,state in ipairs({'normal','hover','pressed','disabled'})do
+                    hit:GetChild(state):GetChild('label').text=label
+                end
+                if control.visible~=true then control:SetVisible(true) end
+            elseif control.visible~=false then
+                control:SetVisible(false)
+                control:GetChild('selected'):SetVisible(false)
             end
         end
     end
