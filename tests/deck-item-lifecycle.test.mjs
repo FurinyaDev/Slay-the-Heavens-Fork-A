@@ -4,6 +4,7 @@ import {mkdtempSync,mkdirSync,readFileSync,readdirSync,rmSync} from 'node:fs';
 import {join,resolve} from 'node:path';
 import {spawnSync} from 'node:child_process';
 import {createRequire} from 'node:module';
+import {createHash} from 'node:crypto';
 import {buildLuaData,luaString} from '../scripts/build-lua-data.mjs';
 import {buildUI} from '../scripts/build-ui.mjs';
 import {beforeMapDeckSource,mapDeckPriorRead} from './helpers/release-map-deck-source.mjs';
@@ -40,6 +41,16 @@ test('historical map deck replay authenticates every current Lua owner before re
  }),/map deck linked owner missing/);
  const drift=current+'\n';
  assert.equal(beforeMapDeckSource(path,drift,()=>assert.fail('unknown source read another owner')),drift);
+});
+test('historical helper copy retains its original bytes and rejects foreign edits',()=>{
+ const path='tests/helpers/release-map-deck-source.mjs';
+ const source=readFileSync(path,'utf8');
+ const read=()=>assert.fail('helper copy consulted a live owner');
+ const prior=beforeMapDeckSource(path,source,read);
+ assert.equal(createHash('sha256').update(prior).digest('hex'),'d76d9d67c6e696d966fe9608a46e66eea0c0e2739c06dd9672151afd4b1f0973');
+ const foreign=source.replace('const hotfixArchive=','const hotfixArchive =');
+ assert.notEqual(foreign,source);
+ assert.equal(beforeMapDeckSource(path,foreign,read),foreign);
 });
 test('map top-bar deck skips covered map and probe painting while retaining scroll, cards and input',t=>{
  const base=resolve('.artifacts/test-tmp');mkdirSync(base,{recursive:true});const out=mkdtempSync(join(base,'map-deck-open-'));t.after(()=>rmSync(out,{recursive:true,force:true}));

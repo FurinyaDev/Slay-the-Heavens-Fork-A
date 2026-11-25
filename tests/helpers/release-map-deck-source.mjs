@@ -4,6 +4,7 @@ import {createHash} from 'node:crypto';
 import {readFileSync} from 'node:fs';
 import {gunzipSync} from 'node:zlib';
 import {beforeLoadingRecoverySource} from './loading-recovery-source.mjs';
+import {beforeHotfixMapDeckHelperSource} from './hotfix-map-deck-helper-source.mjs';
 
 const hash=(bytes,algorithm='sha256')=>createHash(algorithm).update(bytes).digest('hex');
 const normalize=source=>source.replaceAll('\r\n','\n');
@@ -101,6 +102,8 @@ export function beforeMapRoomSource(path,source){
 }
 
 export function beforeMapDeckSource(path,source,read){
+  const helper=beforeHotfixMapDeckHelperSource(path,source);
+  if(helper!==source)return helper;
   if(Object.hasOwn(hotfixFiles,path)&&current(source,hotfixFiles[path].after)){
     const priorRead=hotfixPriorRead(read);
     const prior=beforeMapDeckSource(path,priorRead(path,'utf8'),priorRead);
