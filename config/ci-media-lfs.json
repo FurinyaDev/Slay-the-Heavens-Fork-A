@@ -7480,18 +7480,8 @@
   },
   "checkoutExtension": {
     "sourceCommit": "6492e8dccbcf847a0eba7ad3995da50257032e08",
-    "maxPayloadBytes": 28855381,
+    "maxPayloadBytes": 26457288,
     "files": [
-      {
-        "path": "docs/design/reference-assets/v2.0.0/main-menu-approved-20261119.png",
-        "sha256": "655f4926a86d1135d468b31bf0c225352c65de03ba09a0d684ffa875265741dd",
-        "bytes": 2398093,
-        "category": "approved-menu-design-reference",
-        "oldBinaryGitBlobs": [
-          "c594ad6ff5cbb90ae1407e53c8ad87c6c76c106f"
-        ],
-        "sourceCommit": "6492e8dccbcf847a0eba7ad3995da50257032e08"
-      },
       {
         "path": "docs/design/reference-assets/v2.0.0/sts1-main-menu-20261121/background-hd.png",
         "sha256": "780f7428b1389e7ac824a5c2bd086339af19ea284e394ace692a6a4011d57c8c",

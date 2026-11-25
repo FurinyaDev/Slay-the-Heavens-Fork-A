@@ -7,7 +7,7 @@ import {gunzipSync} from 'node:zlib';
 const hash=(source,algorithm='sha256')=>createHash(algorithm).update(source).digest('hex');
 const blob=source=>hash(`blob ${Buffer.byteLength(source)}\0${source}`,'sha1');
 const archive=readFileSync(new URL('./checkout-storage-source.json.gz',import.meta.url));
-assert.equal(hash(archive),'7949420f8b7e4cd467dd27be7494e5f170cff92a4262a2a26474096211e30a16','exact checkout storage source receipt');
+assert.equal(hash(archive),'648d2d6644e8065318d2ad6d86defa1c3a6af37ef7600eed57a82411151ea905','exact checkout storage source receipt');
 const {schemaVersion,base,files}=JSON.parse(gunzipSync(archive));
 assert.equal(schemaVersion,1);
 assert.equal(base,'6492e8dccbcf847a0eba7ad3995da50257032e08');

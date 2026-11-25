@@ -573,11 +573,7 @@
     },
     "docs/design/reference-assets/v2.0.0/main-menu-approved-20261119.png": {
       "sha256": "655f4926a86d1135d468b31bf0c225352c65de03ba09a0d684ffa875265741dd",
-      "category": "approved-menu-design-reference",
-      "bytes": 2398093,
-      "lfs": true,
-      "storage": "ci-media-lfs-v1",
-      "sourceCommit": "6492e8dccbcf847a0eba7ad3995da50257032e08"
+      "category": "approved-menu-design-reference"
     },
     "docs/evidence/menu-red-quality-20261114/menu.png": {
       "sha256": "23ac07b19542c110d6bb443a0c56e7477b40a2c6cc4bd38617326b3a59f44b9a",

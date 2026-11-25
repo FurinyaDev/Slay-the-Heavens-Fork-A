@@ -255,7 +255,7 @@ test('existing media pointers retain their exact original ledger identities and 
  const pointers=new Map(mediaFiles.map(row=>[row.path,mediaPointer(row)]));
  assert.equal(originalMediaFiles.length,738);assert.equal(new Set(originalMediaFiles.map(row=>row.sha256)).size,705);
  assert.equal([...new Map(originalMediaFiles.map(row=>[row.sha256,row.bytes])).values()].reduce((a,b)=>a+b,0),117369505);
- assert.deepEqual(validateMediaPointers(pointers),{files:831,objects:780,bytes:195739824});
+ assert.deepEqual(validateMediaPointers(pointers),{files:830,objects:779,bytes:193341731});
  assert.equal(maxMediaPayloadBytes,117369505);assert.equal(maxEvidencePayloadBytes,37495268);assert.equal(lfs.maxReviewedPngBytes,5983528);
  for(const row of mediaFiles){const entry=ledger.files[row.path];assert.equal(entry.sha256,row.sha256);assert.equal(entry.bytes,row.bytes);assert.equal(entry.category,row.category);assert.equal(entry.storage,'ci-media-lfs-v1');}
  const first=mediaFiles[0],wrong=new Map(pointers);wrong.set(first.path,Buffer.from(mediaPointer(first).toString().replace(first.sha256,'0'.repeat(64))));
@@ -266,7 +266,7 @@ test('existing media pointers retain their exact original ledger identities and 
 });
 
 test('complete existing media are freshly authenticated on a cache hit without a transfer token',()=>{
- assert.deepEqual(prepareMediaAssets({env:{...process.env,CI_LFS_TOKEN:''}}),{status:'cached',files:831,objects:780,bytes:195739824});
+ assert.deepEqual(prepareMediaAssets({env:{...process.env,CI_LFS_TOKEN:''}}),{status:'cached',files:830,objects:779,bytes:193341731});
 });
 
 test('three existing CI archives retain complete bytes and original Git blob identities under exact storage',()=>{
@@ -299,9 +299,9 @@ test('two frozen helper archives preserve complete historical views under exact 
 });
 
 test('checkout storage preserves the reviewed binary fixtures, paths, and original comparison identities',()=>{
- assert.equal(checkoutFiles.length,12);
- assert.equal(maxCheckoutPayloadBytes,28855381);
- assert.equal(new Set(checkoutFiles.map(row=>row.sha256)).size,12);
+ assert.equal(checkoutFiles.length,11);
+ assert.equal(maxCheckoutPayloadBytes,26457288);
+ assert.equal(new Set(checkoutFiles.map(row=>row.sha256)).size,11);
  assert.equal(checkoutFiles.reduce((sum,row)=>sum+row.bytes,0),maxCheckoutPayloadBytes);
  for(const row of checkoutFiles){
   assert.equal(row.sourceCommit,'6492e8dccbcf847a0eba7ad3995da50257032e08');

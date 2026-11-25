@@ -8,7 +8,7 @@ import {spawnSync} from 'node:child_process';
 import {lfsArguments,lfsEnvironment} from './ci-reviewed-lfs.mjs';
 const hash=bytes=>createHash('sha256').update(bytes).digest('hex');
 const bytes=readFileSync(new URL('../config/ci-media-lfs.json',import.meta.url));
-assert.equal(hash(bytes),'1c43180035b554dd1e95efc7a3dc6a41d36c9256b355d3e72229c1bb09bca526','exact media and evidence manifest');
+assert.equal(hash(bytes),'6116501b13bea235c3aab03da6a8b0776b07a6cf22914bb4b4c7caef646853bd','exact media and evidence manifest');
 const manifest=JSON.parse(bytes);
 assert.equal(manifest.schemaVersion,1);
 const {checkoutExtension,...previous}=manifest;
@@ -28,7 +28,7 @@ export const maxMediaPayloadBytes=117369505;
 export const maxEvidencePayloadBytes=37495268;
 export const maxArchivePayloadBytes=6584075;
 export const maxHelperArchivePayloadBytes=5435595;
-export const maxCheckoutPayloadBytes=28855381;
+export const maxCheckoutPayloadBytes=26457288;
 assert.equal(manifest.maxPayloadBytes,maxMediaPayloadBytes);
 assert.equal(manifest.evidenceExtension.maxPayloadBytes,maxEvidencePayloadBytes);
 assert.equal(manifest.evidenceExtension.sourceCommit,'f34723b6d54b6153de8a333a8abcc77884737f8f');
@@ -41,7 +41,7 @@ assert.equal(manifest.helperExtension.maxPayloadBytes,maxHelperArchivePayloadByt
 assert.deepEqual(helperArchiveFiles.map(row=>row.path),['tests/helpers/closeout-ci-source.json.gz','tests/helpers/release-source-epoch.json.gz']);
 assert.equal(checkoutExtension.sourceCommit,'6492e8dccbcf847a0eba7ad3995da50257032e08');
 assert.equal(checkoutExtension.maxPayloadBytes,maxCheckoutPayloadBytes);
-assert.equal(checkoutFiles.length,12);
+assert.equal(checkoutFiles.length,11);
 assert.equal(mediaByPath.size,mediaFiles.length);
 const unique=new Map();
 for(const row of mediaFiles){
