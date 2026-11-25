@@ -552,6 +552,9 @@ const currentReleaseTests=Object.freeze({
  'tests/gil-candidate.test.mjs':'e8a08db32ea8a237575f428566093ab18cc60fd0d0ce4acb0b5e2d7e30b364de',
  'tests/production-performance.test.mjs':'102893c9285fc52693ee9a7d1bae36d8cefef418ecf8da5d40e53b4eb98b2947',
  'tests/release-metadata.test.mjs':'eceb8ab92f616084fdcdac875e69e761cf2c9674a804be9f0295e89213453cb8',
+ 'tests/release-performance-artifacts.test.mjs':'16048e83d321cd8505e0d1b56bd8707da3ea0ad506f4aa317c44b2ff62722413',
+ 'tests/release-performance-verification.test.mjs':'948be43b15e610a3917c497d5a83e75b7dabe159429e662e7279c72aecbd57c0',
+ 'tests/release-performance.test.mjs':'7d38cc78989244c395eb8176a1ab6f49e2e055b7527611bc5672ba45414fb550',
 });
 const newerTests={
  js:{
