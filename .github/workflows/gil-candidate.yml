@@ -88,6 +88,22 @@ jobs:
       - name: Verify ref resolution, errors, archive checks and receipt constraints
         working-directory: control
         run: node --test tests/gil-candidate.test.mjs
+  archive:
+    if: github.repository_id == '1460097312' && github.ref == 'refs/heads/ci/v211-gil-hosted-probe'
+    runs-on: windows-2025
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          path: control
+          persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /scripts/gil-candidate.mjs
+            /.github/gil-download-probe.mjs
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24.18.0'
       - name: Create public synthetic download-check input
         run: Set-Content "$env:RUNNER_TEMP/gil-download-link-smoke.txt" 'Public download verification fixture only.'
       - id: test-archive
