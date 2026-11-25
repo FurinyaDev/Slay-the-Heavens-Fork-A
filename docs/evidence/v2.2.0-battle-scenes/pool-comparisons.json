@@ -1,0 +1,122 @@
+{
+  "pilotSha256": "f886508da7b72d508c1b95dd8a66bf092a593900e7049e35653faa3fb63e9008",
+  "scope": "Isolated native scene and production actor-painter comparison",
+  "results": [
+    {
+      "name": "mobile-16-9-act1-pool",
+      "canvasId": "mobile-16-9",
+      "act": 1,
+      "contactTrial": false,
+      "width": 1280,
+      "height": 720,
+      "backgroundControls": 256,
+      "poolReady": "CHAPTER_BATTLE_SCENE_POOL_READY act=1",
+      "screenshotSha256": "5745ae48c2171c92e364f5e544f5711b4f956fb1e7af9de86318c7629c2d6472",
+      "saveSha256": "9c7f2c1255585247ab7c193fc4313eeeb4bfa50494a48dee16c75a23a4df0215",
+      "receipt": {
+        "canvasId": "mobile-16-9",
+        "frame": 0,
+        "time": 0,
+        "clockMode": "manual",
+        "width": 1280,
+        "height": 720,
+        "pixelWidth": 1280,
+        "pixelHeight": 720,
+        "assetWarnings": []
+      },
+      "actorReady": "ACTOR_ALPHA_READY hero=473 monster=32",
+      "projectionDifference": {
+        "pixelsOver1ChannelLevel": 35,
+        "pixelsOver10ChannelLevels": 0,
+        "maxChannelLevels": 6
+      }
+    },
+    {
+      "name": "mobile-16-9-act2-pool",
+      "canvasId": "mobile-16-9",
+      "act": 2,
+      "contactTrial": false,
+      "width": 1280,
+      "height": 720,
+      "backgroundControls": 256,
+      "poolReady": "CHAPTER_BATTLE_SCENE_POOL_READY act=2",
+      "screenshotSha256": "753808c2e377e775689a211cd8f020b71cf2d30b58d4cc51934f4c4e22199c93",
+      "saveSha256": "f2cc67f9f9f3f733a45d28834013541ed26877dccd098f5168fe79835e67bfa0",
+      "receipt": {
+        "canvasId": "mobile-16-9",
+        "frame": 0,
+        "time": 0,
+        "clockMode": "manual",
+        "width": 1280,
+        "height": 720,
+        "pixelWidth": 1280,
+        "pixelHeight": 720,
+        "assetWarnings": []
+      },
+      "actorReady": "ACTOR_ALPHA_READY hero=473 monster=32",
+      "projectionDifference": {
+        "pixelsOver1ChannelLevel": 7,
+        "pixelsOver10ChannelLevels": 0,
+        "maxChannelLevels": 8
+      }
+    },
+    {
+      "name": "pc-21-9-act1-pool",
+      "canvasId": "pc-21-9",
+      "act": 1,
+      "contactTrial": false,
+      "width": 2100,
+      "height": 900,
+      "backgroundControls": 256,
+      "poolReady": "CHAPTER_BATTLE_SCENE_POOL_READY act=1",
+      "screenshotSha256": "ae59ac09f2ad9435feec577d19e2222f5f5b0280880628bac381a41baaa4335e",
+      "saveSha256": "688cc8730241e4e2984b1ac7abd747803c84de3e74cad0f1a3edffe39fa56bd1",
+      "receipt": {
+        "canvasId": "pc-21-9",
+        "frame": 0,
+        "time": 0,
+        "clockMode": "manual",
+        "width": 2100,
+        "height": 900,
+        "pixelWidth": 2100,
+        "pixelHeight": 900,
+        "assetWarnings": []
+      },
+      "actorReady": "ACTOR_ALPHA_READY hero=473 monster=32",
+      "projectionDifference": {
+        "pixelsOver1ChannelLevel": 184,
+        "pixelsOver10ChannelLevels": 2,
+        "maxChannelLevels": 11
+      }
+    },
+    {
+      "name": "pc-21-9-act2-pool",
+      "canvasId": "pc-21-9",
+      "act": 2,
+      "contactTrial": false,
+      "width": 2100,
+      "height": 900,
+      "backgroundControls": 256,
+      "poolReady": "CHAPTER_BATTLE_SCENE_POOL_READY act=2",
+      "screenshotSha256": "6147bb96ff846ef74b1dcb4d121f48ac1a621cf31692a64eb5e965cc0e409e9a",
+      "saveSha256": "2b14a0425348b8cd035b0e110f3573773039b1fd26c34888212e717592456bf9",
+      "receipt": {
+        "canvasId": "pc-21-9",
+        "frame": 0,
+        "time": 0,
+        "clockMode": "manual",
+        "width": 2100,
+        "height": 900,
+        "pixelWidth": 2100,
+        "pixelHeight": 900,
+        "assetWarnings": []
+      },
+      "actorReady": "ACTOR_ALPHA_READY hero=473 monster=32",
+      "projectionDifference": {
+        "pixelsOver1ChannelLevel": 9,
+        "pixelsOver10ChannelLevels": 0,
+        "maxChannelLevels": 7
+      }
+    }
+  ]
+}

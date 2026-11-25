@@ -2,6 +2,8 @@
   "layers": {
     "abyss_checkpoint_identities": "core",
     "abyss_page_reveal": "ui",
+    "abyss_chapter_battle_scene": "ui",
+    "abyss_chapter_battle_scene_data": "ui",
     "abyss_lowcost_art": "ui",
     "abyss_game_ui_navigation": "ui",
     "abyss_game_ui_navigation_view": "ui",

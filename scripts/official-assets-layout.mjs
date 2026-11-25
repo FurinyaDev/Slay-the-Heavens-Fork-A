@@ -1,6 +1,7 @@
 import {nativeMenuFrames} from './native-menu-approved-layout.mjs';
 import {compactBoundedCardFaces} from './lightweight-card-layout.mjs';
 import {applyV25BattleScene} from './v25-battle-scene.mjs';
+import {applyChapterBattleScene} from './v220-chapter-battle-scenes.mjs';
 import {applyV25BattleChrome} from './v25-battle-chrome.mjs';
 import {applyV25TurnNoticeLayout} from './v25-turn-notice-layout.mjs';
 import {styleTreasure} from './v25-node-layout.mjs';
@@ -243,7 +244,7 @@ function pageBackgrounds(node,theme){
  // The map has grouped mapField/mapLight surfaces, not a backdrop child. Its
  // quiet low-control background and semantic official node icons stay intact.
 }
-export function applyOfficialAssets(trees,theme){
+export function applyOfficialAssets(trees,theme,{chapterScenes}={}){
  if(!Array.isArray(trees)||!trees.length)throw Error('Official assets require layout trees');
  const images=theme.officialAssets?.images;
  if(!images||Object.values(images).some(id=>!Number.isSafeInteger(id)||id<=0))throw Error('Invalid official image manifest');
@@ -273,7 +274,8 @@ export function applyOfficialAssets(trees,theme){
     applyV25BattleLayout(tree,theme);
     applyV25BattleChrome(tree,theme);
     applyV25TurnNoticeLayout(tree,theme);
-    applyV25BattleScene(tree,theme);
+    if(chapterScenes)applyChapterBattleScene(tree,chapterScenes);
+    else applyV25BattleScene(tree,theme);
     const battle=child(stage,'battlePanel')??stage;
     battleSurfaces(battle,theme);
     officialBattleHud(battle,theme);officialBattleUtilityFaces(stage,theme);
