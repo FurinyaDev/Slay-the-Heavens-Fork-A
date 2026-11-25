@@ -304,13 +304,15 @@ print('PAGE_REVEAL_PASS native map departure')`);
  }
 });
 
-for (const officialAssets of [false, true]) {
-  test(`${officialAssets ? 'official' : 'default'} Forethought stays open on selection and confirms once`, t => {
+for (const [profile, officialAssets, nativePageLifecycle] of [
+  ['default', false, false], ['official', true, false], ['formal narrow-screen', true, true],
+]) {
+  test(`${profile} Forethought stays open on selection and confirms once`, t => {
     const base=resolve('.artifacts/test-tmp');mkdirSync(base,{recursive:true});
     const out = mkdtempSync(join(base, 'forethought-host-'));
     t.after(() => rmSync(out, { recursive: true, force: true }));
     buildLuaData('data', join(out, 'abyss_data.lua'));
-    buildUI(out, undefined, { officialAssets });
+    buildUI(out, undefined, { officialAssets, nativePageLifecycle });
     const layout = JSON.parse(readFileSync(join(out, 'game-ui.json'), 'utf8'));
     const child = (node, name) => (node.children ?? node.controls).find(value => value.name === name);
     const close = child(child(child(child(layout, 'stage'), 'deckPanel'), 'close'), 'hit');
@@ -321,7 +323,7 @@ for (const officialAssets of [false, true]) {
     const preloads = readdirSync(out).filter(name => name.endsWith('.lua')).map(name =>
       `package.preload[${luaString(name.slice(0, -4))}]=assert(loadfile(${luaString(join(out,name).replaceAll('\\','/'))}))`);
     const script = ["package.path='src/lua/?.lua;'..package.path", ...preloads,
-      "dofile('tests/lua/support/forethought_selection.lua')"].join('\n');
+      `ABYSS_FORETHOUGHT_NATIVE = ${nativePageLifecycle}`, "dofile('tests/lua/support/forethought_selection.lua')"].join('\n');
     const result = spawnSync(process.execPath, [require.resolve('fengari-node-cli/src/lua-cli.js'), '-e', script], {
       encoding: 'utf8', timeout: 90000, maxBuffer: 2 * 1024 * 1024,
       env: { ...process.env, LUA_INIT: '', LUA_INIT_5_3: '' },
