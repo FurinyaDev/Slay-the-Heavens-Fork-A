@@ -39,11 +39,17 @@ export function parseResources(output, profile) {
   const cpuMax = fields.get('cpu.max');
   assert(/^(max|[1-9]\d*) [1-9]\d*$/.test(cpuMax), 'missing or invalid cgroup cpu.max');
   const [quota, period] = cpuMax.split(' ');
-  assert.equal(quota === 'max' ? null : Number(quota) / Number(period), profile.cpus, 'CPU quota mismatch');
+  if (profile.cpus !== null) {
+    assert.equal(quota === 'max' ? null : Number(quota) / Number(period), profile.cpus, 'CPU quota mismatch');
+  }
   const memoryMax = fields.get('memory.max');
   const swapMax = fields.get('memory.swap.max');
-  assert.equal(memoryMax, profile.memoryBytes === null ? 'max' : String(profile.memoryBytes), 'memory cap mismatch');
-  assert.equal(swapMax, profile.memoryBytes === null ? 'max' : '0', 'swap cap mismatch');
+  assert(/^(max|\d+)$/.test(memoryMax), 'missing or invalid cgroup memory.max');
+  assert(/^(max|\d+)$/.test(swapMax), 'missing or invalid cgroup memory.swap.max');
+  if (profile.memoryBytes !== null) {
+    assert.equal(memoryMax, String(profile.memoryBytes), 'memory cap mismatch');
+    assert.equal(swapMax, '0', 'swap cap mismatch');
+  }
   const oom = integer('memory.events.oom');
   const oomKill = integer('memory.events.oom_kill');
   assert.equal(oom + oomKill, 0, 'cgroup recorded an OOM during the workload');

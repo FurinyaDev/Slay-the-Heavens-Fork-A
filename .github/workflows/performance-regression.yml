@@ -1,13 +1,13 @@
 name: Performance regression
 on:
   pull_request:
-    branches: [develop, master, 'release/**']
+    branches: [develop, master, 'release/**', 'hotfix/**']
     types: [opened, synchronize, reopened, ready_for_review, converted_to_draft, labeled, unlabeled]
   merge_group:
     types: [checks_requested]
     branches: [develop]
   push:
-    branches: [develop, master, 'release/**']
+    branches: [develop, master, 'release/**', 'hotfix/**']
   workflow_dispatch:
     inputs:
       mode:

@@ -27,6 +27,18 @@ test('stress requires recorded cgroup limits and clean memory events', () => {
   assert.throws(() => parseResources(receipt.replace('cpu.nr_periods 20', 'cpu.nr_periods NaN'), profiles.stress), /cpu.nr_periods/);
 });
 
+test('a profile without a requested limit records the Docker host default', () => {
+  const hostDefaults = receipt.replace('50000 100000', '400000 100000')
+    .replace('1073741824', '17179869184').replace('swap.max 0', 'swap.max max');
+  const baseline = parseResources(hostDefaults, profiles.baseline);
+  assert.equal(baseline.cpuMax, '400000 100000');
+  assert.equal(baseline.memoryMax, '17179869184');
+  assert.equal(baseline.swapMax, 'max');
+  assert.throws(() => parseResources(hostDefaults.replace('memory.max 17179869184', 'memory.max NaN'), profiles.baseline), /memory.max/);
+  assert.throws(() => parseResources(hostDefaults, profiles['cpu-only']), /CPU quota/);
+  assert.throws(() => parseResources(hostDefaults, profiles['memory-only']), /memory cap/);
+});
+
 test('time signals require at least three pairs above threshold and retain workload increases', () => {
   const rows = (elapsedMs, nativeCalls = 10) => ({ rows: [{ phase: 'fixture', elapsedMs, nativeCalls }] });
   const before = [rows(100), rows(100), rows(100)];
