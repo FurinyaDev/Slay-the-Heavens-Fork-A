@@ -71,6 +71,9 @@ export function sourceInputs(root,{artFeatures,nativeCardArt,readyCardArt,lightw
   const encoderInputs=toolchainIdentity?['source','helper'].map(key=>{
     const actual=fileRecord(toolchainIdentity[key+'Path']);
     if(actual.sha256!==toolchainIdentity[key+'Sha256']||actual.bytes!==toolchainIdentity[key+'Bytes'])throw Error('Native UI encoder input changed: '+key);
+    if(toolchainIdentity.payloadPathFormat==='portable-v1'){
+      return {...actual,path:key==='source'?'@miliastra-mcp/src/scene-save.mjs':'scripts/native-client-check.mjs'};
+    }
     return actual;
   }):[];
   return [...files.sort().map(path=>{const {sha256,bytes}=fileRecord(join(root,path),root);return {path,sha256,bytes};}),...encoderInputs,...(v25UiMasks?v25UiMaskInputs(v25UiMasks,root):[]),...(v25CardAssets?v25PrivateInputs(v25CardAssets,root):[])];
@@ -446,7 +449,7 @@ export async function buildNativeCandidateFromToolchain(options) {
     const {clientScriptRecord,addClientUi,addClientTemplate}=native;
     const {container,fields,field,one,replace,wrap}=await import(pathToFileURL(join(toolRoot,'src/scene/wire.mjs')));
     const receipt=await buildNativeCandidate({...options,
-      toolchainIdentity:identity,
+      toolchainIdentity:process.env.GIL_PORTABLE_RECEIPT==='1'?{...identity,payloadPathFormat:'portable-v1'}:identity,
       writeScripts:async(mapPath,updates,workspace)=>{
         return writeScriptBatch(mapPath,updates,workspace,{container,fields,field,one,replace,wrap,clientScriptRecord,luaSyntaxError});
       },

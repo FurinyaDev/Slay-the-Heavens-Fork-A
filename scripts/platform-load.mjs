@@ -4,7 +4,7 @@ import {portraitRuntimeInventory} from './official-portraits.mjs';
 import {readyArtRuntimeInventory} from './art/ready-card-runtime.mjs';
 import {backgroundRuntimeInventory} from './official-background.mjs';
 import { readFileSync, mkdirSync, writeFileSync, realpathSync } from 'node:fs';
-import { resolve, join } from 'node:path';
+import { dirname, resolve, join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
@@ -13,7 +13,7 @@ import { checkArchitecture } from './check-architecture.mjs';
 import { assertNativeUiCapacity } from './build-ui.mjs';
 import { sourceInputs, payloadDigest } from './build-native-candidate.mjs';
 import { verifyNativeCardArtReceipt } from './card-art-samples.mjs';
-import { validDate } from './evidence-files.mjs';
+import { inside, validDate } from './evidence-files.mjs';
 import { gitSourceIdentity } from './release-notes.mjs';
 import {assertCandidateArtReceipt} from './candidate-art-policy.mjs';
 
@@ -166,6 +166,22 @@ export function verifyPlatformRelease(receipt, evidence, readArtifact, now = Dat
     recordedAt: evidence.recordedAt, verifiedAt: new Date(now).toISOString(), errors, warnings};
 }
 
+function portableCandidate(receipt, receiptPath) {
+  const encoder = receipt.toolchainIdentity;
+  if (encoder?.payloadPathFormat !== 'portable-v1' || encoder.sourcePath || encoder.helperPath) return receipt;
+  const { sourceCommit, sourceDirty } = gitSourceIdentity();
+  if (sourceCommit !== receipt.sourceCommit || sourceDirty !== false)
+    throw Error('Check out the exact clean source commit for the downloaded candidate');
+  if (!/^slay-the-heavens-v\d+\.\d+\.\d+-[a-f0-9]{12}\.gil$/.test(receipt.candidate?.path ?? ''))
+    throw Error('Invalid downloaded candidate filename');
+  const toolRoot = process.env.MILIASTRA_MCP_ROOT;
+  if (!toolRoot) throw Error('Set MILIASTRA_MCP_ROOT to the pinned toolchain recorded in manifest.json');
+  const root = dirname(resolve(receiptPath));
+  return { ...receipt, candidate: { ...receipt.candidate, path: inside(root, resolve(root, receipt.candidate.path)) },
+    toolchainIdentity: { ...encoder, sourcePath: resolve(toolRoot, 'src/scene-save.mjs'),
+      helperPath: resolve('scripts/native-client-check.mjs') } };
+}
+
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
   try {
     const [mode, directory = 'build/lua', evidencePath] = process.argv.slice(2);
@@ -184,7 +200,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
       report.delta = Object.fromEntries(['luaBytes', 'layoutJsonBytes', 'templateJsonBytes', 'controls', 'hiddenControls']
         .map(key => [key, report[key] - baseline[key]]));
     } else if (mode === 'release') {
-      const receipt = JSON.parse(readFileSync(directory));
+      const receipt = portableCandidate(JSON.parse(readFileSync(directory)), directory);
       if (hash(readFileSync(receipt.candidate.path)) !== receipt.candidate.sha256) throw Error('Candidate file changed');
       verifyNativeCardArtReceipt(receipt.nativeCardArt, {root: process.cwd()});
       assertCandidateArtReceipt(receipt);
