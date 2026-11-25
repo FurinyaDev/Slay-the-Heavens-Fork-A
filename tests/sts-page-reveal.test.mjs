@@ -381,12 +381,39 @@ test('Forethought authenticates its complete Lua and layout owners',async()=>{
 
 test('current StS source replay requires the live map-room artwork owner',async()=>{
  const {sourceEpoch,ciRepairSourceEpoch}=await import('./helpers/closeout-source-epoch.mjs');
+ const {restoreExactFixtureHunks}=await import('./helpers/exact-fixture-hunks.mjs');
+ const {createHash}=await import('node:crypto');
  const {gunzipSync}=await import('node:zlib');
  const config='config/architecture.json',art='src/lua/abyss_card_art_runtime.lua';
  const archive=readFileSync(new URL('./fixtures/develop-map-room-entry-source.json.gz',import.meta.url));
  const predecessor=JSON.parse(gunzipSync(archive)).files[art].before.source;
+ const bytes=readFileSync(new URL('./fixtures/sts-map-room-review-owners.json.gz',import.meta.url));
+ assert.equal(createHash('sha256').update(bytes).digest('hex'),
+  'd015128dd55c749457c1f6f4c59dd43a5c1f9e1dddedbf59680401e830f1f86f','exact reviewed map-room owner continuation');
+ const {prior,current,files}=JSON.parse(gunzipSync(bytes));
+ assert.equal(prior,'c420b02841c61d5270fd8588d072fc62ec9a5071');
+ assert.equal(current,'b2f74d99a3d80e60b99165b6380987cda8b4488d');
+ assert.equal(Object.keys(files).length,35);
+ assert(!Object.hasOwn(files,art),'map-room artwork must be read live, never replaced by the adapter');
  const readSource=path=>readFileSync(path,'utf8');
- const project=read=>sourceEpoch.preCombinedSource(config,readSource(config),{target:'stsStylePrior',readSource:read});
+ // Later releases advanced this #912 cohort. Only exact changed inputs may
+ // be projected back; unmodified linked owners still use the original checks.
+ const project=readLive=>{
+  const read=path=>{
+   const raw=readLive(path);
+   if(!Object.hasOwn(files,path))return raw;
+   const restored=restoreExactFixtureHunks(files[path],path,raw);
+   assert.notEqual(restored,raw,'linked owner identity: '+path+' at '+current);
+   return restored;
+  };
+  return sourceEpoch.preCombinedSource(config,read(config),{target:'stsStylePrior',readSource:read});
+ };
  assert.equal(project(readSource),ciRepairSourceEpoch.proof.current[config].source);
  assert.throws(()=>project(path=>path===art?predecessor:readSource(path)),/combined linked owner identity: src\/lua\/abyss_card_art_runtime\.lua/);
+ for(const owner of [config,'src/lua/abyss_game_ui.lua','scripts/deck-ui-layout.mjs']){
+  const raw=readSource(owner);
+  for(const wrong of [restoreExactFixtureHunks(files[owner],owner,raw),raw+'\n']){
+   assert.throws(()=>project(path=>path===owner?wrong:readSource(path)),new RegExp('linked owner identity: '+owner));
+  }
+ }
 });
