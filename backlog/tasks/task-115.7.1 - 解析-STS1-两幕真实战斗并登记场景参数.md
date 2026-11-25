@@ -1,10 +1,11 @@
 ---
-id: TASK-113.7.1
+id: TASK-115.7.1
 title: 解析 STS1 两幕真实战斗并登记场景参数
-status: To Do
+status: In Progress
 assignee:
   - '@Furinya'
-created_date: '2026-11-25 20:50'
+created_date: '2026-11-25 21:01'
+updated_date: '2026-11-25 21:03'
 labels:
   - v2.2.0
 milestone: m-8
@@ -15,12 +16,14 @@ references:
   - >-
     https://images.squarespace-cdn.com/content/v1/5b76af6eb10598ab8a9f2588/1535205202521-YJVU8OK3QV41F5246Q33/STSLev2-BruceBrenneise
   - 'https://www.indiedb.com/games/slay-the-spire/presskit'
+  - >-
+    https://github.com/FurinyaDev/Slay-the-Heavens-Fork-A/tree/46ca4a02d658b1ee1435441cb0f1eb19479e52c6/docs/design/reference-assets/v2.2.0/battle-scene
 documentation:
   - docs/versions/V2.2.0-RELEASE.md
-parent_task_id: TASK-113.7
+parent_task_id: TASK-115.7
 priority: medium
 type: spike
-ordinal: 196000
+ordinal: 215000
 ---
 
 ## Description
@@ -39,3 +42,9 @@ ordinal: 196000
 <!-- AC:BEGIN -->
 - [ ] #1 交付两幕截图及原画对照、来源和可实现参数；每项设计标明适用版本、有效稿和被替代稿
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+已派发独立视觉研究，取得两幕参照原图和战斗截图，场景参数与对照待独立评审。
+<!-- SECTION:NOTES:END -->

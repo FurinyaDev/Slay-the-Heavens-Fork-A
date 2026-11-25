@@ -1,10 +1,10 @@
 ---
-id: TASK-113.11
+id: TASK-115.11
 title: 收口已有工程成果及在途 PR
 status: In Progress
 assignee:
   - '@Furinya'
-created_date: '2026-11-25 20:51'
+created_date: '2026-11-25 21:02'
 labels:
   - v2.2.0
 milestone: m-8
@@ -16,10 +16,10 @@ references:
   - 'https://github.com/FurinyaWorks/Slay-the-Heavens/pull/968'
 documentation:
   - docs/versions/V2.2.0-RELEASE.md
-parent_task_id: TASK-113
+parent_task_id: TASK-115
 priority: medium
 type: task
-ordinal: 204000
+ordinal: 223000
 ---
 
 ## Description

@@ -1,20 +1,20 @@
 ---
-id: TASK-113.5
+id: TASK-115.5
 title: 修复阻塞正常游玩的严重缺陷
 status: To Do
 assignee:
   - '@Furinya'
-created_date: '2026-11-25 20:50'
+created_date: '2026-11-25 21:00'
 labels:
   - v2.2.0
 milestone: m-8
 dependencies: []
 documentation:
   - docs/versions/V2.2.0-RELEASE.md
-parent_task_id: TASK-113
+parent_task_id: TASK-115
 priority: high
 type: bug
-ordinal: 193000
+ordinal: 212000
 ---
 
 ## Description

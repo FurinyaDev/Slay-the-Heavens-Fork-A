@@ -1,10 +1,10 @@
 ---
-id: TASK-113.9
+id: TASK-115.9
 title: 验收 develop 已合入的体验成果
 status: To Do
 assignee:
   - '@Furinya'
-created_date: '2026-11-25 20:51'
+created_date: '2026-11-25 21:02'
 labels:
   - v2.2.0
 milestone: m-8
@@ -14,10 +14,10 @@ references:
   - 'https://github.com/FurinyaWorks/Slay-the-Heavens/pull/912'
 documentation:
   - docs/versions/V2.2.0-RELEASE.md
-parent_task_id: TASK-113
+parent_task_id: TASK-115
 priority: medium
 type: task
-ordinal: 202000
+ordinal: 221000
 ---
 
 ## Description

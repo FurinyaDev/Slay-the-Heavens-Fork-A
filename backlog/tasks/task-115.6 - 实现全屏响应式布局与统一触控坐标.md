@@ -1,20 +1,24 @@
 ---
-id: TASK-113.6
+id: TASK-115.6
 title: 实现全屏响应式布局与统一触控坐标
-status: To Do
+status: In Progress
 assignee:
   - '@Furinya'
-created_date: '2026-11-25 20:50'
+created_date: '2026-11-25 21:01'
+updated_date: '2026-11-25 21:03'
 labels:
   - v2.2.0
 milestone: m-8
 dependencies: []
+references:
+  - >-
+    https://github.com/FurinyaDev/Slay-the-Heavens-Fork-A/tree/8d99c0b557129077118480ec99c4ae20f6ea1bff
 documentation:
   - docs/versions/V2.2.0-RELEASE.md
-parent_task_id: TASK-113
+parent_task_id: TASK-115
 priority: medium
 type: feature
-ordinal: 194000
+ordinal: 213000
 ---
 
 ## Description
@@ -34,3 +38,9 @@ ordinal: 194000
 - [ ] #1 用宿主或实际 Simulator 记录视口/安全区/输入能力，并登记可实现的获审设计
 - [ ] #2 16:9、19.5:9、20:9、21:9 实渲验收战斗、背景、HUD、两侧操作、手牌、触控及性能
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+已派发宿主与坐标探针。复用 Fork A 固定来源 8d99c0b557129077118480ec99c4ae20f6ea1bff，分支旧 TASK-38.9 仅作来源；官方手机安全区能力待验。
+<!-- SECTION:NOTES:END -->

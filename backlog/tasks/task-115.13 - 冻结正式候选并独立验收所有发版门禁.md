@@ -1,34 +1,33 @@
 ---
-id: TASK-113.13
+id: TASK-115.13
 title: 冻结正式候选并独立验收所有发版门禁
 status: To Do
 assignee:
   - '@Furinya'
-created_date: '2026-11-25 20:51'
-updated_date: '2026-11-25 20:53'
+created_date: '2026-11-25 21:02'
 labels:
   - v2.2.0
 milestone: m-8
 dependencies:
-  - TASK-113.1
-  - TASK-113.2
-  - TASK-113.3
-  - TASK-113.4
-  - TASK-113.5
-  - TASK-113.6
-  - TASK-113.7
-  - TASK-113.7.3
-  - TASK-113.7.5
-  - TASK-113.8
-  - TASK-113.9
-  - TASK-113.10
-  - TASK-113.11
+  - TASK-115.1
+  - TASK-115.2
+  - TASK-115.3
+  - TASK-115.4
+  - TASK-115.5
+  - TASK-115.6
+  - TASK-115.7
+  - TASK-115.7.3
+  - TASK-115.7.5
+  - TASK-115.8
+  - TASK-115.9
+  - TASK-115.10
+  - TASK-115.11
 documentation:
   - docs/versions/V2.2.0-RELEASE.md
-parent_task_id: TASK-113
+parent_task_id: TASK-115
 priority: medium
 type: task
-ordinal: 206000
+ordinal: 225000
 ---
 
 ## Description

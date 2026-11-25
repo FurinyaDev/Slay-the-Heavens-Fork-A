@@ -1,11 +1,10 @@
 ---
-id: TASK-113
+id: TASK-115
 title: 交付 v2.2.0 体验与视觉升级
 status: In Progress
 assignee:
   - '@Furinya'
-created_date: '2026-11-25 20:50'
-updated_date: '2026-11-25 20:53'
+created_date: '2026-11-25 20:59'
 labels:
   - v2.2.0
 milestone: m-8
@@ -14,7 +13,7 @@ documentation:
   - docs/versions/V2.2.0-RELEASE.md
 priority: medium
 type: task
-ordinal: 188000
+ordinal: 207000
 ---
 
 ## Description

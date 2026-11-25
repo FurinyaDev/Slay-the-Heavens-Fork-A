@@ -1,11 +1,10 @@
 ---
-id: TASK-113.10
+id: TASK-115.10
 title: 集成已开发的产品体验候选
 status: In Progress
 assignee:
   - '@Furinya'
-created_date: '2026-11-25 20:51'
-updated_date: '2026-11-25 20:54'
+created_date: '2026-11-25 21:02'
 labels:
   - v2.2.0
 milestone: m-8
@@ -20,10 +19,10 @@ references:
   - 'https://github.com/FurinyaWorks/Slay-the-Heavens/pull/965'
 documentation:
   - docs/versions/V2.2.0-RELEASE.md
-parent_task_id: TASK-113
+parent_task_id: TASK-115
 priority: medium
 type: task
-ordinal: 203000
+ordinal: 222000
 ---
 
 ## Description
@@ -40,5 +39,5 @@ ordinal: 203000
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 每个 PR 有合入或归档理由、固定来源和验证；已合更新通过相应定向验收，由 TASK-113.13 联合复验
+- [ ] #1 每个 PR 有合入或归档理由、固定来源和验证；已合更新通过相应定向验收，由 TASK-115.13 联合复验
 <!-- AC:END -->

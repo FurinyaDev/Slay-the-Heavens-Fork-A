@@ -1,21 +1,21 @@
 ---
-id: TASK-113.7.3
+id: TASK-115.7.3
 title: 修正角色与敌人的比例、站位和接地
 status: To Do
 assignee:
   - '@Furinya'
-created_date: '2026-11-25 20:51'
+created_date: '2026-11-25 21:02'
 labels:
   - v2.2.0
 milestone: m-8
 dependencies:
-  - TASK-113.7.2
+  - TASK-115.7.2
 documentation:
   - docs/versions/V2.2.0-RELEASE.md
-parent_task_id: TASK-113.7
+parent_task_id: TASK-115.7
 priority: medium
 type: enhancement
-ordinal: 198000
+ordinal: 217000
 ---
 
 ## Description

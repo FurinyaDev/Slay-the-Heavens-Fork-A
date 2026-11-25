@@ -1,10 +1,10 @@
 ---
-id: TASK-113.7
+id: TASK-115.7
 title: 交付两幕战斗背景与角色场景融合
-status: To Do
+status: In Progress
 assignee:
   - '@Furinya'
-created_date: '2026-11-25 20:50'
+created_date: '2026-11-25 21:01'
 labels:
   - v2.2.0
 milestone: m-8
@@ -14,10 +14,10 @@ references:
   - docs/design/characters/PRODUCTION.md
 documentation:
   - docs/versions/V2.2.0-RELEASE.md
-parent_task_id: TASK-113
+parent_task_id: TASK-115
 priority: medium
 type: feature
-ordinal: 195000
+ordinal: 214000
 ---
 
 ## Description

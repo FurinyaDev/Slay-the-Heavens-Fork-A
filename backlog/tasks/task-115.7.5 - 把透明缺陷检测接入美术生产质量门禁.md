@@ -1,23 +1,23 @@
 ---
-id: TASK-113.7.5
+id: TASK-115.7.5
 title: 把透明缺陷检测接入美术生产质量门禁
 status: To Do
 assignee:
   - '@Furinya'
-created_date: '2026-11-25 20:51'
+created_date: '2026-11-25 21:02'
 labels:
   - v2.2.0
 milestone: m-8
 dependencies:
-  - TASK-113.7.4
+  - TASK-115.7.4
 references:
   - docs/design/characters/PRODUCTION.md
 documentation:
   - docs/versions/V2.2.0-RELEASE.md
-parent_task_id: TASK-113.7
+parent_task_id: TASK-115.7
 priority: medium
 type: task
-ordinal: 200000
+ordinal: 219000
 ---
 
 ## Description

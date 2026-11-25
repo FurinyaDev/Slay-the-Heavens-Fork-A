@@ -1,20 +1,20 @@
 ---
-id: TASK-113.7.4
+id: TASK-115.7.4
 title: 修复正式角色与怪物非预期透底
-status: To Do
+status: In Progress
 assignee:
   - '@Furinya'
-created_date: '2026-11-25 20:51'
+created_date: '2026-11-25 21:02'
 labels:
   - v2.2.0
 milestone: m-8
 dependencies: []
 documentation:
   - docs/versions/V2.2.0-RELEASE.md
-parent_task_id: TASK-113.7
+parent_task_id: TASK-115.7
 priority: medium
 type: bug
-ordinal: 199000
+ordinal: 218000
 ---
 
 ## Description
@@ -33,3 +33,9 @@ ordinal: 199000
 <!-- AC:BEGIN -->
 - [ ] #1 正式资产清单与修复结果对应；黑、白、高对比及战斗背景最终渲染实测无意外漏色
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+已派发正式运行时资产透底排查。按已批准原图做覆盖判定；私有批准源缺失时记录其摘要和待取证项。
+<!-- SECTION:NOTES:END -->

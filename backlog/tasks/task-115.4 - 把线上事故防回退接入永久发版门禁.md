@@ -1,11 +1,10 @@
 ---
-id: TASK-113.4
+id: TASK-115.4
 title: 把线上事故防回退接入永久发版门禁
 status: In Progress
 assignee:
   - '@Furinya'
-created_date: '2026-11-25 20:50'
-updated_date: '2026-11-25 20:54'
+created_date: '2026-11-25 21:00'
 labels:
   - v2.2.0
 milestone: m-8
@@ -19,10 +18,10 @@ references:
   - docs/PLATFORM_LOAD.md
 documentation:
   - docs/versions/V2.2.0-RELEASE.md
-parent_task_id: TASK-113
+parent_task_id: TASK-115
 priority: high
 type: task
-ordinal: 192000
+ordinal: 211000
 ---
 
 ## Description
@@ -40,5 +39,11 @@ ordinal: 192000
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
 - [ ] #1 覆盖已确认根因及有效负对照，轻量持续检查和冻结候选完整门禁可重复执行
-- [ ] #2 在明确的正式配置接续样本验证同工作负载、六档实限和极端档退化恢复，独立评审核对可执行门禁、基线和证据字段；最终候选完整验收归 TASK-113.13
+- [ ] #2 在明确的正式配置接续样本验证同工作负载、六档实限和极端档退化恢复，独立评审核对可执行门禁、基线和证据字段；最终候选完整验收归 TASK-115.13
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+已派发永久门禁开发。真实 Docker、cgroup v2 可用。0.5 CPU、1 GiB、无 swap 的实际配置已读回，正式配对和门禁集成待验。
+<!-- SECTION:NOTES:END -->

@@ -1,10 +1,10 @@
 ---
-id: TASK-113.2
+id: TASK-115.2
 title: 接续工程与平台版本解耦
 status: In Progress
 assignee:
   - '@Furinya'
-created_date: '2026-11-25 20:50'
+created_date: '2026-11-25 20:59'
 labels:
   - v2.2.0
 milestone: m-8
@@ -13,10 +13,10 @@ references:
   - 'https://github.com/FurinyaWorks/Slay-the-Heavens/pull/952'
 documentation:
   - docs/versions/V2.2.0-RELEASE.md
-parent_task_id: TASK-113
+parent_task_id: TASK-115
 priority: medium
 type: task
-ordinal: 190000
+ordinal: 209000
 ---
 
 ## Description

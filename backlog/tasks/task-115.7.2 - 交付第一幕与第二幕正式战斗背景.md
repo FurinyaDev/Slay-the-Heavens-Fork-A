@@ -1,21 +1,21 @@
 ---
-id: TASK-113.7.2
+id: TASK-115.7.2
 title: 交付第一幕与第二幕正式战斗背景
 status: To Do
 assignee:
   - '@Furinya'
-created_date: '2026-11-25 20:50'
+created_date: '2026-11-25 21:02'
 labels:
   - v2.2.0
 milestone: m-8
 dependencies:
-  - TASK-113.7.1
+  - TASK-115.7.1
 documentation:
   - docs/versions/V2.2.0-RELEASE.md
-parent_task_id: TASK-113.7
+parent_task_id: TASK-115.7
 priority: medium
 type: feature
-ordinal: 197000
+ordinal: 216000
 ---
 
 ## Description
