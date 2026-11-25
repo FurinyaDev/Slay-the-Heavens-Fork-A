@@ -1,10 +1,11 @@
 ---
 id: TASK-115.7.3
 title: 修正角色与敌人的比例、站位和接地
-status: To Do
+status: In Progress
 assignee:
   - '@Furinya'
 created_date: '2026-11-25 21:02'
+updated_date: '2026-11-25 22:09'
 labels:
   - v2.2.0
 milestone: m-8
@@ -34,3 +35,17 @@ ordinal: 217000
 <!-- AC:BEGIN -->
 - [ ] #1 实渲覆盖两幕、不同体型、不同敌人数量及宽屏，接地、间距、遮挡和交互可读性经独审确认
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. 用真实战斗渲染核对旅行者、地面敌人以及有意悬浮敌人的相对高度。
+2. 对比仅调站位与轻接触阴影，检查血条间距、静置、攻击、受击和回位。
+3. 在两幕的多种敌人和屏幕比例上核对接地与性能，请独立评审比对原版、修改前和修改后。
+<!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Owner 在阶段图中仍看到悬浮。独立评审发现站位调整后鞋底与石板仍缺少局部接触明暗，第二幕部分敌人血条距脚底约 5–8 像素。接触阴影保留为同场景实验，待实渲、交互与独立验收。
+<!-- SECTION:NOTES:END -->
