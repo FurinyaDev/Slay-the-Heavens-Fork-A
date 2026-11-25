@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {execFileSync} from 'node:child_process';
 import {mkdirSync, readFileSync, writeFileSync} from 'node:fs';
-import {githubRequest, releaseBranch, verifyReleaseFull} from '../release-ci.mjs';
+import {formalPublishBranch, githubRequest, verifyReleaseFull} from '../release-ci.mjs';
 import {productionWorkload, workloadIdentity} from './resource-receipt.mjs';
 import {frozenReleaseVersion, verifyResourceReport} from './verify-release-performance.mjs';
 import {resolvePublishedBaseline} from './published-baseline.mjs';
@@ -15,7 +15,7 @@ try {
   const attempt = Number(env.GITHUB_RUN_ATTEMPT);
   assert(env.GITHUB_ACTIONS === 'true' && env.GITHUB_EVENT_NAME === 'workflow_dispatch' &&
     env.GITHUB_REPOSITORY === 'FurinyaWorks/Slay-the-Heavens' && env.GITHUB_REPOSITORY_ID === '1429751262' &&
-    releaseBranch(branch) && /^[a-f0-9]{40}$/.test(head) && runId > 0 && attempt > 0,
+    formalPublishBranch(branch) && /^[a-f0-9]{40}$/.test(head) && runId > 0 && attempt > 0,
     'This evidence requires a trusted hosted formal release dispatch');
   const git = (...args) => execFileSync('git', args, {maxBuffer:4 * 1024 * 1024});
   assert.equal(git('rev-parse', 'HEAD').toString().trim(), head, 'Formal resource action checkout changed');
