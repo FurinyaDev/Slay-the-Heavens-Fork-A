@@ -1,22 +1,26 @@
 import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
 import test from 'node:test';
+import {formalPublishBranch, publicationTarget} from '../scripts/release-ci.mjs';
 import {requireReleasePerformance} from '../scripts/runtime-baseline/require-release-performance.mjs';
 import {sha256} from '../scripts/runtime-baseline/release-performance-artifacts.mjs';
 import {head, tree, published, sha256 as workloadSha256, reportFixture, receipt} from './helpers/release-performance-fixture.mjs';
+import {beforeHotfixPublicationGate, hotfixPublicationGate} from './helpers/release-ci-workflow.mjs';
 
 const repo = 'FurinyaWorks/Slay-the-Heavens';
-const repository = {id:1429751262};
+const repository = {id:1429751262,full_name:repo};
 const branch = 'release/v2.2.0';
-const version = '2.2.0';
 const formalName = 'release-performance-40-2';
-const refPath = '/git/ref/heads/' + branch;
-const workflowPath = '/actions/workflows/performance-regression.yml/runs?event=workflow_dispatch&branch=' +
-  encodeURIComponent(branch) + '&head_sha=' + head + '&per_page=100&page=1';
-const fullPath = '/actions/workflows/quality.yml/runs?event=workflow_dispatch&branch=' +
-  encodeURIComponent(branch) + '&per_page=100&page=1';
 const full = {repo, branch, head, runId:10, attempt:3, checkoutArtifactId:60};
 
-function fixture() {
+function fixture(source = full) {
+  const {branch} = source;
+  const version = branch.split('/v').at(-1);
+  const refPath = '/git/ref/heads/' + branch;
+  const workflowPath = '/actions/workflows/performance-regression.yml/runs?event=workflow_dispatch&branch=' +
+    encodeURIComponent(branch) + '&head_sha=' + head + '&per_page=100&page=1';
+  const fullPath = '/actions/workflows/quality.yml/runs?event=workflow_dispatch&branch=' +
+    encodeURIComponent(branch) + '&per_page=100&page=1';
   const controller = '1'.repeat(40);
   const gil = {name:'gil-candidate-v' + version + '-' + head + '-' + '2'.repeat(64), id:30, runId:20, attempt:1, controllerSha:controller,
     digest:'sha256:' + '3'.repeat(64), gilSha256:'4'.repeat(64), payloadDigest:'5'.repeat(64), buildId:'f960b8ee-5310-47d9-b21b-3bea1ef578c1',
@@ -57,7 +61,8 @@ function fixture() {
     },
   };
   const request = async path => responses.get(path.slice(('/repos/' + repo).length));
-  return {options, request, check:() => requireReleasePerformance(full, request, options), responses, evidence, run};
+  return {options, request, check:() => requireReleasePerformance(source, request, options), responses, evidence, run,
+    refPath, workflowPath, fullPath};
 }
 
 test('requires the same frozen source, latest successful attempt and audited GIL before publication', async () => {
@@ -71,10 +76,10 @@ test('requires the same frozen source, latest successful attempt and audited GIL
 
 test('no evidence or a newer failing formal run blocks a prior green result', async () => {
   const missing = fixture();
-  missing.responses.set(workflowPath, {workflow_runs:[]});
+  missing.responses.set(missing.workflowPath, {workflow_runs:[]});
   await assert.rejects(missing.check(), /Latest formal release performance run must pass/);
   const failing = fixture();
-  failing.responses.get(workflowPath).workflow_runs.push({...failing.run, id:41, conclusion:'failure'});
+  failing.responses.get(failing.workflowPath).workflow_runs.push({...failing.run, id:41, conclusion:'failure'});
   await assert.rejects(failing.check(), /Latest formal release performance run must pass/);
   const old = fixture();
   old.run.run_attempt = 3;
@@ -91,7 +96,7 @@ test('rejects report tampering, a different original GIL, or a moving freeze', a
   const moving = fixture();
   const original = moving.options.readArtifact;
   moving.options.readArtifact = async locator => {
-    moving.responses.get(refPath).object.sha = 'f'.repeat(40);
+    moving.responses.get(moving.refPath).object.sha = 'f'.repeat(40);
     return original(locator);
   };
   await assert.rejects(moving.check(), /Release HEAD changed/);
@@ -101,6 +106,39 @@ test('a new Full attempt or checkout receipt on the same run and source invalida
   const current = fixture();
   await assert.rejects(requireReleasePerformance({...full, attempt:4}, current.request, current.options), /current frozen Full run, attempt/);
   await assert.rejects(requireReleasePerformance({...full, checkoutArtifactId:61}, current.request, current.options), /checkout artifact differ/);
-  current.responses.get(fullPath).workflow_runs[0].run_attempt = 4;
+  current.responses.get(current.fullPath).workflow_runs[0].run_attempt = 4;
   await assert.rejects(current.check(), /Frozen Full changed during performance verification/);
+});
+
+test('Hotfix-to-master uses the hosted formal performance and GIL custody check', async () => {
+  const branch = 'hotfix/v2.2.1';
+  const event = {pull_request:{base:{ref:'master',repo:repository},head:{ref:branch,sha:head,repo:repository}}};
+  const target = publicationTarget(event, repo, true);
+  assert.deepEqual(target, {branch,head});
+  const hotfix = fixture({...full,...target});
+  assert.equal((await hotfix.check()).branch, branch);
+  hotfix.responses.get(hotfix.fullPath).workflow_runs[0].run_attempt = 4;
+  await assert.rejects(hotfix.check(), /Frozen Full changed during performance verification/);
+  hotfix.responses.get(hotfix.fullPath).workflow_runs[0].run_attempt = 3;
+  hotfix.run.run_attempt = 3;
+  await assert.rejects(hotfix.check(), /one sealed artifact/);
+  const quality = readFileSync(new URL('../.github/workflows/quality.yml',import.meta.url),'utf8').replaceAll('\r\n','\n');
+  assert.equal(quality.split(hotfixPublicationGate).length, 2);
+  assert(!beforeHotfixPublicationGate(quality).includes('verify-hotfix-pr'));
+  assert.equal(beforeHotfixPublicationGate(quality + hotfixPublicationGate), quality + hotfixPublicationGate);
+});
+
+test('rejects a foreign, unversioned, protected or non-Hotfix publication ref', () => {
+  const source = {ref:'hotfix/v2.2.1',sha:head,repo:repository};
+  const base = {ref:'master',repo:repository};
+  for (const ref of ['master','develop','hotfix/v02.2.1','hotfix/v2.2','hotfix/v2.2.1-rc','refs/heads/hotfix/v2.2.1']) {
+    assert(!formalPublishBranch(ref));
+    assert.throws(() => publicationTarget({pull_request:{base,head:{...source,ref}}}, repo, true), /same-repository Hotfix/);
+  }
+  for (const head of [{...source,ref:'release/v2.2.1'}, {...source,repo:{...repository,id:999}}, {...source,sha:'develop'}]) {
+    assert.throws(() => publicationTarget({pull_request:{base,head}}, repo, true), /same-repository Hotfix/);
+  }
+  for (const other of [{...base,ref:'develop'}, {...base,repo:{...repository,id:999}}]) {
+    assert.throws(() => publicationTarget({pull_request:{base:other,head:source}}, repo, true), /same-repository Hotfix/);
+  }
 });

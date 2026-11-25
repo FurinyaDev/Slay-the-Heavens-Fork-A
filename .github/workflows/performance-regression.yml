@@ -19,7 +19,7 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: Resource matrix depth, or formal for a frozen release
+        description: Resource matrix depth, or formal for a frozen release or hotfix
         type: choice
         options: [fast, full, formal]
         default: full
@@ -69,7 +69,7 @@ jobs:
           if [ "$mode" = formal ]; then
             test "$GITHUB_EVENT_NAME" = workflow_dispatch
             test "$GITHUB_REPOSITORY_ID" = 1429751262
-            [[ "$GITHUB_REF" == refs/heads/release/* ]]
+            [[ "$GITHUB_REF" =~ ^refs/heads/(release|hotfix)/v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]
             test -z "$MANUAL_BASE_SHA"
             [[ "$GIL_ARTIFACT_ID" =~ ^[1-9][0-9]*$ ]]
           fi

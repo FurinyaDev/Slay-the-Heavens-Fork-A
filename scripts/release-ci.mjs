@@ -8,7 +8,18 @@ import {projectRepositoryMatches} from './repository-identity.mjs';
 
 const validSha=value=>/^[a-f0-9]{40}$/.test(value??'');
 export const releaseBranch=value=>/^release\/[\w][\w.-]*$/.test(value??'');
-const frozenBranch=value=>releaseBranch(value)||/^hotfix\/v(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)$/.test(value??'');
+export const formalPublishBranch=value=>/^(?:release|hotfix)\/v(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)$/.test(value??'');
+const hotfixBranch=value=>typeof value==='string'&&value.startsWith('hotfix/')&&formalPublishBranch(value);
+const frozenBranch=value=>releaseBranch(value)||hotfixBranch(value);
+
+export function publicationTarget(event,repo,hotfix=false) {
+ const pr=event?.pull_request,head=pr?.head;
+ const matches=hotfix?hotfixBranch(head?.ref)&&projectRepositoryMatches(head.repo,repo)&&projectRepositoryMatches(pr.base?.repo,repo)
+  :releaseBranch(head?.ref)&&head.repo?.full_name===repo;
+ if(pr?.base?.ref!=='master'||!matches||!validSha(head.sha))
+  throw Error(hotfix?'Expected same-repository Hotfix publication PR':'Expected same-repository Release publication PR');
+ return {branch:head.ref,head:head.sha};
+}
 export async function pages(request,path,key) {
  const rows=[];
  for(let page=1;page<=100;page++) {
@@ -135,10 +146,10 @@ if(process.argv[1]&&import.meta.url===pathToFileURL(resolve(process.argv[1])).hr
  try {
   let [command,branch,head]=process.argv.slice(2);
   const repo='FurinyaWorks/Slay-the-Heavens';
-  if(command==='verify-pr') {
-   const pr=JSON.parse(readFileSync(process.env.GITHUB_EVENT_PATH,'utf8')).pull_request;
-   if(pr?.base?.ref!=='master'||!releaseBranch(pr.head?.ref)||pr.head?.repo?.full_name!==repo)throw Error('Expected same-repository Release publication PR');
-   command='verify';branch=pr.head.ref;head=pr.head.sha;
+  if(command==='verify-pr'||command==='verify-hotfix-pr') {
+   const event=JSON.parse(readFileSync(process.env.GITHUB_EVENT_PATH,'utf8'));
+   ({branch,head}=publicationTarget(event,repo,command==='verify-hotfix-pr'));
+   command='verify';
   }
   if(!['freeze','verify'].includes(command)||!frozenBranch(branch)||!validSha(head))
    throw Error('Usage: node scripts/release-ci.mjs freeze|verify <release/name|hotfix/vX.Y.Z> <frozen-HEAD>');
@@ -146,9 +157,7 @@ if(process.argv[1]&&import.meta.url===pathToFileURL(resolve(process.argv[1])).hr
    console.log(JSON.stringify(await freezeReleaseFull(repo,branch,head,githubRequest)));
   } else {
    const full=await verifyReleaseFull(repo,branch,head,githubRequest);
-   const performance=releaseBranch(branch)
-    ? await (await import('./runtime-baseline/require-release-performance.mjs')).requireReleasePerformance(full,githubRequest)
-    : undefined;
+   const performance=await (await import('./runtime-baseline/require-release-performance.mjs')).requireReleasePerformance(full,githubRequest);
    console.log(JSON.stringify({...full,performance},null,2));
   }
  } catch(error) {console.error(error.message);process.exitCode=1;}

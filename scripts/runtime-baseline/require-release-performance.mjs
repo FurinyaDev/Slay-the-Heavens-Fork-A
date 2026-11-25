@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {execFileSync} from 'node:child_process';
-import {latestFullRun, releaseBranch, pages} from '../release-ci.mjs';
+import {latestFullRun, formalPublishBranch, pages} from '../release-ci.mjs';
 import {resolvePublishedBaseline} from './published-baseline.mjs';
 import {productionWorkload, workloadIdentity} from './resource-receipt.mjs';
 import {verifyResourceReport} from './verify-release-performance.mjs';
@@ -26,10 +26,10 @@ export async function requireReleasePerformance(fullProof, request, {
   readSource = frozenSource, readArtifact = loadArtifact, readBaseline = resolvePublishedBaseline,
 } = {}) {
   const {repo, branch, head, runId:qualityRun, attempt:qualityAttempt, checkoutArtifactId} = fullProof;
-  assert(repo === repository && releaseBranch(branch) && sha.test(head) &&
+  assert(repo === repository && formalPublishBranch(branch) && sha.test(head) &&
     [qualityRun, qualityAttempt, checkoutArtifactId].every(validId), 'Frozen release Full proof required');
   const {version, tree, workloadSha256} = readSource(head);
-  assert(branch === 'release/v' + version && sha.test(tree) && digest.test(workloadSha256), 'Frozen engineering source identity differs');
+  assert(branch.endsWith('/v' + version) && sha.test(tree) && digest.test(workloadSha256), 'Frozen engineering source identity differs');
   const target = {head, branch, version};
   const checkRef = async () => {
     const ref = await request(prefix + '/git/ref/heads/' + branch);
