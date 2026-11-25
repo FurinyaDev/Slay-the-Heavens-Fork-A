@@ -167,7 +167,7 @@ local function duration(entry,style,fastMode)
     return 0
 end
 
-function M.new(stage, platform, present, complete)
+function M.new(stage, platform, present, complete, pileLayout)
     local self = { busy = false, fastMode = false, effects = {}, deaths = {}, dying = {}, poses = {}, escaping = {}, escaped = {}, slotOwners = {}, tints = {} }
     local overlay = stage:GetChild("feedback")
     local v25Notice=require('abyss_v25_turn_notice').new(overlay,platform)
@@ -180,7 +180,7 @@ function M.new(stage, platform, present, complete)
         if v25Notice then v25Notice:bind(battle)end
         if battle and not self.busy then self.shadow = battle end
     end
-    self.cardFlow=CardFlow.new(stage,platform)
+    self.cardFlow=CardFlow.new(stage,platform,pileLayout)
     local function colour(c, alpha) return platform.color(c.r, c.g, c.b, math.floor((c.a or 255) * (alpha or 1))) end
     local function tint(box, c, alpha) box.imageColor = colour(c, alpha) end
     local function actor(id)

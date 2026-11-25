@@ -5,6 +5,7 @@ local CardGlow=require('abyss_battle_card_glow')
 local Combat = require("abyss_combat")
 local Run = require("abyss_run")
 local Theme = require("abyss_theme")
+local Viewport = require("abyss_viewport")
 local CardSkin = require('abyss_card_skin')
 local CardDisplay = require("abyss_card_display")
 local number = require("abyss_numbers").integer
@@ -283,6 +284,7 @@ function M.new(view, controls)
     local child, show = controls.child, controls.show
     local ink, tint, picture = controls.ink, controls.tint, controls.picture
     local placeCard, placeReward = controls.placeCard, controls.placeReward
+    local pileLayout = controls.pileLayout or Viewport.pileLayout(view.root)
     local dragTarget, dragPose, enemyPosition = controls.dragTarget, controls.dragPose, controls.enemyPosition
     local handBattle,handPoses,previousPiles=nil,{},{}
     -- Ten physical hand slots own their native animation handles until explicit
@@ -314,9 +316,8 @@ function M.new(view, controls)
                 -- at .12 against the source's ordinary .75 hand scale.
                 local pile=previousPiles[instance.uid]
                 if pile=='discard'and recentDrawOrigins[instance.uid]then pile='draw'end
-                local start=pile=='discard'and L.discardPile.position
-                    or pile=='exhaust'and{L.topBar.exhaustIcon[1],L.topBar.y}or L.drawPile.position
-                entry.current={x=start[1],y=start[2],scale=0.12/0.75,angle=0}
+                local x,y=pileLayout.point(pile or 'draw',pileLayout.extraWidth())
+                entry.current={x=x,y=y,scale=0.12/0.75,angle=0}
             end
             handPoses[instance.uid]=entry
         end

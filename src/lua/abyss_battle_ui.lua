@@ -202,12 +202,14 @@ function M.new(root, data, presentation, clickEvent, platform, options)
     -- Post-battle pick: centred cards on their own stage, never the hand arc.
     -- Hover/press only changes scale and a small lift, so a card's edge stays
     -- under the pointer and neighbours never overlap (step > hover width).
+    local pileLayout=require('abyss_viewport').pileLayout(host.stage)
     host.cardView = CardView.new(self, {
         child = services.child, show = services.show, ink = services.ink, tint = services.tint, picture = services.picture, platform = host.platform,
         placeCard = services.placeCard, placeReward = services.placeReward,
         dragTarget = services.dragTarget, dragPose = services.dragPose, enemyPosition = services.enemyPosition,
         renderAimActors = services.renderEnemies,
         potionTarget = services.potionDragTarget,
+        pileLayout = pileLayout,
     })
     self.feedback = Feedback.new(host.stage, host.platform, function(battle, acting)
         self.displayBattle, self.acting = battle, acting
@@ -236,7 +238,7 @@ function M.new(root, data, presentation, clickEvent, platform, options)
             error(message)
         end
         if not refreshed then error(why)end
-    end)
+    end, pileLayout)
     -- An open detail panel owns the next pointer sequence: its Down closes the panel and
     -- the matching Click is swallowed, so no card, target or button acts underneath it.
     services.bind("start", function() if not self.run or self.run.phase == "defeat" then self:start() end end)

@@ -1,6 +1,7 @@
 -- Read-only card destinations, driven by committed UID membership snapshots.
 -- Ten reusable native mini-cards match the hand limit; overflow waits in Lua.
 local Theme=require('abyss_theme')
+local Viewport=require('abyss_viewport')
 local M={}
 -- Exhaust burn timing (seconds / px); total is the exhaust trail lifetime.
 M.burn={lift=30,scale=1.05,hold=0.25,burn=0.9,fly=0.2}
@@ -24,21 +25,31 @@ local function handPoint(index,count)
     local floor=-Theme.canvas.base[2]/2+Theme.canvas.safe.y+halfHeight-(L.hand.overhang or 0)
     return {distance*spacing,math.max(floor,L.hand.y-math.abs(distance)*L.hand.arcDrop)}
 end
-local function point(place)
-    if place.pile=='hand'or place.pile=='retain'then return handPoint(place.index,place.count)end
-    if place.pile=='draw'then return L.drawPile.position end
-    if place.pile=='discard'then return L.discardPile.position end
-    if place.pile=='exhaust'then
-        local b=L.topBar
-        return {b.exhaustIcon[1],b.y}
-    end
-    return L.player.position
-end
-function M.new(stage,platform)
+function M.new(stage,platform,pileLayout)
+    pileLayout=pileLayout or Viewport.pileLayout(stage)
     local self={active={},waiting={},inPlay={},moving={}}
+    local extra
     local overlay=stage:GetChild('feedback')
     local function colour(c,alpha)return platform.color(c.r,c.g,c.b,math.floor((c.a or 255)*alpha))end
     local function box(slot)return overlay:GetChild('cardTrail'..slot)end
+    local function point(place)
+        if place.pile=='hand'or place.pile=='retain'then return handPoint(place.index,place.count)end
+        local x,y=pileLayout.point(place.pile,extra)
+        return x and {x,y} or L.player.position
+    end
+    local function retarget(entry)
+        local sx=pileLayout.point(entry.from,extra)
+        local tx=pileLayout.point(entry.to,extra)
+        if sx then entry.start[1]=sx end
+        if tx then entry.finish[1]=tx end
+    end
+    local function syncViewport()
+        local width=pileLayout.extraWidth()
+        if extra==width then return end
+        extra=width
+        for _,entry in pairs(self.active)do retarget(entry)end
+        for _,entry in ipairs(self.waiting)do retarget(entry)end
+    end
     function self.reset()
         for slot=1,10 do box(slot):SetVisible(false)end
         self.active,self.waiting,self.inPlay,self.moving={},{},{},{}
@@ -54,6 +65,7 @@ function M.new(stage,platform)
             order=to.pile=='discard'and #self.waiting or 0}
     end
     function self.sync(_owner,before,after,kind,complete)
+        syncViewport()
         local old,new=locations(before),locations(after)
         for _,pile in ipairs(piles)do for index,card in ipairs(after[pile]or{})do
             local prior=old[card.uid]or self.inPlay[card.uid]
@@ -159,6 +171,8 @@ function M.new(stage,platform)
         end
     end
     function self.update(_owner,dt,catalog,presentation,fast)
+        if next(self.active)==nil and #self.waiting==0 then return end
+        syncViewport()
         for slot=1,10 do
             local entry=self.active[slot]
             if not entry and #self.waiting>0 then

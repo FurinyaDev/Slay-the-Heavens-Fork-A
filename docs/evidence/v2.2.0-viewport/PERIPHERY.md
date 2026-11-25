@@ -34,3 +34,18 @@ NODE
 node docs/evidence/v2.2.0-viewport/periphery.mjs \
   .artifacts/viewport-edge/official-generated/game-ui.json mobile-16-9 mobile-19.5-9 pc-21-9
 ```
+
+## 飞牌起点与终点
+
+手牌起飞、弃牌尾段、洗牌回抽牌堆和消耗尾段使用原生牌堆的横向锚点。已有 16:9 落点继续复用。正式弃牌原落点比图标中心向内 17.5、向上 11.5 个舞台单位，宽屏保留该偏移，终点位于图标范围内。正在播放和排队的尾段在逻辑宽度改变时同步更新。
+
+| Simulator 比例 | 抽牌落点 x | 弃牌落点 x | 消耗落点 x | 原始回执 |
+| --- | ---: | ---: | ---: | --- |
+| 16:9 | −585.5 | 568 | 593.33333 | [实际写入](mobile-16-9-flights.json) |
+| 19.5:9 | −725.5 | 708 | 733.33333 | [实际写入](mobile-19.5-9-flights.json) |
+| 20:9 | −745.5 | 728 | 753.33333 | [实际写入](mobile-20-9-flights.json) |
+| 21:9 | −785.5 | 768 | 793.33333 | [实际写入](pc-21-9-flights.json) |
+
+探针运行生产 `abyss_card_flow`，在四档真实 Simulator 控件上读取三种到达位置，与同场的牌堆图标范围校验。16:9 的前后端点、触点与 PNG 摘要相同。[16:9 修改前回执](mobile-16-9-flights-before.json)用同一正式 v3 `game-ui.json` 和旧动画源码作负对照，21:9 抽牌尾段仍停在 −585.5，触发宽屏期望 −785.5 的断言。[21:9 修改前原始错误](pc-21-9-flights-before.log)Fengari 的 `card_flow_feedback.lua` 另覆盖真实 Combat 后的规则与 RNG 保持以及三种宽屏入手起点，`card_flow.lua` 覆盖排队、播放中与回到 16:9 的重定位。实际完整两幕与设备表现仍按同包验收。
+
+复现时在本页 Simulator 命令前设置 `VIEWPORT_VERIFY_FLIGHTS=1`。该模式加载生成目录的正式主题，并提取原有尾段控件。20:9 同样使用记录中的独立尺寸预设。

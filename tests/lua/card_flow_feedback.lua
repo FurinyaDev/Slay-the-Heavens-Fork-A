@@ -96,3 +96,32 @@ for _,card in ipairs(before.hand)do assert(discarded[card.uid]and shuffled[card.
 same(battle,committed)
 assert(not feedback.cardFlow:busy())
 print('ok card_flow_feedback - normal end-turn discard and reshuffle preserve every UID and committed event/RNG state')
+
+local ui,root=F.fixture()
+F.Viewport.apply(root.parent,1680,720)
+ui:resize(1680,720)
+assert(F.start(ui))
+assert(require('abyss_run').startCombat(ui.run,'raven_adept_solo'))
+ui:refresh()
+local view=ui.battleUI
+local combat=ui.run.combat
+local card=assert(combat.hand[1])
+local function atPile(x,y)
+    local current=assert(view.cardPositions[card.uid])
+    assert(current[1]==x and current[2]==y,
+        string.format('hand flight origin %.4f,%.4f expected %.4f,%.4f',current[1],current[2],x,y))
+end
+atPile(Theme.layout.drawPile.position[1]-200,Theme.layout.drawPile.position[2])
+for _,pile in ipairs({'discard','exhaust'})do
+    table.insert(combat[pile],table.remove(combat.hand,1))
+    view:render()
+    table.insert(combat.hand,1,table.remove(combat[pile]))
+    view:render()
+    if pile=='discard'then
+        atPile(Theme.layout.discardPile.position[1]+200,Theme.layout.discardPile.position[2])
+    else
+        local anchor=root:GetChild('battlePanel'):GetChild('exhaustIcon').anchorMinX
+        atPile(Theme.layout.topBar.exhaustIcon[1]+(anchor-.5)*400,Theme.layout.topBar.y)
+    end
+end
+print('ok card_flow_feedback - wide hand launches use all three generated pile anchors')
