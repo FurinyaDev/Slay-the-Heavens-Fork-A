@@ -64,6 +64,17 @@ function M.new(stage,platform,pileLayout)
             start={start[1],start[2]},finish={finish[1],finish[2]},age=0,label=label,
             order=to.pile=='discard'and #self.waiting or 0}
     end
+    local function settleInPlay(after)
+        for uid,entry in pairs(self.inPlay)do
+            local using=after.cardInUse and after.cardInUse.uid==uid
+            if not using then
+                local definition=after.catalog.cards[entry.card.cardId]
+                if definition.type=='power'then enqueue(entry.card,entry,{pile='power'},'能力生效')end
+                -- Purged/autoplay and terminal battle cleanup are not exhaust.
+                self.inPlay[uid]=nil
+            end
+        end
+    end
     function self.sync(_owner,before,after,kind,complete)
         syncViewport()
         local old,new=locations(before),locations(after)
@@ -77,17 +88,7 @@ function M.new(stage,platform,pileLayout)
                 enqueue(card,prior,{pile='retain',index=index,count=#after.hand},'保留')
             end
         end end
-        if complete then for uid,entry in pairs(self.inPlay)do
-            local using=after.cardInUse and after.cardInUse.uid==uid
-            local definition=after.catalog.cards[entry.card.cardId]
-            if not using and definition.type=='power'then
-                enqueue(entry.card,entry,{pile='power'},'能力生效')
-                self.inPlay[uid]=nil
-            elseif not using then
-                -- Purged/autoplay and terminal battle cleanup are not exhaust.
-                self.inPlay[uid]=nil
-            end
-        end end
+        if complete then settleInPlay(after)end
     end
     -- Exhaust burn: behaviour port of Slay the Spire ExhaustCardEffect (lift + pow2Out
     -- scale, darken-to-transparent) with ExhaustEmber twinkle, rewritten on the existing
@@ -170,6 +171,18 @@ function M.new(stage,platform,pileLayout)
             end
         end
     end
+    local function animate(card,entry)
+        if entry.to=='exhaust'then return burn(card,entry)end
+        if entry.to=='discard'then return discard(card,entry)end
+        local p=math.min(1,entry.age/T.slow)
+        local q=p*p*(3-2*p)
+        local lift=entry.to=='retain'and Theme.space.s or Theme.space.xxl
+        card:SetAnchoredPosition(entry.start[1]+(entry.finish[1]-entry.start[1])*q,
+            entry.start[2]+(entry.finish[2]-entry.start[2])*q+math.sin(p*math.pi)*lift)
+        local scale=entry.to=='retain'and 0.5 or 0.5-(0.5-0.12/0.75)*q
+        card:SetLocalScale(scale,scale,1)
+        return p>=1
+    end
     function self.update(_owner,dt,catalog,presentation,fast)
         if next(self.active)==nil and #self.waiting==0 then return end
         syncViewport()
@@ -181,18 +194,8 @@ function M.new(stage,platform,pileLayout)
             end
             if entry then
                 entry.age=entry.age+dt*(fast and 2 or 1)
-                local p=math.min(1,entry.age/T.slow)
-                local q=p*p*(3-2*p)
                 local card=box(slot)
-                local done
-                if entry.to=='exhaust'then done=burn(card,entry)
-                elseif entry.to=='discard'then done=discard(card,entry)else
-                local lift=entry.to=='retain'and Theme.space.s or Theme.space.xxl
-                card:SetAnchoredPosition(entry.start[1]+(entry.finish[1]-entry.start[1])*q,
-                    entry.start[2]+(entry.finish[2]-entry.start[2])*q+math.sin(p*math.pi)*lift)
-                local scale=entry.to=='retain'and 0.5 or 0.5-(0.5-0.12/0.75)*q
-                card:SetLocalScale(scale,scale,1)
-                done=p>=1 end
+                local done=animate(card,entry)
                 -- Keep the card visible at its real endpoint for one update before recycling.
                 if entry.arrived and dt>0 then
                     card:SetVisible(false);self.active[slot]=nil;self.moving[entry.uid]=nil
