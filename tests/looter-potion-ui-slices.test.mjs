@@ -49,7 +49,12 @@ function validatePartitions(rows, actualWrappers) {
 }
 
 function validateHelper(source) {
-  assert.equal(sha(source), original.helperSha256, 'unchanged fresh seed-42 reward fixture and shared helper');
+  // #951 renamed only the encounter used by this live fixture. Verify the
+  // reviewed current call, then recover the exact seed-42 predecessor.
+  const current = " assert(Run.startCombat(h.run,'raven_adept_solo'))\n";
+  const predecessor = " assert(Run.startCombat(h.run,'cultist_solo'))\n";
+  assert.equal(source.split(current).length, 2, 'one current seed-42 encounter binding');
+  assert.equal(sha(source.replace(current, predecessor)), original.helperSha256, 'unchanged fresh seed-42 reward fixture and shared helper');
 }
 
 test('eight original-budget looter UI fixtures preserve all eight groups and 22 fresh reward setups', () => {
@@ -75,6 +80,8 @@ test('looter UI source and coverage contracts reject lost assertions, skipped gr
   assert.throws(() => validatePartitions(overlap, wrappers()), /complete ranges/);
   const inert = wrappers(); inert[ranges[1][0]] = '-- ' + inert[ranges[1][0]];
   assert.throws(() => validatePartitions(ranges, inert), /executable tail wrapper/);
+  const staleHelper = read(helper).replace("'raven_adept_solo'", "'cultist_solo'");
+  assert.throws(() => validateHelper(staleHelper), /one current seed-42 encounter binding/);
   const changedSeed = read(helper).replace('Run.new(H.F.Data,42)', 'Run.new(H.F.Data,43)');
   assert.notEqual(changedSeed, read(helper), 'the negative control must alter the real reward seed');
   assert.throws(() => validateHelper(changedSeed), /fresh seed-42 reward fixture/);
