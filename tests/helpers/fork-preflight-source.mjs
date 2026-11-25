@@ -743,7 +743,7 @@ function beforeCalibrationReplayOwner(path,source){
  if(!calibrationReplayPredecessor){
   calibrationReplayPredecessor=releaseUiRestoreArchive(
    readFileSync(new URL('./calibration-v220-replay-owners.json.gz',import.meta.url)),
-   'bb0bc7f65edd2a4dd74ca43786a841368118db17dd1b2414defcac9344a080d2','8b4172d59779ad9fa21b4ba91ef750ab22fcdaf1');
+   '79de902e142f7a2447b3400aee0daf78aa2171398cabfd83dfc026ac014e56df','8b4172d59779ad9fa21b4ba91ef750ab22fcdaf1');
   assert.deepEqual(Object.keys(calibrationReplayPredecessor.files),calibrationReplayPaths,'ordered v2.2 calibration replay owners');
  }
  return calibrationReplayPredecessor.project(path,source);

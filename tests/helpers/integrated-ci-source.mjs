@@ -30,17 +30,30 @@ const luaFixtureSuccessors=Object.freeze({
   sha256:'15e495490244a447d8f9311bce88f03dc3ed30f6282ec108a5b4a4421b88624d',gitBlob:'53a04c8d5e53b4a62c789bc083e385b41bb04255',
  },
 });
-const changelogPath='CHANGELOG.md';
-const publishedChangelog=Object.freeze({
- sha256:'8df706839da1f445aae118f5483af85c68a910e6b279c5207534e604d651513b',
- gitBlob:'41409da7947a7b3b688810473e94a64b72367081',
+const integratedEvidenceSuccessors=Object.freeze({
+ 'CHANGELOG.md':{
+  sha256:'8df706839da1f445aae118f5483af85c68a910e6b279c5207534e604d651513b',gitBlob:'41409da7947a7b3b688810473e94a64b72367081',
+ },
+ // #940, #942 and #951 update the live architecture with approved owners.
+ 'config/architecture.json':{
+  sha256:'7149b7878a8258a6de4b23d95742dc3c4e31d38bf558f80a35efe51aac401e00',gitBlob:'4aa8367e9d694587c9b58202185524fe3376640a',
+ },
+ // #951 synchronizes the existing low-cost enemy art IDs.
+ 'data/presentation/lowcost-enemy-art.json':{
+  sha256:'ea93d485c6aa0a5db2e0565a6f123fbc7d83a1aad9bc0ee4393ce92c4679a133',gitBlob:'60d4f24c7c83757009146771ead479246c75086b',
+ },
+ // #822 and #951 update the approved relic icon and IDs.
+ 'data/presentation/lowcost-relic-art.json':{
+  sha256:'11656534ea60482edbdce97c0cd1298ea0f43410f74264c1eae4893e16b33dd0',gitBlob:'501272bd18fbd6054d8f5cefcf93fb9fb7867125',
+ },
 });
 export function assertIntegratedLuaFixturesCurrent(read){
  for(const [path,binding] of Object.entries(luaFixtureSuccessors))
   assert(exactSourceMatches(read(path,'utf8'),binding),'fresh current integrated Lua fixture source: '+path);
 }
 function beforeIntegrationEvidence(path,source){
- const binding=path===changelogPath?publishedChangelog:luaFixtureSuccessors[path];
+ const binding=Object.hasOwn(integratedEvidenceSuccessors,path)?integratedEvidenceSuccessors[path]
+  :Object.hasOwn(luaFixtureSuccessors,path)?luaFixtureSuccessors[path]:undefined;
  if(!binding||!exactSourceMatches(source,binding))return source;
  const prior=integratedCiProof.files[path].current.source;
  return source.includes('\r\n')?prior.replaceAll('\n','\r\n'):prior;
@@ -66,10 +79,12 @@ export function integratedRead(target,{read=readFileSync}={}){read=preflightPrio
 };}
 export function assertIntegratedCurrent(read=readFileSync){
  assertReleaseBootstrapCiCurrent(read);
- read=preflightPriorRead(read);
+ const rawRead=read;
+ read=preflightPriorRead(rawRead);
  for(const [path,row]of Object.entries(integratedCiProof.files)){
-  const source=read(path,'utf8');
-  if(path===changelogPath)assert(exactSourceMatches(source,publishedChangelog),'fresh current published changelog');
+  const binding=integratedEvidenceSuccessors[path];
+  const source=binding?rawRead(path,'utf8'):read(path,'utf8');
+  if(binding)assert(exactSourceMatches(source,binding),'fresh complete integration source: '+path);
   const prior=releaseBootstrapCiCheckedSource(path,beforeIntegrationEvidence(path,source),row.current);
   assert.equal(hash(norm(prior)),row.current.sha256,'fresh complete integration source: '+path);
  }
