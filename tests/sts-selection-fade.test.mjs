@@ -173,8 +173,11 @@ test('Release UI closeout projection rejects drift and stale owner rereads',asyn
  assert.notEqual(previous,source);
  assert.throws(()=>beforeReleaseUiCloseoutSource(path,source,()=>previous),/Release UI closeout owner identity/);
  assert.equal(beforeReleaseUiCloseoutSource(path,source+'\n',()=>assert.fail('unknown bytes authorized a read')),source+'\n');
- const crlf=text=>text.replaceAll('\n','\r\n');
+ // The fixture is checked out as CRLF on Windows; convert idempotently.
+ const crlf=text=>text.replace(/\r?\n/g,'\r\n');
  assert.equal(beforeReleaseUiCloseoutSource(path,crlf(source),file=>crlf(read(file))),crlf(previous));
+ const malformed=crlf(source).replace('\r\n','\r\r\n');
+ assert.equal(beforeReleaseUiCloseoutSource(path,malformed,()=>assert.fail('malformed CRLF authorized a read')),malformed);
  const live=readFileSync(path,'utf8');
  if(live!==source)assert.equal(beforeReleaseUiCloseoutSource(path,live,()=>assert.fail('live owner authorized a historical read')),live);
 });
