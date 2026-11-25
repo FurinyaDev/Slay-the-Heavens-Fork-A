@@ -3,6 +3,10 @@
   "baseCommit": "4c75a31fafcd27c204b957cd7dbc75ac6d9f5ab0",
   "hashRule": "SHA256 raw binary bytes; Lua/JSON/SVG CRLF normalized to LF. Categories record provenance, not clearance. Update manually after rights review.",
   "categories": {
+    "performance-profiling-evidence": {
+      "status": "Project-generated diagnostic charts drawn from measured Host, Lua and native readback data. Chart text uses system fonts. The SVGs contain no original font binaries, platform textures or screenshot images.",
+      "evidence": "docs/evidence/v2.1.1-performance-20261125/README.md and accompanying numeric receipts, generation scripts and archives."
+    },
     "native-event-illustrations": {
       "status": "The project owner confirmed authority on 2026-11-22 to distribute these redrawn event illustrations through the public GitHub repository and the Miliastra Wonderland level. The approved payload contains fitted native primitive IDs, colors and transforms. Underlying game and platform IP rights remain with their respective owners.",
       "evidence": "Owner distribution confirmation and reviewed precision-fix handoff for the 49 event IDs in data/release/launch-content.json. The contour refinements use the same artwork from the owner-supplied 330px WebP review previews. The fit records retain source artwork and review preview hashes. The sphere has a transparent output reconstructed from its RGB preview."
@@ -253,6 +257,38 @@
     }
   },
   "files": {
+    "docs/evidence/v2.1.1-performance-20261125/05-resource-sensitivity.svg": {
+      "category": "performance-profiling-evidence",
+      "sha256": "768016fd0e4afe2c9c49604b50b0ef10c34d7f090716fa88aa8f6238811afe1c"
+    },
+    "docs/evidence/v2.1.1-performance-20261125/06-fault-tree.svg": {
+      "category": "performance-profiling-evidence",
+      "sha256": "3c4465675450f396a9e307c1c509c48a1e3a9009c7fcb5b3378964bcb763f975"
+    },
+    "docs/evidence/v2.1.1-performance-20261125/capacity/capacity-treemap.svg": {
+      "category": "performance-profiling-evidence",
+      "sha256": "d96d88c131377d2653a9d52eea5c22f269a5352f6214a785c70e7b2abd3460e7"
+    },
+    "docs/evidence/v2.1.1-performance-20261125/capacity/dose/static-ui-dose.svg": {
+      "category": "performance-profiling-evidence",
+      "sha256": "63e5132fbd163868395d6f1149a9890540ffd7f3e59d84aa30aa59dae3a32fc0"
+    },
+    "docs/evidence/v2.1.1-performance-20261125/runtime/cpu-lua-call-tree.svg": {
+      "category": "performance-profiling-evidence",
+      "sha256": "db3fecb70f34db305afa4a9f0c12fa988c3d65e1a16c64f37a8181216e5ee47a"
+    },
+    "docs/evidence/v2.1.1-performance-20261125/runtime/resource-trace-live.svg": {
+      "category": "performance-profiling-evidence",
+      "sha256": "8b2a3f9b6526201486f41124aa03b591bd066bf064fbd24649a8041db2fb8b5e"
+    },
+    "docs/evidence/v2.1.1-performance-20261125/runtime/resource-trace.svg": {
+      "category": "performance-profiling-evidence",
+      "sha256": "e4dcff941a6296adf813283f99dfac0e37a46f13c81b0a54b1e1afc5451a64c5"
+    },
+    "docs/evidence/v2.1.1-performance-20261125/startup/startup-waterfall.svg": {
+      "category": "performance-profiling-evidence",
+      "sha256": "12a90327e93917fad8c5e75507b8644b0f350337d23529c94dce0853fbf4e275"
+    },
     "docs/evidence/run-hud-20261124/after/after-pc-detail-return.png": {
       "sha256": "5639cb61c376938a6ba5a43c1136369082a5ab6c1f85b7c0e1d9d715c6e63987",
       "category": "official-assets-offline-diagnostic"
