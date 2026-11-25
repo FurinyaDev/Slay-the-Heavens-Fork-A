@@ -31,11 +31,19 @@ function reportFixture() {
     const arm = {samples:Array.from({length:3}, () => ({rows, resources, wallMs:1})), pass:true};
     return [name, {profile, candidate:structuredClone(arm), baseline:arm, comparisonStatus:'PAIRED', signals:[]}];
   }));
+  const candidate = {commit:head, ...evidence};
+  const extreme = {
+    status:'PASS', candidate,
+    probe:{resources:{cpuMax:'50000 100000', memoryMax:'134217728', swapMax:'0'},
+      state:{Running:false, OOMKilled:true, ExitCode:137, StartedAt:'2026-11-25T11:02:00Z', FinishedAt:'2026-11-25T11:02:01Z'},
+      stdout:'RESOURCE cpu.max 50000 100000\nRESOURCE memory.max 134217728\nRESOURCE memory.swap.max 0\n'},
+    recovery:{recordedAt:'2026-11-25T11:03:00Z', sample:structuredClone(results.stress.candidate.samples[0])},
+  };
   return structuredClone({
     kind:'offline-production-host-resource-pressure', status:'PASS', mode:'full', comparisonStatus:'PAIRED',
     seed:42, alertPercent:20, repetitions:3, timeUtc:'2026-11-25T12:00:00Z',
     engine:{cpuModel:'fixture', kernel:'fixture', arch:'x64', docker:'28.4.0 2 linux amd64', imageId:`sha256:${sha256}`},
-    candidate:{commit:head, ...evidence}, baseline:{...evidence, ...published}, results,
+    candidate, baseline:{...evidence, ...published}, results, extreme,
   });
 }
 
@@ -83,6 +91,21 @@ test('binds strict audio audit to the frozen receipt and downloaded bytes', () =
   assert.throws(() => verifyAuditedBuild(Buffer.from('tampered'), candidate, audit, head), /GIL bytes do not match/);
   assert.throws(() => verifyAuditedBuild(gil, Buffer.concat([candidate, Buffer.from('\n')]), audit, head), /strict audio audit required/);
   assert.throws(() => verifyAuditedBuild(gil, candidate, {...audit, expectedGraphs: []}, head), /strict audio audit required/);
+});
+
+test('requires an independent extreme failure and a later supported recovery sample', () => {
+  const missing = reportFixture();
+  delete missing.extreme;
+  assert.throws(() => verifyResourceReport(missing, head, tree, published, receipt), /extreme failure and recovery proof/);
+  const unbounded = reportFixture();
+  unbounded.extreme.probe.state.OOMKilled = false;
+  assert.throws(() => verifyResourceReport(unbounded, head, tree, published, receipt), /bounded cgroup OOM/);
+  const altered = reportFixture();
+  altered.extreme.probe.stdout = altered.extreme.probe.stdout.replace('memory.swap.max 0', 'memory.swap.max max');
+  assert.throws(() => verifyResourceReport(altered, head, tree, published, receipt), /raw cgroup readback/);
+  const early = reportFixture();
+  early.extreme.recovery.recordedAt = '2026-11-25T11:01:30Z';
+  assert.throws(() => verifyResourceReport(early, head, tree, published, receipt), /follow the observed extreme failure/);
 });
 
 test('resolves historical publication source and actual annotation tree independently', async () => {

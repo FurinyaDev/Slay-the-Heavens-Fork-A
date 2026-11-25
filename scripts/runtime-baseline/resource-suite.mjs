@@ -7,7 +7,8 @@ import { dirname, relative, resolve } from 'node:path';
 import { performance } from 'node:perf_hooks';
 import { parseArgs } from 'node:util';
 import { counters, phases, validateSample } from '../benchmark-runtime-path.mjs';
-import { compareSamples, lockfileIdentity, matchingResourceCaps, parseResources, profiles, selectResourceReference, summarize } from './resource-receipt.mjs';
+import { compareSamples, guardExtremeCgroup, lockfileIdentity, matchingResourceCaps, parseResources, profiles,
+  selectResourceReference, summarize, unsupportedFormalProfile } from './resource-receipt.mjs';
 import { productionPhases } from './production-inputs.mjs';
 import { lfsArguments, lfsEnvironment } from '../ci-reviewed-lfs.mjs';
 
@@ -34,6 +35,14 @@ printf 'RESOURCE memory.peak %s\n' "$value"
 while read -r key value; do printf 'RESOURCE cpu.%s %s\n' "$key" "$value"; done < "$cg/cpu.stat"
 while read -r key value; do printf 'RESOURCE memory.events.%s %s\n' "$key" "$value"; done < "$cg/memory.events"
 exit "$status"
+`;
+const extremeReceipt = String.raw`
+set -eu
+for key in cpu.max memory.max memory.swap.max; do
+  value=$(cat "/sys/fs/cgroup/$key")
+  printf 'RESOURCE %s %s\n' "$key" "$value"
+done
+exec node scripts/runtime-baseline/worker.mjs "$@"
 `;
 
 function run(command, args, cwd, env) {
@@ -75,14 +84,19 @@ function prepareProduction(root, harnessRoot) {
   return { directory, configuration };
 }
 
-function measure(root, profile, production, harnessRoot) {
-  const name = `slay-resource-suite-${randomUUID()}`;
-  const args = ['run', '--rm', '--name', name, '--network', 'none', '--cgroupns', 'private', '--read-only',
+function containerFlags(root, profile, production) {
+  const args = ['--network', 'none', '--cgroupns', 'private', '--read-only',
     '--user', `${process.getuid()}:${process.getgid()}`,
     '--mount', `type=bind,src=${root},dst=/repo,readonly`, '--workdir', '/repo'];
   if (profile.cpus !== null) args.push('--cpus', String(profile.cpus));
   if (profile.memoryBytes !== null) args.push('--memory', String(profile.memoryBytes), '--memory-swap', String(profile.memoryBytes));
   if (production) args.push('--env', `NODE_OPTIONS=--max-old-space-size=${productionHeapMiB}`);
+  return args;
+}
+
+function measure(root, profile, production, harnessRoot) {
+  const name = `slay-resource-suite-${randomUUID()}`;
+  const args = ['run', '--rm', '--name', name, ...containerFlags(root, profile, production)];
   // A/B arms use the same harness and fixtures while loading each arm's own game sources.
   if (production && root !== harnessRoot) {
     for (const path of productionWorkload) {
@@ -107,6 +121,30 @@ function measure(root, profile, production, harnessRoot) {
   }
 }
 
+function measureExtreme(root, production, candidate) {
+  const name = `slay-resource-suite-extreme-${randomUUID()}`;
+  let probe;
+  try {
+    const caps = containerFlags(root, unsupportedFormalProfile, production);
+    const id = run('docker', ['create', '--name', name, ...caps, image, 'sh', '-c', extremeReceipt,
+      'resource-extreme', relative(root, production.directory)], root);
+    const result = spawnSync('docker', ['start', '-a', id], {cwd: root, encoding: 'utf8', timeout: 45_000, maxBuffer: 4 * 1024 * 1024});
+    const state = JSON.parse(run('docker', ['inspect', '--format', '{{json .State}}', id], root));
+    const report = Object.fromEntries([...result.stdout.matchAll(/^RESOURCE (\S+) (.+)$/gm)].map(match => match.slice(1)));
+    const resources = {cpuMax: report['cpu.max'], memoryMax: report['memory.max'], swapMax: report['memory.swap.max']};
+    probe = {resources, state, stdout: result.stdout, stderr: result.stderr};
+    assert(!result.error, 'Extreme workload did not complete within the probe bound');
+    guardExtremeCgroup(resources, state);
+  } catch (error) {
+    return {status: 'FAIL', candidate, probe, error: error.message};
+  } finally {
+    spawnSync('docker', ['rm', '-f', name], {timeout: 10_000, stdio: 'ignore'});
+  }
+  const recovery = measure(root, profiles.stress, production, root);
+  return {status: recovery.error ? 'FAIL' : 'PASS', candidate, probe,
+    recovery: {recordedAt: new Date().toISOString(), sample: recovery}};
+}
+
 function deterministicCounts(sample) {
   return sample.rows.map(row => [counters.map(key => row[key]), row.nativeMethods, row.propertyNames]);
 }
@@ -129,6 +167,7 @@ function summarizeSamples(samples, count, samplePhases) {
 function suite(values) {
   assert.equal(process.platform, 'linux', 'use a Linux Docker host');
   assert(Object.hasOwn(modes, values.mode), `unknown mode: ${values.mode}`);
+  assert(!values.extreme || values.production, 'Extreme probe requires the formal configuration');
   const selected = values.profile ?? modes[values.mode];
   assert(selected.every(profile => Object.hasOwn(profiles, profile)) && new Set(selected).size === selected.length, 'unknown or duplicate profile');
   const repetitions = Number(values.samples ?? (values.mode === 'fast' ? 1 : 3));
@@ -184,9 +223,11 @@ function suite(values) {
       signals: paired ? compareSamples(before, after, alertPercent) : [],
     };
   }
+  const extreme = values.extreme ? measureExtreme(candidatePath, candidateProduction, candidate) : null;
   assert.deepEqual(snapshotCandidate(), candidate, 'candidate inputs changed while measuring');
   if (baseline) assert.deepEqual(snapshotBaseline(), baseline, 'baseline inputs changed while measuring');
-  const pass = Object.values(results).every(result => result.candidate.pass && (result.baseline?.pass ?? true));
+  const pass = (!extreme || extreme.status === 'PASS') &&
+    Object.values(results).every(result => result.candidate.pass && (result.baseline?.pass ?? true));
   const paired = Object.values(results).every(result => result.comparisonStatus === 'PAIRED');
   return {
     schemaVersion: 1, timeUtc: new Date().toISOString(),
@@ -195,7 +236,7 @@ function suite(values) {
     engine: { image, imageId, docker, kernel: release(), arch: arch(), cpuModel: cpus()[0]?.model, availableCpus: availableParallelism(), hostMemoryBytes: totalmem(),
       ...(values.production && { productionHeapMiB }) },
     alertPercent, candidate, baseline, comparisonStatus: paired ? 'PAIRED' : 'UNPAIRED',
-    ...(unpairedReference && { unpairedReference }), results,
+    ...(unpairedReference && { unpairedReference }), ...(extreme && {extreme}), results,
   };
 }
 
@@ -209,7 +250,7 @@ function main() {
   const { values } = parseArgs({ options: {
     mode: { type: 'string', default: 'fast' }, profile: { type: 'string', multiple: true },
     samples: { type: 'string' }, baseline: { type: 'string' }, 'baseline-if-compatible': { type: 'boolean' },
-    production: { type: 'boolean' },
+    production: { type: 'boolean' }, extreme: { type: 'boolean' },
     output: { type: 'string', default: 'build/performance-regression/report.json' },
     'alert-percent': { type: 'string', default: '20' },
   } });

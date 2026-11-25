@@ -96,7 +96,7 @@ jobs:
           args=(--mode "$mode")
           if [ "$mode" = formal ]; then
             git lfs install --local --skip-smudge
-            args=(--mode full --production)
+            args=(--mode full --production --extreme)
           fi
           prepare
           if [ -n "$BASE_SHA" ] && git cat-file -e "$BASE_SHA:scripts/runtime-baseline/worker.mjs"; then

@@ -5,7 +5,7 @@ import {mkdirSync, readFileSync, writeFileSync} from 'node:fs';
 import {resolve} from 'node:path';
 import {pathToFileURL} from 'node:url';
 import {validateSample} from '../benchmark-runtime-path.mjs';
-import {compareSamples, matchingResourceCaps, parseResources, profiles} from './resource-receipt.mjs';
+import {compareSamples, guardExtremeCgroup, matchingResourceCaps, parseResources, profiles} from './resource-receipt.mjs';
 import {productionPhases} from './production-inputs.mjs';
 import {resolvePublishedBaseline} from './published-baseline.mjs';
 
@@ -37,6 +37,19 @@ function verifySample(sample, profile) {
     ['cpu.usage_usec', caps.cpuUsageUsec], ['cpu.nr_periods', caps.cpuPeriods],
     ['cpu.nr_throttled', caps.throttledPeriods], ['cpu.throttled_usec', caps.throttledUsec],
   ].map(([key, value]) => `RESOURCE ${key} ${value}`).join('\n'), profile);
+}
+
+function verifyExtreme(extreme, candidate) {
+  assert(extreme?.status === 'PASS' && extreme.probe && extreme.recovery, 'Independent extreme failure and recovery proof required');
+  assert.deepEqual(extreme.candidate, candidate, 'Extreme probe and formal source/configuration differ');
+  const {resources, state, stdout} = extreme.probe;
+  guardExtremeCgroup(resources, state);
+  for (const [key, value] of [['cpu.max', resources.cpuMax], ['memory.max', resources.memoryMax], ['memory.swap.max', resources.swapMax]]) {
+    const lines = stdout.split('\n').filter(line => line.startsWith('RESOURCE ' + key + ' '));
+    assert.deepEqual(lines, ['RESOURCE ' + key + ' ' + value], 'Extreme raw cgroup readback differs');
+  }
+  assert(Date.parse(extreme.recovery.recordedAt) >= Date.parse(state.FinishedAt), 'Recovery must follow the observed extreme failure');
+  verifySample(extreme.recovery.sample, profiles.stress);
 }
 
 export function verifyResourceReport(report, sourceCommit, sourceTree, published, receipt) {
@@ -83,6 +96,7 @@ export function verifyResourceReport(report, sourceCommit, sourceTree, published
     assert.deepEqual(result.signals, observed, 'Source evidence signals differ from samples: ' + name);
     if (observed.length) signals[name] = observed;
   }
+  verifyExtreme(report.extreme, report.candidate);
   return signals;
 }
 

@@ -11,6 +11,17 @@ export const profiles = {
   medium: { cpus: 1, memoryBytes: 2 * GiB },
   stress: { cpus: 0.5, memoryBytes: GiB },
 };
+export const unsupportedFormalProfile = {cpus: .5, memoryBytes: 128 * 1024 ** 2};
+
+export function guardExtremeCgroup(caps, state) {
+  assert.equal(caps.cpuMax, '50000 100000', 'Extreme probe must read back the 0.5-CPU quota');
+  assert.equal(caps.memoryMax, String(unsupportedFormalProfile.memoryBytes), 'Extreme probe memory limit mismatch');
+  assert.equal(caps.swapMax, '0', 'Extreme probe swap limit mismatch');
+  assert(state.Running === false && state.OOMKilled === true && state.ExitCode === 137,
+    'Unsupported formal load must end as a bounded cgroup OOM');
+  assert(Number.isFinite(Date.parse(state.StartedAt)) && Date.parse(state.FinishedAt) >= Date.parse(state.StartedAt),
+    'Extreme probe lifecycle missing');
+}
 
 export function lockfileIdentity(bytes) {
   const dependencies = JSON.parse(bytes);
