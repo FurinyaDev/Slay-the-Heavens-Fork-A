@@ -46,6 +46,10 @@ const integratedEvidenceSuccessors=Object.freeze({
  'data/presentation/lowcost-relic-art.json':{
   sha256:'11656534ea60482edbdce97c0cd1298ea0f43410f74264c1eae4893e16b33dd0',gitBlob:'501272bd18fbd6054d8f5cefcf93fb9fb7867125',
  },
+ // #938, #940, #942, #951 and #984 update the approved live theme after #912.
+ 'data/presentation/ui_theme.json':{
+  sha256:'72cae11890ce1a018fa145152188cd6ff6779f899db201f9d3799171db7abb4e',gitBlob:'2d5262e17653444c27bba75679748ccc06ea1d09',
+ },
 });
 export function assertIntegratedLuaFixturesCurrent(read){
  for(const [path,binding] of Object.entries(luaFixtureSuccessors))
