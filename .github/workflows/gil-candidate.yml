@@ -4,6 +4,7 @@ on:
     branches: [ci/v211-gil-hosted-probe]
 permissions:
   contents: read
+  actions: read
 jobs:
   probe:
     if: github.repository_id == '1460097312' && github.ref == 'refs/heads/ci/v211-gil-hosted-probe'
@@ -25,6 +26,7 @@ jobs:
             /scripts/gil-candidate.mjs
             /tests/gil-candidate.test.mjs
             /.github/gil-headless-probe.mjs
+            /.github/gil-download-probe.mjs
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           repository: FurinyaWorks/Slay-the-Heavens
@@ -86,3 +88,18 @@ jobs:
       - name: Verify ref resolution, errors, archive checks and receipt constraints
         working-directory: control
         run: node --test tests/gil-candidate.test.mjs
+      - name: Create public synthetic download-check input
+        run: Set-Content "$env:RUNNER_TEMP/gil-download-link-smoke.txt" 'Public download verification fixture only.'
+      - id: test-archive
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: gil-download-link-smoke
+          path: ${{ runner.temp }}/gil-download-link-smoke.txt
+          if-no-files-found: error
+          retention-days: 1
+      - name: Download and hash the public synthetic archive
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ARTIFACT_ID: ${{ steps.test-archive.outputs.artifact-id }}
+          ARTIFACT_DIGEST: ${{ steps.test-archive.outputs.artifact-digest }}
+        run: node control/.github/gil-download-probe.mjs

@@ -113,24 +113,50 @@ export async function api(path, checkDownload = false) {
     headers: { Authorization: `Bearer ${process.env.GH_TOKEN}`, Accept: 'application/vnd.github+json' },
     signal: AbortSignal.timeout(20000), redirect: checkDownload ? 'manual' : 'error',
   });
-  if (checkDownload && [404, 410].includes(response.status)) return false;
+  if (checkDownload && [404, 410].includes(response.status)) return null;
   if (checkDownload) {
-    requireGate(response.status === 302 && response.headers.get('location'), 'GitHub did not return a candidate download redirect.');
-    return true;
+    const location = response.headers.get('location');
+    requireGate(response.status === 302 && location, 'GitHub did not return a candidate download redirect.');
+    return location;
   }
   requireGate(response.ok, path.startsWith('compare/') && response.status === 404
     ? 'source_sha is unknown in the main repository.' : `GitHub API verification failed (HTTP ${response.status}).`);
   return response.json();
 }
 
-export async function verifyUploadedArtifact({ id, runId, name, archiveDigest }, request, now = Date.now()) {
+export async function digestArtifactDownload(location) {
+  requireGate(URL.canParse(location), 'Invalid GitHub Artifact download URL.');
+  const url = new URL(location);
+  requireGate(url.protocol === 'https:' && !url.username && !url.password, 'Invalid GitHub Artifact download URL.');
+  try {
+    // The second hop uses the signed URL. GitHub API credentials stay on api.github.com.
+    const response = await fetch(url, { redirect: 'error', signal: AbortSignal.timeout(180000) });
+    requireGate(response.ok && response.body, `GitHub Artifact download failed (HTTP ${response.status}).`);
+    const sha256 = createHash('sha256');
+    let bytes = 0;
+    for await (const chunk of response.body) {
+      sha256.update(chunk);
+      bytes += chunk.length;
+    }
+    return { bytes, sha256: sha256.digest('hex') };
+  } catch (error) {
+    if (error instanceof GateError) throw error;
+    throw new GateError('GitHub Artifact download did not finish.');
+  }
+}
+
+export async function verifyUploadedArtifact({ id, runId, name, archiveDigest }, request, now = Date.now(), download = digestArtifactDownload) {
   requireGate(/^[1-9]\d*$/.test(id) && /^[1-9]\d*$/.test(runId) && digest.test(archiveDigest), 'Missing Artifact upload identity.');
   const path = `actions/artifacts/${id}`;
   const artifact = await request(path);
   requireGate(String(artifact.id) === id && String(artifact.workflow_run?.id) === runId && artifact.name === name &&
     artifact.expired === false && Date.parse(artifact.expires_at) > now && artifact.size_in_bytes > 0 &&
     artifact.digest === `sha256:${archiveDigest}`, 'Uploaded Artifact metadata or archive digest does not match.');
-  requireGate(await request(`${path}/zip`, true), 'Uploaded Artifact does not have an accessible download link.');
+  const location = await request(`${path}/zip`, true);
+  requireGate(location, 'Uploaded Artifact does not have an accessible download link.');
+  const archive = await download(location);
+  requireGate(archive.bytes === artifact.size_in_bytes && archive.sha256 === archiveDigest,
+    'Downloaded Artifact size or archive SHA-256 does not match.');
   return `https://github.com/${repository}/actions/runs/${runId}/artifacts/${id}`;
 }
 
