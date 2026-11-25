@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - Furinya
 created_date: '2026-11-06 01:46'
-updated_date: '2026-11-25 14:11'
+updated_date: '2026-11-25 15:32'
 labels:
   - 待验
   - delivery-verify
@@ -65,4 +65,6 @@ PR #523 首份离线Host全路径基线已实现：固定实际seed、源摘要�
 2026-11-14第二轮状态纠正：已有Host基准、visibility配对与SDK阶段记录，当前候选完整覆盖待补；工具及研究已开展，不应标To Do。 更正上一轮将待验统一退回To Do的处理；未勾AC及独立审批保持，In Progress表示工作已开展，不表示有人正持续占用执行窗口。
 
 2026-11-25 v2.1.1 封板。保留 #959 的正式配置 Host 回归和线上源码 06c2577ecc6c07593c6bf8b6e79e158dac5b6195 的离线性能结果。后续配对、正式合入核验和同包设备证据继续留在本任务及 TASK-4.21，已上线版本不追加变更。
+
+当前授权验收切片以 develop 27e2f830 为起点，核对并接续 #959 的正式有声工作负载、相关 Host 断言和普通集成门禁。先复跑 node scripts/runtime-baseline/production.mjs 与历史负控，再走 Fork A、独立复审和正常队列。既有范围、负责人、未勾验收与冻结包均保留。
 <!-- SECTION:NOTES:END -->
