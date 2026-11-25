@@ -1,0 +1,759 @@
+{
+  "simulatorVersion": "0.5.2",
+  "pilotSha256": "f886508da7b72d508c1b95dd8a66bf092a593900e7049e35653faa3fb63e9008",
+  "scope": "Isolated native scene and production actor-painter comparison",
+  "results": [
+    {
+      "name": "mobile-16-9-before",
+      "canvasId": "mobile-16-9",
+      "act": 0,
+      "contactTrial": false,
+      "width": 1280,
+      "height": 720,
+      "backgroundControls": 261,
+      "screenshotSha256": "55a81a28ff8b12ab5cdc52fd32f556747ea9a1ef4dfe493b463e925aea035993",
+      "saveSha256": "b88c19234e2b2ae2a7371603a5cc11b5a75143d40991565eae5864ef26b2838d",
+      "receipt": {
+        "canvasId": "mobile-16-9",
+        "frame": 0,
+        "time": 0,
+        "clockMode": "manual",
+        "width": 1280,
+        "height": 720,
+        "pixelWidth": 1280,
+        "pixelHeight": 720,
+        "assetWarnings": []
+      },
+      "actorReady": "ACTOR_ALPHA_READY hero=473 monster=32",
+      "rawDirectory": "v220-scenes-v2b-stock",
+      "edgeSamplesRgb": [
+        [
+          6,
+          24,
+          48
+        ],
+        [
+          6,
+          24,
+          48
+        ],
+        [
+          27,
+          33,
+          37
+        ],
+        [
+          27,
+          33,
+          37
+        ],
+        [
+          31,
+          37,
+          41
+        ],
+        [
+          31,
+          37,
+          41
+        ]
+      ],
+      "bottomRowCenterDeltaP95": 28
+    },
+    {
+      "name": "mobile-16-9-act1",
+      "canvasId": "mobile-16-9",
+      "act": 1,
+      "contactTrial": false,
+      "width": 1280,
+      "height": 720,
+      "backgroundControls": 236,
+      "screenshotSha256": "d3cbade4406549623956baf2a8902b4fe57a4acce536bf70e29cfed797c644c6",
+      "saveSha256": "cea7ee08089f1fffb4a54025b54a1295345ed3ce59221b513d2d487a7e06c8d3",
+      "receipt": {
+        "canvasId": "mobile-16-9",
+        "frame": 0,
+        "time": 0,
+        "clockMode": "manual",
+        "width": 1280,
+        "height": 720,
+        "pixelWidth": 1280,
+        "pixelHeight": 720,
+        "assetWarnings": []
+      },
+      "actorReady": "ACTOR_ALPHA_READY hero=473 monster=32",
+      "rawDirectory": "v220-scenes-v2b-stock",
+      "edgeSamplesRgb": [
+        [
+          83,
+          66,
+          57
+        ],
+        [
+          77,
+          59,
+          52
+        ],
+        [
+          79,
+          63,
+          56
+        ],
+        [
+          73,
+          59,
+          53
+        ],
+        [
+          29,
+          29,
+          33
+        ],
+        [
+          29,
+          29,
+          33
+        ]
+      ],
+      "bottomRowCenterDeltaP95": 0
+    },
+    {
+      "name": "mobile-16-9-act2",
+      "canvasId": "mobile-16-9",
+      "act": 2,
+      "contactTrial": false,
+      "width": 1280,
+      "height": 720,
+      "backgroundControls": 257,
+      "screenshotSha256": "403a660826bb2bc2624df5105dbbee78e77e6dbd1aa45d24ccfeb00c35508178",
+      "saveSha256": "3d1e4647dd63d50384de6acea99aeab167d8407e1f5e2713e22f9606e995c85b",
+      "receipt": {
+        "canvasId": "mobile-16-9",
+        "frame": 0,
+        "time": 0,
+        "clockMode": "manual",
+        "width": 1280,
+        "height": 720,
+        "pixelWidth": 1280,
+        "pixelHeight": 720,
+        "assetWarnings": []
+      },
+      "actorReady": "ACTOR_ALPHA_READY hero=473 monster=32",
+      "rawDirectory": "v220-scenes-v2b-stock",
+      "edgeSamplesRgb": [
+        [
+          40,
+          45,
+          50
+        ],
+        [
+          40,
+          45,
+          50
+        ],
+        [
+          57,
+          71,
+          75
+        ],
+        [
+          57,
+          71,
+          75
+        ],
+        [
+          29,
+          29,
+          33
+        ],
+        [
+          29,
+          29,
+          33
+        ]
+      ],
+      "bottomRowCenterDeltaP95": 0
+    },
+    {
+      "name": "mobile-19.5-9-before",
+      "canvasId": "mobile-19.5-9",
+      "act": 0,
+      "contactTrial": false,
+      "width": 1560,
+      "height": 720,
+      "backgroundControls": 261,
+      "screenshotSha256": "bf01b38a15e62301fe4072ee417fbb480b15c735aab38e05abc531a5c88f95cb",
+      "saveSha256": "b88c19234e2b2ae2a7371603a5cc11b5a75143d40991565eae5864ef26b2838d",
+      "receipt": {
+        "canvasId": "mobile-19.5-9",
+        "frame": 0,
+        "time": 0,
+        "clockMode": "manual",
+        "width": 1560,
+        "height": 720,
+        "pixelWidth": 1560,
+        "pixelHeight": 720,
+        "assetWarnings": []
+      },
+      "actorReady": "ACTOR_ALPHA_READY hero=473 monster=32",
+      "rawDirectory": "v220-scenes-v2b-stock",
+      "edgeSamplesRgb": [
+        [
+          6,
+          24,
+          50
+        ],
+        [
+          6,
+          24,
+          50
+        ],
+        [
+          6,
+          26,
+          54
+        ],
+        [
+          6,
+          26,
+          54
+        ],
+        [
+          6,
+          24,
+          50
+        ],
+        [
+          6,
+          24,
+          50
+        ]
+      ],
+      "bottomRowCenterDeltaP95": 28
+    },
+    {
+      "name": "mobile-19.5-9-act1",
+      "canvasId": "mobile-19.5-9",
+      "act": 1,
+      "contactTrial": false,
+      "width": 1560,
+      "height": 720,
+      "backgroundControls": 236,
+      "screenshotSha256": "9013b24b5092b0d13965354816fa9a4b44b3da912ae6a93d33b8e72dcd96d993",
+      "saveSha256": "cea7ee08089f1fffb4a54025b54a1295345ed3ce59221b513d2d487a7e06c8d3",
+      "receipt": {
+        "canvasId": "mobile-19.5-9",
+        "frame": 0,
+        "time": 0,
+        "clockMode": "manual",
+        "width": 1560,
+        "height": 720,
+        "pixelWidth": 1560,
+        "pixelHeight": 720,
+        "assetWarnings": []
+      },
+      "actorReady": "ACTOR_ALPHA_READY hero=473 monster=32",
+      "rawDirectory": "v220-scenes-v2b-stock",
+      "edgeSamplesRgb": [
+        [
+          83,
+          66,
+          57
+        ],
+        [
+          77,
+          59,
+          52
+        ],
+        [
+          79,
+          63,
+          56
+        ],
+        [
+          73,
+          59,
+          53
+        ],
+        [
+          30,
+          30,
+          33
+        ],
+        [
+          29,
+          29,
+          33
+        ]
+      ],
+      "bottomRowCenterDeltaP95": 0
+    },
+    {
+      "name": "mobile-19.5-9-act2",
+      "canvasId": "mobile-19.5-9",
+      "act": 2,
+      "contactTrial": false,
+      "width": 1560,
+      "height": 720,
+      "backgroundControls": 257,
+      "screenshotSha256": "eb059812de31b2079ae937eb9f74b8f8d632df520a806d2e49c0dde696534a46",
+      "saveSha256": "3d1e4647dd63d50384de6acea99aeab167d8407e1f5e2713e22f9606e995c85b",
+      "receipt": {
+        "canvasId": "mobile-19.5-9",
+        "frame": 0,
+        "time": 0,
+        "clockMode": "manual",
+        "width": 1560,
+        "height": 720,
+        "pixelWidth": 1560,
+        "pixelHeight": 720,
+        "assetWarnings": []
+      },
+      "actorReady": "ACTOR_ALPHA_READY hero=473 monster=32",
+      "rawDirectory": "v220-scenes-v2b-stock",
+      "edgeSamplesRgb": [
+        [
+          40,
+          45,
+          50
+        ],
+        [
+          40,
+          45,
+          50
+        ],
+        [
+          57,
+          58,
+          60
+        ],
+        [
+          64,
+          80,
+          86
+        ],
+        [
+          30,
+          30,
+          33
+        ],
+        [
+          29,
+          29,
+          33
+        ]
+      ],
+      "bottomRowCenterDeltaP95": 0
+    },
+    {
+      "name": "pc-21-9-before",
+      "canvasId": "pc-21-9",
+      "act": 0,
+      "contactTrial": false,
+      "width": 2100,
+      "height": 900,
+      "backgroundControls": 261,
+      "screenshotSha256": "8b9b86090d2a7f3003953826c07325dc09cfa7f0305a9b89c46e855837fa7471",
+      "saveSha256": "a4bdf3b6f124fbb6acac0c9282bc14bf99be4ebdfc1700602fb58ebfad588add",
+      "receipt": {
+        "canvasId": "pc-21-9",
+        "frame": 0,
+        "time": 0,
+        "clockMode": "manual",
+        "width": 2100,
+        "height": 900,
+        "pixelWidth": 2100,
+        "pixelHeight": 900,
+        "assetWarnings": []
+      },
+      "actorReady": "ACTOR_ALPHA_READY hero=473 monster=32",
+      "rawDirectory": "v220-scenes-v2b-stock",
+      "edgeSamplesRgb": [
+        [
+          6,
+          24,
+          50
+        ],
+        [
+          6,
+          24,
+          50
+        ],
+        [
+          6,
+          26,
+          54
+        ],
+        [
+          6,
+          26,
+          54
+        ],
+        [
+          6,
+          24,
+          50
+        ],
+        [
+          6,
+          24,
+          50
+        ]
+      ],
+      "bottomRowCenterDeltaP95": 20
+    },
+    {
+      "name": "pc-21-9-act1",
+      "canvasId": "pc-21-9",
+      "act": 1,
+      "contactTrial": false,
+      "width": 2100,
+      "height": 900,
+      "backgroundControls": 236,
+      "screenshotSha256": "229c96d69fc65ac209502ca399eb2dbdca226f529b862657a6196a865eb67e10",
+      "saveSha256": "d5032a0f941ca328d38c921afd99562d1c818aa2e65de3cc3cf8598f6d169913",
+      "receipt": {
+        "canvasId": "pc-21-9",
+        "frame": 0,
+        "time": 0,
+        "clockMode": "manual",
+        "width": 2100,
+        "height": 900,
+        "pixelWidth": 2100,
+        "pixelHeight": 900,
+        "assetWarnings": []
+      },
+      "actorReady": "ACTOR_ALPHA_READY hero=473 monster=32",
+      "rawDirectory": "v220-scenes-v2b-stock",
+      "edgeSamplesRgb": [
+        [
+          83,
+          66,
+          57
+        ],
+        [
+          77,
+          59,
+          52
+        ],
+        [
+          79,
+          63,
+          56
+        ],
+        [
+          73,
+          59,
+          53
+        ],
+        [
+          29,
+          29,
+          33
+        ],
+        [
+          29,
+          29,
+          33
+        ]
+      ],
+      "bottomRowCenterDeltaP95": 0
+    },
+    {
+      "name": "pc-21-9-act2",
+      "canvasId": "pc-21-9",
+      "act": 2,
+      "contactTrial": false,
+      "width": 2100,
+      "height": 900,
+      "backgroundControls": 257,
+      "screenshotSha256": "6973629f704430a0c249402b038444cedc44a703aeef27c9cd0973f8037d632c",
+      "saveSha256": "c570035e444b142993822c13613270c6b252f9631328f2b751c8c055baab08bc",
+      "receipt": {
+        "canvasId": "pc-21-9",
+        "frame": 0,
+        "time": 0,
+        "clockMode": "manual",
+        "width": 2100,
+        "height": 900,
+        "pixelWidth": 2100,
+        "pixelHeight": 900,
+        "assetWarnings": []
+      },
+      "actorReady": "ACTOR_ALPHA_READY hero=473 monster=32",
+      "rawDirectory": "v220-scenes-v2b-stock",
+      "edgeSamplesRgb": [
+        [
+          40,
+          45,
+          50
+        ],
+        [
+          40,
+          45,
+          50
+        ],
+        [
+          57,
+          71,
+          75
+        ],
+        [
+          64,
+          80,
+          86
+        ],
+        [
+          29,
+          29,
+          33
+        ],
+        [
+          29,
+          29,
+          33
+        ]
+      ],
+      "bottomRowCenterDeltaP95": 0
+    },
+    {
+      "name": "mobile-20-9-before",
+      "canvasId": "mobile-20-9",
+      "act": 0,
+      "contactTrial": false,
+      "width": 1600,
+      "height": 720,
+      "backgroundControls": 261,
+      "screenshotSha256": "23f92c875b65ff82e83d4ee4b93efe352ae128665d4f3fa41ec9cafcd9396795",
+      "saveSha256": "b88c19234e2b2ae2a7371603a5cc11b5a75143d40991565eae5864ef26b2838d",
+      "receipt": {
+        "canvasId": "mobile-20-9",
+        "frame": 0,
+        "time": 0,
+        "clockMode": "manual",
+        "width": 1600,
+        "height": 720,
+        "pixelWidth": 1600,
+        "pixelHeight": 720,
+        "assetWarnings": []
+      },
+      "actorReady": "ACTOR_ALPHA_READY hero=473 monster=32",
+      "rawDirectory": "v220-scenes-v2b-20-9",
+      "edgeSamplesRgb": [
+        [
+          6,
+          24,
+          50
+        ],
+        [
+          6,
+          24,
+          50
+        ],
+        [
+          6,
+          26,
+          54
+        ],
+        [
+          6,
+          26,
+          54
+        ],
+        [
+          6,
+          24,
+          50
+        ],
+        [
+          6,
+          24,
+          50
+        ]
+      ],
+      "bottomRowCenterDeltaP95": 28
+    },
+    {
+      "name": "mobile-20-9-act1",
+      "canvasId": "mobile-20-9",
+      "act": 1,
+      "contactTrial": false,
+      "width": 1600,
+      "height": 720,
+      "backgroundControls": 236,
+      "screenshotSha256": "835fafbe04d2d0cce8f99dff77e6d49cfbcd7313b69ec356ae84c6506039756d",
+      "saveSha256": "cea7ee08089f1fffb4a54025b54a1295345ed3ce59221b513d2d487a7e06c8d3",
+      "receipt": {
+        "canvasId": "mobile-20-9",
+        "frame": 0,
+        "time": 0,
+        "clockMode": "manual",
+        "width": 1600,
+        "height": 720,
+        "pixelWidth": 1600,
+        "pixelHeight": 720,
+        "assetWarnings": []
+      },
+      "actorReady": "ACTOR_ALPHA_READY hero=473 monster=32",
+      "rawDirectory": "v220-scenes-v2b-20-9",
+      "edgeSamplesRgb": [
+        [
+          83,
+          66,
+          57
+        ],
+        [
+          77,
+          59,
+          52
+        ],
+        [
+          79,
+          63,
+          56
+        ],
+        [
+          73,
+          59,
+          53
+        ],
+        [
+          29,
+          29,
+          33
+        ],
+        [
+          29,
+          29,
+          33
+        ]
+      ],
+      "bottomRowCenterDeltaP95": 0
+    },
+    {
+      "name": "mobile-20-9-act2",
+      "canvasId": "mobile-20-9",
+      "act": 2,
+      "contactTrial": false,
+      "width": 1600,
+      "height": 720,
+      "backgroundControls": 257,
+      "screenshotSha256": "fc46b6d9e6109b0b0e4cd8f4aaa57301cfa311f5fa9879c72de70222532e0e99",
+      "saveSha256": "3d1e4647dd63d50384de6acea99aeab167d8407e1f5e2713e22f9606e995c85b",
+      "receipt": {
+        "canvasId": "mobile-20-9",
+        "frame": 0,
+        "time": 0,
+        "clockMode": "manual",
+        "width": 1600,
+        "height": 720,
+        "pixelWidth": 1600,
+        "pixelHeight": 720,
+        "assetWarnings": []
+      },
+      "actorReady": "ACTOR_ALPHA_READY hero=473 monster=32",
+      "rawDirectory": "v220-scenes-v2b-20-9",
+      "edgeSamplesRgb": [
+        [
+          40,
+          45,
+          50
+        ],
+        [
+          40,
+          45,
+          50
+        ],
+        [
+          57,
+          71,
+          75
+        ],
+        [
+          57,
+          58,
+          60
+        ],
+        [
+          29,
+          29,
+          33
+        ],
+        [
+          29,
+          29,
+          33
+        ]
+      ],
+      "bottomRowCenterDeltaP95": 0
+    },
+    {
+      "name": "mobile-16-9-act1-contact",
+      "canvasId": "mobile-16-9",
+      "act": 1,
+      "contactTrial": true,
+      "width": 1280,
+      "height": 720,
+      "backgroundControls": 237,
+      "screenshotSha256": "264e8d5962383a445d3e10cf44830b7fd1a746120478a3b815b2795be7fb485c",
+      "saveSha256": "ea4ea531fdb60964b32e48fcab8cde9c595620aba5d9aebcad657ff4f4d0a149",
+      "receipt": {
+        "canvasId": "mobile-16-9",
+        "frame": 0,
+        "time": 0,
+        "clockMode": "manual",
+        "width": 1280,
+        "height": 720,
+        "pixelWidth": 1280,
+        "pixelHeight": 720,
+        "assetWarnings": []
+      },
+      "actorReady": "ACTOR_ALPHA_READY hero=473 monster=32",
+      "rawDirectory": "v220-scenes-v2b-contact",
+      "contactDelta": {
+        "pixels": 464,
+        "bounds": [
+          279,
+          489,
+          361,
+          498
+        ],
+        "maxChannelReduction": 13
+      }
+    },
+    {
+      "name": "mobile-16-9-act2-contact",
+      "canvasId": "mobile-16-9",
+      "act": 2,
+      "contactTrial": true,
+      "width": 1280,
+      "height": 720,
+      "backgroundControls": 258,
+      "screenshotSha256": "aae6e069e93947892a3bc958be9d60d6d93ff412f73e794550cf8352a3f2be40",
+      "saveSha256": "b592a5040f364ab344a5698ea39b1dd88f7f8c5d9cdbf66fe1aea57eb90e7a5a",
+      "receipt": {
+        "canvasId": "mobile-16-9",
+        "frame": 0,
+        "time": 0,
+        "clockMode": "manual",
+        "width": 1280,
+        "height": 720,
+        "pixelWidth": 1280,
+        "pixelHeight": 720,
+        "assetWarnings": []
+      },
+      "actorReady": "ACTOR_ALPHA_READY hero=473 monster=32",
+      "rawDirectory": "v220-scenes-v2b-contact",
+      "contactDelta": {
+        "pixels": 459,
+        "bounds": [
+          279,
+          489,
+          361,
+          498
+        ],
+        "maxChannelReduction": 12
+      }
+    }
+  ]
+}
