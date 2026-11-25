@@ -30,6 +30,30 @@ const luaFixtureSuccessors=Object.freeze({
   sha256:'15e495490244a447d8f9311bce88f03dc3ed30f6282ec108a5b4a4421b88624d',gitBlob:'53a04c8d5e53b4a62c789bc083e385b41bb04255',
  },
 });
+// These approved test revisions remain executable in the raw Full inventory.
+// Use the same exact identities for the applicable historical source and inventory comparisons.
+const jsInventorySuccessors=Object.freeze({
+ 'tests/deck-browser-reveal-reuse.test.mjs':{
+  sha256:'f9f446f381fff3b96527f9047fc9e175287dae6dcdd30c1cf3f63bf79283758b',
+  gitBlob:'f84703488081cc2c4106aeb17c1a75a52ef3a3d8',
+ },
+ 'tests/official-choice-pagination.test.mjs':{
+  sha256:'2f8794a5d9f7e7c87578672afd0069929947e0de5217f8e805ee1b43c93ba321',
+  gitBlob:'7519d2b322d91c39387a244e14a2dc7b220eb39d',
+ },
+ 'tests/sts-card-reference-runtime.test.mjs':{
+  sha256:'b72ccb3d21a095000282b340d873e6b3b65224c758c13e2e21f7b3f98569080e',
+  gitBlob:'75cac3711224bdf9f4622efd0cefe24b26ea0c98',
+ },
+ 'tests/sts-character-browser.test.mjs':{
+  sha256:'a8c371980710a7824aff8328cf5c041b06b1199eea548cb4e51b17668a7d40dc',
+  gitBlob:'be5b6ad2bc339cfc227818355a4505b94f88ddf9',
+ },
+ 'tests/sts-page-reveal.test.mjs':{
+  sha256:'aad08a2635e39b294b0b756feabbd878d3a1708fc636a607d60393cfc6e04456',
+  gitBlob:'7dcb8cedafdd5ca8b9a58f57662c2c5940422bd2',
+ },
+});
 const integratedEvidenceSuccessors=Object.freeze({
  'CHANGELOG.md':{
   sha256:'8df706839da1f445aae118f5483af85c68a910e6b279c5207534e604d651513b',gitBlob:'41409da7947a7b3b688810473e94a64b72367081',
@@ -53,6 +77,44 @@ const integratedEvidenceSuccessors=Object.freeze({
  // #951 adds release-text checks to the active syntax and platform scripts.
  'package.json':{
   sha256:'ba29a08fc203195bba8c9acd047274167f2de046f8a29e54a681f72faa314e77',gitBlob:'8b3f35c25c42aa7276a5ab334ae7112fe9dbe01b',
+ },
+ // Approved #938, #940, #942, #943, #951, #984 and #985 source successors.
+ 'scripts/sts-card-reference-profile.mjs':{
+  sha256:'92eef4262017dfe74dc80e41ee0bcf9961aba9c7c121247f96ae9b0c235db199',gitBlob:'1d7aeb376916e8a4617ac75da9a50f5fd8c5075e',
+ },
+ 'src/lua/abyss_game_ui_view.lua':{
+  sha256:'e01ca4da8d838b9ea38ef7663a097785e208c97fbac3f1d1df103c618d09957d',gitBlob:'fa1578151eb2565798e81843bc30681e42bcbb70',
+ },
+ 'tests/deck-browser-reveal-reuse.test.mjs':jsInventorySuccessors['tests/deck-browser-reveal-reuse.test.mjs'],
+ 'tests/helpers/intent-visibility-vm.mjs':{
+  sha256:'873779165d8bc25ca5bb2673f76726591931e0ce773f44914b8ce0ba6edf5597',gitBlob:'1fb0be4b656c01c50bb421678b673cdd493983d9',
+ },
+ 'tests/lua/game_ui_classes.lua':{
+  sha256:'09f1df83661ccabd3f90e47d39b7fe2aa9899bcd649f9b2598fc43a01f4312c3',gitBlob:'9f2452c15c29c69a93f150352d87d74dff8a4bd1',
+ },
+ 'tests/lua/game_ui_classes_failure.lua':{
+  sha256:'59e872e3e78b6b667b9a1250c227f29ec4e800bebecc0ee17343e44acb14b311',gitBlob:'fc39ead01b7a4f1163700f4ae1495f0e5ed6667c',
+ },
+ 'tests/lua/game_ui_prologue.lua':{
+  sha256:'7079832098012f2afa09490ee427eaf72724d5a306731acce85df8f9699dc200',gitBlob:'af469226aac72f8165ff451a8194fd977a751da1',
+ },
+ 'tests/lua/support/committed_defeat_fixture.lua':{
+  sha256:'14333b6952b54947b584807704080ca16015573ff51463d4b46f17015462e1e7',gitBlob:'4255d447c68d7ae7fe622c406d231b5c5d6ecfdd',
+ },
+ 'tests/lua/support/node_ui_cases.lua':{
+  sha256:'593b6e6a91941a7cdb110045bd953db0633eb2d13424d25edec0ddd34ad2aaa0',gitBlob:'d9c00c3abc5c4c13b0b4de3c7673d44e00651e6b',
+ },
+ 'tests/lua/support/official_choice_pagination.lua':{
+  sha256:'c8f593cd3bddc4be2d9d95dd5ca6b3c220d79d871f6573300cc396b77c7ba618',gitBlob:'a9f3090beb4db596192e7538ebc781f203d44ae5',
+ },
+ 'tests/lua/title_menu_admission.lua':{
+  sha256:'f93914c96f1e24b8e0f684e358bd13c3ac2dff0e347744b16b1d4069070d4bc4',gitBlob:'8928c7cd380bd0cc5d1efc22fe3cd1191aa7af58',
+ },
+ 'tests/official-choice-pagination.test.mjs':jsInventorySuccessors['tests/official-choice-pagination.test.mjs'],
+ 'tests/sts-card-reference-runtime.test.mjs':jsInventorySuccessors['tests/sts-card-reference-runtime.test.mjs'],
+ 'tests/sts-page-reveal.test.mjs':jsInventorySuccessors['tests/sts-page-reveal.test.mjs'],
+ 'tests/v25-card-skin-integration.test.mjs':{
+  sha256:'f94b0534b4bd8468bf1a6bc76936b7d0264d8ce0e96d635f13a9d213034d04bb',gitBlob:'f8f3e90f9924902353cbe8c159b26f6123994745',
  },
 });
 export function assertIntegratedLuaFixturesCurrent(read){
@@ -104,30 +166,6 @@ export function extendIntegratedHelperClosure(original){
  for(const [path,row]of Object.entries(patch)){assert.equal(row.before,original[path]??null,'exact integration copy predecessor: '+path);assert.match(row.after,/^[a-f0-9]{64}$/);current[path]=row.after;}
  return freeze(current);
 }
-// These approved test revisions remain executable in the raw Full inventory.
-// Their exact identities authorize only the historical inventory comparison.
-const jsInventorySuccessors=Object.freeze({
- 'tests/deck-browser-reveal-reuse.test.mjs':{
-  sha256:'f9f446f381fff3b96527f9047fc9e175287dae6dcdd30c1cf3f63bf79283758b',
-  gitBlob:'f84703488081cc2c4106aeb17c1a75a52ef3a3d8',
- },
- 'tests/official-choice-pagination.test.mjs':{
-  sha256:'2f8794a5d9f7e7c87578672afd0069929947e0de5217f8e805ee1b43c93ba321',
-  gitBlob:'7519d2b322d91c39387a244e14a2dc7b220eb39d',
- },
- 'tests/sts-card-reference-runtime.test.mjs':{
-  sha256:'b72ccb3d21a095000282b340d873e6b3b65224c758c13e2e21f7b3f98569080e',
-  gitBlob:'75cac3711224bdf9f4622efd0cefe24b26ea0c98',
- },
- 'tests/sts-character-browser.test.mjs':{
-  sha256:'a8c371980710a7824aff8328cf5c041b06b1199eea548cb4e51b17668a7d40dc',
-  gitBlob:'be5b6ad2bc339cfc227818355a4505b94f88ddf9',
- },
- 'tests/sts-page-reveal.test.mjs':{
-  sha256:'aad08a2635e39b294b0b756feabbd878d3a1708fc636a607d60393cfc6e04456',
-  gitBlob:'7dcb8cedafdd5ca8b9a58f57662c2c5940422bd2',
- },
-});
 // Exact complete inventories for historical receipts; raw Full discovery remains live.
 export function integratedPriorInventory(paths,target,kind='js',read=readFileSync){
  const current=kind==='js'?integratedCiProof.inventory:integratedCiProof.luaInventory;
