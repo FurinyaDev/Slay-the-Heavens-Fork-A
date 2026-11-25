@@ -4,10 +4,12 @@ import { counters, percentile } from '../benchmark-runtime-path.mjs';
 
 const GiB = 1024 ** 3;
 export const resourceImage = 'node:24.19.0-bookworm-slim@sha256:a9f5f7c91a432850b2a8a7797adf5eadb6c733ceed61167806cee7ea7fbc29df';
+export const formalImageId = 'sha256:622f209f6c16ba5af4d9a337cae6577d096f17174b904cfc6a5b0c81a2679c24';
 export const productionHeapMiB = 768;
 export const workload = ['worker.mjs', 'host.lua', 'observer.lua', 'turn.lua'].map(file => `scripts/runtime-baseline/${file}`);
 workload.push('tests/lua/support/game_ui_fixture.lua', 'tests/lua/support/native_ui_contract.lua', 'tests/lua/support/shop_timeline.lua');
 export const productionWorkload = [...workload, 'tests/lua/support/production_performance.lua'];
+export const productionReportKind = 'offline-production-host-resource-pressure';
 
 export function workloadIdentity(paths, read) {
   const hash = bytes => createHash('sha256').update(bytes).digest('hex');

@@ -5,8 +5,8 @@ import {mkdirSync, readFileSync, writeFileSync} from 'node:fs';
 import {resolve} from 'node:path';
 import {pathToFileURL} from 'node:url';
 import {validateSample} from '../benchmark-runtime-path.mjs';
-import {compareSamples, guardExtremeCgroup, matchingResourceCaps, parseResources, profiles, productionHeapMiB,
-  productionWorkload, resourceImage, workloadIdentity} from './resource-receipt.mjs';
+import {compareSamples, formalImageId, guardExtremeCgroup, matchingResourceCaps, parseResources, profiles, productionHeapMiB,
+  productionReportKind, productionWorkload, resourceImage, workloadIdentity} from './resource-receipt.mjs';
 import {productionPhases} from './production-inputs.mjs';
 import {resolvePublishedBaseline} from './published-baseline.mjs';
 
@@ -42,6 +42,8 @@ function verifySample(sample, profile, executions) {
   assert(/^[a-f0-9]{12}$/.test(sample.executionId) && !executions.has(sample.executionId), 'Sample execution is missing or duplicated');
   executions.add(sample.executionId);
   const caps = sample.resources;
+  if (profile.cpus === null) assert.match(caps.cpuMax, /^max /, 'Expected the unrestricted CPU tier');
+  if (profile.memoryBytes === null) assert.equal(caps.memoryMax, 'max', 'Expected the unrestricted memory tier');
   parseResources([
     ['cpu.max', caps.cpuMax], ['memory.max', caps.memoryMax], ['memory.swap.max', caps.swapMax],
     ['memory.events.oom', caps.oom], ['memory.events.oom_kill', caps.oomKill], ['memory.peak', caps.peakBytes],
@@ -68,7 +70,7 @@ function verifyExtreme(extreme, candidate, executions) {
 }
 
 export function verifyResourceReport(report, sourceCommit, sourceTree, published, receipt, expectedWorkload) {
-  assert(report.schemaVersion === 1 && report.release === true && report.kind === 'offline-production-host-resource-pressure',
+  assert(report.schemaVersion === 1 && report.release === true && report.kind === productionReportKind,
     'Formal production release resource report required');
   assert.equal(report.status, 'PASS', 'Resource workload failed');
   assert.equal(report.mode, 'full', 'All six tiers required');
@@ -76,9 +78,10 @@ export function verifyResourceReport(report, sourceCommit, sourceTree, published
   assert(report.seed === 42 && report.alertPercent === 20 && Number.isInteger(report.repetitions) &&
     report.repetitions >= 3, 'Unexpected workload, threshold or sample count');
   assert(Number.isFinite(Date.parse(report.timeUtc)) && report.engine?.cpuModel && report.engine?.kernel &&
-    report.engine?.arch && /^\S+ 2 linux \S+$/.test(report.engine?.docker) && /^sha256:[a-f0-9]{64}$/.test(report.engine?.imageId),
+    report.engine?.arch === 'x64' && /^\S+ 2 linux (amd64|x86_64)$/.test(report.engine?.docker),
     'Missing raw run environment');
-  assert(report.engine.image === resourceImage && report.engine.productionHeapMiB === productionHeapMiB, 'Formal Host engine or heap differs');
+  assert(report.engine.image === resourceImage && report.engine.imageId === formalImageId &&
+    report.engine.productionHeapMiB === productionHeapMiB, 'Formal Host engine or heap differs');
   assert.equal(report.candidate?.commit, sourceCommit, 'Report and frozen source differ');
   assert.equal(report.candidate?.tree, sourceTree, 'Report and frozen source tree differ');
   assert.notEqual(published.commit, sourceCommit, 'Use a distinct previously published reference');
@@ -100,9 +103,12 @@ export function verifyResourceReport(report, sourceCommit, sourceTree, published
   assert.deepEqual(Object.keys(report.results).sort(), Object.keys(profiles).sort(), 'Six-tier coverage is incomplete');
   const signals = {};
   const executions = new Set();
+  const pairOrder = Array.from({length:report.repetitions}, (_, index) =>
+    index % 2 ? ['candidate', 'baseline'] : ['baseline', 'candidate']);
   for (const [name, profile] of Object.entries(profiles)) {
     const result = report.results[name];
     assert.deepEqual(result.profile, profile, 'Resource profile changed: ' + name);
+    assert.deepEqual(result.pairOrder, pairOrder, 'Resource execution order differs: ' + name);
     assert(result.candidate?.pass && result.baseline?.pass && result.comparisonStatus === 'PAIRED',
       'Resource profile failed or was not paired: ' + name);
     const before = result.baseline.samples;

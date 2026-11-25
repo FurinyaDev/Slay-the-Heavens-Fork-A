@@ -2,9 +2,9 @@
 
 Release 日常修复走受影响 Fast；集成完成才按 [CI 候选入口](CI-FAST.md)冻结准确 HEAD 并显式请求一次 Full。正式上线前须执行 `node scripts/release-ci.mjs verify release/<版本> <候选source SHA>` 并保存通过结果；当前 Release HEAD、候选来源或最新 Full 任一变化即重新验收。Release→master 的必需 Quality 会自动校验同一门禁。此入口不创建 Tag、不自动上传或发布，平台与设备验收仍适用。
 
-冻结源码后，在 **Performance regression** 手动运行 `formal`，选择同一 `release/*`。作业根据已确认的平台发布记录独立解析上个正式工程版本、构建源码、源码树与产物摘要。v2.2.0 对应 [v2.1.1 正式构建来源](versions/ENGINEERING.md)。该作业使用两份正式生成结果、同一 Host 工作负载、既有六档 Docker 实限及三组正反交错配对。保留 run、attempt、原始 `report.json` 及独立复核。日常受影响 PR 继续使用轻量 Fast。
+同一 `release/v<工程版本>` 的冻结 Full 和 **GIL candidate** 构建成功后，在 **Performance regression** 选该分支运行 `formal`，将本次有声 GIL 下载链接末尾的数字填入 `gil_artifact_id`。作业根据已确认的平台发布记录独立解析上个正式工程版本、构建源码、源码树与产物摘要。v2.2.0 对应 [v2.1.1 正式构建来源](versions/ENGINEERING.md)。作业使用两份正式生成结果、同一 Host 工作负载、既有六档 Docker 实限及三组正反交错配对。归档 `release-performance-<run>-<attempt>` 的 `report.json`、`evidence.json` 及独立复核。日常受影响 PR 执行轻量 Fast。
 
-取得正式有声 GIL、构建原始回执、严格读回审计和该次报告。在同一冻结源码工作树执行校验。
+正式发布 Quality 入口验证最新成功的 `formal` run、attempt、原始报告和正式 GIL，固定到当前冻结 source SHA 和 GIL SHA-256。持有本地完整读回审计的独立验证者也可在同一冻结源码工作树执行以下校验。
 
 ```sh
 node scripts/runtime-baseline/verify-release-performance.mjs <final.gil> <candidate.json> <audit.json> <report.json>

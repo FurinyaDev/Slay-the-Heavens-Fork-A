@@ -7,8 +7,8 @@ import { dirname, relative, resolve } from 'node:path';
 import { performance } from 'node:perf_hooks';
 import { parseArgs } from 'node:util';
 import { counters, phases, validateSample } from '../benchmark-runtime-path.mjs';
-import { compareSamples, guardExtremeCgroup, lockfileIdentity, matchingResourceCaps, parseResources, profiles, productionHeapMiB,
-  productionWorkload, resourceImage as image, resourceResultStatus, selectResourceReference, summarize,
+import { compareSamples, formalImageId, guardExtremeCgroup, lockfileIdentity, matchingResourceCaps, parseResources, profiles,
+  productionHeapMiB, productionReportKind, productionWorkload, resourceImage as image, resourceResultStatus, selectResourceReference, summarize,
   unsupportedFormalProfile, workload, workloadIdentity } from './resource-receipt.mjs';
 import { productionPhases } from './production-inputs.mjs';
 import { lfsArguments, lfsEnvironment } from '../ci-reviewed-lfs.mjs';
@@ -198,6 +198,9 @@ function suite(values) {
     run('docker', ['pull', image], candidatePath);
   }
   const imageId = run('docker', ['image', 'inspect', '--format', '{{.Id}}', image], candidatePath);
+  if (values.release) {
+    assert(arch() === 'x64' && imageId === formalImageId, 'The approved amd64 formal Host image is required');
+  }
   const results = {};
   const samplePhases = values.production ? productionPhases : phases;
   for (const key of selected) {
@@ -262,7 +265,7 @@ function main() {
   } });
   const destination = resolve(values.output);
   mkdirSync(dirname(destination), { recursive: true });
-  const kind = values.production ? 'offline-production-host-resource-pressure' : 'offline-host-resource-pressure';
+  const kind = values.production ? productionReportKind : 'offline-host-resource-pressure';
   const initial = { schemaVersion: 1, kind, timeUtc: new Date().toISOString() };
   publish(destination, { ...initial, status: 'RUNNING' });
   try {

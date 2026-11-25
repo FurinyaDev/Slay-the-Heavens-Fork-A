@@ -1,56 +1,14 @@
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import test from 'node:test';
-import {productionPhases} from '../scripts/runtime-baseline/production-inputs.mjs';
-import {profiles, productionHeapMiB, resourceImage, resourceResultStatus} from '../scripts/runtime-baseline/resource-receipt.mjs';
+import {resourceResultStatus} from '../scripts/runtime-baseline/resource-receipt.mjs';
 import {resolvePublishedBaseline} from '../scripts/runtime-baseline/published-baseline.mjs';
 import {frozenReleaseVersion, verifyAuditedBuild, verifyResourceReport as verifyFormalReport} from '../scripts/runtime-baseline/verify-release-performance.mjs';
 
-const head = 'a'.repeat(40);
-const tree = 'b'.repeat(40);
-const published = {commit:'c'.repeat(40), tree:'e'.repeat(40)};
-const sha256 = 'd'.repeat(64);
-const flags = {cards:false, menuBackground:false, selectionAvatar:true, battlePortrait:true, monsters:true};
-const receipt = {artFeatures:{flags}};
+import {head, tree, published, sha256, receipt, reportFixture} from './helpers/release-performance-fixture.mjs';
+
 const verifyResourceReport = (report, sourceCommit, sourceTree, reference, build) =>
   verifyFormalReport(report, sourceCommit, sourceTree, reference, build, sha256);
-
-function reportFixture() {
-  const evidence = {
-    tree, workloadSha256:sha256, generatedLuaSha256:sha256, lockfile:{dependencies:sha256},
-    configuration:{officialAssets:true, refinedReleaseMonsterArt:true, nativePageLifecycle:true, artFeatures:flags},
-  };
-  let sequence = 0;
-  const results = Object.fromEntries(Object.entries(profiles).map(([name, profile]) => {
-    const rows = productionPhases.map(phase => ({
-      phase, elapsedMs:1, requireCalls:1, moduleLoads:1, nativeCalls:1, propertyWrites:1, snapshots:1,
-      nativeMethods:{GetChild:1}, propertyNames:{visible:1}, memory:{rss:1, heapUsed:1},
-    }));
-    const resources = {
-      cpuMax:profile.cpus === null ? 'max 100000' : `${profile.cpus * 100000} 100000`,
-      memoryMax:String(profile.memoryBytes ?? 'max'), swapMax:profile.memoryBytes === null ? 'max' : '0',
-      oom:0, oomKill:0, peakBytes:100, cpuUsageUsec:1, cpuPeriods:1, throttledPeriods:0, throttledUsec:0,
-    };
-    const arm = () => structuredClone({samples:Array.from({length:3}, () => ({rows, resources, wallMs:1,
-      executionId:(++sequence).toString(16).padStart(12, '0')})), pass:true});
-    return [name, {profile, candidate:arm(), baseline:arm(), comparisonStatus:'PAIRED', signals:[]}];
-  }));
-  const candidate = {commit:head, ...evidence};
-  const extreme = {
-    status:'PASS', candidate,
-    probe:{containerId:'a'.repeat(64), executionId:'a'.repeat(12), resources:{cpuMax:'50000 100000', memoryMax:'134217728', swapMax:'0'},
-      state:{Running:false, OOMKilled:true, ExitCode:137, StartedAt:'2026-11-25T11:02:00Z', FinishedAt:'2026-11-25T11:02:01Z'},
-      stdout:'RESOURCE_EXECUTION_ID aaaaaaaaaaaa\nRESOURCE cpu.max 50000 100000\nRESOURCE memory.max 134217728\nRESOURCE memory.swap.max 0\n'},
-    recovery:{recordedAt:'2026-11-25T11:03:00Z', sample:{...structuredClone(results.stress.candidate.samples[0]), executionId:'b'.repeat(12)}},
-  };
-  return structuredClone({
-    schemaVersion:1, release:true, kind:'offline-production-host-resource-pressure', status:'PASS', mode:'full', comparisonStatus:'PAIRED',
-    seed:42, alertPercent:20, repetitions:3, timeUtc:'2026-11-25T12:00:00Z',
-    engine:{cpuModel:'fixture', kernel:'fixture', arch:'x64', docker:'28.4.0 2 linux amd64', imageId:`sha256:${sha256}`,
-      image:resourceImage, productionHeapMiB},
-    candidate, baseline:{...evidence, ...published}, results, extreme,
-  });
-}
 
 test('accepts six formal paired tiers from the exact release and published builds', () => {
   assert.deepEqual(verifyResourceReport(reportFixture(), head, tree, published, receipt), {});
@@ -71,6 +29,12 @@ test('rejects weaker limits and cleared performance signals', () => {
   const wrongLimit = reportFixture();
   wrongLimit.results.stress.candidate.samples[0].resources.cpuMax = 'max 100000';
   assert.throws(() => verifyResourceReport(wrongLimit, head, tree, published, receipt), /CPU quota mismatch/);
+  const restricted = reportFixture();
+  restricted.results.baseline.candidate.samples[0].resources.memoryMax = '1073741824';
+  assert.throws(() => verifyResourceReport(restricted, head, tree, published, receipt), /unrestricted memory tier/);
+  const order = reportFixture();
+  order.results.stress.pairOrder[1].reverse();
+  assert.throws(() => verifyResourceReport(order, head, tree, published, receipt), /execution order differs/);
   const drift = reportFixture();
   drift.results.stress.candidate.samples[0].resources.oom = 1;
   assert.throws(() => verifyResourceReport(drift, head, tree, published, receipt), /OOM during the workload/);
@@ -127,6 +91,9 @@ test('formal collection fails closed and its verifier requires the frozen versio
   const wrongEngine = reportFixture();
   wrongEngine.engine.productionHeapMiB = 1024;
   assert.throws(() => verifyResourceReport(wrongEngine, head, tree, published, receipt), /engine or heap differs/);
+  const wrongImage = reportFixture();
+  wrongImage.engine.imageId = `sha256:${sha256}`;
+  assert.throws(() => verifyResourceReport(wrongImage, head, tree, published, receipt), /engine or heap differs/);
   const wrongWorkload = reportFixture();
   wrongWorkload.candidate.workloadSha256 = wrongWorkload.baseline.workloadSha256 = '7'.repeat(64);
   assert.throws(() => verifyResourceReport(wrongWorkload, head, tree, published, receipt), /workload differs from the frozen source/);
