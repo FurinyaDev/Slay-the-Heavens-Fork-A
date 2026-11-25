@@ -1,0 +1,217 @@
+{
+  "schemaVersion": 1,
+  "sourceCommit": "6ab89ed1a16fdeea8bf9649cbeecb99aa51fe3fd",
+  "maxPayloadBytes": 20636068,
+  "files": [
+    {
+      "path": "docs/design/reference-assets/v2.0.0/main-menu-approved-20261119.png",
+      "sha256": "655f4926a86d1135d468b31bf0c225352c65de03ba09a0d684ffa875265741dd",
+      "bytes": 2398093,
+      "oldBinaryGitBlobs": [
+        "c594ad6ff5cbb90ae1407e53c8ad87c6c76c106f"
+      ],
+      "category": "approved-menu-design-reference",
+      "sourceCommit": "6ab89ed1a16fdeea8bf9649cbeecb99aa51fe3fd"
+    },
+    {
+      "path": "docs/design/reference-assets/v2.0.0/sts1-main-menu-20261121/background-hd.png",
+      "sha256": "780f7428b1389e7ac824a5c2bd086339af19ea284e394ace692a6a4011d57c8c",
+      "bytes": 1558535,
+      "oldBinaryGitBlobs": [
+        "9322390b5c631cc4c2b6be21b4cd76a1f4f9a5a3"
+      ],
+      "category": "sts1-menu-session-reference",
+      "sourceCommit": "6ab89ed1a16fdeea8bf9649cbeecb99aa51fe3fd"
+    },
+    {
+      "path": "docs/design/reference-assets/v2.0.0/sts1-main-menu-20261121/design-hd.png",
+      "sha256": "0228b36c13b805c1a31eb0cb13d960be2b3b1168d6707412fedee2c7a51c06aa",
+      "bytes": 1585970,
+      "oldBinaryGitBlobs": [
+        "b016172f96762c604064a727d377d5f3c86b8e6d"
+      ],
+      "category": "sts1-menu-session-reference",
+      "sourceCommit": "6ab89ed1a16fdeea8bf9649cbeecb99aa51fe3fd"
+    },
+    {
+      "path": "docs/evidence/liyue-transition/reference-adaptation/transition.gif",
+      "sha256": "6217f53a69c4bd6dc4e3213ecb602d5215b0b89e5c2f0d490092d0312675d850",
+      "bytes": 617806,
+      "oldBinaryGitBlobs": [
+        "b28ac81ac86f4f3a93b573ad1a0ad84e5a807f5c"
+      ],
+      "category": "liyue-transition-evidence",
+      "sourceCommit": "6ab89ed1a16fdeea8bf9649cbeecb99aa51fe3fd"
+    },
+    {
+      "path": "docs/evidence/m3-mechanism-closeout-20261031/main-integration/pr436-merged-passed.json.gz",
+      "sha256": "103f853287580e551e79d8b9556d958d29a75914cdd62a04648068f032e748ee",
+      "bytes": 607522,
+      "oldBinaryGitBlobs": [
+        "8b5912451a01f52b50e4c23d831111d0a09bd8a0"
+      ],
+      "category": "project-ci-history-evidence",
+      "sourceCommit": "6ab89ed1a16fdeea8bf9649cbeecb99aa51fe3fd"
+    },
+    {
+      "path": "docs/evidence/m7-closeout-20261105/raw-api.json.gz",
+      "sha256": "f085ec1b1ba6ce9e003fbf3a5f8314b1d8cc55a0bc9a75b72becd483bfc5aa68",
+      "bytes": 1144786,
+      "oldBinaryGitBlobs": [
+        "979b9995983eebe1e1d5ac668102f5ecf9d15e36"
+      ],
+      "category": "project-ci-history-evidence",
+      "sourceCommit": "6ab89ed1a16fdeea8bf9649cbeecb99aa51fe3fd"
+    },
+    {
+      "path": "docs/evidence/m7-reward-query-shop-graph-20261107.jsonl.gz",
+      "sha256": "b15a1994356684d4e052edb71618265716c2976921daaf7756fef81cc9c9cd09",
+      "bytes": 730316,
+      "oldBinaryGitBlobs": [
+        "8875d07f002cad7ed6cf4ba1b8929d7b66376012"
+      ],
+      "category": "project-ci-history-evidence",
+      "sourceCommit": "6ab89ed1a16fdeea8bf9649cbeecb99aa51fe3fd"
+    },
+    {
+      "path": "docs/evidence/m9-ci-20261103/baseline-full.log.gz",
+      "sha256": "bcef886632cce709d2b54e3ab1c8b9d5dabbf425f24618f3541c074039ca8eaf",
+      "bytes": 917965,
+      "oldBinaryGitBlobs": [
+        "2f4d7bb7498353bcc47c2f3b324f1417155ec875"
+      ],
+      "category": "project-ci-history-evidence",
+      "sourceCommit": "6ab89ed1a16fdeea8bf9649cbeecb99aa51fe3fd"
+    },
+    {
+      "path": "docs/evidence/map-v25-20261110/raw/game.save.json.gz",
+      "sha256": "417e18607da2c9363cea607a4b6268d8be2f231eea575002c064f0df49d8977c",
+      "bytes": 1547688,
+      "oldBinaryGitBlobs": [
+        "ebd590bfe169107b6c28c9d53ba9b9670d61ddb7"
+      ],
+      "category": "v25-native-simulator-evidence",
+      "sourceCommit": "6ab89ed1a16fdeea8bf9649cbeecb99aa51fe3fd"
+    },
+    {
+      "path": "docs/evidence/native-ui-ab-20261111/sdk-A.json.gz",
+      "sha256": "9bf541289af8c8143a3c607725d60bb36ef330a1793731687725e4015588189c",
+      "bytes": 921267,
+      "oldBinaryGitBlobs": [
+        "10f3d594ad7e12dd43809050e6235f8a9fdabbef"
+      ],
+      "category": "project-ci-history-evidence",
+      "sourceCommit": "6ab89ed1a16fdeea8bf9649cbeecb99aa51fe3fd"
+    },
+    {
+      "path": "docs/evidence/native-ui-ab-20261111/sdk-diff.json.gz",
+      "sha256": "609e6a500e7099fb12b8cd5ccc8a07fa868907113fb09a6a932cf8aedb3c103c",
+      "bytes": 921257,
+      "oldBinaryGitBlobs": [
+        "26b7aeac4b4fd1a0629df68ac1464f03ebe7a2c6"
+      ],
+      "category": "project-ci-history-evidence",
+      "sourceCommit": "6ab89ed1a16fdeea8bf9649cbeecb99aa51fe3fd"
+    },
+    {
+      "path": "docs/evidence/native-ui-ab-20261111/sdk-tween.json.gz",
+      "sha256": "bcc45e726426f3ab5f857d28be6aebcd90843c4bebabe02cec26395afc0f76c3",
+      "bytes": 1131891,
+      "oldBinaryGitBlobs": [
+        "e95c1dd14184fae7ad4f0d3dc5c69c014cf74db0"
+      ],
+      "category": "project-ci-history-evidence",
+      "sourceCommit": "6ab89ed1a16fdeea8bf9649cbeecb99aa51fe3fd"
+    },
+    {
+      "path": "docs/evidence/official-assets-first-20261109/full-flow/prefix-validation.json.gz",
+      "sha256": "ccf6386287a0644c3e845c386aee07bf74c7cedb8588dc49ce60a9e0f9926dae",
+      "bytes": 675478,
+      "oldBinaryGitBlobs": [
+        "863f86b2a85e00f55573dd66c019e1189bf944b5"
+      ],
+      "category": "official-assets-offline-diagnostic",
+      "sourceCommit": "6ab89ed1a16fdeea8bf9649cbeecb99aa51fe3fd"
+    },
+    {
+      "path": "docs/evidence/sts1-combat-reference-20261121/flow-spike.gif",
+      "sha256": "e948f55ae01adfad50e59cc71024b5dbe195966f34e0d782bd56ebf619b96dd4",
+      "bytes": 941962,
+      "oldBinaryGitBlobs": [
+        "49ae48c52f2f2be9a08589c00afdfef961702b15"
+      ],
+      "category": "sts1-combat-sdk-evidence",
+      "sourceCommit": "6ab89ed1a16fdeea8bf9649cbeecb99aa51fe3fd"
+    },
+    {
+      "path": "docs/evidence/sts1-main-menu-20261121/comparison.png",
+      "sha256": "e676f2fb04d925b11c1c714b1a4e48b7286c6c670b251dc8fc1aa2f64d659972",
+      "bytes": 899751,
+      "oldBinaryGitBlobs": [
+        "4491f23ff288676daf3da9f2cc3c13a54140b03a"
+      ],
+      "category": "sts1-menu-session-reference",
+      "sourceCommit": "6ab89ed1a16fdeea8bf9649cbeecb99aa51fe3fd"
+    },
+    {
+      "path": "docs/evidence/task-100-1-v25-latest-natural-raw-20261109.json.gz",
+      "sha256": "62707761bfa8667e226f025cf5749b26ae0825f5cc9e86338b775d7fb948a82e",
+      "bytes": 702025,
+      "oldBinaryGitBlobs": [
+        "8ec0f43b58e50d09d0248aa344e65d18d63005f6"
+      ],
+      "category": "project-ci-history-evidence",
+      "sourceCommit": "6ab89ed1a16fdeea8bf9649cbeecb99aa51fe3fd"
+    },
+    {
+      "path": "docs/evidence/task-100-1-v25-latest-natural-visual-raw-20261109.json.gz",
+      "sha256": "deb17ea6825cde68d302eab559af108c3dc0e1a2d03314797a140f777a3aedf6",
+      "bytes": 694180,
+      "oldBinaryGitBlobs": [
+        "b19e42a2323eadbcb2548c045eab8ad93d3599ee"
+      ],
+      "category": "project-ci-history-evidence",
+      "sourceCommit": "6ab89ed1a16fdeea8bf9649cbeecb99aa51fe3fd"
+    },
+    {
+      "path": "docs/evidence/task-100-1-v25-native-control-count-raw-20261109.json.gz",
+      "sha256": "410d46071f219d5f7c29c074b571df1cfd01e8efee339ade56331a319dc205d7",
+      "bytes": 653099,
+      "oldBinaryGitBlobs": [
+        "e4076e3f68262b0ca095b6d2f7952f9b03406a0a"
+      ],
+      "category": "project-ci-history-evidence",
+      "sourceCommit": "6ab89ed1a16fdeea8bf9649cbeecb99aa51fe3fd"
+    },
+    {
+      "path": "docs/evidence/task-100-1-v25-stage-baseline-1-20261109.json.gz",
+      "sha256": "5dc272e5b0cdaeeeadad82ef1bda590ab78c22700b3bfeb8b1a581bcf20f4500",
+      "bytes": 661622,
+      "oldBinaryGitBlobs": [
+        "bdf304860a6b4dc140381404f861942f335f034e"
+      ],
+      "category": "project-ci-history-evidence",
+      "sourceCommit": "6ab89ed1a16fdeea8bf9649cbeecb99aa51fe3fd"
+    },
+    {
+      "path": "docs/evidence/task-100-1-v25-stage-baseline-2-20261109.json.gz",
+      "sha256": "147c15222a597ea508a99147f8f7f5621ba4f733117f72ab349bc4ee770c50a8",
+      "bytes": 649702,
+      "oldBinaryGitBlobs": [
+        "9cd79b1e18b42b4eb5287ee71850b6f941a35771"
+      ],
+      "category": "project-ci-history-evidence",
+      "sourceCommit": "6ab89ed1a16fdeea8bf9649cbeecb99aa51fe3fd"
+    },
+    {
+      "path": "docs/evidence/task-100-1-v25-stage-baseline-3-20261109.json.gz",
+      "sha256": "62aa19f0759e60ffa5b9f15b4c812f66d27326e4e088fa6307fd7357c2f83f75",
+      "bytes": 675153,
+      "oldBinaryGitBlobs": [
+        "d3cc0b9b8e03f1353aa31b1d65f79ad5c2270a81"
+      ],
+      "category": "project-ci-history-evidence",
+      "sourceCommit": "6ab89ed1a16fdeea8bf9649cbeecb99aa51fe3fd"
+    }
+  ]
+}

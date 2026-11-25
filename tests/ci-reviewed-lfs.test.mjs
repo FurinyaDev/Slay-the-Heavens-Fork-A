@@ -1,6 +1,7 @@
 import test, { after } from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
+import { gunzipSync } from 'node:zlib';
 import { mkdtempSync, mkdirSync, readFileSync, writeFileSync, rmSync, existsSync, readdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
@@ -8,7 +9,7 @@ import { pathToFileURL } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import * as lfs from '../scripts/ci-reviewed-lfs.mjs';
 import { reviewedPngPaths, needsReviewedAssets, verifyReviewedPngs, prepareReviewedAssets, lfsEnvironment, lfsArguments } from '../scripts/ci-reviewed-lfs.mjs';
-import {mediaFiles,originalMediaFiles,evidenceFiles,archiveFiles,helperArchiveFiles,mediaPointer,maxMediaPayloadBytes,maxEvidencePayloadBytes,maxArchivePayloadBytes,maxHelperArchivePayloadBytes,validateMediaPointers,prepareMediaAssets} from '../scripts/ci-media-lfs.mjs';
+import {mediaByPath,mediaFiles,originalMediaFiles,evidenceFiles,archiveFiles,helperArchiveFiles,releasePackMediaFiles,mediaPointer,maxMediaPayloadBytes,maxEvidencePayloadBytes,maxArchivePayloadBytes,maxHelperArchivePayloadBytes,validateMediaPointers,prepareMediaAssets} from '../scripts/ci-media-lfs.mjs';
 import {checkWhitespace,validateMediaBases} from '../scripts/ci-whitespace.mjs';
 import {prepareComparisonBlobs,comparisonBlobIds} from '../scripts/ci-comparison-blobs.mjs';
 import {checkHostedCheckout,checkNetworkPolicy} from '../scripts/check-network-policy.mjs';
@@ -254,7 +255,7 @@ test('existing media pointers retain their exact original ledger identities and 
  const pointers=new Map(mediaFiles.map(row=>[row.path,mediaPointer(row)]));
  assert.equal(originalMediaFiles.length,738);assert.equal(new Set(originalMediaFiles.map(row=>row.sha256)).size,705);
  assert.equal([...new Map(originalMediaFiles.map(row=>[row.sha256,row.bytes])).values()].reduce((a,b)=>a+b,0),117369505);
- assert.deepEqual(validateMediaPointers(pointers),{files:819,objects:768,bytes:166884443});
+ assert.deepEqual(validateMediaPointers(pointers),{files:840,objects:789,bytes:187520511});
  assert.equal(maxMediaPayloadBytes,117369505);assert.equal(maxEvidencePayloadBytes,37495268);assert.equal(lfs.maxReviewedPngBytes,5983528);
  for(const row of mediaFiles){const entry=ledger.files[row.path];assert.equal(entry.sha256,row.sha256);assert.equal(entry.bytes,row.bytes);assert.equal(entry.category,row.category);assert.equal(entry.storage,'ci-media-lfs-v1');}
  const first=mediaFiles[0],wrong=new Map(pointers);wrong.set(first.path,Buffer.from(mediaPointer(first).toString().replace(first.sha256,'0'.repeat(64))));
@@ -265,7 +266,38 @@ test('existing media pointers retain their exact original ledger identities and 
 });
 
 test('complete existing media are freshly authenticated on a cache hit without a transfer token',()=>{
- assert.deepEqual(prepareMediaAssets({env:{...process.env,CI_LFS_TOKEN:''}}),{status:'cached',files:819,objects:768,bytes:166884443});
+ assert.deepEqual(prepareMediaAssets({env:{...process.env,CI_LFS_TOKEN:''}}),{status:'cached',files:840,objects:789,bytes:187520511});
+});
+
+test('release pack transport preserves every original archived byte and Git blob identity',()=>{
+ const transport=JSON.parse(readFileSync('config/ci-release-pack-media.json','utf8'));
+ assert.equal(transport.sourceCommit,'6ab89ed1a16fdeea8bf9649cbeecb99aa51fe3fd');
+ assert.equal(transport.maxPayloadBytes,20636068);
+ assert.equal(transport.files.length,21);
+ assert.equal(transport.files.reduce((sum,row)=>sum+row.bytes,0),transport.maxPayloadBytes);
+ for(const row of transport.files){
+  assert.match(row.path,/^docs\/(?:evidence|design\/reference-assets)\//);
+  assert.deepEqual(mediaByPath.get(row.path),row);
+  const bytes=readFileSync(row.path);
+  assert.equal(bytes.length,row.bytes);
+  assert.equal(createHash('sha256').update(bytes).digest('hex'),row.sha256);
+  assert(bytes.subarray(0,8000).includes(0),'prior file was already binary under Git diff');
+  assert.deepEqual(row.oldBinaryGitBlobs,[createHash('sha1').update(`blob ${bytes.length}\0`).update(bytes).digest('hex')]);
+  assert(sensitive(row.path));
+ }
+});
+
+test('release pack repair projects only exact sources into existing historical witnesses',async()=>{
+ const {beforePreflightSource}=await import('./helpers/fork-preflight-source.mjs');
+ const history=JSON.parse(gunzipSync(readFileSync('tests/helpers/release-pack-transport-source.json.gz')));
+ for(const [path,row] of Object.entries(history.files)){
+  const live=readFileSync(path,'utf8').replaceAll('\r\n','\n');
+  assert.equal(createHash('sha256').update(live).digest('hex'),row.afterSha256);
+  for(const view of ['prior','release-bootstrap']){
+   assert.equal(beforePreflightSource(path,live,view),beforePreflightSource(path,row.before,view));
+   assert.equal(beforePreflightSource(path,live+'\n',view),live+'\n');
+  }
+ }
 });
 
 test('three existing CI archives retain complete bytes and original Git blob identities under exact storage',()=>{
@@ -317,7 +349,7 @@ test('cold partial checkout checks all text and exact media pointers without dow
  assert.equal(originalEvidence.length,evidenceFiles.length);
  for(const [i,row]of evidenceFiles.entries())assert.deepEqual(row.oldBinaryGitBlobs,[originalEvidence[i]]);
  run(source,['update-index','--index-info'],evidenceFiles.map((row,i)=>'100644 '+originalEvidence[i]+'\t'+row.path).join('\n')+'\n');
- const storedArchives=[...archiveFiles,...helperArchiveFiles];
+ const storedArchives=[...archiveFiles,...helperArchiveFiles,...releasePackMediaFiles];
  const originalArchives=run(source,['hash-object','-w','--no-filters','--stdin-paths'],storedArchives.map(row=>JSON.stringify(resolve(root,row.path))).join('\n')+'\n').split('\n');
  for(const [i,row]of storedArchives.entries())assert(row.oldBinaryGitBlobs.includes(originalArchives[i]));
  run(source,['update-index','--index-info'],storedArchives.map((row,i)=>'100644 '+originalArchives[i]+'\t'+row.path).join('\n')+'\n');

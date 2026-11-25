@@ -54,6 +54,17 @@ for(const [path,row] of Object.entries(transport.files)){
  assert.equal(hash(row.before),row.beforeSha,path+' complete media transport predecessor');
  assert.equal(createHash('sha1').update(`blob ${Buffer.byteLength(row.before)}\0`).update(row.before).digest('hex'),row.gitBlob,path);
 }
+const releasePackBytes=readFileSync(new URL('./release-pack-transport-source.json.gz',import.meta.url));
+assert.equal(hash(releasePackBytes),'12b72e9788ea4191d4cf815e1192742c1e94b76d324b3387dc9d8433df6847f8','complete release pack storage predecessor');
+const releasePack=JSON.parse(gunzipSync(releasePackBytes));
+assert.equal(releasePack.schemaVersion,1);
+assert.equal(releasePack.base,'6ab89ed1a16fdeea8bf9649cbeecb99aa51fe3fd');
+assert.deepEqual(Object.keys(releasePack.files),['.gitattributes','docs/legal/assets.json','scripts/ci-media-lfs.mjs','tests/ci-reviewed-lfs.test.mjs']);
+for(const [path,row] of Object.entries(releasePack.files)){
+ assert.equal(hash(row.before),row.beforeSha256,path+' complete release pack predecessor');
+ assert.equal(createHash('sha1').update(`blob ${Buffer.byteLength(row.before)}\0`).update(row.before).digest('hex'),row.beforeGitBlob,path);
+ assert.match(row.afterSha256,/^[0-9a-f]{64}$/);
+}
 const normalize=s=>s.replaceAll('\r\n','\n');
 // Keep earlier CI observations bound to the Release baseline while current
 // tests execute the approved default and frozen candidate paths.
@@ -501,6 +512,10 @@ export function assertIntegrationSuccessorsCurrent(read=readFileSync){
 }
 export function beforePreflightSource(path,source,view='prior'){
  if(Object.hasOwn(Object.prototype,path))return source;
+ const releasePackRow=Object.hasOwn(releasePack.files,path)?releasePack.files[path]:null;
+ if(releasePackRow&&['prior','release-bootstrap'].includes(view)&&typeof source==='string'&&
+  !source.includes('\r\r\n')&&hash(normalize(source))===releasePackRow.afterSha256)
+  source=source.includes('\r\n')?releasePackRow.before.replaceAll('\n','\r\n'):releasePackRow.before;
  source=beforeCharacterSelectionSource(path,source);
  source=beforeCharacterPreparationCiSource(path,beforeV2UiAdmission(path,beforeCoopCiSource(path,source)));
  source=beforeIntegrationSuccessor(path,source);

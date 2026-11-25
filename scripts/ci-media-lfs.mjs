@@ -11,6 +11,11 @@ const bytes=readFileSync(new URL('../config/ci-media-lfs.json',import.meta.url))
 assert.equal(hash(bytes),'a744f84701e638657569cf3211443adbace935c28435b2742ebc28b2a666e89d','exact media and evidence manifest');
 const manifest=JSON.parse(bytes);
 assert.equal(manifest.schemaVersion,1);
+const packBytes=readFileSync(new URL('../config/ci-release-pack-media.json',import.meta.url));
+assert.equal(hash(packBytes),'aef52ce135b2a0b7ca8bf0322e16f6c0084062906dd5008a3323487468d0a763','exact release pack media contract');
+const packManifest=JSON.parse(packBytes);
+assert.equal(packManifest.schemaVersion,1);
+assert.equal(packManifest.sourceCommit,'6ab89ed1a16fdeea8bf9649cbeecb99aa51fe3fd');
 const original={...manifest};delete original.evidenceExtension;delete original.archiveExtension;delete original.helperExtension;
 assert.equal(hash(JSON.stringify(original,null,2)+'\n'),'732a8b8b64611a2a3f714bf41a7c2bc1f458b1a6f9dfb86f5d37d0dc0c3a715a','complete original media contract');
 const freeze=row=>Object.freeze({...row,oldBinaryGitBlobs:Object.freeze(row.oldBinaryGitBlobs)});
@@ -18,13 +23,17 @@ export const originalMediaFiles=Object.freeze(manifest.files.map(freeze));
 export const evidenceFiles=Object.freeze(manifest.evidenceExtension.files.map(freeze));
 export const archiveFiles=Object.freeze(manifest.archiveExtension.files.map(freeze));
 export const helperArchiveFiles=Object.freeze(manifest.helperExtension.files.map(freeze));
-export const mediaFiles=Object.freeze([...originalMediaFiles,...evidenceFiles,...archiveFiles,...helperArchiveFiles]);
+export const releasePackMediaFiles=Object.freeze(packManifest.files.map(freeze));
+export const mediaFiles=Object.freeze([...originalMediaFiles,...evidenceFiles,...archiveFiles,...helperArchiveFiles,...releasePackMediaFiles]);
 const mediaMap=new Map(mediaFiles.map(row=>[row.path,row]));
 export const mediaByPath=Object.freeze({size:mediaMap.size,has:path=>mediaMap.has(path),get:path=>mediaMap.get(path)});
 export const maxMediaPayloadBytes=117369505;
 export const maxEvidencePayloadBytes=37495268;
 export const maxArchivePayloadBytes=6584075;
 export const maxHelperArchivePayloadBytes=5435595;
+export const maxReleasePackMediaPayloadBytes=20636068;
+assert.equal(packManifest.maxPayloadBytes,maxReleasePackMediaPayloadBytes);
+assert.equal(releasePackMediaFiles.length,21);
 assert.equal(manifest.maxPayloadBytes,maxMediaPayloadBytes);
 assert.equal(manifest.evidenceExtension.maxPayloadBytes,maxEvidencePayloadBytes);
 assert.equal(manifest.evidenceExtension.sourceCommit,'f34723b6d54b6153de8a333a8abcc77884737f8f');
@@ -41,7 +50,9 @@ for(const row of mediaFiles){
  assert(typeof row.path==='string'&&!isAbsolute(row.path)&&!/[\\\s,:*?\[\]\0]/u.test(row.path)&&row.path.split('/').every(p=>p!=='.'&&p!=='..'&&p!==''),'exact safe media path');
  const scoped=evidenceFiles.includes(row)?/^docs\/evidence\/.+\.json\.gz$/.test(row.path)&&row.sourceCommit===manifest.evidenceExtension.sourceCommit
   :archiveFiles.includes(row)?row.sourceCommit===manifest.archiveExtension.sourceCommit
-  :helperArchiveFiles.includes(row)?row.sourceCommit===manifest.helperExtension.sourceCommit:/\.(png|jpe?g|gif)$/i.test(row.path);
+  :helperArchiveFiles.includes(row)?row.sourceCommit===manifest.helperExtension.sourceCommit
+  :releasePackMediaFiles.includes(row)?/^docs\/(?:evidence|design\/reference-assets)\/.+\.(?:gz|png|jpe?g|gif)$/.test(row.path)&&row.sourceCommit===packManifest.sourceCommit
+  :/\.(png|jpe?g|gif)$/i.test(row.path);
  assert(scoped&&/^[0-9a-f]{64}$/.test(row.sha256)&&Number.isSafeInteger(row.bytes)&&row.bytes>0);
  assert(row.oldBinaryGitBlobs.length>0&&row.oldBinaryGitBlobs.every(id=>/^[0-9a-f]{40}$/.test(id))&&typeof row.category==='string');
  if(unique.has(row.sha256))assert.equal(unique.get(row.sha256),row.bytes);unique.set(row.sha256,row.bytes);
@@ -52,7 +63,8 @@ assert.equal(new Set(evidenceFiles.map(row=>row.sha256)).size,58);
 assert.equal(payload(evidenceFiles),maxEvidencePayloadBytes,'distinct exact evidence payload');
 assert.equal(payload(archiveFiles),maxArchivePayloadBytes,'distinct exact existing history payload');
 assert.equal(payload(helperArchiveFiles),maxHelperArchivePayloadBytes,'distinct exact existing helper history payload');
-const maxStoragePayloadBytes=maxMediaPayloadBytes+maxEvidencePayloadBytes+maxArchivePayloadBytes+maxHelperArchivePayloadBytes;
+assert.equal(payload(releasePackMediaFiles),maxReleasePackMediaPayloadBytes,'distinct exact release pack media payload');
+const maxStoragePayloadBytes=maxMediaPayloadBytes+maxEvidencePayloadBytes+maxArchivePayloadBytes+maxHelperArchivePayloadBytes+maxReleasePackMediaPayloadBytes;
 assert.equal([...unique.values()].reduce((a,b)=>a+b,0),maxStoragePayloadBytes,'distinct exact storage payload');
 export const mediaPointer=row=>Buffer.from(`version https://git-lfs.github.com/spec/v1\noid sha256:${row.sha256}\nsize ${row.bytes}\n`);
 export function validateMediaPointers(pointers){

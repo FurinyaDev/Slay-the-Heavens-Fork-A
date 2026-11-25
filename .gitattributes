@@ -1454,3 +1454,26 @@ docs/evidence/v2-ui-20261119/p1/runtime-shop.png filter=lfs diff=lfs merge=lfs -
 docs/evidence/v2-ui-20261119/p1/runtime-transition-opening.png filter=lfs diff=lfs merge=lfs -text
 docs/evidence/v2-ui-20261119/p1/runtime-transition-room.png filter=lfs diff=lfs merge=lfs -text
 docs/evidence/v2-ui-20261119/p1/runtime-victory.png filter=lfs diff=lfs merge=lfs -text
+
+# Existing binary evidence moved to the bounded release pack media lane.
+docs/design/reference-assets/v2.0.0/main-menu-approved-20261119.png filter=lfs diff=lfs merge=lfs -text ci-immutable-media
+docs/design/reference-assets/v2.0.0/sts1-main-menu-20261121/background-hd.png filter=lfs diff=lfs merge=lfs -text ci-immutable-media
+docs/design/reference-assets/v2.0.0/sts1-main-menu-20261121/design-hd.png filter=lfs diff=lfs merge=lfs -text ci-immutable-media
+docs/evidence/liyue-transition/reference-adaptation/transition.gif filter=lfs diff=lfs merge=lfs -text ci-immutable-media
+docs/evidence/m3-mechanism-closeout-20261031/main-integration/pr436-merged-passed.json.gz filter=lfs diff=lfs merge=lfs -text ci-immutable-media
+docs/evidence/m7-closeout-20261105/raw-api.json.gz filter=lfs diff=lfs merge=lfs -text ci-immutable-media
+docs/evidence/m7-reward-query-shop-graph-20261107.jsonl.gz filter=lfs diff=lfs merge=lfs -text ci-immutable-media
+docs/evidence/m9-ci-20261103/baseline-full.log.gz filter=lfs diff=lfs merge=lfs -text ci-immutable-media
+docs/evidence/map-v25-20261110/raw/game.save.json.gz filter=lfs diff=lfs merge=lfs -text ci-immutable-media
+docs/evidence/native-ui-ab-20261111/sdk-A.json.gz filter=lfs diff=lfs merge=lfs -text ci-immutable-media
+docs/evidence/native-ui-ab-20261111/sdk-diff.json.gz filter=lfs diff=lfs merge=lfs -text ci-immutable-media
+docs/evidence/native-ui-ab-20261111/sdk-tween.json.gz filter=lfs diff=lfs merge=lfs -text ci-immutable-media
+docs/evidence/official-assets-first-20261109/full-flow/prefix-validation.json.gz filter=lfs diff=lfs merge=lfs -text ci-immutable-media
+docs/evidence/sts1-combat-reference-20261121/flow-spike.gif filter=lfs diff=lfs merge=lfs -text ci-immutable-media
+docs/evidence/sts1-main-menu-20261121/comparison.png filter=lfs diff=lfs merge=lfs -text ci-immutable-media
+docs/evidence/task-100-1-v25-latest-natural-raw-20261109.json.gz filter=lfs diff=lfs merge=lfs -text ci-immutable-media
+docs/evidence/task-100-1-v25-latest-natural-visual-raw-20261109.json.gz filter=lfs diff=lfs merge=lfs -text ci-immutable-media
+docs/evidence/task-100-1-v25-native-control-count-raw-20261109.json.gz filter=lfs diff=lfs merge=lfs -text ci-immutable-media
+docs/evidence/task-100-1-v25-stage-baseline-1-20261109.json.gz filter=lfs diff=lfs merge=lfs -text ci-immutable-media
+docs/evidence/task-100-1-v25-stage-baseline-2-20261109.json.gz filter=lfs diff=lfs merge=lfs -text ci-immutable-media
+docs/evidence/task-100-1-v25-stage-baseline-3-20261109.json.gz filter=lfs diff=lfs merge=lfs -text ci-immutable-media

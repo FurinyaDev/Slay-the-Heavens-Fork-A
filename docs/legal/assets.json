@@ -366,7 +366,11 @@
     },
     "docs/evidence/sts1-combat-reference-20261121/flow-spike.gif": {
       "sha256": "e948f55ae01adfad50e59cc71024b5dbe195966f34e0d782bd56ebf619b96dd4",
-      "category": "sts1-combat-sdk-evidence"
+      "category": "sts1-combat-sdk-evidence",
+      "bytes": 941962,
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "6ab89ed1a16fdeea8bf9649cbeecb99aa51fe3fd"
     },
     "docs/evidence/sts1-combat-reference-20261121/status-contact-sheet.png": {
       "sha256": "d383f928822b551bdd1aebb425b3b4940f6292b083df7d459d80193589c61914",
@@ -533,7 +537,11 @@
     },
     "docs/design/reference-assets/v2.0.0/main-menu-approved-20261119.png": {
       "sha256": "655f4926a86d1135d468b31bf0c225352c65de03ba09a0d684ffa875265741dd",
-      "category": "approved-menu-design-reference"
+      "category": "approved-menu-design-reference",
+      "bytes": 2398093,
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "6ab89ed1a16fdeea8bf9649cbeecb99aa51fe3fd"
     },
     "docs/evidence/menu-red-quality-20261114/menu.png": {
       "sha256": "23ac07b19542c110d6bb443a0c56e7477b40a2c6cc4bd38617326b3a59f44b9a",
@@ -10086,7 +10094,11 @@
     },
     "docs/evidence/liyue-transition/reference-adaptation/transition.gif": {
       "category": "liyue-transition-evidence",
-      "sha256": "6217f53a69c4bd6dc4e3213ecb602d5215b0b89e5c2f0d490092d0312675d850"
+      "sha256": "6217f53a69c4bd6dc4e3213ecb602d5215b0b89e5c2f0d490092d0312675d850",
+      "bytes": 617806,
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "6ab89ed1a16fdeea8bf9649cbeecb99aa51fe3fd"
     },
     "docs/evidence/liyue-transition/readiness-audio/after.png": {
       "category": "liyue-transition-evidence",
@@ -10202,11 +10214,19 @@
     },
     "docs/design/reference-assets/v2.0.0/sts1-main-menu-20261121/design-hd.png": {
       "sha256": "0228b36c13b805c1a31eb0cb13d960be2b3b1168d6707412fedee2c7a51c06aa",
-      "category": "sts1-menu-session-reference"
+      "category": "sts1-menu-session-reference",
+      "bytes": 1585970,
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "6ab89ed1a16fdeea8bf9649cbeecb99aa51fe3fd"
     },
     "docs/design/reference-assets/v2.0.0/sts1-main-menu-20261121/background-hd.png": {
       "sha256": "780f7428b1389e7ac824a5c2bd086339af19ea284e394ace692a6a4011d57c8c",
-      "category": "sts1-menu-session-reference"
+      "category": "sts1-menu-session-reference",
+      "bytes": 1558535,
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "6ab89ed1a16fdeea8bf9649cbeecb99aa51fe3fd"
     },
     "docs/design/reference-assets/v2.0.0/sts1-main-menu-20261121/background-medium.png": {
       "sha256": "7cc1f328257adbcabf47212d4cbe84713193d66f1412566a212c2ca1644bf14f",
@@ -10218,7 +10238,11 @@
     },
     "docs/evidence/sts1-main-menu-20261121/comparison.png": {
       "sha256": "e676f2fb04d925b11c1c714b1a4e48b7286c6c670b251dc8fc1aa2f64d659972",
-      "category": "sts1-menu-session-reference"
+      "category": "sts1-menu-session-reference",
+      "bytes": 899751,
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "6ab89ed1a16fdeea8bf9649cbeecb99aa51fe3fd"
     },
     "docs/evidence/sts1-main-menu-20261121/runtime-menu-normal.png": {
       "sha256": "f526c8786753c6aa91b46e9486787a8fa97f909dde884f872b894577eae1a848",
@@ -10515,6 +10539,126 @@
     "docs/evidence/release-layout-20261124/screens/before/pc-treasure-rewards.png": {
       "sha256": "ad4f514335901b6509a4e93dca846ea2f92b4157263fc669aa769f2069d498b0",
       "category": "official-assets-offline-diagnostic"
+    },
+    "docs/evidence/m3-mechanism-closeout-20261031/main-integration/pr436-merged-passed.json.gz": {
+      "sha256": "103f853287580e551e79d8b9556d958d29a75914cdd62a04648068f032e748ee",
+      "bytes": 607522,
+      "category": "project-ci-history-evidence",
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "6ab89ed1a16fdeea8bf9649cbeecb99aa51fe3fd"
+    },
+    "docs/evidence/m7-closeout-20261105/raw-api.json.gz": {
+      "sha256": "f085ec1b1ba6ce9e003fbf3a5f8314b1d8cc55a0bc9a75b72becd483bfc5aa68",
+      "bytes": 1144786,
+      "category": "project-ci-history-evidence",
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "6ab89ed1a16fdeea8bf9649cbeecb99aa51fe3fd"
+    },
+    "docs/evidence/m7-reward-query-shop-graph-20261107.jsonl.gz": {
+      "sha256": "b15a1994356684d4e052edb71618265716c2976921daaf7756fef81cc9c9cd09",
+      "bytes": 730316,
+      "category": "project-ci-history-evidence",
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "6ab89ed1a16fdeea8bf9649cbeecb99aa51fe3fd"
+    },
+    "docs/evidence/m9-ci-20261103/baseline-full.log.gz": {
+      "sha256": "bcef886632cce709d2b54e3ab1c8b9d5dabbf425f24618f3541c074039ca8eaf",
+      "bytes": 917965,
+      "category": "project-ci-history-evidence",
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "6ab89ed1a16fdeea8bf9649cbeecb99aa51fe3fd"
+    },
+    "docs/evidence/map-v25-20261110/raw/game.save.json.gz": {
+      "sha256": "417e18607da2c9363cea607a4b6268d8be2f231eea575002c064f0df49d8977c",
+      "bytes": 1547688,
+      "category": "v25-native-simulator-evidence",
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "6ab89ed1a16fdeea8bf9649cbeecb99aa51fe3fd"
+    },
+    "docs/evidence/native-ui-ab-20261111/sdk-A.json.gz": {
+      "sha256": "9bf541289af8c8143a3c607725d60bb36ef330a1793731687725e4015588189c",
+      "bytes": 921267,
+      "category": "project-ci-history-evidence",
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "6ab89ed1a16fdeea8bf9649cbeecb99aa51fe3fd"
+    },
+    "docs/evidence/native-ui-ab-20261111/sdk-diff.json.gz": {
+      "sha256": "609e6a500e7099fb12b8cd5ccc8a07fa868907113fb09a6a932cf8aedb3c103c",
+      "bytes": 921257,
+      "category": "project-ci-history-evidence",
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "6ab89ed1a16fdeea8bf9649cbeecb99aa51fe3fd"
+    },
+    "docs/evidence/native-ui-ab-20261111/sdk-tween.json.gz": {
+      "sha256": "bcc45e726426f3ab5f857d28be6aebcd90843c4bebabe02cec26395afc0f76c3",
+      "bytes": 1131891,
+      "category": "project-ci-history-evidence",
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "6ab89ed1a16fdeea8bf9649cbeecb99aa51fe3fd"
+    },
+    "docs/evidence/official-assets-first-20261109/full-flow/prefix-validation.json.gz": {
+      "sha256": "ccf6386287a0644c3e845c386aee07bf74c7cedb8588dc49ce60a9e0f9926dae",
+      "bytes": 675478,
+      "category": "official-assets-offline-diagnostic",
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "6ab89ed1a16fdeea8bf9649cbeecb99aa51fe3fd"
+    },
+    "docs/evidence/task-100-1-v25-latest-natural-raw-20261109.json.gz": {
+      "sha256": "62707761bfa8667e226f025cf5749b26ae0825f5cc9e86338b775d7fb948a82e",
+      "bytes": 702025,
+      "category": "project-ci-history-evidence",
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "6ab89ed1a16fdeea8bf9649cbeecb99aa51fe3fd"
+    },
+    "docs/evidence/task-100-1-v25-latest-natural-visual-raw-20261109.json.gz": {
+      "sha256": "deb17ea6825cde68d302eab559af108c3dc0e1a2d03314797a140f777a3aedf6",
+      "bytes": 694180,
+      "category": "project-ci-history-evidence",
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "6ab89ed1a16fdeea8bf9649cbeecb99aa51fe3fd"
+    },
+    "docs/evidence/task-100-1-v25-native-control-count-raw-20261109.json.gz": {
+      "sha256": "410d46071f219d5f7c29c074b571df1cfd01e8efee339ade56331a319dc205d7",
+      "bytes": 653099,
+      "category": "project-ci-history-evidence",
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "6ab89ed1a16fdeea8bf9649cbeecb99aa51fe3fd"
+    },
+    "docs/evidence/task-100-1-v25-stage-baseline-1-20261109.json.gz": {
+      "sha256": "5dc272e5b0cdaeeeadad82ef1bda590ab78c22700b3bfeb8b1a581bcf20f4500",
+      "bytes": 661622,
+      "category": "project-ci-history-evidence",
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "6ab89ed1a16fdeea8bf9649cbeecb99aa51fe3fd"
+    },
+    "docs/evidence/task-100-1-v25-stage-baseline-2-20261109.json.gz": {
+      "sha256": "147c15222a597ea508a99147f8f7f5621ba4f733117f72ab349bc4ee770c50a8",
+      "bytes": 649702,
+      "category": "project-ci-history-evidence",
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "6ab89ed1a16fdeea8bf9649cbeecb99aa51fe3fd"
+    },
+    "docs/evidence/task-100-1-v25-stage-baseline-3-20261109.json.gz": {
+      "sha256": "62aa19f0759e60ffa5b9f15b4c812f66d27326e4e088fa6307fd7357c2f83f75",
+      "bytes": 675153,
+      "category": "project-ci-history-evidence",
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "6ab89ed1a16fdeea8bf9649cbeecb99aa51fe3fd"
     }
   }
 }

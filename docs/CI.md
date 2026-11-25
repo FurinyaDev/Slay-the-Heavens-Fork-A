@@ -172,6 +172,8 @@ PR646 的 f347 冷检出实测159956847字节，仍由原128MiB门禁拒绝；8M
 
 Windows hosted仍从空Git数据库检出精确SHA、depth2及双父，增加blob:none。pack guard前取全实际parent/比较base中缺失的非清单blob，保留fetch pack并禁止自动维护；新增missing对象实际原字节总量超过8MiB即失败。原128MiB原样计算全部检出及预取pack；之后禁止lazy fetch。数据量断言是下载后验，不冒充传输前限流。安装式runner的原增量128MiB检查和有界long-push后备保留。
 
+v2.1.1 托管 Windows Full 的一次冷检出收到 151,027,631 Git pack 字节，超过原门禁上限。独立的 `config/ci-release-pack-media.json` 固定 21 份现有二进制文档、原 Git OID、原 SHA-256、许可分类及 20,636,068 原始字节，沿用以上共享验证和恢复流程。浅检出和比较源上限维持 128 MiB 和 8 MiB。将同一组二进制转为精确指针的本地传输模型，在 Release→master 双父场景中包含父对象预取共收到 131,916,912 字节。模型用于资源预算验证，托管 Full 仍需在精确的新提交上取得实跑结果。
+
 二进制转换不能靠漏读旧对象来跳过有效空白检查。`ci-whitespace.mjs` 鲜查全部before/after/index路径的cached及working属性，排除集合只能恰为清单；每路径必须是精确普通100644指针，旧侧只能是该路径已实读确认前8000字节含NUL的冻结旧OID或当前pointer，且旧diff属性不得强制text。指针采用完整字节验证，其余所有文本仍执行原git diff --check及rename语义。未知旧OID、额外排除属性、symlink mode或指针漂移均拒绝。冷partial clone负控证明旧binary保持missing，文本空白仍失败，比较后没有新增未计量pack。
 
 Full、Fast、Quick、Licenses及presentation在实际读取媒体前恢复并逐文件验证原始SHA和大小；无token的缓存命中同样重验索引/模式/内容。只读token仅放Git子进程，不持久化或回显认证信息；关闭额外重试，准备共用90秒期限及原步骤时限。metadata导入不依赖可选globSync，实际分片仍在固定Node24.18.0运行，presentation显式同版。新实现不新增job、worker或放宽测试/官方容量门槛。
