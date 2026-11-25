@@ -4,10 +4,10 @@ Release 日常修复走受影响 Fast；集成完成才按 [CI 候选入口](CI-
 
 冻结源码后，在 **Performance regression** 手动运行 `formal`，选择同一 `release/*`，`base_sha` 填上次实际发布 GIL 的源码 SHA。对 v2.2.0 使用 [v2.1.1 正式构建来源](versions/ENGINEERING.md)。该作业使用两份正式生成结果、同一 Host 工作负载、既有六档 Docker 实限及三组正反交错配对。保留 run、attempt、原始 `report.json` 及独立复核。日常受影响 PR 继续使用轻量 Fast。
 
-下载正式有声 GIL、构建原始回执和该次报告。用同一冻结源码工作树校验：
+取得正式有声 GIL、构建原始回执、严格读回审计和该次报告。在同一冻结源码工作树执行校验。
 
 ```sh
-node scripts/runtime-baseline/verify-release-performance.mjs <final.gil> <candidate.json> <report.json> <published-source-sha>
+node scripts/runtime-baseline/verify-release-performance.mjs <final.gil> <candidate.json> <audit.json> <report.json> <published-source-sha>
 ```
 
 归档生成的 `build/release-performance-evidence.json`、原始测量和对应运行环境。失败、少档、实限不一致、候选身份不符或不可比均阻塞。`REVIEW_REQUIRED` 保留原信号，待独立评审核对已知开销、设备预算和候选原因。正式线上门禁还要求真实平台冷暖加载、可点击、帧时间及持续游玩等设备证据，按下文同候选负载门禁执行。

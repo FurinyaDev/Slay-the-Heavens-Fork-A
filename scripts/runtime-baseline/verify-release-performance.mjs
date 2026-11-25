@@ -5,14 +5,26 @@ import {mkdirSync, readFileSync, writeFileSync} from 'node:fs';
 import {resolve} from 'node:path';
 import {pathToFileURL} from 'node:url';
 import {validateSample} from '../benchmark-runtime-path.mjs';
-import {artBuildOptionsFromReceipt} from '../art-features.mjs';
-import {payloadDigest, sourceInputs} from '../build-native-candidate.mjs';
 import {compareSamples, matchingResourceCaps, parseResources, profiles} from './resource-receipt.mjs';
 import {productionPhases} from './production-inputs.mjs';
 
 const sha256 = bytes => createHash('sha256').update(bytes).digest('hex');
 const hash = /^[a-f0-9]{64}$/;
 const commit = /^[a-f0-9]{40}$/;
+
+export function verifyAuditedBuild(gilBytes, receiptBytes, audit, sourceCommit) {
+  const receipt = JSON.parse(receiptBytes);
+  const gilSha256 = sha256(gilBytes);
+  assert.equal(gilSha256, receipt.candidate?.sha256, 'Final GIL bytes do not match the build receipt');
+  assert(receipt.sourceCommit === sourceCommit && receipt.sourceDirty === false && hash.test(receipt.payloadDigest) &&
+    hash.test(receipt.release?.notesSha256) && /^[a-f0-9-]{36}$/.test(receipt.buildId), 'Frozen release candidate receipt required');
+  assert(audit.ok === true && audit.sourceCommit === sourceCommit && audit.liveWriteEnabled === false &&
+    audit.candidate?.sha256Before === gilSha256 && audit.candidate?.sha256After === gilSha256 &&
+    audit.buildMarker?.buildId === receipt.buildId && audit.buildMarker?.candidateSha256 === gilSha256 &&
+    audit.buildMarker?.receiptSha256 === sha256(receiptBytes) &&
+    audit.expectedGraphs?.some(graph => graph.name === '_GSTS_ABYSS_BGM'), 'Same-package strict audio audit required');
+  return {receipt, gilSha256};
+}
 
 function verifySample(sample, profile) {
   validateSample(sample, productionPhases);
@@ -38,6 +50,7 @@ export function verifyResourceReport(report, sourceCommit, sourceTree, published
     'Missing raw run environment');
   assert.equal(report.candidate?.commit, sourceCommit, 'Report and frozen source differ');
   assert.equal(report.candidate?.tree, sourceTree, 'Report and frozen source tree differ');
+  assert.notEqual(publishedCommit, sourceCommit, 'Use a distinct previously published reference');
   assert.equal(report.baseline?.commit, publishedCommit, 'Comparison is not the published build source');
   for (const arm of [report.candidate, report.baseline]) {
     assert(commit.test(arm.tree) && hash.test(arm.workloadSha256) && hash.test(arm.generatedLuaSha256) &&
@@ -79,27 +92,21 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
     console.log(JSON.stringify(result));
   };
   try {
-    const [gil, candidate, evidence, publishedCommit, ...extra] = process.argv.slice(2);
-    assert(gil && candidate && evidence && commit.test(publishedCommit) && !extra.length,
-      'Use verify-release-performance.mjs <final.gil> <candidate.json> <report.json> <published-source-sha>');
-    const receipt = JSON.parse(readFileSync(candidate));
+    const [gil, candidate, auditPath, evidence, publishedCommit, ...extra] = process.argv.slice(2);
+    assert(gil && candidate && auditPath && evidence && commit.test(publishedCommit) && !extra.length,
+      'Use verify-release-performance.mjs <final.gil> <candidate.json> <audit.json> <report.json> <published-source-sha>');
     const head = ref => execFileSync('git', ['rev-parse', ref], {encoding: 'utf8'}).trim();
     const sourceCommit = head('HEAD');
     const sourceTree = head('HEAD^{tree}');
-    const gilSha256 = sha256(readFileSync(gil));
-    assert.equal(gilSha256, receipt.candidate?.sha256, 'Final GIL bytes do not match the build receipt');
-    assert(receipt.sourceCommit === sourceCommit && receipt.sourceDirty === false &&
-      hash.test(receipt.release?.notesSha256) && /^[a-f0-9-]{36}$/.test(receipt.buildId), 'Frozen release candidate receipt required');
-    const artOptions = artBuildOptionsFromReceipt(receipt);
-    assert.equal(payloadDigest(sourceInputs(process.cwd(), artOptions)), receipt.payloadDigest,
-      'GIL receipt differs from current production inputs');
+    const auditBytes = readFileSync(auditPath);
+    const {receipt, gilSha256} = verifyAuditedBuild(readFileSync(gil), readFileSync(candidate), JSON.parse(auditBytes), sourceCommit);
     const bytes = readFileSync(evidence);
     const raw = JSON.parse(bytes);
     const signals = verifyResourceReport(raw, sourceCommit, sourceTree, publishedCommit, receipt);
     const status = Object.keys(signals).length ? 'REVIEW_REQUIRED' : 'OFFLINE_RESOURCE_VERIFIED';
     write({status, sourceCommit, sourceTree, gilSha256, buildId: receipt.buildId, payloadDigest: receipt.payloadDigest,
       publishedCommit, configuration: raw.candidate.configuration, environment: raw.engine,
-      rawReportSha256: sha256(bytes), signals});
+      strictAudioAuditSha256: sha256(auditBytes), rawReportSha256: sha256(bytes), signals});
     if (status === 'REVIEW_REQUIRED') process.exitCode = 1;
   } catch (error) {
     write({status: 'BLOCKED', error: error.message});

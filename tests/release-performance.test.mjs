@@ -1,8 +1,9 @@
 import assert from 'node:assert/strict';
+import {createHash} from 'node:crypto';
 import test from 'node:test';
 import {productionPhases} from '../scripts/runtime-baseline/production-inputs.mjs';
 import {profiles} from '../scripts/runtime-baseline/resource-receipt.mjs';
-import {verifyResourceReport} from '../scripts/runtime-baseline/verify-release-performance.mjs';
+import {verifyAuditedBuild, verifyResourceReport} from '../scripts/runtime-baseline/verify-release-performance.mjs';
 
 const head = 'a'.repeat(40);
 const tree = 'b'.repeat(40);
@@ -42,7 +43,8 @@ test('accepts six formal paired tiers from the exact release and published build
 });
 
 test('rejects the wrong published source, release tree, missing tier, or changed art profile', () => {
-  assert.throws(() => verifyResourceReport(reportFixture(), head, tree, head, receipt), /published build source/);
+  assert.throws(() => verifyResourceReport(reportFixture(), head, tree, tree, receipt), /published build source/);
+  assert.throws(() => verifyResourceReport(reportFixture(), head, tree, head, receipt), /distinct previously published/);
   assert.throws(() => verifyResourceReport(reportFixture(), head, head, published, receipt), /frozen source tree/);
   const report = reportFixture();
   delete report.results.light;
@@ -60,4 +62,23 @@ test('rejects weaker limits and cleared performance signals', () => {
   const cleared = reportFixture();
   for (const sample of cleared.results.stress.candidate.samples) sample.rows[1].elapsedMs *= 2;
   assert.throws(() => verifyResourceReport(cleared, head, tree, published, receipt), /signals differ from samples/);
+});
+
+test('binds strict audio audit to the frozen receipt and downloaded bytes', () => {
+  const digest = bytes => createHash('sha256').update(bytes).digest('hex');
+  const gil = Buffer.from('fixture');
+  const candidateSha256 = digest(gil);
+  const buildId = '29f48ea1-fa9d-4f76-b124-2bffc83f7594';
+  const candidate = Buffer.from(JSON.stringify({
+    sourceCommit:head, sourceDirty:false, buildId, candidate:{sha256:candidateSha256},
+    payloadDigest:sha256, release:{notesSha256:sha256},
+  }));
+  const audit = {
+    ok:true, sourceCommit:head, liveWriteEnabled:false, candidate:{sha256Before:candidateSha256, sha256After:candidateSha256},
+    buildMarker:{buildId, candidateSha256, receiptSha256:digest(candidate)}, expectedGraphs:[{name:'_GSTS_ABYSS_BGM'}],
+  };
+  assert.equal(verifyAuditedBuild(gil, candidate, audit, head).gilSha256, candidateSha256);
+  assert.throws(() => verifyAuditedBuild(Buffer.from('tampered'), candidate, audit, head), /GIL bytes do not match/);
+  assert.throws(() => verifyAuditedBuild(gil, Buffer.concat([candidate, Buffer.from('\n')]), audit, head), /strict audio audit required/);
+  assert.throws(() => verifyAuditedBuild(gil, candidate, {...audit, expectedGraphs: []}, head), /strict audio audit required/);
 });
