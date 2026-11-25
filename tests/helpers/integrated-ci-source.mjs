@@ -7,6 +7,7 @@ import {createHash} from 'node:crypto';
 import {gunzipSync} from 'node:zlib';
 import {integratedCiBytes} from './integrated-ci-binding.mjs';
 import {releaseBootstrapCiSource,releaseBootstrapCiCheckedSource,assertReleaseBootstrapCiCurrent} from './release-bootstrap-ci-source.mjs';
+import {exactSourceMatches} from './source-fingerprint.mjs';
 const hash=s=>createHash('sha256').update(s).digest('hex'),norm=s=>s.replaceAll('\r\n','\n');
 const freeze=v=>{if(v&&typeof v==='object'&&!Object.isFrozen(v)){Object.values(v).forEach(freeze);Object.freeze(v);}return v;};
 export const integratedCiProof=freeze(JSON.parse(gunzipSync(integratedCiBytes)));
@@ -47,6 +48,30 @@ export function extendIntegratedHelperClosure(original){
  for(const [path,row]of Object.entries(patch)){assert.equal(row.before,original[path]??null,'exact integration copy predecessor: '+path);assert.match(row.after,/^[a-f0-9]{64}$/);current[path]=row.after;}
  return freeze(current);
 }
+// These approved test revisions remain executable in the raw Full inventory.
+// Their exact identities authorize only the historical inventory comparison.
+const jsInventorySuccessors=Object.freeze({
+ 'tests/deck-browser-reveal-reuse.test.mjs':{
+  sha256:'f9f446f381fff3b96527f9047fc9e175287dae6dcdd30c1cf3f63bf79283758b',
+  gitBlob:'f84703488081cc2c4106aeb17c1a75a52ef3a3d8',
+ },
+ 'tests/official-choice-pagination.test.mjs':{
+  sha256:'2f8794a5d9f7e7c87578672afd0069929947e0de5217f8e805ee1b43c93ba321',
+  gitBlob:'7519d2b322d91c39387a244e14a2dc7b220eb39d',
+ },
+ 'tests/sts-card-reference-runtime.test.mjs':{
+  sha256:'b72ccb3d21a095000282b340d873e6b3b65224c758c13e2e21f7b3f98569080e',
+  gitBlob:'75cac3711224bdf9f4622efd0cefe24b26ea0c98',
+ },
+ 'tests/sts-character-browser.test.mjs':{
+  sha256:'a8c371980710a7824aff8328cf5c041b06b1199eea548cb4e51b17668a7d40dc',
+  gitBlob:'be5b6ad2bc339cfc227818355a4505b94f88ddf9',
+ },
+ 'tests/sts-page-reveal.test.mjs':{
+  sha256:'aad08a2635e39b294b0b756feabbd878d3a1708fc636a607d60393cfc6e04456',
+  gitBlob:'7dcb8cedafdd5ca8b9a58f57662c2c5940422bd2',
+ },
+});
 // Exact complete inventories for historical receipts; raw Full discovery remains live.
 export function integratedPriorInventory(paths,target,kind='js',read=readFileSync){
  const current=kind==='js'?integratedCiProof.inventory:integratedCiProof.luaInventory;
@@ -67,7 +92,9 @@ export function integratedPriorInventory(paths,target,kind='js',read=readFileSyn
  assert.deepEqual([...paths].sort(),current,kind==='lua'?'complete integration Lua discovery inventory':'complete integration js inventory');
  for(const path of added){
   const row=integratedCiProof.files[path];assert(row,'complete added inventory source: '+path);
-  assert.equal(hash(norm(releaseBootstrapCiSource(path,beforePreflightSource(path,read(path,'utf8')),row.current))),row.current.sha256,'fresh added inventory source: '+path);
+  const source=read(path,'utf8');
+  if(Object.hasOwn(jsInventorySuccessors,path)&&exactSourceMatches(source,jsInventorySuccessors[path]))continue;
+  assert.equal(hash(norm(releaseBootstrapCiSource(path,beforePreflightSource(path,source),row.current))),row.current.sha256,'fresh added inventory source: '+path);
  }
  return [...prior];
 }
