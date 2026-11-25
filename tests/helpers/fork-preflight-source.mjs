@@ -550,7 +550,8 @@ const currentReleaseTests=Object.freeze({
  'tests/battle-ui-publication.test.mjs':'a2d4d911de18b48f4b01cbaf52384b4d133b77a8e646c15d2149185052fb7759',
  'tests/check-release-text.test.mjs':'1b3d0db323d89b0e6035f504b8c84ac1c564df528cca917ba2c89db29567993a',
  'tests/formal-startup-budget.test.mjs':'8a3d66d9b7c963cd3592c92750d6b41cecba2fed3cde933a81f34aee048df2ef',
- 'tests/gil-candidate-preflight.test.mjs':'aa6cb5fd58626e02d602eef0951d369fd537f0d724f40d091c0375eb8801a4d4',
+ 'tests/gil-candidate-preflight.test.mjs':'7ec29cdbeaf1572fa9713d37fdc17003e4f7843479c5af5ebe3c3c8787b93068',
+ 'tests/gil-candidate.test.mjs':'e8a08db32ea8a237575f428566093ab18cc60fd0d0ce4acb0b5e2d7e30b364de',
  'tests/production-performance.test.mjs':'102893c9285fc52693ee9a7d1bae36d8cefef418ecf8da5d40e53b4eb98b2947',
  'tests/release-metadata.test.mjs':'eceb8ab92f616084fdcdac875e69e761cf2c9674a804be9f0295e89213453cb8',
 });
