@@ -128,10 +128,16 @@ function beforeIntegrationEvidence(path,source){
  const prior=integratedCiProof.files[path].current.source;
  return source.includes('\r\n')?prior.replaceAll('\n','\r\n'):prior;
 }
+function linkedProductionOwner(path){
+ return path.startsWith('src/')||path==='config/architecture.json';
+}
+export function integratedHistoricalInput(path,source){
+ return linkedProductionOwner(path)?source:beforeIntegrationEvidence(path,source);
+}
 export function integratedSource(path,source,target){
  source=beforePreflightSource(path,source);
  assert(Object.hasOwn(integratedCiProof.sources,target),'known integration input');
- if(path.startsWith('src/')||path==='config/architecture.json')return source;
+ if(linkedProductionOwner(path))return source;
  const row=Object.hasOwn(integratedCiProof.files,path)?integratedCiProof.files[path]:null;
  source=releaseBootstrapCiSource(path,beforeIntegrationEvidence(path,source),row?.current);
  if(!row?.views[target]||typeof source!=='string'||source.includes('\r\r\n')||hash(norm(source))!==row.current.sha256)return source;
