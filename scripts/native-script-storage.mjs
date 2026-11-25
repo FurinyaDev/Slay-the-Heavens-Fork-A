@@ -1,14 +1,15 @@
-import lua from 'luaparse';
 import {isDeepStrictEqual} from 'node:util';
 import {isUtf8} from 'node:buffer';
+import {createRequire} from 'node:module';
 
+const require=createRequire(import.meta.url);
 const legacyProfile='lossless-lua-v1';
 const losslessProfile='lossless-lua-v2';
 export const nativeScriptStorageProfile='competition-lua-v3';
 const options={luaVersion:'5.3',encodingMode:'pseudo-latin1',comments:false};
 const dataModules=new Set(['abyss_data','abyss_original_v4_data','abyss_theme','abyss_presentation','abyss_narrative']);
 const latin=source=>Buffer.from(source,'utf8').toString('latin1');
-function tokens(source){
+function tokens(source,lua){
  const parser=lua.parse(source,{...options,wait:true}),result=[];
  for(;;){const token=parser.lex();if(token.type===lua.tokenTypes.EOF)return result;result.push(token);}
 }
@@ -22,8 +23,8 @@ function compactDecimal(raw){
  const decimal=fraction.replace(/0+$/,'');
  return `${integer}.${decimal||(!integer?'0':'')}`;
 }
-function compactCode(source,decimals){
- const bytes=latin(source),original=tokens(bytes);let result='',line=1,previous='';
+function compactCode(source,decimals,lua){
+ const bytes=latin(source),original=tokens(bytes,lua);let result='',line=1,previous='';
  for(const token of original){
   const originalRaw=bytes.slice(...token.range);
   const raw=decimals&&token.type===lua.tokenTypes.NumericLiteral?compactDecimal(originalRaw):originalRaw;
@@ -34,7 +35,7 @@ function compactCode(source,decimals){
   result+=raw;line=token.line+(raw.match(/\n/g)?.length??0);previous=raw;
  }
  const signature=rows=>rows.map(({type,value,line})=>[type,value,line]);
- if(!isDeepStrictEqual(signature(original),signature(tokens(result))))throw Error('Native Lua storage changed token identity or source lines');
+ if(!isDeepStrictEqual(signature(original),signature(tokens(result,lua))))throw Error('Native Lua storage changed token identity or source lines');
  return Buffer.from(result,'latin1').toString('utf8');
 }
 function quote(value){
@@ -111,8 +112,9 @@ export function packNativeScript(name,source,profile){
  // The native competition entry rejects all Original V4 identities before
  // preparing their data. Keep a fail-closed loader at the same module name.
  if(competition&&name==='abyss_original_v4_data')return 'error("Original V4 is unavailable in the competition campaign")\n';
+ const lua=require('luaparse');
  const generated=dataModules.has(name)||extended&&name==='abyss_traveler_portrait_assets';
- const ast=lua.parse(latin(source),options),compact=compactCode(source,extended&&generated);
+ const ast=lua.parse(latin(source),options),compact=compactCode(source,extended&&generated,lua);
  let result=compact;
  const statement=ast.body.length===1&&ast.body[0];
  if(generated&&statement?.type==='ReturnStatement'&&statement.arguments.length===1&&literal(statement.arguments[0],extended)){
