@@ -11,7 +11,18 @@ end
 return function(v,pools)
  local run=Run.new(D,v.seed,{experimental=true,character='ironclad',campaign=true,campaignProfile='competition-two-act'})
  local function source(id)
-  for _,card in ipairs(run.data.cards.cards)do if card.id==id then return assert(card.sourceId or card.sts_name)end end
+  for _,card in ipairs(run.data.cards.cards)do
+   if card.id==id then
+    local sourceId=assert(card.sourceId or card.sts_name)
+    -- Compare the released identity (#949) with the immutable STS1 vector.
+    if id=='calculated_exchange'then
+     assert(sourceId=='Calculated Exchange','released Calculated Exchange source identity')
+     return 'Calculated Gamble'
+    end
+    assert(id~='calculated_gamble' and sourceId~='Calculated Gamble','retired Calculated Gamble identity')
+    return sourceId
+   end
+  end
   error('missing source '..tostring(id))
  end
  local function ids(cards)local out={};for _,id in ipairs(cards)do out[#out+1]=source(id)end;return out end
