@@ -108,7 +108,7 @@ export function officialBattleHud(root,theme){
   }
  }
  bar.children.push({name:'battleRoute',kind:'container',position:[hud.route[0],hud.route[1]-hud.y],size:hud.route.slice(2),children:[
-  text('label',[0,0],hud.route.slice(2),'地图',18,'#D6CBA5'),
+   {name:'icon',kind:'image',position:[0,0],size:[28,28],image:theme.icon.map,colour:'#D6CBA5'},
    {name:'hit',kind:'cursorArea',position:[0,-.5],size:hud.route.slice(2).map(value=>Math.max(44,value))},
  ]});
  for(const kind of ['draw','discard']){
