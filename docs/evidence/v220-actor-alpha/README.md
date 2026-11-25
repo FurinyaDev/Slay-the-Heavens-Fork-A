@@ -6,6 +6,7 @@
 
 - 用 BeyondSimulator 0.5.2 的手动试玩时钟，在 1280×720 渲染岩荧和 42 个正式敌人。同样的几何依次在黑、白及高对比绿底渲染，逐图绑定存档、PNG 摘要、帧号及渲染警告。 [全量静态图元截图回执](static-roster.json)
 - 岩荧和小型酸叶团另走实际生产 Lua 绘制模块。在探针中固定角色 133 px、敌人 106 px，用来源画布登记像素位置。岩荧创建 473 个原生控件，酸叶团绘制 32 个图元，黑白两底的结果和同几何静态探针逐像素相同。补采当前正式共用战斗背景，背景纹理读回无警告。 [原生产图元回执](runtime-baseline.json)
+- 全部 43 个正式演员随后以相同画布和三个测试色调用生产 Lua 绘制，九对运行时／静态画面逐 RGB 像素相等。另追溯到 11 份同几何历史拟合预览，均无完全开口或深层透明区误填，五份在保护区有共 12 个低于 Alpha 192 的内部像素。 [补充回执](supplemental-diagnostics.json)
 - 黑白渲染的每通道之差给出透过率，绿底复核混合结果。实测逐通道的整数舍入偏差最多 4 级。以已审批源 Alpha 掩模分别测量不透明身体和应透明区域，双方各排除一像素边界，减少边缘抗锯齿和采样注册偏移带来的误差。
 - 本次岩荧使用 Owner 选定的 464 图元拟合预览作诊断参照。参照预览 SHA‑256 为 `5d00ee1cd222a2fc038e40b91d17509106beed2cbf545b9594f5549d942ce0fd`，其对应私有原图为 `bc9118f85b57b2ca70ec027c43a520c3bb2d0f403e4f0f6e167d4297c63a1ff5`。怪物当前公开归档提供批准几何及来源收据。正式验收需补充由 Owner 或 DOT 提供的已对位原图 Alpha 掩模。 [#751](https://github.com/FurinyaWorks/Slay-the-Heavens/pull/751) · [批准拟合预览](https://github.com/FurinyaWorks/Slay-the-Heavens/blob/9e57c6e489377143acc13d171b0f527fcbac3bfe/art/characters/battle-figure-experiments/2026-11-19/lumine/eye-rebuild-133/native.png) · [正式怪物来源](../refined-release-monsters-20261121/art-provenance.json)
 
@@ -35,7 +36,7 @@ node experiments/art-tech-lab/actor-alpha-capture.mjs .artifacts/actor-alpha-ros
 node experiments/art-tech-lab/actor-alpha-capture.mjs .artifacts/actor-alpha-lua --runtime-pilot
 STH_ALPHA_UNDERPAINT_TRIAL=docs/evidence/v220-actor-alpha/hero-underpaint-12.json \
   node experiments/art-tech-lab/actor-alpha-capture.mjs .artifacts/actor-alpha-underpaint --runtime-pilot
-python3 -m unittest discover -s experiments/art-tech-lab -p 'test_actor_alpha_measure.py'
+python3 -m unittest discover -s tests/art -p 'test_actor_alpha_measure.py'
 python3 experiments/art-tech-lab/actor_alpha_measure.py .artifacts/actor-alpha-roster/capture.json \
   --masks <已批准像素对位掩模清单> --output .artifacts/actor-alpha-roster/coverage.json --require-pass
 ```

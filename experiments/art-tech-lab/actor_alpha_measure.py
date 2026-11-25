@@ -114,6 +114,8 @@ def measure(capture_path, masks):
             else:
                 result.update(status="unverified", reason="approved independent registered opacity mask unavailable")
             actors[key] = result
+    if not actors:
+        raise ValueError("Capture contains no actors")
     unknown = masks.keys() - actors.keys()
     if unknown:
         raise ValueError(f"Masks refer to assets absent from capture: {sorted(unknown)}")

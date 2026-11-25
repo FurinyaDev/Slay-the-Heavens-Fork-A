@@ -1,0 +1,197 @@
+{
+  "schemaVersion": 1,
+  "actorCount": 43,
+  "actualPainterCount": 43,
+  "presentedGeometry": "production Lua actor painters on an isolated Simulator runtime scene",
+  "views": [
+    {
+      "page": 1,
+      "background": "black",
+      "differentRgbPixels": 0,
+      "staticSha256": "f88758af016ec610418d422aecbb0e0c22e23ce8003f1398af67f80420d0f2b2",
+      "runtimeSha256": "f88758af016ec610418d422aecbb0e0c22e23ce8003f1398af67f80420d0f2b2"
+    },
+    {
+      "page": 1,
+      "background": "white",
+      "differentRgbPixels": 0,
+      "staticSha256": "d2a19d993372790972aa13d860d38649aa2840f4b2856891d87027755f00c561",
+      "runtimeSha256": "d2a19d993372790972aa13d860d38649aa2840f4b2856891d87027755f00c561"
+    },
+    {
+      "page": 1,
+      "background": "contrast",
+      "differentRgbPixels": 0,
+      "staticSha256": "470263dc7bfa2bb60340e863caa3f82afee864fb58e739b0d678ac70a41ca1a5",
+      "runtimeSha256": "470263dc7bfa2bb60340e863caa3f82afee864fb58e739b0d678ac70a41ca1a5"
+    },
+    {
+      "page": 2,
+      "background": "black",
+      "differentRgbPixels": 0,
+      "staticSha256": "06e727ead7ee4c4bd3044b0d9d171674fe1fabea14d80b0477f6d6a93c1ce1a2",
+      "runtimeSha256": "06e727ead7ee4c4bd3044b0d9d171674fe1fabea14d80b0477f6d6a93c1ce1a2"
+    },
+    {
+      "page": 2,
+      "background": "white",
+      "differentRgbPixels": 0,
+      "staticSha256": "c48983e57dea53058ffb8e7badbe286cb027d039a406241ca75934096756877d",
+      "runtimeSha256": "c48983e57dea53058ffb8e7badbe286cb027d039a406241ca75934096756877d"
+    },
+    {
+      "page": 2,
+      "background": "contrast",
+      "differentRgbPixels": 0,
+      "staticSha256": "cb632a3c31e518b1d548ff6c9e4b682c7598ce9deaf93ebbb3d92f8f8687a44f",
+      "runtimeSha256": "cb632a3c31e518b1d548ff6c9e4b682c7598ce9deaf93ebbb3d92f8f8687a44f"
+    },
+    {
+      "page": 3,
+      "background": "black",
+      "differentRgbPixels": 0,
+      "staticSha256": "0c856e2522a5f85a0bfaae4f3420fda1373cdaf9e44749bd26696195c9e955fe",
+      "runtimeSha256": "0c856e2522a5f85a0bfaae4f3420fda1373cdaf9e44749bd26696195c9e955fe"
+    },
+    {
+      "page": 3,
+      "background": "white",
+      "differentRgbPixels": 0,
+      "staticSha256": "e55a31c91f79b1738c97487948cd4463689a138ee2491b2dce60c7d6e583153d",
+      "runtimeSha256": "e55a31c91f79b1738c97487948cd4463689a138ee2491b2dce60c7d6e583153d"
+    },
+    {
+      "page": 3,
+      "background": "contrast",
+      "differentRgbPixels": 0,
+      "staticSha256": "04d25a159a32a7b5b5d53ad286f7bd30d17145f862ad58ca57f7054288c52d56",
+      "runtimeSha256": "04d25a159a32a7b5b5d53ad286f7bd30d17145f862ad58ca57f7054288c52d56"
+    }
+  ],
+  "sourceCommitForProductionVisualFiles": "27e2f8304bcbaedffa0efbc02d739bd4aeab38b6",
+  "runtimeRosterCaptureSha256": "c79d042a91283758df1fd0b42c50a4cc1a608828a82141fc4d0dc6eff99a1f3e",
+  "baselines": [
+    {
+      "id": "acid_slime_s",
+      "geom": "00eed78095381e2f4db8650ddd5a07bcee78dac73c9a487a1672616e0934c5d8",
+      "alphaReferenceSHA256": "207bc010fd3d3584570b5fae5807fb3eb33691d015e96651a51c3254696338f2",
+      "opaque": 1496,
+      "under253": 1,
+      "under192": 0,
+      "under3": 0,
+      "spill": 0,
+      "source": "ba7c04af719153c53d2f839acd9f3aa028a98429:docs/release-handoffs/2026-11-15-pr663/native-figure-budget-review/archive/monster-pilot-02/acid-small/native-reconstruction.png"
+    },
+    {
+      "id": "acid_slime_l",
+      "geom": "70a13bdcb5b66fac27a24e2a3854f46f1526ff87e9d3d7deaa364cc4ff8450ae",
+      "alphaReferenceSHA256": "23da5378348b68102f66cc099361b0623caaf06832ef21b9b43f583137c6acf4",
+      "opaque": 4521,
+      "under253": 120,
+      "under192": 0,
+      "under3": 0,
+      "spill": 0,
+      "source": "ba7c04af719153c53d2f839acd9f3aa028a98429:docs/release-handoffs/2026-11-15-pr663/native-figure-budget-review/archive/monster-pilot-01/official/dendro/native-reconstruction.png"
+    },
+    {
+      "id": "spike_slime_s",
+      "geom": "e4e220dbeff4bf6466542e8d1b32ab5d3df0544648f94758f6e80a8fa6abdcfb",
+      "alphaReferenceSHA256": "ff69b3a18837fa75637053fbe6de1bcf80d2daa454bca828feda7b656eff659a",
+      "opaque": 2982,
+      "under253": 102,
+      "under192": 2,
+      "under3": 0,
+      "spill": 0,
+      "source": "ba7c04af719153c53d2f839acd9f3aa028a98429:docs/release-handoffs/2026-11-15-pr663/native-figure-budget-review/archive/monster-slime-feedback-r2/spike-small/native-reconstruction.png"
+    },
+    {
+      "id": "spike_slime_m",
+      "geom": "be74e7f13bb61b57a7c2aef3fae60ff438e230190b226f384fef8bb3cbae4a2d",
+      "alphaReferenceSHA256": "4a8c1617a7ec4b0f13aef41883e41777470bcfb076735feeb6570754c87e42d9",
+      "opaque": 3552,
+      "under253": 74,
+      "under192": 0,
+      "under3": 0,
+      "spill": 0,
+      "source": "ba7c04af719153c53d2f839acd9f3aa028a98429:docs/release-handoffs/2026-11-15-pr663/native-figure-budget-review/archive/monster-pilot-02/spike-medium/native-reconstruction.png"
+    },
+    {
+      "id": "spike_slime_l",
+      "geom": "98d074cfd482a5dc7d2b77b2e1110b9e84956d7ed533780001662c79a3ecebe2",
+      "alphaReferenceSHA256": "dfc8d819c99aa29a257caf5571e14d4d8cc7680c30c48cfcd7a915abfc4faa5a",
+      "opaque": 2423,
+      "under253": 117,
+      "under192": 0,
+      "under3": 0,
+      "spill": 0,
+      "source": "ba7c04af719153c53d2f839acd9f3aa028a98429:docs/release-handoffs/2026-11-15-pr663/native-figure-budget-review/archive/monster-pilot-01/geo-slime/native-reconstruction.png"
+    },
+    {
+      "id": "red_louse",
+      "geom": "5eb6d3ea20bc314c70f7452ab84d9bbccc4538f1f1f99e45fee6d12c0c463909",
+      "alphaReferenceSHA256": "ec041d28517dd40b5e4425a3a891cbf6dc407ce5e9ff7e5a4cdf11741a9f170d",
+      "opaque": 1578,
+      "under253": 19,
+      "under192": 0,
+      "under3": 0,
+      "spill": 0,
+      "source": "ba7c04af719153c53d2f839acd9f3aa028a98429:docs/release-handoffs/2026-11-15-pr663/native-figure-budget-review/archive/monster-pilot-03/red-louse/native-reconstruction.png"
+    },
+    {
+      "id": "green_louse",
+      "geom": "c329ab092bd899eb1ba9a3fc0e5669b1ec5dab482ef9078e5697ccea4a6dc944",
+      "alphaReferenceSHA256": "5e43e06fba76e15262f9a425159cb2400dc97b215a23f81cf28cf359897444cc",
+      "opaque": 2518,
+      "under253": 139,
+      "under192": 3,
+      "under3": 0,
+      "spill": 0,
+      "source": "ba7c04af719153c53d2f839acd9f3aa028a98429:docs/release-handoffs/2026-11-15-pr663/native-figure-budget-review/archive/monster-pilot-03/green-louse/native-reconstruction.png"
+    },
+    {
+      "id": "raven_adept",
+      "geom": "23413092980a34a52a0318493198caae444714a6cb1aaab05ba14ae090a009e9",
+      "alphaReferenceSHA256": "9810c4f5b51cd86baa7bc6d462cea4eadec7f15b33a39785da8060cde5427221",
+      "opaque": 807,
+      "under253": 81,
+      "under192": 1,
+      "under3": 0,
+      "spill": 0,
+      "source": "ba7c04af719153c53d2f839acd9f3aa028a98429:docs/release-handoffs/2026-11-15-pr663/native-figure-budget-review/archive/monster-pilot-03/cultist/native-reconstruction.png"
+    },
+    {
+      "id": "looter",
+      "geom": "73d8e450c79b236d1f6085d4fe6cc695282dd4d33c73c4234ef2a3a9f00e92dd",
+      "alphaReferenceSHA256": "86607f3896cd034f22a4b675bc29c7f0022d480e261668ad08a173f93465fc93",
+      "opaque": 730,
+      "under253": 115,
+      "under192": 1,
+      "under3": 0,
+      "spill": 0,
+      "source": "ba7c04af719153c53d2f839acd9f3aa028a98429:docs/release-handoffs/2026-11-15-pr663/native-figure-budget-review/archive/monster-pilot-04/looter/native-reconstruction.png"
+    },
+    {
+      "id": "jaw_worm",
+      "geom": "a56ba3b24c32d50b216fa108ec9f3ed2e6b8166b7eefcad02095ab93a62e5c6e",
+      "alphaReferenceSHA256": "8511eead0f8c0b35fab726a08f696d7c8002ae41478590c18d98bdf1e4d908db",
+      "opaque": 1929,
+      "under253": 116,
+      "under192": 5,
+      "under3": 0,
+      "spill": 0,
+      "source": "ba7c04af719153c53d2f839acd9f3aa028a98429:docs/release-handoffs/2026-11-15-pr663/native-figure-budget-review/archive/monster-pilot-03/jaw-worm/native-reconstruction.png"
+    },
+    {
+      "id": "fungi_beast",
+      "geom": "a7a5e90f3875d371fc9a568e995d441363bb06d55d924a226958b9985177521a",
+      "alphaReferenceSHA256": "23d6f1e117f7db9d2eeb80dec2c9342f1c2f201ba415f6239d4dc53d1bd834a7",
+      "opaque": 1630,
+      "under253": 100,
+      "under192": 0,
+      "under3": 0,
+      "spill": 0,
+      "source": "ba7c04af719153c53d2f839acd9f3aa028a98429:docs/release-handoffs/2026-11-15-pr663/native-figure-budget-review/archive/monster-pilot-04/fungi-beast/native-reconstruction.png"
+    }
+  ],
+  "limits": "Normalized static pose, isolated source-stage paint. Archive images are previously accepted fits, reference diagnostics only. Official source masks and candidate GIL remain pending."
+}
