@@ -5,7 +5,7 @@ import {createHash} from 'node:crypto';
 import {resolve, relative, isAbsolute} from 'node:path';
 import {pathToFileURL} from 'node:url';
 import {spawnSync} from 'node:child_process';
-import {lfsArguments,lfsEnvironment} from './ci-reviewed-lfs.mjs';
+import {lfsArguments,lfsEnvironment,prepareRuntimePreviews,runtimePreviewPaths,runtimePreviewObjects} from './ci-reviewed-lfs.mjs';
 const hash=bytes=>createHash('sha256').update(bytes).digest('hex');
 const bytes=readFileSync(new URL('../config/ci-media-lfs.json',import.meta.url));
 assert.equal(hash(bytes),'80e6bae0a63426858864d5d13d50b86e7fa2369a4b89715b2f0d264b8068092e','exact media and evidence manifest');
@@ -108,10 +108,15 @@ export function verifyMediaAssets(root){
 function bundleMedia(root, directory, env){
  root=realpathSync.native(root);
  const result=prepareMediaAssets({root,env});
+ const runtimePreviews=prepareRuntimePreviews({root,needed:true,env});
  mkdirSync(directory);
- const pathsByOid=new Map(mediaFiles.map(row=>[row.sha256,row]));
- for(const [oid,row] of pathsByOid)copyFileSync(mediaPath(root,row),resolve(directory,oid));
- return result;
+ const pathsByOid=new Map(mediaFiles.map(row=>[row.sha256,row.path]));
+ for(const [index,path] of runtimePreviewPaths.entries()){
+  const [oid]=runtimePreviewObjects[index];
+  pathsByOid.set(oid,path);
+ }
+ for(const [oid,path] of pathsByOid)copyFileSync(mediaPath(root,{path}),resolve(directory,oid));
+ return {...result,runtimePreviews};
 }
 
 function restoreMediaBundle(root, directory, needed){
