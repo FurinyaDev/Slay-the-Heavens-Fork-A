@@ -56,31 +56,33 @@ const releaseFixtures=Object.freeze({
  'tests/native-candidate-rebuild.test.mjs':['70c84225ac44eeb4d4fb891b071a5b7691e955528a78fff3ffaaa578e49a565c','bcc20ef97fa83430d7dd804603f3cc3991514c75'],
 });
 
-function currentSource(path,source,after){
+function fixtureMatches(path,source,after,{allowArchived=true}={}){
  if(typeof source!=='string'||source.includes('\r\r\n'))return false;
- const normalized=source.replaceAll('\r\n','\n');
- if(normalized===after.source)return true;
+ const normalized=source.replaceAll('\r\n','\n'),archived=normalized===after.source;
+ if(allowArchived&&archived)return true;
  const release=releaseFixtures[path];
- return release!==undefined&&sha256(normalized)===release[0]&&blob(normalized)===release[1];
+ return release?sha256(normalized)===release[0]&&blob(normalized)===release[1]:archived;
 }
 
 export function assertNativeFixturesCurrent(read){
- for(const [path,{after}] of Object.entries(files))
-  assert(currentSource(path,beforeUiEntranceWitness(path,read(path,'utf8')),after),'fresh complete native fixture source: '+path);
+ for(const [path,{after}] of Object.entries(files)){
+  const source=read(path,'utf8');
+  assert(fixtureMatches(path,source,after,{allowArchived:false}),'fresh complete native fixture source: '+path);
+ }
 }
 
 export function beforeNativeFixtureReplay(path,source){
  if(!Object.hasOwn(files,path))return source;
  source=beforeUiEntranceWitness(path,source);
  const {before,after}=files[path];
- if(!currentSource(path,source,after))return source;
+ if(!fixtureMatches(path,source,after))return source;
  return source.includes('\r\n')?before.source.replaceAll('\n','\r\n'):before.source;
 }
 
 // Restore #899's complete post-retirement fixture before its own historical inverse.
 export function beforeNativeFixtureInputRetirement(path,source,{requireCurrent=false}={}){
  if(!Object.hasOwn(files,path)||!files[path].inputRetirement)return source;
- const {after,inputRetirement}=files[path],current=currentSource(path,source,after);
+ const {after,inputRetirement}=files[path],current=fixtureMatches(path,source,after);
  if(requireCurrent)assert(current,'fresh composed input retirement fixture: '+path);
  if(!current)return source;
  return source.includes('\r\n')?inputRetirement.source.replaceAll('\n','\r\n'):inputRetirement.source;

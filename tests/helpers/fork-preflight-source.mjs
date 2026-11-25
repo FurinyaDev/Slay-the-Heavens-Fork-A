@@ -1,6 +1,6 @@
 import {beforePosixDeadlineWorkflow,beforeWindowsDeadlineWorkflow} from './auto-merge-workflow.mjs';
 import {beforeHotfixPublicationGate} from './release-ci-workflow.mjs';
-import {beforeInputRetirementTestInventory,readRetiredInputLuaReceipt} from './input-retirement-inventory.mjs';
+import {assertInputRetirementLuaCurrent,beforeInputRetirementTestInventory,readRetiredInputLuaReceipt} from './input-retirement-inventory.mjs';
 import {beforeDeckPagesSuiteSource} from './input-retirement-source.mjs';
 export {beforeInputRetirementTestInventory} from './input-retirement-inventory.mjs';
 import {assertDevelopBackflowCurrent,authenticateDevelopBackflow,beforeDevelopBackflow,developBackflowOwns} from './develop-release-backflow-source.mjs';
@@ -587,6 +587,10 @@ function exactReleaseLuaFixture(source,binding){
 function exactCurrentReleaseLuaFixture(path,source){
  return exactReleaseLuaFixture(source,currentReleaseLuaFixtures[path]);
 }
+function assertCurrentReleaseLuaFixtureSources(read){
+ for(const path of Object.keys(currentReleaseLuaFixtures))
+  assert(exactCurrentReleaseLuaFixture(path,read(path,'utf8')),'fresh current Release Lua fixture source: '+path);
+}
 // #940 and #962 added three cases, and #951 renamed the Act 2 event case.
 function beforeCurrentReleaseLuaNames(paths,read,{required=false}={}){
  const currentPaths=Object.keys(additionalReleaseLuaFixtures);
@@ -642,7 +646,8 @@ export function assertCurrentJsInventory(paths,preceding,read=readFileSync){
  assertCoopJsInventory(paths,preceding,read);
 }
 export function assertCurrentLuaInventory(paths,preceding,read=readFileSync){
- paths=beforeInputRetirementTestInventory(paths,'lua',read,{required:true});
+ paths=beforeInputRetirementTestInventory(paths,'lua',read,{required:true,requireLive:true});
+ assertCurrentReleaseLuaFixtureSources(read);
  paths=beforeCurrentReleaseLuaNames(paths,read,{required:true});
  const additions=[...Object.keys(newerTests.lua),shopEntryTests.lua[0],'tests/lua/shop_dismiss.lua'];
  assert.deepEqual([...paths].sort(),[...preceding,...additions].sort(),'complete current raw discovery inventory (Lua)');
@@ -731,7 +736,7 @@ function beforeCalibrationReplayOwner(path,source){
  if(!calibrationReplayPredecessor){
   calibrationReplayPredecessor=releaseUiRestoreArchive(
    readFileSync(new URL('./calibration-v220-replay-owners.json.gz',import.meta.url)),
-   '59f639cfed8e3d6c53cc2de3209d123971c69d97633962865c4b56933a3c5981','8b4172d59779ad9fa21b4ba91ef750ab22fcdaf1');
+   '4bbbce77fb999f53de3de15ffb0a57e8673946b3f3a330ee41aba49d8e01ed2c','8b4172d59779ad9fa21b4ba91ef750ab22fcdaf1');
   assert.deepEqual(Object.keys(calibrationReplayPredecessor.files),calibrationReplayPaths,'ordered v2.2 calibration replay owners');
  }
  return calibrationReplayPredecessor.project(path,source);
@@ -900,6 +905,8 @@ function beforeIntegrationSuccessor(path,source){
 export function assertIntegrationSuccessorsCurrent(read=readFileSync){
  const rawRead=read;
  const liveRead=(path,encoding)=>beforeForkPush(path,beforeCalibrationReplayOwner(path,rawRead(path,encoding)));
+ assertInputRetirementLuaCurrent(rawRead);
+ assertCurrentReleaseLuaFixtureSources(rawRead);
  assertNativeFixturesCurrent(liveRead);
  assertNativeFlowFixturesCurrent(liveRead);
  read=(path,encoding)=>{
