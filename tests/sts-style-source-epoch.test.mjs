@@ -2,7 +2,7 @@ import {actorFocusAdded,assertActorFocusInventory,deckPagesAdded,stasisUpgradeAd
 import {pointerInputPath,readRetiredController,retiredControllerPath} from './helpers/input-retirement-source.mjs';
 import {beforeCharacterPreparationSource} from './helpers/character-preparation-source.mjs';
 import {entranceInventory} from './helpers/ui-entrance-source.mjs';
-import {assertCurrentJsInventory,beforeInputRetirementTestInventory,beforeShopEntryInventory} from './helpers/fork-preflight-source.mjs';
+import {assertCurrentJsInventory,assertCurrentLuaInventory,beforeShopEntryInventory} from './helpers/fork-preflight-source.mjs';
 import test from 'node:test';
 import {integratedRead,integratedCiProof,integratedPriorInventory,assertIntegratedCurrent} from './helpers/integrated-ci-source.mjs';
 import assert from 'node:assert/strict';
@@ -34,14 +34,13 @@ test('release additions remain in raw Full and exact historical inventories reje
  assertIntegratedCurrent();
  const rawJs=discoverJs(),rawLua=readdirSync('tests/lua').filter(p=>p.endsWith('.lua')).map(p=>'tests/lua/'+p).sort();
  assertCurrentJsInventory(rawJs,integratedCiProof.inventory);
- // These five tests remain in current Full discovery. Only the authenticated
- // historical view may omit them; a missing live test is not a valid prior view.
- const liveLuaAdditions=['tests/lua/detail_latency.lua','tests/lua/potion_management_visual.lua',
-  'tests/lua/shop_dismiss.lua','tests/lua/shop_entry.lua','tests/lua/traveler_power_tooltip.lua'];
- const liveLuaInventory=[...integratedCiProof.luaInventory,...liveLuaAdditions].sort();
+ const liveLuaAdditions=['tests/lua/battle_ui_publication.lua','tests/lua/card_body_catalog.lua',
+  'tests/lua/card_body_focus.lua','tests/lua/detail_latency.lua','tests/lua/potion_management_visual.lua',
+  'tests/lua/shop_dismiss.lua','tests/lua/shop_entry.lua','tests/lua/traveling_merchant_event_content.lua',
+  'tests/lua/traveler_power_tooltip.lua'];
+ const liveInventoryError=/missing live Release Lua inventory source:|unique live Lua discovery inventory|complete current raw discovery inventory \(Lua\)/;
  const historicalLua=(paths,read=readFileSync)=>{
-  paths=beforeInputRetirementTestInventory(paths,'lua',read,{required:true});
-  assert.deepEqual(paths,liveLuaInventory,'exact live Lua discovery inventory');
+  assertCurrentLuaInventory(paths,integratedCiProof.luaInventory,read);
   const prior=beforeShopEntryInventory(paths,'lua',read);
   assert.deepEqual(prior,integratedCiProof.luaInventory,'exact integrated Lua predecessor inventory');
   return prior;
@@ -49,13 +48,13 @@ test('release additions remain in raw Full and exact historical inventories reje
  const currentLua=historicalLua(rawLua);
  assert.deepEqual(historicalLua(rawLua,(path,encoding)=>readFileSync(path,encoding).replaceAll('\r\n','\n').replaceAll('\n','\r\n')),currentLua);
  for(const path of liveLuaAdditions){
-  assert.throws(()=>historicalLua(rawLua.filter(test=>test!==path)),/live Lua discovery inventory/);
-  assert.throws(()=>historicalLua([...rawLua,path].sort()),/live Lua discovery inventory/);
+  assert.throws(()=>historicalLua(rawLua.filter(test=>test!==path)),liveInventoryError);
+  assert.throws(()=>historicalLua([...rawLua,path].sort()),liveInventoryError);
   const bytes=readFileSync(path,'utf8').replaceAll('\r\n','\n');
   for(const foreign of [null,bytes+'\n',bytes.replace('\n','\r\r\n')])
    assert.throws(()=>historicalLua(rawLua,(file,encoding)=>file===path?foreign:readFileSync(file,encoding)),/fresh .*?(?:test|source)/);
  }
- assert.throws(()=>historicalLua([...rawLua,'tests/lua/foreign.lua'].sort()),/live Lua discovery inventory/);
+ assert.throws(()=>historicalLua([...rawLua,'tests/lua/foreign.lua'].sort()),liveInventoryError);
  const newTest=rawJs.find(path=>!integratedCiProof.inventory.includes(path));
  assert.throws(()=>assertCurrentJsInventory(integratedCiProof.inventory,integratedCiProof.inventory),/inventory/);
  for(const target of Object.keys(integratedCiProof.sources)){

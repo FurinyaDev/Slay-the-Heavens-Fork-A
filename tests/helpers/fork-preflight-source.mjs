@@ -1,7 +1,7 @@
 import {beforePosixDeadlineWorkflow,beforeWindowsDeadlineWorkflow} from './auto-merge-workflow.mjs';
 import {beforeHotfixPublicationGate} from './release-ci-workflow.mjs';
-import {beforeInputRetirementTestInventory,readRetiredInputLuaReceipt} from './input-retirement-inventory.mjs';
-import {beforeDeckPagesSuiteSource} from './input-retirement-source.mjs';
+import {assertInputRetirementLuaCurrent,beforeInputRetirementTestInventory,readRetiredInputLuaReceipt} from './input-retirement-inventory.mjs';
+import {assertReleaseCandidateToolsCurrent,beforeDeckPagesSuiteSource} from './input-retirement-source.mjs';
 export {beforeInputRetirementTestInventory} from './input-retirement-inventory.mjs';
 import {assertDevelopBackflowCurrent,authenticateDevelopBackflow,beforeDevelopBackflow,developBackflowOwns} from './develop-release-backflow-source.mjs';
 import {beforeCalibrationReplay,beforeCurrentReplayCopier} from './calibration-replay-sources.mjs';
@@ -10,7 +10,7 @@ import {assertNativeFixturesCurrent,beforeNativeFixtureReplay} from './native-fi
 import {assertNativeFlowFixturesCurrent,beforeNativeFlowFixture} from './native-flow-fixture-source.mjs';
 import {beforeUiEntranceWitness} from './ui-entrance-source.mjs';
 import {beforeOfficialBackgroundFixture} from './official-background-fixture-source.mjs';
-import {beforeMapRoomReplayCohort,beforeDevelopReplayMerge} from './develop-replay-merge-source.mjs';
+import {assertAudioDeckBrowserCurrent,beforeMapRoomReplayCohort,beforeDevelopReplayMerge} from './develop-replay-merge-source.mjs';
 import {beforeStsUiCloseoutSource} from './sts-ui-closeout-source.mjs';
 import {beforeStsFadeCi} from './sts-fade-ci-source.mjs';
 import {beforeCurrentReplayFixes} from './current-replay-fix-sources.mjs';
@@ -22,11 +22,12 @@ import {beforeM05BackflowInventory} from './m05-shop-ci-source.mjs';
 import {beforeReleaseShopEntry,releaseUiRestoreArchive,shopEntryPriorRead} from './release-ui-restore-source.mjs';
 import {beforeCombatVisualSource,combatVisualPriorRead} from './combat-visual-source.mjs';
 import {beforeSts1MenuCiSource} from './sts1-menu-ci-source.mjs';
-import {assertRefinedReleaseSourcesCurrent,beforeRefinedReleaseCiSource,beforeRefinedReleaseJsInventory,refinedReleaseHistoricalInput} from './refined-release-source.mjs';
+import {assertRefinedReleasePackingCurrent,assertRefinedReleaseSourcesCurrent,beforeRefinedReleaseCiSource,beforeRefinedReleaseJsInventory,refinedReleaseHistoricalInput} from './refined-release-source.mjs';
 import {beforeV2UiAdmission} from './v2-ui-admission-ci-source.mjs';
 import {beforeV2UiEvidence,beforeV2UiPreTinyHouseSource,beforeFieldConfirmation,beforeRelicCrystal} from './v2-p1-ci-source.mjs';
 import {beforeCharacterPreparationCiSource} from './character-preparation-source.mjs';
 import {integratedCiBytes} from './integrated-ci-binding.mjs';
+import {assertIntegratedLuaFixturesCurrent} from './integrated-ci-source.mjs';
 import {stsStylePriorRuntime} from './sts-style-prior-runtime.mjs';
 export {exactReviewedBuildInput} from './rebased-release-source.mjs';
 export {beforeM05ShopCiSource} from './m05-shop-ci-source.mjs';
@@ -546,8 +547,22 @@ const shopEntryTests={
  lua:['tests/lua/shop_entry.lua','85547fda98f035ff78a0cebdf56e91ba43899f0579d706c4cb045e13a55f6259',
   'e2b0e5297f87eb64525710b871ba23bd9bbcf81e942623c316759e9991dcebeb'],
 };
+const currentReleaseTests=Object.freeze({
+ 'tests/battle-ui-publication.test.mjs':'a2d4d911de18b48f4b01cbaf52384b4d133b77a8e646c15d2149185052fb7759',
+ 'tests/check-release-text.test.mjs':'1b3d0db323d89b0e6035f504b8c84ac1c564df528cca917ba2c89db29567993a',
+ 'tests/event-readability.test.mjs':'95e888cc87e48e8d6a161eaea9da54a410444c9966cafe1b263cffc66882dbb0',
+ 'tests/formal-startup-budget.test.mjs':'8a3d66d9b7c963cd3592c92750d6b41cecba2fed3cde933a81f34aee048df2ef',
+ 'tests/gil-candidate-preflight.test.mjs':'7ec29cdbeaf1572fa9713d37fdc17003e4f7843479c5af5ebe3c3c8787b93068',
+ 'tests/gil-candidate.test.mjs':'e8a08db32ea8a237575f428566093ab18cc60fd0d0ce4acb0b5e2d7e30b364de',
+ 'tests/production-performance.test.mjs':'102893c9285fc52693ee9a7d1bae36d8cefef418ecf8da5d40e53b4eb98b2947',
+ 'tests/release-metadata.test.mjs':'eceb8ab92f616084fdcdac875e69e761cf2c9674a804be9f0295e89213453cb8',
+ 'tests/release-performance-artifacts.test.mjs':'16048e83d321cd8505e0d1b56bd8707da3ea0ad506f4aa317c44b2ff62722413',
+ 'tests/release-performance-verification.test.mjs':'8cd3e37b605735624177c99ff5fa40882d38abf3e68742a4a06f4340dbc81122',
+ 'tests/release-performance.test.mjs':'7d38cc78989244c395eb8176a1ab6f49e2e055b7527611bc5672ba45414fb550',
+});
 const newerTests={
  js:{
+  ...currentReleaseTests,
   'tests/detail-latency.test.mjs':'310f906435fbbfa45899b30a5344ca83f9de32860d09394b9824de95ee9cffee',
   'tests/potion-sts-structure.test.mjs':'56b91c313e26d1129a39b7678a39df7df38a71a2252deb060351c5cc115e6118'
  },
@@ -557,13 +572,58 @@ const newerTests={
   'tests/lua/traveler_power_tooltip.lua':'eacaefc663ef5800d114a4118546a170ee7c93be09800df02108a223285afda0'
  },
 };
+// These live Lua fixtures retain #981's additional checks and #951's approved
+// runtime IDs. Historical inventories still use the same original paths.
+const currentReleaseLuaFixtures=Object.freeze({
+ 'tests/lua/detail_latency.lua':['0d886fb386da8f6c7b938138bd8dafc935f96abf9a48f608ad89f6f810709654','7b2a025c5005a90919de2d1239e38187dcc14565'],
+ 'tests/lua/traveler_power_tooltip.lua':['7d2684b7c627301cb435af6c2d45040be039a9624cc85e121a7fded90aa006af','1e381500795ccc639100192dd8b513f4dc90edf2'],
+});
+const additionalReleaseLuaFixtures=Object.freeze({
+ 'tests/lua/battle_ui_publication.lua':['73a3d97356202f4943152acaa32fd14bf8e257c5b3229374d76e9a936973a6e2','6aa2a4c9a8c1195a7fda5d118ac0d5d66cfba0c4'],
+ 'tests/lua/card_body_catalog.lua':['9ec720cb8c67c95338f497094a36e894bcefe6c2171954271ba8c73e49f6706b','933398a096b075b6739a2c811318e4d7e0a16033'],
+ 'tests/lua/card_body_focus.lua':['bb5683abf45cb5427fbbd9e40841d54d966f722b2879f84b0dedfebb6a8f9937','5889006b9cc8e4217a098c60dbb21eb431f0f029'],
+ 'tests/lua/traveling_merchant_event_content.lua':['19872217244484f650323e9332ab7bbb3903540dd9ae718e5b28192759a03b60','2e287211403fdb4f0923f387161565389df3fa40'],
+});
+function exactReleaseLuaFixture(source,binding){
+ if(!binding||typeof source!=='string'||source.includes('\r\r\n'))return false;
+ const normalized=normalize(source);
+ return hash(normalized)===binding[0]&&gitBlob(normalized)===binding[1];
+}
+function exactCurrentReleaseLuaFixture(path,source){
+ return exactReleaseLuaFixture(source,currentReleaseLuaFixtures[path]);
+}
+function assertCurrentReleaseLuaFixtureSources(read){
+ for(const path of Object.keys(currentReleaseLuaFixtures))
+  assert(exactCurrentReleaseLuaFixture(path,read(path,'utf8')),'fresh current Release Lua fixture source: '+path);
+}
+// #940 and #962 added three cases, and #951 renamed the Act 2 event case.
+function beforeCurrentReleaseLuaNames(paths,read,{required=false}={}){
+ const currentPaths=Object.keys(additionalReleaseLuaFixtures);
+ if(!required&&!currentPaths.some(path=>paths.includes(path)))return paths;
+ const names=new Set(paths);
+ assert.equal(names.size,paths.length,'unique live Release Lua inventory');
+ for(const path of currentPaths){
+  const found=names.delete(path);
+  if(required)assert(found,'missing live Release Lua inventory source: '+path);
+  if(found)assert(exactReleaseLuaFixture(read(path,'utf8'),additionalReleaseLuaFixtures[path]),'fresh added inventory source: '+path);
+ }
+ if(paths.includes('tests/lua/traveling_merchant_event_content.lua')){
+  const retired='tests/lua/addict_event_content.lua';
+  assert(!names.has(retired),'retired event fixture must be absent from live Lua inventory');
+  assert.throws(()=>read(retired,'utf8'),{code:'ENOENT'},'retired event fixture must be absent');
+  names.add(retired);
+ }
+ return [...names].sort();
+}
 export function beforeReleaseAdditionalInventory(paths,kind,read=readFileSync){
  paths=beforeM05BackflowInventory(paths,kind,(path,encoding)=>beforeCurrentReplayFixes(path,beforeUiEntranceWitness(path,read(path,encoding))));
  for(const [path,sha] of Object.entries(newerTests[kind])){
   const count=paths.filter(candidate=>candidate===path).length;
   if(!count)continue;
   assert.equal(count,1,'single added Release test: '+path);
-  const source=beforeDevelopBackflow(path,read(path,'utf8'));
+  const live=read(path,'utf8');
+  if(kind==='lua'&&exactCurrentReleaseLuaFixture(path,live))continue;
+  const source=beforeDevelopBackflow(path,live);
   assert(typeof source==='string'&&!source.includes('\r\r\n')&&hash(normalize(source))===sha,'fresh added inventory source: '+path);
  }
  return paths.filter(path=>!Object.hasOwn(newerTests[kind],path));
@@ -571,6 +631,7 @@ export function beforeReleaseAdditionalInventory(paths,kind,read=readFileSync){
 export function beforeShopEntryInventory(paths,kind,read=readFileSync){
  paths=beforeInputRetirementTestInventory(paths,kind,read);
  if(kind==='js')paths=beforeIntegratedStsInventory(paths,(path,encoding)=>beforeNativeFlowFixture(path,read(path,encoding)));
+ else paths=beforeCurrentReleaseLuaNames(paths,read);
  paths=beforeReleaseAdditionalInventory(paths,kind,read);
  const [path,...authenticated]=shopEntryTests[kind];
  const position=paths.indexOf(path);
@@ -581,17 +642,24 @@ export function beforeShopEntryInventory(paths,kind,read=readFileSync){
  return paths.filter(test=>test!==path);
 }
 export function assertCurrentJsInventory(paths,preceding,read=readFileSync){
+ // These tests remain mandatory in live Full. Only exact authenticated
+ // successor paths can be omitted from the older replay inventory.
+ for(const path of Object.keys(currentReleaseTests))
+  assert.equal(paths.filter(candidate=>candidate===path).length,1,'complete current raw discovery inventory: '+path);
  paths=beforeInputRetirementTestInventory(paths,'js',read,{required:true});
  paths=beforeRefinedReleaseJsInventory(beforeShopEntryInventory(paths,'js',read),[...preceding,coopLabTest],read,true);
  assertCoopJsInventory(paths,preceding,read);
 }
 export function assertCurrentLuaInventory(paths,preceding,read=readFileSync){
- paths=beforeInputRetirementTestInventory(paths,'lua',read,{required:true});
+ paths=beforeInputRetirementTestInventory(paths,'lua',read,{required:true,requireLive:true});
+ assertCurrentReleaseLuaFixtureSources(read);
+ assertIntegratedLuaFixturesCurrent(read);
+ paths=beforeCurrentReleaseLuaNames(paths,read,{required:true});
  const additions=[...Object.keys(newerTests.lua),shopEntryTests.lua[0],'tests/lua/shop_dismiss.lua'];
  assert.deepEqual([...paths].sort(),[...preceding,...additions].sort(),'complete current raw discovery inventory (Lua)');
  const prior=beforeShopEntryInventory(paths,'lua',(path,encoding)=>{
   const source=beforeForkFirstCi(path,beforeUiEntranceWitness(path,read(path,encoding)));
-  if(developBackflowOwns(path))assertDevelopBackflowCurrent(path,source);
+  if(developBackflowOwns(path)&&!exactCurrentReleaseLuaFixture(path,source))assertDevelopBackflowCurrent(path,source);
   return source;
  });
  assert.deepEqual([...prior].sort(),preceding,'complete Release bootstrap raw discovery inventory');
@@ -661,6 +729,25 @@ function closeoutPredecessor(path){
  }
  return closeoutPredecessors.get(path);
 }
+const calibrationReplayPaths=Object.freeze([
+ 'tests/helpers/integrated-ci-source.mjs',
+ 'tests/helpers/copy-integration-source-closure.mjs',
+ 'data/presentation/narrative.zh-CN.json',
+ 'tests/lore-v2.test.mjs',
+ 'tests/watcher-actor-boundary.test.mjs',
+ 'tests/sts-style-source-epoch.test.mjs',
+]);
+let calibrationReplayPredecessor;
+function beforeCalibrationReplayOwner(path,source){
+ if(!calibrationReplayPaths.includes(path))return source;
+ if(!calibrationReplayPredecessor){
+  calibrationReplayPredecessor=releaseUiRestoreArchive(
+   readFileSync(new URL('./calibration-v220-replay-owners.json.gz',import.meta.url)),
+   'bb0bc7f65edd2a4dd74ca43786a841368118db17dd1b2414defcac9344a080d2','8b4172d59779ad9fa21b4ba91ef750ab22fcdaf1');
+  assert.deepEqual(Object.keys(calibrationReplayPredecessor.files),calibrationReplayPaths,'ordered v2.2 calibration replay owners');
+ }
+ return calibrationReplayPredecessor.project(path,source);
+}
 function beforeIntegrationReplayTests(path,source){
  if(path!=='tests/integration-source-epoch.test.mjs'||typeof source!=='string'||source.includes('\r\r\n'))return source;
  const current=normalize(source);
@@ -726,6 +813,14 @@ function withoutArchiveRecords(current,first,after){
 function beforeDeckBrowserAssetLedger(source){
  if(typeof source!=='string'||source.includes('\r\r\n'))return source;
  let current=normalize(source);
+ // #951 updates the native event manifest hash after its approved text edits.
+ if(hash(current)==='3c4b140e7d432bb1de89289e516723dafa14daecd414b1ffe94b4f39d267f5c2'&&
+    blob(current)==='94e5b7f8a05e190d59e603b7b0760fc968d2a600'){
+  current=current.replace('eac9cfc53f1203d635ba1ed77acee1bfd6d12073be53fcb7b4d0af56262bb1b5',
+   'db7a1393c4fae90fc9d7cc30b2ee762394a8ab041b19a6a9aa33973a263eeb13');
+  assert.equal(hash(current),'5ec27c5274a512ccdf2dfb183f65bd15321c87883e3e4e633e6502f726429353','exact pre-#951 asset ledger');
+  assert.equal(blob(current),'dcd99bd13cf06653847b5ca8eb76748c229f17a4');
+ }
  if(hash(current)==='5ec27c5274a512ccdf2dfb183f65bd15321c87883e3e4e633e6502f726429353'&&
     blob(current)==='dcd99bd13cf06653847b5ca8eb76748c229f17a4'){
   current=withoutArchiveRecords(current,'    "native-event-illustrations": {\n','    "deck-browser-host-evidence": {\n');
@@ -816,7 +911,13 @@ function beforeIntegrationSuccessor(path,source){
 }
 export function assertIntegrationSuccessorsCurrent(read=readFileSync){
  const rawRead=read;
- const liveRead=(path,encoding)=>beforeForkPush(path,rawRead(path,encoding));
+ const liveRead=(path,encoding)=>beforeForkPush(path,beforeCalibrationReplayOwner(path,rawRead(path,encoding)));
+ assertReleaseCandidateToolsCurrent(rawRead);
+ assertAudioDeckBrowserCurrent(rawRead);
+ assertRefinedReleasePackingCurrent(rawRead);
+ assertInputRetirementLuaCurrent(rawRead);
+ assertCurrentReleaseLuaFixtureSources(rawRead);
+ assertIntegratedLuaFixturesCurrent(rawRead);
  assertNativeFixturesCurrent(liveRead);
  assertNativeFlowFixturesCurrent(liveRead);
  read=(path,encoding)=>{
@@ -872,7 +973,7 @@ export function assertIntegrationSuccessorsCurrent(read=readFileSync){
  }
 }
 export function beforePreflightSource(path,source,view='prior'){
- source=beforeForkPush(path,source);
+ source=beforeForkPush(path,beforeCalibrationReplayOwner(path,source));
  if(path==='.github/workflows/quality.yml')source=beforePosixDeadlineWorkflow(beforeWindowsDeadlineWorkflow(source));
  source=beforeUiEntranceWitness(path,beforeCurrentReplayCopier(path,source));
  source=beforeCurrentReplayFixes(path,source);
