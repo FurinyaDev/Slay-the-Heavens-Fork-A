@@ -740,8 +740,33 @@ function beforeDeckBrowserAssetLedger(source){
  assert.equal(blob(prior),id);
  return source.includes('\r\n')?prior.replaceAll('\n','\r\n'):prior;
 }
+// Historical checks still use the exact media script from before runtime previews
+// joined the hosted bundle. The live bundle path has its own transport tests.
+function beforeRuntimePreviewBundle(source){
+ if(typeof source!=='string'||source.includes('\r\r\n'))return source;
+ const current=normalize(source);
+ if(hash(current)!=='e608fc9d33f97f5446c64e5897f852c3fd5bad6a50900aec41bd4f719989b9f7'
+   ||blob(current)!=='537d4fd28b1cbb730f7d5f95afbdd35b79f7243e')return source;
+ const prior=current
+  .replace(',prepareRuntimePreviews,runtimePreviewPaths,runtimePreviewObjects','')
+  .replace(' const runtimePreviews=prepareRuntimePreviews({root,needed:true,env});\n','')
+  .replace(` const pathsByOid=new Map(mediaFiles.map(row=>[row.sha256,row.path]));
+ for(const [index,path] of runtimePreviewPaths.entries()){
+  const [oid]=runtimePreviewObjects[index];
+  pathsByOid.set(oid,path);
+ }
+ for(const [oid,path] of pathsByOid)copyFileSync(mediaPath(root,{path}),resolve(directory,oid));
+ return {...result,runtimePreviews};`,` const pathsByOid=new Map(mediaFiles.map(row=>[row.sha256,row]));
+ for(const [oid,row] of pathsByOid)copyFileSync(mediaPath(root,row),resolve(directory,oid));
+ return result;`);
+ const [sha,id]=replayStorageSources['scripts/ci-media-lfs.mjs'];
+ assert.equal(hash(prior),sha,'immutable runtime preview bundle predecessor');
+ assert.equal(blob(prior),id);
+ return source.includes('\r\n')?prior.replaceAll('\n','\r\n'):prior;
+}
 function beforeReplayArchiveStorage(path,source){
  if(!Object.hasOwn(replayStorageSources,path)||typeof source!=='string'||source.includes('\r\r\n'))return source;
+ if(path==='scripts/ci-media-lfs.mjs')source=beforeRuntimePreviewBundle(source);
  const current=normalize(source);
  const [sha,id]=replayStorageSources[path];
  if(hash(current)!==sha||blob(current)!==id)return source;
