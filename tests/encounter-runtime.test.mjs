@@ -16,6 +16,26 @@ test('room construction vectors preserve independently authored source interpret
 test('all seventeen bindings and Guardian match independent HP/Bite/AI/CurlUp and interleaved stream vectors',()=>{
  const dir=mkdtempSync(join(tmpdir(),'abyss-room-vectors-'));
  try{
+  // #951 renamed the live encounter, enemy and intent identifiers. Keep the
+  // frozen oracle intact and use the exact corresponding live identities.
+  const encounterNames=new Map([
+   ['Cultist','Raven Adept'],['Blue Slaver','Blue Guard'],['Red Slaver','Red Guard'],
+  ]);
+  const enemyIds=new Map([
+   ['cultist','raven_adept'],['blue_slaver','blue_guard'],['red_slaver','red_guard'],
+  ]);
+  const intentIds=new Map([
+   ['cultist_1','raven_adept_1'],['cultist_2','raven_adept_2'],
+   ['blue_slaver_1','blue_guard_1'],['blue_slaver_2','blue_guard_2'],
+   ['red_slaver_1','red_guard_1'],['red_slaver_2','red_guard_2'],['red_slaver_3','red_guard_3'],
+  ]);
+  const liveCases=vectors.cases.map(entry=>({
+   ...entry,
+   source:encounterNames.get(entry.source)??entry.source,
+   actors:entry.actors.map(actor=>({
+    ...actor,id:enemyIds.get(actor.id)??actor.id,intent:intentIds.get(actor.intent)??actor.intent,
+   })),
+  }));
   const file=join(dir,'vectors.lua');
   writeFileSync(file,`local Run,C,R,Bindings=require('abyss_run'),require('abyss_combat'),require('abyss_sts_random'),require('abyss_room_encounters')
 local Data=require('abyss_data')
@@ -25,7 +45,7 @@ local function same(a,b,path)
  for k,v in pairs(a)do same(v,b[k],path..'.'..tostring(k))end
  for k in pairs(b)do assert(a[k]~=nil,path..' missing '..tostring(k))end
 end
-for _,v in ipairs(${toLua(vectors.cases)})do
+for _,v in ipairs(${toLua(liveCases)})do
  local run=Run.new(Data,v.seed);local streams=Run.roomStreams(run,v.floor)
  assert(streams.seed==v.roomSeed)
  local tier=v.source=='Gremlin Nob' or v.source=='Lagavulin' or v.source=='3 Sentries'
@@ -76,6 +96,7 @@ for _,v in ipairs(${toLua(vectors.cases)})do
 end
 print('SOURCE_ROOM_VECTORS_PASS 126')`);
   const result=runLua(file,{timeout:60000});assert.equal(result.status,0,result.stderr||result.stdout);
+  assert.match(result.stdout,/^SOURCE_ROOM_VECTORS_PASS 126$/m);
  }finally{rmSync(dir,{recursive:true,force:true});}
 });
 test('actual Nodes entries preserve source queue ownership and transaction boundaries',()=>{
