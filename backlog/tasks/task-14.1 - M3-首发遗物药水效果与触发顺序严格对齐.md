@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@Furinya'
 created_date: '2026-10-23 01:57'
-updated_date: '2026-11-14 06:50'
+updated_date: '2026-11-25 20:53'
 labels:
   - required
   - rule-parity
@@ -39,7 +39,7 @@ references:
   - docs/reviews/M3-RULES-CONSUMER-CHAIN-20261031.md
   - docs/evidence/m3-completion-20261031/
 parent_task_id: TASK-14
-priority: high
+priority: medium
 type: enhancement
 ordinal: 42000
 ---
@@ -287,4 +287,6 @@ PR #304：普通与Boss遗物不可领由手机试玩发现；离线源链路确
 2026-11-14清理旧窗口日期：原due_date=2026-10-28保留于历史，不再显示为当前截止；实际未完成AC和审批不变。
 
 2026-11-14第二轮状态纠正：已有8/10项AC通过及既有实施证据，剩余未完成要求属于后续验证或接续。 状态表示整个任务的完成进展，不表示当前有执行者持续占用；保留原未验AC、负责人、依赖及历史证据。更正过去把已开展待验事项退回To Do的处理。
+
+v2.2.0 排程时按当前队列调为 Medium。原规则差异、现场复验和未勾验收保留，复现的正常游玩阻塞由 TASK-113.5 追踪。
 <!-- SECTION:NOTES:END -->
