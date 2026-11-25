@@ -18,6 +18,7 @@ workload.push('tests/lua/support/game_ui_fixture.lua', 'tests/lua/support/native
 const sourceInputs = ['src/lua', 'data', 'config', 'package-lock.json', ...workload];
 const productionWorkload = [...workload, 'tests/lua/support/production_performance.lua'];
 const lfsFilters = lfsArguments.slice(0, lfsArguments.indexOf('lfs'));
+const productionHeapMiB = 768;
 
 const receipt = String.raw`
 set -eu
@@ -81,6 +82,7 @@ function measure(root, profile, production, harnessRoot) {
     '--mount', `type=bind,src=${root},dst=/repo,readonly`, '--workdir', '/repo'];
   if (profile.cpus !== null) args.push('--cpus', String(profile.cpus));
   if (profile.memoryBytes !== null) args.push('--memory', String(profile.memoryBytes), '--memory-swap', String(profile.memoryBytes));
+  if (production) args.push('--env', `NODE_OPTIONS=--max-old-space-size=${productionHeapMiB}`);
   // A/B arms use the same harness and fixtures while loading each arm's own game sources.
   if (production && root !== harnessRoot) {
     for (const path of productionWorkload) {
@@ -186,7 +188,8 @@ function suite(values) {
     schemaVersion: 1, timeUtc: new Date().toISOString(),
     status: pass ? 'PASS' : 'FAIL', mode: values.mode, repetitions,
     ...(values.production ? { seed: 42, officialClient: 'UNVERIFIED' } : { seed: 1, idleFrames: 300 }),
-    engine: { image, imageId, docker, kernel: release(), arch: arch(), cpuModel: cpus()[0]?.model, availableCpus: availableParallelism(), hostMemoryBytes: totalmem() },
+    engine: { image, imageId, docker, kernel: release(), arch: arch(), cpuModel: cpus()[0]?.model, availableCpus: availableParallelism(), hostMemoryBytes: totalmem(),
+      ...(values.production && { productionHeapMiB }) },
     alertPercent, candidate, baseline, comparisonStatus: paired ? 'PAIRED' : 'UNPAIRED',
     ...(unpairedReference && { unpairedReference }), results,
   };

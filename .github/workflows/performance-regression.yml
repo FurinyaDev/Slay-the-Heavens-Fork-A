@@ -5,18 +5,25 @@ on:
     types: [opened, synchronize, reopened, ready_for_review]
     paths:
       - '.github/workflows/performance-regression.yml'
-      - 'scripts/runtime-baseline/resource-receipt.mjs'
-      - 'scripts/runtime-baseline/resource-suite.mjs'
+      - 'scripts/runtime-baseline/**'
+      - 'scripts/build-ui.mjs'
+      - 'scripts/monster-art.mjs'
+      - 'src/lua/abyss_map_ui.lua'
+      - 'src/lua/abyss_ui.lua'
+      - 'src/lua/abyss_battle*.lua'
+      - 'src/lua/abyss_deck*.lua'
+      - 'src/lua/abyss_page_reveal.lua'
       - 'tests/benchmarks/resource-suite.test.mjs'
+      - 'tests/release-performance.test.mjs'
   workflow_dispatch:
     inputs:
       mode:
-        description: Resource matrix depth
+        description: Resource matrix depth, or formal for a frozen release
         type: choice
-        options: [fast, full]
+        options: [fast, full, formal]
         default: full
       base_sha:
-        description: Exact optional comparison commit in this repository
+        description: Exact comparison commit. Formal mode requires the last published build source.
         type: string
 permissions:
   contents: read
@@ -51,6 +58,12 @@ jobs:
           GIT_TERMINAL_PROMPT: '0'
         run: |
           test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          mode=${RESOURCE_MODE:-full}
+          if [ "$mode" = formal ]; then
+            test "$GITHUB_EVENT_NAME" = workflow_dispatch
+            [[ "$GITHUB_REF" == refs/heads/release/* ]]
+            [[ "$MANUAL_BASE_SHA" =~ ^[0-9a-f]{40}$ ]]
+          fi
           npm_flags=(--ignore-scripts --prefer-offline --no-audit --no-fund --fetch-retries=0 --fetch-timeout=30000)
           BASE_SHA=${MANUAL_BASE_SHA:-${PR_BASE_SHA:-$(git rev-parse --verify HEAD^ 2>/dev/null || true)}}
           if [ -n "$BASE_SHA" ]; then
@@ -60,13 +73,26 @@ jobs:
             fi
           fi
           npm ci "${npm_flags[@]}"
-          npm run build:data
-          npm run build:ui
-          args=(--mode "${RESOURCE_MODE:-full}")
+          node --test tests/release-performance.test.mjs
+          prepare() {
+            if [ "$mode" = formal ]; then
+              git -c lfs.transfer.maxretries=0 -c lfs.activitytimeout=30 lfs pull \
+                --include='art/characters/traveler-geo/portraits/avatar96/preview-native-1x.png,art/characters/traveler-geo/portraits/battle133/preview-native-1x.png' --exclude=''
+            else
+              npm run build:data
+              npm run build:ui
+            fi
+          }
+          args=(--mode "$mode")
+          if [ "$mode" = formal ]; then
+            git lfs install --local --skip-smudge
+            args=(--mode full --production)
+          fi
+          prepare
           if [ -n "$BASE_SHA" ] && git cat-file -e "$BASE_SHA:scripts/runtime-baseline/worker.mjs"; then
             reference="$RUNNER_TEMP/performance-reference"
             git worktree add --detach "$reference" "$BASE_SHA"
-            (cd "$reference" && npm ci "${npm_flags[@]}" && npm run build:data && npm run build:ui)
+            (cd "$reference" && npm ci "${npm_flags[@]}" && prepare)
             args+=(--baseline "$reference")
             if [ -z "$MANUAL_BASE_SHA" ]; then
               args+=(--baseline-if-compatible)
