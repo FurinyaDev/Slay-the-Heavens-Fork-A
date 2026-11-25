@@ -30,6 +30,34 @@ function M.toStage(x, y, width, height)
     return validX and (x - width / 2) / scale or nil, validY and (y - height / 2) / scale or nil, invalid
 end
 
+-- Keep the authored launch/landing offset inside each icon at 16:9. The
+-- generated native anchors determine how both the icon and its motion move.
+function M.pileLayout(panel)
+    local layout = Theme.layout
+    local origin = {
+        draw = layout.drawPile.position,
+        discard = layout.discardPile.position,
+        exhaust = {layout.topBar.exhaustIcon[1], layout.topBar.y},
+    }
+    local holder = panel and panel.anchorMinX == 0 and panel.anchorMaxX == 1 and panel.parent
+    local anchors = {}
+    if holder then
+        for pile in pairs(origin) do
+            local icon = panel:GetChild(pile .. "Icon")
+            anchors[pile] = icon and icon.anchorMinX
+        end
+    end
+    local function extraWidth()
+        if not holder then return 0 end
+        return (holder.sizeDeltaX or baseWidth) + (panel.sizeDeltaX or 0) - baseWidth
+    end
+    local function point(pile, extra)
+        local base = origin[pile]
+        if base then return base[1] + ((anchors[pile] or .5) - .5) * extra, base[2] end
+    end
+    return { extraWidth = extraWidth, point = point }
+end
+
 function M.apply(root, width, height, mobile)
     local frame = M.measure(width, height, mobile)
     local stage = assert(root:GetChild("stage"), "missing stage")
