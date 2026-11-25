@@ -39,6 +39,18 @@ for c,v in pairs(fields)do
  assert(c.x==v.x and c.y==v.y and c.sizeDeltaX==v.sx and c.sizeDeltaY==v.sy and c.scale[1]==v.scale and c.localRotationZ==v.rotation,'stable hand geometry changed')
 end
 if not ABYSS_RUNTIME_BASELINE then assert(counts.position==0 and counts.size==0 and counts.scale==0,'settled card geometry resubmitted')end
+local name=F.actorControl(panel,'enemy1'):GetChild('name')
+local setNameVisible,nameWrites=name.SetVisible,0
+name.SetVisible=function(self,...)
+ nameWrites=nameWrites+1
+ return setNameVisible(self,...)
+end
+for _=1,30 do ui:update(1/60)end
+assert(not name.visible and nameWrites==0,'hidden enemy name resubmitted '..nameWrites..' visibility writes')
+setNameVisible(name,true)
+ui:update(1/60)
+assert(not name.visible and nameWrites==1,'enemy name visibility did not recover after an external change')
+name.SetVisible=setNameVisible
 -- Native visibility writes occur between activation and the final battle paint.
 -- Exercise a public command at that exact boundary; a first-paint-only shortcut
 -- leaves an old energy counter even though the live command has committed.
