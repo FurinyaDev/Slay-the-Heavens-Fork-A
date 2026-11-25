@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - Furinya
 created_date: '2026-10-28 08:20'
-updated_date: '2026-11-14 06:50'
+updated_date: '2026-11-25 21:03'
 labels:
   - 待验
   - delivery-verify
@@ -17,7 +17,7 @@ references:
   - src/lua/abyss_run.lua
   - docs/evidence/m3-normal-campaign-20261031/summary.json
   - docs/evidence/m3-completion-20261031/
-priority: high
+priority: medium
 type: feature
 ordinal: 1
 ---
@@ -66,4 +66,6 @@ ordinal: 1
 2026-11-07 看板核对（develop 2c85bc61）：实现类交付已按历史记录保留，剩余 AC 待同候选官方/设备验证；当前无在途 PR，状态由 In Progress 归 To Do（待验）。
 
 2026-11-14第二轮状态纠正：已有3/4项AC通过及既有实施证据，剩余未完成要求属于后续验证或接续。 状态表示整个任务的完成进展，不表示当前有执行者持续占用；保留原未验AC、负责人、依赖及历史证据。更正过去把已开展待验事项退回To Do的处理。
+
+v2.2.0 排程按已有两幕终点实现和自然通关证据调为 Medium。同一正式候选的终点和官方验收继续保留，纳入 TASK-115.13。
 <!-- SECTION:NOTES:END -->
