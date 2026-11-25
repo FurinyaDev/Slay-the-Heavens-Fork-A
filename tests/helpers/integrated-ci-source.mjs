@@ -30,59 +30,8 @@ const luaFixtureSuccessors=Object.freeze({
   sha256:'15e495490244a447d8f9311bce88f03dc3ed30f6282ec108a5b4a4421b88624d',gitBlob:'53a04c8d5e53b4a62c789bc083e385b41bb04255',
  },
 });
-const changelogPath='CHANGELOG.md';
-const publishedChangelog=Object.freeze({
- sha256:'8df706839da1f445aae118f5483af85c68a910e6b279c5207534e604d651513b',
- gitBlob:'41409da7947a7b3b688810473e94a64b72367081',
-});
-export function assertIntegratedLuaFixturesCurrent(read){
- for(const [path,binding] of Object.entries(luaFixtureSuccessors))
-  assert(exactSourceMatches(read(path,'utf8'),binding),'fresh current integrated Lua fixture source: '+path);
-}
-function beforeIntegrationEvidence(path,source){
- const binding=path===changelogPath?publishedChangelog:luaFixtureSuccessors[path];
- if(!binding||!exactSourceMatches(source,binding))return source;
- const prior=integratedCiProof.files[path].current.source;
- return source.includes('\r\n')?prior.replaceAll('\n','\r\n'):prior;
-}
-export function integratedSource(path,source,target){
- source=beforePreflightSource(path,source);
- assert(Object.hasOwn(integratedCiProof.sources,target),'known integration input');
- if(path.startsWith('src/')||path==='config/architecture.json')return source;
- const row=Object.hasOwn(integratedCiProof.files,path)?integratedCiProof.files[path]:null;
- source=releaseBootstrapCiSource(path,beforeIntegrationEvidence(path,source),row?.current);
- if(!row?.views[target]||typeof source!=='string'||source.includes('\r\r\n')||hash(norm(source))!==row.current.sha256)return source;
- if(row.views[target].sha256===row.current.sha256)return source;
- return row.views[target].source;
-}
-export function integratedRead(target,{read=readFileSync}={}){read=preflightPriorRead(read);return(path,encoding)=>{
- const raw=read(path,encoding);
- const binary=Object.hasOwn(integratedCiProof.binaryViews,path)?integratedCiProof.binaryViews[path]:null;
- if(Buffer.isBuffer(raw)&&binary?.views[target]&&hash(raw)===binary.current){
-  const saved=binary.views[target],bytes=read(saved.path);assert.equal(hash(bytes),saved.sha256,'complete immutable integration binary predecessor');return bytes;
- }
- const text=typeof raw==='string'?raw:raw.toString('utf8'),prior=integratedSource(path,text,target);
- return typeof raw==='string'?prior:prior===text?raw:Buffer.from(prior);
-};}
-export function assertIntegratedCurrent(read=readFileSync){
- assertReleaseBootstrapCiCurrent(read);
- read=preflightPriorRead(read);
- for(const [path,row]of Object.entries(integratedCiProof.files)){
-  const source=read(path,'utf8');
-  if(path===changelogPath)assert(exactSourceMatches(source,publishedChangelog),'fresh current published changelog');
-  const prior=releaseBootstrapCiCheckedSource(path,beforeIntegrationEvidence(path,source),row.current);
-  assert.equal(hash(norm(prior)),row.current.sha256,'fresh complete integration source: '+path);
- }
- for(const [path,row]of Object.entries(integratedCiProof.closure))assert.equal(hash(path.endsWith('.gz')?read(path):norm(releaseBootstrapCiSource(path,read(path,'utf8'),integratedCiProof.files[path]?.current))),row.after,'fresh integration copy owner: '+path);
-}
-export function extendIntegratedHelperClosure(original){
- const current={...original},patch=integratedCiProof.closure;
- assert.deepEqual(Object.keys(patch).sort(),['tests/helpers/closeout-source-epoch.mjs','tests/helpers/combined-epoch/source-epoch-runtime.mjs','tests/helpers/menu-presentation-source.json.gz','tests/helpers/menu-red-production-source.json.gz','tests/helpers/menu-red-source-epoch.mjs','tests/helpers/release-source-epoch.json.gz','tests/helpers/release-source-epoch.mjs','tests/helpers/session-menu-source-epoch.json.gz','tests/helpers/session-menu-source-epoch.mjs']);
- for(const [path,row]of Object.entries(patch)){assert.equal(row.before,original[path]??null,'exact integration copy predecessor: '+path);assert.match(row.after,/^[a-f0-9]{64}$/);current[path]=row.after;}
- return freeze(current);
-}
 // These approved test revisions remain executable in the raw Full inventory.
-// Their exact identities authorize only the historical inventory comparison.
+// Use the same exact identities for the applicable historical source and inventory comparisons.
 const jsInventorySuccessors=Object.freeze({
  'tests/deck-browser-reveal-reuse.test.mjs':{
   sha256:'f9f446f381fff3b96527f9047fc9e175287dae6dcdd30c1cf3f63bf79283758b',
@@ -105,6 +54,124 @@ const jsInventorySuccessors=Object.freeze({
   gitBlob:'7dcb8cedafdd5ca8b9a58f57662c2c5940422bd2',
  },
 });
+const integratedEvidenceSuccessors=Object.freeze({
+ 'CHANGELOG.md':{
+  sha256:'8df706839da1f445aae118f5483af85c68a910e6b279c5207534e604d651513b',gitBlob:'41409da7947a7b3b688810473e94a64b72367081',
+ },
+ // #940, #942 and #951 update the live architecture with approved owners.
+ 'config/architecture.json':{
+  sha256:'7149b7878a8258a6de4b23d95742dc3c4e31d38bf558f80a35efe51aac401e00',gitBlob:'4aa8367e9d694587c9b58202185524fe3376640a',
+ },
+ // #951 synchronizes the existing low-cost enemy art IDs.
+ 'data/presentation/lowcost-enemy-art.json':{
+  sha256:'ea93d485c6aa0a5db2e0565a6f123fbc7d83a1aad9bc0ee4393ce92c4679a133',gitBlob:'60d4f24c7c83757009146771ead479246c75086b',
+ },
+ // #822 and #951 update the approved relic icon and IDs.
+ 'data/presentation/lowcost-relic-art.json':{
+  sha256:'11656534ea60482edbdce97c0cd1298ea0f43410f74264c1eae4893e16b33dd0',gitBlob:'501272bd18fbd6054d8f5cefcf93fb9fb7867125',
+ },
+ // #938, #940, #942, #951 and #984 update the approved live theme after #912.
+ 'data/presentation/ui_theme.json':{
+  sha256:'72cae11890ce1a018fa145152188cd6ff6779f899db201f9d3799171db7abb4e',gitBlob:'2d5262e17653444c27bba75679748ccc06ea1d09',
+ },
+ // #951 adds release-text checks to the active syntax and platform scripts.
+ 'package.json':{
+  sha256:'ba29a08fc203195bba8c9acd047274167f2de046f8a29e54a681f72faa314e77',gitBlob:'8b3f35c25c42aa7276a5ab334ae7112fe9dbe01b',
+ },
+ // Approved #938, #940, #942, #943, #951, #984 and #985 source successors.
+ 'scripts/sts-card-reference-profile.mjs':{
+  sha256:'92eef4262017dfe74dc80e41ee0bcf9961aba9c7c121247f96ae9b0c235db199',gitBlob:'1d7aeb376916e8a4617ac75da9a50f5fd8c5075e',
+ },
+ 'src/lua/abyss_game_ui_view.lua':{
+  sha256:'e01ca4da8d838b9ea38ef7663a097785e208c97fbac3f1d1df103c618d09957d',gitBlob:'fa1578151eb2565798e81843bc30681e42bcbb70',
+ },
+ 'tests/deck-browser-reveal-reuse.test.mjs':jsInventorySuccessors['tests/deck-browser-reveal-reuse.test.mjs'],
+ 'tests/helpers/intent-visibility-vm.mjs':{
+  sha256:'873779165d8bc25ca5bb2673f76726591931e0ce773f44914b8ce0ba6edf5597',gitBlob:'1fb0be4b656c01c50bb421678b673cdd493983d9',
+ },
+ 'tests/lua/game_ui_classes.lua':{
+  sha256:'09f1df83661ccabd3f90e47d39b7fe2aa9899bcd649f9b2598fc43a01f4312c3',gitBlob:'9f2452c15c29c69a93f150352d87d74dff8a4bd1',
+ },
+ 'tests/lua/game_ui_classes_failure.lua':{
+  sha256:'59e872e3e78b6b667b9a1250c227f29ec4e800bebecc0ee17343e44acb14b311',gitBlob:'fc39ead01b7a4f1163700f4ae1495f0e5ed6667c',
+ },
+ 'tests/lua/game_ui_prologue.lua':{
+  sha256:'7079832098012f2afa09490ee427eaf72724d5a306731acce85df8f9699dc200',gitBlob:'af469226aac72f8165ff451a8194fd977a751da1',
+ },
+ 'tests/lua/support/committed_defeat_fixture.lua':{
+  sha256:'14333b6952b54947b584807704080ca16015573ff51463d4b46f17015462e1e7',gitBlob:'4255d447c68d7ae7fe622c406d231b5c5d6ecfdd',
+ },
+ 'tests/lua/support/node_ui_cases.lua':{
+  sha256:'593b6e6a91941a7cdb110045bd953db0633eb2d13424d25edec0ddd34ad2aaa0',gitBlob:'d9c00c3abc5c4c13b0b4de3c7673d44e00651e6b',
+ },
+ 'tests/lua/support/official_choice_pagination.lua':{
+  sha256:'c8f593cd3bddc4be2d9d95dd5ca6b3c220d79d871f6573300cc396b77c7ba618',gitBlob:'a9f3090beb4db596192e7538ebc781f203d44ae5',
+ },
+ 'tests/lua/title_menu_admission.lua':{
+  sha256:'f93914c96f1e24b8e0f684e358bd13c3ac2dff0e347744b16b1d4069070d4bc4',gitBlob:'8928c7cd380bd0cc5d1efc22fe3cd1191aa7af58',
+ },
+ 'tests/official-choice-pagination.test.mjs':jsInventorySuccessors['tests/official-choice-pagination.test.mjs'],
+ 'tests/sts-card-reference-runtime.test.mjs':jsInventorySuccessors['tests/sts-card-reference-runtime.test.mjs'],
+ 'tests/sts-page-reveal.test.mjs':jsInventorySuccessors['tests/sts-page-reveal.test.mjs'],
+ 'tests/v25-card-skin-integration.test.mjs':{
+  sha256:'f94b0534b4bd8468bf1a6bc76936b7d0264d8ce0e96d635f13a9d213034d04bb',gitBlob:'f8f3e90f9924902353cbe8c159b26f6123994745',
+ },
+});
+export function assertIntegratedLuaFixturesCurrent(read){
+ for(const [path,binding] of Object.entries(luaFixtureSuccessors))
+  assert(exactSourceMatches(read(path,'utf8'),binding),'fresh current integrated Lua fixture source: '+path);
+}
+function beforeIntegrationEvidence(path,source){
+ const binding=Object.hasOwn(integratedEvidenceSuccessors,path)?integratedEvidenceSuccessors[path]
+  :Object.hasOwn(luaFixtureSuccessors,path)?luaFixtureSuccessors[path]:undefined;
+ if(!binding||!exactSourceMatches(source,binding))return source;
+ const prior=integratedCiProof.files[path].current.source;
+ return source.includes('\r\n')?prior.replaceAll('\n','\r\n'):prior;
+}
+function linkedProductionOwner(path){
+ return path.startsWith('src/')||path==='config/architecture.json';
+}
+export function integratedHistoricalInput(path,source){
+ return linkedProductionOwner(path)?source:beforeIntegrationEvidence(path,source);
+}
+export function integratedSource(path,source,target){
+ source=beforePreflightSource(path,source);
+ assert(Object.hasOwn(integratedCiProof.sources,target),'known integration input');
+ if(linkedProductionOwner(path))return source;
+ const row=Object.hasOwn(integratedCiProof.files,path)?integratedCiProof.files[path]:null;
+ source=releaseBootstrapCiSource(path,beforeIntegrationEvidence(path,source),row?.current);
+ if(!row?.views[target]||typeof source!=='string'||source.includes('\r\r\n')||hash(norm(source))!==row.current.sha256)return source;
+ if(row.views[target].sha256===row.current.sha256)return source;
+ return row.views[target].source;
+}
+export function integratedRead(target,{read=readFileSync}={}){read=preflightPriorRead(read);return(path,encoding)=>{
+ const raw=read(path,encoding);
+ const binary=Object.hasOwn(integratedCiProof.binaryViews,path)?integratedCiProof.binaryViews[path]:null;
+ if(Buffer.isBuffer(raw)&&binary?.views[target]&&hash(raw)===binary.current){
+  const saved=binary.views[target],bytes=read(saved.path);assert.equal(hash(bytes),saved.sha256,'complete immutable integration binary predecessor');return bytes;
+ }
+ const text=typeof raw==='string'?raw:raw.toString('utf8'),prior=integratedSource(path,text,target);
+ return typeof raw==='string'?prior:prior===text?raw:Buffer.from(prior);
+};}
+export function assertIntegratedCurrent(read=readFileSync){
+ assertReleaseBootstrapCiCurrent(read);
+ const rawRead=read;
+ read=preflightPriorRead(rawRead);
+ for(const [path,row]of Object.entries(integratedCiProof.files)){
+  const binding=integratedEvidenceSuccessors[path];
+  const source=binding?rawRead(path,'utf8'):read(path,'utf8');
+  if(binding)assert(exactSourceMatches(source,binding),'fresh complete integration source: '+path);
+  const prior=releaseBootstrapCiCheckedSource(path,beforeIntegrationEvidence(path,source),row.current);
+  assert.equal(hash(norm(prior)),row.current.sha256,'fresh complete integration source: '+path);
+ }
+ for(const [path,row]of Object.entries(integratedCiProof.closure))assert.equal(hash(path.endsWith('.gz')?read(path):norm(releaseBootstrapCiSource(path,read(path,'utf8'),integratedCiProof.files[path]?.current))),row.after,'fresh integration copy owner: '+path);
+}
+export function extendIntegratedHelperClosure(original){
+ const current={...original},patch=integratedCiProof.closure;
+ assert.deepEqual(Object.keys(patch).sort(),['tests/helpers/closeout-source-epoch.mjs','tests/helpers/combined-epoch/source-epoch-runtime.mjs','tests/helpers/menu-presentation-source.json.gz','tests/helpers/menu-red-production-source.json.gz','tests/helpers/menu-red-source-epoch.mjs','tests/helpers/release-source-epoch.json.gz','tests/helpers/release-source-epoch.mjs','tests/helpers/session-menu-source-epoch.json.gz','tests/helpers/session-menu-source-epoch.mjs']);
+ for(const [path,row]of Object.entries(patch)){assert.equal(row.before,original[path]??null,'exact integration copy predecessor: '+path);assert.match(row.after,/^[a-f0-9]{64}$/);current[path]=row.after;}
+ return freeze(current);
+}
 // Exact complete inventories for historical receipts; raw Full discovery remains live.
 export function integratedPriorInventory(paths,target,kind='js',read=readFileSync){
  const current=kind==='js'?integratedCiProof.inventory:integratedCiProof.luaInventory;
