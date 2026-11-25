@@ -9,6 +9,7 @@ end
 assert(backdropSpec and stageSpec)
 local stage = {}
 function stage:SetLocalScale(x, y, z) self.scale = {x, y, z} end
+function stage:SetSizeDelta(w, h) NativeContract.sizeDelta(w,h); self.size = {w,h} end
 local backdrop = { delta = {backdropSpec.size[1], backdropSpec.size[2]} }
 function backdrop:SetSizeDelta(w, h) NativeContract.sizeDelta(w,h); self.delta = {w, h} end
 local root = {}
@@ -27,10 +28,15 @@ local cases = {
 for _, device in ipairs(cases) do
     -- Repeat after portrait/tablet/wide-screen changes: no accumulated enlargement.
     for _ = 1, 3 do
-        local returned, scale = Viewport.apply(root, device[1], device[2])
+        local returned, scale, frame = Viewport.apply(root, device[1], device[2])
         local expected = math.min(device[1] / 1280, device[2] / 720)
         assert(returned == stage and scale == expected)
         assert(stage.scale[1] == expected and stage.scale[2] == expected and stage.scale[3] == 1)
+        assert(stage.size[1] == frame.input[3] and stage.size[2] == frame.input[4])
+        assert(math.abs(stage.size[1] * scale - device[1]) < 1e-8)
+        assert(math.abs(stage.size[2] * scale - device[2]) < 1e-8)
+        local x, y = Viewport.toStage(device[1] - 60 * scale, device[2] / 2 - 80 * scale, device[1], device[2])
+        assert(math.abs(x - (stage.size[1] / 2 - 60)) < 1e-8 and math.abs(y + 80) < 1e-8)
         for axis = 1, 2 do
             local low = backdropSpec.anchor and backdropSpec.anchor.min[axis] or 0.5
             local high = backdropSpec.anchor and backdropSpec.anchor.max[axis] or 0.5
@@ -42,8 +48,20 @@ for _, device in ipairs(cases) do
         assert(stageSpec.size[2] * scale <= device[2] + 1e-9)
     end
 end
+do
+    local known, reported = Viewport.measure(1384.916, 720, true), Viewport.measure(1280, 720, true)
+    assert(known.input[3] == 1384.916 and known.visual[3] == 1784.916)
+    assert(reported.input[3] == 1280 and reported.visual[3] == 1680)
+    assert(Viewport.measure(1280, 960, true).visual[3] == 1280)
+    local x, y, bad = Viewport.toStage(nil, 360, 1280, 720)
+    assert(x == nil and y == 0 and not bad)
+    x, y, bad = Viewport.toStage(0/0, 360, 1280, 720)
+    assert(x == nil and y == 0 and bad)
+    x, y, bad = Viewport.toStage(640, math.huge, 1280, 720)
+    assert(x == 0 and y == nil and bad)
+end
 for _, bad in ipairs({0, -1, math.huge, 0/0, "1280"}) do
     assert(not pcall(Viewport.apply, root, bad, 720))
     assert(not pcall(Viewport.apply, root, 1280, bad))
 end
-print("PASS viewport: independent host coverage, uniform content and repeated resize (9 devices)")
+print("PASS viewport: host coverage, logical input, uniform content and repeated resize (9 devices)")
