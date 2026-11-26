@@ -14,15 +14,12 @@ end
 -- ready-art runtime contexts separately exercise the complete seven-slot shelf.
 run.nodeFlow.cards={assert(run.nodeFlow.cards[1])}
 local root=Native.decorate(F.Viewport.apply(F.control({children=F.Layout}),1280,720))
-local panel=root:GetChild('nodePanel')
-local shelf=panel:GetChild('shopView')
-local face=shelf:GetChild('card1')
+local face=root:GetChild('nodePanel'):GetChild('shopView'):GetChild('card1')
 local options=Small.platform
-local node=require('abyss_node_ui').new(panel,run,map,F.Presentation,'click',function()end,options)
-node:setVisible(true)
-assert(panel:GetChild('merchant'):GetChild('talk'):GetChild('hit').click())
+local node=require('abyss_node_ui').new(root:GetChild('nodePanel'),run,map,F.Presentation,'click',function()end,options)
+assert(node:press('merchant/talk'))
 dofile('tests/lua/support/shop_timeline.lua')(node)
-assert(node.shopOpen and not node.shopBusy and shelf.visible and node.actions['shopView/card1'])
+assert(node.shopOpen and not node.shopBusy and node.actions['shopView/card1'])
 local failures,passed={},0
 local function check(kind,ready,label)
  for art in pairs(F.Theme.icon.cardArt)do

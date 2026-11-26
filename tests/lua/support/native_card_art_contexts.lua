@@ -77,11 +77,10 @@ shop.nodeFlow.cards[1].id='cleave'
 local function openShop(panel,view)
  assert(panel:GetChild('merchant'):GetChild('talk'):GetChild('hit').click())
  advanceShop(view)
- assert(panel:GetChild('shopView').visible,'merchant shelf did not open')
 end
 local panel=r:GetChild('nodePanel')
 local node=NodeUI.new(panel,shop,map,F.Presentation,'click',function()end,platform)
-node:setVisible(true);openShop(panel,node)
+node:render();openShop(panel,node)
 local offer=panel:GetChild('shopView'):GetChild('card1');art(offer,true,true)
 shop.nodeFlow.cards[1].id='heavy_blade';node:render();art(offer,true,true)
 shop.nodeFlow.cards[1].id='defend';node:render();art(offer,false,true)

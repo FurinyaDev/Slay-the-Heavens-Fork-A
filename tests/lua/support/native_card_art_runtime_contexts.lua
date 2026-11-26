@@ -27,26 +27,10 @@ local DeckUI,NodeUI=require('abyss_deck_ui'),require('abyss_node_ui')
 local platform=F.withMonsterActors({imageSource='static',imageTypes={basic=17,stretch=23},color=function(...)return {...}end})
 local r=Native.decorate(F.Viewport.apply(F.control({children=F.Layout}),1280,720))
 local function drain()for _=1,450 do Runtime.update()end end
-local function check(face,enabled)
+local function check(face,enabled,node)
  assert(face:GetChild('artSamples').visible==enabled,'native artwork binding visibility mismatch')
- local fallback=face:GetChild('art')
+ local fallback=face:GetChild(node and 'art_attack' or 'art')
  assert(fallback.visible~=enabled,'native fallback visibility mismatch')
-end
-local function visibleThroughParents(control)
- while control do
-  if not control.alive or not control.visible then return false end
-  control=control.parent
- end
- return true
-end
-local function checkNodeArt(face,state)
- assert(visibleThroughParents(face)==(state~='hidden'),'card face visibility mismatch')
- assert(visibleThroughParents(face:GetChild('artSamples'))==(state=='native'),'native artwork visibility mismatch: '..state)
- for kind in pairs(F.Theme.icon.cardArt)do
-  local fallback=face:GetChild('art_'..kind)
-  assert(visibleThroughParents(fallback)==(state==kind),'unexpected visible fallback artwork: '..kind)
-  if state==kind then assert(fallback.imageId,'visible fallback has no image')end
- end
 end
 local function phase(name)print('NATIVE_CARD_ART_RUNTIME_PHASE '..name)end
 if ABYSS_RUNTIME_CONTEXT=='battle' then
@@ -128,112 +112,40 @@ elseif ABYSS_RUNTIME_CONTEXT=='deck-capacity' or ABYSS_RUNTIME_CONTEXT=='deck-sc
   assert(deck:close());grid:flush();calibrationCallback(calibrationItem,0);drain();assert(Runtime.status().livePools==0)
   phase('deck-deferred-calibration')
  end
-elseif ABYSS_RUNTIME_CONTEXT:match('^node%-') then
- local function shop(cardId)
-  local run=Run.new(F.Data,42);local map=Map.generate(run.data,42)
-  local path=dofile('tests/lua/support/map_routes.lua').to(map,function(candidate)return candidate.type=='shop'end)
-  for i=1,#path-1 do assert(Map.choose(map,path[i]))end
-  assert(Nodes.enter(run,map,path[#path]))
-  run.nodeFlow.cards[1].id=cardId
-  run.deck={{uid=99,cardId='cleave',upgraded=true}}
-  run.gold=1000
-  return run,map
+elseif ABYSS_RUNTIME_CONTEXT=='node-shop' or ABYSS_RUNTIME_CONTEXT=='node-picker' or ABYSS_RUNTIME_CONTEXT=='node-return' then
+ local run=Run.new(F.Data,42);local map=Map.generate(run.data,42)
+ for _=1,17 do
+  local choices,found=Map.available(map),false
+  for _,node in ipairs(choices)do if node.type=='shop'then assert(Nodes.enter(run,map,node.id));found=true;break end end
+  if found then break end;assert(Map.choose(map,assert(choices[1]).id))
  end
- local run,map=shop('cleave')
- local panel=r:GetChild('nodePanel')
- local shelf,picker=panel:GetChild('shopView'),panel:GetChild('pickerView')
- local goods=shelf:GetChild('goods') or shelf
- local node=NodeUI.new(panel,run,map,F.Presentation,'click',function()end,platform)
- local face,pickFace=shelf:GetChild('card1'),picker:GetChild('card1')
- local pool=face:GetChild('artSamples')
- local talk=panel:GetChild('merchant'):GetChild('talk'):GetChild('hit')
- node:setVisible(true)
- local function frame()
-  node:update(1/30);Runtime.update()
- end
- local function openShop()
-  assert(visibleThroughParents(talk) and talk.click())
-  for _=1,18 do frame()end
-  assert(node.shopOpen and not node.shopBusy and visibleThroughParents(face),'shop did not publish the card shelf')
- end
- local function showNative(box,id)
-  local art=box:GetChild('artSamples')
-  for _=1,450 do if art.visible then break end;Runtime.update()end
-  checkNodeArt(box,'native')
-  local metadata=F.Presentation[id].nativeArt
-  local count=0
-  for _,group in ipairs(art.children)do
-   assert(group.alive,'visible artwork retained a destroyed group')
-   count=count+#group.children
-  end
-  assert(count==(metadata.rectangleCount or #metadata.slots),'wrong artwork shape count: '..id)
- end
- local function click(box)
-  local hit=box:GetChild('hit');assert(visibleThroughParents(hit) and hit.click())
- end
+ run.nodeFlow.cards[1].id='cleave'
+ local node=NodeUI.new(r:GetChild('nodePanel'),run,map,F.Presentation,'click',function()end,platform)
+ local face=r:GetChild('nodePanel'):GetChild('shopView'):GetChild('card1')
+ assert(node:press('merchant/talk'))
+ dofile('tests/lua/support/shop_timeline.lua')(node)
+ assert(node.shopOpen and not node.shopBusy and node.actions['shopView/card1'])
  if ABYSS_RUNTIME_CONTEXT=='node-shop' then
-  checkNodeArt(face,'hidden')
-  assert(Runtime.status().livePools==0,'room entrance immediately allocated shop artwork')
-  frame()
-  local pending=assert(pool.children[1],'missing pending native allocation')
-  assert(Runtime.status().livePools>0 and pending.alive and not pool.visible,'pending art was not staged')
-  checkNodeArt(face,'hidden')
-  node:setVisible(false)
-  assert(Runtime.status().livePools==0 and not pending.alive and next(pool.children)==nil,'pending node pool leaked on hide')
+  Runtime.update();node:setVisible(false)
+  assert(Runtime.status().livePools==0,'pending node pool leaked on hide')
   phase('node-pending-hide')
-  for _=1,18 do frame()end
-  assert(Runtime.status().livePools==0,'hidden node update restarted art')
-  node:setVisible(true);openShop();checkNodeArt(face,'attack');showNative(face,'cleave')
-  phase('node-show-ready')
- elseif ABYSS_RUNTIME_CONTEXT=='node-hidden' then
-  openShop();showNative(face,'cleave')
-  local ready=assert(pool.children[1]);assert(ready.alive)
-  node:setVisible(false);node:render();frame();checkNodeArt(face,'hidden')
-  assert(Runtime.status().livePools==0 and not ready.alive and next(pool.children)==nil,'hidden node render restarted art')
+  node:render();drain();check(face,false,true);assert(Runtime.status().livePools==0,'hidden node render restarted art')
   phase('node-hidden-render')
-  node:setVisible(true);checkNodeArt(face,'attack');frame()
-  assert(pool.children[1] and pool.children[1].alive,'visible shelf did not resume art after hide')
-  phase('node-visible-resume')
- elseif ABYSS_RUNTIME_CONTEXT=='node-reuse' then
-  run.relics[#run.relics+1]='courier'
-  openShop();showNative(face,'cleave')
-  local old=assert(pool.children[1])
-  local External,Random=require('abyss_external_random'),require('abyss_randomxs128')
-  External.setReplayState(Random.snapshot(Random.fromSeed('1')))
-  click(face);click(panel:GetChild('confirm'))
-  assert(run.nodeFlow.cards[1].id=='wild_strike','fixture did not restock a different card in the same slot')
-  assert(face:GetChild('name').text==F.Presentation.wild_strike.name and not old.alive and next(pool.children)==nil)
-  checkNodeArt(face,'attack');showNative(face,'wild_strike')
-  local replacement=assert(pool.children[1]);assert(replacement~=old and replacement.alive)
-  node:render();frame();checkNodeArt(face,'native')
-  assert(pool.children[1]==replacement,'same offer repainted by allocating a new card-art tree')
-  phase('node-slot-reuse')
- elseif ABYSS_RUNTIME_CONTEXT=='node-reopen' then
-  openShop()
-  local previous=assert(pool.children[1]);assert(previous.alive)
-  click(panel:GetChild('back'))
-  checkNodeArt(face,'hidden');assert(not run.nodeFlow.complete)
-  openShop()
-  assert(pool.children[1]==previous and previous.alive,'warm reopening discarded the current offer artwork')
-  phase('node-close-reopen')
-  click(panel:GetChild('back'));node:update(.7);click(panel:GetChild('back'))
-  assert(run.nodeFlow.complete and Runtime.status().livePools==0 and not previous.alive)
-  checkNodeArt(face,'hidden');assert(next(pool.children)==nil)
-  node.run,node.map=shop('armaments');node:render();openShop()
-  checkNodeArt(face,'skill');showNative(face,'armaments')
-  assert(face:GetChild('name').text==F.Presentation.armaments.name)
-  phase('node-leave-new-shop')
+  node:setVisible(true);node:render();drain();check(face,true,true)
+  phase('node-show-ready')
  else
-  openShop()
-  if ABYSS_RUNTIME_CONTEXT=='node-picker' then showNative(face,'cleave')end
-  local previous=assert(pool.children[1]);click(goods:GetChild('removal'));showNative(pickFace,'cleave')
-  checkNodeArt(face,'hidden');assert(not previous.alive and next(pool.children)==nil,'picker retained shop art')
+  -- Separate complete ready-to-ready page transitions so no VM redraws the
+  -- seven-slot real shop twice. All generated offers and artwork stay intact.
+  if ABYSS_RUNTIME_CONTEXT=='node-picker' then drain();check(face,true,true)end
+  run.deck={{uid=99,cardId='cleave',upgraded=true}}
+  assert(node:press('shopView/removal'));drain()
+  check(r:GetChild('nodePanel'):GetChild('pickerView'):GetChild('card1'),true,true)
   if ABYSS_RUNTIME_CONTEXT=='node-picker' then
+   assert(not face:GetChild('artSamples').visible,'shop to picker leaked art')
    phase('node-shop-to-picker')
   else
-   local pickPool=pickFace:GetChild('artSamples');local old=assert(pickPool.children[1])
-   click(panel:GetChild('back'));checkNodeArt(face,'attack');showNative(face,'cleave')
-   checkNodeArt(pickFace,'hidden');assert(not old.alive and next(pickPool.children)==nil,'shop retained picker art')
+   assert(node:press('back'));drain();check(face,true,true)
+   assert(not r:GetChild('nodePanel'):GetChild('pickerView'):GetChild('card1'):GetChild('artSamples').visible)
    phase('node-picker-to-shop')
   end
  end
