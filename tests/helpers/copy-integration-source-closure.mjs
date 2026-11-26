@@ -348,7 +348,7 @@ const entranceFiles=Object.freeze({
  ...currentReplayFiles,
  'tests/helpers/release-integration-source.mjs':'74093921a53a94ba842afac199e579a622b60fea5abf2519d416ede77bbfa1a7',
  'tests/fixtures/release-lazy-monster-art-source.json.gz':'211c3588a53b1f97c98d9f9b905349d82b244a2e81a940d4ebe48022381ca92e',
- 'tests/helpers/m7-core-final-source-inverse.mjs':'8e0d432cd1ecf668bad14a614a61772e495e13cce67ab0168babcaac5bfda1e6',
+ 'tests/helpers/m7-core-final-source-inverse.mjs':'c9d98969785466649e0e915df0d912f81b774d8b937b4fb63e74eed731635133',
  'tests/helpers/release-ui-restore-source.mjs':'846781b9a6b31c7b85dfca9cdca0447d1880f9a220d1488c18278c4189d6ad48',
  'tests/helpers/current-replay-fix-sources.mjs':'bfef80da2fc30501c3b2e82cd14bdb8130e4a089f2db231ff2587804fa83a08b',
  'tests/helpers/character-preparation-source.mjs':'ae3b89b99224cf8bb86b8e569e6488db68ac2d30bf1233ed6652c90808df1984',
@@ -364,6 +364,10 @@ const entranceFiles=Object.freeze({
  [closeout]: '4f559399c631fbd0fd25ea7f1ceb8f3b8c6643e167f0116d9f151e12ee0a0ecb',
  'tests/helpers/input-retirement-source.mjs':'0ca50356e7e2cb5a0755e7a7b203a8d2168ab59d542fb5eeb3729a3984b5e9b8',
  'tests/fixtures/event-readability-source.json.gz':'1ccc3098014ebf726a776928f5d0b41c29b6a2a1cff21f096ee42a53b0da9cd5',
+ 'tests/helpers/reward-query-boundary-source-inverse.mjs':'07d2abf826061305510cebfd60a4c13b2d07e86352d63a5db1868a40c9cc082c',
+ 'tests/helpers/relic-query-source-inverse.mjs':'41b4cddcba283db2cbcdc4d9c19fdd8bb14321378bd1151fc76a74b7ec9b1120',
+ 'tests/helpers/reward-current-source.mjs':'32beb13dbdd789feb8f79b583e6fabc91a1dc5aedcf21d6484f48c4db90a2d0c',
+ 'tests/helpers/reward-current-source.json.gz':'a68d10abe6e6f3bd33a69f85326d34dce1250b34b6892543cb5c1314c01f3b9f',
 });
 const inside=(root,path)=>{const r=relative(root,path);return r!==''&&!isAbsolute(r)&&r!=='..'&&!r.startsWith('../')&&!r.startsWith('..\\');};
 export function copyIntegrationSourceClosure(directory,{sourceRoot=process.cwd()}={}){

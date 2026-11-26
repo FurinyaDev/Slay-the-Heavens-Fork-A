@@ -98,14 +98,17 @@ for(const [path,row] of Object.entries(transport.files)){
 const normalize=s=>s.replaceAll('\r\n','\n');
 // Exact complete successor bytes preserve the existing immutable historical CI views.
 const forkPushBytes=readFileSync(new URL('../fixtures/fork-push-ci-source.json.gz',import.meta.url));
-assert.equal(hash(forkPushBytes),'3e336d4dc79dc2dcb5f5d2297212034bf074aed8eea184dca73c0d02bab91f18','complete Fork push CI continuation');
+assert.equal(hash(forkPushBytes),'d8f0cb25d3884387b232a67ce8a99bf6570bdb50dcbecbba15b25ec3bcfd9d83','complete Fork push CI continuation');
 const forkPushPacket=JSON.parse(gunzipSync(forkPushBytes));
 assert.equal(forkPushPacket.baseCommit,'73c21489efaab409d4c0c46bee517d410d3427fc');
 for(const row of Object.values(forkPushPacket.files))assert.equal(hash(row.before),row.beforeSha256);
 export function beforeForkPush(path,source){
  if(path==='.github/workflows/quality.yml'&&typeof source==='string')source=beforeHotfixPublicationGate(source);
- const row=forkPushPacket.files[path];
- return row&&typeof source==='string'&&!source.includes('\r\r\n')&&hash(normalize(source))===row.afterSha256?(source.includes('\r\n')?row.before.replaceAll('\n','\r\n'):row.before):source;
+ const row=Object.hasOwn(forkPushPacket.files,path)?forkPushPacket.files[path]:undefined;
+ if(!row||typeof source!=='string'||source.includes('\r\r\n'))return source;
+ const digest=hash(normalize(source));
+ if(digest!==row.afterSha256&&digest!==row.afterSuccessorSha256)return source;
+ return source.includes('\r\n')?row.before.replaceAll('\n','\r\n'):row.before;
 }
 // Receipt readers retain the actual Q1 current-source predecessor before their existing replay layers.
 for(const row of Object.values(forkPushPacket.receiptSuccessors??{}))assert.equal(hash(row.before),row.beforeSha256);
@@ -766,6 +769,9 @@ const calibrationReplayPaths=Object.freeze([
  'tests/watcher-actor-boundary.test.mjs',
  'tests/sts-style-source-epoch.test.mjs',
  'tests/integrated-ci-source.cases.mjs',
+ 'tests/helpers/reward-query-boundary-source-inverse.mjs',
+ 'tests/helpers/m7-core-final-source-inverse.mjs',
+ 'tests/helpers/relic-query-source-inverse.mjs',
 ]);
 let calibrationReplayPredecessor;
 function beforeCalibrationReplayOwner(path,source){
@@ -773,7 +779,7 @@ function beforeCalibrationReplayOwner(path,source){
  if(!calibrationReplayPredecessor){
   calibrationReplayPredecessor=releaseUiRestoreArchive(
    readFileSync(new URL('./calibration-v220-replay-owners.json.gz',import.meta.url)),
-   '6d7da50c5b4954af8a7b6061805a90d86069e404d77f2ed21f2c8b1eabbca2d5','8b4172d59779ad9fa21b4ba91ef750ab22fcdaf1');
+   '72bb3d5b6959847b874d358457eb7f27492883b202b5e06f140b6db08b1d3ca2','8b4172d59779ad9fa21b4ba91ef750ab22fcdaf1');
   assert.deepEqual(Object.keys(calibrationReplayPredecessor.files),calibrationReplayPaths,'ordered v2.2 calibration replay owners');
  }
  return calibrationReplayPredecessor.project(path,source);
