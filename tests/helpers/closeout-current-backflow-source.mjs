@@ -7,8 +7,8 @@ import {exactSourceMatches} from './source-fingerprint.mjs';
 
 const bytes=readFileSync(new URL('../fixtures/closeout-current-backflow-source.json.gz',import.meta.url));
 assert.equal(createHash('sha256').update(bytes).digest('hex'),
- 'd0910a05e5686fc23a15a54a4d6c2f8be504821a9db5a63f8aa1393784f51e77','exact current closeout backflow packet');
-const {schemaVersion,base,head,files,owners,continuation,sessionRoute,anchorRefactor,actorDetail,tooling,pageReveal}=JSON.parse(gunzipSync(bytes));
+ 'f214dfb607a3c31a2cfcc4d59fbe57e5f720d32c73054331a368b45403a0a187','exact current closeout backflow packet');
+const {schemaVersion,base,head,files,owners,continuation,sessionRoute,anchorRefactor,actorDetail,tooling,pageReveal,independentFiles}=JSON.parse(gunzipSync(bytes));
 assert.equal(schemaVersion,1);
 assert.equal(base,'903bf2a31e91f10fb24763ab4cea23d586d0bb83');
 assert.equal(head,'7228aaa83b0995e1dc6e36955cfd6e773c199f07');
@@ -85,8 +85,9 @@ export function beforeCloseoutJoustCiFixture(path,source){
 // These are reads of the original frozen Closeout hashes. Verify the live
 // Joust projection's linked production cohort before reconstructing old bytes.
 export function readCloseoutCurrentBackflowReceipt(path,digest,read){
- // This receipt follows the history and catalogue tooling changes only.
- if(path===tooling.path&&digest===tooling.beforeSha256)return readCloseoutFixture(path,tooling,read).prior;
+ // Test and tooling inputs have their own Git histories and complete byte proofs.
+ const independent=path===tooling.path?tooling:Object.hasOwn(independentFiles,path)?independentFiles[path]:null;
+ if(independent&&digest===independent.beforeSha256)return readCloseoutFixture(path,independent,read).prior;
  if(!Object.hasOwn(files,path)||files[path].beforeSha256!==digest)return;
  const row=files[path];
  const {source,prior}=readCloseoutFixture(path,row,read);
