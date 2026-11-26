@@ -7,6 +7,7 @@ export * from './epochs/develop/tests/helpers/m7-core-final-source-inverse.mjs';
 import { preM7FinalSource as original } from './epochs/develop/tests/helpers/m7-core-final-source-inverse.mjs';
 import {sourceEpoch} from './combined-epoch/source-epoch.mjs';
 import {readFileSync} from 'node:fs';
+import {currentRewardReplay} from './reward-current-source.mjs';
 import assert from 'node:assert/strict';
 import {beforeCombatEvents,isCurrentInputRetirementSource} from './input-retirement-source.mjs';
 import {beforeUiEntrance} from './ui-entrance-source.mjs';
@@ -47,6 +48,9 @@ export function currentDefectActorReader(raw){
 }
 export function preM7FinalSource(path,source,{readSource=live}={}){
  readSource=readers.get(readSource)??readSource;
+ const replay=currentRewardReplay(path,source,readSource);
+ source=replay.source;
+ readSource=replay.read;
  const input=source;
  // Authenticate the post-Actor combat backflow against real disk owners before
  // passing an older source to the independently frozen Actor verifier.

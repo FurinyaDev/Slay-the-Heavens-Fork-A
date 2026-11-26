@@ -769,6 +769,9 @@ const calibrationReplayPaths=Object.freeze([
  'tests/watcher-actor-boundary.test.mjs',
  'tests/sts-style-source-epoch.test.mjs',
  'tests/integrated-ci-source.cases.mjs',
+ 'tests/helpers/reward-query-boundary-source-inverse.mjs',
+ 'tests/helpers/m7-core-final-source-inverse.mjs',
+ 'tests/helpers/relic-query-source-inverse.mjs',
 ]);
 let calibrationReplayPredecessor;
 function beforeCalibrationReplayOwner(path,source){
@@ -776,7 +779,7 @@ function beforeCalibrationReplayOwner(path,source){
  if(!calibrationReplayPredecessor){
   calibrationReplayPredecessor=releaseUiRestoreArchive(
    readFileSync(new URL('./calibration-v220-replay-owners.json.gz',import.meta.url)),
-   '6d7da50c5b4954af8a7b6061805a90d86069e404d77f2ed21f2c8b1eabbca2d5','8b4172d59779ad9fa21b4ba91ef750ab22fcdaf1');
+   '72bb3d5b6959847b874d358457eb7f27492883b202b5e06f140b6db08b1d3ca2','8b4172d59779ad9fa21b4ba91ef750ab22fcdaf1');
   assert.deepEqual(Object.keys(calibrationReplayPredecessor.files),calibrationReplayPaths,'ordered v2.2 calibration replay owners');
  }
  return calibrationReplayPredecessor.project(path,source);
