@@ -31,7 +31,7 @@ const retiredInputLuaTests=[
 function assertInputRetirementLuaSources(read,requireLive=false){
  let liveEpoch;
  for(const [path,[sha,id]] of Object.entries(inputRetirementLuaTests)){
-  const source=read(path,'utf8');
+  const source=beforeKnownMasterBackflowSource(path,read(path,'utf8'));
   const message='fresh Lua input retirement inventory source: '+path;
   assert(typeof source==='string'&&!source.includes('\r\r\n'),message);
   const lf=normalize(source),digest=hash(lf),gitBlob=blob(lf);
