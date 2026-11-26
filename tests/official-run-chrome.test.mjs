@@ -300,7 +300,12 @@ test('run headers paint above opaque page backgrounds and below their live resou
 test('official shop has an explicit reachable map shortcut outside its decorative header',()=>{
  const {layout,theme}=officialLayout(),node=child(layout,'nodePanel'),route=child(node,'runRoute');
  assert(route,'shop must expose the same direct map action as combat');
- assert.equal(child(route,'label').text.content,'地图');
+ const battleRoute=child(child(child(layout,'battlePanel'),'topBar'),'battleRoute');
+ const icon=child(battleRoute,'icon');
+ assert.equal(icon.kind,'image');
+ assert.equal(icon.image,theme.icon.map);
+ assert.deepEqual(child(route,'icon'),icon);
+ assert(![route,battleRoute].some(shortcut=>shortcut.children.some(part=>part.kind==='text')));
  assert.deepEqual(route.position,theme.officialAssets.battleHud.route.slice(0,2));
  assert(child(route,'hit').size.every(value=>value>=44),'direct map needs a touch target');
  assert(node.children.indexOf(route)>node.children.indexOf(child(node,'officialRunBar')));
