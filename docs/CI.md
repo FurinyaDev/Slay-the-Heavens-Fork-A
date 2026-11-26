@@ -141,6 +141,16 @@ gh api --method PUT repos/FurinyaWorks/Slay-the-Heavens/pulls/<PR>/merge --input
 
 历史隔离实测和 API 证据见 [TASK-70](backlog-details/task-70.md)。
 
+## 生产历史回流与祖先门禁
+
+每次 Release 或 Hotfix 合入 `master` 后，从最新 `develop` 创建短分支，以实际生产 SHA 为第二父提交做 `git merge --no-ff`。回流 PR 保存源发布 PR、固定 HEAD/BASE/合并树、差异处置、独立 Review 和该组合的 Hosted Full 证据。已通过零散回流的变更也按实际行为核对。
+
+当前常规队列使用 squash。生产历史回流经 Owner 授权走仓库管理员的 PR-only 合并，使用 `merge_method: merge`，并固定已审查的精确 HEAD。合并前重读 `master`、`develop` 与 PR，查明独审、Required Checks 和 Hosted Full 的实际状态。生产历史回流须取得完整证据。父提交或候选树改变时以新组合重验。合入后读回双父与树，执行发布结项检查。
+
+[Release backflow](../.github/workflows/release-backflow.yml) 在 develop PR/队列检查候选包含当前生产提交。受保护分支的推送和默认分支的定期检查核对真实远端分支，发现待回流时失败。维护者在默认分支手动提交本次 `master_sha`。同一次运行的 `release-closeout` 验证合后精确 develop 推送的全部 Full 阶段、原始 checkout 回执和 Licenses，之后再次读取两条远端分支。结项记录引用这两项检查。历史失败保留供追溯。
+
+工作流入库并确认检查来源后，在 develop Ruleset 25870651 将 `release-backflow` 加到现有 Required Checks，来源为 GitHub Actions（integration 15368）。读回规则与一次真实合成提交上的检查结果，确认保护生效。现有队列的其余规则和 Required Checks 保留。
+
 ## 已审阅 PNG 的按需 LFS 读取
 
 `ci-reviewed-lfs.mjs` 只允许 `art/cards/traveler-geo/` 中已审阅的六个精确 PNG 路径、OID 与字节数，冻结对象 payload 合计上限为 **5,983,528 字节**。本次Cleave及身份修正版Heavy共新增4对象、4,202,803字节；Armaments既有2对象保留，旧Heavy两对象仅在历史保留、不重复上传。拉取前校验 index 指针，缓存命中也不能绕过；拉取后必须验证真实 PNG 签名、完整 SHA-256 和字节数，原资产与 license 验证继续执行。指针文本不能充当已验证图片。

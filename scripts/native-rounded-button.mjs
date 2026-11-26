@@ -1,3 +1,4 @@
+import {isDeepStrictEqual} from 'node:util';
 import {nativeRoundedMaterial} from './official-battle-card-chrome.mjs';
 
 const child=(node,name)=>node.children.find(part=>part.name===name);
@@ -73,4 +74,34 @@ export function roundedFramedButton(button,theme,{stretch=false}={}){
  for(const part of button.children)if(legacyFaces.includes(part.name))part.visible=false;
  const material=theme.officialAssets.actionButton;
  button.children.unshift(roundedButtonMaterial('roundedButton',button.size,material.secondary.normal,{stretch,material,images:theme.image}));
+}
+
+// Lua-driven faces can reuse one material when every state is exactly the
+// normal tree with uniform layer colours. Preserve the explicit state trees
+// if a future theme changes any property beyond the layer colours and its separately published scale.
+export function projectRoundedStates(states,materialName){
+ const normal=states.find(state=>state.name==='normal');
+ if(!normal||states.length!==4||new Set(states.map(state=>state.name)).size!==4||
+  !['normal','hover','pressed','disabled'].every(name=>states.some(state=>state.name===name)))return null;
+ const palette={},scales={};
+ for(const state of states){
+  const expected={...structuredClone(normal),name:state.name,visible:state.visible,scale:state.scale};
+  if(!Array.isArray(state.scale)||state.scale.length!==2||state.scale.some(value=>!Number.isFinite(value)))return null;
+  scales[state.name]=[...state.scale];
+  const material=child(state,materialName),target=child(expected,materialName);
+  if(!material||!target)return null;
+  palette[state.name]=[];
+  for(const name of ['rim','cloth']){
+   const layer=child(material,name),reference=child(target,name);
+   const colour=layer?.children?.[0]?.colour;
+   if(!Array.isArray(reference?.children)||typeof colour!=='string'||!/^#[0-9a-f]{6}$/i.test(colour)||
+    layer.children.some(part=>part.kind!=='image'||part.colour!==colour))return null;
+   for(const part of reference.children)part.colour=colour;
+   palette[state.name].push(colour);
+  }
+  if(!isDeepStrictEqual(state,expected))return null;
+ }
+ const face=structuredClone(normal);
+ face.name='roundedButtonState';
+ return {face,palette,scales};
 }

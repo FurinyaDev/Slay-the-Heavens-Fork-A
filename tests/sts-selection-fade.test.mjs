@@ -168,6 +168,52 @@ print('FULL_DEPARTURE_COVER_PASS')`;
  assert.equal(r.status,0,r.stdout+r.stderr);assert.match(r.stdout,/FULL_DEPARTURE_COVER_PASS/);
 });
 
+test('a reverting local intent cannot end a room fade or skip input publication',()=>{
+ const body=`package.path='src/lua/?.lua;'..package.path
+local Gate=require('abyss_page_reveal')
+local veil={SetAnchoredPosition=function()end,SetSizeDelta=function()end}
+local blocker={SetAnchoredPosition=function()end,SetSizeDelta=function()end}
+local cover={GetChild=function(_,n)if n=='veil'then return veil elseif n=='blocker'then return blocker end end,SetVisible=function()end,SetAsLastSibling=function()end}
+local frames={full={0,0,1280,720},nodePanel={0,0,1240,680}}
+local enabled=0
+local gate=Gate.new(cover,function()return true end,nil,frames,{duration=.2,color=function(r,g,b,a)return {a=a}end,
+ entryTrace=function(phase)if phase=='input_enabled'then enabled=enabled+1 end end})
+local a={page='mapPanel',mode='map',phase='map',run={},act=1}
+local b={page='nodePanel',mode='node',phase='node',run=a.run,act=1,nodeId='room',nodeType='camp',nodePage=1}
+gate:begin(a);gate:step(a,0);gate:step(a,0)
+assert(gate:depart(function()return gate:begin(b)end,nil,{id=1}))
+gate:step(a,.2);gate:step(a,0);gate:step(b,0);gate:step(b,0);gate:step(b,.1)
+assert(gate.state=='fadingIn' and veil.imageColor.a>0 and veil.imageColor.a<255)
+local c={};for k,v in pairs(b)do c[k]=v end;c.nodePage=2
+assert(gate:request(c));assert(gate:begin(b))
+assert(not gate:finish(b) and gate:covered() and gate.entry and enabled==0)
+gate:step(b,0);gate:step(b,0);gate:step(b,.2)
+assert(not gate:covered() and not gate.entry and enabled==1)
+print('SCENE_REENTRY_PASS')`;
+ const result=spawnSync(process.execPath,[require.resolve('fengari-node-cli/src/lua-cli.js'),'-e',body],{encoding:'utf8'});
+ assert.equal(result.status,0,result.stdout+result.stderr);
+ assert.match(result.stdout,/SCENE_REENTRY_PASS/);
+});
+
+test('Release UI closeout projection rejects drift and stale owner rereads',async()=>{
+ const {readFileSync}=await import('node:fs');
+ const {beforeReleaseUiCloseoutSource}=await import('./helpers/release-ui-closeout-source.mjs');
+ const path='src/lua/abyss_page_reveal.lua';
+ // The inverse authenticates the exact #839 owner. #864 changed the live
+ // owner, while the historical predecessor and its rejection rules stayed fixed.
+ const source=readFileSync(new URL('./fixtures/page-reveal-pr839.lua',import.meta.url),'utf8');
+ const read=file=>{assert.equal(file,path);return source;};
+ const previous=beforeReleaseUiCloseoutSource(path,source,read);
+ assert.notEqual(previous,source);
+ assert.throws(()=>beforeReleaseUiCloseoutSource(path,source,()=>previous),/Release UI closeout owner identity/);
+ assert.equal(beforeReleaseUiCloseoutSource(path,source+'\n',()=>assert.fail('unknown bytes authorized a read')),source+'\n');
+ const crlf=text=>text.replaceAll('\n','\r\n');
+ assert.equal(beforeReleaseUiCloseoutSource(path,crlf(source),file=>crlf(read(file))),crlf(previous));
+ const live=readFileSync(path,'utf8');
+ if(live!==source)assert.equal(beforeReleaseUiCloseoutSource(path,live,()=>assert.fail('live owner authorized a historical read')),live);
+});
+
+
 test('a failed departure cannot reject a newer page requested by its callback',()=>{
  const body=`package.path='src/lua/?.lua;'..package.path
 local Gate=require('abyss_page_reveal')

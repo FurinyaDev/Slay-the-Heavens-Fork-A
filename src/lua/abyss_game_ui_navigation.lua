@@ -52,7 +52,7 @@ function M.requestNodeEntry(self,platform,changed)
         end
         self.nodeEntry=request
         trace('input_received',request,request.nodeId)
-        local called,accepted=pcall(gate.depart,gate,commit,cancel,true,request.id)
+        local called,accepted=pcall(gate.depart,gate,commit,cancel,true,request.id,self.fastMode and .001 or nil)
         if not called or not accepted then
             cancel()
             local departure=gate.departure
@@ -78,9 +78,26 @@ function M.minimalRunMenu(self)
     return Theme.presentationProfile=='official-assets-first' and M.hasRun(self)
         and not self.sessionPaused and not self.characterOpen
 end
+function M.routeAllowsMenu(self)
+    return not self.routeOpen or Theme.presentationProfile=='official-assets-first'
+end
+function M.canOpenMenu(self)
+    if not M.routeAllowsMenu(self) then return false end
+    if self.deckUI.visible or self.potionUI.visible or self.choiceUI and self.choiceUI.visible then return false end
+    if self.prologue and self.prologue:covering() then return false end
+    return not (self.disabled or self.easterEggOpen or self.exitOpen and not self.routeOpen
+        or self.menuOpen or self.settlementRequested or self.settlementBusy)
+end
+
+local function sessionUnavailable(self)
+    return self.disabled or self.characterOpen or self.settlementRequested or self.settlementBusy or self.easterEggOpen
+end
 local function blocked(self)
-    return self.disabled or self.characterOpen or self.routeOpen
-        or self.settlementRequested or self.settlementBusy or self.easterEggOpen
+    return self.routeOpen or sessionUnavailable(self)
+end
+function M.canReturnToMainMenu(self)
+    return self.exitOpen and self.menuOpen and not sessionUnavailable(self)
+        and not self.sessionPaused and M.hasRun(self)
 end
 local function dismiss(self,owner)
     self.exitOpen,self.menuOpen,self.exitError,self.navigationAction=false,false,nil,nil
@@ -89,9 +106,9 @@ local function dismiss(self,owner)
 end
 function M.install(self,owner,neowHistory)
     self.returnToMainMenu=function(_)
-        if blocked(self) or not M.hasRun(self) or self.sessionPaused or not self.menuOpen then return false end
+        if not M.canReturnToMainMenu(self) then return false end
         -- Keep battle presentation, node result, reward/choice tokens and RNG in place.
-        self.sessionPaused=true
+        self.routeOpen,self.sessionPaused=false,true
         dismiss(self,owner);self:refresh();return true
     end
     self.continueRun=function(_)

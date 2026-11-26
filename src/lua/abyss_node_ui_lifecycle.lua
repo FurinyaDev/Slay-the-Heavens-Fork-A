@@ -31,6 +31,7 @@ function M.install(ctx)
         ctx.resetButtons()
         ctx.shopSelection:clear()
         ctx.roomMotion:cancel()
+        ctx.cancelShop(false)
         self.canvasWidth, self.canvasHeight = width, height
         ctx.cancelShop(false)
         if self.pendingOwner then self:render();return end
@@ -42,6 +43,7 @@ function M.install(ctx)
         -- Resource/skin work may run behind the publication cover. Match clocks,
         -- input holds and room/merchant timelines start only after publication.
         ctx.campUI:update()
+        ctx.prepareShop()
         for box in pairs(ctx.skinFaces)do CardSkin.tick(box,dt)end
     end
 
@@ -139,7 +141,7 @@ function M.install(ctx)
     end
 
     local function usesRoomSnapshot(self, flow)
-        return flow and self.run.phase ~= 'ending_proceed'
+        return ctx.hostRendersEvent(flow) or flow and self.run.phase ~= 'ending_proceed'
             and (flow.type == 'shop' or ctx.options.enhancedRooms and flow.type == 'camp')
     end
 
@@ -167,6 +169,19 @@ function M.install(ctx)
             ctx.shopNotification=nil
         end
         return ok, reason
+    end
+
+    local function publishCommit(node, command, before, accepted, reason)
+        -- The game host paints events inside its presentation frame or switches
+        -- directly to the destination when the event completes.
+        if not ctx.hostRendersEvent(node) and not (accepted and ctx.hostLeavesForMap()) then
+            ctx.self:render()
+            if accepted then ctx.roomMotion:start(command,before) end
+            ctx.self.failed = false
+        end
+        local ok, detail = ctx.notify(accepted, reason)
+        ctx.self.failed = false
+        return ok, detail
     end
 
     ctx.commit = function(command, argument, describe, choice)
@@ -232,10 +247,7 @@ function M.install(ctx)
         else
             ctx.self.notice, ctx.self.failed = reasons[reason] or "操作未完成，请重新选择", true
         end
-        ctx.self:render()
-        if accepted then ctx.roomMotion:start(command,before) end
-        ctx.self.failed = false
-        return ctx.notify(accepted, reason)
+        return publishCommit(node, command, before, accepted, reason)
     end
 
     function ctx.self:press(key)
@@ -246,7 +258,7 @@ function M.install(ctx)
             if entry and entry.retire then entry.retire() end
             return false, view
         end
-        local entry = self.actions[key]
+        local entry = self.actions[key] or ctx.campUI:action(key)
         if not entry then return false, "unavailable_action" end
         if not entry.enabled then
             if entry.poor then ctx.merchant:react("poor") end

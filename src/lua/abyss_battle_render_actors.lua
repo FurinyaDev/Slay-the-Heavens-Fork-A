@@ -104,6 +104,14 @@ local function renderIntentBadge(box,face,x,y,size,allowed,alpha,binding,picture
     tint(badge,intentTone(alpha,'buff'))
 end
 -- Explicit ports preserve the approved implementation without a shared constructor closure.
+local function paintEnemyHealthTarget(box,enemy,geometry)
+    local hpHit = box:GetChild('hpHit')
+    if hpHit then
+        hpHit:SetAnchoredPosition(geometry.healthX, geometry.healthY)
+        hpHit:SetSizeDelta(geometry.hitWidth + S.border * 2, geometry.healthHeight + S.border * 2)
+        hpHit:SetVisible(Actors.isPresent(enemy))
+    end
+end
 function M.install(owner, ownership, host, dependencies)
     -- A new view binding starts fresh; weak native keys cannot retain retired actors.
     local intentGeometryOwner={}
@@ -145,14 +153,16 @@ function M.install(owner, ownership, host, dependencies)
         return targetable == true or potionHighlighted(enemy,index,pendingTarget) or owner.acting == enemy.id
     end
     local function enemyIntentFace(frame,enemy,index)
-        local face
+        local view, face = host.monsterIntentParticles
         if IntentView.hasSourceIntent(enemy)then
-            local view=host.monsterIntentParticles
             local selected=view:needsSelected(enemy.id) and IntentView.selectedDescriptor(frame.battle,index) or nil
             face=view:face(enemy.id,selected,function(base)
                 return Combat.intentAttackAmount(frame.battle,enemy,frame.battle.player,base)
             end)
-        else face=intentView(frame.battle,index)end
+        else
+            face=intentView(frame.battle,index)
+            view:rememberPreview(enemy.id,face)
+        end
         -- Dome changes visibility, never the source selected/displayed state.
         if require('abyss_boss_relics').hidesIntents(owner.run)then face.hidden=true;face.value=''end
         return face
@@ -240,6 +250,7 @@ function M.install(owner, ownership, host, dependencies)
         local geometry=EnemyView.geometry(enemy)
         host.unit(box, enemy, portrait, enemyPortraitIcon(enemy), width, selected,step,geometry)
         host.monsterPowers:render(box,entry.controlSlot,enemy,geometry)
+        paintEnemyHealthTarget(box,enemy,geometry)
         box:GetChild('hit'):SetSizeDelta(geometry.hitWidth,geometry.hitHeight)
         box:GetChild('hit'):SetAnchoredPosition(geometry.hitX-x,geometry.hitY-y)
         local dim = (aim.pendingTarget or owner.potionAim ~= nil) and not selected
@@ -306,6 +317,8 @@ function M.install(owner, ownership, host, dependencies)
     end
     local function hideEscapingHud(box,id)
         if not owner.feedback.escaping[id] then return end
+        local hp=box:GetChild('hpHit')
+        if hp then hp:SetVisible(false) end
         for _,name in ipairs({'hpBorder','hpTrack','hpGhost','hpFill','hp','blockEdge','blockIcon','block','name','statusRow','intentIcon','intentBadge','intentExtra','intent','intentHit'})do
             local control=box:GetChild(name)
             intentVisibilities[control]=nil

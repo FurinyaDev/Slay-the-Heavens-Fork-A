@@ -5,9 +5,10 @@ status: In Progress
 assignee:
   - '@Furinya'
 created_date: '2026-11-25 21:00'
-updated_date: '2026-11-25 21:28'
+updated_date: '2026-11-26 02:39'
 labels:
   - v2.2.0
+  - p0
 milestone: m-8
 dependencies: []
 references:
@@ -41,6 +42,8 @@ ordinal: 211000
 <!-- AC:BEGIN -->
 - [ ] #1 覆盖已确认根因及有效负对照，轻量持续检查和冻结候选完整门禁可重复执行
 - [ ] #2 在明确的正式配置接续样本验证同工作负载、六档实限和极端档退化恢复，独立评审核对可执行门禁、基线和证据字段；最终候选完整验收归 TASK-115.13
+- [ ] #3 实际 master 生产提交以双父 Merge Commit 回流 develop，经独立 Review 与 Hosted Full 核验；远端 master 是 develop 祖先，线上热路径和现行开发功能均有定向回归。
+- [ ] #4 Release 和 Hotfix 的祖先检查在分叉时失败、正确回流后通过；合后精确 Full 和 Licenses 共同验证结项。
 <!-- AC:END -->
 
 ## Implementation Notes
@@ -49,4 +52,6 @@ ordinal: 211000
 已派发永久门禁开发。真实 Docker、cgroup v2 可用。0.5 CPU、1 GiB、无 swap 的实际配置已读回，正式配对和门禁集成待验。
 
 正式配置同一 1 CPU/2 GiB 环境三对样本中，选角打开 P50 约 201→4285 ms，地图进入约 609→1996 ms。原始配对报告 SHA-256 80115294e539d04e5b07fc385a3c8c97350d954cb4b093c507adceb06dbe8928。离线结果已锁定，候选继续保持待验。
+
+v2.2.0 P0 回流从 develop 05c9dfe3 与 master d96c9f0d 开始。合前完整 CI、独立 Review、合后祖先关系和结项门禁逐项核证。正式六档验收继续使用线上 v2.1.1 有声 GIL，最终候选验收归 TASK-115.13。
 <!-- SECTION:NOTES:END -->

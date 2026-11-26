@@ -135,7 +135,6 @@ export function integratedHistoricalInput(path,source){
  return linkedProductionOwner(path)?source:beforeIntegrationEvidence(path,source);
 }
 export function integratedSource(path,source,target){
- source=beforePreflightSource(path,source);
  assert(Object.hasOwn(integratedCiProof.sources,target),'known integration input');
  if(linkedProductionOwner(path))return source;
  const row=Object.hasOwn(integratedCiProof.files,path)?integratedCiProof.files[path]:null;

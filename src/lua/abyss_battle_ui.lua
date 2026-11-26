@@ -120,7 +120,7 @@ function M.new(root, data, presentation, clickEvent, platform, options)
     })))
     install(services, require("abyss_battle_target_bindings").install(self, ownership, host, ports(links, {
         "child", "enemyAt", "swallowed", "discardEnemyPointer",
-        "enemyReady", "down", "cancelPotionAim", "sameEnemySlot", "consumeReleasedDragClick"
+        "enemyReady", "down", "closeInfo", "cancelPotionAim", "sameEnemySlot", "consumeReleasedDragClick"
     })))
     install(services, require("abyss_battle_detail_bindings").install(self, ownership, host, ports(links, {
         "enemyAt", "listen", "child", "closeInfo",
@@ -193,6 +193,7 @@ function M.new(root, data, presentation, clickEvent, platform, options)
     host.lines = InfoContent.lines
     host.infoContent = InfoContent.new(self, {
         statusDetail = statusDetail, statusKind = statusKind, intentView = intentView, potionText = potionText,
+        displayedIntent=function(battle,id)return host.monsterIntentParticles:tooltip(battle,id)end,
         temporaryOps = temporaryOps, stanceNames = stanceNames, orbNames = orbNames,
         kindNames = kindNames, intentColors = intentColors,
     })

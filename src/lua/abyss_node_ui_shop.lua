@@ -63,7 +63,7 @@ function M.install(ctx)
         return panel:GetChild(name) or goods and goods:GetChild(name)
     end
     function ctx.shopGoodsVisible()
-        return ctx.self.shopOpen and elapsed ~= 0 and ctx.self.mode == 'main'
+        return ctx.self.shopOpen and elapsed ~= 0 and ctx.self.mode == 'main' and ctx.shopVisualsReady()
     end
     local function height()
         local w, h = ctx.self.canvasWidth or 1280, ctx.self.canvasHeight or 720
@@ -189,7 +189,7 @@ function M.install(ctx)
         local farewell = ctx.self:holding() and ctx.self.result.view == 'farewell'
         ctx.showShopRoom(active or farewell, main and not ctx.self.shopOpen)
         visible(panel, main and ctx.self.shopOpen == true)
-        if ctx.self.shopOpen then setProductsVisible(elapsed ~= 0) end
+        if ctx.self.shopOpen then setProductsVisible(ctx.shopGoodsVisible()) end
         paintShade()
     end
 
@@ -197,7 +197,7 @@ function M.install(ctx)
         return Motion.approach(height(), 0, 5, .5 * Motion.scale, time)
     end
     local function advanceRug(dt)
-        if not elapsed then return end
+        if not elapsed or not ctx.shopVisualsReady() then return end
         local first = elapsed == 0
         elapsed = elapsed + dt
         local nextRug, previous = sample(elapsed), sample(math.max(0, elapsed - Motion.step))
@@ -238,7 +238,8 @@ function M.install(ctx)
     ctx.self.merchant = ctx.merchant
 
     ctx.shopSelection = ShopSelection.new(ctx.self, ctx.child('shopView'), ctx.options)
-    ctx.renderShop, ctx.shopQuoteCurrent, ctx.invalidateShopVisuals = ShopUI.new(ctx.self, {
+    ctx.renderShop,ctx.shopQuoteCurrent,ctx.invalidateShopVisuals,ctx.prepareShop,ctx.shopVisualsReady=ShopUI.new(ctx.self,{
+        deferHiddenProducts=ctx.options.deferHiddenShopProducts,
         selection = ctx.shopSelection,
         child = ctx.child, product = ctx.shopControl, reuseCard = ctx.reuseShopFace, show = ctx.show, state = ctx.state, ink = ctx.ink, picture = ctx.picture,relicPicture=ctx.relicPicture,
         fillCard = ctx.fillCard, cardName = ctx.cardName, relicName = ctx.relicName, relicText = ctx.relicText,

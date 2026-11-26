@@ -65,7 +65,7 @@ test('chapter-local map geometry, real same-table transitions and stale gestures
      "assert(box('next'):GetChild('hit').click());ui:update(.04)",1],
     ["assert(not box(1).visible and not pcall(box,'next') and not pcall(box,'previous'))",
      "assert(not box(1).visible and not box('next'):GetChild('hit').visible\n            and not box('previous'):GetChild('hit').visible)",3],
-    ["local scrollOk,scrollReason=ui:scrollBy(100);assert(not scrollOk and scrollReason=='invalid_map_context')",
+    ["local scrollOk,scrollReason=ui:scrollBy(100);assert(not scrollOk and scrollReason=='invalid_map_context')\n    assert(not ui:focusCurrent(true))",
      "assert(not box('next'):GetChild('hit').click())",1],
   ];
   for(const [current,prior,count] of deferredMapChanges){

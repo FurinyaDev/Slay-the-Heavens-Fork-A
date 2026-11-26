@@ -165,10 +165,12 @@ test('both official build orders retain exact choice and picker semantics and ev
  for(const themeFirst of [false,true]){
   const theme=officialAssetsTheme(nativeTheme),layout=gameLayout(themeFirst?theme:nativeTheme),template=deckCardTemplate();
   const picker=child(child(layout,'nodePanel'),'pickerView'),choice=child(layout,'choicePanel');
-  const retained=[...['card1','card2','card3'].map(n=>child(picker,n)),...['card1','card2'].map(n=>child(choice,n))];
+  const retained=['card1','card2','card3'].map(n=>child(picker,n));
   const hits=retained.map(n=>child(n,'hit'));
   const result=applyOfficialAssets([layout,template],theme);
-  assert.deepEqual(children(choice).filter(n=>/^card\d+$/.test(n.name)).map(n=>n.name),['card1','card2']);
+  assert.deepEqual(children(choice).filter(n=>/^card\d+$/.test(n.name)),[]);
+  assert.equal(child(choice,'cards').itemTemplate,template.name);
+  assert.ok(child(choice,'option1')&&child(choice,'option2'),'potion controls remain separate from card cells');
   assert.deepEqual(children(picker).filter(n=>/^card\d+$/.test(n.name)).map(n=>n.name),['card1','card2','card3','card4','card5','card6']);
   for(let i=1;i<=3;i++)assert(child(child(picker,'card'+i),'stsReferenceChrome'),'visible picker retains a full card face');
   for(let i=4;i<=6;i++){

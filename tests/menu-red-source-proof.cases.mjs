@@ -6,6 +6,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {createHash} from 'node:crypto';
 import {sourceEpoch,menuRedPriorEpoch} from './helpers/closeout-source-epoch.mjs';
+import {readReviewedSelectionSource} from './helpers/replay-reviewed-selection.mjs';
 import {extendMenuRedSourceEpoch,extendMenuPresentationEpoch,menuPresentationPatch,menuRedProductionPatch as patch} from './helpers/menu-red-source-epoch.mjs';
 import {assertMenuRedCiCurrent,preMenuRedCiSource,menuRedCiProof,renderMenuRedCiBinding} from './helpers/menu-red-ci-source.mjs';
 const raw=p=>readFileSync(p,'utf8').replaceAll('\r\n','\n'),hash=s=>createHash('sha256').update(s).digest('hex');

@@ -1,0 +1,95 @@
+{
+  "image": "node:24.19.0-bookworm-slim@sha256:a9f5f7c91a432850b2a8a7797adf5eadb6c733ceed61167806cee7ea7fbc29df",
+  "scope": "effective cgroup preflight; no performance workload",
+  "profiles": {
+    "baseline": {
+      "requested_flags": [],
+      "returncode": 0,
+      "effective": {
+        "cpu.max": "400000 100000",
+        "memory.max": "17179869184",
+        "memory.swap.max": "max"
+      },
+      "stderr": ""
+    },
+    "cpu-only": {
+      "requested_flags": [
+        "--cpus",
+        "0.5"
+      ],
+      "returncode": 0,
+      "effective": {
+        "cpu.max": "400000 100000",
+        "memory.max": "17179869184",
+        "memory.swap.max": "max"
+      },
+      "stderr": ""
+    },
+    "memory-only": {
+      "requested_flags": [
+        "--memory",
+        "1g",
+        "--memory-swap",
+        "1g"
+      ],
+      "returncode": 0,
+      "effective": {
+        "cpu.max": "400000 100000",
+        "memory.max": "17179869184",
+        "memory.swap.max": "max"
+      },
+      "stderr": ""
+    },
+    "light": {
+      "requested_flags": [
+        "--cpus",
+        "2",
+        "--memory",
+        "4g",
+        "--memory-swap",
+        "4g"
+      ],
+      "returncode": 0,
+      "effective": {
+        "cpu.max": "400000 100000",
+        "memory.max": "17179869184",
+        "memory.swap.max": "max"
+      },
+      "stderr": ""
+    },
+    "medium": {
+      "requested_flags": [
+        "--cpus",
+        "1",
+        "--memory",
+        "2g",
+        "--memory-swap",
+        "2g"
+      ],
+      "returncode": 0,
+      "effective": {
+        "cpu.max": "400000 100000",
+        "memory.max": "17179869184",
+        "memory.swap.max": "max"
+      },
+      "stderr": ""
+    },
+    "stress": {
+      "requested_flags": [
+        "--cpus",
+        "0.5",
+        "--memory",
+        "1g",
+        "--memory-swap",
+        "1g"
+      ],
+      "returncode": 0,
+      "effective": {
+        "cpu.max": "400000 100000",
+        "memory.max": "17179869184",
+        "memory.swap.max": "max"
+      },
+      "stderr": ""
+    }
+  }
+}

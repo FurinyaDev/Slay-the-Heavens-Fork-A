@@ -1,0 +1,44 @@
+{
+  "ok": false,
+  "candidateSha256": "015e8d77bec8bf9cae6c6997cb6e92be8820404d7587c9b262ca2d394d937a0a",
+  "unchanged": true,
+  "issues": [
+    {
+      "code": "UI_MISMATCH",
+      "detail": "Controls differ from same-source generated UI"
+    },
+    {
+      "code": "GRAPH_COUNT",
+      "detail": "Unexpected/missing server graph"
+    }
+  ],
+  "actualGraphs": [
+    {
+      "id": 1073741825,
+      "name": "_GSTS_CgStage",
+      "type": 20000,
+      "nodeCount": 14
+    },
+    {
+      "id": 1073741826,
+      "name": "_GSTS_ABYSS_SETTLEMENT",
+      "type": 20000,
+      "nodeCount": 22
+    },
+    {
+      "id": 1073741827,
+      "name": "_GSTS_ABYSS_BGM",
+      "type": 20000,
+      "nodeCount": 83
+    }
+  ],
+  "productionAuditUiEqual": false,
+  "diagnosticComparisonEqualAfterExcludingReportedFields": true,
+  "differingFields": [
+    "stage/menuPanel/start/label/text/outlineOpacity=1",
+    "stage/menuPanel/continueRun/label/text/outlineOpacity=1",
+    "stage/menuPanel/titleQuit/label/text/outlineOpacity=1"
+  ],
+  "inspectedModuleCount": 375,
+  "sourceEquivalentModules": 375
+}

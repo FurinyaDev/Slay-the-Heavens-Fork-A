@@ -1,0 +1,124 @@
+{
+  "baseline": {
+    "sourceCommit": "380ffdd8de10ffb8472a48725c438c3f77c0d3d4",
+    "sha256": "4f0d1d4687466d5e4a01189562ae5995ac0a01eeebc090455830b3cf77ded027"
+  },
+  "candidate": {
+    "sourceCommit": "82267834fa9202893cabe39c1ff21e141cf9f567",
+    "sha256": "9ff8245d758fcceab6fe9a3b13c4b235083a43cd58926a1e75c65dad16556465"
+  },
+  "records": [
+    {
+      "kind": "before",
+      "state": "normal",
+      "canvasId": "pc-16-9",
+      "bytes": 111200,
+      "sha256": "e80db7b8b45cf9bde167a6f4db5cb6f8476bd05ee4cda16677ba61a4bb34f394"
+    },
+    {
+      "kind": "before",
+      "state": "normal",
+      "canvasId": "mobile-16-9",
+      "bytes": 83684,
+      "sha256": "daa064017a10370cab6cccd502864aea7bd92437af2bcab50c28da92cf833433"
+    },
+    {
+      "kind": "after",
+      "state": "normal",
+      "canvasId": "pc-16-9",
+      "bytes": 111200,
+      "sha256": "e80db7b8b45cf9bde167a6f4db5cb6f8476bd05ee4cda16677ba61a4bb34f394"
+    },
+    {
+      "kind": "after",
+      "state": "normal",
+      "canvasId": "mobile-16-9",
+      "bytes": 83684,
+      "sha256": "daa064017a10370cab6cccd502864aea7bd92437af2bcab50c28da92cf833433"
+    },
+    {
+      "kind": "before",
+      "state": "hover",
+      "canvasId": "pc-16-9",
+      "bytes": 111064,
+      "sha256": "00a1199b561841232136785a756d12b699f0792865fe409f853eae496d5cb3cd"
+    },
+    {
+      "kind": "before",
+      "state": "hover",
+      "canvasId": "mobile-16-9",
+      "bytes": 83680,
+      "sha256": "b7ecbbb133339b05936675eef284015411f1e7f49ae4fefa5d5c7f4dade22c1a"
+    },
+    {
+      "kind": "after",
+      "state": "hover",
+      "canvasId": "pc-16-9",
+      "bytes": 111064,
+      "sha256": "00a1199b561841232136785a756d12b699f0792865fe409f853eae496d5cb3cd"
+    },
+    {
+      "kind": "after",
+      "state": "hover",
+      "canvasId": "mobile-16-9",
+      "bytes": 83680,
+      "sha256": "b7ecbbb133339b05936675eef284015411f1e7f49ae4fefa5d5c7f4dade22c1a"
+    },
+    {
+      "kind": "before",
+      "state": "pressed",
+      "canvasId": "pc-16-9",
+      "bytes": 111191,
+      "sha256": "8679300fe2ed4b1e99949c700dc0d17d03eb6a9f3a120d8d49c828d1cc5f5c85"
+    },
+    {
+      "kind": "before",
+      "state": "pressed",
+      "canvasId": "mobile-16-9",
+      "bytes": 83680,
+      "sha256": "168834cea119a4d96f8daddd613bade7a79fe2b8b7e4905900a37f5c4636cea6"
+    },
+    {
+      "kind": "after",
+      "state": "pressed",
+      "canvasId": "pc-16-9",
+      "bytes": 111191,
+      "sha256": "8679300fe2ed4b1e99949c700dc0d17d03eb6a9f3a120d8d49c828d1cc5f5c85"
+    },
+    {
+      "kind": "after",
+      "state": "pressed",
+      "canvasId": "mobile-16-9",
+      "bytes": 83680,
+      "sha256": "168834cea119a4d96f8daddd613bade7a79fe2b8b7e4905900a37f5c4636cea6"
+    },
+    {
+      "kind": "before",
+      "state": "disabled",
+      "canvasId": "pc-16-9",
+      "bytes": 111220,
+      "sha256": "b6dc4c860cd9018e214a0ef40ffb36fcc71bf0a94b09e58b243b3260d156004b"
+    },
+    {
+      "kind": "before",
+      "state": "disabled",
+      "canvasId": "mobile-16-9",
+      "bytes": 83705,
+      "sha256": "76e3ffd0a17d4dbafbe87ef2b8076c8bc39307f5b805c88862fa2823b6c03dae"
+    },
+    {
+      "kind": "after",
+      "state": "disabled",
+      "canvasId": "pc-16-9",
+      "bytes": 111220,
+      "sha256": "b6dc4c860cd9018e214a0ef40ffb36fcc71bf0a94b09e58b243b3260d156004b"
+    },
+    {
+      "kind": "after",
+      "state": "disabled",
+      "canvasId": "mobile-16-9",
+      "bytes": 83705,
+      "sha256": "76e3ffd0a17d4dbafbe87ef2b8076c8bc39307f5b805c88862fa2823b6c03dae"
+    }
+  ]
+}

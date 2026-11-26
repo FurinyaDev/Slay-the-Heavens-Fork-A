@@ -1,4 +1,4 @@
--- Host for the same-run map, node and battle controllers. Only commands change rules.
+-- Host for the same-run map, node and battle views. Only commands change rules.
 require("abyss_run")
 require("abyss_map")
 local Nodes = require("abyss_nodes")
@@ -42,50 +42,63 @@ end
 local function legacyPrologue(panel,platform,gate)
     return panel and platform.prologue==true and platform.color and not gate
 end
+local function installPageReveal(self,platform,owner,clickEvent,root)
+    if not platform.presentationReady then return end
+    local cover=assert(root:GetChild('pageReveal'),'missing shared page reveal cover')
+    local function ready(intent)
+        if intent.page=='choicePanel' and self.choiceUI then
+            local painted,reason,count=self.choiceUI:presentationReady()
+            if not painted then return false,reason,'choice:'..tostring(count) end
+        end
+        return platform.presentationReady(intent)
+    end
+    self.pageReveal=PageReveal.new(cover,ready,function()
+        owner.exitGeneration=owner.exitGeneration+1;owner.menuGeneration=owner.menuGeneration+1
+    end,{full={0,0,Theme.canvas.base[1],Theme.canvas.base[2]},
+        deckPanel=Theme.layout.deckView.viewport,deckBrowser=Theme.layout.deckView.pileViewport,deckPaged=browserFrame(),
+        nodePanel=Theme.layout.nativeNode.backdrop,battlePanel=Theme.layout.rewardPick.stage,
+        potionPanel={0,0,Theme.layout.modal.size[1],Theme.layout.modal.size[2]},
+        choicePanel=Theme.layout.combatChoice.viewport or Theme.layout.combatChoice.panel,
+        onMapReturn=function()
+            if self.mapUI.visible and not self.exitOpen and not self.settlementRequested then
+                self.mapUI:startReturnReveal()
+            end
+        end},revealMotion(platform,self.selectionMotion))
+    function self.pointerBlocked()
+        local gate=self.pageReveal
+        return gate:covered() and (not self.exitOpen or self.routeOpen)
+            and not (self.deckUI and self.deckUI.paged and not self.deckUI.cardDetail and not self.deckUI.detailPages
+                and gate.intent and gate.intent.deckPaged
+                and gate.localFrame and gate.state~='failed')
+    end
+    platform.pointerBlocked=self.pointerBlocked
+    cover.disableCursorEventPassthrough=true
+    cover:GetChild('blocker'):AddCursorEventListener(clickEvent,function()return true end)
+    local cancel=cover:GetChild('cancel'):GetChild('hit')
+    local function canRecover()return self.pageReveal.state=='failed' and (not self.exitOpen or self.routeOpen) end
+    function self.recoverPage(_)
+        if not canRecover()then return false end
+        if self.routeOpen then return self:closeExit() end
+        if self.deckUI.paged then return self:closeDeck() end
+        return self:openMenu()
+    end
+    local function recover()return self:recoverPage()end
+    cancel:AddCursorEventListener(clickEvent,recover)
+end
 function M.new(root, data, presentation, clickEvent, platform)
-    -- A seed is an explicit replay/test override. Normal runs sample at Start,
-    -- never while constructing the title screen or refreshing the UI.
     local self = { root = root, data = data, seed = platform.seed, mode = "menu" }
     local owner = {exitGeneration=0, menuGeneration=0, ready=false}
-    -- Per-host callbacks must stay with their original control tree.
     platform=setmetatable({},{__index=platform})
     self.selectionMotion=CharacterView.motion(assert(root:GetChild('characterPanel'),'missing game panel characterPanel'),platform)
     local neowHistory=NeowHistory.new(platform.readNeowHistory)
     local endingHistory=EndingHistory.new({read=platform.readEndingHistory,write=platform.writeEndingHistory})
     -- Read-only Production data service; no navigation or eager catalogue build.
     self.productionCompendium = Overlays.productionCompendium(data,presentation)
-    if platform.presentationReady then
-        local cover=assert(root:GetChild('pageReveal'),'missing shared page reveal cover')
-        self.pageReveal=PageReveal.new(cover,platform.presentationReady,function()
-            owner.exitGeneration=owner.exitGeneration+1;owner.menuGeneration=owner.menuGeneration+1
-        end,{full={0,0,Theme.canvas.base[1],Theme.canvas.base[2]},
-            deckPanel=Theme.layout.deckView.viewport,deckBrowser=Theme.layout.deckView.pileViewport,deckPaged=browserFrame(),
-            nodePanel=Theme.layout.nativeNode.backdrop,battlePanel=Theme.layout.rewardPick.stage,
-            potionPanel={0,0,Theme.layout.modal.size[1],Theme.layout.modal.size[2]},
-            choicePanel=Theme.layout.combatChoice.panel},revealMotion(platform,self.selectionMotion))
-        function self.pointerBlocked()
-            local gate=self.pageReveal
-            return gate:covered() and (not self.exitOpen or self.routeOpen)
-                and not (self.deckUI and self.deckUI.paged and gate.intent and gate.intent.deckPaged
-                    and gate.localFrame and gate.state~='failed')
-        end
-        platform.pointerBlocked=self.pointerBlocked
-        cover.disableCursorEventPassthrough=true
-        cover:GetChild('blocker'):AddCursorEventListener(clickEvent,function()return true end)
-        local cancel=cover:GetChild('cancel'):GetChild('hit')
-        local function canRecover()return self.pageReveal.state=='failed' and (not self.exitOpen or self.routeOpen) end
-        function self.recoverPage(_)
-            if not canRecover()then return false end
-            if self.routeOpen then return self:closeExit() end
-            if self.deckUI.paged then return self:closeDeck() end
-            return self:openMenu()
-        end
-        local function recover()return self:recoverPage()end
-        cancel:AddCursorEventListener(clickEvent,recover)
-    end
+    installPageReveal(self,platform,owner,clickEvent,root)
     local newSeed = platform.newSeed or function() return require("abyss_new_run_seed").next() end
     local bgm = Bgm.new(platform.music)
     local function child(name) return assert(root:GetChild(name), "missing game panel " .. name) end
+    platform.mobileRunHud=require('abyss_mobile_run_hud').apply(child,platform)
     local menu = child("menuPanel")
     local exitPanel, exitEntry = child("exitPanel"), child("exitEntry")
     local runMenu = child("runMenu")
@@ -106,7 +119,8 @@ function M.new(root, data, presentation, clickEvent, platform)
             onPile=function(kind)return self:openDeck(kind)end,
             onCardFocus=function(read)return self:openDeck(nil,read)end })
     self.mapUI = MapUI.new(child("mapPanel"), nil, Navigation.requestNodeEntry(self,platform,changed),
-        clickEvent, { embedded = true, color = platform.color, imageSource = platform.imageSource,
+        clickEvent, { embedded = true, hudTop=platform.mobileRunHud and platform.mobileRunHud.contentTop,
+        color = platform.color, imageSource = platform.imageSource,
         cursor = platform.cursorEvents, pointerBlocked = platform.pointerBlocked,
         inputCovered=inputCovered,
         available=function(map)return Nodes.available(self.run,map)end,
@@ -119,9 +133,9 @@ function M.new(root, data, presentation, clickEvent, platform)
         presentation, clickEvent, changed, { color = platform.color, imageSource = platform.imageSource,
             imageTypes = platform.imageTypes,
             imageFillRight = platform.imageFillRight,
-            textAlignments = platform.textAlignments,
+            textAlignments = platform.textAlignments, mobileRunHud=platform.mobileRunHud,
             cursorEvents = platform.cursorEvents, sound = platform.sound, pointerBlocked = platform.pointerBlocked, touchScreen = platform.touchScreen,
-            enhancedRooms=true,inputCovered=inputCovered,
+            enhancedRooms=true, hostRendersEvents=true, hostRendersMap=true, deferHiddenShopProducts=platform.nativePageLifecycle==true, inputCovered=inputCovered,
             onInspectCard=function(definition,upgraded)
                 if not self.run or self.disabled or self.mode~='node' or self.exitOpen
                     or self.deckUI.visible or self.potionUI.visible or self.settlementRequested then return false end
@@ -139,6 +153,7 @@ function M.new(root, data, presentation, clickEvent, platform)
     local inCombat = Overlays.inCombat(self)
     local canManagePotions = Overlays.canManagePotions(inputCovered,self)
     local resourceHint = Overlays.resourceHint(self,canManagePotions)
+    View.bindHudInput(self,platform,owner)
     self.relicUI=require('abyss_relic_view_ui').new(child('relicPanel'),child('relicBar'),clickEvent,platform,
         function(run,id)return self.nodeUI:describeRelic(run,id)end,function()return self:closeDeck()end,
         function(i)return self:openRelics(i)end,function()return self.mode end)
@@ -180,8 +195,7 @@ function M.new(root, data, presentation, clickEvent, platform)
     local start,settlement=menuView.start,menuView.settlement
     local present = View.present(menuView)
     self.animate = View.animate(menuView)
-    local menuLoading,characterLoading,originalCharacterHint=false,false,nil
-    self.paintArtLoading = View.paintArtLoading(platform,menu,self,menuLoading,characterPanel,characterLoading,originalCharacterHint)
+    self.paintArtLoading = View.paintArtLoading(platform,menu,self,characterPanel)
 
     local finishRunFlow = View.finishRunFlow(neowHistory,endingHistory,self)
     local selectMode = View.selectMode(self)
@@ -197,7 +211,7 @@ function M.new(root, data, presentation, clickEvent, platform)
     local suspendBattle = View.suspendBattle(self,openingCovered)
     local refreshPageVisibility = View.refreshPageVisibility(menu,self,suspendBattle,child,refreshMapResources,platform.nativePageLifecycle==true)
     local renderBattlePage = View.renderBattlePage(self,child)
-    local updateBossEntrance = View.updateBossEntrance(self,child)
+    local updateBossEntrance=View.updateBossEntrance(self,child)
     local renderMapPage = View.renderMapPage(self)
     local renderCurrentPage = View.renderCurrentPage(self,renderBattlePage,renderMapPage,platform)
     local exitDialogOwnsForeground = View.exitDialogOwnsForeground(self)
@@ -210,7 +224,7 @@ function M.new(root, data, presentation, clickEvent, platform)
     local openingForeground = View.openingForeground(self,child,prologuePanel,runMenu,exitPanel)
     local syncOfficialBattleScene = View.syncOfficialBattleScene(root,self)
     self.refresh = View.refresh(self,finishRunFlow,syncOpening,selectMode,syncOfficialBattleScene,syncMenuContext,platform,syncCardChoice,closeStaleDeck,openCardChoice,canManagePotions,overlaysBlocked,syncRewardReturn,refreshUtilities,refreshPageVisibility,renderCurrentPage,bgm,present,refreshForeground,syncPortraits,openingForeground)
-    local selectionChanged = RunFlow.selectionChanged(self,owner)
+    local selectionChanged = RunFlow.selectionChanged(self,owner,View.refreshSelection(self,platform,syncPortraits))
     self.closeCharacters = RunFlow.closeCharacters(self,selectionChanged)
     self.selectCharacter = RunFlow.selectCharacter(self,selectionChanged)
     self.selectElement = RunFlow.selectElement(self,selectionChanged)
@@ -223,7 +237,7 @@ function M.new(root, data, presentation, clickEvent, platform)
     self.resize = Lifecycle.resize(self,owner)
     self.update = Lifecycle.update(self,platform,openingCovered,updateBossEntrance,bgm)
     self.disable = Lifecycle.disable(self,platform,characterPanel,owner)
-    Input.installUtilities(self,child,clickEvent,platform,inCombat,exitPanel,runMenu)
+    Input.installUtilities(self,child,clickEvent,inCombat,exitPanel,runMenu)
     local bindCommand = Input.bindCommand(platform,self,canManagePotions,clickEvent,owner)
     Input.installMenu(self,child,clickEvent,resourceHint,bindCommand,start,settlement,exitEntry,exitPanel)
     Input.installRunMenu(self,bindCommand,runMenu,canViewRoute,child,owner)

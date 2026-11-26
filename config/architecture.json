@@ -370,7 +370,11 @@
     "abyss_monster_intent_particles": "ui",
     "abyss_combat_native_play": "core",
     "abyss_combat_queued_play": "core",
-    "abyss_actor_presence": "core"
+    "abyss_actor_presence": "core",
+    "abyss_rounded_button": "ui",
+    "abyss_choice_grid": "ui",
+    "abyss_strike": "core",
+    "abyss_mobile_run_hud": "ui"
   },
   "dynamicExceptions": [],
   "deferredImports": [
@@ -768,14 +772,30 @@
   "dependencyBoundaries": [
     {
       "id": "actor-stance-and-focus-leaves",
-      "from": ["abyss_focus", "abyss_actor_artifact", "abyss_stance_damage"],
-      "forbiddenTargets": ["abyss_actor", "abyss_combat", "abyss_stances"],
+      "from": [
+        "abyss_focus",
+        "abyss_actor_artifact",
+        "abyss_stance_damage"
+      ],
+      "forbiddenTargets": [
+        "abyss_actor",
+        "abyss_combat",
+        "abyss_stances"
+      ],
       "reason": "Focus and Artifact operate on existing actor data. Stance arithmetic does not load its lifecycle coordinator."
     },
     {
       "id": "stasis-card-upgrade",
-      "from": ["abyss_act2_stasis", "abyss_card_upgrade", "abyss_blood_for_blood_cost"],
-      "forbiddenTargets": ["abyss_combat", "abyss_actor", "abyss_warrior_status_cards"],
+      "from": [
+        "abyss_act2_stasis",
+        "abyss_card_upgrade",
+        "abyss_blood_for_blood_cost"
+      ],
+      "forbiddenTargets": [
+        "abyss_combat",
+        "abyss_actor",
+        "abyss_warrior_status_cards"
+      ],
       "reason": "Stasis returns a card through shared instance upgrade rules without loading the combat owner."
     },
     {
@@ -795,14 +815,23 @@
     },
     {
       "id": "power-membership-independence",
-      "from": ["abyss_power_membership"],
-      "forbiddenTargets": ["abyss_power_order", "abyss_power_schedule"],
+      "from": [
+        "abyss_power_membership"
+      ],
+      "forbiddenTargets": [
+        "abyss_power_order",
+        "abyss_power_schedule"
+      ],
       "reason": "Display membership owns list edits. Its callers own application and hook dispatch."
     },
     {
       "id": "power-schedule-independence",
-      "from": ["abyss_power_schedule"],
-      "forbiddenTargets": ["abyss_power_order"],
+      "from": [
+        "abyss_power_schedule"
+      ],
+      "forbiddenTargets": [
+        "abyss_power_order"
+      ],
       "reason": "Hook removal uses the shared display membership operations without loading their coordinator."
     },
     {
@@ -1019,9 +1048,16 @@
     },
     {
       "id": "session-command-consumers",
-      "from": ["abyss_boss_relics", "abyss_relic_card_rewards", "abyss_relic_choices",
-        "abyss_relic_pending", "abyss_uncommon_relics"],
-      "forbiddenTargets": ["abyss_run"],
+      "from": [
+        "abyss_boss_relics",
+        "abyss_relic_card_rewards",
+        "abyss_relic_choices",
+        "abyss_relic_pending",
+        "abyss_uncommon_relics"
+      ],
+      "forbiddenTargets": [
+        "abyss_run"
+      ],
       "reason": "Session reward and relic commands accept the existing Run transaction and mutation capabilities from their callers."
     },
     {

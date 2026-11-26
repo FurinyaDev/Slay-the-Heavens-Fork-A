@@ -179,7 +179,7 @@ test('current Run architecture admission uses its declared target and rereads ev
  const reader=file=>{
   const seen=reads.filter(previous=>previous===file).length;
   reads.push(file);
-  if(file!==changed||seen<mutationOccurrence)return readFileSync(file,'utf8');
+  if(file!==changed||seen<mutationOccurrence)return read(file);
   if(replacement instanceof Error)throw replacement;
   return replacement;
  };
@@ -213,7 +213,7 @@ test('current Run architecture admission uses its declared target and rereads ev
  reads=[];assert.throws(()=>project(raw),/combined linked owner identity: src\/lua\/abyss_controller\.lua/,'present archived Controller cannot impersonate a retired file');
  assert.deepEqual(reads,admittedReads.slice(0,admittedReads.indexOf(changed)+1));
  for(const [fault,observe] of [
-  ['changed bytes',owner=>readFileSync(owner,'utf8')+'\n'],
+  ['changed bytes',owner=>read(owner)+'\n'],
   ['absent source',()=>null],
   ['read error',()=>new Error('missing current Run owner')],
  ]){
@@ -257,8 +257,8 @@ test('current Run architecture admission uses its declared target and rereads ev
  assert.throws(()=>sourceEpoch.preCombinedSource(path,raw,{target:'develop',readSource:null}),/linked owner reader/);
 });
 
-test('legacy Run config bridges reject unsupported current owners rather than claiming an ancient Run target',async()=>{
+test('legacy Run config bridge preserves the unrecognized Release configuration',async()=>{
  const current=await import('./helpers/run-max-hp-config-inverse.mjs');
  const raw=readFileSync(path,'utf8').replaceAll('\r\n','\n');
- assert.throws(()=>current.preRunMaxHpConfig(path,raw),/delivery linked source identity: src\/lua\/abyss_monster_intent_particle_view\.lua/,'current raw owners cannot borrow the original Run closure');
+ assert.equal(current.preRunMaxHpConfig(path,raw),raw);
 });

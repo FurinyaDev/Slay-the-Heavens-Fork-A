@@ -33,7 +33,16 @@
         "centreLight": "#898986"
       }
     },
-    "choicePage": {"columns": 2, "rows": 1, "origin": [-108, 0]},
+    "choicePage": {
+      "viewport": [0, -17, 960, 516],
+      "title": [0, 297, 1040, 44],
+      "hint": [0, 258, 1040, 36],
+      "status": [0, -338, 960, 32],
+      "confirm": [0, -300, 168, 48],
+      "before": [-400, -300, 128, 48],
+      "after": [400, -300, 128, 48],
+      "optionSize": [360, 126]
+    },
     "pickerPage": {"columns":[-246,0,246]},
     "neowGuide": {
       "scale":0.945,"origin":[739,61.5],
@@ -74,7 +83,6 @@
     "note": "PR #588 opt-in candidate. Existing 2026-10-13 catalog thumbnails inspected; current-client visual acceptance is UNVERIFIED. Preserve all semantic icon IDs and actual Traveler portraits; no MCP catalog update.",
     "images": {
       "cardPanel": 107253,
-      "panel": 107311,
       "button": 107231,
       "costDisc": 107270,
       "battleBanner": 107192,
@@ -86,7 +94,7 @@
     "battleCardInset": 4,
     "battleGlowReference": "CardGlowBorder.java: expanding silhouette, 1.2s lifetime and fading alpha; palette may differ by Owner instruction.",
     "battleAim": {"segments":20,"idle":"#FFFFFF","locked":"#FF334D","headSize":32,"lockScale":1.2,"bend":[0.25,0.5]},
-    "battleRelicBar": {"origin":[-597.3333333333,292],"step":48,"icon":42.6666666667,"hit":48,"count":25},
+    "battleRelicBar": {"origin":[-594,292],"step":44,"icon":42.6666666667,"hit":44,"count":25},
     "battleRelicIcons": {
       "burning_blood":{"id":105071,"placeholder":true,"note":"官方石块图标仅在岩脉残晶原生图形不可用时代用。"},
       "kunai":{"id":105217,"placeholder":true,"note":"官方交叉利刃徽章代用苦无；非原版遗物专图。"},
@@ -211,6 +219,27 @@
     "costInk": "#403829",
     "battlePortraitDisplay": 210,
     "battlePortraitPosition": [0, 0],
+    "mobileRunHud": {
+      "height": 88,
+      "y": 298,
+      "hit": 84,
+      "potionX": -161,
+      "potionStep": 92,
+      "potionBottle": [42, 48],
+      "potionPopupBottom": 230,
+      "hpShift": -104,
+      "goldShift": -107,
+      "headingY": 339,
+      "floorGap": 56,
+      "routeX": 356,
+      "deckX": 452,
+      "menuX": 548,
+      "status": [241, 257, 130, 28],
+      "relicBar": {"origin":[-558,210],"step":92,"icon":42.6666666667,"count":11},
+      "neowOptions": {"bottomInset":40,"spacing":92,"faceHeight":58,"bubbleLift":32,"fontSize":21},
+      "rewardList": {"rowY":54,"rowStep":58,"potionLabel":[-398,-214,300,96]},
+      "treasureRewards": {"headingY":208,"rowY":134,"rowStep":110,"noteY":-270,"noteHeight":34}
+    },
     "battleHud": {
       "y": 338.5,
       "barColour": "#30333B",
@@ -545,7 +574,7 @@
   },
   "image": {
     "officialBackdrops": {
-      "title": 107271,
+      "title": 100001,
       "selection": 107050,
       "act1_1": 107106,
       "act1_2": 107107,
@@ -1601,6 +1630,15 @@
       "perRow": 5,
       "rows": 2
     },
+    "actorDetail": {
+      "width": 392,
+      "font": 18,
+      "pitch": 27,
+      "tagWidth": 104,
+      "fill": "#20292D",
+      "border": "#71848B",
+      "title": "#F5D78A"
+    },
     "powerTips": {
       "rows": 48,
       "width": 248,
@@ -1773,7 +1811,7 @@
     "relicView": {
       "note": "TASK-4.7 持有遗物站位：顶栏圆形遗物盘沿 prototype topBar() 32px disc / 36 步进；详情每行为图标盘+中文名+状态签+说明，美术位绑定 icon.relic，占位图标待专属美术。",
       "bar": { "origin": [-584, 270], "step": 38, "disc": 34, "face": 30, "icon": 24, "count": 12, "tray": [-376, 270, 456, 38], "trayBorder": 1, "more": [10, 0, 56, 40] },
-      "barNote": "STS TopPanel/RelicPanel 移植：遗物在生命/金币行正下方从左向右单排流动（F 型扫视），每个遗物盘本身就是唯一入口；不再有托盘胶囊与右上角重复的遗物按钮。超过 count 件时末位改为 +N 溢出盘，点开分页详情。",
+      "barNote": "PD-02：持有顺序横向排列，固定尺寸，仅已持有图标；超容量左右箭头分页，PC25/移动端按有效舞台宽度计算。不使用+N或集合入口；详情独立复用单对象。",
       "panel": [0, 0, 1160, 620],
       "title": [0, 268, 760, 48],
       "close": [490, 268, 88, 48],
@@ -1827,8 +1865,6 @@
         "sort": [0, 282, 856, 36],
         "legacyDescription": [0, -303, 860, 36],
         "legacyRarityTip": [0, -336, 650, 30],
-        "drawBadge": [-534, -310, 170, 46],
-        "discardBadge": [534, -310, 170, 46],
         "footer": {
           "browserDescription": [0, -282, 900, 36],
           "rarityTip": [0, -308, 450, 36],
@@ -3648,7 +3684,7 @@
       },
       "v25TurnNotice": { "position": [0, 43], "size": [1280, 100], "duration": 1.7, "enterEnd": 0.2, "exitStart": 0.65, "travel": 40, "titleSize": 37, "subtitleSize": 16, "titleInk": "#ECD193", "subtitleInk": "#C0B9A4", "shadeInk": "#03080CCD", "shadowInk": "#000000CC", "swordInk": { "edge": "#334947", "left": "#8DACA4", "right": "#AFC3B2", "guard": "#829A88", "handle": "#80958B" } },
       "player": { "position": [-324, -37], "portrait": 210 },
-      "enemyRow": { "floorY": 330, "nativeFloorY": 501, "nativeStatusColumns": 2 },
+      "enemyRow": { "floorY": 330, "nativeFloorY": 501, "nativePowerFloorY": -156.5, "nativeStatusColumns": 2 },
       "hpBar": { "size": [154, 11] },
       "battleUnit": { "heroFoot": 0, "heroNameGap": 0, "heroNameLine": 0, "heroHealthGap": 5, "heroHealthWidth": 154 },
       "energy": { "position": [-511, -233], "size": 86, "numberSize": 29, "rimColour": "#514247", "shellColour": "#24262A", "faceColour": "#FFE35DC0", "lightColour": "#FFF7A680", "elementColour": "#FFE35D30" },

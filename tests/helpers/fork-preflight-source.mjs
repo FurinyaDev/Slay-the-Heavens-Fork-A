@@ -1,3 +1,4 @@
+import {readBeforeMasterBackflowSource} from './master-backflow-source.mjs';
 import {beforePosixDeadlineWorkflow,beforeWindowsDeadlineWorkflow} from './auto-merge-workflow.mjs';
 import {beforeHotfixPublicationGate} from './release-ci-workflow.mjs';
 import {assertInputRetirementLuaCurrent,beforeInputRetirementTestInventory,readRetiredInputLuaReceipt} from './input-retirement-inventory.mjs';
@@ -968,8 +969,11 @@ function beforeIntegrationSuccessor(path,source){
  assert.equal(hash(prior.source),prior.sha256,'immutable integration predecessor: '+path);
  return source.includes('\r\n')?prior.source.replaceAll('\n','\r\n'):prior.source;
 }
+const currentReviewReaders=new WeakSet();
 export function currentReviewedSelectionRead(read){
- return (path,encoding)=>{
+ if(currentReviewReaders.has(read))return read;
+ read=readBeforeMasterBackflowSource(read);
+ const current=(path,encoding)=>{
   const source=read(path,encoding);
   if(path===reviewedSelectionFixture){
    const text=!encoding&&Buffer.isBuffer(source)?source.toString('utf8'):source;
@@ -981,6 +985,8 @@ export function currentReviewedSelectionRead(read){
   }
   return source;
  };
+ currentReviewReaders.add(current);
+ return current;
 }
 export function assertIntegrationSuccessorsCurrent(read=readFileSync){
  const rawRead=currentReviewedSelectionRead(read);

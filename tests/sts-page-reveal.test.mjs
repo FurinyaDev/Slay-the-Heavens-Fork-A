@@ -146,8 +146,10 @@ reveal:request(require('abyss_page_reveal').intent(host));host:update(1/60)
 assert(ruleUpdates==0 and host.run.elapsedSeconds==0,'preparation advanced combat or charged load time')
 host.battleUI.update=updateBattle;host.run=nil;host.mode='menu';prepared=true
 reveal:request(require('abyss_page_reveal').intent(host));reveal:step(require('abyss_page_reveal').intent(host));reveal:step(require('abyss_page_reveal').intent(host));host:refresh()
-assert(start.click()and host.characterOpen and reveal:covered(),'new page did not acquire a fresh cover')
+prepared=false
+assert(start.click()and host.characterOpen and reveal:covered(),'unfinished selection page did not acquire a fresh cover')
 assert(not host:openDeck(),'public deck action bypassed preparation')
+prepared=true
 for i=1,3 do host:update(1/60);reveal:step(require('abyss_page_reveal').intent(host));host:refresh()end
 assert(F.confirmStart(host))
 for i=1,4 do host:update(1/60);reveal:step(require('abyss_page_reveal').intent(host));host:refresh()end
@@ -170,18 +172,16 @@ local Art=require('abyss_card_art_runtime');Art.configure({instantiate=function(
 textureRuntime=require('abyss_v25_texture_runtime').new({imageTemplateId=1,groupTemplateId=2,textures={[101]={width=1,height=1,count=1,drawCount=1,blocks='0000000000010001ffffffff'}}},{
  instantiate=function()return native()end,destroy=function(c)c.alive=false end,
  createController=function()local phase='building';return{begin=function()return true end,step=function()phase='ready'end,status=function()return{phase=phase}end}end})
-local choiceFaces,battleFaces,pools,metadata={},{},{},{}
-local choiceLayout=require('abyss_theme').layout.combatChoice
-for i=1,choiceLayout.columns*choiceLayout.rows do
- choiceFaces[root:GetChild('choicePanel'):GetChild('card'..i):GetChild('face')]=true
-end
+local battleFaces,pools,metadata={},{},{}
+local choiceGrid=root:GetChild('choicePanel'):GetChild('cards')
 for i=1,10 do
  local card=root:GetChild('battlePanel'):GetChild('card'..i);if card then battleFaces[card]=true end
 end
 local Display=require('abyss_card_display');local write=Display.writeNativeArt
 Display.writeNativeArt=function(face,definition,raw,p,fallback,identity)
- if not choiceFaces[face]and not battleFaces[face]then return write(face,definition,raw,p,fallback,identity)end
- local wanted=choiceFaces[face]and 'choicePanel'or'battlePanel';assert(sourcePage==wanted,'first native art lease received the wrong page owner')
+ local choiceFace=face.parent and face.parent.parent==choiceGrid
+ if not choiceFace and not battleFaces[face]then return write(face,definition,raw,p,fallback,identity)end
+ local wanted=choiceFace and 'choicePanel'or'battlePanel';assert(sourcePage==wanted,'first native art lease received the wrong page owner')
  pools[face]=pools[face]or native();metadata[definition.id]=metadata[definition.id]or{cardId=definition.id,slots={{}}}
  textureRuntime:surfaceApi().instantiate(101,face)
  return Art.request(face,pools[face],metadata[definition.id],p,fallback,identity,function()return true end)
@@ -191,6 +191,13 @@ local uids={};for _,card in ipairs(host.run.combat.hand)do uids[#uids+1]=card.ui
 host:refresh();assert(not Art.presentationReady('battlePanel'),'battle native-art owner missing')
 host.run.combat.pendingDiscard={token='page-reveal-choice',turn=host.run.combat.turn,count=1,handUids=uids}
 host:refresh();assert(host.choiceUI.visible and reveal:covered())
+assert(not host.choiceUI:presentationReady(),'new choice exposed before native grid callback')
+local previousEpoch=reveal.epoch
+choiceGrid.deferRefresh=true
+host:update(1/60)
+assert(not reveal:step(require('abyss_page_reveal').intent(host)) and reveal.epoch==previousEpoch)
+choiceGrid:flush();host:update(1/60);choiceGrid:flush()
+assert(host.choiceUI:presentationReady())
 assert(not Art.presentationReady('choicePanel'),'first choice native-art owner missing')
 assert(not textureRuntime:presentationReady('choicePanel')and not textureRuntime:presentationReady('battlePanel'))
 assert(not reveal:step(require('abyss_page_reveal').intent(host)),'empty choice readiness skipped first leases')
@@ -286,18 +293,17 @@ dofile('tests/lua/support/pc13_reward_feedback_tail.lua')
 print('PAGE_REVEAL_PASS')`);
 });
 
-test('official Host paints a destination room once, gates pending assets and retains page fade',t=>{
+test('official Host publishes painted map rooms immediately when ready and gates pending assets',t=>{
  const base=resolve('.artifacts/test-tmp');mkdirSync(base,{recursive:true});
- const output=mkdtempSync(join(base,'develop-map-room-'));
- t.after(()=>rmSync(output,{recursive:true,force:true}));
- buildLuaData('data',join(output,'abyss_data.lua'));
- buildUI(output,undefined,{officialAssets:true,nativePageLifecycle:true});
- const paths=luaString(output.replaceAll('\\','/')+'/?.lua;src/lua/?.lua;');
- lua(`package.path=${paths}..package.path
+ const out=mkdtempSync(join(base,'page-reveal-map-room-'));t.after(()=>rmSync(out,{recursive:true,force:true}));
+ buildLuaData('data',join(out,'abyss_data.lua'));
+ buildUI(out,undefined,{officialAssets:true,refinedReleaseMonsterArt:true,nativePageLifecycle:true});
+ const source=`package.path=${luaString(out.replaceAll('\\','/')+'/?.lua;src/lua/?.lua;')}..package.path`;
+ lua(`${source}
 dofile('tests/lua/support/map_room_reveal.lua')
 print('PAGE_REVEAL_PASS')`);
- for(const section of ['rooms','readiness','cancellation']){
-   lua(`package.path=${paths}..package.path
+ for(const section of ['rooms','readiness','cancellation','fast','boss','treasure-return','return-readiness']){
+   lua(`${source}
 ABYSS_MAP_ROOM_SECTION=${luaString(section)}
 dofile('tests/lua/support/map_room_transition.lua')
 print('PAGE_REVEAL_PASS native map departure')`);

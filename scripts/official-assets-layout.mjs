@@ -10,6 +10,7 @@ import {officialBattleCardChrome} from './official-battle-card-chrome.mjs';
 import {installStsReferenceCardChrome,stsReferenceRuntimeGeometry,geoCardReferenceTokens} from './sts-card-reference-profile.mjs';
 import {loadLowCostArt,attachLowCostArt} from './lowcost-art.mjs';
 import {preflightOfficialRoots,composeOfficialRun,finishOfficialComposition} from './official-run-layout.mjs';
+import {applyOfficialChoiceLayout} from './character-ui-layout.mjs';
 const children=node=>node?.controls??node?.children??[];
 const child=(node,name)=>children(node).find(item=>item.name===name);
 const required=(node,name)=>{const value=child(node,name);if(!value)throw Error('Official assets missing '+name);return value;};
@@ -90,7 +91,7 @@ export function officialAssetsTheme(source){
    Object.assign(theme.layout.nativeNode.picker,structuredClone(theme.officialAssets.pickerPage));
   return theme;
 }
-function cardFace(face,theme){
+function cardFace(face,theme,playable){
  const art=theme.officialAssets;
  // The bottom role medallion is decoration, not a card state. Retain handles
  // for shared runtime writers while removing it from every official card host.
@@ -99,10 +100,7 @@ function cardFace(face,theme){
   const image=required(required(face,name),'flat');
    setImage(image,theme.image.rect,name==='roundBody'?art.cardBodyTint:undefined);
  }
-  face.children.unshift({name:'nativePlayableRim',kind:'container',visible:false,size:[150,210],children:[
-   ...[-1,1].map(side=>({name:'side'+side,kind:'image',position:[side*75,0],size:[4,212],image:100001,colour:'#43C6BD',opacity:.55,feather:{pixels:[2,2]}})),
-   ...[-1,1].map(side=>({name:'edge'+side,kind:'image',position:[0,side*105],size:[154,4],image:100001,colour:'#43C6BD',opacity:.55,feather:{pixels:[2,2]}})),
-  ]});
+  face.children.unshift({name:'nativePlayableRim',kind:'container',visible:false,size:[150,210],children:[]});
   const body=required(face,'roundBody'),flat=required(body,'flat');flat.colour=art.battleCardBodyTint;
   body.children.unshift({name:'nativePaperTrim',kind:'image',position:[...flat.position],size:[...flat.size],image:art.images.cardPanel,imageType:'basic',colour:art.battleCardTrim});
   flat.size=flat.size.map(value=>value-art.battleCardInset);
@@ -139,7 +137,7 @@ function cardFace(face,theme){
  const disc=required(face,'costCore');disc.size=[Math.min(...disc.size),Math.min(...disc.size)];
   disc.size=[34,34];disc.imageType='basic';
   const cost=required(face,'cost');cost.text.outline=true;cost.text.outlineColour='#4A2B27';cost.text.outlineOpacity=1;
-  officialBattleCardChrome(face,theme);
+  officialBattleCardChrome(face,theme,playable);
   installStsReferenceCardChrome(face,theme);
 }
 function battleSurfaces(root,theme){
@@ -178,32 +176,20 @@ function buttonFaces(node,theme){
  }
 }
 function relicSurfaces(stage,theme){
- const bar=child(stage,'relicBar'),panel=child(stage,'relicPanel'),protectedHosts=new Set();
+ const bar=child(stage,'relicBar'),panel=child(stage,'relicPanel');
  if(bar){
   const style=theme.officialAssets.battleRelicBar;
   for(let i=1;i<=style.count;i++){
    const slot=required(bar,'slot'+i);slot.position=[style.origin[0]+style.step*(i-1),style.origin[1]];
    required(slot,'icon').size=[style.icon,style.icon];required(slot,'hit').size=[style.hit,style.hit];
    required(slot,'rim').visible=false;required(slot,'face').visible=false;
+   required(slot,'counter').text.autoSize=false;
   }
  }
  if(panel)for(const host of [panel,...children(panel).filter(n=>/^row\d+$/.test(n.name))]){
   // Keep the compact relic information surfaces and their live input bounds.
   setImage(required(host,host===panel?'frame':'border'),theme.image.rect,theme.color.goldDim);
-  setImage(required(host,'plate'),theme.image.rect,theme.color.panelSunken);protectedHosts.add(host);
- }
- return protectedHosts;
-}
-function panelSurfaces(node,theme,protectedHosts){
- // Keep all modal catchers, live field paths, sizes and visibility. Only replace
-// large landscape image surfaces; do not stretch the landscape plaque into icons.
- if(node.kind!=='container'||protectedHosts?.has(node)||node.name==='potionPopup')return;
- const hasText=children(node).some(item=>item.kind==='text');
- if(!hasText)return;
- for(const name of ['face','panel','plate']){
-  const plate=child(node,name);
-  if(plate?.kind==='image'&&plate.size?.[0]>=240&&plate.size[1]>=96&&plate.size[0]>=plate.size[1]*1.4)
-   setImage(plate,theme.officialAssets.images.panel,'#FFFFFF');
+  setImage(required(host,'plate'),theme.image.rect,theme.color.panelSunken);
  }
 }
 function roomTextFits(node,theme){
@@ -223,7 +209,7 @@ function pageBackgrounds(node,theme){
   const result=required(node,'result');
   for(const key of ['floor','victories','time','deck']){
    const stat=required(result,'stat_'+key);
-   setImage(required(stat,'face'),theme.officialAssets.images.panel,'#FFFFFF');
+   setImage(required(stat,'face'),theme.image.rect,theme.color.panel);
    required(stat,'border').colour=theme.color.goldDim;
   }
  }
@@ -252,7 +238,8 @@ export function applyOfficialAssets(trees,theme){
   for(const tree of trees){
    const stage=child(tree,'stage')??tree;
    const choice=child(stage,'choicePanel'),page=theme.layout.combatChoice;
-   if(choice){
+   if(choice&&page.viewport)applyOfficialChoiceLayout(choice,theme);
+   else if(choice){
     choice.children=choice.children.filter(node=>!/^card\d+$/.test(node.name)||Number(node.name.slice(4))<=page.columns*page.rows);
     for(let i=0;i<page.columns*page.rows;i++)required(choice,'card'+(i+1)).position=
      [page.origin[0]+i%page.columns*page.step[0],page.origin[1]+Math.floor(i/page.columns)*page.step[1]];
@@ -266,27 +253,27 @@ export function applyOfficialAssets(trees,theme){
    for(const host of [child(stage,'relicBar'),child(stage,'relicPanel')])if(host)walk(host,node=>{
     if(node.kind==='image'&&node.name==='icon')node.colour='#FFFFFF';
    });
-   const relicHosts=relicSurfaces(stage,theme);
+   relicSurfaces(stage,theme);
    const rooms=child(stage,'nodePanel'),treasure=child(rooms,'treasureView');
-   if(treasure)relicHosts.add(required(treasure,'details'));
-   if(child(stage,'battlePanel')||child(stage,'endTurn')){
+   const battle=child(stage,'battlePanel')??(child(stage,'endTurn')?stage:null);
+   if(battle){
     applyV25BattleLayout(tree,theme);
     applyV25BattleChrome(tree,theme);
     applyV25TurnNoticeLayout(tree,theme);
     applyV25BattleScene(tree,theme);
-    const battle=child(stage,'battlePanel')??stage;
     battleSurfaces(battle,theme);
     officialBattleHud(battle,theme);officialBattleUtilityFaces(stage,theme);
    }
    rebuildV25CardFaces(tree,theme);
    const result=compactBoundedCardFaces(tree,[],{preserveWindows:true});removedControls+=result.removedControls;
+   const handSlots=new Set(children(battle).filter(node=>/^card\d+$/.test(node.name)));
    walk(tree,node=>{
     // Several native 28px labels are only 44px high. Their formerly identical
     // preferred/minimum sizes leave no whole line in the real renderer. Keep
     // geometry and preferred sizes, and let the existing autosizer fit the text.
     if(node.kind==='text'&&node.text?.autoSize&&node.text.minFontSize*1.45+4>node.size?.[1])node.text.minFontSize=theme.font.minimum;
-   if(child(node,'roundFrame')&&child(node,'skin')&&child(node,'costDisc')){cardFace(node,theme);cardHosts++;}
-   else {buttonFaces(node,theme);panelSurfaces(node,theme,relicHosts);pageBackgrounds(node,theme);roomTextFits(node,theme);}
+   if(child(node,'roundFrame')&&child(node,'skin')&&child(node,'costDisc')){cardFace(node,theme,handSlots.has(node));cardHosts++;}
+   else {buttonFaces(node,theme);pageBackgrounds(node,theme);roomTextFits(node,theme);}
   });
   const deckPanel=child(child(tree,'stage')??tree,'deckPanel');
   const pileReturn=child(deckPanel,'pileReturn');
