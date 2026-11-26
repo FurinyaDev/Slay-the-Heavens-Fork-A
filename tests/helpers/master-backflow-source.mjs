@@ -28,7 +28,7 @@ const updatedSources = new Map([
   ['scripts/ci-media-lfs.mjs', ['e0e71dca9c631734d1cf52f9eae7684428095d949eb4b956d592899652ef0d63', '3803eaa2637dc1e8370bf98dba77e82cd52c71d9']],
   ['src/lua/abyss_game_ui.lua', ['607192763b5ed9b93e4be3cb0ebddfae78aabe8710b274104ac26f6cef672e4a', 'c533ebfef1f88c30a4c45cadac43414400f4151e']],
   ['src/lua/abyss_game_ui_lifecycle.lua', ['6e3967351a581630c2c352742fdfc3fecc20fefbaf2c26c7ddc8f21e052b3e14', 'abf67a2ab3994df9058d32a3554420c6317d133c']],
-  ['src/lua/abyss_game_ui_navigation.lua', ['0984f53626472b2ed945972ccd63300cfdf1519cc8c4ae97956c8b995f083a99', 'b5aa6ddd4f07718e600eb89a84a7e585d5879b8c']],
+  ['src/lua/abyss_game_ui_navigation.lua', ['8178cf61dd61228c0a53c34f69270ab693de58951446dc9865db53b3fecfc2a2', '1963c48ed871f0b683a29f08d7d3458deb0089b5']],
   ['src/lua/abyss_game_ui_view.lua', ['e0610fe83e363eec39953b814529de730cd223d1ecc365f4d3e6f0b6364d0ae6', '619a50506490dece4f1fb1c79b3d6c6a36bcfa65']],
   ['src/lua/abyss_page_reveal.lua', ['64cd428bc1744eb46ce420f4dd9639673f929ca665de3f32c648fd44e60f6ffb', 'b6af02700b2b0caecec59f89c8910088fe54df2d']],
   ['src/lua/abyss_shop_ui.lua', ['caa2a9e292c671e8caccda3c04905bad9f930b53bb5c52d14491452845b7cb1c', 'e7956c45a252b2595fb5af636b56e3a12d4a4581']],
@@ -37,6 +37,7 @@ const updatedSources = new Map([
   ['tests/helpers/fork-preflight-source.mjs', ['cb6c0ad1e737f50712a5ec25f219a112ef3defdfb4eeb9d6322c7a8202e62a24', '03e4327edef1d4aa5ce1a0b08ff89f7d39f9311f']],
   ['tests/integration-source-epoch.test.mjs', ['fd0cb659920b58cb0354c37acba7344028847c06211bb0339cc0deb38bbc2a8b', '8ec5fab8e038c2b0a3e1201a353283a28f02293f']],
   ['tests/lua/dynamic_monster_input_bindings.lua', ['8f79e3591cbcf361879fd664fc72eb9a495cb1004c22ad5a2b6fa3dff813ec21', '95895f0e46424f30b6f207d44b0891a33cece192']],
+  ['tests/lua/support/dynamic_monster_game_ui.lua', ['abfe82b4330839610a3b495db737078ba2f4704ee951e8c1ac53cc8ee8056b94', '05e5c56c220b537f9a5fbaa68e49d0d5345dcdb8']],
 ]);
 
 function matchesSuccessor(path, source, original) {
