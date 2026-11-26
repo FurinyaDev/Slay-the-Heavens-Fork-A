@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@Furinya'
 created_date: '2026-11-25 21:00'
-updated_date: '2026-11-26 05:42'
+updated_date: '2026-11-26 05:54'
 labels:
   - engineering
 milestone: m-8
@@ -36,6 +36,7 @@ references:
     https://github.com/FurinyaDev/Slay-the-Heavens-Fork-A/actions/runs/45760509932
   - 'https://github.com/FurinyaWorks/Slay-the-Heavens/pull/1023'
   - 'https://github.com/FurinyaWorks/Slay-the-Heavens/pull/1024'
+  - 'https://github.com/FurinyaWorks/Slay-the-Heavens/pull/1026'
 documentation:
   - docs/versions/V2.2.0-RELEASE.md
 parent_task_id: TASK-115
@@ -118,4 +119,6 @@ Curses 历史 #1004 实际合入 05c9dfe3b41ac4a7c0e325d9fbb1ef8f0db1497f，父 
 #1023 已合入精确 develop 724f12cae3a70ce2cff3ac8177a165c68a4f95bf，父提交 f9513b58，合入树 31ee9ce11cbac9ed702a15ee1e6825afbdb70877 与独立评审 6069012108 一致。Fork A 以原 PR HEAD 808bf5120595553df22825d917a73c0e72617003 重试成功，包括 LFS、现有 Luacheck 门槛和 Advisory Quick。当前主仓 Quality 45762283047、Licenses 45762283430 已入队，尚待正式结果。
 
 #1024 已合入 develop ad7108ad4c498e29f279afdb5fb62f999d177b76，父提交 724f12ca，树 03661abf774c7ece9296ca066cf83d36828840bb。原 PR HEAD f597aa4c7cde2e581c86c9e63bfdfce294318a31 通过独立评审 6069077548、精确 Fork 45762659739、原 StS 11/11、封存入口 2/2 及四个原始源码校验。724f 对应两项主仓检查在后续提交时取消。ad7108ad 的 Quality 45763104333 与 Licenses 45763104335 已入队；完整 CI 验收项继续未勾。
+
+#1026 已合入 develop 2586d456681738d5585672bcec5c7b6a3ac13d50，父提交 ad7108ad，树 09a83e9650874ed7414c3e2ef8e1d32b240be057。原 PR HEAD 34724aae725b7211045da6b868444b87265680dc 通过独立评审 6069155355、精确 Fork 45763491966、原四文件 26/26、原始门禁 3/3 和 StS 3/3。新主仓 Quality 45764329756 和 Licenses 45764329820 已入队，完整 CI 与正式发版继续待验。
 <!-- SECTION:NOTES:END -->
