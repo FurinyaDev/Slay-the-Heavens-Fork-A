@@ -561,13 +561,14 @@ const shopEntryTests={
  lua:['tests/lua/shop_entry.lua','85547fda98f035ff78a0cebdf56e91ba43899f0579d706c4cb045e13a55f6259',
   'e2b0e5297f87eb64525710b871ba23bd9bbcf81e942623c316759e9991dcebeb'],
 };
+const gilCandidateTest='tests/gil-candidate.test.mjs';
 const currentReleaseTests=Object.freeze({
  'tests/battle-ui-publication.test.mjs':'a2d4d911de18b48f4b01cbaf52384b4d133b77a8e646c15d2149185052fb7759',
  'tests/check-release-text.test.mjs':'1b3d0db323d89b0e6035f504b8c84ac1c564df528cca917ba2c89db29567993a',
  'tests/event-readability.test.mjs':'95e888cc87e48e8d6a161eaea9da54a410444c9966cafe1b263cffc66882dbb0',
  'tests/formal-startup-budget.test.mjs':'8a3d66d9b7c963cd3592c92750d6b41cecba2fed3cde933a81f34aee048df2ef',
  'tests/gil-candidate-preflight.test.mjs':'7ec29cdbeaf1572fa9713d37fdc17003e4f7843479c5af5ebe3c3c8787b93068',
- 'tests/gil-candidate.test.mjs':'e8a08db32ea8a237575f428566093ab18cc60fd0d0ce4acb0b5e2d7e30b364de',
+ [gilCandidateTest]:'e8a08db32ea8a237575f428566093ab18cc60fd0d0ce4acb0b5e2d7e30b364de',
  'tests/production-performance.test.mjs':'102893c9285fc52693ee9a7d1bae36d8cefef418ecf8da5d40e53b4eb98b2947',
  'tests/release-metadata.test.mjs':'eceb8ab92f616084fdcdac875e69e761cf2c9674a804be9f0295e89213453cb8',
  'tests/release-performance-artifacts.test.mjs':'c1d0d51314ab0dffac68236a3f722a4a4cdb8a0ebbfc292d1ca36cd0b2b2a941',
@@ -663,7 +664,10 @@ function beforeCurrentReleaseLuaNames(paths,read,{required=false}={}){
  for(const path of currentPaths){
   const found=names.delete(path);
   if(required)assert(found,'missing live Release Lua inventory source: '+path);
-  if(found)assert(exactSourceBinding(read(path,'utf8'),additionalReleaseLuaFixtures[path]),'fresh added inventory source: '+path);
+  if(found){
+   const source=beforeKnownMasterBackflowSource(path,read(path,'utf8'));
+   assert(exactSourceBinding(source,additionalReleaseLuaFixtures[path]),'fresh added inventory source: '+path);
+  }
  }
  if(paths.includes('tests/lua/traveling_merchant_event_content.lua')){
   const retired='tests/lua/addict_event_content.lua';
@@ -673,7 +677,36 @@ function beforeCurrentReleaseLuaNames(paths,read,{required=false}={}){
  }
  return [...names].sort();
 }
+// These four production tests retain their original master blobs. The backflow
+// test was added with the integration. Live CI discovers and runs all five.
+const masterBackflowJsTests=Object.freeze({
+ 'tests/compact-popup-surface.test.mjs':['1a6349e7cc53725bfb922a62b8ad6bcfd79b2c37ba0dbe23afda2f300a2741a1','db022e06a306a75b59165e8805d7222e951ab2bb'],
+ 'tests/forethought-selection.test.mjs':['efe0d72d48c9c281f9af7f77fe432cdb2c6cb0edca8ee508f0897ea447a7ffab','4bb817f80d9bd2b81305cae20590b4130085a51b'],
+ 'tests/native-script-storage.test.mjs':['a63c7b5266ac5c0acd1201717025df85d008be6ec6ca63fce208a677fd58efa9','b86ec95a0a540c3e69d0ea9700bfb5ca1a502b07'],
+ 'tests/release-backflow.test.mjs':['b2795af636a76d8d769b068473845c5ffb19ffc481753aa2e58d819f91f51633','57727dd03f972ed4b0d7844a17af7a453895fe61'],
+ 'tests/run-hud-inventory.test.mjs':['cc1d74a98726b07908f74381f83cf5783b406d6f1d3d84793fee9f0d097ba1ce','1c7830dd934c32720fd67f2facda0368904d3d9b'],
+});
+const masterBackflowLuaTests=Object.freeze({
+ 'tests/lua/character_select_latency.lua':['97145a327f6d719d9ea6ce0f02400789ed281848904e2df1a5eea5ba37bcf074','a2114e75312a83dfb3ba62d76aa260c5402fb79d'],
+ 'tests/lua/strike_family.lua':['06abc8866c85160d7f2203f144ad7bde6bca1daee6657949b7b5ea6a74bea30f','898df81b02bfe5d161cc506725941787d004d7a4'],
+});
+// The changed test also identifies the backflow if the whole added cohort is
+// removed. Older callers can still replay their original complete inventory.
+function beforeMasterBackflowInventory(paths,bindings,changedTest,read){
+ const present=paths.some(path=>Object.hasOwn(bindings,path));
+ if(!present){
+  if(!paths.includes(changedTest))return paths;
+  const source=read(changedTest,'utf8');
+  if(beforeKnownMasterBackflowSource(changedTest,source)===source)return paths;
+ }
+ for(const [path,binding] of Object.entries(bindings)){
+  assert.equal(paths.filter(candidate=>candidate===path).length,1,'complete current raw discovery inventory: '+path);
+  assert(exactCheckoutSource(read(path,'utf8'),binding),'fresh added inventory source: '+path);
+ }
+ return paths.filter(path=>!Object.hasOwn(bindings,path));
+}
 export function beforeReleaseAdditionalInventory(paths,kind,read=readFileSync){
+ if(kind==='js')paths=beforeMasterBackflowInventory(paths,masterBackflowJsTests,gilCandidateTest,read);
  paths=beforeM05BackflowInventory(paths,kind,(path,encoding)=>beforeCurrentReplayFixes(path,beforeUiEntranceWitness(path,read(path,encoding))));
  for(const [path,sha] of Object.entries(newerTests[kind])){
   const count=paths.filter(candidate=>candidate===path).length;
@@ -681,7 +714,7 @@ export function beforeReleaseAdditionalInventory(paths,kind,read=readFileSync){
   assert.equal(count,1,'single added Release test: '+path);
   const live=read(path,'utf8');
   if(kind==='lua'&&exactCurrentReleaseLuaFixture(path,live))continue;
-  const predecessor=path==='tests/gil-candidate.test.mjs'?beforeKnownMasterBackflowSource(path,live):live;
+  const predecessor=path===gilCandidateTest?beforeKnownMasterBackflowSource(path,live):live;
   const source=beforeDevelopBackflow(path,predecessor);
   assert(typeof source==='string'&&!source.includes('\r\r\n')&&hash(normalize(source))===sha,'fresh added inventory source: '+path);
  }
@@ -711,6 +744,7 @@ export function assertCurrentJsInventory(paths,preceding,read=readFileSync){
  assertCoopJsInventory(paths,preceding,read);
 }
 export function assertCurrentLuaInventory(paths,preceding,read=readFileSync){
+ paths=beforeMasterBackflowInventory(paths,masterBackflowLuaTests,'tests/lua/battle_ui_publication.lua',read);
  paths=beforeChapterPoolFixtureInventory(paths,read,true);
  paths=beforeInputRetirementTestInventory(paths,'lua',read,{required:true,requireLive:true});
  assertCurrentReleaseLuaFixtureSources(read);

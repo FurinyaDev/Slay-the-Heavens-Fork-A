@@ -1,5 +1,6 @@
 import {beforeCombatVisualSource,combatVisualPriorRead,assertCombatVisualCurrent} from './combat-visual-source.mjs';
 import {beforeCurrentReplayFixes} from './current-replay-fix-sources.mjs';
+import {beforeKnownMasterBackflowSource} from './master-backflow-source.mjs';
 // Historical-only continuation. Production builds and test discovery use live inputs.
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
@@ -135,7 +136,7 @@ export function beforeRefinedReleaseJsInventory(paths,preceding,read,required=fa
  if(!required&&!added.some(path=>paths.includes(path)))return paths;
  assert.deepEqual([...paths].sort(),[...preceding,...added].sort(),'complete current raw discovery inventory');
  for(const path of added){
-  const source=read(path,'utf8');
+  const source=beforeKnownMasterBackflowSource(path,read(path,'utf8'));
   const successor=Object.hasOwn(addedJsSuccessors,path)?addedJsSuccessors[path]:null;
   const expected=required&&successor?successor:addedJs[path];
   assert(matches(source,expected)||!required&&matches(source,successor),'fresh added inventory source: '+path);
