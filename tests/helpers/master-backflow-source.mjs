@@ -41,6 +41,7 @@ const updatedSources = new Map([
   ['tests/helpers/isolated-current-source.mjs', ['b839ff3ffa5985995b5720350e5554816f87d0365069b76bc5c447d495f9e5e6', '6cfa35ef0d27fef1acaae4f5db501ec52fbef3b1']],
   ['tests/game-ui.test.mjs', ['24e4ac5ceaa35a28372b53ab1e7baf4f0442383b96b0218f7457f94f37e49fec', '69aa3d7748b13116293ae97a31347cca31b6d643']],
   ['tests/helpers/fork-preflight-source.mjs', ['a76f1bc4ba7bea5dbf719d5ec97a2f9e9163148d8af853f39a2e56c12558e815', 'cac5d6c40be57b918011aa296cb3e99c332e09ae']],
+  ['tests/official-assets-runtime.test.mjs', ['475d4772d0224ee4690cb5215d2536ac4961efe8a1415a40c3219dcc70fd4cde', '4ab27d84b1640b8ee6c48daaecc3c6aae1b416c8']],
   ['tests/official-battle-relic-icons.test.mjs', ['02ac336167bbf416ca27af8679c8983dad1420820128a5966dd8c796356a6b5e', '01dd97b42135c76c110fae8f2acc6e71b7bd8be4']],
   ['tests/run-max-hp-config-inverse.test.mjs', ['0ab6687bb1f64cbe27b15ec0b7270fc857c820fbd0de4f55605c0d336b37cd9c', '08e5ba78015e099203cbd69bdb93ed5862c7b756']],
   ['tests/integration-source-epoch.test.mjs', ['fd0cb659920b58cb0354c37acba7344028847c06211bb0339cc0deb38bbc2a8b', '8ec5fab8e038c2b0a3e1201a353283a28f02293f']],
