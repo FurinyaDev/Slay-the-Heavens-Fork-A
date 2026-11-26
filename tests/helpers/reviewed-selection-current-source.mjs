@@ -4,7 +4,7 @@ import {restoreExactFixtureHunks} from './exact-fixture-hunks.mjs';
 import {exactSourceMatches} from './source-fingerprint.mjs';
 import {releaseUiRestoreArchive} from './release-ui-restore-source.mjs';
 import {visualSelectionOwnerRead} from './visual-selection-source.mjs';
-import {readBeforeMasterBackflowSource} from './master-backflow-source.mjs';
+import {beforeKnownMasterBackflowSource,beforeMasterBackflowSource,readBeforeMasterBackflowSource} from './master-backflow-source.mjs';
 
 const replayBase='02dcb2466b2c90308f9a9e42896c2c5af3ed288c';
 const renamedOwners=Object.freeze({
@@ -108,7 +108,11 @@ export function reviewedStsStyleInventory(paths,read=readFileSync){
  assert.equal(current.size,paths.length,'unique live StS runtime inventory');
  for(const [path,identity] of Object.entries(addedStsOwners)){
   assert(current.delete(path),'missing live StS runtime module: '+path);
-  assert(exactSourceMatches(read(path,'utf8'),identity),'fresh added StS runtime module: '+path);
+  const source=read(path,'utf8');
+  const prior=beforeKnownMasterBackflowSource(path,source);
+  assert(exactSourceMatches(prior,identity),'fresh added StS runtime module: '+path);
+  // A changed owner must supply the live master successor even if its old bytes match.
+  if(prior===source)beforeMasterBackflowSource(path,source);
  }
  const selection=reviewedSelectionRead(read);
  for(const [retired,active] of Object.entries(renamedOwners)){
