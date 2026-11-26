@@ -29,7 +29,7 @@ const updatedSources = new Map([
   ['src/lua/abyss_game_ui.lua', ['607192763b5ed9b93e4be3cb0ebddfae78aabe8710b274104ac26f6cef672e4a', 'c533ebfef1f88c30a4c45cadac43414400f4151e']],
   ['src/lua/abyss_game_ui_lifecycle.lua', ['6e3967351a581630c2c352742fdfc3fecc20fefbaf2c26c7ddc8f21e052b3e14', 'abf67a2ab3994df9058d32a3554420c6317d133c']],
   ['src/lua/abyss_game_ui_navigation.lua', ['8178cf61dd61228c0a53c34f69270ab693de58951446dc9865db53b3fecfc2a2', '1963c48ed871f0b683a29f08d7d3458deb0089b5']],
-  ['src/lua/abyss_game_ui_view.lua', ['e0610fe83e363eec39953b814529de730cd223d1ecc365f4d3e6f0b6364d0ae6', '619a50506490dece4f1fb1c79b3d6c6a36bcfa65']],
+  ['src/lua/abyss_game_ui_view.lua', ['b64cc28d1242af7fd219d1ccce46c9a043f42e3f602772e775896f3ea28fdf84', 'd865b4d6b0d4e8b6043b9e84f6a595b2d7f78bc6']],
   ['src/lua/abyss_page_reveal.lua', ['64cd428bc1744eb46ce420f4dd9639673f929ca665de3f32c648fd44e60f6ffb', 'b6af02700b2b0caecec59f89c8910088fe54df2d']],
   ['src/lua/abyss_shop_ui.lua', ['caa2a9e292c671e8caccda3c04905bad9f930b53bb5c52d14491452845b7cb1c', 'e7956c45a252b2595fb5af636b56e3a12d4a4581']],
   ['tests/ci-reviewed-lfs.test.mjs', ['2a9a520742fc514b7edfad5ae8b636caf5834cfd8e7c8cd49b971ea054a9c119', '0d61e4d967a2a9946cd2adb9d32762064215a73c']],
