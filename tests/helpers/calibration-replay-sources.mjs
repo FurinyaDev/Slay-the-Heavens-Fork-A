@@ -202,10 +202,28 @@ function readRelicEquipReceipt(readCurrent){
  return lf(archived);
 }
 
+const launchComponentPath='scripts/verify-launch-content.mjs';
+const launchComponentPrior={
+ sha256:'f249e9c6eb152bb16e9b75401b1aa445721eebc19c128d31e330a0379da66ab6',gitBlob:'f218c47d76bca2f8036ee65c9bbc149491f0cba2',
+};
+function readLaunchComponentReceipt(readCurrent){
+ const source=readCurrent(launchComponentPath,'utf8');
+ assert(matches(source,{
+  sha256:'7dca28897fadbbb2b4fef133e6317e0887cda5f368b7720547ea590240ef621c',gitBlob:'501b73728eee52536770b49e211a997c46d29c9f',
+ }),'current launch component receipt input changed');
+ const normalized=lf(source);
+ assert(source===normalized||source===normalized.replaceAll('\n','\r\n'),'mixed launch component receipt line endings');
+ const prior=normalized.replace('augmentation_core:', 'mutagenic_strength:').replace('raven_mask:', 'cultist_mask:')
+  .replaceAll('explicit_event:augmenter:', 'explicit_event:drug_dealer:').replaceAll('drug_dealer:claim_core', 'drug_dealer:mutagens');
+ assert(matches(prior,launchComponentPrior),'exact launch component receipt predecessor');
+ return prior;
+}
+
 // A frozen receipt may read a registered old blob only after checking the
 // corresponding current file. Raw Full discovery and inputs use their normal readers.
 export function readCalibrationReceiptInput(path,digest,read,readCurrent=readFileSync){
  if(path===relicEquipReceipt.path&&digest===relicEquipReceipt.prior.sha256)return readRelicEquipReceipt(readCurrent);
+ if(path===launchComponentPath&&digest===launchComponentPrior.sha256)return readLaunchComponentReceipt(readCurrent);
  const vocabulary=readCloseoutLuaVocabularyReceipt(path,digest,readCurrent);
  if(vocabulary!==undefined)return vocabulary;
  const closeout=readCloseoutCurrentBackflowReceipt(path,digest,readCurrent);
