@@ -1,0 +1,61 @@
+# v2.1.1 生产历史回流核验
+
+| 基线 | 固定身份 |
+| --- | --- |
+| 开工 develop | `05c9dfe3b41ac4a7c0e325d9fbb1ef8f0db1497f` |
+| master 与注释 Tag v2.1.1 的目标 | `d96c9f0d7958148ec1bb027f14a3214da81d06b4` |
+| 原共同祖先 | `ff6af63d9bf93056dd772347d10dc749e7fa8d34` |
+| 线上有声包 | 千星奇域 `2.02`，23,780,838 字节，SHA-256 `afe80c0783d0d4b6046c1f44cba3ef2b71cb8bb34fbc7404d939d12e0f5ff831` |
+| 实际构建 | `06c2577ecc6c07593c6bf8b6e79e158dac5b6195`，树 `d3bb8794ee95f97142c986a11aa9f439b5d73984` 与 master 一致 |
+| 包读回 | buildId `29f48ea1-fa9d-4f76-b124-2bffc83f7594`，375 个 Lua 模块、16 个原生模板，BGM 核验通过 |
+
+[线上发布](https://github.com/FurinyaWorks/Slay-the-Heavens/releases/tag/v2.1.1) · [有声包及回执](https://github.com/FurinyaWorks/Slay-the-Heavens/tree/3f79269e90a8f2507f6782135563ecf573b357d7/docs/evidence/v2.1.1-2026-11-25) · [上一版性能与取舍](../v2.1.1-performance-20261125/README.md)
+
+## 性能差异审查
+
+| 生产变更 | 合流核对点 |
+| --- | --- |
+| 选角，#900、#905、#956 | 同一角色和元素保留已有资料，无重复可见性、图像及文本写入。保留现行分层登场和失效校验。 |
+| 地图与房间，#874、#885、#898、#922、#954 | 缓存原生地图容器，启用导航前可暂存滚动与可见性。事件就绪后的内容由同一调用发布，房间离开保留地图亮度过渡。复核章节内滚动、首领、宝箱和陈旧输入。 |
+| 牌组与战斗三堆，#888、#899、#903、#920、#962 | 暖开与翻页复用正式卡面，单次索引校准和首屏预热保留回退。复核当前卡面内容、可见卡位、三堆顺序、详情回退、排序和滚动。 |
+| 营地与选牌，#878、#889 | 预热锻造首窗、可见卡位按需发布。正式战斗选牌复用原生滚动网格，以真实回调、输入世代和有序提交验证。 |
+| 战斗与启动，#953、#955、#956、#957、#962 | 延后怪物插槽解码，保留粒子同值写保护、被遮盖战斗页和敌名去重。生产曾评估后撤回的另一版手牌几何快路径仍按生产实际取舍。 |
+| 构建与资源，#861、#879、#890、#896 | 正式 Lua 在装配时无损压紧并校验读回。减少非手牌边框子控件、地图返回按钮重复面和选择布局的静态控件，保留精确产物来源、音频读回及正式性能验收合同。 |
+
+## 定向 Host 对照
+
+同一替身 SDK 工作负载读取线上 GIL 解出的布局和模块，并对照精确开工 develop 和合流实现。选角使用已选旅行者，连续执行 12 次相同投影。地图用同一种子重开并执行主控发布，三边均能沿第一条合法路线进入楼层 1。
+
+| 可重现计数 | 线上 v2.1.1 | 回流前 develop | 回流实现在审查工作树 |
+| --- | ---: | ---: | ---: |
+| 选角 SetVisible | 0 | 336 | 0 |
+| 选角 SetImage | 0 | 252 | 0 |
+| 选角文本写入 | 0 | 24 | 0 |
+| 地图重开完整绘制 | 1 | 2 | 1 |
+| 初始化地图容器查询 | 5 | 5 | 5 |
+
+现行计数回归见 `tests/lua/battle_ui_publication.lua` 和 `tests/lua/map_ui.lua`。生产六档使用最终有声候选的读回内容、独立音频核验和实际 cgroup 限额，验收见 [v2.2.0 统一清单](../../versions/V2.2.0-RELEASE.md)。
+
+## 结项证据
+
+生产分叉和同树 squash 的测试均拒绝通过，保留双父的合流通过。手动结项同时验证实际 develop 推送的完整 Quality、不可变 checkout 回执及 Licenses，并在验证后重读两个分支。入口及远端保护见 [发布操作单](../../PUBLISHING.md#release-与-hotfix-回流结项) 和 [工程配置](../../CI.md#生产历史回流与祖先门禁)。
+
+本地 Docker 请求资源限额后，容器读回仍为 4 CPU、16 GiB，未获得六档规定的实际限制。正式有声配对仍需主仓获准的候选归档和支持实限的 Hosted Performance。回流 PR 和上线收据逐项登记最终 CI、独立 Review、合后祖先验证及正式六档结果。
+
+## 现行选角与正式历史回放
+
+选角继续使用 develop 的分层登场、短介绍和 107271 风景回退。正式选角的牌组容器从生成树清除，介绍保留两个原生文本行空间。主菜单保留 v2.1.1 的平面材质和紧凑间距，选角风景独立绑定。当前生成与运行时验收覆盖进入、暂停、重开、失败和重复投影。
+
+已发布的长介绍与近黑底板可从生产提交 `d96c9f0d7958148ec1bb027f14a3214da81d06b4` 通过原断言逐字节回放。在该提交的独立干净工作树安装锁定依赖后运行：
+
+```sh
+node --test --test-name-pattern='published Traveler selection|approved traveler synopsis' tests/v25-character-layout.test.mjs
+```
+
+## 检出体积与旧证据
+
+TASK-116 核对后，地图原存档从集成树移除，历史 Git 对象 `ebd590bfe169107b6c28c9d53ba9b9670d61ddb7` 及原归档账本保留。21 份生产原日志留存于发布提交 `d96c9f0d`。当前树采用已有的复现入口、汇总与脱敏回执。原账本和独立评审可按生产提交读回。[药水回归](https://github.com/FurinyaWorks/Slay-the-Heavens/tree/d96c9f0d7958148ec1bb027f14a3214da81d06b4/docs/evidence/potion-click-release-20261123) · [HUD 独立复验](https://github.com/FurinyaWorks/Slay-the-Heavens/tree/d96c9f0d7958148ec1bb027f14a3214da81d06b4/docs/evidence/run-hud-20261124) · [性能审计](https://github.com/FurinyaWorks/Slay-the-Heavens/tree/d96c9f0d7958148ec1bb027f14a3214da81d06b4/docs/evidence/v2.1.1-performance-20261125/attestations)
+
+相同 `--depth=2 --filter=blob:none`、关闭 LFS smudge 的浅检出中，develop `468b58ed` 的 Git pack 为 132,479,662 字节，最初组合 `ca2e8240` 为 142,008,320 字节。Fork B Full 45751139687 的 18 个 Windows 分片在保留的 128 MiB 检出门禁停止。现有不可变媒体清单接续 55 份生产资料。原路径、压缩字节、生产 Git blob、SHA-256、权限分类及固定来源继续可查。通过 `node scripts/ci-media-lfs.mjs` 恢复并核对全部媒体。该批新增归档内容的去重载荷为 11,402,323 字节。
+
+迁移后从 Fork B 冷检出 `752ada5a445cedd44ec3aa2b5a5cc317b3ce52b6`，以 `eafffb28afeb10d5256e5ee7b82b5ee0a6674fd6` 运行同一比较源预取（实取 233 个对象、4,200,104 字节）。原检出门禁录得 132,582,556 字节，空白检查验证 886 个路径。迁移正反例额外核对旧 Git 对象仍未取回、未知归档不能跳过比较以及精确指针字节。

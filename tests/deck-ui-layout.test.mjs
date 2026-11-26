@@ -97,6 +97,24 @@ test('the simplified-Chinese sort header has three native buttons and clears the
   assert.ok(sort.position[1] + 22 < shade.position[1] + shade.size[1] / 2);
 });
 
+test('pile chrome contains a centered, non-interactive text heading and no bottom badges', () => {
+  const panel = gameLayout().controls.find(c => c.name === 'deckPanel');
+  const chrome = panel.children.find(c => c.name === 'pileChrome');
+  assert.deepEqual(chrome.children.map(c => c.name), ['shade', 'empty', 'heading']);
+  const heading = chrome.children.find(c => c.name === 'heading');
+  assert.equal(heading.kind, 'text');
+  assert.equal(heading.visible, false);
+  assert.equal(heading.raycastTarget, false);
+  assert.equal(heading.position[0], 0);
+  assert.equal(heading.text.align, 'centre');
+  assert.equal(heading.text.fontSize, theme.font.heading);
+  assert.equal(heading.text.colour, theme.color.text);
+  assert.deepEqual(heading.children ?? [], []);
+  assert.equal(heading.states, undefined);
+  assert.equal(theme.layout.deckView.browser.drawBadge, undefined);
+  assert.equal(theme.layout.deckView.browser.discardBadge, undefined);
+});
+
 test('overlays avoid navigation metadata and deck pages leave the card viewport clear', () => {
   const layout = gameLayout(undefined, {originalCharacters: true});
   for (const name of ['deckPanel','potionPanel','choicePanel','characterPanel','exitPanel']) {
@@ -111,16 +129,21 @@ test('overlays avoid navigation metadata and deck pages leave the card viewport 
   }
 });
 
- test('upgrade preview is an explicit native button outside the text paging hit', () => {
+ test('upgrade preview uses a magnified native card face and a separate focusable switch', () => {
  const panel=gameLayout().controls.find(c=>c.name==='deckPanel');
  const toggle=panel.children.find(c=>c.name==='upgradePreview');
- const textHit=panel.children.find(c=>c.name==='detailHit');
+ const card=panel.children.find(c=>c.name==='cardFocus');
+ const face=card.children[0];
+ assert.equal(card.visible,false);
+ assert.ok(card.scale.every(value=>value>1));
+ assert.deepEqual(face.children,deckCardTemplate().children[0].children);
+ assert.equal(toggle.position[0],card.position[0]);
  assert.equal(toggle.visible,false);
  assert.equal(toggle.children[0].kind,'presetButton');
  assert.equal(toggle.children[0].focusable,undefined);
  assert.ok(toggle.size[1]>=48);
- assert.ok(toggle.position[1]+toggle.size[1]/2<textHit.position[1]-textHit.size[1]/2);
- for(const state of toggle.children[0].children)assert.equal(state.children.find(c=>c.name==='label').text.content,'升级预览');
+ assert.ok(toggle.position[1]+toggle.size[1]/2<card.position[1]-card.size[1]*card.scale[1]/2);
+ for(const state of toggle.children[0].children)assert.equal(state.children.find(c=>c.name==='label').text.content,'查看升级');
  });
 
  test('original Chinese sort labels fit in every state without truncation at all reported sizes', () => {

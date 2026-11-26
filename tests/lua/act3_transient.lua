@@ -214,20 +214,23 @@ test('real Host shows shifting intent HP and both source Power details without r
  assert(testStart(host));local r=host.run;r.act,r.floor,r.encounters=3,35,Q.new('4',3)
  for _=1,2 do local _,n=Q.consume(r.encounters,'normal');r.encounters=n;r.floor=r.floor+1 end
  assert(Run.startRoomCombat(r,'normal'));host:refresh()
- local panel=root:GetChild('battlePanel');local enemy=monsterControl(panel,'enemy1');local _,tap=H.controls(panel)
+ local panel=root:GetChild('battlePanel');local enemy=monsterControl(panel,'enemy1')
  eq(enemy:GetChild('name').text,'流散之影');eq(enemy:GetChild('hp').text,'999/999');eq(enemy:GetChild('intent').text,'30')
- tap('enemy1',81)
- local info=panel:GetChild('statusInfo');assert(info.visible);local texts={}
- for i=1,F.Theme.layout.statusInfo.rows do
-  for _,prefix in ipairs({'name','text','note'})do local control=info:GetChild(prefix..i)
-   if control and control.visible then texts[#texts+1]=control.text end end
+ local function readDetails(control,touch)
+  local hit=assert(enemy:GetChild(control));local before=C.copy(r)
+  hit.click({touchId=touch})
+  local opened=assert(host.battleUI.info)
+  assert(opened.source==hit and opened.actor==r.combat.enemies[1] and opened.powerTips)
+  local detail=inspectDetails(host.battleUI,panel)
+  same(r,before)
+  return detail
  end
- local detail=table.concat(texts,' ');assert(detail:find('变幻',1,true)and detail:find('消逝 5',1,true))
+ local detail=readDetails('hpHit',81)
+ assert(detail:find('变幻',1,true)and detail:find('消逝 5',1,true),detail)
  assert(detail:find('反伤',1,true)and detail:find('自毁',1,true)and detail:find('正常战斗奖励',1,true))
- info:GetChild('hit').click({touchId=82})
  local uid;for _,c in ipairs(r.combat.hand)do if c.cardId=='strike'then uid=c.uid;break end end
  assert(Run.play(r,uid,1));host:refresh();eq(enemy:GetChild('intent').text,'24');eq(enemy:GetChild('hp').text,'993/999')
- tap('enemy1',83);local intentDetail=inspectDetails(host.battleUI,panel);assert(not intentDetail:find('未知',1,true))
+ local intentDetail=readDetails('intentHit',83);assert(not intentDetail:find('未知',1,true))
  assert(Run.endTurn(r));host:refresh();eq(enemy:GetChild('intent').text,'40');eq(r.combat.player.hp,56)
  local before=C.copy(r);host:refresh();same(r,before)
 end)

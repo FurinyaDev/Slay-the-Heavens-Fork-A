@@ -1,3 +1,4 @@
+local readPowers=dofile('tests/lua/support/power_tip_fixture.lua')
 local monsterControl=dofile('tests/lua/support/monster_control_fixture.lua')
 -- Real generated per-instance controls at explicit boundary HP. Not live/native.
 local H=dofile('tests/lua/support/battle_action_fixture.lua')
@@ -15,9 +16,7 @@ local function has(text,part)assert(text:find(part,1,true),text..' missing '..pa
 local info=panel:GetChild('statusInfo')
 local function detail(box,touch,part)
  click(box:GetChild('intentHit'),touch);assert(info.visible)
- local found=false
- for i=1,4 do local row=info:GetChild('text'..i);if row and row.text and row.text:find(part,1,true)then found=true end end
- assert(found,'missing intent detail '..part);click(info:GetChild('hit'),touch+1)
+ has(readPowers(panel),part);click(panel:GetChild('statusDismiss'),touch+1)
 end
 assert(#Slots.slots(s)==3 and panel:GetChild('enemy1')==nil,'three real instances without fixed actor placeholders')
 for i,e in ipairs(s.enemies)do local box=monsterControl(panel,'enemy'..i)
@@ -41,7 +40,7 @@ assert(regrow.sourceEnum==nil and regrow.label=='再生')
 dofile('tests/lua/support/intent_face_assertion.lua')(monsterControl(panel,'enemy1'),regrow,'再生')
 assert(monsterControl(panel,'enemy1'):GetChild('intentIcon').visible and monsterControl(panel,'enemy1'):GetChild('intentIcon').imageId==H.F.Theme.icon.intent.unknown,'legacy Regrow keeps its unknown world glyph')
 assert(monsterControl(panel,'enemy1'):GetChild('intentHit').visible,'present half-dead actor retains its intent detail target')
-assert(not ui.feedback.deaths[e.id]);detail(monsterControl(panel,'enemy1'),203,'复生')
+assert(not ui.feedback.deaths[e.id]);detail(monsterControl(panel,'enemy1'),203,'这名敌人的意图不明')
 -- Clicking a sleeping slot cannot spend a targeted attack or secretly hit an ally.
 s.energy=3;host:refresh();local uid=s.hand[1].uid;local energy=s.energy;local allyHp=s.enemies[2].hp
 tap('card1',205);tap('enemy1',206);drain()
@@ -53,7 +52,7 @@ assert(reincarnate.sourceEnum==nil and reincarnate.label=='复生')
 dofile('tests/lua/support/intent_face_assertion.lua')(monsterControl(panel,'enemy1'),reincarnate,'复生')
 assert(monsterControl(panel,'enemy1'):GetChild('intentIcon').visible and monsterControl(panel,'enemy1'):GetChild('intentIcon').imageId==H.F.Theme.icon.intent.buff,'legacy Reincarnate keeps its buff world glyph')
 assert(monsterControl(panel,'enemy1'):GetChild('intentHit').visible,'present half-dead actor retains its intent detail target')
-detail(monsterControl(panel,'enemy1'),208,'生命')
+detail(monsterControl(panel,'enemy1'),208,'这名敌人将要进行强化')
 tap('endTurn',210);drain()
 assert(e.hp==math.floor(e.maxHp/2)and not e.halfDead and A.isActive(e))
 assert(monsterControl(panel,'enemy1'):GetChild('hp').text==string.format('%d/%d',e.hp,e.maxHp))

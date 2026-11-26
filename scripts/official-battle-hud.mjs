@@ -20,6 +20,17 @@ function energyFinish(root,theme){
  const number=child(root,'energy');
  Object.assign(number.text,{outline:true,outlineColour:'#4C2425',outlineOpacity:1});
 }
+function deckSymbol(variant,colour){
+ const centerX=child(variant,'ring').position[0];
+ const cards=['back2','back1','front'].map(name=>{
+  const card=structuredClone(child(variant,name));
+  card.position[0]-=centerX;
+  for(const part of card.children)part.raycastTarget=false;
+  child(card,'border').colour=colour;
+  return card;
+ });
+ return {name:'symbol',kind:'container',position:[-19,0],size:[30,30],scale:[1.15,1.15],children:cards};
+}
 export function officialBattleUtilityFaces(stage,theme){
  for(const entry of ['deckEntry','exitEntry']){
   const hit=child(child(child(stage,entry),'open'),'hit');if(!hit)continue;
@@ -27,8 +38,9 @@ export function officialBattleUtilityFaces(stage,theme){
    const deck=entry==='deckEntry',colour=variant.name==='hover'?'#FFF3CE':variant.name==='disabled'?'#8F918B':'#D6CBA5';
    const count=text('count',[26,0],[52,36],'',18,colour);
    Object.assign(count.text,{autoSize:false,align:'left'});
-   variant.children.push({name:'officialBattleHud',kind:'container',size:deck?[104,variant.size[1]]:[...variant.size],visible:false,children:[
-    ...(deck?[text('symbol',[-19,0],[30,36],'▱',18,colour)]:[
+   if(deck)variant.size=[104,variant.size[1]];
+   variant.children.push({name:'officialBattleHud',kind:'container',size:[...variant.size],visible:false,children:[
+    ...(deck?[deckSymbol(variant,colour)]:[
      {name:'symbol',kind:'image',position:[0,0],size:[28,28],image:theme.icon.settings,colour},
     ]),
     ...(deck?[count]:[]),
@@ -60,11 +72,11 @@ export function officialRunChrome(tree,theme){
   // Keep live titles in their existing owners (MapUI resolves mapGroup/title).
    const titleOwner=page.children.findIndex(part=>name==='mapPanel'?/^mapGroup\d+$/.test(part.name):part.name==='title');
    page.children.splice(titleOwner<0?page.children.length:titleOwner,0,bar);
-   if(name==='nodePanel'){
+   if(name==='nodePanel'||name==='mapPanel'){
     // A live action belongs to the node page, never to a decorative bar clone.
     // Reuse the battle shortcut face and let GameUI own its context and input.
     const route=structuredClone(child(source,'battleRoute'));
-    route.name='runRoute';route.position=[hud.route[0],hud.route[1]];
+    route.name=name==='nodePanel'?'runRoute':'mapRoute';route.position=[hud.route[0],hud.route[1]];
     page.children.push(route);
    }
   const visit=node=>{
@@ -80,6 +92,11 @@ export function officialRunChrome(tree,theme){
   visit(page);
   for(const [name,reference]of Object.entries(component.resources))mountOfficialResource(child(resources,name),reference);
   mountOfficialResourceHints(page,theme);
+  // The complete room surface paints first, then the resource component.
+  if(name==='nodePanel'){
+  const hudRoles=new Set(['officialRunBar','title','hpIcon','hp','goldIcon','gold','resourceHints','runRoute']);
+  page.children=[...page.children.filter(n=>!hudRoles.has(n.name)),...page.children.filter(n=>hudRoles.has(n.name))];
+  }
  }
 }
 export function officialBattleHud(root,theme){

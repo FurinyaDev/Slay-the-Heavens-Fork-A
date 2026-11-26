@@ -12,6 +12,40 @@ local tailStates={
     blocked_by_mark={name='绽放印记阻断',text='绽放印记阻止复活，保留本局的一次使用机会。',colour=C.danger},
 }
 
+-- AbstractMonster.updateIntentTip and the STS1 Simplified Chinese UI text.
+local attackTips = {
+    ATTACK = {"攻势", "这名敌人将要\n攻击造成 "},
+    ATTACK_BUFF = {"攻势", "这名敌人将要进行强化并攻击造成 "},
+    ATTACK_DEBUFF = {"策略", "这名敌人将要对你施加负面效果并攻击造成 "},
+    ATTACK_DEFEND = {"攻势", "这名敌人将要格挡并攻击造成 "},
+}
+local otherTips = {
+    BUFF = {"策略", "这名敌人将要进行强化。"},
+    DEBUFF = {"策略", "这名敌人将要对你施加一种负面效果。"},
+    STRONG_DEBUFF = {"策略", "这名敌人将要对你施加一种强大的负面效果。"},
+    DEFEND = {"守势", "这名敌人将要在这个回合进行格挡。"},
+    DEFEND_DEBUFF = {"守势", "这名敌人将要进行格挡并对你施加一种负面效果。"},
+    DEFEND_BUFF = {"守势", "这名敌人将要进行格挡并进行强化。"},
+    ESCAPE = {"胆小", "这名敌人将要逃跑。"},
+    MAGIC = {"魔法", "这名敌人将要在这个回合使用神秘的魔法。"},
+    SLEEP = {"熟睡", "这名敌人正在睡觉。"},
+    STUN = {"击晕", "这名敌人在这个回合被击晕了。"},
+    UNKNOWN = {"不明", "这名敌人的意图不明（但不是攻击）。"},
+}
+
+function M.intentTip(enum, damage, times)
+    if not enum or enum == 'NONE' then return end
+    local copy = attackTips[enum] or otherTips[enum]
+    if not copy then return end
+    local body = copy[2]
+    if attackTips[enum] then
+        body = body .. number(damage) .. ' 点伤害'
+        if times and enum ~= 'ATTACK_DEBUFF' then body = body .. ' ' .. number(times) .. ' 次' end
+        body = body .. '。'
+    end
+    return {name = copy[1], body = body}
+end
+
 -- CJK glyphs take one font size; ASCII takes about half. Count UTF-8 lead bytes.
 function M.lines(text, boxWidth, fontSize, inset)
     if not text or text == "" then return 0 end
@@ -47,8 +81,8 @@ local function selectedEntries(entries, info)
     return entries
 end
 
-local function ownedStatusText(self, describe, entry, battle, actor)
-    local text, tag, note = describe.statusDetail(entry, battle.rules, actor, battle)
+local function ownedStatusText(self, describe, entry, battle, actor, enemyPowerTip)
+    local text, tag, note = describe.statusDetail(entry, battle.rules, actor, battle, enemyPowerTip)
     if entry.id=='stasis' and actor.stasisCardId then
         local display=self.presentation[actor.stasisCardId]
         local definition=battle.catalog.cards[actor.stasisCardId]
@@ -67,18 +101,21 @@ function M.new(self, describe)
         if require('abyss_boss_relics').hidesIntents(self.run)then return require('abyss_battle_intent_view').hidden()end
         return describe.intentView(battle,index)
     end
-    local function statusRow(entry, battle, actor)
-        local text, tag, note = ownedStatusText(self, describe, entry, battle, actor)
+    local function statusRow(entry, battle, actor, enemyPowerTip)
+        local text, tag, note = ownedStatusText(self, describe, entry, battle, actor, enemyPowerTip)
         local kind = describe.statusKind(entry)
+        local showsAmount = entry.stack ~= "none" and (entry.id ~= "strength" or enemyPowerTip)
         return { status = entry.id, icon = (Theme.icon.status[entry.id] or Theme.icon.status[entry.id:match('^colorless_bomb_') and 'colorless_bomb' or entry.icon]),
             colour = kind == "buff" and C.buff or C.debuff, tag = tag, text = text, note = note,
-            name = entry.name .. ((entry.id == "strength" or entry.stack == "none") and "" or " " .. number(entry.amount)) }
+            name = entry.name .. (showsAmount and " " .. number(entry.amount) or "") }
     end
 
     local function intentCard(card, battle, info)
         local view = projectedIntent(battle, info.index)
         card.tag, card.accent, card.hp = "下一步行动", describe.intentColors[view.kind] or C.textDim, nil
-        card.subtitle = "尚未执行 · 敌方回合时发生"
+        local actor=battle.enemies[info.index]
+        local tip=actor and not view.hidden and describe.displayedIntent and M.intentTip(describe.displayedIntent(battle,actor.id))
+        card.subtitle = tip and tip.body or "尚未执行 · 敌方回合时发生"
         card.sections[1] = { rows = view.rows }
         return card
     end
@@ -208,25 +245,33 @@ function M.new(self, describe)
         end
     end
 
+    local function sourcePowerTip(battle, info, actor)
+        if info.powerTips and not info.statusId and not info.offset
+            and not require('abyss_boss_relics').hidesIntents(self.run) then
+            return M.intentTip(describe.displayedIntent(battle, actor.id))
+        end
+    end
+
     local function powerRows(entries, battle, info, actor)
-        local rows = {}
+        local rows = {sourcePowerTip(battle, info, actor)}
         for _, entry in ipairs(selectedEntries(entries, info) or {}) do
-            local row = statusRow(entry, battle, actor)
+            local row = statusRow(entry, battle, actor, info.powerTips)
             local body = row.text or ""
             if row.tag and row.tag ~= "" and tonumber(row.tag) == nil then body = body .. "。 " .. row.tag end
             if row.note and row.note ~= "" then body = body .. "。 " .. row.note end
-            rows[#rows + 1] = {name = entry.originalV4 and row.name or entry.name, body = body}
+            rows[#rows + 1] = {name = (info.powerTips or entry.originalV4) and row.name or entry.name, body = body}
         end
         return #rows > 0 and rows or nil
     end
 
     return function(data, presentation, battle, info, actor)
         local entries = Combat.statusView(actor)
-        if info.kind == "powerTips" then return powerRows(entries, battle, info, actor) end
+        if info.powerTips or info.kind == "powerTips" then return powerRows(entries, battle, info, actor) end
         local card = {title = actor.name or "旅行者", tag = "当前状态", accent = C.gold,
             hp = actor.hp, maxHp = actor.maxHp, block = actor.block, sections = {}}
         if info.kind == "intent" then return intentCard(card, battle, info) end
         if info.kind == "card" or info.kind == "potion" or info.kind=='rewardCard' then return keywordCard(card, data, presentation, battle, info, actor) end
+        card.actorDetail = true
         entries = selectedEntries(entries, info)
         if not entries then return end
         if info.index > 0 and not info.statusId and not info.offset then
@@ -236,7 +281,10 @@ function M.new(self, describe)
         end
         playerResources(card, battle, info, actor)
         statusSections(card, entries, battle, actor)
-        if #card.sections == 0 then card.empty = "暂无状态" end
+        if #card.sections == 0 then
+            if info.transient then return end
+            card.empty = "暂无状态"
+        end
         return card
     end
 end

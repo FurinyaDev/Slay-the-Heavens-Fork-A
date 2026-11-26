@@ -247,7 +247,7 @@ test('actual required gate commands reject every missing, failed, cancelled or s
 });
 
 test('actual impact CLI routes Full Fast unknown and merge-group through the complete current matrices',()=>{
- const root=mkdtempSync(join(tmpdir(),'impact-posix15-')),cli=resolve('scripts/ci-impact.mjs');
+ const root=mkdtempSync(join(tmpdir(),'impact-posix16-')),cli=resolve('scripts/ci-impact.mjs');
  const git=(...args)=>{const result=spawnSync('git',args,{cwd:root,encoding:'utf8'});assert.ifError(result.error);assert.equal(result.status,0,result.stderr);return result.stdout.trim();};
  try{
   for(const dir of ['src/lua','scripts','tests','docs'])mkdirSync(join(root,dir),{recursive:true});
@@ -273,7 +273,7 @@ test('actual impact CLI routes Full Fast unknown and merge-group through the com
    const plan=JSON.parse(readFileSync(join(root,'ci-impact.json'),'utf8'));assert.equal(plan.mode,scenario.mode);assert.equal(plan.sha,head);
    const emitted=Object.fromEntries(readFileSync(output,'utf8').trim().split('\n').map(line=>[line.slice(0,line.indexOf('=')),line.slice(line.indexOf('=')+1)]));
    assert.equal(emitted.mode,scenario.mode);assert.deepEqual(JSON.parse(emitted.windows_shards),qualityShardMatrices.windows);assert.deepEqual(JSON.parse(emitted.posix_shards),qualityShardMatrices.posix);
-   assert.equal(JSON.parse(emitted.windows_shards).length,18);assert.equal(JSON.parse(emitted.posix_shards).length,15);
+   assert.equal(JSON.parse(emitted.windows_shards).length,18);assert.equal(JSON.parse(emitted.posix_shards).length,16);
    if(scenario.eventName){
     writeFileSync(eventPath,JSON.stringify({...event,merge_group:{...event.merge_group,head_sha:'b'.repeat(40)}}));
     const denied=spawnSync(process.execPath,[cli],{cwd:root,env,encoding:'utf8'});assert.ifError(denied.error);assert.notEqual(denied.status,0);assert.match(denied.stderr,/Invalid native merge group identity/);

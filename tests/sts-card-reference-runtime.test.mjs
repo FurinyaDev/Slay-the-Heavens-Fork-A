@@ -75,8 +75,27 @@ end
 currentWell('skill',Theme.cardSkin.artWells.skill)
 assert(colourIs(framePart.imageColor,Theme.officialAssets.stsCardReference.rarity.uncommon.frame))
 assert(colourIs(bannerPart.imageColor,Theme.officialAssets.stsCardReference.rarity.uncommon.banner))
+-- This Release hides unused pool pieces without rewriting their transforms.
+-- Prove meaningful recycling for every piece owned by power but not attack.
+local shapes=Theme.officialAssets.stsCardReference.geometry.frameProfiles
+local powerOnly={}
+for i=#shapes.attack+1,#shapes.power do
+ local batch=root:GetChild('frame'):GetChild('batch'..math.floor((i-1)/50))
+ powerOnly[i]=batch:GetChild('part'..i)
+end
+assert(#shapes.power>#shapes.attack,'fixture requires at least one reusable power-only slot')
+local function assertPowerGeometry()
+ for i,part in pairs(powerOnly)do
+  local shape=shapes.power[i]
+  assert(part.visible and part.rotation==shape.rotation and
+   part.position[1]==shape.position[1]and part.position[2]==shape.position[2]and
+   part.size[1]==shape.size[1]and part.size[2]==shape.size[2]and
+   part.scale[1]==shape.scale[1]and part.scale[2]==shape.scale[2],'power slot lost authored geometry: '..i)
+ end
+end
 Skin.apply(box,definition('power','rare'),api,{cost=1,baseCost=1})
 assert(reads==firstReads and portraits:GetChild('power').visible)
+assertPowerGeometry()
 currentWell('power',Theme.cardSkin.artWells.power)
 assert(colourIs(framePart.imageColor,Theme.officialAssets.stsCardReference.rarity.rare.frame))
 assert(colourIs(bannerPart.imageColor,Theme.officialAssets.stsCardReference.rarity.rare.banner))
@@ -89,8 +108,12 @@ assert(attackWell.imageColor==priorWellColour,'idle apply cannot repaint cached 
 assert(box:GetChild('type').enableOutline==false,'reference writer must clear an inherited type outline')
 assert(colourIs(framePart.imageColor,Theme.officialAssets.stsCardReference.rarity.common.frame))
 assert(colourIs(bannerPart.imageColor,Theme.officialAssets.stsCardReference.rarity.common.banner))
-local part=root:GetChild('frame'):GetChild('batch2'):GetChild('part142')
-assert(not part.visible and part.rotation==0 and part.position[1]==0 and part.scale[1]==1,'unused pool slots must reset after power reuse')
+for i,part in pairs(powerOnly)do assert(not part.visible,'unused pool slot retained visibility after power reuse: '..i)end
+Skin.apply(box,definition('power','rare'),api,{cost=1,baseCost=1})
+assertPowerGeometry()
+Skin.apply(box,definition('attack','common'),api,{cost=1,baseCost=1})
+for i,part in pairs(powerOnly)do assert(not part.visible,'recycled slot leaked when returning to attack: '..i)end
+assert(reads==firstReads,'recycling power-only slots must preserve discovered handles')
 local outer=back:GetChild('body'):GetChild('bodyFit'):GetChild('vertical')
 local geo=Theme.officialAssets.stsCardReference.character.outer
 assert(outer.imageColor.r==geo.r and outer.imageColor.g==geo.g)

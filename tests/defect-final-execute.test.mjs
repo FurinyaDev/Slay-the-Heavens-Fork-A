@@ -9,6 +9,11 @@ import luaparse from 'luaparse';
 const path='src/lua/abyss_defect_final_cards.lua';
 const read=p=>readFileSync(p,'utf8').replaceAll('\r\n','\n');
 const before=read('tests/fixtures/defect-final-execute-before.lua');
+// a111076f (#940) changed the base Equilibrium card body, which is recorded in
+// the complete state graph. Apply just that approved copy to the expected VM.
+const previousEquilibriumText = "text='获得13点格挡。本回合保留所有非虚无手牌。',";
+const approvedEquilibriumText = "text='获得13点格挡。本回合保留所有非虚无手牌',";
+const expectedSource = before.replace(previousEquilibriumText, approvedEquilibriumText);
 const current=()=>read(path);
 function run(source,fixture){
  const dir=mkdtempSync(join(tmpdir(),'defect-execute-'));
@@ -23,11 +28,12 @@ function run(source,fixture){
 test('complete Defect source is immutable 6f017ff875baa2de80a121e507634a2d859fecfa Git blob',()=>{
  assert.equal(createHash('sha256').update(before).digest('hex'),'df100051b93665ecc88dea658f9c3bfdf24148907fd740c50ca0166852f9be71');
  assert.equal(createHash('sha1').update(`blob ${Buffer.byteLength(before)}\0`).update(before).digest('hex'),'16821c6065a7819bae767e1f6f511c497eba903a');
+ assert.equal(before.split(previousEquilibriumText).length, 2, 'one frozen Equilibrium card body');
 });
 for(const fixture of ['tests/helpers/defect-final-execute-edges.lua',...[
  'defect_final_actions','defect_final_generation','defect_final_defenses','defect_final_powers','defect_final_matrix','defect_final_end_cleanup','defect_genetic_copies',
 ].map(n=>'tests/lua/'+n+'.lua')])test(`${fixture}: independent VMs compare complete graphs, aliases, returns, RNG, queues and errors`,()=>{
- const a=run(before,fixture),b=run(current(),fixture);
+ const a=run(expectedSource,fixture),b=run(current(),fixture);
  assert.equal(a.status,0,a.error);assert.equal(b.status,0,b.error);
  console.log('DEFECT_EXECUTE_GRAPH_RESULT '+JSON.stringify({fixture,checkpoints:b.checkpoints,bytes:Buffer.byteLength(b.graph)}));
  assert(b.checkpoints>0);if(fixture.startsWith('tests/lua/'))assert(b.labels.some(l=>l.startsWith('execute:')),'retained fixture must execute DefectFinal.execute');assert.deepEqual(b.logs,a.logs);assert.deepEqual(b.labels,a.labels);assert.equal(b.graph,a.graph);

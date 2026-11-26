@@ -1,5 +1,4 @@
 local F=dofile('tests/lua/support/game_ui_fixture.lua')
-local Run=require('abyss_run')
 local Map=require('abyss_map')
 local cursor={CursorDown='down',CursorUp='up',CursorExit='exit',CursorEndDrag='endDrag'}
 local function hit(r,p,n)return r:GetChild(p):GetChild(n):GetChild('hit')end
@@ -19,7 +18,8 @@ test('map, battle, busy feedback and node survive repeated title round trips',fu
   local calls=0
   local h,r=F.fixture(nil,function()calls=calls+1;return true end,nil,cursor);assert(F.start(h))
   if context=='battle' or context=='busy'then
-   assert(Run.startCombat(h.run,'raven_adept_solo'));h:refresh()
+   local first=assert(Map.available(h.map)[1])
+   assert(h.mapUI:choose(first.id) and h.run.phase=='combat' and h.mode=='battle')
    if context=='busy'then h.battleUI:endTurn();assert(h.battleUI.busy)end
   elseif context=='node'then
    local routes=dofile('tests/lua/support/map_routes.lua')

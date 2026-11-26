@@ -7,9 +7,10 @@ local enter=Nodes.enter
 local section=assert(ABYSS_MAP_ROOM_SECTION,'map room transition test section required')
 
 local function observeCore(host,root)
-    local trace={calls=0,opaqueFrame=false}
+    local trace={calls=0,opaqueFrame=false,subtitles=0}
     local cover=root:GetChild('pageReveal')
     local veil=cover:GetChild('veil')
+    local subtitle=cover:GetChild('subtitle')
     Nodes.enter=function(...)
         trace.calls=trace.calls+1
         assert(trace.opaqueFrame and veil.imageColor.a==255,'core started before a separate opaque update')
@@ -19,6 +20,12 @@ local function observeCore(host,root)
         OnUpdate(dt or frame)
         assert(script.updating and not host.disabled,'unexpected fatal UI fallback')
         if cover.visible and veil.imageColor.a==255 then trace.opaqueFrame=true end
+        if subtitle.visible then
+            assert(cover.visible and veil.imageColor.a==255 and host.pageReveal:covered(),
+                'subtitle escaped opaque black or the input lock')
+            assert(not cover:GetChild('message').visible and not cover:GetChild('cancel').visible)
+            trace.subtitles=trace.subtitles+1
+        end
     end
     function trace.settle(count)
         for _=1,count or 60 do
@@ -90,7 +97,10 @@ for _,kind in ipairs({'camp','shop','event','combat','elite','boss','treasure'})
         local endTurn=assert(button.click and button or button:GetChild('hit'))
         assert(not tap(endTurn,4) and battle.turn==turn,'covered battle accepted a direct end-turn listener')
     end
-    trace.settle()
+    local guardian=kind=='boss' and run.encounterId=='boss_guardian'
+    trace.settle(guardian and 300 or nil)
+    assert(guardian and trace.subtitles>=260 and trace.subtitles<=265 or not guardian and trace.subtitles==0,
+        'only the Guardian entry holds the approved subtitle')
     assert(trace.calls==1 and map.currentNodeId==id and run.roomGeneration==oldGeneration+1 and run.nodeFlow.type==expectedType)
     assert(same(map,expectedMap) and same(run,expectedRun),'UI departure changed rule/RNG outputs')
     local phases={'input_received','feedback_submitted','core_enter_start','core_enter_end','native_preparation_start',
@@ -126,6 +136,73 @@ for _,kind in ipairs({'camp','shop','event','combat','elite','boss','treasure'})
     elseif host.mode=='battle' then
         finishBattle(host,root,settle,kind)
     end
+    Nodes.enter=enter
+    OnDestroy()
+end
+end
+
+if section=='boss' then
+for _,scenario in ipairs({'late_ready','asset_failure','cancelled'}) do
+    local host,root,assets,_,_,id,hit=onMap('boss')
+    local trace,cover=observeCore(host,root)
+    local subtitle=cover:GetChild('subtitle')
+    local notice=root:GetChild('battlePanel'):GetChild('notice')
+    local elapsed=host.run.elapsedSeconds
+    assets.value=false
+    assert(tap(hit,50))
+    trace.tick()
+    assert(trace.calls==0 and not subtitle.visible,'subtitle preceded the opaque scheduler turn')
+    if scenario=='cancelled' then
+        assert(host:openMenu() and host:closeExit())
+        trace.settle()
+        assert(trace.calls==0 and host.map.currentNodeId~=id and not subtitle.visible)
+        assert(tap(hit,51),'a cancelled departure blocked the next legal tap')
+    end
+    for _=1,12 do trace.tick() end
+    assert(trace.calls==1 and host.map.currentNodeId==id and subtitle.visible)
+    assert(host.run.encounterId=='boss_guardian' and host.run.phase=='combat')
+    assert(subtitle.text=='石门缓缓开启。昔日的封印守卫仍在履行职责，只是漆黑的力量已令它分不清敌友。')
+    assert(notice.text=='' and host.run.elapsedSeconds==elapsed)
+    local alpha,epoch=subtitle.fontColor.a,host.pageReveal.epoch
+    assert(alpha>0 and alpha<255,'subtitle must fade in gradually')
+    for _=1,4 do host:refresh() end
+    assert(host.pageReveal.epoch==epoch and subtitle.fontColor.a==alpha and trace.calls==1)
+    local button=root:GetChild('battlePanel'):GetChild('endTurn')
+    local turn=host.run.combat.turn
+    assert(not tap(assert(button.click and button or button:GetChild('hit')),52) and host.run.combat.turn==turn)
+    for _=1,20 do trace.tick() end
+    assert(subtitle.fontColor.a==255 and host.run.elapsedSeconds==elapsed)
+    local recovery=cover:GetChild('cancel')
+    if scenario=='asset_failure' then
+        assets.failure='injected_guardian_asset_failure'
+        trace.tick()
+        assert(host.pageReveal.state=='failed' and recovery.visible and not subtitle.visible)
+        assert(tap(recovery:GetChild('hit'),53) and host.exitOpen)
+        assets.failure=nil
+        assert(host:closeExit())
+    end
+    assets.value=true
+    local last,count,fadeOut=255,trace.subtitles,false
+    for _=1,280 do
+        if not host.pageReveal:covered() then break end
+        trace.tick()
+        if subtitle.visible then
+            assert(subtitle.fontColor.a<=last,'subtitle restarted after the hold')
+            last=subtitle.fontColor.a
+            fadeOut=fadeOut or last<255
+        end
+    end
+    assert(not host.pageReveal:covered() and not subtitle.visible and not recovery.visible)
+    assert(trace.calls==1 and not cover.visible and host.run.combat.turn==turn and notice.text=='')
+    if scenario=='asset_failure' then
+        assert(count==trace.subtitles,'recovery replayed the failed subtitle')
+    else
+        assert(fadeOut and trace.subtitles>=260 and trace.subtitles<=265,
+            'preparation changed the subtitle duration or skipped the fade-out')
+    end
+    local revealed=host.pageReveal.epoch
+    host:refresh();trace.tick()
+    assert(host.pageReveal.epoch==revealed and not subtitle.visible and host.run.elapsedSeconds>elapsed)
     Nodes.enter=enter
     OnDestroy()
 end

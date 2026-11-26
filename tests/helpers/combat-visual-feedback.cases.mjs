@@ -42,7 +42,8 @@ local function node(name)
 end
 local function get(n)if not nodes[n]then nodes[n]=node(n)end;return nodes[n]end
 local owner={data={rules={player={energyPerTurn=3}}}}
-local writers=require('abyss_battle_render_hud').install(owner,nil,{options={}},{child=get,label=function(n,v)get(n).text=v end,show=function(n,v)get(n):SetVisible(v)end,tint=function(c,v)c.tint=v end,ink=function(c,v)c.ink=v end})
+local host={options={},platform={mobileRunHud=false}}
+local writers=require('abyss_battle_render_hud').install(owner,nil,host,{child=get,label=function(n,v)get(n).text=v end,show=function(n,v)get(n):SetVisible(v)end,tint=function(c,v)c.tint=v end,ink=function(c,v)c.ink=v end})
 local frame={battle={energy=3,exhaust={}},fighting=true}
 writers.renderEnergy(frame)
 local chrome=get('energyIcon'):GetChild('v25Chrome')

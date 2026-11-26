@@ -107,7 +107,7 @@ local function installActivation(owner,host,dependencies)
         if not ok then error(reason,0) end
         if not nested and owner.rewardRender==expected and hiddenProjectionUnowned(owner,host) then revision=expected end
     end
-    function owner:setActive(active,suspend,deferRender)
+    function owner:setActive(active,suspend,deferRender,deckCoversHand)
         assert(type(active) == "boolean", "active must be boolean")
         local wasActive=self.active
         self.active=active
@@ -117,7 +117,7 @@ local function installActivation(owner,host,dependencies)
         host.root:SetVisible(active)
         if deferRender then return end
         if active or self.run or not self.reuseRetiredProjection then
-            revision=nil;self:render()
+            revision=nil;self:render(nil,deckCoversHand)
         else retireOrReuse(wasActive) end
     end
 end
@@ -140,9 +140,9 @@ function M.install(owner, ownership, host, dependencies)
             if not found then owner.selected = nil end
         else owner.selected = nil end
     end
-    local function refresh(changed)
+    local function refresh(changed, deferRender)
         reconcileSelection()
-        owner:render()
+        if not deferRender then owner:render() end
         if changed and host.options.onChange then host.options.onChange(owner) end
     end
     local function perform(command, origin, clearPlayedSelection, commandContext)

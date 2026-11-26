@@ -11,7 +11,7 @@ local function same(a,b)
     for k,v in pairs(a) do same(v,b[k]) end
     for k in pairs(b) do assert(a[k]~=nil) end
 end
-local function setup(kind,linked,extraCards,source)
+local function setup(kind,linked,extraCards,source,inputCovered)
     source=source or Data
     local run,map=Run.new(source,42),Map.generate(source,42)
     for _=1,extraCards or 0 do assert(Run.obtainCard(run,run.deck[1].cardId))end
@@ -37,7 +37,7 @@ local function setup(kind,linked,extraCards,source)
     end
     local root=F.control(assert(find(Layout)))
     local sounds={}
-    local ui=UI.new(root,run,map,Presentation,"click",nil,{cursorEvents=cursor,enhancedRooms=true,color=function(r,g,b,a)return {r=r,g=g,b=b,a=a}end,sound=function(cue)sounds[#sounds+1]=cue end})
+    local ui=UI.new(root,run,map,Presentation,"click",nil,{cursorEvents=cursor,enhancedRooms=true,inputCovered=inputCovered,color=function(r,g,b,a)return {r=r,g=g,b=b,a=a}end,sound=function(cue)sounds[#sounds+1]=cue end})
     ui.testSounds=sounds
     ui:setVisible(true)
     if kind=="shop" then assert(root:GetChild("merchant"):GetChild("talk"):GetChild("hit").listeners.click());advanceShop(ui) end

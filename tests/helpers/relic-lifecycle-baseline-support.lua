@@ -15,7 +15,10 @@ function F.runFixture(key,prefix,first,last)
   if selected then F.executed[#F.executed+1]=identity end
   return selected
  end
- local source=fixture.source:gsub(dispatcher:gsub('([^%w])','%%%1'),function(value)
+ -- Both independent VMs consume the same generated catalogue. Only these
+ -- exact #951 literals use its new spelling in the archived executable case.
+ local fixtureSource=fixture.source:gsub("'cultist'","'raven_adept'"):gsub("'cultist_solo'","'raven_adept_solo'")
+ local source=fixtureSource:gsub(dispatcher:gsub('([^%w])','%%%1'),function(value)
   return value..'\n if not RELIC_LIFECYCLE_REGISTER_CASE(name)then return end\n'
  end)
  assert(load(source,'@'..fixture.path,'t'))()
@@ -92,13 +95,17 @@ end
 local methods={
  hooks={'onLoseHpLast','gainGold','onEquip','onUnequip','obtainCirclet','scoreAdjustment','enqueuePostDraw','upgradeRandomHand','campHealAmount','onUsePotion','onRest','beforeObtainCard','onPreviewObtainCard','previewCardReward','onObtainCard','onEnterRoom','onSpendGold','onVictory','bindBattle','preBattle','hpChanged','wasHpLost','atTurnStart','prepareTurnStart','onUseCard','afterCard','battleStart','endTurnBlock','onPlayerEndTurn'},
  uncommon={'onEquip','onEnterRoom','battleEnd','onVictory','atTurnStart','onShuffle','onUseCard','onMonsterDeath','wasHpLost','strikeBonus','vulnerablePercent','canPlayCurse','singingBowl','onChestOpen','bottleCandidates','equipBottle'},
- rare={'onMasterDeckChange','onEquip','bindBattle','battleStart','atTurnStart','postDraw','onPlayCard','onUseCard','onPlayerEndTurn','disableTop','onRefreshHand','blockPower','onVulnerableApplied','onAttacked','blockAtTurnStart','rechargeEnergy','modifyHealing','randomCardId','onExhaust','chooseGambling','applyEffect','onVictory','campOptions','lift','canWingedTravel','useWingedTravel'},
+ rare={'onMasterDeckChange','onEquip','bindBattle','battleStart','atTurnStart','postDraw','onPlayCard','onUseCard','onPlayerEndTurn','disableTop','onRefreshHand','blockPower','onVulnerableApplied','onAttacked','blockAtTurnStart','rechargeEnergy','modifyHealing','randomCardId','onExhaust','chooseTacticalExchange','applyEffect','onVictory','campOptions','lift','canWingedTravel','useWingedTravel'},
  boss={'energyBonus','drawBonus','hidesIntents','retainsHand','atTurnStart','canPlay','onPlayCard','wasHpLost','preBattle','onSpawnMonster','battleStart','select','claimRelic','claim','onEquip'},
  shop={'onEquip','chooseMirror','battleStartActions','turnStartActions','onBlockBroken','onShuffle','xBonus','medicalCard','exhaustAfterUse','onUseCard','execute','beginToolbox','chooseToolbox','drawOrderVisible'},
 }
 F.publicMethods={}
+local function activeMethod(namespace,name)
+ if namespace=='rare' and name=='chooseTacticalExchange' and RELIC_LIFECYCLE_FROZEN then return 'chooseGambling' end
+ return name
+end
 for namespace,names in pairs(methods)do
- local result={};for _,name in ipairs(names)do result[#result+1]=name end
+ local result={};for _,name in ipairs(names)do result[#result+1]=activeMethod(namespace,name) end
  result[#result+1]='localId'
  if namespace~='boss'then result[#result+1]='owns'end
  if namespace=='uncommon'then result[#result+1]='rewardCardCount';result[#result+1]='isBottled'
@@ -113,8 +120,9 @@ for _,namespace in ipairs({'hooks','uncommon','rare','boss','shop'})do
  local module=require('abyss_'..(namespace=='hooks'and 'relic_hooks'or namespace..'_relics'))
  F[namespace]=module
  for _,name in ipairs(methods[namespace])do
-  local original=assert(module[name],namespace..'.'..name)
-  module[name]=function(...)
+  local activeName=activeMethod(namespace,name)
+  local original=assert(module[activeName],namespace..'.'..activeName)
+  module[activeName]=function(...)
    local label=namespace..'.'..name;F.coverage[label]=(F.coverage[label]or 0)+1
    local args=table.pack(...);local observed=traceArguments(namespace,name,args)
    local api=namespace=='hooks'and name=='onEquip' and RELIC_LIFECYCLE_TRACE and type(args[3])=='table'and args[3]

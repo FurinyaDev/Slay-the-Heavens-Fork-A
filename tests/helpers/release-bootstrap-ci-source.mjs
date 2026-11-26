@@ -1,5 +1,8 @@
+import {beforeKnownMasterBackflowSource} from './master-backflow-source.mjs';
 import {assertCurrentJsInventory,assertCurrentLuaInventory,assertIntegrationSuccessorsCurrent,beforePreflightSource,exactReviewedBuildInput,beforeM05ShopCiSource,assertDevelopBackflowCurrent,authenticateDevelopBackflow,developBackflowOwns,readHistoricalPreflightInput} from './fork-preflight-source.mjs';
+import {beforeCloseoutReviewedDeckBuild,beforeCloseoutRunHudBuild} from './closeout-current-backflow-source.mjs';
 import {beforeInputRetirement} from './input-retirement-source.mjs';
+import {beforeRunHudMapIcon,beforeRunHudDeckLabel} from './run-hud-successors.mjs';
 // CI-only complete bootstrap continuation. No gameplay source or production projector.
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
@@ -54,6 +57,7 @@ function checkedSource(path,source,before){
 }
 export const releaseBootstrapCiCheckedSource=checkedSource;
 export function releaseBootstrapCiSource(path,source,before){
+ source=beforeKnownMasterBackflowSource(path,source);
  if(path==='tests/helpers/draft-quality-workflow.mjs'&&typeof source==='string'&&!source.includes('\r\r\n')&&hash(norm(source))==='357ad5c4d68378063b02cf75396f804c8c2b61d12a925595663a4b533948e4e6'){
   if(before&&before.sha256!=='5c3cc95c0371927db143c573c1500843b97ca8e138f67737aede03e558b1d986')return source;
   const prior=norm(source).replace("import {beforeReleaseFullGate} from './release-ci-workflow.mjs';\n",'').replace('  text = beforeReleaseFullGate(text);\n','');
@@ -83,14 +87,14 @@ function guidanceBefore(path,source){
  }
  return source;
 }
-// The live disk reader feeds the Run HUD predecessor chain. Authenticate these
-// two descendants before entering that chain; already-historical readers are unchanged.
 function beforeRunHudDiskInput(path,source,read){
+ source=beforeRunHudMapIcon(path,source);
  if(path!=='scripts/deck-ui-layout.mjs'&&path!=='tests/node-ui-layout.test.mjs')return source;
- if(path==='tests/node-ui-layout.test.mjs')source=beforeInputRetirement(path,source);
+ if(path==='scripts/deck-ui-layout.mjs')source=beforeRunHudDeckLabel(source);
+ else source=beforeInputRetirement(path,source);
  if(developBackflowOwns(path))assertDevelopBackflowCurrent(path,source);
  source=authenticateDevelopBackflow(path,source,owner=>read(owner,'utf8'));
- if(path==='scripts/deck-ui-layout.mjs')return exactReviewedBuildInput(path,()=>source);
+ if(path==='scripts/deck-ui-layout.mjs')return exactReviewedBuildInput(path,()=>beforeCloseoutReviewedDeckBuild(path,source));
  assert(!source.includes('\r\r\n'),'fresh Run HUD source: '+path);
  const lf=norm(source),hashBlob=s=>createHash('sha1').update(`blob ${Buffer.byteLength(s)}\0`).update(s).digest('hex');
  assert.equal(hash(lf),'60b7f711eb3b3939bace1e69a6293d30ac563769039d30937cb982e202693c31','fresh Run HUD source: '+path);
@@ -110,7 +114,9 @@ function beforeRunHudDiskInput(path,source,read){
  return original;
 }
 export function releaseBootstrapCiRead(read=readFileSync){return(path,encoding)=>{
- const raw=readHistoricalPreflightInput(path,encoding,read),text=typeof raw==='string'?raw:raw.toString('utf8'),prior=releaseBootstrapCiSource(path,guidanceBefore(path,beforeRunHudDiskInput(path,text,read)));
+ const raw=readHistoricalPreflightInput(path,encoding,read),text=typeof raw==='string'?raw:raw.toString('utf8');
+ const projected=releaseBootstrapCiSource(path,guidanceBefore(path,beforeRunHudDiskInput(path,text,read)));
+ const prior=beforeCloseoutRunHudBuild(path,projected);
  return typeof raw==='string'?prior:prior===text?raw:Buffer.from(prior);
 };}
 export function releaseBootstrapWorkflowBefore(path,source){

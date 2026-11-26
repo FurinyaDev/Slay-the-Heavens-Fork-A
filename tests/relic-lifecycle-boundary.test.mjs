@@ -102,13 +102,19 @@ test('all delegated ordinary public fields share their planned canonical slot in
  const slots=JSON.parse(readFileSync('tests/fixtures/relic-lifecycle-slots.json','utf8'));
  assert.equal(slots.baselineRevision,'5762bdd07234b1b25d2541604af773d31e7d05f7');
  assert.equal(slots.forwardedFields,89);
+ const rare=slots.groups.find(group=>group.facade==='abyss_rare_relics'&&group.namespace==='rare');
+ assert.equal(rare.fields.filter(field=>field==='chooseGambling').length,1);
+ // The v2.1 production vocabulary backflow renamed this same public slot.
+ const groups=slots.groups.map(group=>Object.fromEntries(Object.entries({
+  ...group,fields:group===rare?group.fields.map(field=>field==='chooseGambling'?'chooseTacticalExchange':field):group.fields,
+ }).filter(([,value])=>value!==null)));
  for(const name of ['abyss_relic_combat_hooks','abyss_relic_family_combat'])
   assert(existsSync(`src/lua/${name}.lua`),'[RELIC_LIFECYCLE] missing canonical slot producer '+name);
  const directory=mkdtempSync(join(tmpdir(),'relic-lifecycle-slots-'));
  try{
   const file=join(directory,'slots.lua');
   writeFileSync(file,`package.path='src/lua/?.lua;build/lua/?.lua;'..package.path
-local groups=${toLua(slots.groups.map(group=>Object.fromEntries(Object.entries(group).filter(([,value])=>value!==null))))}
+local groups=${toLua(groups)}
 local first,second=function()end,function()end
 local count=0
 for _,group in ipairs(groups)do
@@ -129,6 +135,7 @@ for _,group in ipairs(groups)do
 end
 local boss,rare=require('abyss_boss_relics'),require('abyss_rare_relics')
 assert(boss.owns==nil and boss.privateOwns==nil and rare.privateOwns==nil,'private predicates are not new facade API')
+assert(rare.chooseGambling==nil and require('abyss_relic_family_combat').rare.chooseGambling==nil,'old choice field stays retired')
 assert(count==89);print('RELIC_LIFECYCLE_SLOTS_PASS '..count)
 `);
   const result=runLua(file);assert.equal(result.status,0,result.stdout+result.stderr);

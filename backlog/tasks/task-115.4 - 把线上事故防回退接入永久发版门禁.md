@@ -5,10 +5,11 @@ status: In Progress
 assignee:
   - '@Furinya'
 created_date: '2026-11-25 21:00'
-updated_date: '2026-11-26 03:52'
+updated_date: '2026-11-26 04:05'
 labels:
   - v2.2.0
   - release-gate
+  - p0
 milestone: m-8
 dependencies: []
 references:
@@ -47,6 +48,8 @@ ordinal: 211000
 <!-- AC:BEGIN -->
 - [ ] #1 覆盖已确认根因及有效负对照，轻量持续检查和冻结候选完整门禁可重复执行
 - [ ] #2 在明确的正式配置接续样本验证同工作负载、六档实限和极端档退化恢复，独立评审核对可执行门禁、基线和证据字段；最终候选完整验收归 TASK-115.13
+- [ ] #3 实际 master 生产提交以双父 Merge Commit 回流 develop，经独立 Review 与 Hosted Full 核验；远端 master 是 develop 祖先，线上热路径和现行开发功能均有定向回归。
+- [ ] #4 Release 和 Hotfix 的祖先检查在分叉时失败、正确回流后通过；合后精确 Full 和 Licenses 共同验证结项。
 <!-- AC:END -->
 
 ## Implementation Notes
@@ -71,4 +74,6 @@ ordinal: 211000
 实际 GIL 每臂曲目来源 #1001 已接续到 0a10bd9c，HEAD 5c96301f8e49f427257a929260efdf0c4fb6728d、树 0cd5db9a0ce6ae87caed2a424686f2b87f7731b6。独立原生评审 6067501339，正式 25/25、历史及奖励 6/6、LF 和 CRLF 各 3/3，Fork A 45738223303 通过。实际线上 GIL 复读 375 模块、16 模板，同一包对不同曲目源码臂拒绝。正式候选的六档、超载恢复和实机继续待验。
 
 #1001 经管理员 PR-only 合入 fb356bf9fd876c48e60cd67fb6ff654ea192b503，实际父为 0a10bd9c、树 0cd5db9a 与独审及精确 Fork 一致。该补丁只负责真实 GIL 曲目来源绑定，首个正式有声包、配对六档及官方客户端继续待验。
+
+v2.2.0 P0 回流从 develop 05c9dfe3 与 master d96c9f0d 开始。合前完整 CI、独立 Review、合后祖先关系和结项门禁逐项核证。正式六档验收继续使用线上 v2.1.1 有声 GIL，最终候选验收归 TASK-115.13。
 <!-- SECTION:NOTES:END -->

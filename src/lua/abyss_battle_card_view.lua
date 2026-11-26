@@ -279,6 +279,17 @@ local function readableDragPosition(x, y, scale)
     return math.max(-sx-left,math.min(sx-right,x)), math.max(-sy-bottom,math.min(sy-top,y))
 end
 
+local function releaseCoveredHand(child)
+    local cleared=true
+    for i=1,10 do
+        local box=child('card'..i)
+        CardGlow.clear(box)
+        local hidden=box:GetChild('nativePlayableRim'):SetVisible(false)~=false
+        local _,released=CardDisplay.clearNativeArt(box)
+        cleared=hidden and released and cleared
+    end
+    return cleared
+end
 function M.new(view, controls)
     local child, show = controls.child, controls.show
     local ink, tint, picture = controls.ink, controls.tint, controls.picture
@@ -286,6 +297,7 @@ function M.new(view, controls)
     local pileLayout = controls.pileLayout or Viewport.pileLayout(view.root)
     local dragTarget, dragPose, enemyPosition = controls.dragTarget, controls.dragPose, controls.enemyPosition
     local handBattle,handPoses,previousPiles=nil,{},{}
+    local handSuspended=false
     -- Ten physical hand slots own their native animation handles until explicit
     -- release. Weak leaf caches alone cannot retire Tweens after userdata GC.
     local glowBoxes={}
@@ -420,7 +432,11 @@ function M.new(view, controls)
         return card, (card.selected or hovered) and box or nil
     end
 
+    local function suspendHand()
+        if not handSuspended then handSuspended=releaseCoveredHand(child) end
+    end
     local function renderCards(data, presentation, battle, fighting, active, reward, picking)
+        handSuspended=false
         local context = { data = data, presentation = presentation, battle = battle, fighting = fighting,run=view.run,
             active = active, reward = reward, rewards = picking and Run.rewardOptions(view.run) or {} }
         local aimUid, aimTarget = currentAim(view,dragTarget)
@@ -601,6 +617,7 @@ function M.new(view, controls)
         return true
     end
     local function update(dt)
+        if handSuspended then return end
         for i=1,10 do local box=child('card'..i);CardSkin.tick(box,dt);CardGlow.tick(box,dt)end
         if not handBattle or dt<=0 then return end
         local held=view.gesture or view.carry
@@ -617,6 +634,6 @@ function M.new(view, controls)
         for _,box in pairs(glowBoxes)do CardGlow.clear(box)end
         glowBoxes={}
     end
-    return { renderCards = renderCards, renderDrag = renderDrag, refreshHover=refreshHover, refreshAim=refreshAim, update = update, destroy=destroy }
+    return { renderCards = renderCards, suspendHand = suspendHand, renderDrag = renderDrag, refreshHover=refreshHover, refreshAim=refreshAim, update = update, destroy=destroy }
 end
 return M

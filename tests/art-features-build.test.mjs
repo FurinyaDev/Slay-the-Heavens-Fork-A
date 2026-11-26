@@ -40,9 +40,14 @@ for(let mask=0;mask<32;mask++)test(`independent category build ${mask.toString(2
  assertReadyCardGameHosts(layout,{enabled:artFeatures.cards});
  assert.equal(counts.monsterArt,0,'art belongs to each dynamic actor template, not static layout');
  const actor=templates.find(t=>t.name==='AbyssMonsterActor');
- assert.equal(nodes(actor).length,artFeatures.monsters?647:35);
- assert.equal(nodes(actor).filter(node=>/^shape[0-9]+$/.test(node.name)).length,artFeatures.monsters?600:0);
- assert.equal(nodes(actor).filter(node=>node.name==='monsterArt').length,artFeatures.monsters?1:0);
+ const actorNodes=nodes(actor);
+ const healthTargets=actorNodes.filter(node=>node.name==='hpHit');
+ assert.equal(healthTargets.length,1,'the approved health reader exists independently of art');
+ assert.equal(healthTargets[0].kind,'cursorArea');
+ assert.equal(healthTargets[0].visible,false);
+ assert.equal(actorNodes.length,artFeatures.monsters?648:36);
+ assert.equal(actorNodes.filter(node=>/^shape[0-9]+$/.test(node.name)).length,artFeatures.monsters?600:0);
+ assert.equal(actorNodes.filter(node=>node.name==='monsterArt').length,artFeatures.monsters?1:0);
  assert.equal(templates.some(t=>t.name==='AbyssOfficialBackgroundImage'),artFeatures.menuBackground);
  assert.equal(templates.some(t=>t.name==='AbyssReadyCardImage'),artFeatures.cards||artFeatures.menuBackground||artFeatures.selectionAvatar||artFeatures.battlePortrait);
  const cards=readFileSync(join(dir,'abyss_ready_card_assets.lua'),'utf8'),portraits=readFileSync(join(dir,'abyss_traveler_portrait_assets.lua'),'utf8');

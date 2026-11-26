@@ -4,10 +4,12 @@ import {readFileSync} from 'node:fs';
 import {createHash} from 'node:crypto';
 import {preEvent488Source as inverse} from './helpers/event-488-source-inverse.mjs';
 import {deliverySourceProof as proof,preDeliveryTargetSource as project,tryDeliverySource,verifiedDeliverySources} from './helpers/delivery-source-composition.mjs';
+import {reviewedSelectionRead} from './helpers/reviewed-selection-current-source.mjs';
 const path='src/lua/abyss_drug_dealer_event.lua';
-const current=readFileSync(new URL('../src/lua/abyss_augmenter_event.lua',import.meta.url),'utf8')
- .replaceAll('\r\n','\n').replace("'augmenter_transform'","'drug_dealer_transform'");
-const read=p=>p===path?current:readFileSync(p,'utf8');
+const readCheckout=(p,encoding)=>readFileSync(new URL('../'+p,import.meta.url),encoding);
+const readRenamedEvent=reviewedSelectionRead(readCheckout);
+const current=readRenamedEvent(path);
+const read=p=>p===path?readRenamedEvent(p):readFileSync(p,'utf8');
 const hash=s=>createHash('sha256').update(s).digest('hex');
 test('exact new event source reconstructs the immutable prior source and unknown bytes stay unknown',()=>{
  const old=inverse(path,current);

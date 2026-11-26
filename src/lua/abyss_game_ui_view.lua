@@ -1,7 +1,6 @@
 local Nodes = require("abyss_nodes")
 local Run = require("abyss_run")
 local PotionDiscardUI = require("abyss_potion_discard_ui")
-local Narrative = require("abyss_narrative")
 local Bgm = require("abyss_bgm")
 local CharacterView = require("abyss_character_select_view")
 local MenuView=require("abyss_game_ui_menu_view")
@@ -14,6 +13,7 @@ local Acts=require('abyss_acts')
 local ChapterBattleScene=require('abyss_chapter_battle_scene')
 local NativePages=require('abyss_native_pages')
 local Input=require('abyss_game_ui_input')
+local Navigation=require('abyss_game_ui_navigation')
 local PageReveal=require('abyss_page_reveal')
 local RunHud=require('abyss_run_hud')
 local M = {}
@@ -32,7 +32,8 @@ function M.animate(menuView)
     return function(_,dt) MenuView.animate(menuView,dt) end
 end
 
-function M.paintArtLoading(platform,menu,self,menuLoading,characterPanel,characterLoading,originalCharacterHint)
+function M.paintArtLoading(platform,menu,self,characterPanel)
+    local menuLoading,characterLoading,originalCharacterHint
     return function(_)
             if Theme.presentationProfile=='official-assets-first' then return end
             local bg=platform.background and platform.background:status()
@@ -158,7 +159,7 @@ function M.syncRewardReturn(self)
         end
 end
 
-local function mapPotionFrame(open,hit,run,mapSlots)
+local function mapPotionFrame(open,hit,run,mapSlots,mobile)
     local values=Theme.layout.nativeNode.topBar.potions
     local x,y,w,h=table.unpack(values)
     if mapSlots then
@@ -166,8 +167,8 @@ local function mapPotionFrame(open,hit,run,mapSlots)
         -- Keep the leftmost slot clear of live gold when Potion Belt adds two.
         x,y,w,h=-250+math.max(0,capacity-3)*21,338,capacity*42,44
         if Theme.presentationProfile=='official-assets-first' then
-            local hud=Theme.officialAssets.battleHud
-            x,y,w,h=hud.potionX+(capacity-1)*hud.potionStep/2,hud.y,capacity*hud.potionStep,44
+            local hud=mobile or Theme.officialAssets.battleHud
+            x,y,w,h=hud.potionX+(capacity-1)*hud.potionStep/2,hud.y,capacity*hud.potionStep,hud.hit or 44
         end
     end
     open:SetAnchoredPosition(x,y);hit:SetSizeDelta(w,h)
@@ -182,13 +183,13 @@ function M.refreshPotionEntry(child,inCombat,canManagePotions,platform)
             -- Battle rewards retain mode='battle' after combat has ended. The
             -- shared official entry keeps its physical slots on every run page.
             local mapSlots=official and run~=nil or anchor and mapVisible==true
-            if anchor or official then mapPotionFrame(open,potionHit,run,mapSlots)end
+            if anchor or official then mapPotionFrame(open,potionHit,run,mapSlots,platform.mobileRunHud)end
             if official then
                 potionHit.interactable=not inCombat();potionHit.raycastTarget=false
                 for i=1,Theme.layout.battlePotions.count do
                     local slot=child('potionEntry'):GetChild('slot'..i)
                     if slot then
-                        local occupied=not inCombat() and run~=nil and run.potions[i]~=nil
+                        local occupied=(not inCombat() or mapVisible) and run~=nil and run.potions[i]~=nil
                         slot:SetVisible(occupied);slot:GetChild('hit').raycastTarget=occupied
                     end
                 end
@@ -229,23 +230,43 @@ local function refreshRewardsBack(button,available)
     if available then button:SetAsLastSibling() end
 end
 
+function M.bindHudInput(self,platform,owner)
+    platform.previewingRoute=function()return self.routeOpen==true end
+    platform.hudAlive=function()return not self.disabled end
+    platform.hudInputContext=function()return {self.run,self.mode,self.run and self.run.phase,
+        self.run and self.run.nodeFlow,self.run and self.run.nodeFlow and self.run.nodeFlow.event and self.run.nodeFlow.event.stage,
+        self.deckUI.generation,self.potionUI and self.potionUI.generation,owner.exitGeneration}end
+end
+
+local function showsUtilities(self,run,inMenu,deckOpen,blocked)
+    return not (run and run.phase=='ending_proceed') and not inMenu and not deckOpen
+        and (not blocked or self.routeOpen==true and not self.menuOpen)
+end
+local function refreshRelicCount(control,run)
+    for _,state in ipairs({'normal','hover','pressed','disabled'})do
+        local variant=control:GetChild('open'):GetChild('hit'):GetChild(state)
+        variant:GetChild('label').text=run and '遗物 '..#run.relics or '遗物'
+        variant:GetChild('count').text=run and number(#run.relics) or ''
+    end
+end
+
 function M.refreshUtilities(child,self,inCombat,refreshPotionEntry,refreshDeckEntry)
+    local official=Theme.presentationProfile=='official-assets-first'
     return function(run,inMenu,deckOpen,potionOpen,blocked,returnAvailable)
-            local ending=run and run.phase=='ending_proceed'
-            local hudVisible=not ending and not inMenu and not deckOpen and not blocked
+            local hudVisible=showsUtilities(self,run,inMenu,deckOpen,blocked)
             local utilitiesVisible=hudVisible and not potionOpen
             local inventoryVisible=hudVisible and (not potionOpen or self.potionUI.localPanel==true)
+            local inventoryBlocked=potionOpen
+            if official then inventoryVisible,inventoryBlocked=RunHud.visible(self),RunHud.blocked(self) end
             refreshRewardsBack(child("combatRewards"),returnAvailable)
             child("deckEntry"):SetVisible(utilitiesVisible)
             -- STS has no separate relic button: the discs under the HP row are the one control.
             child("relicEntry"):SetVisible(false)
-            self.relicUI:refreshBar(run,inventoryVisible,potionOpen)
-            for _,state in ipairs({'normal','hover','pressed','disabled'})do
-                local variant=child('relicEntry'):GetChild('open'):GetChild('hit'):GetChild(state)
-                variant:GetChild('label').text=run and '遗物 '..#run.relics or '遗物'
-                variant:GetChild('count').text=run and number(#run.relics) or ''
-            end
-            child("potionEntry"):SetVisible(not inCombat() and inventoryVisible)
+            local browser=deckOpen and self.deckUI.browserShell
+            self.relicUI:refreshBar(run,inventoryVisible,inventoryBlocked,browser)
+            if not browser then refreshRelicCount(child('relicEntry'),run) end
+            child("potionEntry"):SetVisible((not inCombat() or self.routeOpen==true) and inventoryVisible)
+            if browser then return end
             refreshPotionEntry(run,mapPotionVisible(self))
             child("nodePanel"):GetChild("potions"):SetVisible(false)
             refreshDeckEntry(run)
@@ -277,10 +298,13 @@ function M.refreshPageVisibility(menu,self,suspendBattle,child,refreshMapResourc
     local visibilityPass=0
     local function refreshMapVisibility(run,deckOpen,blocked)
         local onMap=self.mode=="map"
+        if not self.routeOpen then
+            local mapRoute=child('mapPanel'):GetChild('mapRoute')
+            if mapRoute then mapRoute:SetVisible(false) end
+        end
         local returningFromDeck=coveredMapRun~=nil and coveredMapRun==run
         coveredMapRun=onMap and deckOpen and run or nil
-        self.mapUI:setVisible(onMap and not deckOpen and not blocked,onMap,returningFromDeck)
-        if self.sessionPaused then self.mapUI:setNavigationEnabled(false) end
+        self.mapUI:setVisible(onMap and not deckOpen and not blocked,onMap,returningFromDeck,true)
         child("mapPanel"):SetVisible(onMap)
         refreshMapResources(run)
     end
@@ -297,18 +321,21 @@ function M.refreshPageVisibility(menu,self,suspendBattle,child,refreshMapResourc
                 and battle.potionInventory==potionInventory and run.maxHp==maxHp
         end
     end
+    local function coveredMapBrowser(deckOpen)
+        return self.mode=='map' and deckOpen and self.deckUI.browserShell and not self.battleUI.active
+    end
     local function refreshBattleVisibility(run,deckOpen,potionOpen,blocked,pass)
         -- Reuse a cover only after its eager render has committed suspension.
         -- The active flag changes before the native setter and can survive failure.
         local deckBattle=self.mode=='battle' and deckOpen and run and run.combat or nil
-        local deferDeckRender=deckBattle~=nil and coveredDeckBattle==deckBattle
+        local deferDeckRender=coveredMapBrowser(deckOpen) or deckBattle~=nil and coveredDeckBattle==deckBattle
         local coveredPaint
         if not deferDeckRender then
             coveredDeckBattle=nil
             coveredPaint=coveredPaintCheck(run,deckBattle,pass)
         end
         self.battleUI:setActive(self.mode == "battle" and not deckOpen and not potionOpen and not blocked,
-            suspendBattle(run,deckOpen,potionOpen),deferDeckRender)
+            suspendBattle(run,deckOpen,potionOpen),deferDeckRender,deckBattle~=nil and self.deckUI.browserShell==true)
         if visibilityPass==pass then coveredDeckBattle=deckBattle end
         return coveredPaint
     end
@@ -335,27 +362,7 @@ function M.renderBattlePage(self,child)
             end
             if run.phase == "combat" and self.presentedBattle ~= run.combat then
                 self.presentedBattle = run.combat
-                local guardian = false
-                for _, enemy in ipairs(run.combat.enemies) do
-                    if enemy.definitionId == "guardian" then guardian = true end
-                end
-                child("battlePanel"):GetChild("notice").text = guardian
-                    and Narrative.flow.bossEntrance.full or ""
-                self.bossEntrance=guardian and {battle=run.combat,remaining=6} or nil
-            end
-        end
-end
-
-function M.updateBossEntrance(self,child)
-    return function(dt)
-            local entrance=self.bossEntrance
-            if not entrance then return end
-            local notice=child("battlePanel"):GetChild("notice")
-            entrance.remaining=entrance.remaining-dt
-            if not self.run or self.run.combat~=entrance.battle or self.run.phase~="combat"
-                or notice.text~=Narrative.flow.bossEntrance.full or entrance.remaining<=0 then
-                if notice.text==Narrative.flow.bossEntrance.full then notice.text="" end
-                self.bossEntrance=nil
+                child("battlePanel"):GetChild("notice").text = ""
             end
         end
 end
@@ -363,12 +370,13 @@ end
 function M.renderMapPage(self)
     return function(run,deckOpen,potionOpen,blocked,covering)
             if deckOpen then return self.mapUI:setNavigationEnabled(false,true) end
-            -- While the cinematic's last fade uncovers the map, the map is visible but inert.
-            self.mapUI:setNavigationEnabled(not potionOpen and not blocked and not covering and #Nodes.available(run, self.map) > 0)
             if run.neowStatus=='unavailable' and self.map.floor==0 and not self.mapUI.entryError then
                 self.mapUI.entryError='开局恩赐暂不可用：未取得上一局历史；本次保持原开局资源。'
-                self.mapUI:render()
             end
+            -- Apply the input grant and paint the position staged by visibility together.
+            local enabled=not potionOpen and not blocked and not covering and not self.sessionPaused
+                and #Nodes.available(run, self.map) > 0
+            self.mapUI:setNavigationEnabled(enabled)
         end
 end
 
@@ -430,17 +438,43 @@ function M.syncPortraits(platform,self)
         end
 end
 
+local function menuOwnsForeground(self)
+    return self.exitOpen and (not self.routeOpen or self.menuOpen)
+end
 function M.exitEntryVisible(self)
     return function()
+            if not Navigation.routeAllowsMenu(self) then return false end
             local minimal=(Theme.presentationProfile=='official-assets-first' or Theme.presentationProfile=='v25-reference')
                 and Theme.menuPresentation and Theme.menuPresentation.minimal
             if minimal and self.mode=='menu' and not self.characterOpen then return false end
             return not (self.prologue and self.prologue:covering())
                 and not (self.potionUI.localPanel and self.potionUI.visible)
-                and not self.easterEggOpen and not self.exitOpen and not self.settlementRequested and not self.settlementBusy
+                and not self.easterEggOpen and not menuOwnsForeground(self)
+                and not self.settlementRequested and not self.settlementBusy
         end
 end
 
+local function positionUtility(control,values,mobile,deck)
+    local x=mobile and (values==deck and mobile.deckX or mobile.menuX) or values[1]
+    control:SetAnchoredPosition(x,mobile and mobile.y or values[2])
+    local hit=control:GetChild('hit')
+    if mobile then hit:SetSizeDelta(mobile.hit,mobile.hit) end
+    return hit
+end
+local function showRoute(self,child)
+    if not self.routeOpen then return end
+    self.mapUI.map = self.map
+    self.mapUI:setVisible(true,false,false,true)
+    self.mapUI:setNavigationEnabled(false)
+    local mapPanel=child('mapPanel')
+    local mapRoute=mapPanel:GetChild('mapRoute')
+    local visible=not self.menuOpen and not self.deckUI.visible and not self.potionUI.visible
+    if mapRoute then mapRoute:SetVisible(visible) end
+    if visible then
+        mapPanel:SetAsLastSibling()
+        for _,name in ipairs({'relicBar','potionEntry','deckEntry','exitEntry'})do child(name):SetAsLastSibling()end
+    end
+end
 function M.refreshForeground(characterPanel,self,platform,exitEntry,exitEntryVisible,exitPanel,exitDialogOwnsForeground,runMenu,canViewRoute,child,refreshExitDialog)
     local official=Theme.presentationProfile=='official-assets-first'
     local hud=official and Theme.officialAssets.battleHud
@@ -470,8 +504,7 @@ function M.refreshForeground(characterPanel,self,platform,exitEntry,exitEntryVis
         if not hud or utilitiesReady then return end
         for _,entry in ipairs({{child('deckEntry'):GetChild('open'),hud.deck},{exitEntry:GetChild('open'),hud.menu}})do
             local control,values=entry[1],entry[2]
-            control:SetAnchoredPosition(values[1],values[2])
-            local hit=control:GetChild('hit')
+            local hit=positionUtility(control,values,platform.mobileRunHud,hud.deck)
             for _,name in ipairs({'normal','hover','pressed','disabled'})do
                 local variant=hit:GetChild(name)
                 variant:SetLocalScale((variant.localScaleX or 1)*values[3],(variant.localScaleY or 1)*values[3],1)
@@ -495,21 +528,7 @@ function M.refreshForeground(characterPanel,self,platform,exitEntry,exitEntryVis
             characterPanel:SetAsLastSibling()
         end
     end
-    return function()
-            battleUtilities()
-            characterForeground()
-            if self.choiceUI and self.choiceUI.visible then self.choiceUI.root:SetAsLastSibling() end
-            -- Shared utilities stay above the deck overlay; the confirmation stays
-            -- above every page, including an in-flight battle presentation.
-            exitEntry:SetVisible(exitEntryVisible())
-            exitEntry:SetAsLastSibling()
-            exitPanel:SetVisible(exitDialogOwnsForeground())
-            runMenu:SetVisible(self.exitOpen == true and self.menuOpen == true and not self.routeOpen)
-            if menuKeyListener and runMenu.disableKeyEventPassthrough ~= runMenu.visible then
-                runMenu.disableKeyEventPassthrough = runMenu.visible
-            end
-            require('abyss_game_ui_navigation_view').runMenu(self,runMenu,canViewRoute())
-            if runMenu.visible then runMenu:SetAsLastSibling() end
+    local function paintRouteBack()
             local back = child('mapPanel'):GetChild('previewBack')
             local showBack=self.routeOpen==true
             if Theme.presentationProfile=='v25-reference' then
@@ -519,15 +538,27 @@ function M.refreshForeground(characterPanel,self,platform,exitEntry,exitEntryVis
             back:SetVisible(showBack)
             if hud and back:GetChild('v25Face') then
                 require('abyss_v25_menu_view').button(back,showBack and not self.disabled
-                    and not self.settlementRequested and not self.settlementBusy)
+                    and not self.settlementRequested and not self.settlementBusy,platform.color)
             end
             routeCaption(back)
-            if self.routeOpen then
-                self.mapUI.map = self.map
-                self.mapUI:setVisible(true)
-                self.mapUI:setNavigationEnabled(false)
-                child('mapPanel'):SetAsLastSibling()
+    end
+    return function()
+            battleUtilities()
+            characterForeground()
+            if self.choiceUI and self.choiceUI.visible then self.choiceUI.root:SetAsLastSibling() end
+            -- Shared utilities stay above the deck overlay; the confirmation stays
+            -- above every page, including an in-flight battle presentation.
+            exitEntry:SetVisible(exitEntryVisible())
+            if not self.deckUI.visible then exitEntry:SetAsLastSibling() end
+            exitPanel:SetVisible(exitDialogOwnsForeground())
+            runMenu:SetVisible(self.exitOpen == true and self.menuOpen == true)
+            if menuKeyListener and runMenu.disableKeyEventPassthrough ~= runMenu.visible then
+                runMenu.disableKeyEventPassthrough = runMenu.visible
             end
+            require('abyss_game_ui_navigation_view').runMenu(self,runMenu,canViewRoute())
+            if runMenu.visible then runMenu:SetAsLastSibling() end
+            paintRouteBack()
+            showRoute(self,child)
             refreshExitDialog()
         end
 end
@@ -643,6 +674,36 @@ local function publishCharacter(self,platform,syncPortraits,retained)
     local info=self.characterSelection.info
     if retained=='ironclad' and (not info or info.id~='ironclad') then syncPortraits() end
     CharacterView.render(panel,self.characterSelection,platform,true,motion)
+end
+
+local function selectionPageVisible(self,panel)
+    return panel.visible and self.characterOpen and not self.disabled and not self.deckUI.visible
+        and not self.exitOpen and not self.sessionPaused and not self.settlementRequested and not self.settlementBusy
+end
+function M.refreshSelection(self,platform,syncPortraits)
+    local panel=self.root:GetChild('characterPanel')
+    local painting,pending=false,false
+    return function()
+        if painting then pending=true;return end
+        if not selectionPageVisible(self,panel) or self.pageReveal and self.pageReveal:covered() then
+            return self:refresh()
+        end
+        -- A role change replaces the summary and decorative art on the same
+        -- page. Reuse the publication boundary for any actual readiness work.
+        painting=true
+        repeat
+            pending=false
+            if not requestReveal(self,platform) then painting=false;return self:refresh()end
+            if not self.selectionMotion then CharacterView.render(panel,self.characterSelection,platform)end
+            local retained=syncPortraits()
+            if not pending and selectionPageVisible(self,panel) then
+                finishReveal(self,platform)
+                publishCharacter(self,platform,syncPortraits,retained)
+                paintReveal(self)
+            end
+        until not pending or not selectionPageVisible(self,panel)
+        painting=false
+    end
 end
 
 -- Sorting has already painted the deck projection. Keep its publication and

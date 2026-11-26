@@ -2,6 +2,8 @@ local S=require('semantic')
 assert(type(S.new)=='function','semantic bridge must create real Run/Combat fixture')
 local a=S.new()
 assert(a.run.phase=='combat' and #a.run.combat.hand==5)
+local sampleInputs={[a.run.data]=a.run.data}
+local sample=S.Combat.copy(a,sampleInputs)
 local b=a.run.combat
 local function find(id)for i,c in ipairs(b.hand)do if c.cardId==id then return i,c end end end
 local slot,c=find('strike');assert(slot)
@@ -36,5 +38,12 @@ assert(b.player.block==5,'real core block')
 assert(a.effects[1]==retained,'next command preserves prior independent VFX')
 for i=1,60 do a:update(1/60)end
 assert(not a.busy)
-local elapsed={};for i=1,8 do local x=S.new();local k=x:find('strike');local t=os.clock();assert(x:submit(x:capture(k,true),1,'perf'..i));elapsed[i]=(os.clock()-t)*1000 end
+local elapsed={}
+for i=1,8 do
+ -- Reuse the validated opening state and isolate mutable state for each Run.play sample.
+ local x=S.Combat.copy(sample,{[sample.run.data]=sample.run.data})
+ local k=x:find('strike');local t=os.clock()
+ assert(x:submit(x:capture(k,true),1,'perf'..i));elapsed[i]=(os.clock()-t)*1000
+end
+assert(sample.commandCount==0 and sample.run.combat.energy==energy,'each sample must have independent combat state')
 table.sort(elapsed);print('SEMANTIC_PASS checks=16 input_events=0 command_ms_p50='..elapsed[4]..' command_ms_max='..elapsed[8])

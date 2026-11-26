@@ -18,6 +18,7 @@ import {prePlayerDeathSource} from './player-death-transition-inverse.mjs';
 import {preDeathSettlementGuardSource} from './death-settlement-guard-inverse.mjs';
 import {readFileSync} from 'node:fs';
 import {createHash} from 'node:crypto';
+import {exactSourceMatches} from './source-fingerprint.mjs';
 const normalize=source=>source.replaceAll('\r\n','\n');
 const hash=source=>createHash('sha256').update(source).digest('hex');
 const bytes=readFileSync(new URL('../fixtures/pr323-accepted-source-inverse.json',import.meta.url),'utf8');
@@ -98,6 +99,15 @@ function project(path,source,target){
 }
 // Expose the existing full composition step so one materialization can validate
 // and project the same normalized bytes without running that step twice.
+// Restore the exact original fixture before the immutable PR323 proof.
+function beforeShopV4Fixture(path,source){
+ if(path!=="tests/lua/original_v4_ui.lua"||typeof source!=='string'||source.includes('\r\r\n'))return source;
+ const lf=normalize(source);
+ if(hash(lf)!=='71356bd2162f34c375ccf3de38413f5764ebc53e3b44c3910fae263bd2b2459d')return source;
+ const prior=lf.replace("local advanceShop=dofile('tests/lua/support/shop_timeline.lua')\n",'').replace("local room=path(ui.root,'nodePanel/shopRoom')\nlocal shelf=path(ui.root,'nodePanel/shopView')\nassert(room.visible and not shelf.visible, 'the complete shop room appears before the shelf')\nassert(path(ui.root,'nodePanel/merchant/talk/hit').click())\nassert(room.visible and not shelf.visible, 'cold shelf preparation must stay behind the room')\nadvanceShop(ui)\nassert(shelf.visible and not room.visible and not ui.nodeUI.shopBusy, 'the staged shelf must become interactive')\n",'');
+ assert.equal(hash(prior),'672033876fabe45c44bdb5fd0cb47f53353c332bd948ad7ce670141d6e25ea9b','exact original shop fixture predecessor');
+ return source.includes('\r\n')?prior.replaceAll('\n','\r\n'):prior;
+}
 export function normalizePr323HistoryInput(path,source){
  source=beforeOfficialBackgroundFixture(path,source);
  source=preCardOriginSource(path,source);
@@ -120,6 +130,14 @@ export function projectHistoricalPr323Source(path,source,target){
  if(!binding||hash(normalized)!==binding.afterSha256)return normalized;
  return binding[target+'Source']===null?null:normalize(binding[target+'Source']);
 }
-export function preAcceptedPr323Source(path,source){return project(path,source,'accepted');}
+const releaseArchitecture={
+ sha256:'cec427dcede62ac3efe295bfc976eb58cffb073a69bab7be12da02051de58dbe',
+ gitBlob:'fc35277cdbd7809afbe934cfdb63b6ee0828abe5',
+};
+export function preAcceptedPr323Source(path,source){
+ // The current Release config is admitted by the combined epoch with fresh owners.
+ if(path==='config/architecture.json'&&exactSourceMatches(source,releaseArchitecture))return source;
+ return project(path,source,'accepted');
+}
 export function preOriginalPr323Source(path,source){return project(path,source,'original');}
 export function readAcceptedPr323Source(path){return preAcceptedPr323Source(path,readFileSync(path,'utf8'));}

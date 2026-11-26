@@ -1,0 +1,25 @@
+digraph performance_faults {
+  graph [rankdir=LR, bgcolor="white", pad=0.30, nodesep=0.24, ranksep=0.45, fontname="DejaVu Sans"]
+  node [shape=box, style="rounded,filled", fillcolor="#f4f5f7", color="#aab4c4", fontname="DejaVu Sans", fontsize=11, margin="0.15,0.11"]
+  edge [color="#8290a5", arrowsize=0.65]
+  symptom [label="Players report stutter or cannot enter\nIncident attribution · UNVERIFIED", fillcolor="#273b58", color="#273b58", fontcolor="white", fontsize=15]
+  platform [label="Platform before Lua\nT0 to T1"]
+  project [label="Project startup\nT1 to first actionable menu"]
+  play [label="After entry\nCombat and page interactions"]
+  response [label="Device and runtime conditions"]
+  load [label="Host download / cache / network\nUNVERIFIED · no T0 to T1 capture"]
+  tier [label="Load requirement tier and actual deny\nUNVERIFIED · no matched editor receipt"]
+  memory [label="Static native UI / memory load\nUNVERIFIED · device contribution"]
+  decoder [label="Eager monster slot expansion\nCONFIRMED · 42 drawings before title in v2.1.0\nSame 3,385 slots; one first-use decode on hotfix", fillcolor="#dbf1ed", color="#66a995"]
+  lookup [label="Repeated native map group lookup\nCONFIRMED · original Host 391 to 5 (#954)\nDevice wall-clock effect unverified", fillcolor="#dbf1ed", color="#66a995"]
+  init [label="Other sync init / first pixels\nUNVERIFIED · real renderer timing"]
+  hand [label="Rejected hand geometry cache\nRULED OUT · absent in measured hotfix\nGameplay rendering path equals v2.1.0", fillcolor="#edf1fc", color="#8395c0"]
+  lifecycle [label="Native UI / render / lifecycle\nUNVERIFIED · device interactions and GPU"]
+  gc [label="CPU contention / Lua GC / memory peaks\nUNVERIFIED · physical device causal link"]
+  device [label="Thermal throttling / RAM / OS / GPU\nUNVERIFIED · matched iPhone 14 Pro A/B"]
+  symptom -> {platform project play response};
+  platform -> {load tier memory};
+  project -> {decoder lookup init};
+  play -> {hand lifecycle};
+  response -> {gc device};
+}

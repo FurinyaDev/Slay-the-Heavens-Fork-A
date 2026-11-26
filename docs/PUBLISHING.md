@@ -113,6 +113,20 @@ node scripts/release-ci.mjs verify-publish release/vX.Y.Z <frozen-HEAD>
 4. 用有权读取草稿的 GitHub CLI 登录账号运行 `verify`，核对 Tag 指向、构建提交的工程版本及 GitHub 附件 SHA-256 与验收产物一致。已公开 Release 也可用该 workflow 的 `verify` 模式，填数字 Release ID。现有 Full 和实机门禁继续适用。
 5. Owner 完成人工平台发布并核对目标作品的成功结果后，将平台实际版号原样写入 `platform_version`，并添加 `platform_evidence`（指向脱敏成功回执的 HTTPS 地址）。回执应能核对作品 ID、版号、上线状态、时间和候选身份。重跑 `verify`，从同一 Release 重新读回。Actions 只校验格式和归档一致性，平台事实以实际成功回执为准。
 
+### Release 与 Hotfix 回流结项
+
+Release 或 Hotfix 合入 `master` 后，由该 PR 的发布负责人固定实际合入 SHA，并从最新 `develop` 开回流分支。执行 `git merge --no-ff origin/master`，逐项解决冲突，核对线上修复和开发线功能，再向 `develop` 提 PR。PR 中保存生产 SHA、开发基线和候选树，以及独立 Review、Hosted Full、Licenses 和按改动范围要求的性能证据。
+
+按 [CI 回流合并规程](CI.md#生产历史回流与祖先门禁)使用保留父提交的 Merge Commit。合入后从正式远端重新读取两条分支，在实际 `develop` 合入 SHA 的 Hosted Quality Full 与 Licenses 全绿后运行 `Release backflow` 的结项核验。
+
+```sh
+git fetch origin master develop
+git merge-base --is-ancestor origin/master origin/develop
+gh workflow run release-backflow.yml --ref develop -f master_sha="$(git rev-parse origin/master)"
+```
+
+在回执中确认 `release-backflow` 与 `release-closeout` 均通过，再在发布记录和 Backlog 登记发布 PR、回流 PR、双方完整 SHA、合后 Full、Licenses 和结项检查的链接。祖先检查失败、最新生产 SHA 改变或验证缺证时，发布流程仍待结项。平台已发布的事实按原回执记录。历史冻结分支无需恢复。
+
 ### 机器读取与追溯
 
 Release 正文保留一块标记 JSON。以下为待确认的格式示例，提交和摘要均为占位值。

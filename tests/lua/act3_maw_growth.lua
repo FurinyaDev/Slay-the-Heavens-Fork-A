@@ -240,6 +240,13 @@ end)
 test('real Host reads Maw Roar and Growth Constricted source without mutating rules or RNG',function()
  local H=dofile('tests/lua/support/battle_action_fixture.lua');local F=H.F
  local inspectDetails=dofile('tests/lua/support/status_detail_fixture.lua')
+ local function inspectIntent(panel,touchId)
+  local hit=monsterControl(panel,'enemy1'):GetChild('intentHit')
+  for _,event in ipairs({'down','up','click'})do
+   local listener=hit.listeners[event]
+   if listener then listener({touchId=touchId}) end
+  end
+ end
  for _,seed in ipairs({'2','3'})do
   local root=F.Viewport.apply(F.control({children=F.Layout}),1280,720)
   local host=F.GameUI.new(root,D,F.Presentation,'click',{seed=tonumber(seed),campaign=true,prologue=false,
@@ -247,20 +254,22 @@ test('real Host reads Maw Roar and Growth Constricted source without mutating ru
   assert(testStart(host));local r=host.run;r.act,r.floor,r.encounters=3,35,Q.new(seed,3)
   for _=1,2 do local _,q=Q.consume(r.encounters,'normal');r.encounters=q;r.floor=r.floor+1 end
   assert(Run.startRoomCombat(r,'normal'));host:refresh()
-  local panel=root:GetChild('battlePanel');local ui=host.battleUI;local _,tap=H.controls(panel)
+  local panel=root:GetChild('battlePanel');local ui=host.battleUI
   local s,e=r.combat,r.combat.enemies[1];eq(ui.run,r)
   eq(monsterControl(panel,'enemy1'):GetChild('name').text,e.name)
   eq(monsterControl(panel,'enemy1'):GetChild('hp').text,string.format('%d/%d',e.hp,e.maxHp))
   assert(not monsterControl(panel,'enemy2'))
   if seed=='2'then
-   tap('enemy1',51);local detail=inspectDetails(ui,panel)
-   assert(detail:find(s.catalog.statuses.weak.name,1,true)and detail:find(s.catalog.statuses.frail.name,1,true))
+   inspectIntent(panel,51);local detail=inspectDetails(ui,panel)
+   assert(detail:find('强大的负面效果',1,true) and not detail:find('未知',1,true))
+   same(e.intents[e.intentIndex].effects,{{op='applyStatus',status='weak',value=3},{op='applyStatus',status='frail',value=3}})
    assert(Run.endTurn(r));host:refresh();eq(s.player.hp,s.player.maxHp)
    eq(monsterControl(panel,'enemy1'):GetChild('intent').text,'25')
   else
    assert(Run.endTurn(r));host:refresh();eq(s.player.hp,s.player.maxHp-16)
-   tap('enemy1',52);local detail=inspectDetails(ui,panel)
-   assert(detail:find('束缚',1,true)and detail:find('10',1,true)and not detail:find('未知',1,true))
+   inspectIntent(panel,52);local detail=inspectDetails(ui,panel)
+   assert(detail:find('负面效果',1,true) and not detail:find('未知',1,true))
+   same(e.intents[e.intentIndex].effects,{{op='applyStatus',status='constricted',value=10}})
    assert(Run.endTurn(r));host:refresh();eq(s.constrictedSource,e);eq(s.player.statuses.constricted,10)
    panel:GetChild('hero'):GetChild('statusRow'):GetChild('hit').click({touchId=53})
    local info=panel:GetChild('statusInfo');assert(info.visible)

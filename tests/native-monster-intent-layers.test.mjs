@@ -5,7 +5,7 @@ import {createHash} from 'node:crypto';
 import {mkdtempSync,readFileSync,rmSync} from 'node:fs';
 import {join} from 'node:path';
 import {tmpdir} from 'node:os';
-import {enemyUnitTemplate,battleLayout} from '../scripts/ui-layout.mjs';
+import {enemyUnitTemplate,battleLayout,theme} from '../scripts/ui-layout.mjs';
 import {buildUI,assertNativeUiCapacity} from '../scripts/build-ui.mjs';
 import {monsterActorTemplateName,monsterActorInventory} from '../scripts/monster-art.mjs';
 const descendants=n=>[n,...(n.children??n.controls??[]).flatMap(descendants)];
@@ -30,31 +30,45 @@ function assertLayers(actor) {
   assertNativeUiCapacity(actor);
 }
 test('enemy intent effect layers add exactly two empty draw-order roots without changing hero or existing actor fields',()=>{
-  const actor=enemyUnitTemplate();assertLayers(actor);assert.equal(actor.children.length,34);
+  const actor=enemyUnitTemplate();assertLayers(actor);assert.equal(actor.children.length,35);
   actor.children=actor.children.filter(n=>!layers.has(n.name));
   // Approved native readability delta: horizontal intent values are vertically centered.
   const intent=actor.children.find(n=>n.name==='intent');assert.equal(intent.text.valign,'middle');
   intent.text.valign='top'; // Retain the frozen digest for every other existing actor field.
   const previousActor=preReadableUnitTypography(actor);
+  // #897 added the health hit target and blocks cursor passthrough on actors.
+  assert.equal(previousActor.blockCursor,true);
+  delete previousActor.blockCursor;
+  const hits=previousActor.children.filter(n=>n.name==='hpHit');
+  assert.deepEqual(hits,[{name:'hpHit',kind:'cursorArea',size:theme.layout.hpBar.size,visible:false}]);
+  previousActor.children=previousActor.children.filter(n=>n.name!=='hpHit');
   beforeFocusRetirement(previousActor.children,['intentHit','hit']);
   assert.equal(digest(previousActor),'e17a5a9bdaa32056b274d7b12d2a492eee381d4fc70f70c521a4d9b705232f5d');
   const hero=descendants(battleLayout()).find(n=>n.name==='hero');
   const previousHero=preReadableUnitTypography(hero,{hero:true});
   beforeFocusRetirement(previousHero.children,['hit']);
   const statusRow=previousHero.children.find(node=>node.name==='statusRow');
+  // #887 widened the status numbers to fit the native line height.
+  const {statusIcon,nativeText}=theme.layout;
+  const counts=statusRow.children.filter(node=>/^count\d+$/.test(node.name));
+  assert.equal(counts.length,10);
+  for(const count of counts){
+    assert.deepEqual(count.size,[Math.max(statusIcon.size,nativeText.lineHeight),nativeText.lineHeight]);
+    count.size[0]=statusIcon.size;
+  }
   beforeFocusRetirement(statusRow.children,['hit',...Array.from({length:10},(_,index)=>`hit${index+1}`)]);
   assert.equal(digest(previousHero),'ee457437376d90ded5fe29ce2018ed9266eda755a59779022c9571b8439a3d97');
   assert(!descendants(hero).some(n=>layers.has(n.name)));
   const second=enemyUnitTemplate('second');second.children.find(n=>n.name==='intentVfxBehind').children.push({name:'local'});
   assertLayers(enemyUnitTemplate());
 });
-test('actual candidate build emits both ordered layers in its complete 647-control actor template',t=>{
+test('actual candidate build emits both ordered layers in its complete 648-control actor template',t=>{
   const dir=mkdtempSync(join(tmpdir(),'monster-intent-layers-'));t.after(()=>rmSync(dir,{recursive:true,force:true}));
   buildUI(dir,undefined,{artFeatures:{monsters:true}});
   const templates=JSON.parse(readFileSync(join(dir,'game-ui-templates.json')));
   const actors=templates.filter(n=>n.name===monsterActorTemplateName);assert.equal(actors.length,1);
-  const actor=actors[0];assertLayers(actor);assert.equal(actor.children.length,35);assert.equal(actor.visible,false);
-  assert.equal(descendants(actor).length,647);assert.equal(monsterActorInventory(actor).controlsPerActor,647);
+  const actor=actors[0];assertLayers(actor);assert.equal(actor.children.length,36);assert.equal(actor.visible,false);
+  assert.equal(descendants(actor).length,648);assert.equal(monsterActorInventory(actor).controlsPerActor,648);
   assert.deepEqual(actor.children.slice(1),enemyUnitTemplate().children);
   assert.equal(descendants(actor).filter(n=>/^shape\d+$/.test(n.name)).length,600);
   assert.deepEqual(actor.children.find(n=>n.name==='statusRow').children,[]);

@@ -20,7 +20,7 @@ local function control(name,parent)
  return c
 end
 local function unit(name)
- local c=control(name);control('hit',c);control('intentHit',c);local row=control('statusRow',c);control('hit',row)
+ local c=control(name);control('hit',c);control('intentHit',c);control('hpHit',c);local row=control('statusRow',c);control('hit',row)
  for i=1,Theme.layout.statusIcon.perRow*Theme.layout.statusIcon.rows do control('hit'..i,row)end
  return c
 end
@@ -42,7 +42,7 @@ function surfaces:control(slot)return self.boxes[slot]end
 function surfaces:slotFor(box)for i,b in pairs(self.boxes)do if b==box then return i end end end
 local host={monsterSurfaces=surfaces,platform={},clickEvent='click',cursor={CursorDown='down',CursorUp='up',CursorEndDrag='endDrag',CursorEnter='enter',CursorExit='exit'}}
 local ownership={enemyInputs={},enemyPointerObserved=false}
-local static={hero=unit('hero'),statusInfo=control('statusInfo')};control('hit',static.statusInfo);control('page',static.statusInfo)
+local static={hero=unit('hero'),statusInfo=control('statusInfo'),statusDismiss=control('statusDismiss')};control('hit',static.statusInfo);control('page',static.statusInfo)
 for i=1,10 do static['card'..i]=unit('card'..i)end
 for i=1,Theme.layout.battlePotions.count do static['potion'..i]=control('potion'..i);static['potionHelp'..i]=control('potionHelp'..i)end
 local deps={}
@@ -70,11 +70,12 @@ end
 local function event(c,kind,touch)if c.listeners[kind]then return c.listeners[kind]({touchId=touch})end end
 local function click(c,touch)event(c,'down',touch);event(c,'up',touch);event(c,'click',touch)end
 
--- No enemy statusRow or fixed chips: dynamic actor binding must only use intent.
-local actorBox=control('actor');control('hit',actorBox);control('intentHit',actorBox)
+-- No enemy statusRow or fixed chips: dynamic actor binding must bind intent and HP without powers.
+local actorBox=control('actor');control('hit',actorBox);control('intentHit',actorBox);control('hpHit',actorBox)
 bind(1,battle.enemies[1],1,actorBox)
-assert(actorBox:GetChild('hit').listeners.click and actorBox:GetChild('intentHit').listeners.click,
- 'enemy without a power row should still bind portrait and intent')
+assert(actorBox:GetChild('hit').listeners.click and actorBox:GetChild('intentHit').listeners.click
+ and actorBox:GetChild('hpHit').listeners.click,
+ 'enemy without a power row should still bind portrait, intent and HP')
 local actor=battle.enemies[1];Actors.applyPower(battle,actor,'strength',3,actor);Actors.applyPower(battle,actor,'weak',2,battle.player)
 local pool={entries={},boxes={}}
 function pool:entry(slot)return self.entries[slot]end

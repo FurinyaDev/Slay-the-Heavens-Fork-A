@@ -1,9 +1,10 @@
--- Private visual adapter. Core modules are unchanged da6ec560 sources.
+-- Private visual adapter for the current production Run and Combat.
 -- Only fixture construction and presentation live here; all commands use Run.
 local Run=require('abyss_run')
 local Combat=require('abyss_combat')
 local Data=require('abyss_data')
 local Events=require('abyss_events')
+local Encounters=require('abyss_room_encounters')
 local Theme=require('abyss_theme')
 -- Match approved private hand geometry for the production gesture classifier.
 Theme.layout.card.size={150,210}
@@ -23,7 +24,10 @@ local function duration(e)
  return 0
 end
 function M.new()
- local run=Run.new(Data,'42');assert(Run.startCombat(run,'cultist_solo'))
+ local run=Run.new(Data,'42')
+ -- The release roster renamed the original Cultist encounter to Raven Adept.
+ local encounter=assert(Encounters.resolve('Raven Adept','normal'))
+ assert(Run.startCombat(run,encounter.id))
  run.combat=Combat.new(run.data,{deck={'strike','defend','strike','bash','defend'},enemies={'fungi_beast','fungi_beast'},seed=11,hp=68,maxHp=80,gold=99})
  -- This is an explicit five-card test fixture, not a real campaign opening draw.
  local pool=run.combat.hand;local hand={}

@@ -1,5 +1,5 @@
 import { partition, jsShard, jsPlanningWeights, discoverJs, timings as runtimeTimings } from '../scripts/ci-shards.mjs';
-import {beforeInputRetirementTestInventory} from './helpers/input-retirement-inventory.mjs';
+import {beforeCurrentReleaseLuaNames,beforeInputRetirementTestInventory,beforePreflightSource} from './helpers/fork-preflight-source.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
@@ -12,6 +12,7 @@ import { shardLuaScripts } from '../scripts/test-lua.mjs';
 import {historicalTest,readHistoricalBaselineSource} from './helpers/historical-baseline-inputs.mjs';
 import {qualityShardMatrices} from '../scripts/ci-quality-shape.mjs';
 import {ciCompleteCalibrationProof} from './helpers/ci-complete-calibration-source-inverse.mjs';
+import {beforeCalibrationReplay} from './helpers/calibration-replay-sources.mjs';
 
 test('sorted shards partition every fixture without omission or duplication and reject invalid bounds', () => {
   const scripts = ['d.lua', 'b.lua', 'a.lua', 'e.lua', 'c.lua'];
@@ -168,7 +169,7 @@ test('current placement retains the original inventory, safety classification an
     if(Object.hasOwn(original.luaShard,file))assert.ok(timings.luaShard[file]>=original.luaShard[file],'original observations cannot decrease');
   }
   const current = readdirSync('tests/lua').filter(file => file.endsWith('.lua')).map(file => `tests/lua/${file}`);
-  const retained = new Set(beforeInputRetirementTestInventory(current,'lua',readFileSync,{required:true}));
+  const retained = new Set(beforeCurrentReleaseLuaNames(beforeInputRetirementTestInventory(current,'lua',readFileSync,{required:true}),readFileSync));
   assert.ok(files.every(file => retained.has(file)), 'complete measured inventory remains authenticated');
   const count=qualityShardMatrices.windows.length;
   const short = file => (timings.lua[file] ?? timings.unknownLuaMs) < 10000;
@@ -189,6 +190,37 @@ test('current placement retains the original inventory, safety classification an
     assert.throws(() => shardLuaScripts(['heavy'], '1/2', { ...sample, luaShard: { heavy: invalid } }, 2), /positive finite/);
     assert.throws(() => shardLuaScripts(['heavy'], '1/2', { ...sample, lua: { heavy: invalid } }, 2), /positive finite/);
   }
+});
+
+test('historical Lua budget replay authenticates the renamed fixture and preserves both older source views',()=>{
+ const current='tests/lua/traveling_merchant_event_content.lua', retired='tests/lua/addict_event_content.lua';
+ const names=[current],read=readFileSync;
+ assert.deepEqual(beforeCurrentReleaseLuaNames(names,read),[retired]);
+ assert.deepEqual(names,[current]);
+ for(const revive of [[...names,retired],names]){
+  const readWithRetired=(path,encoding)=>path===retired?'old fixture':read(path,encoding);
+  assert.throws(()=>beforeCurrentReleaseLuaNames(revive,readWithRetired),/retired event fixture must be absent/);
+ }
+ const drifted=(path,encoding)=>{
+  const text=read(path,encoding);
+  return path===current?text.slice(0,-1)+'!':text;
+ };
+ assert.throws(()=>beforeCurrentReleaseLuaNames(names,drifted),/fresh added inventory source/);
+
+ const path='tests/ci-windows-shape-expansion.test.mjs',source=read(path,'utf8').replaceAll('\r\n','\n');
+ const crlf=text=>text.replaceAll('\n','\r\n');
+ const expected=[
+  [beforeCalibrationReplay,'dfab061fd4b7edd13ff6fb2f9b4a27d225ded525e1a90352447668c39447fdf5'],
+  [beforePreflightSource,'d28a52f2e892ed88e68cbe5fd29d123dfe6a5b86de5d8053b48a6a117504c874'],
+ ];
+ for(const [project,sha] of expected){
+  const prior=project(path,source);
+  assert.equal(createHash('sha256').update(prior).digest('hex'),sha);
+  assert.equal(project(path,crlf(source)),crlf(prior));
+  const changed=source.slice(0,-1)+'!';
+  assert.equal(project(path,changed),changed);
+  assert.equal(project('foreign/'+path,source),source);
+ }
 });
 
 test('original 1114-fixture placement experiment retains its eight-shard improvement and spread',()=>{

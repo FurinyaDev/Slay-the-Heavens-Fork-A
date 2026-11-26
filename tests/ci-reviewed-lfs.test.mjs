@@ -6,13 +6,16 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { spawnSync } from 'node:child_process';
+import { gunzipSync } from 'node:zlib';
 import * as lfs from '../scripts/ci-reviewed-lfs.mjs';
 import { reviewedPngPaths, needsReviewedAssets, verifyReviewedPngs, prepareReviewedAssets, lfsEnvironment, lfsArguments } from '../scripts/ci-reviewed-lfs.mjs';
-import {mediaFiles,originalMediaFiles,evidenceFiles,archiveFiles,helperArchiveFiles,replayArchiveFiles,mediaPointer,maxMediaPayloadBytes,maxEvidencePayloadBytes,maxArchivePayloadBytes,maxHelperArchivePayloadBytes,maxReplayArchivePayloadBytes,validateMediaPointers,prepareMediaAssets} from '../scripts/ci-media-lfs.mjs';
+import {mediaFiles,originalMediaFiles,evidenceFiles,archiveFiles,helperArchiveFiles,replayArchiveFiles,checkoutFiles,productionBackflowFiles,mediaPointer,maxMediaPayloadBytes,maxEvidencePayloadBytes,maxArchivePayloadBytes,maxHelperArchivePayloadBytes,maxReplayArchivePayloadBytes,maxCheckoutPayloadBytes,maxProductionBackflowPayloadBytes,validateMediaPointers,prepareMediaAssets} from '../scripts/ci-media-lfs.mjs';
 import {checkWhitespace,validateMediaBases} from '../scripts/ci-whitespace.mjs';
 import {prepareComparisonBlobs,comparisonBlobIds} from '../scripts/ci-comparison-blobs.mjs';
 import {checkHostedCheckout,checkNetworkPolicy} from '../scripts/check-network-policy.mjs';
 import {sensitive,checkAssets} from '../scripts/check-license.mjs';
+import {beforeCheckoutStorageSource} from './helpers/checkout-storage-source.mjs';
+import {beforeMasterBackflowSource,readBeforeMasterBackflowSource} from './helpers/master-backflow-source.mjs';
 
 const root = resolve('.');
 const expectedPaths = ['armaments', 'cleave', 'heavy_blade'].flatMap(id => ['source.png', 'preview-native.png'].map(name => `art/cards/traveler-geo/${id}/${name}`));
@@ -232,7 +235,8 @@ test('state evidence storage extension freezes all aliases and leaves the origin
  assert.equal(extension.files.length,76);
  assert.equal(new Set(extension.files.map(row=>row.sha256)).size,58);
  assert.equal(extension.files.filter(row=>row.path.includes('/inspection-')).length,18);
- const original={...manifest};delete original.evidenceExtension;delete original.archiveExtension;delete original.helperExtension;delete original.replayArchiveExtension;
+ const original={...manifest};delete original.evidenceExtension;delete original.archiveExtension;delete original.helperExtension;delete original.replayArchiveExtension;delete original.checkoutExtension;
+ delete original.productionBackflowExtension;
  assert.equal(createHash('sha256').update(JSON.stringify(original,null,2)+'\n').digest('hex'),'732a8b8b64611a2a3f714bf41a7c2bc1f458b1a6f9dfb86f5d37d0dc0c3a715a','all original manifest records, categories, OIDs and budget are byte-preserved');
  const ids=new Set(extension.files.flatMap(row=>row.oldBinaryGitBlobs));assert.equal(ids.size,58);
  const ledger=JSON.parse(readFileSync('docs/legal/assets.json','utf8'));
@@ -258,7 +262,10 @@ test('existing media pointers retain their exact original ledger identities and 
  const priorObjects=new Map(priorFiles.map(row=>[row.sha256,row.bytes]));
  assert.equal(priorFiles.length,819);assert.equal(priorObjects.size,768);
  assert.equal([...priorObjects.values()].reduce((sum,bytes)=>sum+bytes,0),166884443);
- assert.deepEqual(validateMediaPointers(pointers),{files:826,objects:775,bytes:187197405});
+ const overlap=new Set(replayArchiveFiles.map(row=>row.path));
+ const shared=checkoutFiles.filter(row=>overlap.has(row.path));
+ assert.equal(shared.length,6);assert.equal(shared.reduce((sum,row)=>sum+row.bytes,0),18767343);
+ assert.deepEqual(validateMediaPointers(pointers),{files:888,objects:837,bytes:206276216});
  assert.equal(maxMediaPayloadBytes,117369505);assert.equal(maxEvidencePayloadBytes,37495268);assert.equal(lfs.maxReviewedPngBytes,5983528);
  for(const row of mediaFiles){const entry=ledger.files[row.path];assert.equal(entry.sha256,row.sha256);assert.equal(entry.bytes,row.bytes);assert.equal(entry.category,row.category);assert.equal(entry.storage,'ci-media-lfs-v1');}
  const first=mediaFiles[0],wrong=new Map(pointers);wrong.set(first.path,Buffer.from(mediaPointer(first).toString().replace(first.sha256,'0'.repeat(64))));
@@ -269,7 +276,7 @@ test('existing media pointers retain their exact original ledger identities and 
 });
 
 test('complete existing media are freshly authenticated on a cache hit without a transfer token',()=>{
- assert.deepEqual(prepareMediaAssets({env:{...process.env,CI_LFS_TOKEN:''}}),{status:'cached',files:826,objects:775,bytes:187197405});
+ assert.deepEqual(prepareMediaAssets({env:{...process.env,CI_LFS_TOKEN:''}}),{status:'cached',files:888,objects:837,bytes:206276216});
 });
 
 test('three existing CI archives retain complete bytes and original Git blob identities under exact storage',()=>{
@@ -318,6 +325,84 @@ test('the seven replay archives retain their protected Git blob and compressed b
  assert.equal(sensitive('tests/fixtures/foreign-unregistered.json.gz'),false);
 });
 
+test('checkout storage preserves the reviewed binary fixtures, paths, and original comparison identities',()=>{
+ assert.equal(checkoutFiles.length,13);
+ assert.equal(maxCheckoutPayloadBytes,26443831);
+ assert.equal(new Set(checkoutFiles.map(row=>row.sha256)).size,13);
+ const retiredSave='docs/evidence/map-v25-20261110/raw/game.save.json.gz';
+ assert(!mediaFiles.some(row=>row.path===retiredSave));
+ assert(!existsSync(retiredSave),'raw save stays in historical commits only');
+ assert.equal(checkoutFiles.reduce((sum,row)=>sum+row.bytes,0),maxCheckoutPayloadBytes);
+ for(const row of checkoutFiles){
+  assert.equal(row.sourceCommit,'6492e8dccbcf847a0eba7ad3995da50257032e08');
+  const bytes=readFileSync(row.path);
+  assert.equal(bytes.length,row.bytes);
+  assert.equal(createHash('sha256').update(bytes).digest('hex'),row.sha256);
+  assert.deepEqual(row.oldBinaryGitBlobs,[createHash('sha1').update(`blob ${bytes.length}\0`).update(bytes).digest('hex')]);
+  assert(bytes.subarray(0,8000).includes(0),'the original Git object was binary');
+  assert(sensitive(row.path));
+ }
+});
+
+test('production backflow evidence retains the exact published bytes',()=>{
+ const ledger=JSON.parse(readFileSync('docs/legal/assets.json','utf8'));
+ assert.equal(maxProductionBackflowPayloadBytes,11402323);
+ assert.equal(productionBackflowFiles.length,55);
+ assert.equal(productionBackflowFiles.reduce((sum,row)=>sum+row.bytes,0),maxProductionBackflowPayloadBytes);
+ for(const row of productionBackflowFiles){
+  const bytes=readFileSync(row.path);
+  assert.equal(bytes.length,row.bytes);
+  assert.equal(createHash('sha256').update(bytes).digest('hex'),row.sha256);
+  assert.deepEqual(row.oldBinaryGitBlobs,[createHash('sha1').update(`blob ${bytes.length}\0`).update(bytes).digest('hex')]);
+  assert.equal(row.sourceCommit,'d96c9f0d7958148ec1bb027f14a3214da81d06b4');
+  assert.equal(ledger.files[row.path].sourceCommit,row.sourceCommit);
+  assert(bytes.subarray(0,8000).includes(0),'the original Git object was binary');
+ }
+});
+
+test('checkout migration admits only exact v2.1.1 sources into the earlier receipts',()=>{
+ const frozen=readFileSync(new URL('./fixtures/v211-checkout-storage-successors.json.gz',import.meta.url));
+ assert.equal(createHash('sha256').update(frozen).digest('hex'),'8034d3586d970144bd8dce62afe7d6c66151aae7988e8a6355b092684a81371a');
+ const {source,files}=JSON.parse(gunzipSync(frozen));
+ assert.equal(source,'d96c9f0d7958148ec1bb027f14a3214da81d06b4');
+ const paths=['.gitattributes','config/ci-media-lfs.json','docs/legal/assets.json','scripts/ci-media-lfs.mjs',
+  'tests/ci-reviewed-lfs.test.mjs','tests/helpers/fork-preflight-source.mjs'];
+ assert.deepEqual(Object.keys(files),paths);
+ for(const path of paths){
+  const current=files[path];
+  const prior=beforeCheckoutStorageSource(path,current);
+  assert.notEqual(prior,current,path);
+  assert.equal(beforeCheckoutStorageSource(path,current.replaceAll('\n','\r\n')),prior.replaceAll('\n','\r\n'),path);
+  const drift=current+'\n';
+  assert.equal(beforeCheckoutStorageSource(path,drift),drift,path);
+  assert.equal(beforeCheckoutStorageSource('foreign/'+path,current),current,path);
+ }
+});
+
+test('master backflow replays exact changed owners and rejects stale and changed current bytes',()=>{
+ const path='scripts/ci-media-lfs.mjs';
+ const after=readFileSync(path,'utf8').replaceAll('\r\n','\n');
+ const before=beforeMasterBackflowSource(path,after);
+ assert.notEqual(before,after);
+ const crlf=text=>text.replaceAll('\n','\r\n');
+ assert.equal(beforeMasterBackflowSource(path,crlf(after)),crlf(before));
+ assert.equal(beforeMasterBackflowSource('foreign/'+path,after),after);
+ let source=after,reads=0;
+ const admitted=readBeforeMasterBackflowSource((file,encoding)=>{
+  reads++;assert.equal(file,path);
+  return encoding ? source : Buffer.from(source);
+ });
+ assert.equal(readBeforeMasterBackflowSource(admitted),admitted);
+ assert.equal(admitted(path,'utf8'),before);
+ assert.deepEqual(admitted(path),Buffer.from(before));
+ for(const invalid of [before,after+'\n',after.replace('\n','\r\n'),crlf(after).replace('\r\n','\r\r\n'),Buffer.from([255])]){
+  source=invalid;
+  assert.throws(()=>beforeMasterBackflowSource(path,invalid),{message:'fresh master backflow source: '+path});
+  assert.throws(()=>admitted(path,'utf8'),{message:'fresh master backflow source: '+path});
+ }
+ assert.equal(reads,7,'read the active owner afresh on each replay attempt');
+});
+
 test('cold partial checkout checks all text and exact media pointers without downloading old binary',async t=>{
  const directory=mkdtempSync(join(tmpdir(),'media-ws-'));t.after(()=>rmSync(directory,{recursive:true,force:true}));
  const source=join(directory,'source'),clone=join(directory,'clone');mkdirSync(source);
@@ -338,7 +423,7 @@ test('cold partial checkout checks all text and exact media pointers without dow
  assert.equal(originalEvidence.length,evidenceFiles.length);
  for(const [i,row]of evidenceFiles.entries())assert.deepEqual(row.oldBinaryGitBlobs,[originalEvidence[i]]);
  run(source,['update-index','--index-info'],evidenceFiles.map((row,i)=>'100644 '+originalEvidence[i]+'\t'+row.path).join('\n')+'\n');
- const storedArchives=[...archiveFiles,...helperArchiveFiles,...replayArchiveFiles];
+ const storedArchives=[...new Map([...archiveFiles,...helperArchiveFiles,...checkoutFiles,...replayArchiveFiles,...productionBackflowFiles].map(row=>[row.path,row])).values()];
  const originalArchives=run(source,['hash-object','-w','--no-filters','--stdin-paths'],storedArchives.map(row=>JSON.stringify(resolve(root,row.path))).join('\n')+'\n').split('\n');
  for(const [i,row]of storedArchives.entries())assert(row.oldBinaryGitBlobs.includes(originalArchives[i]));
  run(source,['update-index','--index-info'],storedArchives.map((row,i)=>'100644 '+originalArchives[i]+'\t'+row.path).join('\n')+'\n');

@@ -1,0 +1,371 @@
+{
+  "engine": "PUC-Rio Lua 5.3.6 on Linux x86-64, -O2",
+  "iterations": 121,
+  "mode": "interleaved AB/BA after 4 warmups; in-memory compile; warm execution of the just-compiled chunk with GC stopped; Lua allocator sampled after execution, then after full GC while retaining returned data; combined rows sum trials of independent modules",
+  "metrics": {
+    "abyss_data": {
+      "compileMs": {
+        "before": {
+          "p50": 1.39,
+          "p95": 1.938
+        },
+        "after": {
+          "p50": 1.505,
+          "p95": 2.056
+        }
+      },
+      "executeMs": {
+        "before": {
+          "p50": 0.292,
+          "p95": 0.485
+        },
+        "after": {
+          "p50": 0.338,
+          "p95": 0.459
+        }
+      },
+      "luaTransientKiB": {
+        "before": {
+          "p50": 620.5703,
+          "p95": 620.5703
+        },
+        "after": {
+          "p50": 620.6758,
+          "p95": 620.6758
+        }
+      },
+      "luaRetainedKiB": {
+        "before": {
+          "p50": 430.0947,
+          "p95": 430.0947
+        },
+        "after": {
+          "p50": 430.0947,
+          "p95": 430.0947
+        }
+      },
+      "compileAndExecuteMs": {
+        "before": {
+          "p50": 1.687,
+          "p95": 2.396
+        },
+        "after": {
+          "p50": 1.832,
+          "p95": 2.485
+        }
+      }
+    },
+    "abyss_theme": {
+      "compileMs": {
+        "before": {
+          "p50": 17.608,
+          "p95": 32.716
+        },
+        "after": {
+          "p50": 18.1,
+          "p95": 23.931
+        }
+      },
+      "executeMs": {
+        "before": {
+          "p50": 3.239,
+          "p95": 7.085
+        },
+        "after": {
+          "p50": 3.151,
+          "p95": 5.198
+        }
+      },
+      "luaTransientKiB": {
+        "before": {
+          "p50": 6534.4443,
+          "p95": 6534.4443
+        },
+        "after": {
+          "p50": 6539.5381,
+          "p95": 6539.5381
+        }
+      },
+      "luaRetainedKiB": {
+        "before": {
+          "p50": 4269.8457,
+          "p95": 4269.8457
+        },
+        "after": {
+          "p50": 4271.8066,
+          "p95": 4271.8066
+        }
+      },
+      "compileAndExecuteMs": {
+        "before": {
+          "p50": 21.486,
+          "p95": 38.067
+        },
+        "after": {
+          "p50": 21.48,
+          "p95": 28.774
+        }
+      }
+    },
+    "abyss_original_v4_data": {
+      "compileMs": {
+        "before": {
+          "p50": 2.211,
+          "p95": 3.82
+        },
+        "after": {
+          "p50": 2.008,
+          "p95": 2.839
+        }
+      },
+      "executeMs": {
+        "before": {
+          "p50": 0.609,
+          "p95": 0.987
+        },
+        "after": {
+          "p50": 0.489,
+          "p95": 0.8
+        }
+      },
+      "luaTransientKiB": {
+        "before": {
+          "p50": 979.8945,
+          "p95": 979.8945
+        },
+        "after": {
+          "p50": 980.1875,
+          "p95": 980.1875
+        }
+      },
+      "luaRetainedKiB": {
+        "before": {
+          "p50": 759.2686,
+          "p95": 759.2686
+        },
+        "after": {
+          "p50": 759.2686,
+          "p95": 759.2686
+        }
+      },
+      "compileAndExecuteMs": {
+        "before": {
+          "p50": 2.826,
+          "p95": 4.681
+        },
+        "after": {
+          "p50": 2.498,
+          "p95": 3.416
+        }
+      }
+    },
+    "abyss_narrative": {
+      "compileMs": {
+        "before": {
+          "p50": 0.04,
+          "p95": 0.086
+        },
+        "after": {
+          "p50": 0.035,
+          "p95": 0.081
+        }
+      },
+      "executeMs": {
+        "before": {
+          "p50": 0.003,
+          "p95": 0.004
+        },
+        "after": {
+          "p50": 0.003,
+          "p95": 0.004
+        }
+      },
+      "luaTransientKiB": {
+        "before": {
+          "p50": 9.2383,
+          "p95": 9.2383
+        },
+        "after": {
+          "p50": 9.2383,
+          "p95": 9.2383
+        }
+      },
+      "luaRetainedKiB": {
+        "before": {
+          "p50": 5.582,
+          "p95": 5.582
+        },
+        "after": {
+          "p50": 5.582,
+          "p95": 5.582
+        }
+      },
+      "compileAndExecuteMs": {
+        "before": {
+          "p50": 0.043,
+          "p95": 0.089
+        },
+        "after": {
+          "p50": 0.039,
+          "p95": 0.085
+        }
+      }
+    },
+    "abyss_presentation": {
+      "compileMs": {
+        "before": {
+          "p50": 0.217,
+          "p95": 0.325
+        },
+        "after": {
+          "p50": 0.226,
+          "p95": 0.315
+        }
+      },
+      "executeMs": {
+        "before": {
+          "p50": 0.025,
+          "p95": 0.049
+        },
+        "after": {
+          "p50": 0.027,
+          "p95": 0.055
+        }
+      },
+      "luaTransientKiB": {
+        "before": {
+          "p50": 91.6982,
+          "p95": 91.6982
+        },
+        "after": {
+          "p50": 91.6982,
+          "p95": 91.6982
+        }
+      },
+      "luaRetainedKiB": {
+        "before": {
+          "p50": 56.2725,
+          "p95": 56.2725
+        },
+        "after": {
+          "p50": 56.2725,
+          "p95": 56.2725
+        }
+      },
+      "compileAndExecuteMs": {
+        "before": {
+          "p50": 0.261,
+          "p95": 0.366
+        },
+        "after": {
+          "p50": 0.256,
+          "p95": 0.345
+        }
+      }
+    },
+    "abyss_traveler_portrait_assets": {
+      "compileMs": {
+        "before": {
+          "p50": 14.645,
+          "p95": 26.104
+        },
+        "after": {
+          "p50": 8.135,
+          "p95": 12.905
+        }
+      },
+      "executeMs": {
+        "before": {
+          "p50": 1.074,
+          "p95": 2.543
+        },
+        "after": {
+          "p50": 0.7,
+          "p95": 1.02
+        }
+      },
+      "luaTransientKiB": {
+        "before": {
+          "p50": 3171.7061,
+          "p95": 3171.7061
+        },
+        "after": {
+          "p50": 2181.6182,
+          "p95": 2181.6182
+        }
+      },
+      "luaRetainedKiB": {
+        "before": {
+          "p50": 1713.0244,
+          "p95": 1713.0244
+        },
+        "after": {
+          "p50": 1028.2646,
+          "p95": 1028.2646
+        }
+      },
+      "compileAndExecuteMs": {
+        "before": {
+          "p50": 15.74,
+          "p95": 31.114
+        },
+        "after": {
+          "p50": 9.228,
+          "p95": 13.925
+        }
+      }
+    },
+    "sum": {
+      "compileMs": {
+        "before": {
+          "p50": 38.291,
+          "p95": 60.101
+        },
+        "after": {
+          "p50": 30.807,
+          "p95": 42.246
+        }
+      },
+      "executeMs": {
+        "before": {
+          "p50": 5.905,
+          "p95": 10.891
+        },
+        "after": {
+          "p50": 4.969,
+          "p95": 7.229
+        }
+      },
+      "luaTransientKiB": {
+        "before": {
+          "p50": 11407.5518,
+          "p95": 11407.5518
+        },
+        "after": {
+          "p50": 10422.9561,
+          "p95": 10422.9561
+        }
+      },
+      "luaRetainedKiB": {
+        "before": {
+          "p50": 7234.0879,
+          "p95": 7234.0879
+        },
+        "after": {
+          "p50": 6551.2891,
+          "p95": 6551.2891
+        }
+      },
+      "compileAndExecuteMs": {
+        "before": {
+          "p50": 43.634,
+          "p95": 69.935
+        },
+        "after": {
+          "p50": 36.784,
+          "p95": 50.456
+        }
+      }
+    }
+  }
+}

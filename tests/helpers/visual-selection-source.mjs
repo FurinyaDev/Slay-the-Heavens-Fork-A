@@ -77,7 +77,7 @@ export function visualSelectionOwnerRead(read){
   const raw=assertCurrentCardReadingScope(path,read(path,encoding));
   if(path===architecture)
    assert.notEqual(beforeChapterBattleScene(path,raw),raw,'fresh reviewed Selection production owner: '+path);
-  return raw;
+  return beforeCardReadingScope(path,raw);
  };
  return (path,row)=>{
   if(rewardOwners.has(path)){

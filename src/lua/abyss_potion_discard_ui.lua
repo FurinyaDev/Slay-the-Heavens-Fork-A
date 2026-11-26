@@ -30,9 +30,11 @@ local function paintSlot(slot,id,selected,platform)
 end
 function M.refreshEntry(hit,run,platform,mapSlots)
     local capacity=run and Run.potionCapacity(run) or 0
+    local official=Theme.presentationProfile=='official-assets-first'
+    local hud=official and (platform.mobileRunHud or Theme.officialAssets.battleHud)
+    local step=hud and hud.potionStep or 42
     for _,state in ipairs({'normal','hover','pressed','disabled'})do
         local variant=hit:GetChild(state)
-        local official=Theme.presentationProfile=='official-assets-first'
         entryFace(variant,official,mapSlots)
         variant:GetChild('label').text=run and '药水 '..Run.potionCount(run)..'/'..capacity or '药水'
         for i=1,Theme.layout.battlePotions.count do
@@ -40,7 +42,6 @@ function M.refreshEntry(hit,run,platform,mapSlots)
             local id=i<=capacity and run.potions[i] or nil
             slot:SetVisible(mapSlots==true and i<=capacity)
             if mapSlots then
-                local step=official and Theme.officialAssets.battleHud.potionStep or 42
                 slot:SetAnchoredPosition((i-(capacity+1)/2)*step,0)
             end
             paintSlot(slot,id,false,platform)
@@ -52,6 +53,7 @@ local function popupText(run,item)
     local definition=find(run.data.potions.potions,item.id)
     local effect=text.special(item,run,true) or text.describe(run,item.id)
     if effect=='' and definition then effect=definition.description or '' end
+    if item.reason=='potion_target_requires_combat_view' then return effect..'\n返回战斗后选择目标。'end
     if item.reason=='potion_event_restricted' then
         return effect..'\n此事件中不能使用或丢弃药水。'
     end
@@ -67,14 +69,20 @@ local function localPopup(root,clickEvent,platform,allowed,onChange)
         end
     end
     local popup=require('abyss_battle_potion_popup').new(root,state,platform,clickEvent,{
-        allowed=function(run)return allowed(run) and run.phase~='combat'end,
-        item=function(slot)return Run.potionSlotView(state.run,slot)end,
+        allowed=function(run)return allowed(run) and (run.phase~='combat' or platform.previewingRoute and platform.previewingRoute())end,
+        item=function(slot)
+            local item=Run.potionSlotView(state.run,slot)
+            if item and item.needTarget and platform.previewingRoute and platform.previewingRoute() then
+                item.canUse=false;item.reason='potion_target_requires_combat_view'
+            end
+            return item
+        end,
         text=function(item)return popupText(state.run,item)end,
         use=command(Run.usePotion),discard=command(Run.discardPotion),changed=onChange,
     })
     local open=popup.open
     function popup:open(run,slot)
-        if not allowed(run) or run.phase=='combat' or type(slot)~='number' then return false end
+        if not allowed(run) or run.phase=='combat' and not (platform.previewingRoute and platform.previewingRoute()) or type(slot)~='number' then return false end
         state.run=run
         return open(self,slot)
     end

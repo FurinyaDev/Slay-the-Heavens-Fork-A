@@ -6,9 +6,20 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {createHash} from 'node:crypto';
 import {sourceEpoch,menuRedPriorEpoch} from './helpers/closeout-source-epoch.mjs';
+import {reviewedSelectionRead} from './helpers/reviewed-selection-current-source.mjs';
+import {readSelectionProductionOwners} from './helpers/replay-reviewed-selection.mjs';
+import {uiEntranceOwns} from './helpers/ui-entrance-source.mjs';
+import {beforeChapterBattleScene} from './helpers/chapter-battle-scene-source.mjs';
+import {beforeBattlePeriphery} from './helpers/battle-periphery-source.mjs';
 import {extendMenuRedSourceEpoch,extendMenuPresentationEpoch,menuPresentationPatch,menuRedProductionPatch as patch} from './helpers/menu-red-source-epoch.mjs';
 import {assertMenuRedCiCurrent,preMenuRedCiSource,menuRedCiProof,renderMenuRedCiBinding} from './helpers/menu-red-ci-source.mjs';
-const raw=p=>readFileSync(p,'utf8').replaceAll('\r\n','\n'),hash=s=>createHash('sha256').update(s).digest('hex');
+const readCurrent=readSelectionProductionOwners(readFileSync,reviewedSelectionRead());
+const raw=path=>{
+ const source=readCurrent(path,'utf8');
+ const history=uiEntranceOwns(path)?beforeBattlePeriphery(path,beforeChapterBattleScene(path,source)):source;
+ return history.replaceAll('\r\n','\n');
+};
+const hash=s=>createHash('sha256').update(s).digest('hex');
 const powerMembership='src/lua/abyss_power_membership.lua';
 const releasePaths=[...patch.inventory,'src/lua/abyss_lowcost_art.lua','src/lua/abyss_merchant_pages.lua',
  'src/lua/abyss_game_ui_navigation.lua','src/lua/abyss_game_ui_navigation_view.lua',powerMembership].sort();
@@ -16,7 +27,7 @@ const complete=files=>Object.fromEntries(releasePaths.map(path=>[path,files[path
 test('red menu production preserves every prior owner and target and freshly rejects each changed owner drift',()=>{
  for(const path of patch.paths){
   const predecessor=beforeAuthenticatedReleaseUiRestore(path,raw(path),raw);
-  const readPredecessor=owner=>beforeReleaseUiRestore(owner,raw(owner));
+  const readPredecessor=owner=>beforeReleaseUiRestore(owner,raw(owner),raw);
   assert.equal(beforeAuthenticatedPc13RewardCover(path,predecessor,readPredecessor),sourceEpoch.proof.current[path].source,path);
   assert.equal(sourceEpoch.preCombinedSource(path,raw(path),{target:'menuPresentationPrior',readSource:raw}),patch.current[path].source);
   assert.deepEqual(patch.before[path],menuRedPriorEpoch.proof.current[path]);
@@ -36,7 +47,7 @@ test('menu presentation continuation preserves the exact reviewed menu and rejec
  for(const [target,row]of Object.entries(prior.proof.targets))assert.deepEqual(sourceEpoch.proof.targets[target],{...row,files:complete(row.files)});
  assert.deepEqual(menuPresentationPatch.before,prior.proof.current[path]);
  const restored=beforeAuthenticatedReleaseUiRestore(path,raw(path),raw);
- assert.equal(beforeAuthenticatedPc13RewardCover(path,restored,owner=>beforeReleaseUiRestore(owner,raw(owner))),menuPresentationPatch.after.source);
+ assert.equal(beforeAuthenticatedPc13RewardCover(path,restored,owner=>beforeReleaseUiRestore(owner,raw(owner),raw)),menuPresentationPatch.after.source);
  for(const change of [p=>{p.before.source+='\n';},p=>{delete p.after;},p=>{p.path='src/lua/foreign.lua';}]){
   const invalid=structuredClone(menuPresentationPatch);change(invalid);
   assert.throws(()=>extendMenuPresentationEpoch(prior,invalid));

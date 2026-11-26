@@ -1,3 +1,5 @@
+import {beforeMasterBackflowSource} from './master-backflow-source.mjs';
+import {exactSourceMatches} from './source-fingerprint.mjs';
 // Copies only immutable test helper dependencies; production owners remain explicit fixtures.
 import assert from 'node:assert/strict';
 import {officialUiRepairClosure} from './official-ui-repair-closure.mjs';
@@ -350,14 +352,22 @@ const entranceFiles=Object.freeze({
  'tests/helpers/refined-release-source.mjs':'747f63088f1830dad97f7fa116df16f265c555639c9a01161ba9ba3b3b5ecc5c',
  'tests/helpers/battle-periphery-source.mjs':'d436c48e4fb14039a53361fdf8464512f6a95226c81ff32ffe4d2930877db210',
  'tests/helpers/rebased-release-source.mjs':'b1e42ded7f05f580fb25ab0417ccd8db45832f5e9e50db83a38d6aaa2767dc20',
- 'tests/helpers/chapter-battle-scene-source.mjs':'28dcccf5f5e6f87b622f86e79676a18b0fcf8657f9084642782687e43cac4e87',
+ 'tests/helpers/chapter-battle-scene-source.mjs':'7888616f2fbc3f59b3545eb5441069380b453b91c80a7a3d4513e59193fa5696',
  'tests/helpers/release-integration-source.mjs':'74093921a53a94ba842afac199e579a622b60fea5abf2519d416ede77bbfa1a7',
  'tests/fixtures/release-lazy-monster-art-source.json.gz':'211c3588a53b1f97c98d9f9b905349d82b244a2e81a940d4ebe48022381ca92e',
- 'tests/helpers/m7-core-final-source-inverse.mjs':'c9d98969785466649e0e915df0d912f81b774d8b937b4fb63e74eed731635133',
+ 'tests/helpers/m7-core-final-source-inverse.mjs':'f3c74ae48bc3d0f030caaf30c2a6140e096146316dab115a75ebfba87b1dcfe8',
  'tests/helpers/release-ui-restore-source.mjs':'2ec5855476f1b4c8cf762ca1a7ee366028322841b07996a518af96fdd87259b9',
  'tests/helpers/current-replay-fix-sources.mjs':'cceed97f15f0f91ab37ea27d3bf6f5659d213c54dcf11225eaa0fed7adc8ccdf',
  'tests/helpers/character-preparation-source.mjs':'b556363648dd13827dacb603038423caf4a1c2693e618747df58fc29da7be2fd',
- 'tests/helpers/develop-release-backflow-source.mjs':'2834679eef440cf54e64cfb2c144c2fc6dbb5dc7ed048c3767435c250827337f',
+ 'tests/helpers/develop-release-backflow-source.mjs':'d9b04593b5ed2af93096091a53d0043361d9ae3019cdbc64c766100f5d694e39',
+ 'tests/helpers/develop-release-vocabulary-source.mjs':'a70cfaf283d1c758fffa9a2035bec86e122afa871e4104c11e80ae7660c82727',
+ 'tests/fixtures/develop-release-vocabulary-source.json.gz':'2b3d606fc142f2c8c5cfaaff386c70f6e1f741f24fbc1879b78399b7c477e914',
+ 'tests/fixtures/map-room-battle-actions-source.json.gz':'45918da82006880941ab23f10ccc49b7fe11fc2c7978b4f1508f923216e142ec',
+ 'tests/fixtures/develop-battle-input-source.json.gz':'ee0eeaf23242e8307a2b4f06a27319d89477c5d19d7507eddc54477dc878611e',
+ 'tests/fixtures/develop-linked-backflow-source.json.gz':'7f803c657102e0f9a804ca68117af34f1067d32eabbc3b5fc0c99752b590d522',
+ 'tests/fixtures/develop-architecture-linked-source.json.gz':'4e8500c1232bc5bcd5c19d08dbed21cea262be94a30f3a2e8195eeb04ebde859',
+ 'tests/helpers/master-backflow-source.mjs':'374935c2c76b47b65319202a3f3d60eb9884149f4224cd9c1dc432a81f523a7c',
+ 'tests/fixtures/master-backflow-predecessors.json.gz':'b16492b78553e53e675537d95d3f9ef24557d792f657ba41f0f280e43fab325f',
  'tests/helpers/native-fixture-replay-source.mjs':'7dbd2ded60c5b155b958a5e6e2ff44537b2b62c15e113642aaf8f6194771832d',
  'tests/helpers/native-flow-fixture-source.mjs':'8ad7157fd4f3973ffba4f17f9eba440731ddf952e859fee53970d6c3879968e3',
  'tests/helpers/ui-entrance-source.mjs':'c64976a04e877f65315ad8553bd8f6380b6e50a5ab5fce60e3b37bbbb98825c1',
@@ -371,18 +381,226 @@ const entranceFiles=Object.freeze({
  'tests/helpers/input-retirement-source.mjs':'886cc9b65d51c5e5507691f516439d3475f44a3fdfba5dcf96cfb2dde1c5cf2e',
  'tests/fixtures/event-readability-source.json.gz':'1ccc3098014ebf726a776928f5d0b41c29b6a2a1cff21f096ee42a53b0da9cd5',
  'tests/helpers/reward-query-boundary-source-inverse.mjs':'07d2abf826061305510cebfd60a4c13b2d07e86352d63a5db1868a40c9cc082c',
- 'tests/helpers/relic-query-source-inverse.mjs':'41b4cddcba283db2cbcdc4d9c19fdd8bb14321378bd1151fc76a74b7ec9b1120',
+ 'tests/helpers/relic-query-source-inverse.mjs':'ba7525e0fd153e59f59538114ecace70c6475ab65f578dea2f4fc29fb9e71a20',
  'tests/helpers/reward-current-source.mjs':'3b67c5b2cce6c6ab8c76610da98d3ceb3c96e6ccfb8f0c3b58754ac7ea9ff641',
  'tests/helpers/reward-current-source.json.gz':'a68d10abe6e6f3bd33a69f85326d34dce1250b34b6892543cb5c1314c01f3b9f',
 });
+// The live copier targets the approved #1022 helper closure. Other replay
+// readers continue to use their original Master backflow predecessor.
+const reviewedCopySources=Object.freeze({
+ "tests/helpers/character-preparation-source.mjs": {
+  "current": {
+   "sha256": "59e4952da8df25d3c6808a03c05475f1799012f2838880be4f7d76c2d68f68b2",
+   "gitBlob": "59cb86a27add71e38a679cefc82a1c2f8b03b5d2"
+  },
+  "previous": {
+   "sha256": "b556363648dd13827dacb603038423caf4a1c2693e618747df58fc29da7be2fd",
+   "gitBlob": "b9262d101ea11eed7836cf1091bc44f94eb94ce3"
+  },
+  "edits": [
+   {
+    "at": 0,
+    "remove": 3,
+    "previous": []
+   },
+   {
+    "at": 24,
+    "remove": 1,
+    "previous": []
+   },
+   {
+    "at": 45,
+    "remove": 1,
+    "previous": [
+     "    const source = read(path);"
+    ]
+   },
+   {
+    "at": 149,
+    "remove": 2,
+    "previous": []
+   },
+   {
+    "at": 189,
+    "remove": 13,
+    "previous": [
+     "  if (pc13RewardCoverSourcePaths.includes(path)) {"
+    ]
+   }
+  ]
+ },
+ "tests/helpers/current-replay-fix-sources.mjs": {
+  "current": {
+   "sha256": "b09df63dd432eaa4796047bd4ba8f64a3d224963eeab15e1bc90f7732c8afae2",
+   "gitBlob": "bb8df89c3ca48e98c48c31ae961d53fd76231fcc"
+  },
+  "previous": {
+   "sha256": "cceed97f15f0f91ab37ea27d3bf6f5659d213c54dcf11225eaa0fed7adc8ccdf",
+   "gitBlob": "ac19a597d6be7427dd05816dc85dd580d6454c3a"
+  },
+  "edits": [
+   {
+    "at": 3,
+    "remove": 1,
+    "previous": []
+   },
+   {
+    "at": 2499,
+    "remove": 216,
+    "previous": []
+   },
+   {
+    "at": 2716,
+    "remove": 1,
+    "previous": []
+   },
+   {
+    "at": 2726,
+    "remove": 1,
+    "previous": []
+   }
+  ]
+ },
+ "tests/helpers/ui-entrance-source.mjs": {
+  "current": {
+   "sha256": "50851099aed8dca2d5e6da5a715df63ab939f51729b56edab0ca81bec6dee5c0",
+   "gitBlob": "343f6486ebb70ab190d8c28026c6049ff4d48d25"
+  },
+  "previous": {
+   "sha256": "c64976a04e877f65315ad8553bd8f6380b6e50a5ab5fce60e3b37bbbb98825c1",
+   "gitBlob": "2da2af0441e00d0893184b7f401a9848b491b9de"
+  },
+  "edits": [
+   {
+    "at": 6,
+    "remove": 8,
+    "previous": [
+     "import {exactSourceMatches as matches,sourceConfigLayoutMatches} from './source-fingerprint.mjs';",
+     "import {restoreExactFixtureHunks} from './exact-fixture-hunks.mjs';",
+     "import {beforeCurrentReplayFixes,beforeOfficialCharacterBackflow} from './current-replay-fix-sources.mjs';",
+     "import {beforeApprovedUiEntrance,matchesApprovedUiEntranceOwner} from './ui-entrance-approved-sources.mjs';",
+     "",
+     "const archive=readFileSync(new URL('../fixtures/ui-entrance-source.json.gz',import.meta.url));"
+    ]
+   },
+   {
+    "at": 36,
+    "remove": 20,
+    "previous": [
+     "const currentInput=(path,source)=>replaySources.includes(path)",
+     " ?beforeCurrentReplayFixes(path,source):beforeApprovedUiEntrance(path,source);",
+     "function currentMatches(path,source,expected){",
+     " if(!matchesApprovedUiEntranceOwner(path,source))return false;",
+     " const normalized=currentInput(path,source);",
+     " if(requiredCurrentOwners.includes(path)&&normalized===source)return false;",
+     " return matches(normalized,expected);",
+     "}",
+     "const predecessors=new Map();",
+     ""
+    ]
+   },
+   {
+    "at": 70,
+    "remove": 7,
+    "previous": [
+     "",
+     "export function beforeUiEntrance(path,source){",
+     " return project(path,source,binding(path));",
+     "}",
+     ""
+    ]
+   }
+  ]
+ },
+ "tests/helpers/input-retirement-sts-binding.mjs": {
+  "current": {
+   "sha256": "47a212bae11910c09e62b59cf291552e54954d5e710251eb6b263c3289461025",
+   "gitBlob": "9e65f5899089cbe95c937eecd8aa0a72e0f0c7c1"
+  },
+  "previous": {
+   "sha256": "f6395a7c5e299738db3caf30f29d7d29724e7ac091af012a585c76b785697219",
+   "gitBlob": "e3d66011ebc645d886944e71543701c3d313258c"
+  },
+  "edits": [
+   {
+    "at": 101,
+    "remove": 126,
+    "previous": [
+     "];",
+     "",
+     "export function beforeStsRuntimeFixtureSuccessor(path,source){",
+     " const proof=runtimeFixtureSuccessors.find(row=>row.path===path);",
+     " const original=proof?restoreExactFixtureHunks(proof,path,source):source;"
+    ]
+   }
+  ]
+ },
+ "tests/helpers/native-flow-fixture-source.mjs": {
+  "current": {
+   "sha256": "1ea4f6524ec42e6b9f907988f6e716b9560bff6a33a1a35117a050836f1723f1",
+   "gitBlob": "1a3c57078fa15b56609aa8fb4e1a73848e1d472b"
+  },
+  "previous": {
+   "sha256": "8ad7157fd4f3973ffba4f17f9eba440731ddf952e859fee53970d6c3879968e3",
+   "gitBlob": "ec07991f5d6b17bca5d5e40eed75f42b0110b7ae"
+  },
+  "edits": [
+   {
+    "at": 30,
+    "remove": 8,
+    "previous": [
+     "}",
+     "",
+     "// Approved release backflows #912, #940, #942 and #951 supersede these witnesses.",
+     "const releaseFixtures=Object.freeze({",
+     " 'tests/lua/support/native_monster_only_entry.lua':{",
+     "  sha256:'0c192425a730c27bab65e5ebc18fc340c9b2414e8558485922041e01fbaf00c1',gitBlob:'29e0bb8b789624f2128780c7711d122bb0687368',",
+     " },",
+     " 'tests/official-assets-runtime.test.mjs':{"
+    ]
+   }
+  ]
+ }
+});
+function beforeReviewedCopySource(path,raw){
+ if(!Object.hasOwn(reviewedCopySources,path))return beforeMasterBackflowSource(path,raw);
+ const {current,previous,edits}=reviewedCopySources[path];
+ const source=raw.toString('utf8');
+ const text=integrationClosureBytes(path,raw).toString('utf8');
+ assert(source===text||source===text.replaceAll('\n','\r\n'),'uniform current copy owner: '+path);
+ assert(exactSourceMatches(text,current),'exact current copy owner: '+path);
+ const lines=text.split('\n');
+ for(const {at,remove,previous:replacement} of [...edits].reverse())lines.splice(at,remove,...replacement);
+ const prior=lines.join('\n');
+ assert(exactSourceMatches(prior,previous),'exact reviewed copy predecessor: '+path);
+ return Buffer.from(prior);
+}
 const inside=(root,path)=>{const r=relative(root,path);return r!==''&&!isAbsolute(r)&&r!=='..'&&!r.startsWith('../')&&!r.startsWith('..\\');};
-export function copyIntegrationSourceClosure(directory,{sourceRoot=process.cwd()}={}){
+const currentEntranceHelpers=new Set(['tests/helpers/current-replay-fix-sources.mjs','tests/helpers/ui-entrance-source.mjs']);
+export function copyIntegrationSourceClosure(directory,{sourceRoot=process.cwd(),currentProduction=false}={}){
  const destination=realpathSync.native(directory);
- assert.notEqual(destination,realpathSync.native(sourceRoot),'isolated helper copy destination');
- for(const [path,sha]of Object.entries(entranceFiles)){
+ const sourceDirectory=realpathSync.native(sourceRoot);
+ assert.notEqual(destination,sourceDirectory,'isolated helper copy destination');
+ const liveSource=sourceDirectory===realpathSync.native(new URL('../../',import.meta.url));
+ for(const [path,previousSha]of Object.entries(entranceFiles)){
+  const exactCurrent=currentProduction&&currentEntranceHelpers.has(path);
+  const sha=exactCurrent?reviewedCopySources[path].current.sha256:previousSha;
   assert((path.startsWith('tests/helpers/')||path.startsWith('tests/fixtures/'))&&!path.split('/').includes('..'),'fixed helper path');
-  const source=join(sourceRoot,path),raw=readFileSync(source),content=integrationClosureBytes(path,raw);
-  if(path==='tests/helpers/reward-current-source.mjs'&&!raw.equals(content))
+  const source=join(sourceDirectory,path),raw=readFileSync(source);
+  let prior=raw;
+  if(exactCurrent){
+   const current=integrationClosureBytes(path,raw);
+   const source=current.toString('utf8');
+   assert(raw.equals(current)||raw.equals(Buffer.from(source.replaceAll('\n','\r\n'))),'uniform current copy owner: '+path);
+   assert(exactSourceMatches(source,reviewedCopySources[path].current),'exact current copy owner: '+path);
+  }else if(liveSource){
+   try{prior=beforeReviewedCopySource(path,raw);}
+   catch(error){assert.fail('fresh helper copy identity: '+path+': '+error.message);}
+  }
+  const content=integrationClosureBytes(path,prior);
+  if((path==='tests/helpers/reward-current-source.mjs'||path==='tests/helpers/develop-release-backflow-source.mjs'||
+      path==='tests/helpers/develop-release-vocabulary-source.mjs'||path==='tests/helpers/master-backflow-source.mjs'||
+      path==='tests/helpers/m7-core-final-source-inverse.mjs'||path==='tests/helpers/relic-query-source-inverse.mjs')&&!raw.equals(content))
    assert(raw.equals(Buffer.from(content.toString('utf8').replaceAll('\n','\r\n'))),'fresh helper copy identity: '+path);
   assert.equal(hash(content),sha,'fresh helper copy identity: '+path);
   const target=join(directory,path);mkdirSync(dirname(target),{recursive:true});

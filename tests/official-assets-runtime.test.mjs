@@ -5,8 +5,10 @@ import {resolve,join} from 'node:path';
 import {spawnSync} from 'node:child_process';
 import {createRequire} from 'node:module';
 import {deckBrowserParts} from '../scripts/deck-ui-layout.mjs';
-import {buildUI} from '../scripts/build-ui.mjs';
+import {assertNativeUiCapacity,buildUI} from '../scripts/build-ui.mjs';
 import {buildLuaData,luaString,toLua} from '../scripts/build-lua-data.mjs';
+import {capacityProblems,powerTipSnapshots,textConflicts} from './helpers/ui-readability.mjs';
+import {nativeTheme} from '../scripts/native-ui-theme.mjs';
 
 const require=createRequire(import.meta.url);
 const sharedFaceHelpers=`
@@ -40,6 +42,17 @@ function runOfficial(t,body,marker,overrides={},official=true,buildOptions={}){
  const theme=JSON.parse(readFileSync(official?join(directory,'official-assets-theme.json'):'data/presentation/ui_theme.json','utf8'));
  const stage=layout.controls.find(c=>c.name==='stage');
  const battle=stage.children.find(c=>c.name==='battlePanel');
+ if(official&&buildOptions.refinedReleaseMonsterArt){
+  const standalone=JSON.parse(readFileSync(join(directory,'battle-ui.json'),'utf8')).controls.find(c=>c.name==='stage');
+  assert.equal(standalone.children.length,59);
+  assert.equal(battle.children.length,60);
+  for(const panel of [standalone,battle]){
+   assertNativeUiCapacity(panel);
+   const pool=panel.children.find(c=>c.name==='statusInfo').children.find(c=>c.name==='powerTips');
+   assert.equal(pool.children.length,48);
+   assert(pool.children.every(tip=>tip.children.length===3 && tip.visible===false));
+  }
+ }
  const face=battle.children.find(c=>c.name==='card1');
  if(official){
  const pileGrid=stage.children.find(c=>c.name==='deckPanel').children.find(c=>c.name==='pileGrid');
@@ -50,6 +63,13 @@ function runOfficial(t,body,marker,overrides={},official=true,buildOptions={}){
 
  const pile=templates.find(c=>c.name==='AbyssBattlePileCard');
  assert.equal(pile.name,'AbyssBattlePileCard');
+ const handRims=battle.children.filter(c=>/^card\d+$/.test(c.name)).map(card=>card.children.find(c=>c.name==='nativePlayableRim'));
+ assert.equal(handRims.length,10);
+ for(const rim of handRims)assert.deepEqual(rim.children.map(c=>c.name),['softEdge','pulseEdge','pulseEdge2','pulseEdge3','pulseEdge4']);
+ const rims=node=>node.name==='nativePlayableRim'?[node]:(node.children??node.controls??[]).flatMap(rims);
+ const quietRims=[...rims(stage),...templates.flatMap(rims)].filter(rim=>!handRims.includes(rim));
+ assert.equal(quietRims.length,29);
+ for(const rim of quietRims){assert.equal(rim.visible,false);assert.deepEqual(rim.children,[]);}
  const expected=structuredClone(face);
  Object.assign(expected,{name:'face',position:[0,0],scale:[1,1],rotation:0,visible:true});
  expected.children=expected.children.filter(c=>c.name!=='hit');
@@ -68,7 +88,7 @@ function runOfficial(t,body,marker,overrides={},official=true,buildOptions={}){
  assert.deepEqual(pile.children.find(c=>c.name==='hit').size,[150,210]);
  const ordinary=structuredClone(templates.find(c=>c.name==='AbyssDeckCard').children.find(c=>c.name==='face'));
  ordinary.position=[0,0];
- assert.deepEqual(ordinary,expected,'permanent and combat piles share the final hand face');
+ assert.deepEqual(ordinary,readOnly,'permanent and combat piles share the final hand face without idle playable rim layers');
  assert.equal(face.children.find(c=>c.name==='stsReferenceBack').children.find(c=>c.name==='body').children.find(c=>c.name==='paperWell').image,theme.image.rect,
   'the generated production shared face retains its rectangular paper well');
  }else{
@@ -619,19 +639,31 @@ route.listeners.down({touchId=1});route.listeners.up({touchId=1})
 assert(route.click({touchId=1})and host.routeOpen)
 local back=root:GetChild('mapPanel'):GetChild('previewBack')
 local label,hit,face=back:GetChild('label'),back:GetChild('hit'),assert(back:GetChild('v25Face'))
+local surface=assert(face:GetChild('roundedButtonState'))
+local material=assert(surface:GetChild('v25Flag'))
+local action=H.F.Theme.officialAssets.actionButton
 local function state(expected)
- for _,name in ipairs({'normal','hover','pressed','disabled'})do
-  assert(face:GetChild(name).visible==(name==expected),'map return state '..name)
+ assert(#face:GetChildren()==1 and surface.visible,'map return must reuse one visible material')
+ local scale=expected=='pressed' and action.pressedScale or 1
+ assert(surface.localScaleX==scale and surface.localScaleY==scale and surface.scale[3]==1,
+     'map return scale '..expected)
+ local palette=expected=='disabled' and action.disabled or action.secondary[expected]
+ for index,layer in ipairs({'rim','cloth'})do
+  local parts=material:GetChild(layer):GetChildren()
+  assert(#parts>0,'missing map return material '..layer)
+  for _,part in ipairs(parts)do
+   sameColour(part.imageColor,palette[index],'map return '..expected..' '..layer..' '..part.name)
+  end
  end
 end
-assert(label.text=='返回战斗');state('normal')
+assert(back.visible and label.text=='返回战斗');state('normal')
 hit.listeners.enter({});state('hover')
 hit.listeners.down({touchId=703});state('pressed')
 hit.listeners.endDrag({touchId=703});state('normal')
 assert(not hit.click({touchId=703})and host.routeOpen)
 hit.listeners.down({touchId=704});hit.listeners.up({touchId=704})
 assert(hit.click({touchId=704})and not host.routeOpen and host.mode=='battle')
-assert(label.text~='返回战斗');state('disabled')
+assert(not back.visible and label.text~='返回战斗');state('disabled')
 print('OFFICIAL_MAP_RETURN_STATES_PASS')
 `, 'OFFICIAL_MAP_RETURN_STATES_PASS');
 });
@@ -665,7 +697,8 @@ print('OFFICIAL_REWARD_RETURN_STATES_PASS')
 `, 'OFFICIAL_REWARD_RETURN_STATES_PASS');
 });
 
-test('official lethal feedback and reward widgets do not flash the page cover',t=>{
+
+test('official rewards preserve the card picker through a map preview and keep settings separate',t=>{
  runOfficial(t,`
 local GameUI=require('abyss_game_ui')
 local original=GameUI.new
@@ -684,7 +717,7 @@ local map=root:GetChild('mapPanel')
 local function frame()
  host:update(1/60)
  if gate:step(Gate.intent(host)) then host:refresh()end
- gate:paint(not host.exitOpen)
+ gate:paint(not host.exitOpen or host.routeOpen)
 end
 local function actor()
  local exists,box=pcall(F.actorControl,battle,'enemy1')
@@ -725,28 +758,28 @@ for _=1,4 do frame();expectReward(false,true)end
 local card=battle:GetChild('card1')
 local label=card:GetChild('label')
 local text=require('abyss_card_display')
-assert(label.text:find('提升3点伤害。',1,true)
- and select(2,text.fitBody(label.text,{label.sizeDeltaX,label.sizeDeltaY})),
- 'upgraded long reward body overflowed')
+local expected='造成6点伤害。手牌、抽牌堆和弃牌堆中每有一张『剑势』系列牌，基础伤害增加3点。'
+assert(label.text==expected,'upgraded long reward body lost the approved full wording: '..label.text)
+local font,fits=text.fitBody(label.text,{label.sizeDeltaX,label.sizeDeltaY})
+assert(fits and not text.bodyOverflows(label),'upgraded long reward body overflowed')
+assert(label.fontSize==font and label.fontSize>=F.Theme.font.minimum and not label.adaptiveFontSize,
+ 'upgraded long reward body lost its measured font')
 event('card1','down',210);host:update(.36)
 assert(ui.info and ui.info.kind=='rewardCard' and not battle:GetChild('statusInfo').visible)
 event('card1','up',210);event('card1','click',210)
 assert(not ui.info and not host.run.rewards.cardResolved,'reading selected a reward')
 
 local count=#host.run.deck
-tap('card1',203);expectReward(true,false)
+tap('card1',205);expectReward(true,false)
 for _=1,4 do frame();expectReward(true,false)end
 assert(#host.run.deck==count+1 and host.run.rewards.cardResolved,'public pick must claim exactly one card')
 battle:GetChild('continue').click()
-local priorCover=cover.visible
-local coverRuns=priorCover and 1 or 0
-for _=1,8 do
- frame()
- if cover.visible and not priorCover then coverRuns=coverRuns+1 end
- priorCover=cover.visible
+local function expectLocalMapReturn()
+ assert(not cover.visible and not host.pageReveal:covered(),'a ready map return must avoid a fullscreen transition')
+ assert(host.run.phase=='map' and map.visible and not battle.visible and host.mapUI.navigationEnabled,
+  'the completed reward must return to a visible and interactive map')
 end
-assert(coverRuns==1 and not cover.visible and host.run.phase=='map' and map.visible and not battle.visible,
- 'a genuine map transition must cover once, then release')
+for _=1,8 do frame();expectLocalMapReturn()end
 `,'PC13_OFFICIAL_REWARD_FRAMES_PASS');
 });
 
@@ -1079,7 +1112,56 @@ assert(host:closeExit()and not host.routeOpen and host.mode=='node'and host.node
 unchanged(host.run,before,'map preview changed shop stock, selected offer or RNG')
 unchanged(host.map,mapBefore,'map preview changed navigation')
 host:refresh();ink(Theme.officialAssets.buttonInk)
+assert(shelf.visible and button.visible,'map preview must return to the same shelf')
+assert(tapControl(button,804) and host.nodeUI.shopBusy,'visible leave control starts the close animation')
+assert(not host.run.nodeFlow.complete,'leave must not commit before the shelf closes')
+assert(not hit.listeners.click({touchId=804}),'duplicate leave click accepted')
+advanceShop(host)
+assert(host.run.nodeFlow.complete and not shelf.visible,'leaving through the visible control must finish the shop')
 `, 'OFFICIAL_SHOP_ROUTE_INK_PASS');
+});
+
+test('official draw pile return paints shared hover and press without changing the hit target',t=>{
+ runOfficial(t,`
+local host,_,_,_,_,_,_,root=H.setup({'strike','defend'},{'raven_adept'})
+local deck,panel=host.deckUI,root:GetChild('deckPanel')
+local button=panel:GetChild('pileReturn')
+local hit,art=button:GetChild('hit'),button:GetChild('art')
+local chrome=art:GetChild('roundedButton')
+local theme=require('abyss_theme')
+local palette=theme.officialAssets.roundedButtonPalettes.cancel
+local function state(expected)
+ for i,role in ipairs({'rim','cloth'})do
+  for _,part in ipairs(chrome:GetChild(role):GetChildren())do
+   sameColour(part.imageColor,palette[expected][i],expected..' '..role)
+  end
+ end
+ local scale=expected=='pressed' and theme.layout.deckView.pressedScale or 1
+ assert((art.localScaleX or 1)==scale and (hit.localScaleX or 1)==1,'only the visible face may scale on press')
+end
+local function event(kind,id)return hit.listeners[kind]({touchId=id})end
+local function openDraw()
+ assert(host:openDeck('draw'));host:update(0)
+ assert(deck.pileKind=='draw' and button.visible)
+end
+openDraw()
+event('enter');state('hover')
+event('down');state('pressed')
+event('up');state('hover')
+event('exit');state('normal')
+assert(not event('click') and deck.visible,'leaving must discard the pending click')
+event('down',7);state('pressed')
+event('up',8);state('pressed')
+event('endDrag',7);state('normal')
+event('up',7);assert(not event('click',7) and deck.visible,'drag cancellation must prevent navigation')
+event('down',9);event('up',9);state('normal')
+assert(event('click',9) and not deck.visible,'matching touch still returns to battle')
+openDraw();event('enter');state('hover')
+assert(host:closeDeck());state('normal')
+event('enter');state('normal')
+openDraw();state('normal')
+event('enter');event('down');event('up');assert(event('click') and not deck.visible)
+`, 'OFFICIAL_PILE_RETURN_FEEDBACK_PASS');
 });
 
 test('official browser return rejects stale clicks across new choices and browser generations',t=>{
@@ -1453,11 +1535,13 @@ for _,slot in ipairs({1,5,10})do
  assert(not u.info and not info.visible,'leaving a card retained transient help')
 end
 u:showStatus(0)
-assert(plate.sizeDeltaX==theme.layout.statusInfo.width and info:GetChild('hit').visible,'actor details inherited the narrow card mode')
+assert(plate.sizeDeltaX==theme.layout.actorDetail.width and not info:GetChild('hit').visible,
+ 'actor details did not restore the shared compact style and input')
 event('card1','down',230)
-assert(not u.info and not u.gesture and u.swallow,'actor detail close must still swallow the press')
+assert(not u.info and u.gesture and not u.swallow,'actor detail closed without swallowing the card press')
 event('card1','up',230);event('card1','click',230)
-assert(not u.selected and not u.swallow)
+assert(u.selected==battle.hand[1].uid and not u.swallow)
+assert(u:cancelAim() and not u.selected)
 unchanged(battle,before,'hover/detail layout changed battle state')
 -- A fresh click-only surface has never observed a Down. Automatic card help
 -- must preserve its very first Click, while normal target selection remains core-owned.

@@ -1,3 +1,4 @@
+import {goldBag} from './v25-character-layout.mjs';
 import {nativeRoundedMaterial} from './official-battle-card-chrome.mjs';
 import {roundedButtonRadius,roundedPresetButton} from './native-rounded-button.mjs';
 export const stsRewardRowNames=Object.freeze(['goldReward','stolenGold','relicReward1','relicReward2','emeraldKeyReward','claimPotion','cardReward']);
@@ -6,7 +7,6 @@ const find=(n,name)=>n?.name===name?n:children(n).map(c=>find(c,name)).find(Bool
 const required=(n,name)=>{const part=find(n,name);if(!part)throw Error('Missing reward control '+name);return part;};
 const id=value=>typeof value==='object'?value.id:value;
 function iconFor(name,theme){
- if(name==='goldReward'||name==='stolenGold')return id(theme.icon.gold);
  if(name==='cardReward')return id(theme.icon.deck);
  if(name==='claimPotion')return theme.icon.potion.empty;
  if(name==='emeraldKeyReward')return id(theme.icon.lock);
@@ -19,7 +19,10 @@ function rowFace(row,theme){
   for(const old of [border,plate]){old.visible=false;old.image=theme.image.rect;old.size=[...token.rowSize];}
   state.size=[...token.rowSize];state.scale=state.name==='pressed'?[actionButton.pressedScale,actionButton.pressedScale]:[1,1];
   const face=nativeRoundedMaterial('stsRewardFace',...token.rowSize,roundedButtonRadius(token.rowSize[1],actionButton),token[state.name]??token.normal);
-  const icon={name:'rewardIcon',kind:'image',position:[token.iconX,0],size:[token.iconSize,token.iconSize],image:iconFor(row.name,theme)};
+  const iconPosition=[token.iconX,0],iconSize=token.iconSize;
+  const icon=row.name==='goldReward'||row.name==='stolenGold'
+   ?goldBag('rewardIcon',theme,iconPosition,[iconSize*.9,iconSize],{compact:true})
+   :{name:'rewardIcon',kind:'image',position:iconPosition,size:[iconSize,iconSize],image:iconFor(row.name,theme)};
   label.position=[token.textX,0];label.size=[token.textWidth,token.rowSize[1]-theme.space.s];
   Object.assign(label.text,{fontSize:token.fontSize,minFontSize:theme.font.minimum,autoSize:true,align:'left',valign:'middle',colour:state.name==='disabled'?theme.color.textMuted:token.ink,outline:false});
   state.children=[border,plate,face,icon,label];

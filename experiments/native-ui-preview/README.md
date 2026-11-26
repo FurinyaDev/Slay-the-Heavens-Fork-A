@@ -11,7 +11,7 @@
 
 布局以 gzip+base64 无损存储（读取时核对展开 SHA），仅含原生控件、文字、坐标与图片 ID，没有嵌入图片、字体或私人缓存。构建复用本仓库 Lua 源及已公开的 art-tech-lab seed，不复制一整份核心模块。
 
-构建只读取声明的两个生成数据模块，并现场生成主题；build/lua 中若有与 src/lua 同名的残留模块会拒绝构建。战斗在更新入口将呈现步长限制到 0–0.1 秒，长帧后继续播放反馈，不为补时重复提交游戏命令；这不是解决实际出牌耗时的性能优化。
+构建只读取战斗依赖清单中的生成数据模块，包括 `build:data` 的游戏数据和 `build:ui` 的怪物美术数据。主题现场生成。`build/lua` 中若有与 `src/lua` 同名的残留模块，构建会失败。战斗在更新入口将呈现步长限制到 0–0.1 秒，长帧后继续播放反馈，游戏命令仍只提交一次。
 
 ## 先运行无素材回归
 
@@ -20,6 +20,7 @@
 ```sh
 npm ci --ignore-scripts
 npm run build:data
+npm run build:ui
 node --test tests/native-ui-preview.test.mjs
 node experiments/native-ui-preview/build.mjs battle --check-only
 ```

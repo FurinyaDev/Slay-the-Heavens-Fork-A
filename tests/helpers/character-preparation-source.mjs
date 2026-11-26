@@ -1,3 +1,6 @@
+import {isReviewedSelectionRead} from './reviewed-selection-current-source.mjs';
+import {beforeRefinedReleaseProduction,refinedReleaseProductionPaths} from './refined-release-source.mjs';
+import {beforeReleaseCompoundIntent,beforeReleaseControlsGuideRemoval,beforeReleaseForgeGridUi,beforeReleaseRightClick,beforeReleaseSharedRelicUi,beforeReleaseUiRestore,releaseControlsGuideRemovalSourcePaths,releaseForgeSourcePaths,releaseRightClickSourcePaths,releaseSharedRelicSourcePaths,releaseUiRestoreSourcePaths} from './release-ui-restore-source.mjs';
 import { assertCurrentUiEntrance, entrancePredecessor } from './ui-entrance-source.mjs';
 import {battlePeripheryPredecessor} from './battle-periphery-source.mjs';
 import {assertCurrentDevelopUiSource,readRetiredController,retiredControllerPath} from './input-retirement-source.mjs';
@@ -19,6 +22,7 @@ import {beforeSelectorSource,selectorSourcePair} from './character-selector-sour
 import {beforePotionTextSource,potionTextSourcePair} from './potion-text-source.mjs';
 import {beforeFatalBgmSource,fatalBgmPair} from './fatal-bgm-source-continuation.mjs';
 import {beforeEndingTerminalSource,endingTerminalSourcePath} from './ending-terminal-source.mjs';
+import {beforeCharacterSelectionSource} from './sts1-menu-ci-source.mjs';
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import {readFileSync} from 'node:fs';
@@ -39,7 +43,7 @@ const readRaw = path => readFileSync(path, 'utf8');
 
 export function assertCharacterPreparationSources(read = readRaw) {
   for (const path of characterPreparationOwners) {
-    const source = read(path);
+    const source = beforeCharacterSelectionSource(path,read(path));
     assert(typeof source === 'string' && !source.includes('\r\r\n') &&
       digest(normalize(source)) === packet.production[path].after, 'fresh character preparation source: '+path);
   }
@@ -143,6 +147,8 @@ const currentContinuationOwners = new Set([
 ]);
 
 export function beforeCurrentProductionSource(path, source, read = readRaw) {
+  const compound=beforeReleaseCompoundIntent(path,source,read,{requireCurrent:true,reviewed:isReviewedSelectionRead(read)});
+  if(compound!==source)return beforeCharacterPreparationSource(path,compound,owner=>beforeReleaseCompoundIntent(owner,read(owner)));
   ({source,read}=chapterBattleSceneReader(path,source,read));
   ({source,read}=battlePeripheryPredecessor(path,source,read));
   assertCurrentOfficialComposition(path,source);
@@ -181,7 +187,19 @@ export function beforeCurrentProductionSource(path, source, read = readRaw) {
   }
   // A historic successor may still be recognised by an older projector; that
   // must not let it claim the latest PC13 identity at this current-only entry.
-  if (pc13RewardCoverSourcePaths.includes(path)) {
+  if (refinedReleaseProductionPaths.includes(path)) {
+    assert.notEqual(beforeRefinedReleaseProduction(path,source),source,'fresh current production owner: '+path);
+  } else if (releaseForgeSourcePaths.includes(path)) {
+    assert.notEqual(beforeReleaseForgeGridUi(path,source),source,'fresh current production owner: '+path);
+  } else if (releaseSharedRelicSourcePaths.includes(path)) {
+    assert.notEqual(beforeReleaseSharedRelicUi(path,source),source,'fresh current production owner: '+path);
+  } else if (releaseControlsGuideRemovalSourcePaths.includes(path)) {
+    assert.notEqual(beforeReleaseControlsGuideRemoval(path,source),source,'fresh current production owner: '+path);
+  } else if (releaseRightClickSourcePaths.includes(path)) {
+    assert.notEqual(beforeReleaseRightClick(path,source),source,'fresh current production owner: '+path);
+  } else if (releaseUiRestoreSourcePaths.includes(path)) {
+    assert.notEqual(beforeReleaseUiRestore(path,source),source, 'fresh current production owner: '+path);
+  } else if (pc13RewardCoverSourcePaths.includes(path)) {
     assert.notEqual(beforePc13RewardCover(path,source),source, 'fresh current production owner: '+path);
   }
   const prior = beforeCharacterPreparationSource(path, source, read);

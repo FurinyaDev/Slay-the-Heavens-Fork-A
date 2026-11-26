@@ -95,6 +95,19 @@ test('required guidance rejects UI design regressions and passes restored or unr
   check('restored target',() => put(target,'menu pixels'));
   check('ordinary controller fix',() => put(map,'export const layout = { size: [10,10] };\nexport const controllerFix = true;\n'));
   check('historical comparison evidence',() => put('docs/evidence/compare.md','[previous](old-menu.png)'));
+  function archiveRetiredReference({ mismatch = false, reuse = false } = {}) {
+    const { sha256 } = inactive.reference;
+    const bytes = Buffer.byteLength('old pixels');
+    const blob = git('rev-parse', `${base}:${old}`);
+    put(old, `version https://git-lfs.github.com/spec/v1\noid sha256:${sha256}\nsize ${bytes}\n`);
+    put('docs/legal/assets.json', JSON.stringify({files:{[old]:{sha256,bytes,lfs:true,storage:'ci-media-lfs-v1',sourceCommit:base}}}));
+    const files = [{path:old,sha256,bytes:bytes + Number(mismatch),sourceCommit:base,oldBinaryGitBlobs:[blob]}];
+    put('config/ci-media-lfs.json', JSON.stringify({productionBackflowExtension:{sourceCommit:base,files}}, null, 2));
+    if (reuse) put('docs/design/review.md', `[retired design](${old})`);
+  }
+  check('exact storage custody of retired evidence',() => archiveRetiredReference());
+  check('mismatched retired archive metadata',() => archiveRetiredReference({mismatch:true}),/New reference to SUPERSEDED/);
+  check('retired evidence reused outside storage',() => archiveRetiredReference({reuse:true}),/New reference to SUPERSEDED/);
   check('explicit supersession',() => {
     put(candidate,'new pixels');
     index([{...normal,status:'SUPERSEDED'},

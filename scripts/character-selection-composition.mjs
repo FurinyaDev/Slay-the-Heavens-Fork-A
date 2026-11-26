@@ -37,6 +37,10 @@ export function characterSelectionComposition(panel,theme){
   relic:[[162,405,430,30],20,'#E7CA5A'],relicText:[[162,429,440,35],17,'#F3EFDA']};
  for(const [name,[box,font,colour]]of Object.entries(specs))placeText(child(details,name),box,font,colour);
  details.children=details.children.filter(n=>!['deckOpen','deckTitle','deckSummary','deckRule'].includes(n.name));
+ const portraits=child(details,'portraits');
+ portraits.children=portraits.children.filter(node=>node.name!=='traveler_ironclad');
+ Object.assign(child(details,'portraitLoading'),frame(885,455,72,30));
+ Object.assign(child(details,'portraitFade'),frame(645,84,552,451));
  for(const name of ['relicTag','portraitFrame','floorShadow','officialSelectionFigure']){const n=child(details,name);if(n)n.visible=false;}
  Object.assign(child(details,'v25HealthIcon'),frame(115,286,23,21));
  const bag=child(details,'v25GoldIcon');Object.assign(bag,frame(295,284,25,28));

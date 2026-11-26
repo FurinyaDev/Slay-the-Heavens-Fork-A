@@ -24,6 +24,11 @@ local function temporaryNote(entry, name, fallback)
     return temporary ~= 0 and "回合结束时失去 " .. number(temporary) .. " 层" .. name or fallback
 end
 
+local function enemyStrength(entry)
+    return "普通攻击每段伤害 " .. M.signed(entry.amount), temporaryDuration(entry),
+        temporaryNote(entry, "力量", "不影响火焰药水的固定伤害")
+end
+
 -- Each status owns its explanation. The handler receives already formatted
 -- amounts, plus the original entry/rules/owner for the few conditional details.
 local descriptions = {
@@ -266,8 +271,9 @@ descriptions.regrow = function()
 end
 
 -- Returns the effect, duration tag and optional condition, naming real values.
-function M.statusDetail(entry, rules, actor, battle)
+function M.statusDetail(entry, rules, actor, battle, enemyPowerTip)
     if entry.originalV4 then return entry.description, entry.duration, "当前资源与剩余次数，按实际结算更新。" end
+    if enemyPowerTip and entry.id == "strength" then return enemyStrength(entry) end
     local n = number(entry.amount)
     local describe = descriptions[entry.id]
     if describe then return describe({ entry = entry, combat = rules.combat, actor = actor, n = n,

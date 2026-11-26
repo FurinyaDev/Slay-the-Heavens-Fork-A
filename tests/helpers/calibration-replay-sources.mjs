@@ -1,5 +1,7 @@
 import {beforeMapRoomReplayCohort} from './develop-replay-merge-source.mjs';
 import {beforeMapNodeVisualsLineEndings} from './input-retirement-sts-binding.mjs';
+import {readCloseoutLuaVocabularyReceipt} from './closeout-lua-vocabulary-source.mjs';
+import {beforeCloseoutHistoryTooling,beforeCloseoutJoustCiFixture,readCloseoutCurrentBackflowReceipt} from './closeout-current-backflow-source.mjs';
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import {readFileSync} from 'node:fs';
@@ -12,6 +14,10 @@ import {beforeCurrentReplayFixes} from './current-replay-fix-sources.mjs';
 import {beforeUiEntranceWitness} from './ui-entrance-source.mjs';
 import {stsStylePriorRuntime} from './sts-style-prior-runtime.mjs';
 import {stsStyleCiBytes} from './sts-style-ci-binding.mjs';
+import {componentUiCiSourceProof} from './component-ui-ci-source-inverse.mjs';
+import {beforeSelectionReceiptSource,selectionCopierReceipt} from './ui-selection-current-source.mjs';
+import {restoreExactFixtureHunks} from './exact-fixture-hunks.mjs';
+import {beforeRunHudDeckLabel} from './run-hud-successors.mjs';
 
 const hash=(bytes,algorithm='sha256')=>createHash(algorithm).update(bytes).digest('hex');
 const blob=source=>hash(`blob ${Buffer.byteLength(source)}\0${source}`,'sha1');
@@ -23,6 +29,11 @@ assert.equal(packet.schemaVersion,1);
 assert.equal(packet.base,'469e80240c5b7c60f75ff434bebac62d73c0bd0c');
 const matches=(source,row)=>typeof source==='string'&&!source.includes('\r\r\n')&&
  hash(lf(source))===row.sha256&&blob(lf(source))===row.gitBlob;
+const officialBytes=readFileSync(new URL('./official-calibration-v220-source-receipt.json.gz',import.meta.url));
+assert.equal(hash(officialBytes),'7d7a75a81cde23cd60e55a9eafc5dc635aa0030738332e3f7cc6076b9179328f','exact official calibration continuation');
+const officialReceipt=JSON.parse(gunzipSync(officialBytes));
+assert.equal(officialReceipt.schemaVersion,1);
+assert.equal(officialReceipt.currentCommit,'ad375bbc11b6958c7f24fdf94b9681e1a8b48ff6');
 const retirementBytes=readFileSync(new URL('./input-retirement-calibration-source.json.gz',import.meta.url));
 assert.equal(hash(retirementBytes),'2ad6dd590a69fa7035d63d6fc2568dfff5ab815842192bc6a2eec619e316cfa1','exact calibration input retirement packet');
 const retirement=JSON.parse(gunzipSync(retirementBytes));
@@ -57,7 +68,79 @@ function beforeRunHudPotionFixture(path,source){
  return source.includes('\r\n')?prior.replaceAll('\n','\r\n'):prior;
 }
 
+// The live budget test authenticates the #951 fixture rename before using the
+// historical names. Frozen calibration receipts retain the previous test bytes.
+function beforeReleaseLuaNameBudgetTest(path,source){
+ if(path!=='tests/ci-windows-shape-expansion.test.mjs'||!matches(source,{
+  sha256:'6601b5d58613272f5c2967ed444228e5d78fe1e570ae43bd8f0a67956bff9a41',
+  gitBlob:'d0277ba31e28aa3849c7b54cbd3632f650c81a5c',
+ }))return source;
+ const prior=lf(source)
+  .replace('import {beforeCurrentReleaseLuaNames,beforeInputRetirementTestInventory,',
+   'import {beforeInputRetirementTestInventory,')
+  .replace("beforeCurrentReleaseLuaNames(beforeInputRetirementTestInventory(lua,'lua',readFileSync,{required:true}),readFileSync)",
+   "beforeInputRetirementTestInventory(lua,'lua',readFileSync,{required:true})");
+ assert(matches(prior,retirement.continuations[path].after),'exact pre-rename budget fixture');
+ return source.includes('\r\n')?prior.replaceAll('\n','\r\n'):prior;
+}
+
+function beforeRunHudCalibrationHelper(path,source){
+ if(path!=='tests/helpers/run-hud-ci-source.mjs'||!matches(source,{
+  sha256:'815c65ff6963579c7f48ea9ba390b8a6e16c24fbb0c13924ae8ad4a9da51ac7f',gitBlob:'60f9a0a326ff3120bf56671638579a06f74a7fc7',
+ }))return source;
+ const normalized=lf(source);
+ if(source!==normalized&&source!==normalized.replaceAll('\n','\r\n'))return source;
+ const prior=normalized
+  .replace(/^import \{(?:beforePotionReadabilityEvidence|beforeCloseoutHistoryTooling|exactSourceMatches|restoreExactFixtureHunks)[^\n]*\n/gm,'')
+  .replace(/^function beforeSilentPlanningSource[\s\S]*?(?=^export function preRunHudCiSource)/m,'')
+  .replace(/^ source=(?:beforeSilentPlanningSource|beforeDefectPlanningSource|beforeCloseoutHistoryTooling|beforeCloseoutRunHudFixture)\(path,source\);\n/gm,'')
+  .replace('preMenuRedCiSource(path,beforePotionReadabilityEvidence(path,source))','preMenuRedCiSource(path,source)');
+ assert(matches(prior,{
+  sha256:'084db705f3390910da925c32970a18279b78063f4a03d2331a19a775229c5524',gitBlob:'0543be2be1083af9594dbf48238e96d6a7a4bbf2',
+ }),'exact archived Run HUD integration helper');
+ return source===normalized?prior:prior.replaceAll('\n','\r\n');
+}
+
+const prHistoryCalibrationReceipt={
+ "path": "tests/pr-history.test.mjs",
+ "before": {
+  "sha256": "670d63a96197c8310b7cbfe3c98b1dbf64a7c918b1d22502c0807d9a8801e02e",
+  "gitBlob": "00102c1f0557faf6c6b88e5415cbbdf0883ea9df"
+ },
+ "after": {
+  "sha256": "7a76b431c86f1a4c2cf8c2049dde0a9cf6974e2f4855d75d7ff47f951134e10a",
+  "gitBlob": "7909983f36297b4e573eb0643a07af355d71d202"
+ },
+ "hunks": [
+  {
+   "at": 7,
+   "before": "import { receiptToolingSource } from './helpers/integration-1111-tooling.mjs';\nimport { preRunHudCiSource } from './helpers/run-hud-ci-source.mjs';",
+   "after": "import { receiptToolingSource } from './helpers/integration-1111-tooling.mjs';\nimport { beforeCloseoutHistoryTooling } from './helpers/closeout-current-backflow-source.mjs';\nimport { preRunHudCiSource } from './helpers/run-hud-ci-source.mjs';"
+  },
+  {
+   "at": 13,
+   "before": "  const source = readFileSync(row.path, 'utf8').replaceAll('\\r\\n', '\\n');\n  assert.equal(source, row.after.source);\n  for (const input of [source, source.replaceAll('\\n', '\\r\\n')])\n    assert.equal(preRunHudCiSource(row.path, input), row.before.source);\n  for (const input of [source + '\\n', source.slice(1), source.slice(0, -1), source.replaceAll('\\n', '\\r\\r\\n'), null, {}, 17])\n    assert.equal(preRunHudCiSource(row.path, input), input);\n  for (const path of ['__proto__', 'constructor', 'foreign/' + row.path, row.path + '/extra'])\n    assert.equal(preRunHudCiSource(path, source), source);\n});",
+   "after": "  const source = readFileSync(row.path, 'utf8').replaceAll('\\r\\n', '\\n');\n  assert.equal(beforeCloseoutHistoryTooling(row.path, source), row.after.source);\n  for (const fixture of [row.after.source, source]) {\n    for (const input of [fixture, fixture.replaceAll('\\n', '\\r\\n')])\n      assert.equal(preRunHudCiSource(row.path, input), row.before.source);\n    for (const input of [fixture + '\\n', fixture.slice(1), fixture.slice(0, -1), fixture.replaceAll('\\n', '\\r\\r\\n'), null, {}, 17])\n      assert.equal(preRunHudCiSource(row.path, input), input);\n    for (const path of ['__proto__', 'constructor', 'foreign/' + row.path, row.path + '/extra'])\n      assert.equal(preRunHudCiSource(path, fixture), fixture);\n  }\n  const mixed = source.replace('\\n', '\\r\\n');\n  assert.equal(preRunHudCiSource(row.path, mixed), mixed);\n});"
+  }
+ ]
+};
+function beforePrHistoryCalibrationFixture(path,source){
+ const receipt=prHistoryCalibrationReceipt;
+ if(path!==receipt.path||!matches(source,receipt.after))return source;
+ const normalized=lf(source);
+ if(source!==normalized&&source!==normalized.replaceAll('\n','\r\n'))return source;
+ const prior=restoreExactFixtureHunks({path,beforeSha256:receipt.before.sha256,
+  afterSha256:receipt.after.sha256,hunks:receipt.hunks},path,normalized);
+ assert(matches(prior,receipt.before),'exact archived PR history calibration fixture');
+ return source===normalized?prior:prior.replaceAll('\n','\r\n');
+}
+
 export function beforeCalibrationReplay(path,source){
+ source=beforePrHistoryCalibrationFixture(path,source);
+ source=beforeCloseoutJoustCiFixture(path,source);
+ source=beforeCloseoutHistoryTooling(path,source);
+ source=beforeRunHudCalibrationHelper(path,source);
+ source=beforeReleaseLuaNameBudgetTest(path,source);
  source=beforeCurrentHistoricalStsSource(path,source);
  source=beforeMapNodeVisualsLineEndings(path,source);
  source=beforeRunHudPotionFixture(path,source);
@@ -182,10 +265,81 @@ function readRelicEquipReceipt(readCurrent){
  return lf(archived);
 }
 
+const launchComponentPath='scripts/verify-launch-content.mjs';
+const launchComponentPrior={
+ sha256:'f249e9c6eb152bb16e9b75401b1aa445721eebc19c128d31e330a0379da66ab6',gitBlob:'f218c47d76bca2f8036ee65c9bbc149491f0cba2',
+};
+function readLaunchComponentReceipt(readCurrent){
+ const source=readCurrent(launchComponentPath,'utf8');
+ assert(matches(source,{
+  sha256:'7dca28897fadbbb2b4fef133e6317e0887cda5f368b7720547ea590240ef621c',gitBlob:'501b73728eee52536770b49e211a997c46d29c9f',
+ }),'current launch component receipt input changed');
+ const normalized=lf(source);
+ assert(source===normalized||source===normalized.replaceAll('\n','\r\n'),'mixed launch component receipt line endings');
+ const prior=normalized.replace('augmentation_core:', 'mutagenic_strength:').replace('raven_mask:', 'cultist_mask:')
+  .replaceAll('explicit_event:augmenter:', 'explicit_event:drug_dealer:').replaceAll('drug_dealer:claim_core', 'drug_dealer:mutagens');
+ assert(matches(prior,launchComponentPrior),'exact launch component receipt predecessor');
+ return prior;
+}
+
+const componentCurrentSources={
+ 'src/lua/abyss_choice_ui.lua':{sha256:'234a556082e12d50f652fe6579be263c59b485436c287907e2472ecb8ce81eed',gitBlob:'22ea49f3c3ea08a34fe0dddcb9dd72e8ec375a32'},
+ 'src/lua/abyss_map_ui.lua':{sha256:'645764d987cb57f2cf57db066eeb3e99de967d248b9efabbd3cf65269e7dd379',gitBlob:'12e42d8d0abe7607b8526d7b89b2e2fc80c92ced'},
+ 'tests/native-candidate-deployment-closure.test.mjs':{sha256:'e284262759586462477b9631c8c5e9a9284a968d8377af0f95433025ccdeb1d2',gitBlob:'1f7255918b5878460dac5324add5e134a498fd20'},
+ 'tests/native-candidate-scripts.test.mjs':{sha256:'3c6d8c14b8674603ca6108d955e231b00654e67dfd0c5773db058960e6717394',gitBlob:'0f82c2b421f91c2a504c7900c877935c58d42a43'},
+ 'tests/native-candidate.test.mjs':{sha256:'ca0f758acf0d3d053b91182eabe1e1fb5b3f5bdaeb3e5bf13ef9b5e47e224238',gitBlob:'07cb62783fe2221d7ed8df4f7634796613e5fbaa'},
+};
+function readComponentSourceReceipt(path,digest,readCurrent){
+ if(!Object.hasOwn(componentCurrentSources,path))return;
+ const receipt=componentUiCiSourceProof.files[path];
+ if(receipt.afterSha256!==digest)return;
+ const source=readCurrent(path,'utf8');
+ assert(matches(source,componentCurrentSources[path]),'current component receipt input changed: '+path);
+ const normalized=lf(source);
+ assert(source===normalized||source===normalized.replaceAll('\n','\r\n'),'mixed component receipt line endings: '+path);
+ return receipt.afterSource;
+}
+
+const goldenIdolCopierDigest='ebbad15ec6009f1f855014435ef6c4ed2716dfcd0d60d56482e4bcf963dd127b';
+function readGoldenIdolCopierReceipt(readCurrent){
+ const source=readCurrent(copierPath,'utf8');
+ const current={sha256:selectionCopierReceipt.afterSha256,gitBlob:selectionCopierReceipt.afterBlob};
+ assert(matches(source,current)&&beforeSelectionReceiptSource(copierPath,source)!==source,
+  'current Golden Idol copier receipt input changed');
+ return packet.receipts[copierPath].before[goldenIdolCopierDigest].source;
+}
+
 // A frozen receipt may read a registered old blob only after checking the
 // corresponding current file. Raw Full discovery and inputs use their normal readers.
+function readOfficialCalibrationReceipt(path,digest,readCurrent){
+ if(!Object.hasOwn(officialReceipt.files,path))return;
+ const row=officialReceipt.files[path];
+ if(!Object.hasOwn(row.predecessors,digest))return;
+ const prior=row.predecessors[digest];
+ if(row.currentPath!==path)assert.throws(()=>readCurrent(path,'utf8'),{code:'ENOENT'},'retired official receipt input reappeared: '+path);
+ const live=readCurrent(row.currentPath,'utf8');
+ const source=row.currentPath==='scripts/deck-ui-layout.mjs'?beforeRunHudDeckLabel(live):live;
+ assert(matches(source,row.current),'current official receipt input changed: '+row.currentPath);
+ const normalized=lf(source);
+ assert(source===normalized||source===normalized.replaceAll('\n','\r\n'),'mixed official receipt line endings: '+row.currentPath);
+ const predecessor=prior.rename?normalized.replace(prior.rename.after,prior.rename.before):
+  restoreExactFixtureHunks({path,beforeSha256:digest,afterSha256:row.current.sha256,hunks:prior.hunks},path,normalized);
+ assert.equal(prior.sha256,digest,'requested official receipt identity: '+path);
+ assert(matches(predecessor,prior),'exact official receipt predecessor: '+path);
+ return predecessor;
+}
 export function readCalibrationReceiptInput(path,digest,read,readCurrent=readFileSync){
+ const official=readOfficialCalibrationReceipt(path,digest,readCurrent);
+ if(official!==undefined)return official;
  if(path===relicEquipReceipt.path&&digest===relicEquipReceipt.prior.sha256)return readRelicEquipReceipt(readCurrent);
+ if(path===launchComponentPath&&digest===launchComponentPrior.sha256)return readLaunchComponentReceipt(readCurrent);
+ if(path===copierPath&&digest===goldenIdolCopierDigest)return readGoldenIdolCopierReceipt(readCurrent);
+ const component=readComponentSourceReceipt(path,digest,readCurrent);
+ if(component!==undefined)return component;
+ const vocabulary=readCloseoutLuaVocabularyReceipt(path,digest,readCurrent);
+ if(vocabulary!==undefined)return vocabulary;
+ const closeout=readCloseoutCurrentBackflowReceipt(path,digest,readCurrent);
+ if(closeout!==undefined)return closeout;
  const fallback=()=>{
   const source=read(),prior=beforeCurrentReplayFixes(path,source);
   return typeof prior==='string'&&hash(lf(prior))===digest?prior:source;
