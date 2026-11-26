@@ -1083,7 +1083,31 @@ const relicCloseoutIntegratedSuccessor={
  ]
 };
 const relicCloseoutIntegratedIdentity=["3050fb4626b7417c3a98392d82f770657d6769cc34674a5d05baf90884438bdc", "cb755c920a43e60b93d41a29f97e8888dabfabfc"];
+// Revised session-menu inventory identities retain the reviewed #1010 view.
+const sessionMenuIntegratedIdentity=["857848b99d1f3c21055d3bb9a39773770abb4ef82932154dda3835b1a414171b","308cb4abd297aec27f6ccc66d8c31db4f26ecbb3"];
+const sessionMenuIntegratedSuccessor={
+ path:integratedFixture,
+ beforeSha256:relicCloseoutIntegratedIdentity[0],
+ afterSha256:sessionMenuIntegratedIdentity[0],
+ hunks:[
+ {
+  "at": 28,
+  "before": "  sha256:'704f77d7a3a9efd5feffd3659cd2b6d1416d13e5c177bc4c06c89212a24bcaf9',gitBlob:'474b88996f4b6469a5b6dad660b2b6240aba63bb',",
+  "after": "  sha256:'a5f67deae9967c009bdee7182e4f0479bcc07a31e44739442f6710711bdaaea4',gitBlob:'4bcba7540064d617b04649ff4e908ba6050ddf6a',"
+ },
+ {
+  "at": 31,
+  "before": "  sha256:'15e495490244a447d8f9311bce88f03dc3ed30f6282ec108a5b4a4421b88624d',gitBlob:'53a04c8d5e53b4a62c789bc083e385b41bb04255',",
+  "after": "  sha256:'eeffe6b3e94357583ccb13053c0a7381babd783fd75d40e6bd2687e2b78f37bf',gitBlob:'135f0567a6cebc98e2e861ec9c6debebe673da37',"
+ }
+]
+};
 function beforeRelicCloseoutIntegratedFixture(path,source){
+ if(path===integratedFixture&&exactCheckoutSource(source,sessionMenuIntegratedIdentity)){
+  const prior=restoreExactFixtureHunks(sessionMenuIntegratedSuccessor,path,source);
+  assert(exactCheckoutSource(prior,relicCloseoutIntegratedIdentity),'exact session-menu integration fixture predecessor');
+  source=source.includes('\r\n')?prior.replaceAll('\n','\r\n'):prior;
+ }
  if(path!==integratedFixture||!exactCheckoutSource(source,relicCloseoutIntegratedIdentity))return source;
  const prior=restoreExactFixtureHunks(relicCloseoutIntegratedSuccessor,path,source);
  assert.equal(blob(prior),'2f628ab1013c999dc38c55b87537d573c4bbcd40','exact #1010 integration fixture predecessor');
@@ -1462,7 +1486,7 @@ function beforeIntegrationSuccessor(path,source){
 }
 // Verify the live replay helpers before restoring their reviewed predecessors.
 const responsiveReplayHelpers=Object.freeze({
- [integratedFixture]:relicCloseoutIntegratedIdentity,
+ [integratedFixture]:sessionMenuIntegratedIdentity,
  [relicCloseoutInventoryFixture.path]:relicCloseoutInventoryIdentity,
  'tests/helpers/chapter-battle-scene-source.mjs':['1270c293d79c04ac4a5b15483dd4cc8f9c4279362e2f5c551f6e98c20c9ad293','5306929645881d562b4d4322c5b3fa2ecb91edbd'],
  'tests/helpers/rebased-release-source.mjs':['b1e42ded7f05f580fb25ab0417ccd8db45832f5e9e50db83a38d6aaa2767dc20','4b22a3e61459334c6d85b247ea188976313d549e'],
@@ -1717,7 +1741,7 @@ export function beforePreflightSource(path,source,view='prior',read=readFileSync
   const liveRead=read;
   read=(owner,encoding)=>{
    const raw=liveRead(owner,encoding);
-   if(owner===integratedFixture)assert(exactCheckoutSource(raw,relicCloseoutIntegratedIdentity),
+   if(owner===integratedFixture)assert(exactCheckoutSource(raw,sessionMenuIntegratedIdentity),
     'fresh complete integration source: '+owner);
    return beforeRelicCloseoutIntegratedFixture(owner,raw);
   };

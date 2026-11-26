@@ -394,7 +394,7 @@ const nodeNoticeCopier=Object.freeze({
  ]
 });
 const deckArchitectureCopier=Object.freeze({
- current:{"sha256":"f91356992df348455d12d1c46cff3939abb466a659d6067f7a05741762194c77","gitBlob":"81455b6dc430a44de255071736496b0b4228642b"},
+ current:{"sha256":"9f244b21a5a6aec5ba3f69e41d355adc6a9ce0f8eb824b790684440243e75b9b","gitBlob":"4fd2e81bd3a4657068bf625334006bb54e77c2b7"},
  previous:combinedReceipt(copierPath).current,
  hunks:[
  {
@@ -405,7 +405,7 @@ const deckArchitectureCopier=Object.freeze({
  {
   "at": 361,
   "before": " 'tests/helpers/develop-release-backflow-source.mjs':'2834679eef440cf54e64cfb2c144c2fc6dbb5dc7ed048c3767435c250827337f',",
-  "after": " 'tests/helpers/develop-release-backflow-source.mjs':'5f4ae517a51a79bc5c855c5ca1e5b82e461503130cf02a7fed135a140ddab49d',\n 'tests/helpers/develop-release-vocabulary-source.mjs':'6120c2639aeb77972adcab7571c384d2d53f8a28794f99cc389f108a8bf0aeb5',\n 'tests/fixtures/develop-release-vocabulary-source.json.gz':'2b3d606fc142f2c8c5cfaaff386c70f6e1f741f24fbc1879b78399b7c477e914',\n 'tests/fixtures/map-room-battle-actions-source.json.gz':'45918da82006880941ab23f10ccc49b7fe11fc2c7978b4f1508f923216e142ec',\n 'tests/fixtures/develop-battle-input-source.json.gz':'ee0eeaf23242e8307a2b4f06a27319d89477c5d19d7507eddc54477dc878611e',\n 'tests/fixtures/develop-linked-backflow-source.json.gz':'7f803c657102e0f9a804ca68117af34f1067d32eabbc3b5fc0c99752b590d522',\n 'tests/fixtures/develop-architecture-linked-source.json.gz':'4e8500c1232bc5bcd5c19d08dbed21cea262be94a30f3a2e8195eeb04ebde859',\n 'tests/helpers/master-backflow-source.mjs':'7c9fb40ae14704f317e6cc0983bf468709216540a1da347303ad4903aa0434c7',\n 'tests/fixtures/master-backflow-predecessors.json.gz':'b16492b78553e53e675537d95d3f9ef24557d792f657ba41f0f280e43fab325f',"
+  "after": " 'tests/helpers/develop-release-backflow-source.mjs':'5f4ae517a51a79bc5c855c5ca1e5b82e461503130cf02a7fed135a140ddab49d',\n 'tests/helpers/develop-release-vocabulary-source.mjs':'6120c2639aeb77972adcab7571c384d2d53f8a28794f99cc389f108a8bf0aeb5',\n 'tests/fixtures/develop-release-vocabulary-source.json.gz':'2b3d606fc142f2c8c5cfaaff386c70f6e1f741f24fbc1879b78399b7c477e914',\n 'tests/fixtures/map-room-battle-actions-source.json.gz':'45918da82006880941ab23f10ccc49b7fe11fc2c7978b4f1508f923216e142ec',\n 'tests/fixtures/develop-battle-input-source.json.gz':'ee0eeaf23242e8307a2b4f06a27319d89477c5d19d7507eddc54477dc878611e',\n 'tests/fixtures/develop-linked-backflow-source.json.gz':'7f803c657102e0f9a804ca68117af34f1067d32eabbc3b5fc0c99752b590d522',\n 'tests/fixtures/develop-architecture-linked-source.json.gz':'4e8500c1232bc5bcd5c19d08dbed21cea262be94a30f3a2e8195eeb04ebde859',\n 'tests/helpers/master-backflow-source.mjs':'bb9776e3f49d88c2a6878840db782b8e11b99eec8f3126635646d3b0f420e95f',\n 'tests/fixtures/master-backflow-predecessors.json.gz':'b16492b78553e53e675537d95d3f9ef24557d792f657ba41f0f280e43fab325f',"
  },
  {
   "at": 383,
