@@ -1364,7 +1364,7 @@ function beforeIntegrationSuccessor(path,source){
 // The current gate uses these two replay modules to verify the composed hand and scene owners.
 const responsiveReplayHelpers=Object.freeze({
  [integratedFixture]:relicCloseoutIntegratedIdentity,
- 'tests/helpers/chapter-battle-scene-source.mjs':['1270c293d79c04ac4a5b15483dd4cc8f9c4279362e2f5c551f6e98c20c9ad293','5306929645881d562b4d4322c5b3fa2ecb91edbd'],
+ 'tests/helpers/chapter-battle-scene-source.mjs':['b2def7b519baed76f0b8e38c362bf33aa688f43edeac18dbbdcc7477a7ac7526','fd06612ac3a152f080ec6f67c259ba06bbc152c8'],
  'tests/helpers/rebased-release-source.mjs':['b1e42ded7f05f580fb25ab0417ccd8db45832f5e9e50db83a38d6aaa2767dc20','4b22a3e61459334c6d85b247ea188976313d549e'],
 });
 function responsiveReplayCurrentRead(read){
