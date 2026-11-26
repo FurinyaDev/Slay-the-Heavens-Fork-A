@@ -7,6 +7,7 @@ import {gunzipSync} from 'node:zlib';
 import {createHash} from 'node:crypto';
 import {preStsStyleCiSource,stsStylePriorInventory,stsStylePriorRead} from './sts-style-ci-source.mjs';
 import {beforePotionReadabilityEvidence} from './v2-ui-admission-ci-source.mjs';
+import {beforeCloseoutHistoryTooling} from './closeout-current-backflow-source.mjs';
 import {preMenuRedCiSource} from './menu-red-ci-source.mjs';
 const hash=s=>createHash('sha256').update(s).digest('hex');
 const normalize=s=>s.replaceAll('\r\n','\n');
@@ -36,6 +37,7 @@ export function preRunHudCiSource(path,source){
  source=preMenuRedCiSource(path,beforePotionReadabilityEvidence(path,source));
  source=preStsStyleCiSource(path,source);
  source=preNativePreviewCiSource(path,source);
+ source=beforeCloseoutHistoryTooling(path,source);
  if(path===tooling.path&&typeof source==='string'&&!source.includes('\r\r\n')&&
    normalize(source)===tooling.after.source&&hash(normalize(source))===tooling.after.sha256)return tooling.before.source;
  const row=Object.hasOwn(runHudCiProof.files,path)?runHudCiProof.files[path]:null;

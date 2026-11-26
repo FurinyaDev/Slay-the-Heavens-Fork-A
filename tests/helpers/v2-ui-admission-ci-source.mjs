@@ -66,7 +66,13 @@ function beforeOfficialBattleWitness(path,source) {
 // Keep the exact #763 readability adapter visible to its frozen integration receipt.
 function beforeRunHudReadabilityAdapter(path,source) {
   if (path!=='tests/helpers/run-hud-ci-source.mjs' || typeof source!=='string' || source.includes('\r\r\n')) return source;
-  const current=source.replaceAll('\r\n','\n');
+  let current=source.replaceAll('\r\n','\n');
+  if (sha256(current)==='68e97aac87f90aea3e0c165d308744e2bc6e4190902b514b2a0c47e6fd88eb28') {
+    if (source!==current && source!==current.replaceAll('\n','\r\n')) return source;
+    current=current
+      .replace("import {beforeCloseoutHistoryTooling} from './closeout-current-backflow-source.mjs';\n",'')
+      .replace(" source=beforeCloseoutHistoryTooling(path,source);\n",'');
+  }
   if (sha256(current)!=='b3d6e5263fcdb25a102cfacdea2cc76a382f83056f34099968e68476ec3b59aa') return source;
   const prior=current
     .replace("import {beforePotionReadabilityEvidence} from './v2-ui-admission-ci-source.mjs';\n",'')

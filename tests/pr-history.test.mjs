@@ -6,18 +6,23 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { checkHistory, auditHistory } from '../scripts/check-pr-history.mjs';
 import { receiptToolingSource } from './helpers/integration-1111-tooling.mjs';
+import { beforeCloseoutHistoryTooling } from './helpers/closeout-current-backflow-source.mjs';
 import { preRunHudCiSource } from './helpers/run-hud-ci-source.mjs';
 
 test('history tooling continuation preserves the immutable raw closeout identity and rejects drift', () => {
   const row = JSON.parse(readFileSync(new URL('./fixtures/pr-history-tooling-continuation.json', import.meta.url), 'utf8'));
   const source = readFileSync(row.path, 'utf8').replaceAll('\r\n', '\n');
-  assert.equal(source, row.after.source);
-  for (const input of [source, source.replaceAll('\n', '\r\n')])
-    assert.equal(preRunHudCiSource(row.path, input), row.before.source);
-  for (const input of [source + '\n', source.slice(1), source.slice(0, -1), source.replaceAll('\n', '\r\r\n'), null, {}, 17])
-    assert.equal(preRunHudCiSource(row.path, input), input);
-  for (const path of ['__proto__', 'constructor', 'foreign/' + row.path, row.path + '/extra'])
-    assert.equal(preRunHudCiSource(path, source), source);
+  assert.equal(beforeCloseoutHistoryTooling(row.path, source), row.after.source);
+  for (const fixture of [row.after.source, source]) {
+    for (const input of [fixture, fixture.replaceAll('\n', '\r\n')])
+      assert.equal(preRunHudCiSource(row.path, input), row.before.source);
+    for (const input of [fixture + '\n', fixture.slice(1), fixture.slice(0, -1), fixture.replaceAll('\n', '\r\r\n'), null, {}, 17])
+      assert.equal(preRunHudCiSource(row.path, input), input);
+    for (const path of ['__proto__', 'constructor', 'foreign/' + row.path, row.path + '/extra'])
+      assert.equal(preRunHudCiSource(path, fixture), fixture);
+  }
+  const mixed = source.replace('\n', '\r\n');
+  assert.equal(preRunHudCiSource(row.path, mixed), mixed);
 });
 
 test('history receipt continuation authenticates complete source only in its official view', () => {

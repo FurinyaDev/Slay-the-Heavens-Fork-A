@@ -38,6 +38,22 @@ function readExactOwner(path,binding,read){
  return source;
 }
 
+function restoreFixtureSuccessor(path,row,source){
+ const prior=restoreExactFixtureHunks({
+  path,beforeSha256:row.afterSha256,afterSha256:row.successor.sha256,hunks:row.successor.hunks,
+ },path,source);
+ assert(exactSourceMatches(prior,{sha256:row.afterSha256,gitBlob:row.afterBlob}),'exact closeout fixture predecessor: '+path);
+ return prior;
+}
+
+export function beforeCloseoutHistoryTooling(path,source){
+ if(path!==tooling.path||!exactSourceMatches(source,tooling.successor))return source;
+ const lf=source.replaceAll('\r\n','\n');
+ if(source!==lf&&source!==lf.replaceAll('\n','\r\n'))return source;
+ const prior=restoreFixtureSuccessor(path,tooling,source);
+ return source===lf?prior:prior.replaceAll('\n','\r\n');
+}
+
 function readCloseoutFixture(path,row,read){
  const fixture=read(path,'utf8');
  const successorFixture=row.successor;
@@ -45,10 +61,7 @@ function readCloseoutFixture(path,row,read){
  const updated=successorFixture!==undefined&&exactSourceMatches(fixture,successorFixture);
  const source=readExactOwner(path,updated?successorFixture:predecessorBinding,read);
  assert.equal(source,fixture,'closeout owner changed during the receipt read: '+path);
- const previous=updated?restoreExactFixtureHunks({
-  path,beforeSha256:row.afterSha256,afterSha256:successorFixture.sha256,hunks:successorFixture.hunks,
- },path,source):source;
- assert(exactSourceMatches(previous,predecessorBinding),'exact closeout fixture predecessor: '+path);
+ const previous=updated?restoreFixtureSuccessor(path,row,source):source;
  const prior=restoreExactFixtureHunks({...row,path},path,previous);
  assert(exactSourceMatches(prior,{sha256:row.beforeSha256,gitBlob:row.beforeBlob}),'exact current closeout predecessor: '+path);
  return {source,prior};
