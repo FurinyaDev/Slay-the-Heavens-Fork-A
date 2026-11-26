@@ -41,3 +41,17 @@
 生产分叉和同树 squash 的测试均拒绝通过，保留双父的合流通过。手动结项同时验证实际 develop 推送的完整 Quality、不可变 checkout 回执及 Licenses，并在验证后重读两个分支。入口及远端保护见 [发布操作单](../../PUBLISHING.md#release-与-hotfix-回流结项) 和 [工程配置](../../CI.md#生产历史回流与祖先门禁)。
 
 本地 Docker 请求资源限额后，容器读回仍为 4 CPU、16 GiB，未获得六档规定的实际限制。正式有声配对仍需主仓获准的候选归档和支持实限的 Hosted Performance。回流 PR 和上线收据逐项登记最终 CI、独立 Review、合后祖先验证及正式六档结果。
+
+## 现行选角与正式历史回放
+
+选角继续使用 develop 的分层登场、短介绍和 107271 风景回退。正式选角的牌组容器从生成树清除，介绍保留两个原生文本行空间。主菜单保留 v2.1.1 的平面材质和紧凑间距，选角风景独立绑定。当前生成与运行时验收覆盖进入、暂停、重开、失败和重复投影。
+
+已发布的长介绍与近黑底板可从生产提交 `d96c9f0d7958148ec1bb027f14a3214da81d06b4` 通过原断言逐字节回放。在该提交的独立干净工作树安装锁定依赖后运行：
+
+```sh
+node --test --test-name-pattern='published Traveler selection|approved traveler synopsis' tests/v25-character-layout.test.mjs
+```
+
+## 检出体积与旧证据
+
+相同 `--depth=2 --filter=blob:none`、关闭 LFS smudge 的浅检出中，develop `468b58ed` 的 Git pack 为 132,479,662 字节，最初组合 `ca2e8240` 为 142,008,320 字节。Fork B Full 45751139687 的 18 个 Windows 分片在保留的 128 MiB 检出门禁停止。现有不可变媒体清单接续 55 份生产资料。原路径、压缩字节、生产 Git blob、SHA-256、权限分类及固定来源继续可查。通过 `node scripts/ci-media-lfs.mjs` 恢复并核对全部媒体。该批新增归档内容的去重载荷为 11,402,323 字节。
