@@ -1555,6 +1555,27 @@ function beforeV220HostedTiming(path,source){
  if(current===raw)return source;
  return source.includes('\r\n')?current.replaceAll('\n','\r\n'):current;
 }
+// Older replays retain the exact wrapper bytes from before the Prologue count fix.
+const prologueRuntimeFixture={
+ "path": "tests/game-ui.test.mjs",
+ "beforeSha256": "7e964df798323c66d434584750fe6c62cf5ccd898a1dfe65a33b5540e3eb10b2",
+ "afterSha256": "d8376058d5623f3e86090319ae4180e6c2cf85e320a1e4ed7436254ecc7629ae",
+ "hunks": [
+  {
+   "at": 90,
+   "before": "    ['tests/lua/game_ui_prologue.lua', /^LUA_GAME_UI_PROLOGUE_PASS 13$/m],",
+   "after": "    ['tests/lua/game_ui_prologue.lua',\n      /^ok prologue 14 - transition stays silent on entry, completion and cancellation\\r?\\nLUA_GAME_UI_PROLOGUE_PASS 14$/m],"
+  }
+ ]
+};
+const prologueCurrent=['d8376058d5623f3e86090319ae4180e6c2cf85e320a1e4ed7436254ecc7629ae','2874a9ce9cc8af9fda6af59990e224c3ca53db2c'];
+const prologuePrevious=['7e964df798323c66d434584750fe6c62cf5ccd898a1dfe65a33b5540e3eb10b2','43ea5d1100ad7d3dbc2c435115578dc5c60a8a05'];
+function beforePrologueRuntimeFixture(path,source){
+ if(path!==prologueRuntimeFixture.path||!exactCheckoutSource(source,prologueCurrent))return source;
+ const prior=restoreExactFixtureHunks(prologueRuntimeFixture,path,source);
+ assert(exactCheckoutSource(prior,prologuePrevious),'exact Prologue runtime fixture predecessor');
+ return source.includes('\r\n')?prior.replaceAll('\n','\r\n'):prior;
+}
 export function beforePreflightSource(path,source,view='prior',read=readFileSync){
  if(path===replayAssetLedger&&typeof source==='string'){
   const lf=normalize(source);
@@ -1595,6 +1616,7 @@ export function beforePreflightSource(path,source,view='prior',read=readFileSync
  source=beforeDevelopReplayMerge(path,source);
  source=beforeReplayFingerprintSource(path,source);
  source=beforeDevelopEpochReplayRuntime(path,source);
+ source=beforePrologueRuntimeFixture(path,source);
  source=beforeDevelopBackflow(path,beforeDeckPagesSuiteSource(path,source));
  source=beforeNativeHostReplay(path,source);
  source=beforeNativeFixtureReplay(path,source);
