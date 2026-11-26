@@ -1238,7 +1238,7 @@ export function beforeReviewedBuildInput(path,source,read){
  source=beforeForkPush(path,source);
  const reviewed=(owner,raw)=>{
   if(owner.startsWith('src/')||owner==='config/architecture.json')return raw;
-  const input=beforeActorAlphaBuildInput(owner,raw);
+  const input=beforeActorAlphaBuildInput(owner,beforeVersionGovernanceSource(owner,raw));
   return beforeCurrentReplayFixes(owner,beforeUiEntranceWitness(owner,beforeCurrentReplayCopier(owner,beforeForkPush(owner,input))));
  };
  const live=owner=>reviewed(owner,read(owner,'utf8'));
