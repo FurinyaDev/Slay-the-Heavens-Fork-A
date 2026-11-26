@@ -104,7 +104,10 @@ for _,life in ipairs({1.8,1.0})do
  local box=control({name='creature',children={{name='portrait'},{name='impact',visible=false},{name='shield'},{name='floating'},{name='hpGhost'}}})
  local state={dying={enemy={age=0,alpha=1,lifetime=life}},effects={},poses={},escaping={}}
  local unit={hp=0,id='enemy',definitionId='raven_adept'}
- local ctx={state=state,actor=function()return unit,box end,platform={color=function(r,g,b,a)return{r=r,g=g,b=b,a=a}end}}
+ local ctx={state=state,actor=function()return unit,box end,
+  -- A direct painter fixture has no shadow control. Keep the Feedback constructor's default ground position.
+  poseGroundShadow=function(_,_,_,y)return y end,
+  platform={color=function(r,g,b,a)return{r=r,g=g,b=b,a=a}end}}
  Painter.paint(ctx,'enemy',0,{})
  local portrait=box:GetChild('portrait')
  local rgb={portrait.imageColor.r,portrait.imageColor.g,portrait.imageColor.b}
