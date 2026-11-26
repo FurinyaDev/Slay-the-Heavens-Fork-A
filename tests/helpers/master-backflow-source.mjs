@@ -28,6 +28,7 @@ const updatedSources = new Map([
   ['docs/legal/assets.json', ['2fd4b435b871db820568656d28d6afb7e755bc08bcc1afd870a53d8dbba57737', '8d2d572f49b288faa19abb5fb516f7f6b00f140f']],
   ['scripts/ci-media-lfs.mjs', ['e0e71dca9c631734d1cf52f9eae7684428095d949eb4b956d592899652ef0d63', '3803eaa2637dc1e8370bf98dba77e82cd52c71d9']],
   ['scripts/deck-ui-layout.mjs', ['fb8ca6270444a5eaed5fff5ce797b469b01ff53e882a40c13c85374890921b06', '22359b12e6164a4fde5ae9302eef823b5df257dd']],
+  ['scripts/official-battle-hud.mjs', ['af6ffdb50e11d77cf9c2046931f3e455d3bc780fcde9b265fd003d33b1c07a9b', '9956f4ded7b99023522ffc3f59b49b11b1916e85']],
   ['src/lua/abyss_battle_detail_bindings.lua', ['fc3e819c62455d966db30172055d2c3b4aa721daed943418519252fd38ad1852', '951d6e972052ed08a0638140b156ee2ffaea5166']],
   ['src/lua/abyss_battle_details.lua', ['eda327547a5399714320309d5cda22ed264123a8747ec5827ec9ee1a42409aab', '53a076d7a7c0958b02a968ca5125d3f65c744a2c']],
   ['src/lua/abyss_battle_info_content.lua', ['0d96375df2bcdd3e323413c09e27e802e53b450d3053dadbc4eef3d8da715d57', '989f7129614b8c8637bf3e78167e98b33db3e9c4']],
@@ -46,7 +47,7 @@ const updatedSources = new Map([
   ['tests/helpers/isolated-current-source.mjs', ['b839ff3ffa5985995b5720350e5554816f87d0365069b76bc5c447d495f9e5e6', '6cfa35ef0d27fef1acaae4f5db501ec52fbef3b1']],
   ['tests/helpers/pr323-accepted-source-inverse.mjs', ['09a393bb0cac34f4f6ea319905486f36ccb3ce39468c712c195bbbfd512b118b', 'ebaedb48d3128518a3a1654c5990b8dbed8d958c']],
   ['tests/helpers/replay-reviewed-selection.mjs', ['5cd7ad3d5a728418bb89cb8dbf0d4fea7fa199fb005b399b71772e63e0ec2851', '2128fceb1bff074e04d02f911264194e2415037f']],
-  ['tests/helpers/release-map-deck-source.mjs', ['e825e98356085765d46166f6ee5994181ade9548569d0c28e6ee62f195fef5d7', '67ab3e7f739ccbe9e63f6e54235d1378b72f5983']],
+  ['tests/helpers/release-map-deck-source.mjs', ['ddaf9067612caa2e279e4702e6c7bf94a70a4201c0b87b87466060ec7abaf79b', '111ecb276fe90556f7c7702af4c6c4f1d825e013']],
   ['tests/integration-source-epoch.test.mjs', ['fd0cb659920b58cb0354c37acba7344028847c06211bb0339cc0deb38bbc2a8b', '8ec5fab8e038c2b0a3e1201a353283a28f02293f']],
   ['tests/lua/dynamic_monster_input_bindings.lua', ['8f79e3591cbcf361879fd664fc72eb9a495cb1004c22ad5a2b6fa3dff813ec21', '95895f0e46424f30b6f207d44b0891a33cece192']],
   ['tests/lua/intent_artifact_preview.lua', ['f924151fbc38a417985524171f8a8adb0927f133573a4f7b233ee1d52be2279c', '425180561c68ac50d4f67a13fa5fbf4a7a06e6b2']],
@@ -54,6 +55,7 @@ const updatedSources = new Map([
   ['tests/official-assets-runtime.test.mjs', ['475d4772d0224ee4690cb5215d2536ac4961efe8a1415a40c3219dcc70fd4cde', '4ab27d84b1640b8ee6c48daaecc3c6aae1b416c8']],
   ['tests/official-assets-legibility.test.mjs', ['ae2dbaa19e903e2e36374ffc92b0aede106bf8e4ce3afc055eedd3b70c7da844', '5a3a3b9b240f86244664b5f9a7b1fe26112c7f59']],
   ['tests/official-battle-relic-icons.test.mjs', ['02ac336167bbf416ca27af8679c8983dad1420820128a5966dd8c796356a6b5e', '01dd97b42135c76c110fae8f2acc6e71b7bd8be4']],
+  ['tests/official-run-chrome.test.mjs', ['87fc525fbd0690029b8c32ec37f48c26ca80241bfce13dbe11a39c3659fafb74', 'fcdd143c84f896d09c680704d1e136d9f1da5788']],
   ['tests/run-max-hp-config-inverse.test.mjs', ['a40879d35601e22bfbd5622fce1604d0a9ee7a2222d15525f66d7e82b862928f', '408137bf30fd65836eb8a0eaba40de3a3902bdd5']],
 ]);
 

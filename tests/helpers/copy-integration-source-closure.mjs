@@ -388,6 +388,109 @@ const entranceFiles=Object.freeze({
 // The live copier targets the approved #1022 helper closure. Other replay
 // readers continue to use their original Master backflow predecessor.
 const reviewedCopySources=Object.freeze({
+ "tests/helpers/develop-release-backflow-source.mjs": {
+  "current": {
+   "sha256": "10082d86e1a08c3b2a91ec6e9fffd68cfd4620a6cf94e7f8dbfade4826576d91",
+   "gitBlob": "952d4a8e16e4698e88ae66a52a316d0dc0ba43e2"
+  },
+  "previous": {
+   "sha256": "d9b04593b5ed2af93096091a53d0043361d9ae3019cdbc64c766100f5d694e39",
+   "gitBlob": "66f1e5c43ff4247a562ad9091f543f598925e01e"
+  },
+  "edits": [
+   {
+    "at": 0,
+    "remove": 1,
+    "previous": [
+     "import {beforeChapterBattleScene,chapterBattleSceneReader} from './chapter-battle-scene-source.mjs';"
+    ]
+   },
+   {
+    "at": 14,
+    "remove": 1,
+    "previous": [
+     "import {beforeKnownMasterBackflowSource} from './master-backflow-source.mjs';"
+    ]
+   },
+   {
+    "at": 16,
+    "remove": 1,
+    "previous": []
+   },
+   {
+    "at": 251,
+    "remove": 1,
+    "previous": [
+     " const masterPrior=beforeKnownMasterBackflowSource(path,source);"
+    ]
+   },
+   {
+    "at": 272,
+    "remove": 1,
+    "previous": []
+   },
+   {
+    "at": 276,
+    "remove": 2,
+    "previous": [
+     " if(!matches(source,after)&&!matches(source,linkedSuccessors[path]??after))return source;"
+    ]
+   },
+   {
+    "at": 316,
+    "remove": 1,
+    "previous": []
+   },
+   {
+    "at": 415,
+    "remove": 2,
+    "previous": [
+     "  const source=beforeArchitectureOwner(path,read(path));"
+    ]
+   },
+   {
+    "at": 483,
+    "remove": 4,
+    "previous": [
+     "   return authenticateDevelopBackflowWithReaders(path,current,readOwner,readOwner,options);"
+    ]
+   },
+   {
+    "at": 538,
+    "remove": 1,
+    "previous": []
+   }
+  ]
+ },
+ "tests/helpers/master-backflow-source.mjs": {
+  "current": {
+   "sha256": "3aa7064b648d8afc8732508815a656874cf106bc6634146cb1c1399029a36498",
+   "gitBlob": "e23f35aeb39f4fa94c8b66ac5cc59ec4c49f04d9"
+  },
+  "previous": {
+   "sha256": "374935c2c76b47b65319202a3f3d60eb9884149f4224cd9c1dc432a81f523a7c",
+   "gitBlob": "99816ca5321f3664d7df4c834684a88703f0c533"
+  },
+  "edits": [
+   {
+    "at": 30,
+    "remove": 1,
+    "previous": []
+   },
+   {
+    "at": 49,
+    "remove": 1,
+    "previous": [
+     "  ['tests/helpers/release-map-deck-source.mjs', ['e825e98356085765d46166f6ee5994181ade9548569d0c28e6ee62f195fef5d7', '67ab3e7f739ccbe9e63f6e54235d1378b72f5983']],"
+    ]
+   },
+   {
+    "at": 57,
+    "remove": 1,
+    "previous": []
+   }
+  ]
+ },
  "tests/helpers/character-preparation-source.mjs": {
   "current": {
    "sha256": "59e4952da8df25d3c6808a03c05475f1799012f2838880be4f7d76c2d68f68b2",
@@ -600,7 +703,8 @@ export function copyIntegrationSourceClosure(directory,{sourceRoot=process.cwd()
   const content=integrationClosureBytes(path,prior);
   if((path==='tests/helpers/reward-current-source.mjs'||path==='tests/helpers/develop-release-backflow-source.mjs'||
       path==='tests/helpers/develop-release-vocabulary-source.mjs'||path==='tests/helpers/master-backflow-source.mjs'||
-      path==='tests/helpers/m7-core-final-source-inverse.mjs'||path==='tests/helpers/relic-query-source-inverse.mjs')&&!raw.equals(content))
+      path==='tests/helpers/m7-core-final-source-inverse.mjs'||path==='tests/helpers/relic-query-source-inverse.mjs')&&
+     !Object.hasOwn(reviewedCopySources,path)&&!raw.equals(content))
    assert(raw.equals(Buffer.from(content.toString('utf8').replaceAll('\n','\r\n'))),'fresh helper copy identity: '+path);
   assert.equal(hash(content),sha,'fresh helper copy identity: '+path);
   const target=join(directory,path);mkdirSync(dirname(target),{recursive:true});

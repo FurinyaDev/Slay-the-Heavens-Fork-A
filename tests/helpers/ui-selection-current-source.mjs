@@ -467,8 +467,42 @@ const returnedReadingReplay=Object.freeze({
   }
 ],
 });
+const selectionLayoutPath='tests/noncombat-v25-layout.test.mjs';
+const selectionLayoutCurrent=Object.freeze({
+ current:{"sha256":"84f7d6670686ae06dd6d97290e010882b9c6433104eae365e501b738d39d5cf4","gitBlob":"4a1c82e57689e2bc8b9a7bf25f63bc23f5758b1a"},
+ previous:combinedReceipt(selectionLayoutPath).current,
+ hunks:[
+  {
+    "at": 330,
+    "before": " const {beforeKnownMasterBackflowSource}=await import('./helpers/master-backflow-source.mjs');",
+    "after": " const {beforeKnownMasterBackflowSource,productionReadingBackflowOwns}=await import('./helpers/master-backflow-source.mjs');"
+  },
+  {
+    "at": 335,
+    "before": "  if(beforeOfficialCharacterBackflow(path,raw)!==raw)return raw;",
+    "after": "  if(productionReadingBackflowOwns(path)||beforeOfficialCharacterBackflow(path,raw)!==raw)return raw;"
+  }
+],
+});
+const currentBackflowCopier=Object.freeze({
+ current:{"sha256":"7f2da11e24d75b237414194e0c93cec6107dafa236373a4c74211cff6281f3a0","gitBlob":"ac7bfaa4c7a7d44ac72c5119ffc2101fac2382f3"},
+ previous:returnedCardReadingCopier.current,
+ hunks:[
+  {
+    "at": 389,
+    "before": "const reviewedCopySources=Object.freeze({",
+    "after": "const reviewedCopySources=Object.freeze({\n \"tests/helpers/develop-release-backflow-source.mjs\": {\n  \"current\": {\n   \"sha256\": \"10082d86e1a08c3b2a91ec6e9fffd68cfd4620a6cf94e7f8dbfade4826576d91\",\n   \"gitBlob\": \"952d4a8e16e4698e88ae66a52a316d0dc0ba43e2\"\n  },\n  \"previous\": {\n   \"sha256\": \"d9b04593b5ed2af93096091a53d0043361d9ae3019cdbc64c766100f5d694e39\",\n   \"gitBlob\": \"66f1e5c43ff4247a562ad9091f543f598925e01e\"\n  },\n  \"edits\": [\n   {\n    \"at\": 0,\n    \"remove\": 1,\n    \"previous\": [\n     \"import {beforeChapterBattleScene,chapterBattleSceneReader} from './chapter-battle-scene-source.mjs';\"\n    ]\n   },\n   {\n    \"at\": 14,\n    \"remove\": 1,\n    \"previous\": [\n     \"import {beforeKnownMasterBackflowSource} from './master-backflow-source.mjs';\"\n    ]\n   },\n   {\n    \"at\": 16,\n    \"remove\": 1,\n    \"previous\": []\n   },\n   {\n    \"at\": 251,\n    \"remove\": 1,\n    \"previous\": [\n     \" const masterPrior=beforeKnownMasterBackflowSource(path,source);\"\n    ]\n   },\n   {\n    \"at\": 272,\n    \"remove\": 1,\n    \"previous\": []\n   },\n   {\n    \"at\": 276,\n    \"remove\": 2,\n    \"previous\": [\n     \" if(!matches(source,after)&&!matches(source,linkedSuccessors[path]??after))return source;\"\n    ]\n   },\n   {\n    \"at\": 316,\n    \"remove\": 1,\n    \"previous\": []\n   },\n   {\n    \"at\": 415,\n    \"remove\": 2,\n    \"previous\": [\n     \"  const source=beforeArchitectureOwner(path,read(path));\"\n    ]\n   },\n   {\n    \"at\": 483,\n    \"remove\": 4,\n    \"previous\": [\n     \"   return authenticateDevelopBackflowWithReaders(path,current,readOwner,readOwner,options);\"\n    ]\n   },\n   {\n    \"at\": 538,\n    \"remove\": 1,\n    \"previous\": []\n   }\n  ]\n },\n \"tests/helpers/master-backflow-source.mjs\": {\n  \"current\": {\n   \"sha256\": \"3aa7064b648d8afc8732508815a656874cf106bc6634146cb1c1399029a36498\",\n   \"gitBlob\": \"e23f35aeb39f4fa94c8b66ac5cc59ec4c49f04d9\"\n  },\n  \"previous\": {\n   \"sha256\": \"374935c2c76b47b65319202a3f3d60eb9884149f4224cd9c1dc432a81f523a7c\",\n   \"gitBlob\": \"99816ca5321f3664d7df4c834684a88703f0c533\"\n  },\n  \"edits\": [\n   {\n    \"at\": 30,\n    \"remove\": 1,\n    \"previous\": []\n   },\n   {\n    \"at\": 49,\n    \"remove\": 1,\n    \"previous\": [\n     \"  ['tests/helpers/release-map-deck-source.mjs', ['e825e98356085765d46166f6ee5994181ade9548569d0c28e6ee62f195fef5d7', '67ab3e7f739ccbe9e63f6e54235d1378b72f5983']],\"\n    ]\n   },\n   {\n    \"at\": 57,\n    \"remove\": 1,\n    \"previous\": []\n   }\n  ]\n },"
+  },
+  {
+    "at": 705,
+    "before": "      path==='tests/helpers/m7-core-final-source-inverse.mjs'||path==='tests/helpers/relic-query-source-inverse.mjs')&&!raw.equals(content))",
+    "after": "      path==='tests/helpers/m7-core-final-source-inverse.mjs'||path==='tests/helpers/relic-query-source-inverse.mjs')&&\n     !Object.hasOwn(reviewedCopySources,path)&&!raw.equals(content))"
+  }
+],
+});
 function activeReceipt(path){
- if(path===copierPath)return returnedCardReadingCopier;
+ if(path===selectionLayoutPath)return selectionLayoutCurrent;
+ if(path===copierPath)return currentBackflowCopier;
  if(path===returnedReadingReplayPath)return returnedReadingReplay;
  return combinedReceipt(path)??receipt(path);
 }
@@ -485,7 +519,9 @@ function beforeReceipt(path,source,binding){
 }
 
 export function beforeSelectionReceiptSource(path,source){
+ if(path===selectionLayoutPath)source=beforeReceipt(path,source,selectionLayoutCurrent);
  if(path===returnedReadingReplayPath)source=beforeReceipt(path,source,returnedReadingReplay);
+ if(path===copierPath)source=beforeReceipt(path,source,currentBackflowCopier);
  if(path===copierPath)source=beforeReceipt(path,source,returnedCardReadingCopier);
  if(path===copierPath)source=beforeReceipt(path,source,deckArchitectureCopier);
  source=beforeReceipt(path,source,combinedReceipt(path));

@@ -2,7 +2,9 @@ import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import {readFileSync} from 'node:fs';
 import {gunzipSync} from 'node:zlib';
+import {assertCurrentCardReadingScope,beforeCardReadingScope} from './chapter-battle-scene-source.mjs';
 import {restoreExactFixtureHunks} from './exact-fixture-hunks.mjs';
+import {beforeRunHudDeckLabel,beforeRunHudMapIcon} from './run-hud-successors.mjs';
 import {exactSourceMatches} from './source-fingerprint.mjs';
 
 const bytes=readFileSync(new URL('../fixtures/closeout-current-backflow-source.json.gz',import.meta.url));
@@ -23,6 +25,9 @@ assert.deepEqual(anchorRefactor.before,owners[battleDetailView]);
 assert.equal(actorDetail.commit,'cb85a291a83de761e6462d0b98e54c8fc85dc5b8');
 const pageRevealPath='src/lua/abyss_page_reveal.lua';
 assert.equal(pageReveal.commit,'a25784d9814d0a2daf07a506ba416015ac02ec11');
+const cardLayoutPath='src/lua/abyss_battle_card_layout.lua';
+const cardReadingOwners=new Set([cardLayoutPath,'src/lua/abyss_battle_card_view.lua','src/lua/abyss_battle_ui.lua']);
+const cardReadingCompanions=['src/lua/abyss_viewport.lua','tests/lua/selected_hand_safe_area.lua'];
 const relicIconsFixture='tests/official-battle-relic-icons.test.mjs';
 assert.equal(preMasterRelicIcons.commit,'b2f74d99a3d80e60b99165b6380987cda8b4488d');
 assert.equal(files[relicIconsFixture].successor.commit,
@@ -35,13 +40,13 @@ const catalogueToolingBinding={sha256:toolingCatalogue.afterSha256,gitBlob:tooli
 assert.equal(reviewedDeckBuild.reviewed,'637898cbdb81feb3feeda2123536fd1338518d5d');
 assert.equal(reviewedDeckBuild.commit,'8d361c49834d3dd6d36cce8410df08d6441b0782');
 
-function readExactOwner(path,binding,read){
+function readExactOwner(path,binding,read,project){
  if(binding===null){
   assert.throws(()=>read(path,'utf8'),{code:'ENOENT'},'retired closeout owner reappeared: '+path);
   return;
  }
  const source=read(path,'utf8');
- assert(exactSourceMatches(source,binding),'fresh current closeout owner: '+path);
+ assert(exactSourceMatches(project?project(source):source,binding),'fresh current closeout owner: '+path);
  const lf=source.replaceAll('\r\n','\n');
  assert(source===lf||source===lf.replaceAll('\n','\r\n'),'mixed closeout source line endings: '+path);
  return source;
@@ -104,10 +109,12 @@ function readCloseoutFixture(path,row,read){
  const successorFixture=row.successor;
  const predecessorBinding={sha256:row.afterSha256,gitBlob:row.afterBlob};
  const catalogue=path===tooling.path&&exactSourceMatches(fixture,catalogueToolingBinding);
- const candidate=catalogue?beforeExactFixture(path,toolingCatalogue,fixture):fixture;
+ // Reuse the reviewed HUD sources for the current wording and map icon.
+ const beforeRunHud=path===reviewedDeckBuild.path?beforeRunHudDeckLabel:source=>beforeRunHudMapIcon(path,source);
+ const candidate=catalogue?beforeExactFixture(path,toolingCatalogue,fixture):beforeRunHud(fixture);
  const updated=successorFixture!==undefined&&exactSourceMatches(candidate,successorFixture);
  const binding=catalogue?catalogueToolingBinding:updated?successorFixture:predecessorBinding;
- const source=readExactOwner(path,binding,read);
+ const source=readExactOwner(path,binding,read,beforeRunHud);
  assert.equal(source,fixture,'closeout owner changed during the receipt read: '+path);
  const previous=updated?restoreFixtureSuccessor(path,row,candidate):candidate;
  const prior=restoreFixturePredecessor(path,row,previous);
@@ -154,13 +161,23 @@ export function readCloseoutCurrentBackflowReceipt(path,digest,read){
  const readPageReveal=Object.hasOwn(current,battleDetailView);
  const reveal=readPageReveal?read(pageRevealPath,'utf8'):null;
  if(exactSourceMatches(reveal,pageReveal.owner))current[pageRevealPath]=pageReveal.owner;
+ // The reviewed wide-hand revision inherits the exact Closeout layout. Its
+ // card view and battle UI also carry the authenticated production backflow.
+ const layout=read(cardLayoutPath,'utf8');
+ const priorLayout=beforeCardReadingScope(cardLayoutPath,layout);
+ const cardReading=layout!==priorLayout&&exactSourceMatches(priorLayout,owners[cardLayoutPath]);
+ if(cardReading){
+  for(const companion of cardReadingCompanions)assertCurrentCardReadingScope(companion,read(companion,'utf8'));
+ }
  for(const [owner,binding] of Object.entries(owners)){
-  const live=readExactOwner(owner,current[owner]??binding,read);
+  const live=cardReading&&cardReadingOwners.has(owner)
+   ?assertCurrentCardReadingScope(owner,read(owner,'utf8')):readExactOwner(owner,current[owner]??binding,read);
   if(owner===path)assert.equal(live,source,'closeout owner changed during the receipt read: '+path);
   if(owner===markerPath)assert.equal(live,marker,'closeout owner changed during the receipt read: '+owner);
   if(owner===sessionNavigation&&guardian)assert.equal(live,navigation,'closeout owner changed during the receipt read: '+owner);
   if(owner===battleDetailView&&session)assert.equal(live,detail,'closeout owner changed during the receipt read: '+owner);
   if(owner===pageRevealPath&&readPageReveal)assert.equal(live,reveal,'closeout owner changed during the receipt read: '+owner);
+  if(owner===cardLayoutPath)assert.equal(live,layout,'closeout owner changed during the receipt read: '+owner);
  }
  return prior;
 }

@@ -18,6 +18,7 @@ import {componentUiCiSourceProof} from './component-ui-ci-source-inverse.mjs';
 import {beforeSelectionReceiptSource,selectionCopierReceipt} from './ui-selection-current-source.mjs';
 import {restoreExactFixtureHunks} from './exact-fixture-hunks.mjs';
 import {beforeRunHudDeckLabel} from './run-hud-successors.mjs';
+import {beforeCardReadingScope} from './chapter-battle-scene-source.mjs';
 
 const hash=(bytes,algorithm='sha256')=>createHash(algorithm).update(bytes).digest('hex');
 const blob=source=>hash(`blob ${Buffer.byteLength(source)}\0${source}`,'sha1');
@@ -85,12 +86,23 @@ function beforeReleaseLuaNameBudgetTest(path,source){
 }
 
 function beforeRunHudCalibrationHelper(path,source){
- if(path!=='tests/helpers/run-hud-ci-source.mjs'||!matches(source,{
-  sha256:'815c65ff6963579c7f48ea9ba390b8a6e16c24fbb0c13924ae8ad4a9da51ac7f',gitBlob:'60f9a0a326ff3120bf56671638579a06f74a7fc7',
- }))return source;
+ if(path!=='tests/helpers/run-hud-ci-source.mjs'||typeof source!=='string')return source;
  const normalized=lf(source);
- if(source!==normalized&&source!==normalized.replaceAll('\n','\r\n'))return source;
- const prior=normalized
+ const crlf=source!==normalized;
+ if(crlf&&source!==normalized.replaceAll('\n','\r\n'))return source;
+ const priorHelper={
+  sha256:'815c65ff6963579c7f48ea9ba390b8a6e16c24fbb0c13924ae8ad4a9da51ac7f',gitBlob:'60f9a0a326ff3120bf56671638579a06f74a7fc7',
+ };
+ let helper=normalized;
+ if(matches(helper,{
+  sha256:'05d070bf5f2f8e89cfe9a991084302bb496c6cb59bba428bac5f31d4d6c3ae85',gitBlob:'a80cc1d45dfc3d2c5b5440df4ca4a2d68e48c440',
+ })){
+  helper=helper.replace("import {beforeRunHudMapIcon} from './run-hud-successors.mjs';\n",'')
+   .replace(' source=beforeRunHudMapIcon(path,source);\n','');
+  assert(matches(helper,priorHelper),'exact Run HUD map icon predecessor');
+ }
+ if(!matches(helper,priorHelper))return source;
+ const prior=helper
   .replace(/^import \{(?:beforePotionReadabilityEvidence|beforeCloseoutHistoryTooling|exactSourceMatches|restoreExactFixtureHunks)[^\n]*\n/gm,'')
   .replace(/^function beforeSilentPlanningSource[\s\S]*?(?=^export function preRunHudCiSource)/m,'')
   .replace(/^ source=(?:beforeSilentPlanningSource|beforeDefectPlanningSource|beforeCloseoutHistoryTooling|beforeCloseoutRunHudFixture)\(path,source\);\n/gm,'')
@@ -98,7 +110,7 @@ function beforeRunHudCalibrationHelper(path,source){
  assert(matches(prior,{
   sha256:'084db705f3390910da925c32970a18279b78063f4a03d2331a19a775229c5524',gitBlob:'0543be2be1083af9594dbf48238e96d6a7a4bbf2',
  }),'exact archived Run HUD integration helper');
- return source===normalized?prior:prior.replaceAll('\n','\r\n');
+ return crlf?prior.replaceAll('\n','\r\n'):prior;
 }
 
 const prHistoryCalibrationReceipt={
@@ -318,7 +330,8 @@ function readOfficialCalibrationReceipt(path,digest,readCurrent){
  const prior=row.predecessors[digest];
  if(row.currentPath!==path)assert.throws(()=>readCurrent(path,'utf8'),{code:'ENOENT'},'retired official receipt input reappeared: '+path);
  const live=readCurrent(row.currentPath,'utf8');
- const source=row.currentPath==='scripts/deck-ui-layout.mjs'?beforeRunHudDeckLabel(live):live;
+ const source=row.currentPath==='scripts/deck-ui-layout.mjs'?beforeRunHudDeckLabel(live):
+  row.currentPath==='src/lua/abyss_viewport.lua'?beforeCardReadingScope(row.currentPath,live):live;
  assert(matches(source,row.current),'current official receipt input changed: '+row.currentPath);
  const normalized=lf(source);
  assert(source===normalized||source===normalized.replaceAll('\n','\r\n'),'mixed official receipt line endings: '+row.currentPath);
