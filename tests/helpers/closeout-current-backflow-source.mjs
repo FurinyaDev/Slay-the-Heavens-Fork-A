@@ -7,8 +7,8 @@ import {exactSourceMatches} from './source-fingerprint.mjs';
 
 const bytes=readFileSync(new URL('../fixtures/closeout-current-backflow-source.json.gz',import.meta.url));
 assert.equal(createHash('sha256').update(bytes).digest('hex'),
- 'a89d6cd4f44248218bb4451822f5728420e541274286ef93b8febf5db7de1eb8','exact current closeout backflow packet');
-const {schemaVersion,base,head,files,owners,continuation,sessionRoute,anchorRefactor}=JSON.parse(gunzipSync(bytes));
+ '09822c2630c11d7aaa635826ddbd85818e352742555cbf1fc4735cd06edc2c74','exact current closeout backflow packet');
+const {schemaVersion,base,head,files,owners,continuation,sessionRoute,anchorRefactor,actorDetail}=JSON.parse(gunzipSync(bytes));
 assert.equal(schemaVersion,1);
 assert.equal(base,'903bf2a31e91f10fb24763ab4cea23d586d0bb83');
 assert.equal(head,'7228aaa83b0995e1dc6e36955cfd6e773c199f07');
@@ -20,6 +20,7 @@ assert.equal(sessionRoute[routePreviewView].commit,'4d5928646e0356c893f80e088316
 const battleDetailView='src/lua/abyss_battle_info_view.lua';
 assert.equal(anchorRefactor.commit,'c7ea71bd084f27a8c5ace07ee8747e40f7e2ad35');
 assert.deepEqual(anchorRefactor.before,owners[battleDetailView]);
+assert.equal(actorDetail.commit,'cb85a291a83de761e6462d0b98e54c8fc85dc5b8');
 assert.equal(files['tests/official-battle-relic-icons.test.mjs'].successor.commit,
  'dfcc35416f127693b2f0323b8168b0e29590af7d');
 
@@ -70,7 +71,9 @@ export function readCloseoutCurrentBackflowReceipt(path,digest,read){
  const session=exactSourceMatches(navigation,sessionRoute[sessionNavigation]);
  const detail=session?read(battleDetailView,'utf8'):null;
  const current=session?{...successor,...sessionRoute}:guardian?successor:{};
- if(exactSourceMatches(detail,anchorRefactor.after))current[battleDetailView]=anchorRefactor.after;
+ // Actor Detail follows the anchor refactor and advances all four owners.
+ if(exactSourceMatches(detail,actorDetail.owners[battleDetailView]))Object.assign(current,actorDetail.owners);
+ else if(exactSourceMatches(detail,anchorRefactor.after))current[battleDetailView]=anchorRefactor.after;
  for(const [owner,binding] of Object.entries(owners)){
   const live=readExactOwner(owner,current[owner]??binding,read);
   if(owner===path)assert.equal(live,source,'closeout owner changed during the receipt read: '+path);
