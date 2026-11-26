@@ -1,12 +1,14 @@
 ---
 id: TASK-115.7.4
 title: 修复正式角色与怪物非预期透底
-status: In Progress
+status: Blocked
 assignee:
   - '@Furinya'
 created_date: '2026-11-25 21:02'
+updated_date: '2026-11-26 03:52'
 labels:
   - v2.2.0
+  - release-scope
 milestone: m-8
 dependencies: []
 documentation:
@@ -38,4 +40,8 @@ ordinal: 218000
 
 <!-- SECTION:NOTES:BEGIN -->
 已派发正式运行时资产透底排查。按已批准原图做覆盖判定；私有批准源缺失时记录其摘要和待取证项。
+
+已取得 43 个正式演员的黑、白、高对比 Simulator 实渲。批准原图和已对位掩模尚未登记，当前 43 项均待验。正式修复等待取得批准输入，之后逐项核对战斗背景与容量预算。
+
+已核对冠军仓库原图候选 SHA-256 22c1e287 与生产来源 SHA-256 b799c29f 不同。生产档案只记锁定 Image Editor 身份，archive 为 null。当前正式 actor-alpha approvals 和 release-capture 均 0 条。新姿态的草稿几何 SHA-256 f01a8d81… 通过局部视觉独审，仍缺与几何绑定的批准原图和掩膜。已向 Owner 请求正式资产受控路径或批准工件索引，冠军优先。
 <!-- SECTION:NOTES:END -->
