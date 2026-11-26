@@ -1,0 +1,15 @@
+952	ci/release-version-metadata	develop	FurinyaDev	ci(release): 解耦工程与千星奇域平台版本
+948	fix/v2-presentation-card-snapshot	master	FurinyaDev	fix(release): 同步 v2.0.0 原型的卡牌快照
+947	fix/v2-audio-ci-fixture-roots	master	FurinyaDev	test(release): 隔离原生有声回归的输出目录
+945	hotfix/release-script-moderation	master	FurinyaDev	fix(release): 修正千星奇域退场与试炼脚本文案
+944	fix/v2-audio-deck-browser-receipt	master	FurinyaDev	fix(release): 保留有声候选的牌堆模板绑定
+933	refactor/ui-confirmation-spec	develop	FurinyaDev	refactor(ui): 统一共享确认弹窗与触控按钮规格
+932	perf/deck-cold-start	develop	FurinyaDev	perf(ui): 优化只读牌组首次打开体验
+929	fix/posix-reward-replay	develop	FurinyaDev	fix(ci): 并行执行托管 Linux 的奖励来源回归
+924	fix/develop-character-select-reference	develop	FurinyaDev	fix(ui): 回流正式选角设计及生成布局回归
+917	ci/gil-candidate	develop	FurinyaDev	ci: 增加 develop 的按需 GIL 候选构建
+916	test/v6-d-art-capacity	develop	FurinyaDev	docs(art): 交接 V6 岩旅卡图与离线容量对照
+914	fix/act3-normal-ending-summary	develop	FurinyaDev	fix(ui): 显示第三幕普通结局的真实层数
+913	fix/class-runtime-gaps	develop	FurinyaDev	fix(silent): 先结算必备工具抽牌触发，再开放弃牌选择
+911	chore/backlog-delivery-reconcile	develop	FurinyaDev	fix(backlog): 对账 develop 交付并保留 M8/M9 验收门禁
+909	feature/act2-audio	develop	FurinyaDev	feat(audio): 补齐二幕原生音频和交互反馈

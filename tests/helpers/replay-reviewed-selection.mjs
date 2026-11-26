@@ -11,9 +11,11 @@ import {exactReviewedBuildInput} from './rebased-release-source.mjs';
 import {beforeReviewedBuildInput,chapterEvidenceCurrentRead} from './fork-preflight-source.mjs';
 import {reviewedSelectionRead} from './reviewed-selection-current-source.mjs';
 import {uiEntranceOwns} from './ui-entrance-source.mjs';
-import {checkedSelectionEntranceRead} from './ui-selection-current-source.mjs';
+import {checkedSelectionEntranceRead,selectionNodeNoticePath} from './ui-selection-current-source.mjs';
 import {stsStylePriorRuntime} from './sts-style-prior-runtime.mjs';
 import {beforeDeckPagesSuiteSource,readRetiredController,retiredControllerPath} from './input-retirement-source.mjs';
+import {beforeMasterBackflowSource,readBeforeMasterBackflowSource} from './master-backflow-source.mjs';
+import {beforeOfficialCharacterBackflow} from './current-replay-fix-sources.mjs';
 import {readReviewedOfficialAssetInput,reviewedOfficialAssetInputPaths} from './reviewed-official-asset-inputs.mjs';
 const hash=s=>createHash('sha256').update(s).digest('hex'),norm=s=>s.replaceAll('\r\n','\n');
 const archivedOfficialAssets='tests/official-assets.test.mjs';
@@ -23,19 +25,50 @@ const reviewedContracts=Object.freeze({
  'tests/sts-card-reference.test.mjs':13,
  [archivedOfficialAssets]:6,
 });
+export function readSelectionProductionOwners(read,readOwner){
+ const readEntrance=chapterEvidenceCurrentRead(checkedSelectionEntranceRead((path,encoding)=>{
+  const raw=read(path,encoding);
+  const source=Buffer.isBuffer(raw)?raw.toString('utf8'):raw;
+  if(path===selectionNodeNoticePath||beforeOfficialCharacterBackflow(path,source)!==source)return raw;
+  return beforeMasterBackflowSource(path,raw);
+ }));
+ return (path,encoding='utf8')=>uiEntranceOwns(path)?readEntrance(path,encoding):readOwner(path,encoding);
+}
+// Selection's archived intent owner predates #875. Its original reviewed
+// reader must reauthenticate those exact bytes at the current-only seam.
+export function beforeCurrentSelectionProductionSource(path,readCurrent,readReviewed){
+ const read=path==='src/lua/abyss_battle_intent_view.lua'?readReviewed:readCurrent;
+ return beforeCurrentProductionSource(path,read(path),read);
+}
+const readLiveOwner=path=>readFileSync(path,'utf8');
+export function readReviewedSelectionSource(path,read=readLiveOwner){
+ assert(Object.hasOwn(sourceEpoch.proof.current,path),'registered historical selection owner: '+path);
+ const row=sourceEpoch.proof.current[path];
+ if(row===null)return null;
+ const readOwner=reviewedSelectionRead(read);
+ const retired=path===retiredControllerPath;
+ const live=retired?readRetiredController(readOwner).source:read(path);
+ assert(typeof live==='string'&&!live.includes('\r\r\n')&&
+  (read===readLiveOwner||(!retired&&norm(live)===norm(readLiveOwner(path)))),
+  'fresh current production owner: '+path);
+ const readCurrent=readSelectionProductionOwners(read,readOwner);
+ const source=retired?beforeCharacterPreparationSource(path,live,readCurrent)
+  :beforeCurrentSelectionProductionSource(path,readCurrent,readOwner);
+ assert.equal(hash(norm(source)),row.sha256,'fresh current production owner: '+path);
+ return source;
+}
 export function replayReviewedSelection(script='tests/sts-character-reference.test.mjs'){
  assert(Object.hasOwn(reviewedContracts,script),'exact reviewed selection contract');
  const expected=reviewedContracts[script],root=process.cwd();
  assertIntegratedCurrent();
+ const readCurrent=readBeforeMasterBackflowSource(readFileSync);
  const readOwner=reviewedSelectionRead();
- // Entrance authentication consumes live owners. The archived build still uses Selection's reviewed inputs.
- const readEntrance=chapterEvidenceCurrentRead(checkedSelectionEntranceRead(readFileSync));
- const readProductionOwner=(path,encoding='utf8')=>uiEntranceOwns(path)?readEntrance(path,encoding):readOwner(path,encoding);
+ const readProductionOwner=readSelectionProductionOwners(readFileSync,readOwner);
  const retiredInput=readRetiredController(readOwner);
  assert(retiredInput.restored,'only the exact pointer successor can restore the retired input owner');
  for(const [path,row]of Object.entries(sourceEpoch.proof.current)){
   const source=path===retiredControllerPath?beforeCharacterPreparationSource(path,retiredInput.source,readProductionOwner)
-   :beforeCurrentProductionSource(path,readProductionOwner(path),readProductionOwner);
+   :beforeCurrentSelectionProductionSource(path,readProductionOwner,readOwner);
   assert.equal(hash(norm(source)),row.sha256,'fresh current production owner: '+path);
  }
  assert.equal(integratedCiProof.sources.release,'900527d931df941eed642a9667ccde92f76b73db');
@@ -47,7 +80,7 @@ export function replayReviewedSelection(script='tests/sts-character-reference.te
   const paths=execFileSync('git',['ls-files','scripts','data','config','tools','tests/helpers'],{encoding:'utf8'}).trim().split('\n');
   for(const path of paths){
    assert(!isAbsolute(path)&&!path.split('/').includes('..'));const target=join(directory,path);mkdirSync(dirname(target),{recursive:true});
-   const input=useArchivedOfficialInputs?readReviewedOfficialAssetInput(path):undefined;
+   const input=useArchivedOfficialInputs?readReviewedOfficialAssetInput(path,readCurrent):undefined;
    const predecessor=input??exactReviewedBuildInput(path,readProductionOwner,{beforeReviewedInput:beforeReviewedBuildInput});
    if(predecessor===undefined)copyFileSync(path,target);
    else writeFileSync(target,predecessor);
@@ -89,7 +122,7 @@ export function replayReviewedSelection(script='tests/sts-character-reference.te
   assert.equal(hash(readFileSync(target)),original.sha256,'unaltered complete historical assertions');
   if(useArchivedOfficialInputs){
    for(const path of reviewedOfficialAssetInputPaths){
-    const expected=readReviewedOfficialAssetInput(path);
+    const expected=readReviewedOfficialAssetInput(path,readCurrent);
     assert.equal(norm(readFileSync(join(directory,path),'utf8')),norm(expected),'exact staged official-assets input: '+path);
    }
   }

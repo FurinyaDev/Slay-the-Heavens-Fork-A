@@ -55,11 +55,11 @@ G.new=function(root,data,presentation,event,p)
  p.presentationPage=function(page)sourcePage=page;require('abyss_card_art_runtime').setPresentationPage(page)end
  return make(root,data,presentation,event,p)
 end
-local F=dofile('tests/lua/support/game_ui_fixture.lua');local host,root=F.fixture(nil,function()return true end)
+local F=dofile('tests/lua/support/game_ui_fixture.lua');local host,root=F.fixture(nil,function()return true end,nil,nil,nil,nil,nil,nil,F.deckBrowser())
 local Gate=require('abyss_page_reveal');local Run=require('abyss_run');local created=0;local new=Run.new
 Run.new=function(...)created=created+1;return new(...)end
 local function settle()
- for i=1,4 do host:update(1/60);host.pageReveal:step(Gate.intent(host));host:refresh()end
+ for i=1,40 do host:update(1/60);host.pageReveal:step(Gate.intent(host));host:refresh()end
 end
 settle();assert(host:start());settle();assert(host:selectCharacter('traveler'));assert(host:selectElement('ironclad'));settle()
 local info=host.characterSelection.info;local original=F.Combat.copy(info)
@@ -67,27 +67,37 @@ local previewId=info.deck[1].id;info.deck[1].display.name='只读投影专用名
 local panel=root:GetChild('characterPanel')
 assert(not panel:GetChild('details'):GetChild('deckOpen'),'official selection must have no starter deck hit area')
 assert(panel.visible and not host.run and created==0)
-local Display=require('abyss_card_display');local write=Display.writeNativeArt;local painted=0
-Display.writeNativeArt=function(...)
+local Display=require('abyss_card_display');local write=Display.writeArt;local painted=0
+Display.writeArt=function(...)
  assert(sourcePage=='deckPanel','starter card wrote before its deck presentation owner');painted=painted+1;return write(...)
 end
 prepared=false;assert(host:openStarterDeck());assert(host.pageReveal:covered() and Gate.intent(host).page=='deckPanel')
 assert(not host.run and created==0 and host.characterSelection.deckOpen and host.deckUI.previewInfo==info)
 local deck=host.deckUI;local deckPanel=root:GetChild('deckPanel')
 assert(deck.browserShell and not deck.pileView and not deck.pileKind and not deck.choiceToken and not deck.battle)
-assert(deck.run.readOnlyPreview and #deck.cards==info.deckSize and deckPanel:GetChild('pileGrid').visible)
-assert(not panel.visible and not panel:GetChild('deckView'))
-assert(host.pointerBlocked(),'preparation must keep preview input covered')
+assert(deck.run.readOnlyPreview and deck.paged and #deck.cards==info.deckSize,'starter browser lost its paged read-only source')
+assert(not panel.visible and not panel:GetChild('deckView'),'retired selection shell was restored')
+assert(host.pageReveal.localFrame and not host.pointerBlocked(),'preview preparation must cover only the owned card area')
+local pendingGrid=deckPanel:GetChild('pileGrid')
+assert(not pendingGrid.visible,'unprepared cards must remain hidden under the local cover')
+for _,cell in ipairs(pendingGrid:GetChildren())do
+ assert(not cell:GetChild('hit').raycastTarget,'preparation enabled an unready card')
+end
 assert(not host:openStarterDeck(),'covered/reentrant opening must fail')
 for i=1,4 do host:update(1/60);host:refresh()end
 assert(deck.visible and host.pageReveal:covered(),'menu stale-deck rule closed read-only preview')
 prepared=true;settle();assert(not host.pointerBlocked() and not host.pageReveal:covered() and painted>0)
-local cards=deckPanel:GetChild('pileGrid');assert(cards.itemCount==info.deckSize,'starter browser omitted cards')
-for index=0,info.deckSize-1 do
- local cell=cards:recycle(0,index+cards.indexBase);local face=cell:GetChild('face')
- assert(face:GetChild('name').text~='' and face:GetChild('cost').text~='' and face:GetChild('label').text~='','starter card lost actual name/cost/rules')
+local cards=deckPanel:GetChild('pileGrid')
+local visible=0
+for _,cell in ipairs(cards:GetChildren())do
+ if cell.visible then
+  visible=visible+1
+  local face=cell:GetChild('face')
+  assert(face:GetChild('name').text~='' and face:GetChild('cost').text~='' and face:GetChild('label').text~='','starter card lost actual name/cost/rules')
+ end
 end
-cards:flush()
+assert(cards.visible and visible==math.min(10,info.deckSize),'starter browser omitted current-page cards')
+assert(painted>0,'visible starter cards did not paint')
 assert(deckPanel:GetChild('pileReturn').visible)
 assert(deck:setSort('cost'));settle()
 local previewCard;for _,card in ipairs(deck.cards)do if card.cardId==previewId then previewCard=card;break end end
@@ -99,8 +109,8 @@ assert(back.click(),'pointer cannot reach shared browser return')
 settle();assert(not deck.visible and not host.characterSelection.deckOpen and panel.visible)
 assert(host.characterSelection.info==info and info.deck[1].count==original.deck[1].count and created==0 and not host.run)
 -- Closing preview restores the exact caller display source, not a preview copy.
-Display.writeNativeArt=write
-assert(F.confirmStart(host));settle();assert(created==1 and host.run)
+Display.writeArt=write
+assert(F.confirmStart(host));settle();assert(created==1 and #host.run.deck==10)
 assert(host:openDeck());settle();assert(not deck.previewInfo and deck.browserShell and not deck.run.readOnlyPreview)
 assert(deck.listTitle:find('卡组',1,true) and deck.catalog.cards[deck.cards[1].cardId])
 local restored;for _,card in ipairs(deck.cards)do if card.cardId==previewId then restored=card;break end end
@@ -125,8 +135,8 @@ end
 print('CHARACTER_BROWSER_PASS')`);
 });
 
-test('actual OnStart readiness reveals the preview while the hidden real selection portrait is still preparing',t=>{
- const out=temporary(t);buildLuaData('data',join(out,'abyss_data.lua'));buildUI(out,undefined,{officialAssets:true});
+test('actual OnStart warms after title admission and pauses selection workers beneath deck preview',t=>{
+ const out=temporary(t);buildLuaData('data',join(out,'abyss_data.lua'));buildUI(out,undefined,{officialAssets:true,nativePageLifecycle:true,experimentalCharacters:false});
  const preloads=readdirSync(out).filter(n=>n.endsWith('.lua')).map(n=>
   `package.preload[${luaString(n.slice(0,-4))}]=assert(loadfile(${luaString(join(out,n).replaceAll('\\','/'))}))`).join('\n');
  const land=lowpolySelectLiterals(process.cwd(),{menuBackground:true})[0];
@@ -135,7 +145,18 @@ ${preloads}
 local F=dofile('tests/lua/support/game_ui_fixture.lua');local G=require('abyss_game_ui');local make=G.new
 local host,platform,portrait;local noPortraitDuringBuild=false;local P=require('abyss_traveler_portraits');local create=P.new
 P.new=function(...)portrait=create(...);return portrait end
-G.new=function(root,data,presentation,event,p)platform=p;host=make(root,data,presentation,event,p);return host end
+G.new=function(root,data,presentation,event,p)
+ local panel=root:GetChild('characterPanel');local details=panel:GetChild('details')
+ local retired={deckTitle=true,deckSummary=true,deckRule=true,deckOpen=true,deckView=true}
+ for _,control in ipairs({panel,details})do
+  local getChild=control.GetChild
+  control.GetChild=function(self,name)
+   assert(not retired[name],'official selection accessed retired control '..name)
+   return getChild(self,name)
+  end
+ end
+ platform=p;host=make(root,data,presentation,event,p);return host
+end
 package.loaded.abyss_art_features={schemaVersion=2,flags={cards=false,menuBackground=true,selectionAvatar=true,battlePortrait=false,monsters=false}}
 local Asset=require('abyss_traveler_portrait_assets');Asset.imagePrefabId=801;Asset.containerPrefabId=802;Asset.selectionHalfImagePrefabId=803
 Asset.${land}
@@ -169,24 +190,56 @@ game={GetUICanvasSize=function()return 1280,720 end,IsTestPlay=function()return 
  end,DestroyClientUIControl=function(c)c:SetActive(false)end}
 script={object=canvas,GetParam=function()return false end,EnableUpdate=function(_,value)enabled=value end}
 dofile('src/lua/abyss_ui.lua');OnStart();assert(enabled and host and portrait,'real OnStart did not create the production owners')
+local before=portrait:status().selection
+assert(before.owned==0,'starting the title allocated a selection portrait')
+os.clock=function()return 0 end
 for i=1,60 do OnUpdate(1/60);if not host.pageReveal:covered()then break end end
 assert(noPortraitDuringBuild and not host.pageReveal:covered())
 assert(host:start() and not host.characterSelection.info,'selection starts with no character chosen')
+for _=1,4 do
+ if not host.pageReveal:covered()then break end
+ OnUpdate(1/60)
+end
+assert(not host.pageReveal:covered(),'selection fallback did not publish the roster')
 assert(host:selectCharacter('traveler') and host.characterSelection.info,'choose the Geo traveler before checking its portrait')
 local Gate=require('abyss_page_reveal');local state=portrait:status().selection
-assert(state.phase=='building' and not platform.presentationReady(Gate.intent(host)),'real selection must wait for its incomplete portrait')
+assert(state.phase=='building' and platform.presentationReady(Gate.intent(host)),'decorative selection blocked real page readiness')
+local cover=host.root:GetChild('pageReveal')
+local veil=cover:GetChild('veil')
+assert(not cover.visible or veil.imageColor.a==0,'selection put up an opaque page cover')
+assert(not host.pageReveal:covered() or host.pageReveal:allowsCharacterEdit(),'transparent selection preparation blocked role edits')
+for _=1,4 do
+ if not host.pageReveal:covered()then break end
+ OnUpdate(1/60)
+end
+state=portrait:status().selection
+assert(not host.pageReveal:covered() and not cover.visible and state.phase=='building',
+ 'selection fallback did not admit the page before the portrait was ready')
+local details=host.root:GetChild('characterPanel'):GetChild('details')
+local info=host.characterSelection.info
+local published=details
+local motion=details:GetChild('infoMotion')
+if motion then
+ published=nil
+ for _,box in ipairs(motion:GetChildren())do
+  local name=box:GetChild('name')
+  if box.visible and name and name.text==info.name then published=box;break end
+ end
+end
+assert(published and details.visible and published:GetChild('name').text==info.name and info.deckSize==10,'click lost the real loadout')
+for _,name in ipairs({'stats','gold','v25Story','relic','relicText'})do
+ assert(published:GetChild(name).text~='',name)
+end
 assert(not portrait:readyForPage('menu',false,'ironclad'),'negative control requires a real paused menu-scene dependency')
-assert(not host:openStarterDeck(),'public covered input must stay blocked')
--- Arrange an asynchronous page replacement without completing its old owner.
--- The actual shared browser and actual entry readiness remain under test.
-platform.presentationPage('deckPanel');assert(host.deckUI:openPreview(host.characterSelection.info))
-host.characterSelection.deckOpen=true;host:refresh();assert(Gate.intent(host).page=='deckPanel')
+local progress=portrait:status().selection
+assert(host:openStarterDeck(),'decorative selection work blocked the public browser entry')
+assert(Gate.intent(host).page=='deckPanel')
 for i=1,60 do
  OnUpdate(1/60)
  if not host.pageReveal:covered()then break end
 end
 state=portrait:status().selection
-assert(state.phase=='building' or state.phase=='revealing','negative control accidentally completed the old portrait')
+assert(state.phase=='building' and state.nextIndex==progress.nextIndex,'covered selection kept constructing portrait controls')
 assert(host.deckUI.visible and not host.deckUI.pending and not host.deckUI.calibrating)
 assert(platform.presentationReady(Gate.intent(host)) and not host.pageReveal:covered(),'hidden selection portrait blocked the actual preview entry readiness')
 assert(not host.root:GetChild('characterPanel').visible and host.root:GetChild('deckPanel').visible)

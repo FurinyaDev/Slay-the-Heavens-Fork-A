@@ -6,7 +6,7 @@ import {readFileSync} from 'node:fs';
 import {gunzipSync} from 'node:zlib';
 import {exactSourceMatches as matches,sourceConfigLayoutMatches} from './source-fingerprint.mjs';
 import {restoreExactFixtureHunks} from './exact-fixture-hunks.mjs';
-import {beforeCurrentReplayFixes,beforeOfficialCharacterBackflow} from './current-replay-fix-sources.mjs';
+import {beforeCombinedCharacterBackflow,beforeCurrentReplayFixes,beforeOfficialCharacterBackflow,combinedCharacterBackflowOwns} from './current-replay-fix-sources.mjs';
 import {beforeApprovedUiEntrance,matchesApprovedUiEntranceOwner} from './ui-entrance-approved-sources.mjs';
 
 const archive=readFileSync(new URL('../fixtures/ui-entrance-source.json.gz',import.meta.url));
@@ -35,7 +35,9 @@ const replaySources=[...requiredCurrentOwners,
 const currentInput=(path,source)=>replaySources.includes(path)
  ?beforeCurrentReplayFixes(path,source):beforeApprovedUiEntrance(path,source);
 function currentMatches(path,source,expected){
- if(!matchesApprovedUiEntranceOwner(path,source))return false;
+ const approved=beforeCombinedCharacterBackflow(path,source);
+ if(combinedCharacterBackflowOwns(path)&&approved===source)return false;
+ if(!matchesApprovedUiEntranceOwner(path,approved))return false;
  const normalized=currentInput(path,source);
  if(requiredCurrentOwners.includes(path)&&normalized===source)return false;
  return matches(normalized,expected);

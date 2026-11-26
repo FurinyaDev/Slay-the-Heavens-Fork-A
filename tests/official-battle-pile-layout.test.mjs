@@ -16,7 +16,7 @@ test('pile chrome shades the design canvas below the live HUD',()=>{
  assert.equal(shade.position[1]+shade.size[1]/2,theme.canvas.base[1]/2-theme.officialAssets.battleHud.height);
  assert.equal(shade.position[1]-shade.size[1]/2,-360);
  for(const n of chrome.children){const [x,y]=n.position,[w,h]=n.size;assert(x-w/2>=-640.1&&x+w/2<=640.1&&y-h/2>=-360.1&&y+h/2<=360.1,n.name);}
- const button=battlePileReturn({position:[0,0],children:[{children:[]}]},true);
+ const button=battlePileReturn({position:[0,0],children:[{children:[]}]},nativeTheme.officialAssets.buttonInk);
  assert.deepEqual(button.position,[-550,-237]);assert(button.position[0]-180/2>=-640);assert(button.position[1]-54/2>=-360);
 });
 test('pile return keeps the existing button ink readable in all four native states',()=>{

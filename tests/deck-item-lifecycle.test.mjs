@@ -4,6 +4,7 @@ import {mkdtempSync,mkdirSync,readFileSync,readdirSync,rmSync} from 'node:fs';
 import {join,resolve} from 'node:path';
 import {spawnSync} from 'node:child_process';
 import {createRequire} from 'node:module';
+import {createHash} from 'node:crypto';
 import {buildLuaData,luaString} from '../scripts/build-lua-data.mjs';
 import {buildUI} from '../scripts/build-ui.mjs';
 import {beforeMapDeckSource,mapDeckPriorRead} from './helpers/release-map-deck-source.mjs';
@@ -56,9 +57,29 @@ local host,root=F.fixture(nil,nil,nil,{CursorDown='down',CursorUp='up'})
 assert(F.start(host) and host.mode=='map')
 local panel=root:GetChild('deckPanel');local grid=panel:GetChild('pileGrid');local map=host.mapUI
 local hit=root:GetChild('deckEntry'):GetChild('open'):GetChild('hit')
+local Display=require('abyss_card_display')
+local titleWrites,fitCalls,inCardText=0,0,false
+local writeTitle,writeBody,fit=Display.writeTitle,Display.writeBody,Display.fit
+local function isGridText(label)
+ local face=label.parent
+ return face and face.parent and face.parent.parent==grid
+end
+Display.fit=function(...)
+ if inCardText then fitCalls=fitCalls+1 end
+ return fit(...)
+end
+Display.writeTitle=function(label,...)
+ inCardText=isGridText(label)
+ if inCardText then titleWrites=titleWrites+1 end
+ local result=writeTitle(label,...);inCardText=false;return result
+end
+Display.writeBody=function(label,...)
+ inCardText=isGridText(label)
+ local result=writeBody(label,...);inCardText=false;return result
+end
 local oldRender=map.render;local renders=0
 map.render=function(...)renders=renders+1;return oldRender(...)end
-local layoutWrites,unusedWrites,probePaints=0,0,0
+local layoutWrites,geometryWrites,unusedWrites,probePaints=0,0,0,0
 local createCell=grid.recycle
 function grid:recycle(slot,index)
  if not self.items[slot] then
@@ -68,6 +89,13 @@ function grid:recycle(slot,index)
   art.SetImage=function(...)if self.itemCount==1 then probePaints=probePaints+1 end;return oldImage(...)end
   local frame=face:GetChild('stsReferenceChrome'):GetChild('frame')
   for _,batch in ipairs(frame:GetChildren())do for _,part in ipairs(batch:GetChildren())do
+   for _,method in ipairs({'SetSizeDelta','SetLocalScale','SetLocalRotation','SetVisible'})do
+    local original=part[method]
+    part[method]=function(...)
+     geometryWrites=geometryWrites+1
+     return original(...)
+    end
+   end
    local oldPosition=part.SetAnchoredPosition
    part.SetAnchoredPosition=function(...)
     layoutWrites=layoutWrites+1
@@ -88,8 +116,22 @@ local slot;for i,id in pairs(map.slots)do if id==first.id then slot=i;break end 
 local node=F.mapControl(root:GetChild('mapPanel'),'node'..assert(slot)):GetChild('hit')
 local event={touchId=7,GetUIPos=function()return 0,0 end}
 node.listeners.down(event)
+local hiddenBattleDraws=0
+local paintBattle=host.battleUI.render
+host.battleUI.render=function(self,...)
+ hiddenBattleDraws=hiddenBattleDraws+1;return paintBattle(self,...)
+end
+local potionHit=root:GetChild('potionEntry'):GetChild('open'):GetChild('hit')
+local hiddenPotionWrites=0;local sizePotion=potionHit.SetSizeDelta
+potionHit.SetSizeDelta=function(self,...)
+ hiddenPotionWrites=hiddenPotionWrites+1;return sizePotion(self,...)
+end
 renders=0;assert(hit.click());local coldRenders=renders
-host:update(0);node.listeners.up(event)
+assert(hiddenBattleDraws==0 and hiddenPotionWrites==0,'map deck redrew hidden battle or potion controls')
+host.battleUI.render=paintBattle;potionHit.SetSizeDelta=sizePotion
+assert(grid.itemCount==80 and not deck.pending and not deck.calibrating,
+    'cold map deck waited for an update after synchronous native callbacks')
+node.listeners.up(event)
 assert(not node.click(event) and not map:choose(first.id));assert(not map:scrollBy(20))
 assert(grid.itemCount==80 and deck.bindings[grid.items[0]].uid==1001 and deck.bindings[grid.items[1]].uid==1002)
 local function framePart(slot,index)
@@ -97,18 +139,41 @@ local function framePart(slot,index)
 end
 assert(framePart(0,48).visible and not framePart(0,49).visible,'attack lost its authored silhouette')
 assert(framePart(1,68).visible and not framePart(1,69).visible,'skill lost its authored silhouette')
-local coldWrites,coldUnused,coldDefinitions=layoutWrites,unusedWrites,definitionCalls
+local coldWrites,coldGeometry,coldUnused,coldDefinitions=layoutWrites,geometryWrites,unusedWrites,definitionCalls
+local coldFits=fitCalls
 assert(host:closeDeck());assert(not node.click(event),'closing revived the old map press')
 assert(map:scrollBy(130));local scroll=map.scroll
-renders=0;assert(hit.click());host:update(0)
+renders=0;titleWrites,fitCalls=0,0
+cards[1].uid=3001
+assert(hit.click());host:update(0)
+assert(deck.bindings[grid.items[0]].uid==3001 and titleWrites==0 and fitCalls==0,
+    'reopening unchanged faces repainted their title or reused the old UID')
+cards[1].uid=1001
 assert(deck:setSort('original'));assert(deck:setSort('original'));assert(deck.bindings[grid.items[0]].uid==1080)
 assert(framePart(0,68).visible and not framePart(1,49).visible,'recycled cells retained the previous silhouette')
+assert(host:closeDeck());local warmRenders=renders
+cards[80].upgraded=true;titleWrites=0
+local art=grid.items[0]:GetChild('face'):GetChild('art')
+local nativeImage=art.SetImage;local attempts=0
+art.imageId=nil
+art.SetImage=function(self,...)
+ attempts=attempts+1
+ if attempts==1 then return false end
+ return nativeImage(self,...)
+end
+assert(hit.click() and deck.bindings[grid.items[0]].uid==1080)
+assert(titleWrites==1 and grid.items[0]:GetChild('face'):GetChild('name').text:find('＋',1,true),
+    'changing an upgrade failed to repaint exactly its reused card')
 assert(host:closeDeck())
-print('map-deck renders='..coldRenders..' warm_round_trip='..renders..' probe_art='..probePaints..' frame_positions='..coldWrites..' unused_positions='..coldUnused..' definitions='..coldDefinitions)
+assert(hit.click() and attempts==2 and art.imageId~=nil,'transient native portrait rejection became a cache hit')
+assert(host:closeDeck())
+print('map-deck renders='..coldRenders..' warm_round_trip='..warmRenders..' probe_art='..probePaints..' frame_positions='..coldWrites..' other_frame_writes='..coldGeometry..' unused_positions='..coldUnused..' definitions='..coldDefinitions..' fits='..coldFits)
 assert(map.visible and map.navigationEnabled and map.scroll==scroll,'return lost the existing map position')
 assert(host.run.deck==cards and cards[1].uid==1001)
-assert(coldRenders==0 and renders==1,'deck repainted the covered map or redrew it twice on return')
+assert(coldRenders==0 and warmRenders==1,'deck repainted the covered map or redrew it twice on return')
 assert(probePaints==0 and coldWrites<=6*68 and coldUnused==0,'cold grid repainted its probe, default attacks or unused frame shapes')
+assert(coldWrites+coldGeometry<=1464,'cold browser replayed unchanged template geometry')
+assert(coldFits<=4,'starter duplicates repeated the same text fitting work')
 assert(coldDefinitions==12,'default sorting resolved definitions outside the requested native cells')
 print('DECK_REUSE_PASS')`);
  t.diagnostic(output.split('\n').find(line=>line.startsWith('map-deck ')));

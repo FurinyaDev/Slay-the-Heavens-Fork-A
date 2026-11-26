@@ -88,14 +88,20 @@ print('REENTRY_PASS')`;
 test('historical source replay rejects foreign bytes and a changed linked fade owner',async()=>{
  const {readFileSync}=await import('node:fs');
  const {beforeStsSelectionFade,beforeAuthenticatedStsSelectionFade}=await import('./helpers/sts-selection-fade-source.mjs');
+ const {beforeV220SelectionFadeSource}=await import('./helpers/sts-selection-fade-v220-source.mjs');
  const {files}=JSON.parse(readFileSync('tests/fixtures/sts-selection-fade-source.json','utf8'));
  const path='src/lua/abyss_page_reveal.lua',source=readFileSync(path,'utf8');
  const lf=source.replaceAll('\r\n','\n'),crlf=text=>text.replaceAll('\n','\r\n');
- assert.equal(beforeStsSelectionFade(path,lf),files[path].before);
- assert.equal(beforeStsSelectionFade(path,crlf(lf)),crlf(files[path].before));
+ const prior=beforeV220SelectionFadeSource(path,lf);
+ const read=owner=>beforeV220SelectionFadeSource(owner,readFileSync(owner,'utf8'));
+ assert.equal(beforeStsSelectionFade(path,prior),files[path].before);
+ assert.equal(beforeStsSelectionFade(path,beforeV220SelectionFadeSource(path,crlf(lf))),crlf(files[path].before));
+ assert.equal(beforeAuthenticatedStsSelectionFade(path,prior,read),files[path].before);
  const foreign=source+'\n-- foreign drift';assert.equal(beforeStsSelectionFade(path,foreign),foreign);
+ assert.throws(()=>beforeV220SelectionFadeSource(path,foreign),/fresh master backflow source/);
  const owner='src/lua/abyss_game_ui_run.lua';
- assert.throws(()=>beforeAuthenticatedStsSelectionFade(path,source,linked=>readFileSync(linked,'utf8')+(linked===owner?'\n-- drift':'')),error=>
+ assert.throws(()=>beforeV220SelectionFadeSource(owner,readFileSync(owner,'utf8')+'\n-- drift'),/fresh master backflow source/);
+ assert.throws(()=>beforeAuthenticatedStsSelectionFade(path,prior,linked=>read(linked)+(linked===owner?'\n-- drift':'')),error=>
   error.message.includes(owner)&&/(?:fresh linked STS fade source|combined linked owner identity)/.test(error.message));
 });
 
@@ -120,9 +126,11 @@ test('STS discovery custody removes only the complete authenticated added test',
  const {readFileSync}=await import('node:fs');
  const {stsCurrentJsDiscovery}=await import('./helpers/sts-selection-fade-source.mjs');
  const {beforeNativeFlowFixture}=await import('./helpers/native-flow-fixture-source.mjs');
+ const {readBeforeMasterBackflowSource}=await import('./helpers/master-backflow-source.mjs');
  const {inventory}=JSON.parse(readFileSync('tests/fixtures/sts-selection-fade-source.json','utf8'));
  const raw=[...inventory.before,inventory.addition];
- const read=p=>beforeNativeFlowFixture(p,readFileSync(p,'utf8'),{requireCurrent:true});
+ const readMasterPredecessor=readBeforeMasterBackflowSource(readFileSync);
+ const read=p=>beforeNativeFlowFixture(p,readMasterPredecessor(p,'utf8'),{requireCurrent:true});
  assert.deepEqual(stsCurrentJsDiscovery(raw,read),inventory.before);
  for(const invalid of [inventory.before,[...raw,inventory.addition],raw.slice(1),[...raw,'foreign']])
   assert.throws(()=>stsCurrentJsDiscovery(invalid),/complete STS raw/);
@@ -167,6 +175,53 @@ print('FULL_DEPARTURE_COVER_PASS')`;
  const r=spawnSync(process.execPath,[require.resolve('fengari-node-cli/src/lua-cli.js'),'-e',body],{encoding:'utf8'});
  assert.equal(r.status,0,r.stdout+r.stderr);assert.match(r.stdout,/FULL_DEPARTURE_COVER_PASS/);
 });
+
+test('a reverting local intent cannot end a room fade or skip input publication',()=>{
+ const body=`package.path='src/lua/?.lua;'..package.path
+local Gate=require('abyss_page_reveal')
+local veil={SetAnchoredPosition=function()end,SetSizeDelta=function()end}
+local blocker={SetAnchoredPosition=function()end,SetSizeDelta=function()end}
+local cover={GetChild=function(_,n)if n=='veil'then return veil elseif n=='blocker'then return blocker end end,SetVisible=function()end,SetAsLastSibling=function()end}
+local frames={full={0,0,1280,720},nodePanel={0,0,1240,680}}
+local enabled=0
+local gate=Gate.new(cover,function()return true end,nil,frames,{duration=.2,color=function(r,g,b,a)return {a=a}end,
+ entryTrace=function(phase)if phase=='input_enabled'then enabled=enabled+1 end end})
+local a={page='mapPanel',mode='map',phase='map',run={},act=1}
+local b={page='nodePanel',mode='node',phase='node',run=a.run,act=1,nodeId='room',nodeType='camp',nodePage=1}
+gate:begin(a);gate:step(a,0);gate:step(a,0);gate:step(a,.2)
+assert(not gate:covered(),'initial map must publish before departure')
+assert(gate:depart(function()return gate:begin(b)end,nil,{id=1}))
+gate:step(a,.2);gate:step(a,0);gate:step(b,0);gate:step(b,0);gate:step(b,.1)
+assert(gate.state=='fadingIn' and veil.imageColor.a>0 and veil.imageColor.a<255)
+local c={};for k,v in pairs(b)do c[k]=v end;c.nodePage=2
+assert(gate:request(c));assert(gate:begin(b))
+assert(not gate:finish(b) and gate:covered() and gate.entry and enabled==0)
+gate:step(b,0);gate:step(b,0);gate:step(b,.2)
+assert(not gate:covered() and not gate.entry and enabled==1)
+print('SCENE_REENTRY_PASS')`;
+ const result=spawnSync(process.execPath,[require.resolve('fengari-node-cli/src/lua-cli.js'),'-e',body],{encoding:'utf8'});
+ assert.equal(result.status,0,result.stdout+result.stderr);
+ assert.match(result.stdout,/SCENE_REENTRY_PASS/);
+});
+
+test('Release UI closeout projection rejects drift and stale owner rereads',async()=>{
+ const {readFileSync}=await import('node:fs');
+ const {beforeReleaseUiCloseoutSource}=await import('./helpers/release-ui-closeout-source.mjs');
+ const path='src/lua/abyss_page_reveal.lua';
+ // The inverse authenticates the exact #839 owner. #864 changed the live
+ // owner, while the historical predecessor and its rejection rules stayed fixed.
+ const source=readFileSync(new URL('./fixtures/page-reveal-pr839.lua',import.meta.url),'utf8');
+ const read=file=>{assert.equal(file,path);return source;};
+ const previous=beforeReleaseUiCloseoutSource(path,source,read);
+ assert.notEqual(previous,source);
+ assert.throws(()=>beforeReleaseUiCloseoutSource(path,source,()=>previous),/Release UI closeout owner identity/);
+ assert.equal(beforeReleaseUiCloseoutSource(path,source+'\n',()=>assert.fail('unknown bytes authorized a read')),source+'\n');
+ const crlf=text=>text.replaceAll('\n','\r\n');
+ assert.equal(beforeReleaseUiCloseoutSource(path,crlf(source),file=>crlf(read(file))),crlf(previous));
+ const live=readFileSync(path,'utf8');
+ if(live!==source)assert.equal(beforeReleaseUiCloseoutSource(path,live,()=>assert.fail('live owner authorized a historical read')),live);
+});
+
 
 test('a failed departure cannot reject a newer page requested by its callback',()=>{
  const body=`package.path='src/lua/?.lua;'..package.path

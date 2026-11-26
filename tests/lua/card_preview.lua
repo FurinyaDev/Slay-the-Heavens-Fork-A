@@ -9,6 +9,7 @@ local Presentation = require("abyss_presentation")
 local Layout = require("abyss_ui_layout")
 local Fixture=dofile('tests/lua/support/game_ui_fixture.lua')
 local monsterControl=dofile('tests/lua/support/monster_control_fixture.lua')
+local readPowers = dofile("tests/lua/support/power_tip_fixture.lua")
 local L = Theme.layout
 -- These are input points on the current visible native actors, not expected
 -- damage values. Every numerical preview oracle below remains unchanged.
@@ -402,7 +403,7 @@ test("player and every enemy show status icons, stacks and full current effects"
         s.enemies[3].statuses,s.enemies[3].powerOrder={},{}
         Combat.addStatus(s.enemies[3],id,5)
         ui:render()
-        tap({"enemy3", "statusRow", "hit"})
+        assert(ui:openHelp({index=3,statusId=id}))
         open, rows = info(panel,true)
         assert(open and #rows == 1, id)
         local row = rows[1]
@@ -415,6 +416,10 @@ test("player and every enemy show status icons, stacks and full current effects"
         assert(not row.note or utf8.len(row.note) <= perLine * 2, id .. " condition overflows two lines: " .. tostring(row.note))
         assert(utf8.len(row.tag) <= math.floor(I.tagWidth / Theme.font.small), id .. " duration tag too long: " .. row.tag)
         tap({"statusInfo", "hit"})
+        tap({"enemy3", "statusRow", "hit"})
+        local compact, tips = readPowers(panel)
+        assert(#tips == 1 and compact:find(row.name, 1, true) and compact:find(row.text, 1, true), id)
+        panel:GetChild("statusDismiss").click()
     end
 end)
 
@@ -478,7 +483,6 @@ for _, drag in ipairs({false, true}) do
         Combat.addStatus(s.enemies[2],'artifact',1) ui:render() -- A real native power hit area.
         local strike
         for i, instance in ipairs(s.hand) do if instance.cardId == "strike" then strike = strike or i end end
-        local other = strike == 1 and 2 or 1
         local function snapshot() return {energy = s.energy, hand = #s.hand, turn = s.turn, hp1 = s.enemies[1].hp,
             hp2 = s.enemies[2].hp, block = s.player.block, events = #s.events} end
         local before = snapshot()
@@ -492,26 +496,14 @@ for _, drag in ipairs({false, true}) do
         assert(panel:GetChild("statusInfo").visible and ui.selected == s.hand[strike].uid)
         eq(ui.target, 1, "status rows never move the potion/card target")
         unchanged("status row")
-        -- With the panel open, a tap on an enemy, a card or End Turn only closes it.
-        for _, path in ipairs({"enemy2", "card" .. other, "endTurn"}) do
-            tap(path)
-            assert(not panel:GetChild("statusInfo").visible, path .. " closed the panel")
-            unchanged(path)
-            eq(ui.selected, s.hand[strike].uid, path .. " kept the selection")
-            tap({"hero", "hit"}) assert(panel:GetChild("statusInfo").visible)
-        end
-        if drag then
-            -- A drag that starts on a card while the panel is open never becomes a play.
-            local card = panel:GetChild("card" .. other)
-            event("card" .. other, "down", card.x, card.y)
-            assert(not panel:GetChild("statusInfo").visible and ui.gesture == nil)
-            event("card" .. other, "drag", enemyPoint(panel,2))
-            event("card" .. other, "up", enemyPoint(panel,2))
-            event("card" .. other, "click", enemyPoint(panel,2))
-            unchanged("drag")
-        else tap({"statusInfo", "hit"}) end
+        -- The outside dismissal is separate from the enemy's deliberate target tap.
+        event("statusDismiss", "click")
         assert(not panel:GetChild("statusInfo").visible)
-        -- Closed again, the ordinary flow is untouched: the selected Strike hits enemy 2.
+        unchanged("dismissal")
+        eq(ui.selected, s.hand[strike].uid, "dismissal kept the selection")
+        tap({"hero", "hit"})
+        assert(panel:GetChild("statusInfo").visible)
+        unchanged("hero portrait")
         tap("enemy2") drain(ui)
         eq(s.enemies[2].hp, before.hp2 - 6) eq(#s.hand, before.hand - 1)
     end)

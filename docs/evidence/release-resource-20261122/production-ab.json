@@ -1,0 +1,177 @@
+{
+  "before": {
+    "configuration": {
+      "baseSha256": "b3b46b0412caf865ebc259c15ad8215b33a1797ab7940861eb562320541e13a2",
+      "baseBytes": 25793,
+      "release": {
+        "version": "v2.0.0",
+        "workKey": "alpha-test",
+        "notesSha256": "5b4bd0189d506b00c368c8f088bd0f4990ca75bcc8332903464fca1d5bb1ddd2"
+      },
+      "artFeatures": {
+        "schemaVersion": 2,
+        "flags": {
+          "cards": false,
+          "menuBackground": false,
+          "selectionAvatar": true,
+          "battlePortrait": true,
+          "monsters": true
+        },
+        "configSha256": "8ebaf096ee21a38181012516ccc3d962211ce24698c43cff1348f2508406ffb7"
+      },
+      "officialAssetsProfile": "official-assets-battle-v3",
+      "uiProfile": {
+        "schemaVersion": 1,
+        "nativePageLifecycle": true,
+        "configSha256": "fcd16aa1d35aeab4102c7bc49c0889a3c46135466e9a3198f6dcac21e5c59c81"
+      },
+      "mcpVersion": "0.1.0",
+      "encoder": {
+        "adapter": "section50-script-projection-v1",
+        "sourceSha256": "25dbe281655a21d30401d8001dc3ee04b34038adf8f3f42be4230bf03bd85e2b",
+        "helperSha256": "9af415cdbf10f6dfe8808540e5fd6301092b5412f68fa86cba0f08ffd0fcfdd8",
+        "xyzRotations": true,
+        "galleryImageTypes": true
+      }
+    },
+    "sourceCommit": "380ffdd8de10ffb8472a48725c438c3f77c0d3d4",
+    "buildId": "57b7cf0d-e0cb-4d82-87ed-a5b6baa1491a",
+    "candidateSha256": "4f0d1d4687466d5e4a01189562ae5995ac0a01eeebc090455830b3cf77ded027",
+    "payloadDigest": "cab9e1c0dc19be6d1c16bd46f48f00000a167a0eb2a077e6c7c4b5c027e7916e",
+    "storageProfile": "lossless-lua-v1",
+    "metrics": {
+      "gilBytes": 25399331,
+      "nativeUiBytes": 20874543,
+      "nativeScriptBytes": 4475010,
+      "serverGraphBytes": 30876,
+      "layoutControls": 25643,
+      "templateControls": 1518,
+      "layoutJsonBytes": 4149905,
+      "templateJsonBytes": 251133,
+      "packedLuaBytes": 4452596,
+      "modules": 367
+    }
+  },
+  "after": {
+    "configuration": {
+      "baseSha256": "b3b46b0412caf865ebc259c15ad8215b33a1797ab7940861eb562320541e13a2",
+      "baseBytes": 25793,
+      "release": {
+        "version": "v2.0.0",
+        "workKey": "alpha-test",
+        "notesSha256": "5b4bd0189d506b00c368c8f088bd0f4990ca75bcc8332903464fca1d5bb1ddd2"
+      },
+      "artFeatures": {
+        "schemaVersion": 2,
+        "flags": {
+          "cards": false,
+          "menuBackground": false,
+          "selectionAvatar": true,
+          "battlePortrait": true,
+          "monsters": true
+        },
+        "configSha256": "8ebaf096ee21a38181012516ccc3d962211ce24698c43cff1348f2508406ffb7"
+      },
+      "officialAssetsProfile": "official-assets-battle-v3",
+      "uiProfile": {
+        "schemaVersion": 1,
+        "nativePageLifecycle": true,
+        "configSha256": "fcd16aa1d35aeab4102c7bc49c0889a3c46135466e9a3198f6dcac21e5c59c81"
+      },
+      "mcpVersion": "0.1.0",
+      "encoder": {
+        "adapter": "section50-script-projection-v1",
+        "sourceSha256": "25dbe281655a21d30401d8001dc3ee04b34038adf8f3f42be4230bf03bd85e2b",
+        "helperSha256": "9af415cdbf10f6dfe8808540e5fd6301092b5412f68fa86cba0f08ffd0fcfdd8",
+        "xyzRotations": true,
+        "galleryImageTypes": true
+      }
+    },
+    "sourceCommit": "82267834fa9202893cabe39c1ff21e141cf9f567",
+    "buildId": "c4d5699a-efd3-4f2f-9f32-847eb63ea0c8",
+    "candidateSha256": "9ba514d4add71d0af2739bec1c143e2552cc42da4f998da59b9eada74b5b3333",
+    "payloadDigest": "f8694346535fc2b425f10c6e370019a360f3dcf88ffe062765285a57cfc2d752",
+    "storageProfile": "lossless-lua-v2",
+    "metrics": {
+      "gilBytes": 25123794,
+      "nativeUiBytes": 20838049,
+      "nativeScriptBytes": 4235967,
+      "serverGraphBytes": 30876,
+      "layoutControls": 25595,
+      "templateControls": 1518,
+      "layoutJsonBytes": 4145160,
+      "templateJsonBytes": 251133,
+      "packedLuaBytes": 4213553,
+      "modules": 367
+    }
+  },
+  "delta": {
+    "gilBytes": -275537,
+    "nativeUiBytes": -36494,
+    "nativeScriptBytes": -239043,
+    "serverGraphBytes": 0,
+    "layoutControls": -48,
+    "templateControls": 0,
+    "layoutJsonBytes": -4745,
+    "templateJsonBytes": 0,
+    "packedLuaBytes": -239043,
+    "modules": 0
+  },
+  "moduleChanges": [
+    {
+      "name": "abyss_data",
+      "before": 102637,
+      "after": 98327,
+      "delta": -4310
+    },
+    {
+      "name": "abyss_narrative",
+      "before": 2388,
+      "after": 2232,
+      "delta": -156
+    },
+    {
+      "name": "abyss_original_v4_data",
+      "before": 181328,
+      "after": 180390,
+      "delta": -938
+    },
+    {
+      "name": "abyss_presentation",
+      "before": 22508,
+      "after": 22088,
+      "delta": -420
+    },
+    {
+      "name": "abyss_theme",
+      "before": 554628,
+      "after": 499611,
+      "delta": -55017
+    },
+    {
+      "name": "abyss_traveler_portrait_assets",
+      "before": 503928,
+      "after": 325201,
+      "delta": -178727
+    },
+    {
+      "name": "abyss_game_ui_input",
+      "before": 17254,
+      "after": 17351,
+      "delta": 97
+    },
+    {
+      "name": "abyss_game_ui_view",
+      "before": 28013,
+      "after": 28030,
+      "delta": 17
+    },
+    {
+      "name": "abyss_v25_menu_view",
+      "before": 10020,
+      "after": 10431,
+      "delta": 411
+    }
+  ],
+  "officialMetrics": "UNVERIFIED"
+}

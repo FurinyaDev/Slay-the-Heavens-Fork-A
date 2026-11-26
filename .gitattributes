@@ -1467,3 +1467,72 @@ tests/fixtures/sts-fade-ci-source.json text eol=lf
 
 tests/fixtures/sts-ui-closeout-source.json text eol=lf
 tests/fixtures/sts-ui-closeout-ci.json text eol=lf
+
+docs/design/reference-assets/v2.0.0/sts1-main-menu-20261121/background-hd.png filter=lfs -diff merge=lfs -text ci-immutable-media
+docs/design/reference-assets/v2.0.0/sts1-main-menu-20261121/design-hd.png filter=lfs -diff merge=lfs -text ci-immutable-media
+experiments/archive/emergency-20261108/card-upgrade-recovery/original-runtime.patch.gz filter=lfs -diff merge=lfs -text ci-immutable-media
+experiments/menu-red-fit/input/source.png filter=lfs -diff merge=lfs -text ci-immutable-media
+tests/fixtures/integration-ci-epochs.json.gz filter=lfs -diff merge=lfs -text ci-immutable-media
+tests/fixtures/pr323-historical-fixtures.json.gz filter=lfs -diff merge=lfs -text ci-immutable-media
+tests/helpers/closeout-source-epoch.json.gz filter=lfs -diff merge=lfs -text ci-immutable-media
+tests/helpers/component-ui-source-epoch.json.gz filter=lfs -diff merge=lfs -text ci-immutable-media
+tests/helpers/integrated-ci-source.json.gz filter=lfs -diff merge=lfs -text ci-immutable-media
+tests/helpers/sts-style-prior-runtime.json.gz filter=lfs -diff merge=lfs -text ci-immutable-media
+
+
+# Fixed v2.1.1 production evidence with original Git blob and SHA-256 retained.
+docs/evidence/mobile-run-hud/reward-picker-after.png filter=lfs -diff merge=lfs -text ci-immutable-media
+docs/evidence/mobile-run-hud/reward-picker-before.png filter=lfs -diff merge=lfs -text ci-immutable-media
+docs/evidence/release-enemy-tooltips/comparison.png filter=lfs -diff merge=lfs -text ci-immutable-media
+docs/evidence/release-layout-20261124/screens/after/iphone-combat.png filter=lfs -diff merge=lfs -text ci-immutable-media
+docs/evidence/release-layout-20261124/screens/after/iphone-map-relic-detail.png filter=lfs -diff merge=lfs -text ci-immutable-media
+docs/evidence/release-layout-20261124/screens/after/iphone-neow-2.png filter=lfs -diff merge=lfs -text ci-immutable-media
+docs/evidence/release-layout-20261124/screens/after/iphone-neow-4.png filter=lfs -diff merge=lfs -text ci-immutable-media
+docs/evidence/release-layout-20261124/screens/after/iphone-reward-list.png filter=lfs -diff merge=lfs -text ci-immutable-media
+docs/evidence/release-layout-20261124/screens/after/iphone-reward-pick.png filter=lfs -diff merge=lfs -text ci-immutable-media
+docs/evidence/release-layout-20261124/screens/after/iphone-treasure-rewards.png filter=lfs -diff merge=lfs -text ci-immutable-media
+docs/evidence/release-layout-20261124/screens/after/pc-combat.png filter=lfs -diff merge=lfs -text ci-immutable-media
+docs/evidence/release-layout-20261124/screens/after/pc-neow-4.png filter=lfs -diff merge=lfs -text ci-immutable-media
+docs/evidence/release-layout-20261124/screens/after/pc-reward-pick.png filter=lfs -diff merge=lfs -text ci-immutable-media
+docs/evidence/release-layout-20261124/screens/after/pc-treasure-rewards.png filter=lfs -diff merge=lfs -text ci-immutable-media
+docs/evidence/release-layout-20261124/screens/before/iphone-combat.png filter=lfs -diff merge=lfs -text ci-immutable-media
+docs/evidence/release-layout-20261124/screens/before/iphone-map-relic-detail.png filter=lfs -diff merge=lfs -text ci-immutable-media
+docs/evidence/release-layout-20261124/screens/before/iphone-neow-2.png filter=lfs -diff merge=lfs -text ci-immutable-media
+docs/evidence/release-layout-20261124/screens/before/iphone-neow-4.png filter=lfs -diff merge=lfs -text ci-immutable-media
+docs/evidence/release-layout-20261124/screens/before/iphone-reward-list.png filter=lfs -diff merge=lfs -text ci-immutable-media
+docs/evidence/release-layout-20261124/screens/before/iphone-reward-pick.png filter=lfs -diff merge=lfs -text ci-immutable-media
+docs/evidence/release-layout-20261124/screens/before/iphone-treasure-rewards.png filter=lfs -diff merge=lfs -text ci-immutable-media
+docs/evidence/release-layout-20261124/screens/before/pc-combat.png filter=lfs -diff merge=lfs -text ci-immutable-media
+docs/evidence/release-layout-20261124/screens/before/pc-neow-4.png filter=lfs -diff merge=lfs -text ci-immutable-media
+docs/evidence/release-layout-20261124/screens/before/pc-reward-pick.png filter=lfs -diff merge=lfs -text ci-immutable-media
+docs/evidence/release-layout-20261124/screens/before/pc-treasure-rewards.png filter=lfs -diff merge=lfs -text ci-immutable-media
+docs/evidence/release-power-tips/ui-comparison.png filter=lfs -diff merge=lfs -text ci-immutable-media
+docs/evidence/run-hud-20261124/after/after-pc-detail-return.png filter=lfs -diff merge=lfs -text ci-immutable-media
+docs/evidence/run-hud-20261124/after/after-pc-detail.png filter=lfs -diff merge=lfs -text ci-immutable-media
+docs/evidence/run-hud-20261124/after/after-pc-event26-page1.png filter=lfs -diff merge=lfs -text ci-immutable-media
+docs/evidence/run-hud-20261124/after/after-pc-event26-page2.png filter=lfs -diff merge=lfs -text ci-immutable-media
+docs/evidence/run-hud-20261124/after/after-pc-event5.png filter=lfs -diff merge=lfs -text ci-immutable-media
+docs/evidence/run-hud-20261124/after/after-pc-map5.png filter=lfs -diff merge=lfs -text ci-immutable-media
+docs/evidence/run-hud-20261124/after/after-phone-detail-return.png filter=lfs -diff merge=lfs -text ci-immutable-media
+docs/evidence/run-hud-20261124/after/after-phone-detail.png filter=lfs -diff merge=lfs -text ci-immutable-media
+docs/evidence/run-hud-20261124/after/after-phone-event26-page1.png filter=lfs -diff merge=lfs -text ci-immutable-media
+docs/evidence/run-hud-20261124/after/after-phone-event26-page2.png filter=lfs -diff merge=lfs -text ci-immutable-media
+docs/evidence/run-hud-20261124/after/after-phone-event5.png filter=lfs -diff merge=lfs -text ci-immutable-media
+docs/evidence/run-hud-20261124/after/after-phone-map5.png filter=lfs -diff merge=lfs -text ci-immutable-media
+docs/evidence/run-hud-20261124/before/before-pc-event5.png filter=lfs -diff merge=lfs -text ci-immutable-media
+docs/evidence/run-hud-20261124/before/before-pc-map5.png filter=lfs -diff merge=lfs -text ci-immutable-media
+docs/evidence/run-hud-20261124/before/before-phone-event5.png filter=lfs -diff merge=lfs -text ci-immutable-media
+docs/evidence/run-hud-20261124/before/before-phone-map5.png filter=lfs -diff merge=lfs -text ci-immutable-media
+docs/evidence/shop-828/after-click.png filter=lfs -diff merge=lfs -text ci-immutable-media
+docs/evidence/shop-828/after-room.png filter=lfs -diff merge=lfs -text ci-immutable-media
+docs/evidence/shop-828/after-shelf.png filter=lfs -diff merge=lfs -text ci-immutable-media
+docs/evidence/shop-828/after-transition.png filter=lfs -diff merge=lfs -text ci-immutable-media
+docs/evidence/shop-828/before-shelf.png filter=lfs -diff merge=lfs -text ci-immutable-media
+docs/evidence/v2.1.1-performance-20261125/battle-ui-publication/diagnostics.tar.xz filter=lfs -diff merge=lfs -text ci-immutable-media
+docs/evidence/v2.1.1-performance-20261125/battle-ui-publication/host-samples.tar.xz filter=lfs -diff merge=lfs -text ci-immutable-media
+docs/evidence/v2.1.1-performance-20261125/capacity/capacity-spans.csv.gz filter=lfs -diff merge=lfs -text ci-immutable-media
+docs/evidence/v2.1.1-performance-20261125/remediation/deck-remediation-evidence.tar.gz filter=lfs -diff merge=lfs -text ci-immutable-media
+docs/evidence/v2.1.1-performance-20261125/runtime/runtime-evidence.tar.gz filter=lfs -diff merge=lfs -text ci-immutable-media
+docs/evidence/v2.1.1-performance-20261125/runtime/runtime-stacks.csv.gz filter=lfs -diff merge=lfs -text ci-immutable-media
+docs/evidence/v2.1.1-performance-20261125/runtime/runtime-trace.csv.gz filter=lfs -diff merge=lfs -text ci-immutable-media
+docs/evidence/v2.1.1-performance-20261125/startup/startup-evidence.tar.gz filter=lfs -diff merge=lfs -text ci-immutable-media

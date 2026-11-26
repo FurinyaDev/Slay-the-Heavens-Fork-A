@@ -139,7 +139,7 @@ a:onEngineDestroy();assert(not a:readyForPage('menu',true,'ironclad','characterP
 `,{runtimeV2:true,officialAssets:true});
 });
 
-test('official title uses on-demand selection while partial cancellation and ready cache remain intact',()=>{
+test('the legacy title hint does not start the official worker and partial cancel retains the cache',()=>{
  withPortraitVm(`
 Theme.presentationProfile='official-assets-first'
 local originalClock=os.clock;local tickClock=0;os.clock=function()tickClock=tickClock+.009;return tickClock end
@@ -176,6 +176,95 @@ for _=1,5 do
 end
 assert(a:release() and LiveCount()==0)
 os.clock=originalClock
+`,{runtimeV2:true,officialAssets:true});
+});
+
+test('one title worker warms the default across four role slots and switching never publishes an older role',()=>{
+ withPortraitVm(`
+local panel=stage.children.characterPanel
+local keys={'ironclad','hutao','arlecchino','watcher'}
+local hosts={}
+for i,id in ipairs(keys)do
+ local host=tree();host:SetVisible(false);hosts[id]=host
+ panel.children[i==1 and 'lumineSelectionBackground' or id]=host
+end
+local backing=tree();backing:SetVisible(true);panel.children.v25Background=backing
+panel.children.details=tree({})
+traveler:SetVisible(false)
+local rows={}
+for i=1,130 do rows[i]=Asset.lowpolyLumine.rows[i]end
+local drawing={rows=rows,count=#rows,width=1280,height=720,renderProfile='lowpoly-v1',
+ jsonSha256=Asset.lowpolyLumine.jsonSha256,runtimeV2=true,cache=true}
+Asset.selectionVariants={}
+for i=2,#keys do
+ local id=keys[i];Asset.selectionVariants[i-1]={id=id,host=id,drawing=drawing}
+end
+local a=Portraits.new(stage,nil,{selectionAvatar=true})
+local previousClock=os.clock;os.clock=function()return 0 end
+local function warm(eligible,dt,frameStarted)a:warmSelection(eligible,dt or 1/60,frameStarted or 0)end
+local function visible(role)
+ for id,host in pairs(hosts)do assert(host.visible==(id==role),id..' visibility')end
+ assert(backing.visible==(role==nil))
+end
+a:sync('menu',false,false,nil,true);warm(true)
+assert(LiveCount()==0)
+warm(true,.06);warm(true,1/60,-.01);warm(true,'invalid');warm(true,-1);warm(true,0/0)
+assert(LiveCount()==0,'busy frames warmed a portrait')
+warm(true)
+assert(LiveCount()==24)
+for _=1,100 do warm(true)end
+assert(LiveCount()==1628 and not hosts.ironclad.active,'title warmed multiple roles or activated an offscreen host')
+visible(nil)
+a:sync('menu',true,false,nil);visible(nil)
+a:sync('menu',true,false,'ironclad');visible('ironclad')
+assert(LiveCount()==1628,'warm selection created new controls in the click')
+a:sync('menu',true,false,'hutao');a:tick(1/60,false)
+assert(a:status().selection.owned==0);visible(nil)
+a:tick(1/60);local b=a:status().selection.owned
+assert(b>0 and b<=64)
+a:sync('menu',true,false,'arlecchino');visible(nil)
+for _=1,4 do a:tick(1/60)end
+assert(a:status().selection.phase=='ready');visible('arlecchino')
+assert(LiveCount()==1628+b+134,'superseded B or speculative fourth role kept building')
+a:sync('battle',false,false,'ironclad');visible(nil)
+assert(not hosts.arlecchino.active);a:tick(1/60)
+local resident=LiveCount();a:sync('menu',true,false,'arlecchino');visible('arlecchino')
+a:sync('menu',true,false,'ironclad');visible('ironclad')
+assert(LiveCount()==resident)
+a:sync('menu',true,false,nil);visible(nil)
+local native=hosts.ironclad.SetVisible
+hosts.ironclad.SetVisible=function(self,value)
+ if value then assert(a:release())end
+ return native(self,value)
+end
+a:sync('menu',true,false,'ironclad')
+visible(nil);assert(LiveCount()==0 and not hosts.ironclad.active)
+os.clock=previousClock
+`,{runtimeV2:true,officialAssets:true});
+});
+
+test('a native setter can refresh the same cold selection before its first artwork publication',()=>{
+ withPortraitVm(`
+local panel=stage.children.characterPanel
+local selectionHost=tree()
+selectionHost:SetVisible(false);panel.children.lumineSelectionBackground=selectionHost
+local backing=tree();backing:SetVisible(true);panel.children.v25Background=backing
+panel.children.details=tree({})
+traveler:SetVisible(false)
+local a=Portraits.new(stage,nil,{selectionAvatar=true})
+local resize=selectionHost.SetSizeDelta
+local refreshed=0
+selectionHost.SetSizeDelta=function(self,...)
+ refreshed=refreshed+1
+ a:sync('menu',true,false,'ironclad')
+ return resize(self,...)
+end
+assert(a:sync('menu',true,false,'ironclad'))
+for _=1,120 do a:tick(1/60)end
+assert(refreshed==1 and a:status().selection.phase=='ready')
+assert(selectionHost.visible and not backing.visible and LiveCount()==1628,
+ 'the queued same-role refresh stranded a completed but hidden portrait')
+assert(a:release() and LiveCount()==0)
 `,{runtimeV2:true,officialAssets:true});
 });
 
@@ -255,17 +344,18 @@ assert(a:release() and LiveCount()==0)
 `,{runtimeV2:true,officialAssets:true});
 });
 
-test('official selection rejects missing shared pixel source instead of silently building the old full-body drawing',()=>{
+test('official selection retains its static fallback when the approved source is missing',()=>{
  withPortraitVm(`
 local selectionHost=tree();stage.children.characterPanel.children.lumineSelectionBackground=selectionHost;local frame=tree();rawset(frame,'sizeDeltaX',440)
 local note=tree();note.text=''
 stage.children.characterPanel.children.details=tree({officialSelectionFigure=selectionHost,portraitFrame=frame,
  portraits=tree({traveler_ironclad=tree()}),portraitNote=note})
 Asset.lowpolyLumine=nil
-local ok,reason=pcall(Portraits.new,stage,nil,{selectionAvatar=true})
-assert(not ok and tostring(reason):find('approved 1600 background',1,true),
- 'official selection silently fell back to 4315 primitives')
-assert(LiveCount()==0)
+local reason
+local owner=assert(Portraits.new(stage,function(line)reason=line end,{selectionAvatar=true}))
+assert(reason:find('approved 1600 background',1,true))
+owner:sync('menu',true,false,'ironclad');owner:tick()
+assert(not owner:status().selection and LiveCount()==0,'missing source built a different portrait')
 `,{runtimeV2:true,officialAssets:true});
 });
 
@@ -278,9 +368,11 @@ stage.children.characterPanel.children.details=tree({officialSelectionFigure=sel
  portraits=tree({traveler_ironclad=tree()}),portraitNote=note})
 Asset.selectionUses=${marker}
 assert(Asset.battlePixel and Asset.battlePixel.count==57)
-local ok,reason=pcall(Portraits.new,stage,nil,{selectionAvatar=true})
-assert(not ok and tostring(reason):find('approved background schema',1,true),'unmarked official source was accepted')
-assert(LiveCount()==0)
+local reason
+local owner=assert(Portraits.new(stage,function(line)reason=line end,{selectionAvatar=true}))
+assert(reason:find('approved background schema',1,true))
+owner:sync('menu',true,false,'ironclad');owner:tick()
+assert(not owner:status().selection and LiveCount()==0,'unmarked official source was accepted')
 `,{runtimeV2:true,officialAssets:true});
  }
 });

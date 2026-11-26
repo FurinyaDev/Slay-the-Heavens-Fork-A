@@ -61,6 +61,9 @@ local function matching(actor,box,art)
     assert(near(box.y,g.y))
     assert(near(point(box,'hit'),g.hitY))
     assert(near(point(box,'hp'),g.y+g.healthTextY))
+    local hpHit=box:GetChild('hpHit')
+    assert(hpHit.visible and near(point(box,'hpHit'),g.y+g.healthY))
+    assert(hpHit.sizeDeltaX>=(g.healthWidth or g.hitWidth),'health bar extends outside its read target')
     assert(near(point(box,'intentIcon'),g.y+g.intentY))
     if art and art.visible then assert(near(art.y,box:GetChild('portrait').y))end
     if g.footprints then

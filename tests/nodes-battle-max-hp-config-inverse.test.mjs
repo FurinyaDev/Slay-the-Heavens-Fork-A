@@ -177,8 +177,8 @@ test('current architecture admission rereads its complete raw owner closure and 
  const raw=readFileSync(path,'utf8').replaceAll('\r\n','\n'),owners=sourceEpoch.proof.owners;
  const priorReadOrder=[...owners,...currentProductionRereads];
  let changed,replacement,reads=[];
- const reader=file=>{reads.push(file);if(file===changed){if(replacement instanceof Error)throw replacement;return replacement;}return readFileSync(file,'utf8');};
- const layers=JSON.parse(raw).layers;
+ const reader=file=>{reads.push(file);if(file===changed){if(replacement instanceof Error)throw replacement;return replacement;}return read(file);};
+ const layers=JSON.parse(readFileSync(path,'utf8')).layers;
  for(const name of [...nodes,...maxHp])assert.equal(layers[name],'core','current registration: '+name);
  for(const name of battle)assert.equal(layers[name],'ui','current registration: '+name);
  // Admission targets the current declared develop epoch. It does not claim
@@ -211,9 +211,10 @@ test('current architecture admission rereads its complete raw owner closure and 
 });
 
 
-test('legacy Nodes config bridge still rejects incompatible current owners instead of claiming the ancient candidate',async()=>{
+test('legacy Nodes config bridge preserves the unrecognized Release configuration',async()=>{
  const currentNodes=await import('./helpers/nodes-battle-max-hp-config-inverse.mjs');
  const currentRoster=await import('./helpers/competition-roster-config-composition.mjs');
  const raw=readFileSync(path,'utf8').replaceAll('\r\n','\n');
- assert.throws(()=>currentNodes.preNodesBattleMaxHpConfig(path,currentRoster.preRosterConfigSource(path,raw)),/delivery linked source identity: src\/lua\/abyss_monster_intent_particle_view\.lua/,'a real current owner must not borrow a much older delivery identity');
+ assert.equal(currentRoster.preRosterConfigSource(path,raw),raw);
+ assert.equal(currentNodes.preNodesBattleMaxHpConfig(path,raw),raw);
 });

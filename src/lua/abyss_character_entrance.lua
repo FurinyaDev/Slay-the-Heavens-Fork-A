@@ -110,6 +110,12 @@ function M.new(panel, platform, paintInfo)
         confirm:SetVisible(true)
     end
 
+    function motion.syncNative(_,key,native)
+        if not selected or selected.key~=key or nativeSelected==native then return end
+        nativeSelected=native
+        paintBackground()
+    end
+
     function motion.update(_, dt)
         if not showing or paused or dt <= 0 then return end
         local x = Motion.approach(cancelOffset, 0, 9, Motion.scale, dt)

@@ -168,27 +168,6 @@
       "codePath": "scripts/character-selection-composition.mjs",
       "targetVersion": "v2.0.0",
       "state": "details",
-      "revision": "release-sts1-20261122",
-      "status": "APPROVED",
-      "backlogTask": "TASK-103.3",
-      "reference": {
-        "path": "docs/design/reference-assets/v2.0.0/sts1-character-backing-20261122.md",
-        "sha256": "222fd819f90183b377e1d1fd51b849f48c622b1380b4bee9d6b4125d158026c7"
-      },
-      "supersedes": [
-        "sts1-open-copy-20261119"
-      ],
-      "codePaths": [
-        "scripts/character-ui-layout.mjs",
-        "scripts/v25-character-layout.mjs"
-      ],
-      "source": "https://interfaceingame.com/screenshots/slay-the-spire-choose-your-character/",
-      "note": "回流 v2.0.0 左栏设计约束。正式选角保留生命、金币、介绍和初始遗物，省去初始牌组摘要与预览。"
-    },
-    {
-      "codePath": "scripts/character-selection-composition.mjs",
-      "targetVersion": "v2.0.0",
-      "state": "details",
       "revision": "sts1-open-copy-20261119",
       "status": "SUPERSEDED",
       "backlogTask": "TASK-103.3",
@@ -243,26 +222,6 @@
       },
       "supersedes": [],
       "note": "旧选角原型。"
-    },
-    {
-      "codePath": "scripts/character-selection-composition.mjs",
-      "targetVersion": "v2.0.0",
-      "state": "characterPanel",
-      "revision": "release-sts1-20261122",
-      "status": "APPROVED",
-      "backlogTask": "TASK-103.3",
-      "reference": {
-        "path": "docs/design/reference-assets/v2.0.0/sts1-character-backing-20261122.md",
-        "sha256": "222fd819f90183b377e1d1fd51b849f48c622b1380b4bee9d6b4125d158026c7"
-      },
-      "supersedes": [
-        "develop"
-      ],
-      "codePaths": [
-        "scripts/noncombat-v25-layout.mjs"
-      ],
-      "source": "https://interfaceingame.com/screenshots/slay-the-spire-choose-your-character/",
-      "note": "回流两条发布线共用的正式选角构图与信息范围。develop 加载回退仍使用现有风景底图，Release 近黑底板另按该分支登记。"
     },
     {
       "codePath": "scripts/character-selection-composition.mjs",
@@ -791,6 +750,402 @@
       "supersedes": [],
       "note": "商店与选角按固定源码实施分层入场。保留项目素材与最终排布，107271 纹理和设备效果待验。",
       "source": "https://github.com/aeubanks/sts/tree/319009d5df0a82d9fb0f23cc22322286c6a87ec0"
+    },
+    {
+      "codePath": "src/lua/abyss_node_ui_events.lua",
+      "targetVersion": "v2.0.0",
+      "state": "neowOptions",
+      "revision": "release-layout-20261124",
+      "status": "APPROVED",
+      "backlogTask": "TASK-4.12",
+      "reference": {
+        "path": "docs/design/reference-assets/v2.0.0/release-layout-20261124.md",
+        "sha256": "dac3dcf996bf04a0452917c98a6de18255839d526a042ac679aaa543705b7837"
+      },
+      "supersedes": [],
+      "source": "https://mitadmissions.org/wp-content/uploads/2021/02/1613924743.png",
+      "note": "PD-01。现行 Release 布局。",
+      "themeKeys": [
+        "officialAssets.neowChoice"
+      ],
+      "codePaths": [
+        "scripts/sts-neow-choice-layout.mjs",
+        "scripts/noncombat-neow-layout.mjs",
+        "src/lua/abyss_node_ui.lua"
+      ]
+    },
+    {
+      "codePath": "src/lua/abyss_node_ui_events.lua",
+      "targetVersion": "v2.0.0",
+      "state": "neowOptions",
+      "revision": "release-layout-runtime-20261124",
+      "status": "CURRENT_IMPLEMENTATION",
+      "backlogTask": "TASK-4.12",
+      "reference": {
+        "path": "docs/evidence/release-layout-20261124/README.md",
+        "sha256": "0ee0a7840b95a2f5dc590e7351e53eff82c20145a7e2320d955218cdf58bb79c"
+      },
+      "supersedes": [],
+      "source": "https://mitadmissions.org/wp-content/uploads/2021/02/1613924743.png",
+      "note": "PD-01。正式生成树、真实 Lua Host、离线控件投影。",
+      "themeKeys": [
+        "officialAssets.neowChoice"
+      ],
+      "codePaths": [
+        "scripts/sts-neow-choice-layout.mjs",
+        "scripts/noncombat-neow-layout.mjs",
+        "src/lua/abyss_node_ui.lua"
+      ]
+    },
+    {
+      "codePath": "src/lua/abyss_mobile_run_hud.lua",
+      "targetVersion": "v2.0.0",
+      "state": "sharedTopbar",
+      "revision": "release-layout-20261124",
+      "status": "APPROVED",
+      "backlogTask": "TASK-38.4",
+      "reference": {
+        "path": "docs/design/reference-assets/v2.0.0/release-layout-20261124.md",
+        "sha256": "dac3dcf996bf04a0452917c98a6de18255839d526a042ac679aaa543705b7837"
+      },
+      "supersedes": [
+        "run-hud-pd-20261124",
+        "run-hud-runtime-20261124"
+      ],
+      "source": "https://developer.apple.com/design/human-interface-guidelines/designing-for-games",
+      "note": "PD-02。现行 Release 布局。",
+      "themeKeys": [
+        "officialAssets.mobileRunHud"
+      ],
+      "codePaths": [
+        "src/lua/abyss_game_ui.lua",
+        "src/lua/abyss_run_hud.lua",
+        "scripts/official-battle-hud.mjs",
+        "scripts/game-ui-layout.mjs",
+        "src/lua/abyss_game_ui_view.lua"
+      ]
+    },
+    {
+      "codePath": "src/lua/abyss_mobile_run_hud.lua",
+      "targetVersion": "v2.0.0",
+      "state": "sharedTopbar",
+      "revision": "release-layout-runtime-20261124",
+      "status": "CURRENT_IMPLEMENTATION",
+      "backlogTask": "TASK-38.4",
+      "reference": {
+        "path": "docs/evidence/release-layout-20261124/README.md",
+        "sha256": "0ee0a7840b95a2f5dc590e7351e53eff82c20145a7e2320d955218cdf58bb79c"
+      },
+      "supersedes": [],
+      "source": "https://developer.apple.com/design/human-interface-guidelines/designing-for-games",
+      "note": "PD-02。正式生成树、真实 Lua Host、离线控件投影。",
+      "themeKeys": [
+        "officialAssets.mobileRunHud"
+      ],
+      "codePaths": [
+        "src/lua/abyss_game_ui.lua",
+        "src/lua/abyss_run_hud.lua",
+        "scripts/official-battle-hud.mjs"
+      ]
+    },
+    {
+      "codePath": "src/lua/abyss_relic_view_ui.lua",
+      "targetVersion": "v2.0.0",
+      "state": "relicBar",
+      "revision": "release-layout-20261124",
+      "status": "APPROVED",
+      "backlogTask": "TASK-38.4",
+      "reference": {
+        "path": "docs/design/reference-assets/v2.0.0/release-layout-20261124.md",
+        "sha256": "dac3dcf996bf04a0452917c98a6de18255839d526a042ac679aaa543705b7837"
+      },
+      "supersedes": [],
+      "source": "https://images.steamusercontent.com/ugc/957481092836729609/B9E28A64F2A7481684562684F4E09FA8E7F88970/",
+      "note": "PD-03。现行 Release 布局。",
+      "themeKeys": [
+        "officialAssets.battleRelicBar",
+        "layout.relicView"
+      ],
+      "codePaths": [
+        "scripts/relic-view-layout.mjs"
+      ]
+    },
+    {
+      "codePath": "src/lua/abyss_relic_view_ui.lua",
+      "targetVersion": "v2.0.0",
+      "state": "relicBar",
+      "revision": "release-layout-runtime-20261124",
+      "status": "CURRENT_IMPLEMENTATION",
+      "backlogTask": "TASK-38.4",
+      "reference": {
+        "path": "docs/evidence/release-layout-20261124/README.md",
+        "sha256": "0ee0a7840b95a2f5dc590e7351e53eff82c20145a7e2320d955218cdf58bb79c"
+      },
+      "supersedes": [],
+      "source": "https://images.steamusercontent.com/ugc/957481092836729609/B9E28A64F2A7481684562684F4E09FA8E7F88970/",
+      "note": "PD-03。正式生成树、真实 Lua Host、离线控件投影。",
+      "themeKeys": [
+        "officialAssets.battleRelicBar"
+      ],
+      "codePaths": [
+        "scripts/relic-view-layout.mjs"
+      ]
+    },
+    {
+      "codePath": "scripts/v25-node-layout.mjs",
+      "targetVersion": "v2.0.0",
+      "state": "rewardBanners",
+      "revision": "release-layout-20261124",
+      "status": "APPROVED",
+      "backlogTask": "TASK-103.2",
+      "reference": {
+        "path": "docs/design/reference-assets/v2.0.0/release-layout-20261124.md",
+        "sha256": "dac3dcf996bf04a0452917c98a6de18255839d526a042ac679aaa543705b7837"
+      },
+      "supersedes": [],
+      "source": "https://mitadmissions.org/wp-content/uploads/2021/02/1613925089.png",
+      "note": "PD-04。现行 Release 布局。",
+      "themeKeys": [
+        "layout.rewardPick",
+        "layout.battleRewards",
+        "layout.nativeNode.rewardList"
+      ],
+      "codePaths": [
+        "scripts/sts-reward-row-layout.mjs",
+        "src/lua/abyss_battle_reward_layout.lua",
+        "src/lua/abyss_battle_render_hud.lua",
+        "src/lua/abyss_node_ui_treasure.lua",
+        "src/lua/abyss_node_ui_treasure_list.lua",
+        "src/lua/abyss_node_ui_motion.lua"
+      ]
+    },
+    {
+      "codePath": "scripts/v25-node-layout.mjs",
+      "targetVersion": "v2.0.0",
+      "state": "rewardBanners",
+      "revision": "release-layout-runtime-20261124",
+      "status": "CURRENT_IMPLEMENTATION",
+      "backlogTask": "TASK-103.2",
+      "reference": {
+        "path": "docs/evidence/release-layout-20261124/README.md",
+        "sha256": "0ee0a7840b95a2f5dc590e7351e53eff82c20145a7e2320d955218cdf58bb79c"
+      },
+      "supersedes": [],
+      "source": "https://mitadmissions.org/wp-content/uploads/2021/02/1613925089.png",
+      "note": "PD-04。正式生成树、真实 Lua Host、离线控件投影。",
+      "themeKeys": [
+        "layout.rewardPick",
+        "layout.battleRewards",
+        "layout.nativeNode.rewardList"
+      ],
+      "codePaths": [
+        "scripts/sts-reward-row-layout.mjs",
+        "src/lua/abyss_battle_reward_layout.lua",
+        "src/lua/abyss_battle_render_hud.lua",
+        "src/lua/abyss_node_ui_treasure.lua",
+        "src/lua/abyss_node_ui_treasure_list.lua",
+        "src/lua/abyss_node_ui_motion.lua"
+      ]
+    },
+    {
+      "codePath": "src/lua/abyss_mobile_run_hud.lua",
+      "targetVersion": "v2.0.0",
+      "state": "sharedTopbar",
+      "revision": "run-hud-pd-20261124",
+      "status": "SUPERSEDED",
+      "backlogTask": "TASK-38.4",
+      "reference": {
+        "path": "docs/design/reference-assets/v2.0.0/run-hud-pd-20261124/REFERENCE.md",
+        "sha256": "7d31b56657a0da85d416bf678063bf5fb1908a4106ff643cc62b5deb463bd2e2"
+      },
+      "supersedes": [
+        "mobile-run-inventory-v2"
+      ],
+      "source": "https://store.steampowered.com/news/posts/?appids=646570&enddate=1533255390",
+      "codePaths": [
+        "src/lua/abyss_game_ui.lua",
+        "src/lua/abyss_game_ui_view.lua",
+        "src/lua/abyss_game_ui_overlays.lua",
+        "src/lua/abyss_game_ui_input.lua",
+        "src/lua/abyss_relic_view_ui.lua",
+        "src/lua/abyss_mobile_run_hud.lua",
+        "scripts/official-battle-hud.mjs",
+        "scripts/relic-view-layout.mjs",
+        "src/lua/abyss_run_hud.lua",
+        "src/lua/abyss_map_ui.lua",
+        "src/lua/abyss_lowcost_art.lua",
+        "src/lua/abyss_potion_discard_ui.lua"
+      ],
+      "themeKeys": [
+        "officialAssets.mobileRunHud",
+        "officialAssets.battleRelicBar",
+        "layout.relicView"
+      ],
+      "note": "历史版本。旧布局几何已失效。#928 的共享库存显隐、权限、单详情及分页生命周期继续适用。"
+    },
+    {
+      "codePath": "src/lua/abyss_mobile_run_hud.lua",
+      "targetVersion": "v2.0.0",
+      "state": "sharedTopbar",
+      "revision": "run-hud-runtime-20261124",
+      "status": "SUPERSEDED",
+      "backlogTask": "TASK-38.4",
+      "reference": {
+        "path": "docs/evidence/run-hud-20261124/README.md",
+        "sha256": "37b2b35cd2a009541dcd9ea50b7086f949450ec1134b29679db63bfc0c2acb6a"
+      },
+      "supersedes": [],
+      "codePaths": [
+        "src/lua/abyss_game_ui.lua",
+        "src/lua/abyss_game_ui_view.lua",
+        "src/lua/abyss_game_ui_overlays.lua",
+        "src/lua/abyss_game_ui_input.lua",
+        "src/lua/abyss_relic_view_ui.lua",
+        "src/lua/abyss_mobile_run_hud.lua",
+        "scripts/official-battle-hud.mjs",
+        "scripts/relic-view-layout.mjs",
+        "src/lua/abyss_run_hud.lua",
+        "src/lua/abyss_map_ui.lua",
+        "src/lua/abyss_lowcost_art.lua",
+        "src/lua/abyss_potion_discard_ui.lua"
+      ],
+      "themeKeys": [
+        "officialAssets.mobileRunHud",
+        "officialAssets.battleRelicBar",
+        "layout.relicView"
+      ],
+      "note": "历史版本。旧布局几何已失效。#928 的共享库存显隐、权限、单详情及分页生命周期继续适用。"
+    },
+    {
+      "codePath": "src/lua/abyss_mobile_run_hud.lua",
+      "targetVersion": "v2.0.0",
+      "state": "sharedTopbar",
+      "revision": "pre-926-mobile-hitbox",
+      "status": "SUPERSEDED",
+      "backlogTask": "TASK-38.4",
+      "reference": {
+        "path": "docs/evidence/mobile-run-hud/reward-picker-before.png",
+        "sha256": "897011662160e354640321595d846df1b721d4e55542aa6bd1084ffb9b05b248"
+      },
+      "supersedes": [],
+      "note": "旧 2d979ef9 的小热区负例，仅供复盘。"
+    },
+    {
+      "codePath": "src/lua/abyss_mobile_run_hud.lua",
+      "targetVersion": "v2.0.0",
+      "state": "sharedTopbar",
+      "revision": "release-mobile-touch",
+      "status": "SUPERSEDED",
+      "backlogTask": "TASK-38.4",
+      "reference": {
+        "path": "docs/evidence/mobile-run-hud/reward-picker-after.png",
+        "sha256": "454a3ea145adfb8b5680d6781d40d1d099d783232be14f27a0f44ef6402a4c40"
+      },
+      "supersedes": [],
+      "note": "#926 的历史离线热区投影。不能作为事件显隐或战斗遗物验收。"
+    },
+    {
+      "codePath": "src/lua/abyss_mobile_run_hud.lua",
+      "targetVersion": "v2.0.0",
+      "state": "sharedTopbar",
+      "revision": "mobile-run-inventory-v2",
+      "status": "SUPERSEDED",
+      "backlogTask": "TASK-38.4",
+      "reference": {
+        "path": "docs/design/reference-assets/v2.0.0/mobile-run-inventory-v2/REFERENCE.md",
+        "sha256": "caa2d678a57b8ac2d70338ecd18ae7b143ce8d19df399a989a08da000e94e99f"
+      },
+      "supersedes": [
+        "release-mobile-touch",
+        "pre-926-mobile-hitbox"
+      ],
+      "note": "SUPERSEDED：普通事件隐藏库存、count:1/+N及集合列表不符合PD01–05；仅触控尺寸/隔离研究保留。",
+      "codePaths": [
+        "src/lua/abyss_game_ui.lua",
+        "src/lua/abyss_game_ui_view.lua",
+        "src/lua/abyss_game_ui_overlays.lua",
+        "src/lua/abyss_game_ui_input.lua",
+        "src/lua/abyss_battle_potion_popup.lua"
+      ],
+      "themeKeys": [
+        "officialAssets.mobileRunHud"
+      ]
+    },
+    {
+      "codePath": "scripts/character-selection-composition.mjs",
+      "targetVersion": "v2.0.0",
+      "state": "details",
+      "revision": "release-sts1-20261122",
+      "status": "APPROVED",
+      "backlogTask": "TASK-103.3",
+      "reference": {
+        "path": "docs/design/reference-assets/v2.0.0/sts1-character-backing-20261122.md",
+        "sha256": "222fd819f90183b377e1d1fd51b849f48c622b1380b4bee9d6b4125d158026c7"
+      },
+      "supersedes": [
+        "sts1-open-copy-20261119"
+      ],
+      "codePaths": [
+        "scripts/character-ui-layout.mjs",
+        "scripts/v25-character-layout.mjs"
+      ],
+      "source": "https://interfaceingame.com/screenshots/slay-the-spire-choose-your-character/",
+      "note": "回流 v2.0.0 左栏设计约束。正式选角保留生命、金币、介绍和初始遗物，省去初始牌组摘要与预览。"
+    },
+    {
+      "codePath": "scripts/character-selection-composition.mjs",
+      "targetVersion": "v2.0.0",
+      "state": "characterPanel",
+      "revision": "release-sts1-20261122",
+      "status": "APPROVED",
+      "backlogTask": "TASK-103.3",
+      "reference": {
+        "path": "docs/design/reference-assets/v2.0.0/sts1-character-backing-20261122.md",
+        "sha256": "222fd819f90183b377e1d1fd51b849f48c622b1380b4bee9d6b4125d158026c7"
+      },
+      "supersedes": [
+        "develop",
+        "legacy-projection-20261113"
+      ],
+      "codePaths": [
+        "scripts/noncombat-v25-layout.mjs",
+        "scripts/official-assets-layout.mjs"
+      ],
+      "source": "https://interfaceingame.com/screenshots/slay-the-spire-choose-your-character/",
+      "note": "统一正式选角构图与信息范围。Release 09d6cc17 的发布态按确认使用近黑纯色底板，v2.2.0 develop 的加载回退按该版本登记。",
+      "themeKeys": [
+        "image.officialBackdrops.title"
+      ]
+    },
+    {
+      "codePath": "scripts/character-selection-composition.mjs",
+      "targetVersion": "v2.0.0",
+      "state": "characterPanel",
+      "revision": "legacy-projection-20261113",
+      "status": "SUPERSEDED",
+      "backlogTask": "TASK-103.3",
+      "reference": {
+        "path": "docs/evidence/sts-character-reference-20261113/visual-final/character-selected-idle.png",
+        "sha256": "44c63b1f4991cb95bd8f88949ddcc9ae4435fc599c52bcb25663b5d4a24e4d88"
+      },
+      "supersedes": [],
+      "source": "https://github.com/FurinyaWorks/Slay-the-Heavens/blob/e65d9b98fbec69442047650254238cd9244df805/docs/evidence/sts-character-reference-20261113/visual-final/character-selected-idle.png",
+      "note": "历史投影含已下线的查看牌组入口、旧按钮和旧角色图标。"
+    },
+    {
+      "codePath": "scripts/ui-layout.mjs",
+      "targetVersion": "v1.0.0",
+      "state": "battle",
+      "revision": "launch-prototype-20261101",
+      "status": "SUPERSEDED",
+      "backlogTask": "TASK-24",
+      "reference": {
+        "path": "docs/design/prototype/index.html",
+        "sha256": "8d11740a691e51e52d4394c1c183002451ceac70b96bf4fa0666913654a082ef"
+      },
+      "supersedes": [],
+      "source": "https://github.com/FurinyaWorks/Slay-the-Heavens/blob/e970eb2a71e44d352850af148a8f696c5ecaed8e/docs/design/prototype/index.html",
+      "note": "正式首发 Tag v1.0.0 的战斗原型。已核对 Tag 提交与 Release 工作树文件的 Git blob 均为 ac1faead5。仅供首发版本复盘。"
     },
     {
       "codePath": "scripts/character-selection-composition.mjs",
