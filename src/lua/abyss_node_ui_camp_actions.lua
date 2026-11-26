@@ -162,7 +162,7 @@ function M.install(ctx)
         local function attachedControls()
             local attached = ctx.root:GetChild("confirm") == confirm
             local hostAttached = not ctx.rootParent or ctx.rootParent:GetChild("nodePanel") == ctx.root
-            local look, parent = ctx.buttonLooks[confirm], confirm
+            local look, parent = ctx.buttonLook(confirm), confirm
             if not attached or confirm.parent ~= ctx.root or not look or not look.enabled or look.selected then return false end
             while parent do
                 if not parent.visible then return false end
