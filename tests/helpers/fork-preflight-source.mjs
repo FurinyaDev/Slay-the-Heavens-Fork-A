@@ -1332,7 +1332,7 @@ export function currentReviewedSelectionRead(read){
   if(path!==reviewedSelectionFixture&&path!==officialLegibilityFixture&&path!==officialAssetsFixture&&path!==luaInventoryTest)return source;
   const raw=Buffer.isBuffer(source)?source.toString('utf8'):source;
   if(path===luaInventoryTest){
-   assert(exactCheckoutSource(raw,reviewedStsFeedbackIdentity),'fresh complete integration source: '+path);
+   assert(exactCheckoutSource(raw,reviewedStsStyleIdentity),'fresh complete integration source: '+path);
   }else if(path===reviewedSelectionFixture){
    assert.notEqual(beforeReviewedOfficialAssetReplay(path,raw),raw,'fresh current reviewed Selection replay fixture: '+path);
    assert.notEqual(beforeCalibrationReplayOwner(path,raw),raw,'fresh current reviewed Selection replay fixture: '+path);
