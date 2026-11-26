@@ -684,7 +684,7 @@ export function beforeReleaseAdditionalInventory(paths,kind,read=readFileSync){
 export function beforeShopEntryInventory(paths,kind,read=readFileSync){
  if(kind==='lua')paths=beforeChapterPoolFixtureInventory(paths,read);
  paths=beforeInputRetirementTestInventory(paths,kind,read);
- if(kind==='js')paths=beforeIntegratedStsInventory(paths,(path,encoding)=>beforeNativeFlowFixture(path,read(path,encoding)));
+ if(kind==='js')paths=beforeIntegratedStsInventory(paths,(path,encoding)=>beforeNativeFlowFixture(path,beforeKnownMasterBackflowSource(path,read(path,encoding))));
  else paths=beforeCurrentReleaseLuaNames(paths,read);
  paths=beforeReleaseAdditionalInventory(paths,kind,read);
  const [path,...authenticated]=shopEntryTests[kind];

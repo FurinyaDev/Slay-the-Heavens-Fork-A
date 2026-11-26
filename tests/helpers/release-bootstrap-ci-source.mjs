@@ -1,3 +1,4 @@
+import {beforeKnownMasterBackflowSource} from './master-backflow-source.mjs';
 import {assertCurrentJsInventory,assertCurrentLuaInventory,assertIntegrationSuccessorsCurrent,beforePreflightSource,exactReviewedBuildInput,beforeM05ShopCiSource,assertDevelopBackflowCurrent,authenticateDevelopBackflow,developBackflowOwns,readHistoricalPreflightInput} from './fork-preflight-source.mjs';
 import {beforeInputRetirement} from './input-retirement-source.mjs';
 // CI-only complete bootstrap continuation. No gameplay source or production projector.
@@ -54,6 +55,7 @@ function checkedSource(path,source,before){
 }
 export const releaseBootstrapCiCheckedSource=checkedSource;
 export function releaseBootstrapCiSource(path,source,before){
+ source=beforeKnownMasterBackflowSource(path,source);
  if(path==='tests/helpers/draft-quality-workflow.mjs'&&typeof source==='string'&&!source.includes('\r\r\n')&&hash(norm(source))==='357ad5c4d68378063b02cf75396f804c8c2b61d12a925595663a4b533948e4e6'){
   if(before&&before.sha256!=='5c3cc95c0371927db143c573c1500843b97ca8e138f67737aede03e558b1d986')return source;
   const prior=norm(source).replace("import {beforeReleaseFullGate} from './release-ci-workflow.mjs';\n",'').replace('  text = beforeReleaseFullGate(text);\n','');
