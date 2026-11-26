@@ -13,6 +13,7 @@ local Acts=require('abyss_acts')
 local ChapterBattleScene=require('abyss_chapter_battle_scene')
 local NativePages=require('abyss_native_pages')
 local Input=require('abyss_game_ui_input')
+local Navigation=require('abyss_game_ui_navigation')
 local PageReveal=require('abyss_page_reveal')
 local RunHud=require('abyss_run_hud')
 local M = {}
@@ -442,6 +443,7 @@ local function menuOwnsForeground(self)
 end
 function M.exitEntryVisible(self)
     return function()
+            if not Navigation.routeAllowsMenu(self) then return false end
             local minimal=(Theme.presentationProfile=='official-assets-first' or Theme.presentationProfile=='v25-reference')
                 and Theme.menuPresentation and Theme.menuPresentation.minimal
             if minimal and self.mode=='menu' and not self.characterOpen then return false end
