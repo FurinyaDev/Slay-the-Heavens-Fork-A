@@ -762,6 +762,7 @@ function closeoutPredecessor(path){
  return closeoutPredecessors.get(path);
 }
 const officialLegibilityFixture='tests/official-assets-legibility.test.mjs';
+const reviewedSelectionFixture='tests/helpers/replay-reviewed-selection.mjs';
 const calibrationReplayPaths=Object.freeze([
  'tests/helpers/integrated-ci-source.mjs',
  'tests/helpers/copy-integration-source-closure.mjs',
@@ -774,6 +775,7 @@ const calibrationReplayPaths=Object.freeze([
  'tests/helpers/m7-core-final-source-inverse.mjs',
  'tests/helpers/relic-query-source-inverse.mjs',
  officialLegibilityFixture,
+ reviewedSelectionFixture,
 ]);
 let calibrationReplayPredecessor;
 function beforeCalibrationReplayOwner(path,source){
@@ -781,7 +783,7 @@ function beforeCalibrationReplayOwner(path,source){
  if(!calibrationReplayPredecessor){
   calibrationReplayPredecessor=releaseUiRestoreArchive(
    readFileSync(new URL('./calibration-v220-replay-owners.json.gz',import.meta.url)),
-   '04ff0be87926f4b5105e513f4b4f72a596f0dc667196baf267419158fb35a1b8','8b4172d59779ad9fa21b4ba91ef750ab22fcdaf1');
+   '63bc6c21f9563ae6a912ceb4d8244601f853e2a20dee91f02ed947d46f1c4c05','8b4172d59779ad9fa21b4ba91ef750ab22fcdaf1');
   assert.deepEqual(Object.keys(calibrationReplayPredecessor.files),calibrationReplayPaths,'ordered v2.2 calibration replay owners');
  }
  return calibrationReplayPredecessor.project(path,source);
@@ -955,6 +957,9 @@ export function assertIntegrationSuccessorsCurrent(read=readFileSync){
  const legibilitySource=rawRead(officialLegibilityFixture,'utf8');
  assert.notEqual(beforeCalibrationReplayOwner(officialLegibilityFixture,legibilitySource),legibilitySource,
   'fresh current official legibility fixture: '+officialLegibilityFixture);
+ const selectionSource=rawRead(reviewedSelectionFixture,'utf8');
+ assert.notEqual(beforeCalibrationReplayOwner(reviewedSelectionFixture,selectionSource),selectionSource,
+  'fresh current reviewed Selection replay fixture: '+reviewedSelectionFixture);
  const alphaBuildPredecessors=Object.fromEntries(Object.keys(actorAlphaBuildInputs).map(path=>
   [path,checkedActorAlphaBuildPredecessor(path,rawRead(path,'utf8'))]));
  const liveRead=(path,encoding)=>{
