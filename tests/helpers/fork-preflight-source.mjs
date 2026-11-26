@@ -1044,6 +1044,19 @@ function withoutArchiveRecords(current,first,after){
 function beforeDeckBrowserAssetLedger(source){
  if(typeof source!=='string'||source.includes('\r\r\n'))return source;
  let current=normalize(source);
+ // Preserve both reviewed ledger additions in live builds and replay their exact predecessor for archived receipts.
+ const events='    "data/presentation/event-native-controls.json": {\n';
+ const periphery=['bd6482cadc9de9ee77f402709c28949d693eaaf2b0283332ea548a5b8259fb88','a1ca830829f045b31941c750ac6cbf0191765c05'];
+ const sceneReferences=['6e618cdf519fbe4c252dcc1a33b42eac4e737e89641ad215d93fcf50fecab8c3','69d938af08e70e12466cb44b5375b669993fab33'];
+ const initial=['3c4b140e7d432bb1de89289e516723dafa14daecd414b1ffe94b4f39d267f5c2','94e5b7f8a05e190d59e603b7b0760fc968d2a600'];
+ if(exactCheckoutSource(current,periphery)){
+  current=withoutArchiveRecords(current,'    "docs/evidence/v2.2.0-viewport/mobile-16-9-periphery.png": {\n',events);
+  assert(exactCheckoutSource(current,sceneReferences),'complete pre-periphery license ledger');
+ }
+ if(exactCheckoutSource(current,sceneReferences)){
+  current=withoutArchiveRecords(current,'    "docs/design/reference-assets/v2.2.0/battle-scene/act1-geometry.svg": {\n',events);
+  assert(exactCheckoutSource(current,initial),'complete pre-v2.2 license ledger');
+ }
  // #951 updates the native event manifest hash after its approved text edits.
  if(hash(current)==='3c4b140e7d432bb1de89289e516723dafa14daecd414b1ffe94b4f39d267f5c2'&&
     blob(current)==='94e5b7f8a05e190d59e603b7b0760fc968d2a600'){
