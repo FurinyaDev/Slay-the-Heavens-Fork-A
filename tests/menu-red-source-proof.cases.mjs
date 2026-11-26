@@ -7,10 +7,19 @@ import {readFileSync} from 'node:fs';
 import {createHash} from 'node:crypto';
 import {sourceEpoch,menuRedPriorEpoch} from './helpers/closeout-source-epoch.mjs';
 import {reviewedSelectionRead} from './helpers/reviewed-selection-current-source.mjs';
+import {readSelectionProductionOwners} from './helpers/replay-reviewed-selection.mjs';
+import {uiEntranceOwns} from './helpers/ui-entrance-source.mjs';
+import {beforeChapterBattleScene} from './helpers/chapter-battle-scene-source.mjs';
+import {beforeBattlePeriphery} from './helpers/battle-periphery-source.mjs';
 import {extendMenuRedSourceEpoch,extendMenuPresentationEpoch,menuPresentationPatch,menuRedProductionPatch as patch} from './helpers/menu-red-source-epoch.mjs';
 import {assertMenuRedCiCurrent,preMenuRedCiSource,menuRedCiProof,renderMenuRedCiBinding} from './helpers/menu-red-ci-source.mjs';
-const readReviewed=reviewedSelectionRead();
-const raw=p=>readReviewed(p,'utf8').replaceAll('\r\n','\n'),hash=s=>createHash('sha256').update(s).digest('hex');
+const readCurrent=readSelectionProductionOwners(readFileSync,reviewedSelectionRead());
+const raw=path=>{
+ const source=readCurrent(path,'utf8');
+ const history=uiEntranceOwns(path)?beforeBattlePeriphery(path,beforeChapterBattleScene(path,source)):source;
+ return history.replaceAll('\r\n','\n');
+};
+const hash=s=>createHash('sha256').update(s).digest('hex');
 const powerMembership='src/lua/abyss_power_membership.lua';
 const releasePaths=[...patch.inventory,'src/lua/abyss_lowcost_art.lua','src/lua/abyss_merchant_pages.lua',
  'src/lua/abyss_game_ui_navigation.lua','src/lua/abyss_game_ui_navigation_view.lua',powerMembership].sort();
