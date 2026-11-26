@@ -84,17 +84,60 @@ const forethoughtSources=Object.freeze({
   },
 });
 
-function beforeForethoughtSource(path,source,read){
-  const row=Object.hasOwn(forethoughtSources,path) && forethoughtSources[path];
-  if(!row || !current(source,row.after))return source;
-  for(const [owner,binding] of Object.entries(forethoughtSources)){
+function assertForethoughtOwners(owners,read,matches=current){
+  for(const [owner,{after}] of Object.entries(owners)){
     let live;
     try{live=read(owner,'utf8');}catch{assert.fail('Forethought linked owner missing: '+owner);}
-    assert(current(live,binding.after),'Forethought linked owner identity: '+owner);
+    assert(matches(live,after),'Forethought linked owner identity: '+owner);
   }
+}
+
+function restoreForethoughtSource(path,source,row){
   let prior=normalize(source);
   for(const [after,before] of row.fragments)prior=prior.replace(after,()=>before);
   assert(current(prior,row.before),'exact Forethought predecessor: '+path);
+  return source.includes('\r\n')?prior.replaceAll('\n','\r\n'):prior;
+}
+
+function beforeForethoughtSource(path,source,read){
+  const row=Object.hasOwn(forethoughtSources,path)&&forethoughtSources[path];
+  if(!row||!current(source,row.after))return source;
+  assertForethoughtOwners(forethoughtSources,read);
+  return restoreForethoughtSource(path,source,row);
+}
+
+// The reviewed production return supersedes both Forethought owners. Its
+// direct Release view still precedes the older Develop map/deck replay.
+const productionForethoughtSources=Object.freeze({
+  'src/lua/abyss_deck_ui.lua':{after:{
+    sha256:'336fe6d4612a719aec256b0dd1d9ece3799e40fc3b02d748a0a76653ed5a0436',
+    gitBlob:'7b6afe38cf1fbf7c64ec72037aa5276696a74c59',
+  }},
+  [deckLayout]:{after:{
+    sha256:'fac26c8413f7aa98e7d20f44077fb2f05c984ce9bb5b2f82408795e7c8533325',
+    gitBlob:'9a7f5a8d21fa581fa82d9bfa2c164f81eade02cd',
+  }},
+});
+function uniformCurrent(source,binding){
+  if(!current(source,binding))return false;
+  const lf=normalize(source);
+  return source===lf||source===lf.replaceAll('\n','\r\n');
+}
+
+function beforeProductionForethought(path,source,read){
+  const row=Object.hasOwn(productionForethoughtSources,path)&&productionForethoughtSources[path];
+  if(!row||!uniformCurrent(source,row.after))return source;
+  assertForethoughtOwners(productionForethoughtSources,read,uniformCurrent);
+  let prior=files[path]?.before.source;
+  if(path===deckLayout){
+    const forethought=forethoughtSources[path];
+    const released=hotfixFiles[path].before.source.replace(
+      "battlePileReturn(button('pileReturn',[-550,-237,180,54],'返回'),theme.officialAssets.buttonInk)",
+      "battlePileReturn(button('pileReturn',[-550,-237,180,54],'返回'),true,undefined,theme.officialAssets.buttonInk)",
+    );
+    assert(current(released,forethought.after),'exact published Forethought layout');
+    prior=restoreForethoughtSource(path,released,forethought);
+  }
   return source.includes('\r\n')?prior.replaceAll('\n','\r\n'):prior;
 }
 
@@ -105,6 +148,8 @@ export function beforeMapRoomSource(path,source){
 }
 
 export function beforeMapDeckSource(path,source,read){
+  const forethoughtPrior=beforeProductionForethought(path,source,read);
+  if(forethoughtPrior!==source)return forethoughtPrior;
   const readBackflow=read;
   source=authenticateDevelopBackflow(path,source,owner=>readBackflow(owner,'utf8'));
   read=(owner,encoding)=>authenticateDevelopBackflow(owner,readBackflow(owner,encoding),p=>readBackflow(p,'utf8'));
