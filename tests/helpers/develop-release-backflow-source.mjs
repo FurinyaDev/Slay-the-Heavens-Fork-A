@@ -11,6 +11,8 @@ import {authenticateInputRetirement,beforeInputRetirement,beforeInputRetirementR
 import {assertRelicDetailCurrent,authenticateRelicDetail,beforeRelicDetail,relicDetailOwns} from './relic-detail-source.mjs';
 import {beforeNativeFlowFixture} from './native-flow-fixture-source.mjs';
 import {authenticateActionButtons,beforeActionButtons,actionButtonsOwns} from './action-buttons-source.mjs';
+import {beforeNodeNoticeSource} from './reward-current-source.mjs';
+import {beforeReleaseVocabulary,releaseVocabularyOwns} from './develop-release-vocabulary-source.mjs';
 
 const hash=(bytes,algorithm='sha256')=>createHash(algorithm).update(bytes).digest('hex');
 const blob=source=>hash(`blob ${Buffer.byteLength(source)}\0${source}`,'sha1');
@@ -252,9 +254,31 @@ function predecessor(layer,path,source){
 function mapRoomOwnerError(path){
  return 'combined linked owner identity: '+path+' changed during Develop backflow validation (map-room validation)';
 }
+const chapterEntranceOwners=new Set([architecturePath,'src/lua/abyss_game_ui.lua','src/lua/abyss_game_ui_view.lua']);
+const nodeNoticeOwner='src/lua/abyss_node_ui.lua';
+function beforeChapterEntranceOwner(path,source){
+ return chapterEntranceOwners.has(path)?beforeChapterBattleScene(path,source):source;
+}
 function recentBackflowOwnerReader(read,historicalOwners){
  let epoch;
- const readEntrancePrior=entranceReader(read);
+ const readEntrancePrior=entranceReader(path=>{
+  const source=read(path);
+  const vocabulary=releaseVocabularyOwns(path);
+  if(!chapterEntranceOwners.has(path)&&path!==nodeNoticeOwner&&!vocabulary)return source;
+  const frozen=historicalOwners?.[path]?.source;
+  if(typeof frozen==='string'&&(source===frozen||source===frozen.replaceAll('\n','\r\n')))return source;
+  if(path===nodeNoticeOwner)return beforeNodeNoticeSource(path,source);
+  if(vocabulary){
+   const prior=beforeReleaseVocabulary(path,source);
+   assert.notEqual(prior,source,'combined linked owner identity: '+path+' changed during Develop backflow validation');
+   return prior;
+  }
+  // The complete entrance cohort consumes the authenticated post-chapter predecessors.
+  const prior=beforeChapterEntranceOwner(path,source);
+  const stage=path===architecturePath?'Develop backflow validation (deck-pages validation)':'entrance validation';
+  assert.notEqual(prior,source,'combined linked owner identity: '+path+' changed during '+stage);
+  return prior;
+ });
  return path=>{
   // A frozen cohort must expose its original Controller identity or absence.
   const controller=path===retiredControllerPath&&(!historicalOwners||epoch==='current')?readRetiredController(read):undefined;
@@ -276,11 +300,16 @@ export function bindDevelopBackflow(read,historicalOwners){
  const readOwner=recentBackflowOwnerReader(read,historicalOwners);
  return {
   readOwner,
-  authenticate:(path,source,options)=>authenticateDevelopBackflowWithReaders(path,source,readOwner,readOwner,options),
+  authenticate(path,source,options){
+   const chapter=beforeChapterEntranceOwner(path,source);
+   if(chapter!==source)source=beforeUiEntrance(path,chapter);
+   return authenticateDevelopBackflowWithReaders(path,beforeReleaseVocabulary(path,source),readOwner,readOwner,options);
+  },
  };
 }
 function beforePriorDevelopBackflow(path,source){
- return layers.reduce((prior,layer)=>predecessor(layer,path,prior),beforeMatchEventRepair(path,source));
+ source=beforeReleaseVocabulary(path,beforeMatchEventRepair(path,source));
+ return layers.reduce((prior,layer)=>predecessor(layer,path,prior),source);
 }
 const forethoughtOwners=[deckPath,'scripts/deck-ui-layout.mjs'];
 const pileOpenOwners=[...forethoughtOwners,'src/lua/abyss_card_skin.lua'];
