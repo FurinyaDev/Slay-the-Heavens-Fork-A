@@ -187,8 +187,7 @@ function M.install(owner, ownership, host, dependencies)
     -- 搓牌：Clash Royale 式“指下最近一张”。横向主导的按住滑动只换悬停牌，
     -- 不进入出牌拖拽；只有相对当前牌向上主导的位移才提起该牌。
     local function nearestSlot(count, x)
-        local w = L.card.size[1]
-        local spacing = count <= 1 and 0 or math.max(L.hand.spacingMin, math.min(L.hand.spacingMax, (L.hand.maxWidth - w) / (count - 1)))
+        local spacing = Viewport.handSpacing(count, owner.handWidthExtra)
         if spacing == 0 then return 1 end
         local index = math.floor(x/spacing + (count-1)/2 + 0.5)
         return math.max(0, math.min(count-1, index)) + 1

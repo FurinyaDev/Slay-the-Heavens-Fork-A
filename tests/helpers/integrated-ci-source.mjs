@@ -1,4 +1,4 @@
-import {beforeCoopJsInventory,beforeShopEntryInventory,beforePreflightSource,checkedActorAlphaBuildPredecessor,currentReviewedSelectionRead,preflightPriorRead} from './fork-preflight-source.mjs';
+import {beforeCoopJsInventory,beforeShopEntryInventory,beforePreflightSource,checkedActorAlphaBuildPredecessor,preflightPriorRead} from './fork-preflight-source.mjs';
 // Explicit immutable source views for the reviewed integration inputs.
 // Production projectors never import this CI-only archive.
 import assert from 'node:assert/strict';
@@ -8,6 +8,8 @@ import {gunzipSync} from 'node:zlib';
 import {integratedCiBytes} from './integrated-ci-binding.mjs';
 import {releaseBootstrapCiSource,releaseBootstrapCiCheckedSource,assertReleaseBootstrapCiCurrent} from './release-bootstrap-ci-source.mjs';
 import {exactSourceMatches} from './source-fingerprint.mjs';
+import {chapterBattleSceneReader} from './chapter-battle-scene-source.mjs';
+import {beforeBattlePeriphery} from './battle-periphery-source.mjs';
 const hash=s=>createHash('sha256').update(s).digest('hex'),norm=s=>s.replaceAll('\r\n','\n');
 const freeze=v=>{if(v&&typeof v==='object'&&!Object.isFrozen(v)){Object.values(v).forEach(freeze);Object.freeze(v);}return v;};
 export const integratedCiProof=freeze(JSON.parse(gunzipSync(integratedCiBytes)));
@@ -131,12 +133,16 @@ function beforeIntegrationEvidence(path,source){
 function linkedProductionOwner(path){
  return path.startsWith('src/')||path==='config/architecture.json';
 }
+const chapterCurrentOwners=new Set(['config/architecture.json','src/lua/abyss_game_ui_view.lua']);
 export function integratedHistoricalInput(path,source){
  return linkedProductionOwner(path)?source:beforeIntegrationEvidence(path,source);
 }
 export function integratedSource(path,source,target){
- source=beforePreflightSource(path,source);
  assert(Object.hasOwn(integratedCiProof.sources,target),'known integration input');
+ // These owners reach the historic view with the authenticated bytes from
+ // preflight. Only the current-source reader may reopen their live identity.
+ if(chapterCurrentOwners.has(path))return source;
+ source=beforePreflightSource(path,source);
  if(linkedProductionOwner(path))return source;
  const row=Object.hasOwn(integratedCiProof.files,path)?integratedCiProof.files[path]:null;
  source=releaseBootstrapCiSource(path,beforeIntegrationEvidence(path,source),row?.current);
@@ -154,13 +160,17 @@ export function integratedRead(target,{read=readFileSync}={}){read=preflightPrio
  return typeof raw==='string'?prior:prior===text?raw:Buffer.from(prior);
 };}
 export function assertIntegratedCurrent(read=readFileSync){
- const rawRead=currentReviewedSelectionRead(read);
- assertReleaseBootstrapCiCurrent(rawRead);
+ const rawRead=assertReleaseBootstrapCiCurrent(read);
  read=preflightPriorRead(rawRead);
  for(const [path,row]of Object.entries(integratedCiProof.files)){
   const binding=integratedEvidenceSuccessors[path];
   const raw=binding?rawRead(path,'utf8'):read(path,'utf8');
-  const source=path==='package.json'?checkedActorAlphaBuildPredecessor(path,raw):raw;
+  let source=path==='package.json'?checkedActorAlphaBuildPredecessor(path,raw):raw;
+  if(chapterCurrentOwners.has(path)){
+   const chapter=chapterBattleSceneReader(path,source,owner=>rawRead(owner,'utf8'));
+   assert.notEqual(chapter.source,source,'fresh complete integration source: '+path);
+   source=beforeBattlePeriphery(path,chapter.source,chapter.read);
+  }
   if(binding)assert(exactSourceMatches(source,binding),'fresh complete integration source: '+path);
   const prior=releaseBootstrapCiCheckedSource(path,beforeIntegrationEvidence(path,source),row.current);
   assert.equal(hash(norm(prior)),row.current.sha256,'fresh complete integration source: '+path);

@@ -11,6 +11,7 @@ local number = require("abyss_numbers").integer
 local NeowHistory=require('abyss_neow_history')
 local EndingHistory=require('abyss_ending_history')
 local Acts=require('abyss_acts')
+local ChapterBattleScene=require('abyss_chapter_battle_scene')
 local NativePages=require('abyss_native_pages')
 local Input=require('abyss_game_ui_input')
 local PageReveal=require('abyss_page_reveal')
@@ -571,12 +572,22 @@ function M.openingForeground(self,child,prologuePanel,runMenu,exitPanel)
         end
 end
 
-function M.syncOfficialBattleScene(root,self)
+function M.syncOfficialBattleScene(root,self,platform)
     local lastBackdropVisible,lastBackdrop
+    local battle=root:GetChild('battlePanel')
+    local chapterScene=ChapterBattleScene.bind(battle and battle:GetChild('chapterBattleScene'),platform)
     return function(run)
+            local visible=self.mode=='battle'
+            if chapterScene then
+                if visible then
+                    local floor=math.max(1,run and run.floor or 1)
+                    local chapter=Acts.forFloor(floor)
+                    chapterScene(math.min(2,chapter))
+                end
+                return
+            end
             local scenes=root:GetChild('officialBattleBackdrop')
             if not scenes then return end
-            local visible=self.mode=='battle'
             if visible~=lastBackdropVisible then scenes:SetVisible(visible);lastBackdropVisible=visible end
             local floor=math.max(1,run and run.floor or 1)
             local act,row=Acts.forFloor(floor);local chapter=math.min(2,act)
