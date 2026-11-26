@@ -250,13 +250,16 @@ for(const [path,{before,after}] of Object.entries(linkedBackflow)){
  assert.equal(after.commit,linkedSource,'exact reviewed joined owner: '+path);
  assert(matches(before.source,before),'exact joined owner predecessor: '+path);
 }
+const linkedSuccessors={
+ 'src/lua/abyss_game_ui_navigation.lua':{sha256:'89c0b1d90b00e97ca6bfaa5cffc13c7317064017e86da285d6792e56e726d477',
+  gitBlob:'a98e73313e33629917ca535933d35a79d91a287f'},
+ 'src/lua/abyss_battle_detail_bindings.lua':{sha256:'fc3e819c62455d966db30172055d2c3b4aa721daed943418519252fd38ad1852',
+  gitBlob:'951d6e972052ed08a0638140b156ee2ffaea5166'},
+};
 function beforeLinkedBackflow(path,source){
  if(!Object.hasOwn(linkedBackflow,path)||!uniformSource(source))return source;
  const {before,after}=linkedBackflow[path];
- const navigation='src/lua/abyss_game_ui_navigation.lua';
- const choiceMenu={sha256:'89c0b1d90b00e97ca6bfaa5cffc13c7317064017e86da285d6792e56e726d477',
-  gitBlob:'a98e73313e33629917ca535933d35a79d91a287f'};
- if(!matches(source,after)&&!(path===navigation&&matches(source,choiceMenu)))return source;
+ if(!matches(source,after)&&!matches(source,linkedSuccessors[path]??after))return source;
  return source.includes('\r\n')?before.source.replaceAll('\n','\r\n'):before.source;
 }
 const architectureOwnersArchive=readFileSync(new URL('../fixtures/develop-architecture-linked-source.json.gz',import.meta.url));
@@ -269,10 +272,19 @@ for(const [path,{before,after}] of Object.entries(architectureOwners)){
  assert.equal(after.commit,architectureOwnersCommit,'exact reviewed joined owner: '+path);
  assert(matches(before.source,before),'exact linked architecture predecessor: '+path);
 }
+// The restored compact actor detail panel updates three linked architecture owners.
+const architectureSuccessors={
+ 'src/lua/abyss_battle_details.lua':{sha256:'eda327547a5399714320309d5cda22ed264123a8747ec5827ec9ee1a42409aab',
+  gitBlob:'53a076d7a7c0958b02a968ca5125d3f65c744a2c'},
+ 'src/lua/abyss_battle_info_content.lua':{sha256:'0d96375df2bcdd3e323413c09e27e802e53b450d3053dadbc4eef3d8da715d57',
+  gitBlob:'989f7129614b8c8637bf3e78167e98b33db3e9c4'},
+ 'src/lua/abyss_battle_info_view.lua':{sha256:'310fb87f002004b8bdbc8fc1b269b8dc1cbb6ecf0cf03256840fbdaed0d756ff',
+  gitBlob:'7a24b24c0d1ccaa246bbb17afbf1cb4f0ce555dd'},
+};
 function beforeArchitectureOwner(path,source){
  if(!Object.hasOwn(architectureOwners,path)||!uniformSource(source))return source;
  const {before,after}=architectureOwners[path];
- if(!matches(source,after))return source;
+ if(!matches(source,after)&&!matches(source,architectureSuccessors[path]??after))return source;
  return source.includes('\r\n')?before.source.replaceAll('\n','\r\n'):before.source;
 }
 const deckPagesArchive=readFileSync(new URL('../fixtures/develop-deck-pages-source.json.gz',import.meta.url));
