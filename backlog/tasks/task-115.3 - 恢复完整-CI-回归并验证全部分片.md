@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@Furinya'
 created_date: '2026-11-25 21:00'
-updated_date: '2026-11-26 05:25'
+updated_date: '2026-11-26 05:34'
 labels:
   - engineering
 milestone: m-8
@@ -34,6 +34,7 @@ references:
   - 'https://github.com/FurinyaWorks/Slay-the-Heavens/pull/1020'
   - >-
     https://github.com/FurinyaDev/Slay-the-Heavens-Fork-A/actions/runs/45760509932
+  - 'https://github.com/FurinyaWorks/Slay-the-Heavens/pull/1023'
 documentation:
   - docs/versions/V2.2.0-RELEASE.md
 parent_task_id: TASK-115
@@ -112,4 +113,6 @@ Curses 历史 #1004 实际合入 05c9dfe3b41ac4a7c0e325d9fbb1ef8f0db1497f，父 
 已合入遗物装备原回执、六项视觉来源及其历史回放、Fork 自回执和 StS 原封存反馈。原 13 项合流定向通过。较广 StS、Component UI 和两组 GameUI 回放仍有原失败。f9513b58 的主仓 Quality 与 Licenses 已入队，Full 分片待分配。正式 Full 与 Licenses 须按同一精确源码验收。
 
 节点通知与旧标识夹具的精确候选 808bf5120595553df22825d917a73c0e72617003，以 f9513b58 为基线，独立复评通过。原回归 28/28、非战斗 12/12、源码读回 3/3、封存外层 4/4，Luacheck 原上限 15 保留。Fork A 首次只执行到 LFS 恢复，失败后按同一源码重试。旧 Hosted Full 45747071895 实际检出 4d9406a（050c 候选与 e483 合并），从原日志继续对照当前基线；保留旧档案、各分片和原始断言。Owner 已单独授权一个 StS 夹具的精确回执，其余共享历史回执遵守现有授权。
+
+#1023 已合入精确 develop 724f12cae3a70ce2cff3ac8177a165c68a4f95bf，父提交 f9513b58，合入树 31ee9ce11cbac9ed702a15ee1e6825afbdb70877 与独立评审 6069012108 一致。Fork A 同 SHA 第二次运行成功，包括 LFS、现有 Luacheck 门槛和 Advisory Quick。当前主仓 Quality 45762283047、Licenses 45762283430 已入队，尚待正式结果。
 <!-- SECTION:NOTES:END -->
