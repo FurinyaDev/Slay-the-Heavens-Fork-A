@@ -170,7 +170,8 @@ test('original Run and Nodes config closure rejects relabeled, missing and chang
 
 test('current Run architecture admission uses its declared target and rereads every raw owner on each call',async()=>{
  const {sourceEpoch}=await import('./helpers/combined-epoch/source-epoch.mjs');
- const raw=readFileSync(path,'utf8').replaceAll('\r\n','\n'),owners=sourceEpoch.proof.owners;
+ const readCurrent=file=>readFileSync(file,'utf8').replaceAll('\r\n','\n');
+ const raw=readCurrent(path),owners=sourceEpoch.proof.owners;
  const priorReadOrder=[...owners,...currentProductionRereads];
  // Independent complete Git config at the declared develop target d8a57cae,
  // not a hash obtained from the projector's own return value or current proof.
@@ -179,7 +180,7 @@ test('current Run architecture admission uses its declared target and rereads ev
  const reader=file=>{
   const seen=reads.filter(previous=>previous===file).length;
   reads.push(file);
-  if(file!==changed||seen<mutationOccurrence)return read(file);
+  if(file!==changed||seen<mutationOccurrence)return readCurrent(file);
   if(replacement instanceof Error)throw replacement;
   return replacement;
  };
@@ -225,7 +226,7 @@ test('current Run architecture admission uses its declared target and rereads ev
  reads=[];assert.throws(()=>project(raw),/combined linked owner identity: src\/lua\/abyss_controller\.lua/,'present archived Controller cannot impersonate a retired file');
  assert.deepEqual(reads,admittedReads.slice(0,admittedReads.indexOf(changed)+1));
  for(const [fault,observe] of [
-  ['changed bytes',owner=>read(owner)+'\n'],
+  ['changed bytes',owner=>readCurrent(owner)+'\n'],
   ['absent source',()=>null],
   ['read error',()=>new Error('missing current Run owner')],
  ]){
@@ -251,7 +252,7 @@ test('current Run architecture admission uses its declared target and rereads ev
   const position=ownerPosition+Number(retired);
   assert.equal(admittedReads[position],changed);
   mutationOccurrence=admittedReads.slice(0,position).filter(file=>file===changed).length;
-  replacement=readFileSync(changed,'utf8')+'\n';
+  replacement=readCurrent(changed)+'\n';
   reads=[];
   assert.throws(()=>project(raw),error=>{
    const expected=(retired?'combined linked owner missing: ':'combined linked owner identity: ')+owner;

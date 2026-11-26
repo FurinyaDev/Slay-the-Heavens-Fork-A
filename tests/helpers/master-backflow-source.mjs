@@ -50,7 +50,7 @@ const updatedSources = new Map([
   ['tests/lua/support/dynamic_monster_game_ui.lua', ['abfe82b4330839610a3b495db737078ba2f4704ee951e8c1ac53cc8ee8056b94', '05e5c56c220b537f9a5fbaa68e49d0d5345dcdb8']],
   ['tests/official-assets-runtime.test.mjs', ['475d4772d0224ee4690cb5215d2536ac4961efe8a1415a40c3219dcc70fd4cde', '4ab27d84b1640b8ee6c48daaecc3c6aae1b416c8']],
   ['tests/official-battle-relic-icons.test.mjs', ['02ac336167bbf416ca27af8679c8983dad1420820128a5966dd8c796356a6b5e', '01dd97b42135c76c110fae8f2acc6e71b7bd8be4']],
-  ['tests/run-max-hp-config-inverse.test.mjs', ['0ab6687bb1f64cbe27b15ec0b7270fc857c820fbd0de4f55605c0d336b37cd9c', '08e5ba78015e099203cbd69bdb93ed5862c7b756']],
+  ['tests/run-max-hp-config-inverse.test.mjs', ['a40879d35601e22bfbd5622fce1604d0a9ee7a2222d15525f66d7e82b862928f', '408137bf30fd65836eb8a0eaba40de3a3902bdd5']],
 ]);
 
 // The local map return repair follows the already authenticated backflow.
