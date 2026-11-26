@@ -20,24 +20,46 @@
 
 依赖：Python 3、Pillow、NumPy；出中文对照板需 Noto Sans CJK。Lua 测试使用项目兼容的 Lua 运行时。所有生成目录为本地文件，不需要联网，不需要私有贴图；正式原生整局场景继续复用仓库 Simulator 工具链。
 
+**复现已归档批次：** 图稿和工具与牌表是两份不同的输入，不能把实验分支的 `HEAD` 当作牌表基线。从包含下列两个提交的 Fork A 克隆目录运行：
+
 ```sh
-# 在独立仓库工作树的根目录运行
-D=experiments/traveler-card-icons-a
-G="$(mktemp -d)"
-BASE="$(git rev-parse HEAD)"
-python3 "$D/extract-roster.py" . "$G/roster.json" --commit "$BASE"
+set -eu
+ART=0efdc18d3310c670b448c0f780d9f3cef351f2c4
+BASE=aaf8008875896f24acc8fda0d4df47df2564ec1d
+W="$(mktemp -d)"
+git worktree add --detach "$W/art" "$ART"
+git worktree add --detach "$W/source" "$BASE"
+D="$W/art/experiments/traveler-card-icons-a"
+SOURCE="$W/source"
+G="$W/generated-receipt"
+mkdir -p "$G"
+export PYTHONUTF8=1
+python3 "$D/extract-roster.py" "$SOURCE" "$G/roster.json" --commit "$BASE"
 python3 "$D/compile.py" "$G/roster.json" "$G/generated" \
   "$D/accepted-six.json" "$D/attack-one.json" "$D/attack-two.json" \
   "$D/skill-one.json" "$D/skill-two.json" "$D/powers.json" --sheets
 python3 "$D/pack.py" --roster "$G/roster.json" --pinned "$BASE" \
-  --tri-solver scripts/art/native-triangle-placement.py --art "$G/generated" \
+  --tri-solver "$SOURCE/scripts/art/native-triangle-placement.py" --art "$G/generated" \
   --native-overrides "$D/approved-native" --semantic-index "$G/generated/semantic.json" \
   --out "$G/native-pack.json" --allow-pending-review
 python3 "$D/validate.py" "$G/native-pack.json" "$G/roster.json" --pinned "$BASE" --art "$G/generated"
 python3 "$D/test_validation.py" "$G/native-pack.json" "$G/roster.json"
 python3 "$D/test_runtime.py" "$G/native-pack.json"
 python3 "$D/record-review.py" "$G/generated" "$D/static-review.json" "$G/static-review-bound.json" --authoring-only
-node --test tests/warrior75-names.test.mjs
+(cd "$SOURCE" && node --test tests/warrior75-names.test.mjs)
+python3 - "$D/verification.json" "$G/native-pack.json" <<'PY'
+import hashlib, json, sys
+from pathlib import Path
+expected = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))["generatedPackSha256"]
+actual = hashlib.sha256(Path(sys.argv[2]).read_bytes()).hexdigest()
+if actual != expected:
+    raise SystemExit(f"pack SHA-256 mismatch: {actual} != {expected}")
+print(actual)
+PY
 ```
+
+已从两个固定提交全程重建，75 张、名称测试、负例、Lua 模板回放与 75 份独审绑定均通过；包 SHA-256 与 `verification.json` 一致。该 SHA 是上面带待审开关的离线包，不是原生发布批准。工作树验证完毕可用 `git worktree remove "$W/art"` 和 `git worktree remove "$W/source"` 清理（输出在第三个目录，不受影响）。
+
+**生产新批次：** 将 `BASE` 改成审定的最新内容提交并重抽名单，生成新收据，不比较旧包 SHA；牌名或机制有变则送回复审。可复用分批画图、盲评与图元验证步骤，但 `extract-roster.py` 的初始牌组、目录和 75 张断言是岩旅行者专用。换角色时先接入该角色正式牌池、本地化和素材目录，再锁定新的内容与图稿提交。
 
 带待审开关的输出只准离线出样。正式实例必须移除该开关并以独立评审记录锁定每张图。隔离适配器不得从现有生产注册表、UI 装配器或发布配置导入。本实验的本地编译与夹具测试不证明千星 Editor/GIL、正式资源实例数量、PC/手机画面、FPS 或发布资格。
