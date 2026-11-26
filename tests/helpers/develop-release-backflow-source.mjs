@@ -253,7 +253,10 @@ for(const [path,{before,after}] of Object.entries(linkedBackflow)){
 function beforeLinkedBackflow(path,source){
  if(!Object.hasOwn(linkedBackflow,path)||!uniformSource(source))return source;
  const {before,after}=linkedBackflow[path];
- if(!matches(source,after))return source;
+ const navigation='src/lua/abyss_game_ui_navigation.lua';
+ const choiceMenu={sha256:'89c0b1d90b00e97ca6bfaa5cffc13c7317064017e86da285d6792e56e726d477',
+  gitBlob:'a98e73313e33629917ca535933d35a79d91a287f'};
+ if(!matches(source,after)&&!(path===navigation&&matches(source,choiceMenu)))return source;
  return source.includes('\r\n')?before.source.replaceAll('\n','\r\n'):before.source;
 }
 const architectureOwnersArchive=readFileSync(new URL('../fixtures/develop-architecture-linked-source.json.gz',import.meta.url));

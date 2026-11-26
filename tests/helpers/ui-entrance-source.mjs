@@ -8,6 +8,8 @@ import {exactSourceMatches as matches,sourceConfigLayoutMatches} from './source-
 import {restoreExactFixtureHunks} from './exact-fixture-hunks.mjs';
 import {beforeCombinedCharacterBackflow,beforeCurrentReplayFixes,beforeOfficialCharacterBackflow,combinedCharacterBackflowOwns} from './current-replay-fix-sources.mjs';
 import {beforeApprovedUiEntrance,matchesApprovedUiEntranceOwner} from './ui-entrance-approved-sources.mjs';
+import {beforeChapterBattleScene} from './chapter-battle-scene-source.mjs';
+import {beforeKnownMasterBackflowSource} from './master-backflow-source.mjs';
 
 const archive=readFileSync(new URL('../fixtures/ui-entrance-source.json.gz',import.meta.url));
 assert.equal(createHash('sha256').update(archive).digest('hex'),
@@ -34,7 +36,7 @@ const replaySources=[...requiredCurrentOwners,
 ];
 const currentInput=(path,source)=>replaySources.includes(path)
  ?beforeCurrentReplayFixes(path,source):beforeApprovedUiEntrance(path,source);
-function currentMatches(path,source,expected){
+function matchesEntrance(path,source,expected){
  const approved=beforeCombinedCharacterBackflow(path,source);
  if(combinedCharacterBackflowOwns(path)&&approved===source)return false;
  if(!matchesApprovedUiEntranceOwner(path,approved))return false;
@@ -42,6 +44,12 @@ function currentMatches(path,source,expected){
  if(requiredCurrentOwners.includes(path)&&normalized===source)return false;
  return matches(normalized,expected);
 }
+function currentEntranceSource(path,source,expected){
+ if(matchesEntrance(path,source,expected))return source;
+ const prior=beforeChapterBattleScene(path,beforeKnownMasterBackflowSource(path,source));
+ if(prior!==source&&matchesEntrance(path,prior,expected))return prior;
+}
+const currentMatches=(path,source,expected)=>currentEntranceSource(path,source,expected)!==undefined;
 const predecessors=new Map();
 
 function project(path,source,row){
@@ -60,7 +68,9 @@ function project(path,source,row){
 }
 
 export function beforeUiEntrance(path,source){
- return project(path,source,binding(path));
+ const row=binding(path);
+ const current=row?currentEntranceSource(path,source,row.after):undefined;
+ return project(path,current??source,row);
 }
 
 export function beforeUiEntranceWitness(path,source){
