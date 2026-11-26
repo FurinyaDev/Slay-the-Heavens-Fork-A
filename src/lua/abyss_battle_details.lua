@@ -64,9 +64,9 @@ function M.install(owner, ownership, host, dependencies)
     closeInfo = function(preserveHover)
         if host.potionPopup and host.potionPopup:close() then return true end
         if not owner.info then return false end
-        -- Unpinned hover readers yield to a new gesture. Explicit and held readers consume their close.
         local info=owner.info
-        local passThrough=info.transient and (isCard(info) or info.powerTips)
+        local actorDetail=not info.kind and not info.powerTips
+        local passThrough=actorDetail or info.transient and (isCard(info) or info.powerTips)
         owner.info = nil
         local handFocus
         if isCard(info) then
@@ -77,7 +77,7 @@ function M.install(owner, ownership, host, dependencies)
             if owner.help and owner.help.source==info.source then owner.help=nil end
         end
         dependencies.child("statusInfo"):SetVisible(false)
-        if info.powerTips then dependencies.child("statusDismiss"):SetVisible(false) end
+        if actorDetail or info.powerTips then dependencies.child("statusDismiss"):SetVisible(false) end
         return true,passThrough,handFocus
     end
     function owner:canPinPowerTips(source)

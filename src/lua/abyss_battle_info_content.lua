@@ -271,6 +271,7 @@ function M.new(self, describe)
             hp = actor.hp, maxHp = actor.maxHp, block = actor.block, sections = {}}
         if info.kind == "intent" then return intentCard(card, battle, info) end
         if info.kind == "card" or info.kind == "potion" or info.kind=='rewardCard' then return keywordCard(card, data, presentation, battle, info, actor) end
+        card.actorDetail = true
         entries = selectedEntries(entries, info)
         if not entries then return end
         if info.index > 0 and not info.statusId and not info.offset then
@@ -280,7 +281,10 @@ function M.new(self, describe)
         end
         playerResources(card, battle, info, actor)
         statusSections(card, entries, battle, actor)
-        if #card.sections == 0 then card.empty = "暂无状态" end
+        if #card.sections == 0 then
+            if info.transient then return end
+            card.empty = "暂无状态"
+        end
         return card
     end
 end

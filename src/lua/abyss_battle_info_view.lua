@@ -6,9 +6,13 @@ local M = {}
 local UnitView=require("abyss_battle_unit_view")
 local EnemyView=require("abyss_battle_enemy_view")
 local C, L, S = Theme.color, Theme.layout, Theme.space
-local I, P = L.statusInfo, L.powerTips
+local I, A, P = L.statusInfo, L.actorDetail, L.powerTips
 local wrappedLines = require("abyss_battle_info_content").lines
 local powerTitle = string.format("<color=#%02X%02X%02X>", P.title.r, P.title.g, P.title.b)
+
+local function rowHeight(row, pitch)
+    return I.name + (row.textLines + row.noteLines) * pitch + I.entryGap
+end
 
 local function openPage(paging)
     paging.page = {items = {}, rows = 0, sections = 0}
@@ -32,7 +36,7 @@ function M.paginator(lines)
         local labelled, continued = false, false
         for _, row in ipairs(section.rows) do
             row.textLines, row.noteLines = lines(row.text,paging.width,paging.font), lines(row.note,paging.width,paging.font)
-            local height = I.name + (row.textLines + row.noteLines) * I.line + I.entryGap
+            local height = rowHeight(row, paging.pitch)
             local head = section.label and not labelled and I.section or 0
             if needsPage(paging.page, paging.used, head, height, paging.budget) then
                 openPage(paging)
@@ -51,7 +55,8 @@ function M.paginator(lines)
     return function(card,width,font)
         local room = Theme.canvas.base[2] - L.topBar.height - S.s - Theme.canvas.safe.y
         local heading=card.keywordOnly and 0 or I.header+I.summary+I.divider
-        local paging = {pages = {}, used = 0, width=width,font=font,budget = room - I.pad * 2 - heading - I.footer}
+        local paging = {pages = {}, used = 0, width=width,font=font,
+            pitch = card.actorDetail and A.pitch or I.line, budget = room - I.pad * 2 - heading - I.footer}
         openPage(paging)
         for _, section in ipairs(card.sections) do appendSection(paging, section) end
         return paging.pages
@@ -65,8 +70,9 @@ end
 
 local function pageHeight(card, page, footer)
     local body = card.empty and I.section or 0
+    local pitch = card.actorDetail and A.pitch or I.line
     for _, item in ipairs(page.items) do
-        body = body + (item.label and I.section or I.name + (item.row.textLines + item.row.noteLines) * I.line + I.entryGap)
+        body = body + (item.label and I.section or rowHeight(item.row, pitch))
     end
     local heading=card.keywordOnly and 0 or I.header+I.summary+I.divider
     return I.pad * 2 + heading + body + (footer and I.footer or 0)
@@ -238,6 +244,29 @@ local function cardAnchor(self, child, info)
         halfH=(math.abs(math.cos(r))*h+math.abs(math.sin(r))*w)/2}
 end
 
+local function pageGeometry(enemyPosition, battle, info, height, width, font, actorDetail)
+    local x, portrait
+    if info.index == 0 then
+        x, portrait = L.player.position[1], L.player.portrait
+        x = x + portrait / 2 + S.l + width / 2
+    else
+        local enemyX, _, size = enemyPosition(battle, info.index)
+        x, portrait = enemyX - size / 2 - S.l - width / 2, size
+    end
+    local edge = Theme.canvas.base[1] / 2 - Theme.canvas.safe.x - width / 2
+    x = math.max(-edge, math.min(edge, x))
+    local top = Theme.canvas.base[2] / 2 - L.topBar.height - S.s
+    local heroY=L.player.position[2]+UnitView.noticeLift(battle.player,L.player.portrait,L.player.position[2],true)
+    local unitY = info.index == 0 and heroY or select(5,enemyPosition(battle,info.index)) or L.enemyRow.y
+    local cardTop=unitY+portrait/2
+    local y = math.min(top - height / 2, cardTop - height / 2)
+    y = math.max(-Theme.canvas.base[2] / 2 + Theme.canvas.safe.y + height / 2, y)
+    return {x = x, y = y, height = height, width=width,reading=font,line = L.nativeText.lineHeight,
+        pitch = actorDetail and A.pitch or I.line, tagWidth = actorDetail and A.tagWidth or I.tagWidth,
+        inner = width - I.pad * 2, left = x - width / 2 + I.pad, right = x + width / 2 - I.pad,
+        cursor = y + height / 2 - I.pad, sections = 0, rows = 0}
+end
+
 function M.new(self, child, enemyPosition, describeInfo, paginate, tint, ink, picture)
     local textStyles={}
     local function readingSize(control,name,font)
@@ -249,47 +278,29 @@ function M.new(self, child, enemyPosition, describeInfo, paginate, tint, ink, pi
         control.fontSize=font or original.font
         control.minimumFontSize=font and math.min(original.minimum,font) or original.minimum
     end
-    local function pageGeometry(battle, info, height, width)
-        local x, portrait
-        if info.index == 0 then
-            x, portrait = L.player.position[1], L.player.portrait
-            x = x + portrait / 2 + S.l + I.width / 2
-        else
-            local enemyX, _, size = enemyPosition(battle, info.index)
-            x, portrait = enemyX - size / 2 - S.l - I.width / 2, size
-        end
-        width=width or I.width
-        local edge = Theme.canvas.base[1] / 2 - Theme.canvas.safe.x - width / 2
-        x = math.max(-edge, math.min(edge, x))
-        local top = Theme.canvas.base[2] / 2 - L.topBar.height - S.s
-        local heroY=L.player.position[2]+UnitView.noticeLift(battle.player,L.player.portrait,L.player.position[2],true)
-        local unitY = info.index == 0 and heroY or select(5,enemyPosition(battle,info.index)) or L.enemyRow.y
-        local cardTop=unitY+portrait/2
-        local y = math.min(top - height / 2, cardTop - height / 2)
-        y = math.max(-Theme.canvas.base[2] / 2 + Theme.canvas.safe.y + height / 2, y)
-        return {x = x, y = y, height = height, width=width,line = L.nativeText.lineHeight, inner = width - I.pad * 2,
-            left = x - width / 2 + I.pad, right = x + width / 2 - I.pad,
-            cursor = y + height / 2 - I.pad, sections = 0, rows = 0}
-    end
-
     local function frame(panel, card, geometry)
         local x, y, height = geometry.x, geometry.y, geometry.height
         place(panel, "shadow", x + S.s, y - S.s, geometry.width + S.border * 2, height + S.border * 2)
-        place(panel, "border", x, y, geometry.width + S.border * 2, height + S.border * 2)
-        place(panel, "plate", x, y, geometry.width, height)
+        tint(place(panel, "border", x, y, geometry.width + S.border * 2, height + S.border * 2),
+            card.actorDetail and A.border or C.goldDim)
+        tint(place(panel, "plate", x, y, geometry.width, height), card.actorDetail and A.fill or C.panelSunken)
         place(panel, "page", x, y, geometry.width, height)
-        tint(place(panel, "accent", x, y + height / 2 - I.accent / 2, geometry.width, I.accent), card.accent)
+        tint(place(panel, "accent", x, y + height / 2 - I.accent / 2, geometry.width, I.accent),
+            card.actorDetail and A.border or card.accent)
     end
 
     local function header(panel, card, geometry)
+        local showTag = not card.keywordOnly and (card.actorDetail or not geometry.reading)
         panel:GetChild('title'):SetVisible(not card.keywordOnly)
-        panel:GetChild('tag'):SetVisible(not card.keywordOnly and not geometry.reading)
+        panel:GetChild('tag'):SetVisible(showTag)
         if card.keywordOnly then return end
-        local titleWidth=geometry.inner-(geometry.reading and 0 or I.tagWidth)
+        local titleWidth=geometry.inner-(showTag and geometry.tagWidth or 0)
         local title = place(panel, "title", geometry.left + titleWidth / 2, geometry.cursor - I.header / 2,titleWidth,geometry.line)
+        readingSize(title, "title", card.actorDetail and geometry.reading)
         title.text = card.title
-        local tag = place(panel, "tag", geometry.right - I.tagWidth / 2, geometry.cursor - I.header / 2)
-        tag:SetVisible(not geometry.reading)
+        ink(title, card.actorDetail and A.title or C.goldBright)
+        local tag = place(panel, "tag", geometry.right - geometry.tagWidth / 2, geometry.cursor - I.header / 2)
+        readingSize(tag, "tag", card.actorDetail and geometry.reading)
         tag.text = card.tag
         ink(tag, card.accent)
         geometry.cursor = geometry.cursor - I.header
@@ -361,22 +372,28 @@ function M.new(self, child, enemyPosition, describeInfo, paginate, tint, ink, pi
             or row.status and Theme.icon.status[row.status]
             or Theme.icon.intent[row.icon or row.intent] or Theme.icon.intent.unknown)
         tint(icon, row.colour)
-        local name = place(panel, "name" .. i, textX, geometry.cursor - I.name / 2,geometry.inner-I.icon-I.gap,geometry.line)
+        local nameWidth = geometry.inner - I.icon - I.gap
+        if row.tag and row.tag ~= "" then nameWidth = nameWidth - geometry.tagWidth - S.xs end
+        local name = place(panel, "name" .. i, geometry.left + I.icon + I.gap + nameWidth / 2,
+            geometry.cursor - I.name / 2, nameWidth, geometry.line)
         name.text = row.name
+        readingSize(name, "name"..i, geometry.reading)
         ink(name, row.colour)
-        local rowTag = place(panel, "tag" .. i, geometry.right - I.tagWidth / 2, geometry.cursor - I.name / 2)
+        local rowTag = place(panel, "tag" .. i, geometry.right - geometry.tagWidth / 2, geometry.cursor - I.name / 2,
+            geometry.tagWidth,geometry.line)
         rowTag.text = row.tag or ""
+        readingSize(rowTag, "tag"..i, geometry.reading)
         geometry.cursor = geometry.cursor - I.name
-        local text = place(panel, "text" .. i, textX, geometry.cursor - row.textLines * I.line / 2,
-            geometry.inner - I.icon - I.gap, math.max(geometry.line, row.textLines * I.line + I.line))
+        local text = place(panel, "text" .. i, textX, geometry.cursor - row.textLines * geometry.pitch / 2,
+            geometry.inner - I.icon - I.gap, math.max(geometry.line, row.textLines * geometry.pitch + I.line))
         text.text = row.text
         readingSize(text,'text'..i,geometry.reading)
-        geometry.cursor = geometry.cursor - row.textLines * I.line
-        local note = place(panel, "note" .. i, textX, geometry.cursor - row.noteLines * I.line / 2,
-            geometry.inner - I.icon - I.gap, math.max(geometry.line, row.noteLines * I.line + I.line))
+        geometry.cursor = geometry.cursor - row.textLines * geometry.pitch
+        local note = place(panel, "note" .. i, textX, geometry.cursor - row.noteLines * geometry.pitch / 2,
+            geometry.inner - I.icon - I.gap, math.max(geometry.line, row.noteLines * geometry.pitch + I.line))
         note.text = row.note or ""
         readingSize(note,'note'..i,geometry.reading)
-        geometry.cursor = geometry.cursor - row.noteLines * I.line - I.entryGap
+        geometry.cursor = geometry.cursor - row.noteLines * geometry.pitch - I.entryGap
         for _, part in ipairs({icon, name, rowTag, text, note}) do part:SetVisible(true) end
         note:SetVisible(row.note ~= nil)
     end
@@ -400,16 +417,18 @@ function M.new(self, child, enemyPosition, describeInfo, paginate, tint, ink, pi
         end
     end
 
-    local function finish(panel, info, geometry, footer)
+    local function finish(panel, info, geometry, footer, actorDetail)
         local more = panel:GetChild("more")
         more:SetVisible(footer ~= nil)
         more:SetAnchoredPosition(geometry.x, geometry.y - geometry.height / 2 + I.pad + I.footer / 2)
         more.text = footer or ""
         more:SetSizeDelta(geometry.inner,geometry.line)
         panel:SetVisible(true)
-        panel:GetChild("hit"):SetVisible(not info.transient)
+        local modal = not info.transient and not actorDetail
+        child("statusDismiss"):SetVisible(not info.transient and actorDetail == true)
+        panel:GetChild("hit"):SetVisible(modal)
         panel:GetChild("page"):SetVisible(not info.transient)
-        panel.disableCursorEventPassthrough = not info.transient
+        panel.disableCursorEventPassthrough = modal
         panel:SetAsLastSibling()
     end
 
@@ -564,22 +583,23 @@ function M.new(self, child, enemyPosition, describeInfo, paginate, tint, ink, pi
         local card=describedCard(battle,info)
         if not card then
             self.info = nil
+            child("statusDismiss"):SetVisible(false)
             panel:SetVisible(false)
             return
         end
-        local width=I.width
-        local pages = paginate(card,width)
+        local width, font=card.actorDetail and A.width or I.width, card.actorDetail and A.font or nil
+        local pages = paginate(card,width,font)
         info.page = math.max(1, math.min(info.page or 1, #pages))
         info.pages = #pages
         local page = pages[info.page]
         local footer = footerText(info, pages)
-        local geometry = pageGeometry(battle, info, pageHeight(card, page, footer),width)
+        local geometry = pageGeometry(enemyPosition, battle, info, pageHeight(card, page, footer), width, font, card.actorDetail)
         frame(panel, card, geometry)
         header(panel, card, geometry)
         summaryLine(panel, card, geometry)
         pageItems(panel, card, page, geometry)
         hideUnused(panel, geometry)
-        finish(panel, info, geometry, footer)
+        finish(panel, info, geometry, footer, card.actorDetail)
     end
 end
 

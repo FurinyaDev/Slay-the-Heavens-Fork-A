@@ -312,17 +312,18 @@ function M.install(owner, _ownership, host, dependencies)
                 if screenSlot==0 or entry then owner:showStatus(entry and entry.index or 0) end
             end)
         end
-        dependencies.child("statusDismiss"):AddCursorEventListener(host.clickEvent, function(event)
-            if Pointer.blocked(host.platform) or event and event.dragging then return end
-            if owner:dismissEnemyHelp() then return true end
-            if owner.powerTip and owner.powerTip.touch then owner:closePowerTip() end
-        end)
         local info = dependencies.child("statusInfo")
         info.disableCursorEventPassthrough = true
         local function dismissInfo()
             local closed,_,handFocus=dependencies.closeInfo()
             if closed then owner:renderDetailsOnly(false,handFocus) end
         end
+        dependencies.child("statusDismiss"):AddCursorEventListener(host.clickEvent, function(event)
+            if Pointer.blocked(host.platform) or event and event.dragging then return end
+            if owner:dismissEnemyHelp() then return true end
+            if owner.powerTip and owner.powerTip.touch then return owner:closePowerTip() end
+            if owner.info and not owner.info.kind then dismissInfo(); return true end
+        end)
         dependencies.listen(info:GetChild("hit"),dismissInfo)
         -- A tap on the card itself turns to the next page; a single page closes like any tap.
         -- Not routed through listen(): that dismisses the open card before any handler runs.
