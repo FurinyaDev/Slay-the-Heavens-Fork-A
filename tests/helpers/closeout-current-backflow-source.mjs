@@ -7,8 +7,8 @@ import {exactSourceMatches} from './source-fingerprint.mjs';
 
 const bytes=readFileSync(new URL('../fixtures/closeout-current-backflow-source.json.gz',import.meta.url));
 assert.equal(createHash('sha256').update(bytes).digest('hex'),
- 'adb985acdcf564f35dce3d5dfe70a580aa8586a4fdbfa3e5f820bc0e02c38931','exact current closeout backflow packet');
-const {schemaVersion,base,head,files,owners,continuation,sessionRoute,anchorRefactor,actorDetail,tooling}=JSON.parse(gunzipSync(bytes));
+ 'd0910a05e5686fc23a15a54a4d6c2f8be504821a9db5a63f8aa1393784f51e77','exact current closeout backflow packet');
+const {schemaVersion,base,head,files,owners,continuation,sessionRoute,anchorRefactor,actorDetail,tooling,pageReveal}=JSON.parse(gunzipSync(bytes));
 assert.equal(schemaVersion,1);
 assert.equal(base,'903bf2a31e91f10fb24763ab4cea23d586d0bb83');
 assert.equal(head,'7228aaa83b0995e1dc6e36955cfd6e773c199f07');
@@ -21,6 +21,8 @@ const battleDetailView='src/lua/abyss_battle_info_view.lua';
 assert.equal(anchorRefactor.commit,'c7ea71bd084f27a8c5ace07ee8747e40f7e2ad35');
 assert.deepEqual(anchorRefactor.before,owners[battleDetailView]);
 assert.equal(actorDetail.commit,'cb85a291a83de761e6462d0b98e54c8fc85dc5b8');
+const pageRevealPath='src/lua/abyss_page_reveal.lua';
+assert.equal(pageReveal.commit,'a25784d9814d0a2daf07a506ba416015ac02ec11');
 assert.equal(files['tests/official-battle-relic-icons.test.mjs'].successor.commit,
  'dfcc35416f127693b2f0323b8168b0e29590af7d');
 assert.equal(tooling.commit,'e65d9b98fbec69442047650254238cd9244df805');
@@ -102,12 +104,17 @@ export function readCloseoutCurrentBackflowReceipt(path,digest,read){
  // Actor Detail follows the anchor refactor and advances all four owners.
  if(exactSourceMatches(detail,actorDetail.owners[battleDetailView]))Object.assign(current,actorDetail.owners);
  else if(exactSourceMatches(detail,anchorRefactor.after))current[battleDetailView]=anchorRefactor.after;
+ // Local map return was reviewed both with the anchor and with Actor Detail.
+ const readPageReveal=Object.hasOwn(current,battleDetailView);
+ const reveal=readPageReveal?read(pageRevealPath,'utf8'):null;
+ if(exactSourceMatches(reveal,pageReveal.owner))current[pageRevealPath]=pageReveal.owner;
  for(const [owner,binding] of Object.entries(owners)){
   const live=readExactOwner(owner,current[owner]??binding,read);
   if(owner===path)assert.equal(live,source,'closeout owner changed during the receipt read: '+path);
   if(owner===markerPath)assert.equal(live,marker,'closeout owner changed during the receipt read: '+owner);
   if(owner===sessionNavigation&&guardian)assert.equal(live,navigation,'closeout owner changed during the receipt read: '+owner);
   if(owner===battleDetailView&&session)assert.equal(live,detail,'closeout owner changed during the receipt read: '+owner);
+  if(owner===pageRevealPath&&readPageReveal)assert.equal(live,reveal,'closeout owner changed during the receipt read: '+owner);
  }
  return prior;
 }
