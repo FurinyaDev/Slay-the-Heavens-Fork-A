@@ -1226,17 +1226,28 @@ export function assertIntegrationSuccessorsCurrent(read=readFileSync){
  return rawRead;
 }
 // The live planner reads its measured Linux map directly. Historical CI views
-// first restore the exact pre-observation timing table and its custody chain.
+// restore each exact predecessor in reverse observation order.
+const v220HostedTimingEpochs = [
+ ['71c31f96f9578bf8812a802597cd48db5fbbd0aea05999b15ded2f738b41163b','c38fc2ce439ca855b0ea05b795b8e6463b17b001',
+  '6756697bac41f5e9081c49a95618f909628aba4ce31e300ae7e0006d16a5eeef','e7e9d43b598b8d91f70fe6b00843874b7702e1cb'],
+ ['6756697bac41f5e9081c49a95618f909628aba4ce31e300ae7e0006d16a5eeef','e7e9d43b598b8d91f70fe6b00843874b7702e1cb',
+  '8f5644822f365b925cba048ee71a6a1e62a4b1e635074fd05397c792a5d8b961','6b6db60d5e502286e2d0ff670b953c4af1d7d913'],
+];
 function beforeV220HostedTiming(path,source){
  if(path!=='scripts/ci-test-timings.json'||typeof source!=='string'||source.includes('\r\r\n'))return source;
- const current=normalize(source);
- if(hash(current)!=='6756697bac41f5e9081c49a95618f909628aba4ce31e300ae7e0006d16a5eeef'||blob(current)!=='e7e9d43b598b8d91f70fe6b00843874b7702e1cb')return source;
- const value=JSON.parse(current),update=value.jsCalibrationUpdates.pop();
- for(const file of Object.keys(update.weightsMs))delete value.js.linux[file];
- const prior=JSON.stringify(value,null,2)+'\n';
- assert.equal(hash(prior),'8f5644822f365b925cba048ee71a6a1e62a4b1e635074fd05397c792a5d8b961','exact pre-v2.2 Hosted timing table');
- assert.equal(blob(prior),'6b6db60d5e502286e2d0ff670b953c4af1d7d913',path);
- return source.includes('\r\n')?prior.replaceAll('\n','\r\n'):prior;
+ const raw=normalize(source);
+ let current=raw;
+ for(const [sourceSha,sourceBlob,priorSha,priorBlob] of v220HostedTimingEpochs){
+  if(hash(current)!==sourceSha||blob(current)!==sourceBlob)continue;
+  const value=JSON.parse(current),update=value.jsCalibrationUpdates.pop();
+  for(const file of Object.keys(update.weightsMs))delete value.js.linux[file];
+  const prior=JSON.stringify(value,null,2)+'\n';
+  assert.equal(hash(prior),priorSha,'exact Hosted timing table predecessor');
+  assert.equal(blob(prior),priorBlob,path);
+  current=prior;
+ }
+ if(current===raw)return source;
+ return source.includes('\r\n')?current.replaceAll('\n','\r\n'):current;
 }
 export function beforePreflightSource(path,source,view='prior',read=readFileSync){
  source=beforeV220HostedTiming(path,source);
