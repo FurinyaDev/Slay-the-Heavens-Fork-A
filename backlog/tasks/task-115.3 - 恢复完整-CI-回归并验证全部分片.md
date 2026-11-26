@@ -5,9 +5,10 @@ status: In Progress
 assignee:
   - '@Furinya'
 created_date: '2026-11-25 21:00'
-updated_date: '2026-11-26 04:05'
+updated_date: '2026-11-26 03:52'
 labels:
   - engineering
+milestone: m-8
 dependencies: []
 references:
   - 'https://github.com/FurinyaWorks/Slay-the-Heavens/pull/929'
