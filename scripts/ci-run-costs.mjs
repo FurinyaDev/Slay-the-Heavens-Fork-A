@@ -12,14 +12,18 @@ const seconds=(from,to)=>{
 const actual=job=>Number.isSafeInteger(job.runner_id)&&job.runner_id>0
   && job.steps?.some(step=>step.name==='Set up job');
 const latest=values=>values.filter(Boolean).sort().at(-1)??null;
-export function runCost(run,response,{inventoryRun,inventoryJobs}={}) {
+function validateJobs(run,response) {
   if(!Array.isArray(response.jobs)||response.total_count!==response.jobs.length)throw Error('Incomplete jobs response');
   const ids=new Set();
   for(const job of response.jobs) {
+    if(!Number.isSafeInteger(job.id)||job.id<=0)throw Error('Invalid job identity');
     if(ids.has(job.id))throw Error('Duplicate job');
     ids.add(job.id);
     if(job.run_id!==run.id||job.run_attempt!==run.run_attempt||job.head_sha!==run.head_sha)throw Error('Job/run identity mismatch');
   }
+}
+export function runCost(run,response,{inventoryRun,inventoryJobs}={}) {
+  validateJobs(run,response);
   const jobs=response.jobs.map(job=>({id:job.id,name:job.name,status:job.status,conclusion:job.conclusion,
     createdAt:job.created_at??null,startedAt:job.started_at??null,completedAt:job.completed_at??null,
     runnerId:job.runner_id,runnerName:job.runner_name,executed:actual(job),
@@ -111,6 +115,118 @@ export function analyzeDirectory(directory) {
   }
   return {...summarizeCosts(costs),listedRuns:runs.length,uncollectedRuns:runs.length-costs.length,inventoryCosts};
 }
+
+const testSteps=new Set(['JavaScript regression shard','POSIX JavaScript regression shard','Lua regression shard']);
+const aggregationSteps=new Set(['Require every regression shard','Require every POSIX regression shard']);
+const mediaSteps=new Set(['Materialize reviewed PNGs for this shard','Restore exact existing media for the license audit','Restore exact existing media for presentation']);
+const archiveSource=/^(?:(?:combined linked owner missing|Colorless catalog linked owner missing): [\w./-]+: )*(?:combined linked owner identity|fresh current production owner|fresh complete StS CI source|fresh StS helper source|fresh complete native fixture source|exact live retirement owner|reviewed compendium owner|reviewed GameUI extraction retirement module|fresh StS deck browser source|potion linked owner identity|delivery linked source identity|unreviewed integrated retirement source drift): ((?:src|scripts|tests|config|docs)\/[\w./-]+)/;
+
+function caseSignal(line) {
+  const error=line.trimStart().replace(/^(?:AssertionError \[ERR_ASSERTION\]|Error):\s*/,'');
+  const source=archiveSource.exec(error);
+  if(source)return ['historical-source-identity',source[1]];
+  if(/^(?:.*?\.lua:\d+: )?unknown_encounter$/.test(error))return ['fixture-input','unknown_encounter'];
+  const module=/^Missing Lua module ([\w]+); run npm run build:\w+ first\.$/.exec(error);
+  if(module)return ['fixture-input',module[1]];
+  if(/^(?:Historical .+|Lua runner failed \(.+\))(?:: .*)?\bETIMEDOUT\b/.test(error))return ['fixture-timeout','ETIMEDOUT'];
+  return null;
+}
+
+function observedFailures(log,{standaloneLua=false}={}) {
+  const cases=[];
+  let location, current, mediaRestoreFailed=false;
+  const luaFailures=new Map(),luaTimings=new Map();
+  for(const raw of log.split(/\r?\n/)) {
+    const line=raw.replace(/^\d{4}-\d{2}-\d{2}T\S+Z /,'').replace(/\x1b\[[0-9;]*m/g,'');
+    if(/^(?:(?:Runtime preview|Reviewed PNG) LFS materialization failed \(exit (?:\d+|timeout\/start-error)\); no verified PNG result|Exact existing media LFS materialization failed; no verified media result)$/.test(line))mediaRestoreFailed=true;
+    if(standaloneLua) {
+      const luaTiming=/^Lua fixture (tests[/\\]lua[/\\][\w./\\-]+\.lua): (\d+) ms$/.exec(line);
+      if(luaTiming)luaTimings.set(luaTiming[1].replaceAll('\\','/'),Number(luaTiming[2]));
+      const luaFailure=/^Lua (?:worker failed|runner failed) \((tests[/\\]lua[/\\][\w./\\-]+\.lua), /.exec(line);
+      if(luaFailure) {
+        const path=luaFailure[1].replaceAll('\\','/');
+        const signal=caseSignal(line)??luaFailures.get(path);
+        luaFailures.set(path,signal);
+      }
+    }
+    const file=/^test at ((?:tests|scripts)[/\\][^:\r\n]+):(\d+):(\d+)$/.exec(line);
+    if(file) {
+      location={path:file[1].replaceAll('\\','/'),line:Number(file[2]),column:Number(file[3])};
+      current=null;
+      continue;
+    }
+    if(location) {
+      const title=/^✖ (.+) \((\d+(?:\.\d+)?)ms\)$/.exec(line);
+      if(title) {
+        current={...location,name:title[1],durationMs:Number(title[2]),signal:'unclassified',subject:null};
+        cases.push(current);
+      }
+      location=null;
+      continue;
+    }
+    if(!line.trim()||!/^\s/.test(line))current=null;
+    if(current?.signal==='unclassified') {
+      const signal=caseSignal(line);
+      if(signal)[current.signal,current.subject]=signal;
+    }
+  }
+  for(const [path,signal] of luaFailures)cases.push({path,line:null,column:null,name:path,durationMs:luaTimings.get(path)??null,
+    signal:signal?.[0]??'unclassified',subject:signal?.[1]??null});
+  return {cases,mediaRestoreFailed};
+}
+
+function jobFailureKind(job,failedSteps,observation) {
+  if(['cancelled','skipped','neutral','stale'].includes(job.conclusion)||job.status!=='completed')return 'unevaluated';
+  if(observation.cases.length)return 'test-failure';
+  if(failedSteps.some(step=>aggregationSteps.has(step)))return 'aggregation';
+  if(failedSteps.some(step=>mediaSteps.has(step))&&observation.mediaRestoreFailed)return 'infrastructure';
+  if(failedSteps.some(step=>testSteps.has(step)))return 'test-step-without-case-evidence';
+  return 'unclassified';
+}
+
+export function triageRun(run,response,{readJobLog=()=>null}={}) {
+  if(!Number.isSafeInteger(run.id)||run.id<=0||!Number.isSafeInteger(run.run_attempt)||run.run_attempt<=0
+    ||!/^[a-f0-9]{40}$/i.test(run.head_sha))throw Error('Invalid run identity');
+  validateJobs(run,response);
+  const failures=[],groups=new Map();
+  for(const job of response.jobs) {
+    if(job.conclusion==='success')continue;
+    const failedSteps=(job.steps??[]).filter(step=>step.conclusion==='failure').map(step=>step.name);
+    const log=readJobLog(job.id);
+    const observation=observedFailures(log??'',{standaloneLua:failedSteps.includes('Lua regression shard')});
+    const kind=jobFailureKind(job,failedSteps,observation);
+    failures.push({jobId:job.id,name:job.name,status:job.status,conclusion:job.conclusion,kind,failedSteps,
+      logAvailable:log!==null,executed:actual(job),queueSeconds:actual(job)?seconds(job.created_at,job.started_at):null,
+      executionSeconds:actual(job)?seconds(job.started_at,job.completed_at):null,cases:observation.cases});
+    for(const failure of observation.cases) {
+      const key=JSON.stringify([failure.signal,failure.subject??failure.path]);
+      const group=groups.get(key)??{signal:failure.signal,subject:failure.subject??failure.path,count:0,jobIds:new Set()};
+      group.count++;
+      group.jobIds.add(job.id);
+      groups.set(key,group);
+    }
+  }
+  const countByKind={};
+  for(const failure of failures)countByKind[failure.kind]=(countByKind[failure.kind]??0)+1;
+  return {schemaVersion:1,runId:run.id,attempt:run.run_attempt,headSha:run.head_sha,status:run.status,conclusion:run.conclusion,
+    repositoryId:run.repository?.id??null,workflowId:run.workflow_id??null,event:run.event??null,branch:run.head_branch??null,
+    runWallSeconds:run.status==='completed'?seconds(run.created_at,run.updated_at):null,
+    successfulJobs:response.jobs.length-failures.length,countByKind,
+    caseGroups:[...groups.values()].map(group=>({...group,jobIds:[...group.jobIds]})),failures};
+}
+
+function triageCli(args) {
+  if(![2,4].includes(args.length)||(args.length===4&&args[2]!=='--logs'))
+    throw Error('Usage: ci-run-costs.mjs --triage <run.json> <jobs.json> [--logs <directory>]');
+  const [run,jobs]=args.slice(0,2).map(path=>JSON.parse(readFileSync(path,'utf8')));
+  const readJobLog=id=>{
+    if(args.length===2)return null;
+    try{return readFileSync(join(args[3],`${id}.log`),'utf8');}
+    catch(error){if(error.code==='ENOENT')return null;throw error;}
+  };
+  console.log(JSON.stringify(triageRun(run,jobs,{readJobLog}),null,2));
+}
+
 const ms = value => Date.parse(value);
 const key = r => JSON.stringify([r.repository?.id??r.repository_id??null,r.workflow_id,r.head_sha,r.event,r.head_branch]);
 const percentile = (values,p) => values.length ? [...values].sort((a,b)=>a-b)[Math.ceil(values.length*p)-1] : null;
@@ -197,8 +313,11 @@ function governanceCli() {
 }
 if(process.argv[1]&&import.meta.url===pathToFileURL(resolve(process.argv[1])).href) {
   try {
-    if(process.argv[2]?.startsWith('--')){governanceCli();process.exit(0);}
-    if(process.argv.length!==4)throw Error('Usage: ci-run-costs.mjs <raw-directory> <output.json>');
-    writeFileSync(process.argv[3],JSON.stringify(analyzeDirectory(process.argv[2]),null,2)+'\n');
+    if(process.argv[2]==='--triage')triageCli(process.argv.slice(3));
+    else if(process.argv[2]?.startsWith('--'))governanceCli();
+    else {
+      if(process.argv.length!==4)throw Error('Usage: ci-run-costs.mjs <raw-directory> <output.json>');
+      writeFileSync(process.argv[3],JSON.stringify(analyzeDirectory(process.argv[2]),null,2)+'\n');
+    }
   }catch(error){console.error(error.message);process.exitCode=1;}
 }

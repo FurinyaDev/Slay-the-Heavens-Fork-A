@@ -21,3 +21,11 @@ git push fork-b HEAD:refs/heads/ci/full/<task-name>  # 自动 Full
 失败先读准确 run/attempt 的失败步骤：代码冲突、断言失败、无 runner 的排队、权限拒绝和队列退出分别接续。记录作业创建到分配 runner 的等待与实际执行时长；未分配 runner 不计执行。原 HEAD/BASE 已成功或仍在途不重复派发，修复后沿原 PR 推进；入队/本地通过不记交付，实际合并后再用已有交付验证器核验并确认无独有工作才清理。正式候选先定稿版本和 CHANGELOG，再冻结做必要 Full/构建；官方和设备缺项保持未验，不前移为普通 PR 门槛。
 
 统计复用 `scripts/ci-run-costs.mjs`，仅按需运行，见[基线](evidence/ci-preflight-20261117/history.md)。额外来源、SHA、历史或证据防护先针对已发生的故障做最小修复，再比较实际拦截、runner 时间和维护返工；没有收益证据就先保留诊断，不默认升级强制门禁。不为这条原则新增检查、报表平台或每 PR 填表。
+
+用 GitHub REST 的原始运行对象和同一 attempt 的完整作业响应离线归类。可选日志目录按作业 ID 存放 GitHub 解码后的 `<job-id>.log` 文本。缺少日志时仍记录失败步骤和已知耗时。
+
+```sh
+node scripts/ci-run-costs.mjs --triage run.json jobs.json --logs logs > triage.json
+```
+
+报告记录测试位置、耗时和触发的已知错误签名，按历史源码身份、夹具输入、夹具超时及未归因用例归组。签名用于安排复现。作业汇总失败和未评估分片单独统计，真实业务缺陷需要精确源码的行为复现确认。使用 `/actions/runs/{run_id}/attempts/{attempt_number}/jobs` 采集作业，合并分页的 `jobs` 并保留 `total_count`。
