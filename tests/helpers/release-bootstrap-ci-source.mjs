@@ -1,6 +1,6 @@
 import {beforeKnownMasterBackflowSource} from './master-backflow-source.mjs';
 import {assertCurrentJsInventory,assertCurrentLuaInventory,assertIntegrationSuccessorsCurrent,beforePreflightSource,exactReviewedBuildInput,beforeM05ShopCiSource,assertDevelopBackflowCurrent,authenticateDevelopBackflow,developBackflowOwns,readHistoricalPreflightInput} from './fork-preflight-source.mjs';
-import {beforeCloseoutReviewedDeckBuild} from './closeout-current-backflow-source.mjs';
+import {beforeCloseoutReviewedDeckBuild,beforeCloseoutRunHudBuild} from './closeout-current-backflow-source.mjs';
 import {beforeInputRetirement} from './input-retirement-source.mjs';
 // CI-only complete bootstrap continuation. No gameplay source or production projector.
 import assert from 'node:assert/strict';
@@ -113,7 +113,9 @@ function beforeRunHudDiskInput(path,source,read){
  return original;
 }
 export function releaseBootstrapCiRead(read=readFileSync){return(path,encoding)=>{
- const raw=readHistoricalPreflightInput(path,encoding,read),text=typeof raw==='string'?raw:raw.toString('utf8'),prior=releaseBootstrapCiSource(path,guidanceBefore(path,beforeRunHudDiskInput(path,text,read)));
+ const raw=readHistoricalPreflightInput(path,encoding,read),text=typeof raw==='string'?raw:raw.toString('utf8');
+ const projected=releaseBootstrapCiSource(path,guidanceBefore(path,beforeRunHudDiskInput(path,text,read)));
+ const prior=beforeCloseoutRunHudBuild(path,projected);
  return typeof raw==='string'?prior:prior===text?raw:Buffer.from(prior);
 };}
 export function releaseBootstrapWorkflowBefore(path,source){

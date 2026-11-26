@@ -7,8 +7,8 @@ import {exactSourceMatches} from './source-fingerprint.mjs';
 
 const bytes=readFileSync(new URL('../fixtures/closeout-current-backflow-source.json.gz',import.meta.url));
 assert.equal(createHash('sha256').update(bytes).digest('hex'),
- 'fe8489cd7ee0d27078b74c6dd7322722d444abae3b0d3825a2035c698aabe9cd','exact current closeout backflow packet');
-const {schemaVersion,base,head,files,owners,continuation,sessionRoute,anchorRefactor,actorDetail,tooling,pageReveal,independentFiles,preMasterRelicIcons,reviewedDeckBuild}=JSON.parse(gunzipSync(bytes));
+ 'a8e5baab2699f9b2cf7d27b20c1f2b6ac5fda135963e18a3d133eacd7d88e1af','exact current closeout backflow packet');
+const {schemaVersion,base,head,files,owners,continuation,sessionRoute,anchorRefactor,actorDetail,tooling,pageReveal,independentFiles,preMasterRelicIcons,reviewedDeckBuild,runHudBuildInputs}=JSON.parse(gunzipSync(bytes));
 assert.equal(schemaVersion,1);
 assert.equal(base,'903bf2a31e91f10fb24763ab4cea23d586d0bb83');
 assert.equal(head,'7228aaa83b0995e1dc6e36955cfd6e773c199f07');
@@ -77,6 +77,11 @@ function beforeExactFixture(path,row,source){
 
 export function beforeCloseoutReviewedDeckBuild(path,source){
  return path===reviewedDeckBuild.path?beforeExactFixture(path,reviewedDeckBuild,source):source;
+}
+
+// The master backflow reader authenticates the live HUD build sources first.
+export function beforeCloseoutRunHudBuild(path,source){
+ return Object.hasOwn(runHudBuildInputs,path)?beforeExactFixture(path,runHudBuildInputs[path],source):source;
 }
 
 // The frozen Run HUD reader also feeds the Battle and Actor views. Reuse
