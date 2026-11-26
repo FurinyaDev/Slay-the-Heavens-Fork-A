@@ -50,7 +50,10 @@ local function count(box)local n=1;for _,child in pairs(box.children or {})do n=
 game={InstantiateClientUIControl=function(index,parent)
  assert(index==1 or index==2 or index==3,'disabled category template created')
  local box=actorApi.instantiate(index,parent);creates=creates+1;owned[#owned+1]=box
- if index==1 then assert(count(box)==647,'actual complete drawing-enabled actor template');Native.decorate(assert(box:GetChild('monsterArt')))end
+ if index==1 then
+  assert(count(box)==648 and box:GetChild('hpHit'),'actual complete drawing-enabled actor template with health hit target')
+  Native.decorate(assert(box:GetChild('monsterArt')))
+ end
  return box
  end,
  DestroyClientUIControl=function(box)return actorApi.destroy(box)end,
