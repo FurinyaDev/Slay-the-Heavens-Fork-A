@@ -79,12 +79,12 @@ local function paintPortraitNote(details,info,large,native)
     if large and large.playable==false then note=note..' · 非本次正式角色' end
     text(details:GetChild('portraitNote'),note)
 end
-local function paintCharacterButtons(panel,state,platform,originalSts,open,hideSelection)
+local function paintCharacterButtons(panel,state,platform,originalSts,open,selection)
     for i,id in ipairs(Select.characters)do
         local box=panel:GetChild(i==5 and 'traveler' or 'character'..i)
         local allowed=(originalSts or open>1 or id=='traveler') and state:allowsCharacter(id)
         visible(box,allowed)
-        selected(box,not hideSelection and state.character==id)
+        selected(box,selection==id)
         local _,bust=largeSlot(id,id=='traveler' and (state.element or 'ironclad') or nil)
         if allowed and (not originalSts or id~='traveler') then paintBust(box,bust,platform)end
     end
@@ -141,7 +141,7 @@ function M.prepare(panel,state,platform)
     local roster=panel:GetChild('v25Roster')
     local open=countAllowed(Select.characters,function(id)return state:allowsCharacter(id)end)
     if roster then visible(roster,open==1) end
-    paintCharacterButtons(panel,state,platform,panel:GetChild('stsCharacter')~=nil,open,true)
+    paintCharacterButtons(panel,state,platform,panel:GetChild('stsCharacter')~=nil,open,nil)
 end
 function M.motion(panel,platform)
     local nativeV25=officialPanel(panel)
@@ -172,12 +172,14 @@ function M.render(panel,state,platform,published,motion)
     -- 只剩一个可选角色/元素时不摆假选择钮（Pan 2026-10-31：单角色发版）。
     local open=countAllowed(Select.characters,function(id)return state:allowsCharacter(id)end)
     local elementsOpen=countAllowed(Select.elements,function(id)return state:allowsElement(id)end)
-    local roster=panel:GetChild('v25Roster')
-    paintCharacterButtons(panel,state,platform,originalSts,open,nativeV25 and roster and open==1)
+    local roster=nativeV25 and panel:GetChild('v25Roster')
+    local selection=state.character
+    if roster and (open==1 or selection=='traveler') then selection=nil end
+    paintCharacterButtons(panel,state,platform,originalSts,open,selection)
     paintThemesAndElements(panel,state,platform,elementsOpen)
     local details=panel:GetChild('details');visible(details,info~=nil)
     if not nativeV25 then visible(panel:GetChild('deckView'),false)end
-    if nativeV25 and roster then
+    if roster then
         visible(roster,open==1)
         visible(panel:GetChild('title'),info==nil)
         visible(roster:GetChild('selected'):GetChild('selection'),info~=nil)

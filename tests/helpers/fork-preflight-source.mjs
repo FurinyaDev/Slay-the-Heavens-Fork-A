@@ -1,4 +1,4 @@
-import {beforeKnownMasterBackflowSource,readBeforeMasterBackflowSource} from './master-backflow-source.mjs';
+import {beforeKnownMasterBackflowSource,beforeMasterBackflowSource} from './master-backflow-source.mjs';
 import {beforePosixDeadlineWorkflow,beforeWindowsDeadlineWorkflow} from './auto-merge-workflow.mjs';
 import {beforeHotfixPublicationGate} from './release-ci-workflow.mjs';
 import {assertInputRetirementLuaCurrent,beforeInputRetirementTestInventory,readRetiredInputLuaReceipt} from './input-retirement-inventory.mjs';
@@ -12,12 +12,13 @@ import {beforeCalibrationReplay,beforeCurrentReplayCopier} from './calibration-r
 import {beforeNativeHostReplay} from './native-host-replay-source.mjs';
 import {assertNativeFixturesCurrent,beforeNativeFixtureReplay} from './native-fixture-replay-source.mjs';
 import {assertNativeFlowFixturesCurrent,beforeNativeFlowFixture} from './native-flow-fixture-source.mjs';
+import {beforeSelectionReceiptSource,checkedSelectionReceiptRead,selectionCopierReceipt} from './ui-selection-current-source.mjs';
 import {beforeUiEntranceWitness} from './ui-entrance-source.mjs';
 import {beforeOfficialBackgroundFixture} from './official-background-fixture-source.mjs';
 import {assertAudioDeckBrowserCurrent,beforeMapRoomReplayCohort,beforeDevelopReplayMerge} from './develop-replay-merge-source.mjs';
 import {beforeStsUiCloseoutSource} from './sts-ui-closeout-source.mjs';
 import {beforeStsFadeCi} from './sts-fade-ci-source.mjs';
-import {beforeCurrentReplayFixes} from './current-replay-fix-sources.mjs';
+import {beforeCurrentReplayFixes,beforeOfficialCharacterBackflow} from './current-replay-fix-sources.mjs';
 import {beforeIntegratedStsInventory} from './sts-selection-fade-source.mjs';
 import {beforeNativeButtonRepair,beforeRebasedCi,beforeRebasedRelease,historicalReleaseCopier} from './rebased-release-source.mjs';
 import {battlePeripheryPredecessor,beforeBattlePeriphery} from './battle-periphery-source.mjs';
@@ -1043,47 +1044,76 @@ const reviewedStsFeedbackFixture={
 const reviewedStsFeedbackIdentity=['1b937677280a1e5f72063528e7188773d3493207166582bf0805dfe43a1e2669','bf1dd5f099f9c8536bf1b1bb5a73b0f37725d815'];
 const reviewedStsStyleFixture={
  "path": "tests/sts-style-source-epoch.test.mjs",
- "beforeSha256": "1b937677280a1e5f72063528e7188773d3493207166582bf0805dfe43a1e2669",
- "afterSha256": "715e34607e607b3c731dfef61869d3c4e1ac847ab257890da0d7c401620e4b46",
+ "beforeSha256": "dbd8dabc63cafcbaa8404fa76d309c8241dbee8aabecae3e46c2be8120d0ac90",
+ "afterSha256": "af4f8214682d9516a03c168df3805afea8ba844becb5d0f768d4c416e74ae9eb",
  "hunks": [
   {
    "at": 0,
-   "before": "import {actorFocusAdded,assertActorFocusInventory,deckPagesAdded,stasisUpgradeAddedPaths} from './helpers/develop-release-backflow-source.mjs';\nimport {pointerInputPath,readRetiredController,retiredControllerPath} from './helpers/input-retirement-source.mjs';\nimport {beforeCharacterPreparationSource,beforeCurrentProductionSource} from './helpers/character-preparation-source.mjs';\nimport {reviewedSelectionRead} from './helpers/reviewed-selection-current-source.mjs';\nimport {entranceInventory} from './helpers/ui-entrance-source.mjs';\nimport {assertCurrentJsInventory,assertCurrentLuaInventory,beforeShopEntryInventory} from './helpers/fork-preflight-source.mjs';\nimport test from 'node:test';",
-   "after": "import {actorFocusAdded,assertActorFocusInventory,deckPagesAdded,stasisUpgradeAddedPaths} from './helpers/develop-release-backflow-source.mjs';\nimport {pointerInputPath,readRetiredController,retiredControllerPath} from './helpers/input-retirement-source.mjs';\nimport {beforeCharacterPreparationSource,beforeCurrentProductionSource} from './helpers/character-preparation-source.mjs';\nimport {reviewedSelectionRead,reviewedStsStyleInventory,reviewedStsStyleRead} from './helpers/reviewed-selection-current-source.mjs';\nimport {entranceInventory} from './helpers/ui-entrance-source.mjs';\nimport {assertCurrentJsInventory,assertCurrentLuaInventory,beforeShopEntryInventory} from './helpers/fork-preflight-source.mjs';\nimport test from 'node:test';"
+   "before": "import {actorFocusAdded,assertActorFocusInventory,deckPagesAdded,stasisUpgradeAddedPaths} from './helpers/develop-release-backflow-source.mjs';\nimport {pointerInputPath,readRetiredController,retiredControllerPath} from './helpers/input-retirement-source.mjs';\nimport {beforeCharacterPreparationSource,beforeCurrentProductionSource} from './helpers/character-preparation-source.mjs';\nimport {reviewedSelectionRead} from './helpers/reviewed-selection-current-source.mjs';\nimport {entranceInventory,uiEntranceOwns} from './helpers/ui-entrance-source.mjs';\nimport {assertCurrentJsInventory,assertCurrentLuaInventory,beforeShopEntryInventory,chapterEvidenceCurrentRead} from './helpers/fork-preflight-source.mjs';\nimport {checkedSelectionEntranceRead} from './helpers/ui-selection-current-source.mjs';\nimport {beforeChapterBattleScene} from './helpers/chapter-battle-scene-source.mjs';\nimport {beforeBattlePeriphery} from './helpers/battle-periphery-source.mjs';",
+   "after": "import {actorFocusAdded,assertActorFocusInventory,deckPagesAdded,stasisUpgradeAddedPaths} from './helpers/develop-release-backflow-source.mjs';\nimport {pointerInputPath,readRetiredController,retiredControllerPath} from './helpers/input-retirement-source.mjs';\nimport {beforeCharacterPreparationSource} from './helpers/character-preparation-source.mjs';\nimport {reviewedSelectionRead,reviewedStsStyleInventory,reviewedStsStyleRead} from './helpers/reviewed-selection-current-source.mjs';\nimport {entranceInventory,uiEntranceOwns} from './helpers/ui-entrance-source.mjs';\nimport {assertCurrentJsInventory,assertCurrentLuaInventory,beforeShopEntryInventory} from './helpers/fork-preflight-source.mjs';\nimport {beforeCurrentSelectionProductionSource,readSelectionProductionOwners} from './helpers/replay-reviewed-selection.mjs';\nimport {beforeChapterBattleScene} from './helpers/chapter-battle-scene-source.mjs';\nimport {beforeBattlePeriphery} from './helpers/battle-periphery-source.mjs';"
   },
   {
-   "at": 18,
-   "before": "const hash=source=>createHash('sha256').update(source).digest('hex');\nconst bind=source=>({source,sha256:hash(source)}),commit='c'.repeat(40);\nconst readProduction=path=>readFileSync(path,'utf8');\nconst readProductionHistory=path=>path===retiredControllerPath?readRetiredController(readProduction).source:readProduction(path);\nfunction fixture(){\n const config='config/architecture.json',one='src/lua/one.lua',two='src/lua/two.lua',added='src/lua/abyss_page_reveal.lua';\n const current={[config]:bind('{}\\n'),[one]:bind('return 1\\n'),[two]:bind('return 2\\n')};",
-   "after": "const hash=source=>createHash('sha256').update(source).digest('hex');\nconst bind=source=>({source,sha256:hash(source)}),commit='c'.repeat(40);\nconst readProduction=path=>readFileSync(path,'utf8');\nconst readProductionHistory=(path,read)=>path===retiredControllerPath?readRetiredController(read).source:read(path);\nfunction fixture(){\n const config='config/architecture.json',one='src/lua/one.lua',two='src/lua/two.lua',added='src/lua/abyss_page_reveal.lua';\n const current={[config]:bind('{}\\n'),[one]:bind('return 1\\n'),[two]:bind('return 2\\n')};"
+   "at": 22,
+   "before": "const bind=source=>({source,sha256:hash(source)}),commit='c'.repeat(40);\nconst readProduction=path=>readFileSync(path,'utf8');\nconst readProductionHistory=path=>path===retiredControllerPath?readRetiredController(readProduction).source:readProduction(path);\nfunction fixture(){\n const config='config/architecture.json',one='src/lua/one.lua',two='src/lua/two.lua',added='src/lua/abyss_page_reveal.lua';",
+   "after": "const bind=source=>({source,sha256:hash(source)}),commit='c'.repeat(40);\nconst readProduction=path=>readFileSync(path,'utf8');\nconst readProductionHistory=(path,read)=>path===retiredControllerPath?readRetiredController(read).source:read(path);\nfunction fixture(){\n const config='config/architecture.json',one='src/lua/one.lua',two='src/lua/two.lua',added='src/lua/abyss_page_reveal.lua';"
   },
   {
-   "at": 110,
-   "before": "\ntest('real style source retains the complete CI-repair and every older target while authenticating all current raw owners',async()=>{\n const {sourceEpoch,ciRepairSourceEpoch,releaseSourceEpoch,prePowerMembershipEpoch}=await import('./helpers/closeout-source-epoch.mjs');\n const p=sourceEpoch.proof,before=ciRepairSourceEpoch.proof,read=readProduction;\n assert.equal(Object.keys(before.current).length,347); // config plus all 346 prior Lua modules.\n assert.equal(Object.keys(releaseSourceEpoch.proof.current).length,350); // Frozen release: page reveal, low-cost art, merchant pages.\n assert.equal(Object.keys(prePowerMembershipEpoch.proof.current).length,352); // Final menu adds navigation and navigation view.",
-   "after": "\ntest('real style source retains the complete CI-repair and every older target while authenticating all current raw owners',async()=>{\n const {sourceEpoch,ciRepairSourceEpoch,releaseSourceEpoch,prePowerMembershipEpoch}=await import('./helpers/closeout-source-epoch.mjs');\n const p=sourceEpoch.proof,before=ciRepairSourceEpoch.proof,read=reviewedStsStyleRead(readProduction);\n assert.equal(Object.keys(before.current).length,347); // config plus all 346 prior Lua modules.\n assert.equal(Object.keys(releaseSourceEpoch.proof.current).length,350); // Frozen release: page reveal, low-cost art, merchant pages.\n assert.equal(Object.keys(prePowerMembershipEpoch.proof.current).length,352); // Final menu adds navigation and navigation view."
+   "at": 114,
+   "before": "test('real style source retains the complete CI-repair and every older target while authenticating all current raw owners',async()=>{\n const {sourceEpoch,ciRepairSourceEpoch,releaseSourceEpoch,prePowerMembershipEpoch}=await import('./helpers/closeout-source-epoch.mjs');\n const p=sourceEpoch.proof,before=ciRepairSourceEpoch.proof,read=readProduction;\n assert.equal(Object.keys(before.current).length,347); // config plus all 346 prior Lua modules.\n assert.equal(Object.keys(releaseSourceEpoch.proof.current).length,350); // Frozen release: page reveal, low-cost art, merchant pages.",
+   "after": "test('real style source retains the complete CI-repair and every older target while authenticating all current raw owners',async()=>{\n const {sourceEpoch,ciRepairSourceEpoch,releaseSourceEpoch,prePowerMembershipEpoch}=await import('./helpers/closeout-source-epoch.mjs');\n const p=sourceEpoch.proof,before=ciRepairSourceEpoch.proof;\n const readReviewed=reviewedStsStyleRead(readProduction);\n const readCurrent=readSelectionProductionOwners(readFileSync,readReviewed);\n const read=path=>{\n  const source=readCurrent(path);\n  return uiEntranceOwns(path)?beforeBattlePeriphery(path,beforeChapterBattleScene(path,source)):source;\n };\n assert.equal(Object.keys(before.current).length,347); // config plus all 346 prior Lua modules.\n assert.equal(Object.keys(releaseSourceEpoch.proof.current).length,350); // Frozen release: page reveal, low-cost art, merchant pages."
   },
   {
-   "at": 118,
-   "before": " const actual=['config/architecture.json',...readdirSync('src/lua').filter(n=>n.endsWith('.lua')).map(n=>'src/lua/'+n)].sort();\n assert(Object.hasOwn(p.current,retiredControllerPath),'the archived controller must remain available to historical targets');\n const previous=Object.keys(p.current).filter(path=>path!==retiredControllerPath);\n assert.deepEqual([...previous,...stasisUpgradeAddedPaths,...actorFocusAdded,...deckPagesAdded,pointerInputPath].sort(),entranceInventory(actual,read));\n assertActorFocusInventory(actual.filter(path=>path!=='config/architecture.json'),read);\n for(const [path,row]of Object.entries(before.current))assert.deepEqual(p.targets.stsStylePrior.files[path],row,path+' complete prior');\n for(const [name,target]of Object.entries(before.targets))for(const [path,row]of Object.entries(target.files))assert.deepEqual(p.targets[name].files[path],row,name+'/'+path);\n for(const path of Object.keys(p.current))assert.equal(beforeCharacterPreparationSource(path,readProductionHistory(path)).replaceAll('\\r\\n','\\n'),p.current[path].source,path+' exact historical input');\n const config='config/architecture.json',raw=read(config),prior=p.targets.stsStylePrior.files[config].source;\n assert.equal(sourceEpoch.preCombinedSource(config,raw,{target:'stsStylePrior',readSource:read}),prior);\n for(const owner of p.owners.filter(path=>!before.owners.includes(path))){\n  const foreign=readProductionHistory(owner)+'\\n';\n  // The retired controller has an absence witness. Removing its live replacement must still fail.\n  const missing=owner===retiredControllerPath?pointerInputPath:owner;\n  for(const [changed,value] of [[missing,null],[owner,foreign]]){",
-   "after": " const actual=['config/architecture.json',...readdirSync('src/lua').filter(n=>n.endsWith('.lua')).map(n=>'src/lua/'+n)].sort();\n assert(Object.hasOwn(p.current,retiredControllerPath),'the archived controller must remain available to historical targets');\n const previous=Object.keys(p.current).filter(path=>path!==retiredControllerPath);\n const inventory=reviewedStsStyleInventory(actual,readProduction);\n assert.deepEqual([...previous,...stasisUpgradeAddedPaths,...actorFocusAdded,...deckPagesAdded,pointerInputPath].sort(),entranceInventory(inventory,read));\n assertActorFocusInventory(inventory.filter(path=>path!=='config/architecture.json'),read);\n const inventoryError=/missing live (?:renamed )?StS runtime module|unique live StS runtime inventory/;\n const projectedPaths=actual.filter(path=>!inventory.includes(path));\n for(const path of projectedPaths){\n  assert.throws(()=>reviewedStsStyleInventory(actual.filter(owner=>owner!==path),readProduction),inventoryError);\n  assert.throws(()=>reviewedStsStyleInventory([...actual,path],readProduction),inventoryError);\n  for(const invalid of [null,readProduction(path)+'\\n'])\n   assert.throws(()=>reviewedStsStyleInventory(actual,owner=>owner===path?invalid:readProduction(owner)),\n    /fresh (?:added StS runtime module|reviewed Selection production owner)/);\n }\n for(const retired of inventory.filter(path=>!actual.includes(path))){\n  assert.throws(()=>reviewedStsStyleInventory([...actual,retired],readProduction),/legacy StS runtime module must stay absent/);\n  assert.throws(()=>reviewedStsStyleInventory(actual,owner=>owner===retired?'return {}':readProduction(owner)),/legacy Selection owner must stay absent/);\n }\n for(const path of deckPagesAdded)for(const invalid of [null,readProduction(path)+'\\n',read(path)])\n  assert.throws(()=>reviewedStsStyleRead(owner=>owner===path?invalid:readProduction(owner))(path),/fresh StS deck browser source/);\n for(const [path,row]of Object.entries(before.current))assert.deepEqual(p.targets.stsStylePrior.files[path],row,path+' complete prior');\n for(const [name,target]of Object.entries(before.targets))for(const [path,row]of Object.entries(target.files))assert.deepEqual(p.targets[name].files[path],row,name+'/'+path);\n for(const [path,row]of Object.entries(p.current)){\n  const input=readProductionHistory(path,read);\n  const source=path===retiredControllerPath?beforeCharacterPreparationSource(path,input,read):beforeCurrentProductionSource(path,input,read);\n  assert.equal(source.replaceAll('\\r\\n','\\n'),row.source,path+' exact historical input');\n }\n const config='config/architecture.json',raw=read(config),prior=p.targets.stsStylePrior.files[config].source;\n assert.equal(sourceEpoch.preCombinedSource(config,raw,{target:'stsStylePrior',readSource:read}),prior);\n for(const owner of p.owners.filter(path=>!before.owners.includes(path))){\n  const foreign=readProductionHistory(owner,read)+'\\n';\n  // The retired controller has an absence witness. Removing its live replacement must still fail.\n  const missing=owner===retiredControllerPath?pointerInputPath:owner;\n  for(const [changed,value] of [[missing,null],[owner,foreign]]){"
+   "at": 128,
+   "before": " assert(Object.hasOwn(p.current,retiredControllerPath),'the archived controller must remain available to historical targets');\n const previous=Object.keys(p.current).filter(path=>path!==retiredControllerPath);\n assert.deepEqual([...previous,...stasisUpgradeAddedPaths,...actorFocusAdded,...deckPagesAdded,pointerInputPath].sort(),entranceInventory(actual,read));\n assertActorFocusInventory(actual.filter(path=>path!=='config/architecture.json'),read);\n for(const [path,row]of Object.entries(before.current))assert.deepEqual(p.targets.stsStylePrior.files[path],row,path+' complete prior');\n for(const [name,target]of Object.entries(before.targets))for(const [path,row]of Object.entries(target.files))assert.deepEqual(p.targets[name].files[path],row,name+'/'+path);\n for(const path of Object.keys(p.current))assert.equal(beforeCharacterPreparationSource(path,readProductionHistory(path)).replaceAll('\\r\\n','\\n'),p.current[path].source,path+' exact historical input');\n const config='config/architecture.json',raw=read(config),prior=p.targets.stsStylePrior.files[config].source;\n assert.equal(sourceEpoch.preCombinedSource(config,raw,{target:'stsStylePrior',readSource:read}),prior);\n for(const owner of p.owners.filter(path=>!before.owners.includes(path))){\n  const foreign=readProductionHistory(owner)+'\\n';\n  // The retired controller has an absence witness. Removing its live replacement must still fail.\n  const missing=owner===retiredControllerPath?pointerInputPath:owner;",
+   "after": " assert(Object.hasOwn(p.current,retiredControllerPath),'the archived controller must remain available to historical targets');\n const previous=Object.keys(p.current).filter(path=>path!==retiredControllerPath);\n const inventory=reviewedStsStyleInventory(actual,readProduction);\n assert.deepEqual([...previous,...stasisUpgradeAddedPaths,...actorFocusAdded,...deckPagesAdded,pointerInputPath].sort(),entranceInventory(inventory,read));\n assertActorFocusInventory(inventory.filter(path=>path!=='config/architecture.json'),read);\n const inventoryError=/missing live (?:renamed )?StS runtime module|unique live StS runtime inventory/;\n const projectedPaths=actual.filter(path=>!inventory.includes(path));\n for(const path of projectedPaths){\n  assert.throws(()=>reviewedStsStyleInventory(actual.filter(owner=>owner!==path),readProduction),inventoryError);\n  assert.throws(()=>reviewedStsStyleInventory([...actual,path],readProduction),inventoryError);\n  for(const invalid of [null,readProduction(path)+'\\n'])\n   assert.throws(()=>reviewedStsStyleInventory(actual,owner=>owner===path?invalid:readProduction(owner)),\n    /fresh (?:added StS runtime module|reviewed Selection production owner)/);\n }\n for(const retired of inventory.filter(path=>!actual.includes(path))){\n  assert.throws(()=>reviewedStsStyleInventory([...actual,retired],readProduction),/legacy StS runtime module must stay absent/);\n  assert.throws(()=>reviewedStsStyleInventory(actual,owner=>owner===retired?'return {}':readProduction(owner)),/legacy Selection owner must stay absent/);\n }\n for(const path of deckPagesAdded)for(const invalid of [null,readProduction(path)+'\\n',read(path)])\n  assert.throws(()=>reviewedStsStyleRead(owner=>owner===path?invalid:readProduction(owner))(path),/fresh StS deck browser source/);\n for(const [path,row]of Object.entries(before.current))assert.deepEqual(p.targets.stsStylePrior.files[path],row,path+' complete prior');\n for(const [name,target]of Object.entries(before.targets))for(const [path,row]of Object.entries(target.files))assert.deepEqual(p.targets[name].files[path],row,name+'/'+path);\n for(const [path,row]of Object.entries(p.current)){\n  const source=path===retiredControllerPath\n   ?beforeCharacterPreparationSource(path,readProductionHistory(path,readCurrent),readCurrent)\n   :beforeCurrentSelectionProductionSource(path,readCurrent,readReviewed);\n  assert.equal(source.replaceAll('\\r\\n','\\n'),row.source,path+' exact historical input');\n }\n const config='config/architecture.json',raw=read(config),prior=p.targets.stsStylePrior.files[config].source;\n assert.equal(sourceEpoch.preCombinedSource(config,raw,{target:'stsStylePrior',readSource:read}),prior);\n for(const owner of p.owners.filter(path=>!before.owners.includes(path))){\n  const foreign=readProductionHistory(owner,read)+'\\n';\n  // The retired controller has an absence witness. Removing its live replacement must still fail.\n  const missing=owner===retiredControllerPath?pointerInputPath:owner;"
+  },
+  {
+   "at": 277,
+   "before": " }\n const readOwner=reviewedSelectionRead();\n const readEntrance=chapterEvidenceCurrentRead(checkedSelectionEntranceRead(readFileSync));\n const current=path=>uiEntranceOwns(path)?readEntrance(path,'utf8'):readOwner(path);\n for(const [path,row]of Object.entries(p.current)){\n  const source=path===retiredControllerPath\n   ?beforeCharacterPreparationSource(path,readRetiredController(readOwner).source,current)\n   :beforeCurrentProductionSource(path,current(path),current);\n  assert.equal(source.replaceAll('\\r\\n','\\n'),row.source,path);\n }",
+   "after": " }\n const readOwner=reviewedSelectionRead();\n const current=readSelectionProductionOwners(readFileSync,readOwner);\n for(const [path,row]of Object.entries(p.current)){\n  const source=path===retiredControllerPath\n   ?beforeCharacterPreparationSource(path,readRetiredController(readOwner).source,current)\n   :beforeCurrentSelectionProductionSource(path,current,readOwner);\n  assert.equal(source.replaceAll('\\r\\n','\\n'),row.source,path);\n }"
   }
  ]
 };
-const reviewedStsStyleIdentity=['715e34607e607b3c731dfef61869d3c4e1ac847ab257890da0d7c401620e4b46','f3c2b265ab1e4bf0888d86d8a7b6e6daa5be636e'];
+const reviewedStsStyleIdentity=['af4f8214682d9516a03c168df3805afea8ba844becb5d0f768d4c416e74ae9eb','0117b2e2e07261556ed663ab300f6247815bfd08'];
 function beforeReviewedStsStyleFixture(path,source){
  if(path!==luaInventoryTest||!exactCheckoutSource(source,reviewedStsStyleIdentity))return source;
  const prior=restoreExactFixtureHunks(reviewedStsStyleFixture,path,source);
- assert.equal(blob(prior),reviewedStsFeedbackIdentity[1],'exact #1020 StS style fixture predecessor');
+ assert(exactCheckoutSource(prior,selectionStsFeedbackIdentity),'exact #1022 StS feedback fixture');
  return source.includes('\r\n')?prior.replaceAll('\n','\r\n'):prior;
 }
+const selectionStsFeedbackFixture={
+ "path": "tests/sts-style-source-epoch.test.mjs",
+ "beforeSha256": "1b937677280a1e5f72063528e7188773d3493207166582bf0805dfe43a1e2669",
+ "afterSha256": "dbd8dabc63cafcbaa8404fa76d309c8241dbee8aabecae3e46c2be8120d0ac90",
+ "hunks": [
+  {
+   "at": 4,
+   "before": "import {entranceInventory} from './helpers/ui-entrance-source.mjs';\nimport {assertCurrentJsInventory,assertCurrentLuaInventory,beforeShopEntryInventory} from './helpers/fork-preflight-source.mjs';",
+   "after": "import {entranceInventory,uiEntranceOwns} from './helpers/ui-entrance-source.mjs';\nimport {assertCurrentJsInventory,assertCurrentLuaInventory,beforeShopEntryInventory,chapterEvidenceCurrentRead} from './helpers/fork-preflight-source.mjs';\nimport {checkedSelectionEntranceRead} from './helpers/ui-selection-current-source.mjs';\nimport {beforeChapterBattleScene} from './helpers/chapter-battle-scene-source.mjs';\nimport {beforeBattlePeriphery} from './helpers/battle-periphery-source.mjs';"
+  },
+  {
+   "at": 251,
+   "before": " const raw=reviewedSelectionRead();\n for(const [path,row]of Object.entries(p.current)){\n  const source=path===retiredControllerPath\n   ?beforeCharacterPreparationSource(path,readRetiredController(raw).source,raw)\n   :beforeCurrentProductionSource(path,raw(path),raw);\n  assert.equal(source.replaceAll('\\r\\n','\\n'),row.source,path);\n }\n const anchor=feedbackProductionPaths[0];\n assert.equal(sourceEpoch.preCombinedSource(anchor,raw(anchor),{target:'stsFeedbackPrior',readSource:raw}),stsStyleEpoch.proof.current[anchor].source);\n for(const path of feedbackProductionPaths){\n  assert(p.owners.includes(path),'current owner must guard every changed feedback source: '+path);\n  for(const missing of [null,raw(path)+'\\n'])assert.throws(()=>sourceEpoch.preCombinedSource(anchor,raw(anchor),\n   {target:'stsFeedbackPrior',readSource:p=>p===path?missing:raw(p)}),/linked owner identity/,path);\n }",
+   "after": " const readOwner=reviewedSelectionRead();\n const readEntrance=chapterEvidenceCurrentRead(checkedSelectionEntranceRead(readFileSync));\n const current=path=>uiEntranceOwns(path)?readEntrance(path,'utf8'):readOwner(path);\n for(const [path,row]of Object.entries(p.current)){\n  const source=path===retiredControllerPath\n   ?beforeCharacterPreparationSource(path,readRetiredController(readOwner).source,current)\n   :beforeCurrentProductionSource(path,current(path),current);\n  assert.equal(source.replaceAll('\\r\\n','\\n'),row.source,path);\n }\n // The old StS projector sees these owners after the chapter and battle layout stages.\n const history=path=>{\n  const source=current(path);\n  return uiEntranceOwns(path)?beforeBattlePeriphery(path,beforeChapterBattleScene(path,source)):source;\n };\n const anchor=feedbackProductionPaths[0];\n assert.equal(sourceEpoch.preCombinedSource(anchor,history(anchor),{target:'stsFeedbackPrior',readSource:history}),stsStyleEpoch.proof.current[anchor].source);\n for(const path of feedbackProductionPaths){\n  assert(p.owners.includes(path),'current owner must guard every changed feedback source: '+path);\n  for(const missing of [null,history(path)+'\\n'])assert.throws(()=>sourceEpoch.preCombinedSource(anchor,history(anchor),\n   {target:'stsFeedbackPrior',readSource:p=>p===path?missing:history(p)}),/linked owner identity/,path);\n }"
+  }
+ ]
+};
+const selectionStsFeedbackIdentity=['dbd8dabc63cafcbaa8404fa76d309c8241dbee8aabecae3e46c2be8120d0ac90','3142acba314fe40251c9b46231a5db27dcf04986'];
 function beforeReviewedStsFeedbackFixture(path,source){
- if(path!==luaInventoryTest||!exactCheckoutSource(source,reviewedStsFeedbackIdentity))return source;
+ if(path!==luaInventoryTest)return source;
+ if(exactCheckoutSource(source,selectionStsFeedbackIdentity)){
+  const composed=restoreExactFixtureHunks(selectionStsFeedbackFixture,path,source);
+  assert(exactCheckoutSource(composed,reviewedStsFeedbackIdentity),'exact #1020 StS feedback fixture');
+  source=source.includes('\r\n')?composed.replaceAll('\n','\r\n'):composed;
+ }
+ if(!exactCheckoutSource(source,reviewedStsFeedbackIdentity))return source;
  const prior=restoreExactFixtureHunks(reviewedStsFeedbackFixture,path,source);
  assert.equal(blob(prior),'72e15c6ebec71499025aea8bd80a91e0c418f7e7','exact StS feedback fixture predecessor');
  return source.includes('\r\n')?prior.replaceAll('\n','\r\n'):prior;
 }
 function beforeCalibrationReplayOwner(path,source){
  source=beforeReviewedStsFeedbackFixture(path,beforeReviewedStsStyleFixture(path,source));
- source=beforeReviewedOfficialAssetReplay(path,source);
+ source=beforeReviewedOfficialAssetReplay(path,beforeSelectionReceiptSource(path,source));
  source=beforeBattleSceneCopyClosure(path,source);
  if(path===integratedFixture)source=beforeChapterBattleScene(path,beforeRelicCloseoutIntegratedFixture(path,source));
  source=beforeVisualLegibility(path,source);
@@ -1305,7 +1335,7 @@ function beforeIntegrationSuccessor(path,source){
 const responsiveReplayHelpers=Object.freeze({
  [integratedFixture]:relicCloseoutIntegratedIdentity,
  'tests/helpers/chapter-battle-scene-source.mjs':['1270c293d79c04ac4a5b15483dd4cc8f9c4279362e2f5c551f6e98c20c9ad293','5306929645881d562b4d4322c5b3fa2ecb91edbd'],
- 'tests/helpers/rebased-release-source.mjs':['9c06103ee6926bb5def608470430784145880f69d4c3aee3fb35787c1309d509','0016df7289d6b274b533496c48a6fd75a1f66e42'],
+ 'tests/helpers/rebased-release-source.mjs':['b1e42ded7f05f580fb25ab0417ccd8db45832f5e9e50db83a38d6aaa2767dc20','4b22a3e61459334c6d85b247ea188976313d549e'],
 });
 function responsiveReplayCurrentRead(read){
  return (path,...args)=>{
@@ -1318,13 +1348,28 @@ function responsiveReplayCurrentRead(read){
   return raw;
  };
 }
+export function chapterEvidenceCurrentRead(read,copier){
+ const currentRead=responsiveReplayCurrentRead(read);
+ const chapterRead=chapterSceneCurrentRead((path,encoding)=>{
+  const raw=currentRead(path,encoding);
+  if(path!==integratedFixture)return raw;
+  const source=Buffer.isBuffer(raw)?raw.toString('utf8'):raw;
+  const prior=beforeRelicCloseoutIntegratedFixture(path,source);
+  return Buffer.isBuffer(raw)?Buffer.from(prior):prior;
+ },copier);
+ return (path,...args)=>(path===integratedFixture?currentRead:chapterRead)(path,...args);
+}
 const currentReviewReaders=new WeakSet();
 export function currentReviewedSelectionRead(read){
  if(currentReviewReaders.has(read))return read;
- read=readBeforeMasterBackflowSource(read);
  const current=(path,encoding)=>{
   let source;
-  try{source=read(path,encoding);}
+  try{
+   const live=read(path,encoding);
+   const text=Buffer.isBuffer(live)?live.toString('utf8'):live;
+   const selection=beforeSelectionReceiptSource(path,text)!==text||beforeOfficialCharacterBackflow(path,text)!==text;
+   source=selection?live:beforeMasterBackflowSource(path,live);
+  }
   catch(cause){
    if(cause?.code!=='ERR_ASSERTION')throw cause;
    throw new Error('fresh complete integration source: '+path,{cause});
@@ -1334,10 +1379,12 @@ export function currentReviewedSelectionRead(read){
   if(path===luaInventoryTest){
    assert(exactCheckoutSource(raw,reviewedStsStyleIdentity),'fresh complete integration source: '+path);
   }else if(path===reviewedSelectionFixture){
-   assert.notEqual(beforeReviewedOfficialAssetReplay(path,raw),raw,'fresh current reviewed Selection replay fixture: '+path);
+   const reviewed=beforeSelectionReceiptSource(path,raw);
+   assert.notEqual(beforeReviewedOfficialAssetReplay(path,reviewed),reviewed,'fresh current reviewed Selection replay fixture: '+path);
    assert.notEqual(beforeCalibrationReplayOwner(path,raw),raw,'fresh current reviewed Selection replay fixture: '+path);
   }else if(path===officialAssetsFixture){
-   assert.notEqual(beforeOfficialAssetsFocusFixture(path,raw),raw,'fresh current official card focus fixture: '+path);
+   const intermediate=beforeSelectionReceiptSource(path,raw);
+   assert.notEqual(beforeOfficialAssetsFocusFixture(path,intermediate),intermediate,'fresh current official card focus fixture: '+path);
   }else{
    assert.notEqual(beforeVisualLegibility(path,raw),raw,'fresh current official legibility fixture: '+path);
   }
@@ -1390,16 +1437,12 @@ function cursesReceiptCurrentRead(read){
  };
 }
 export function assertIntegrationSuccessorsCurrent(read=readFileSync){
- const replayRead=cursesReceiptCurrentRead(responsiveReplayCurrentRead(currentAssetLedgerRead(currentReviewedSelectionRead(read))));
+ const replayRead=cursesReceiptCurrentRead(responsiveReplayCurrentRead(currentAssetLedgerRead(currentReviewedSelectionRead(checkedSelectionReceiptRead(read)))));
  for(const path of Object.keys(cursesReceiptSources))replayRead(path,'utf8');
  for(const path of Object.keys(responsiveReplayHelpers))replayRead(path,'utf8');
  // The chapter guard consumes its exact reviewed predecessor. Current
  // consumers still read and authenticate the new fixture at every read.
- const chapterRead=chapterSceneCurrentRead((path,encoding)=>{
-  const raw=replayRead(path,encoding);
-  return beforeRelicCloseoutIntegratedFixture(path,raw);
- },refinedByrdPoolCopyClosure);
- const rawRead=actorAlphaCurrentRead((path,...args)=>(path===integratedFixture?replayRead:chapterRead)(path,...args));
+ const rawRead=actorAlphaCurrentRead(chapterEvidenceCurrentRead(replayRead,selectionCopierReceipt));
  rawRead(officialLegibilityFixture,'utf8');
  rawRead(reviewedSelectionFixture,'utf8');
  rawRead(officialAssetsFixture,'utf8');
@@ -1407,7 +1450,7 @@ export function assertIntegrationSuccessorsCurrent(read=readFileSync){
   const alpha=Object.hasOwn(actorAlphaBuildInputs,path);
   const raw=rawRead(path,alpha?'utf8':encoding);
   const input=alpha?beforeActorAlphaBuildInput(path,raw):raw;
-  return beforeForkPush(path,beforeCalibrationReplayOwner(path,beforeOfficialAssetsFocusFixture(path,beforeCursesReceiptFixture(path,input))));
+  return beforeForkPush(path,beforeCalibrationReplayOwner(path,beforeOfficialAssetsFocusFixture(path,beforeCursesReceiptFixture(path,beforeSelectionReceiptSource(path,input)))));
  };
  assertReleaseCandidateToolsCurrent(rawRead);
  assertAudioDeckBrowserCurrent(rawRead);
@@ -1501,8 +1544,11 @@ export function beforePreflightSource(path,source,view='prior',read=readFileSync
   const lf=normalize(source);
   if(source!==lf&&source!==lf.replaceAll('\n','\r\n'))return source;
  }
- // Keep the live linked production owners for their own current-source guard.
- if(typeof path==='string'&&!path.startsWith('src/')&&path!=='config/architecture.json')
+ // The checked Selection receipt owns its boundary. Other linked production
+ // owners retain their live bytes for the scope that authenticates them.
+ const selection=beforeSelectionReceiptSource(path,source);
+ if(selection!==source)source=selection;
+ else if(typeof path==='string'&&!path.startsWith('src/')&&path!=='config/architecture.json')
   source=beforeKnownMasterBackflowSource(path,source);
  source=beforeCursesReceiptFixture(path,source);
  const integratedPrior=beforeRelicCloseoutIntegratedFixture(path,source);

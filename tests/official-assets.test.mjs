@@ -110,7 +110,7 @@ test('approved pages keep live input identities while unrelated pages retain the
  const result=applyOfficialAssets([layout,template],theme);
  const current=new Map([...paths(layout),...paths(template)]);
  const retiredDeckPrefix='/SlayTheAbyss/characterPanel/deckView/';
- const retiredStarterEntry=path=>/^\/SlayTheAbyss\/characterPanel\/details\/deck(?:Open|Title|Summary|Rule)(?:\/|$)/.test(path);
+ const retiredStarterEntry=path=>/^\/SlayTheAbyss\/characterPanel\/(?:deckView$|details\/deck(?:Open|Rule|Title|Summary)(?:\/|$))/.test(path);
  const retiredOverlay=path=>/^\/SlayTheAbyss\/(?:prologuePanel(?:\/|$)|(?:exitPanel|runMenu)\/(?:help|guide)(?:\/|$)|potionPanel\/)/.test(path);
  const retiredPickerChild=path=>/^\/SlayTheAbyss\/nodePanel\/pickerView\/card[4-6]\//.test(path);
  const retiredChoice=path=>/^\/SlayTheAbyss\/choicePanel\/card\d+(?:\/|$)/.test(path)&&!choiceProjection.has(choicePath(path));

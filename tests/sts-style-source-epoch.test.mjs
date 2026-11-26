@@ -1,9 +1,12 @@
 import {actorFocusAdded,assertActorFocusInventory,deckPagesAdded,stasisUpgradeAddedPaths} from './helpers/develop-release-backflow-source.mjs';
 import {pointerInputPath,readRetiredController,retiredControllerPath} from './helpers/input-retirement-source.mjs';
-import {beforeCharacterPreparationSource,beforeCurrentProductionSource} from './helpers/character-preparation-source.mjs';
+import {beforeCharacterPreparationSource} from './helpers/character-preparation-source.mjs';
 import {reviewedSelectionRead,reviewedStsStyleInventory,reviewedStsStyleRead} from './helpers/reviewed-selection-current-source.mjs';
-import {entranceInventory} from './helpers/ui-entrance-source.mjs';
+import {entranceInventory,uiEntranceOwns} from './helpers/ui-entrance-source.mjs';
 import {assertCurrentJsInventory,assertCurrentLuaInventory,beforeShopEntryInventory} from './helpers/fork-preflight-source.mjs';
+import {beforeCurrentSelectionProductionSource,readSelectionProductionOwners} from './helpers/replay-reviewed-selection.mjs';
+import {beforeChapterBattleScene} from './helpers/chapter-battle-scene-source.mjs';
+import {beforeBattlePeriphery} from './helpers/battle-periphery-source.mjs';
 import test from 'node:test';
 import {integratedRead,integratedCiProof,integratedPriorInventory,assertIntegratedCurrent} from './helpers/integrated-ci-source.mjs';
 import assert from 'node:assert/strict';
@@ -111,7 +114,13 @@ test('incomplete inventories, invented predecessors and unowned additions cannot
 
 test('real style source retains the complete CI-repair and every older target while authenticating all current raw owners',async()=>{
  const {sourceEpoch,ciRepairSourceEpoch,releaseSourceEpoch,prePowerMembershipEpoch}=await import('./helpers/closeout-source-epoch.mjs');
- const p=sourceEpoch.proof,before=ciRepairSourceEpoch.proof,read=reviewedStsStyleRead(readProduction);
+ const p=sourceEpoch.proof,before=ciRepairSourceEpoch.proof;
+ const readReviewed=reviewedStsStyleRead(readProduction);
+ const readCurrent=readSelectionProductionOwners(readFileSync,readReviewed);
+ const read=path=>{
+  const source=readCurrent(path);
+  return uiEntranceOwns(path)?beforeBattlePeriphery(path,beforeChapterBattleScene(path,source)):source;
+ };
  assert.equal(Object.keys(before.current).length,347); // config plus all 346 prior Lua modules.
  assert.equal(Object.keys(releaseSourceEpoch.proof.current).length,350); // Frozen release: page reveal, low-cost art, merchant pages.
  assert.equal(Object.keys(prePowerMembershipEpoch.proof.current).length,352); // Final menu adds navigation and navigation view.
@@ -140,8 +149,9 @@ test('real style source retains the complete CI-repair and every older target wh
  for(const [path,row]of Object.entries(before.current))assert.deepEqual(p.targets.stsStylePrior.files[path],row,path+' complete prior');
  for(const [name,target]of Object.entries(before.targets))for(const [path,row]of Object.entries(target.files))assert.deepEqual(p.targets[name].files[path],row,name+'/'+path);
  for(const [path,row]of Object.entries(p.current)){
-  const input=readProductionHistory(path,read);
-  const source=path===retiredControllerPath?beforeCharacterPreparationSource(path,input,read):beforeCurrentProductionSource(path,input,read);
+  const source=path===retiredControllerPath
+   ?beforeCharacterPreparationSource(path,readProductionHistory(path,readCurrent),readCurrent)
+   :beforeCurrentSelectionProductionSource(path,readCurrent,readReviewed);
   assert.equal(source.replaceAll('\r\n','\n'),row.source,path+' exact historical input');
  }
  const config='config/architecture.json',raw=read(config),prior=p.targets.stsStylePrior.files[config].source;
@@ -266,19 +276,25 @@ test('feedback real current source and CI preserve all four immutable archives a
   assert.equal(p.targets.stsFeedbackPrior.files[path],null,'new module has no invented predecessor');
   for(const name of Object.keys(stsStyleEpoch.proof.targets))assert.equal(p.targets[name].files[path],null,name+'/'+path);
  }
- const raw=reviewedSelectionRead();
+ const readOwner=reviewedSelectionRead();
+ const current=readSelectionProductionOwners(readFileSync,readOwner);
  for(const [path,row]of Object.entries(p.current)){
   const source=path===retiredControllerPath
-   ?beforeCharacterPreparationSource(path,readRetiredController(raw).source,raw)
-   :beforeCurrentProductionSource(path,raw(path),raw);
+   ?beforeCharacterPreparationSource(path,readRetiredController(readOwner).source,current)
+   :beforeCurrentSelectionProductionSource(path,current,readOwner);
   assert.equal(source.replaceAll('\r\n','\n'),row.source,path);
  }
+ // The old StS projector sees these owners after the chapter and battle layout stages.
+ const history=path=>{
+  const source=current(path);
+  return uiEntranceOwns(path)?beforeBattlePeriphery(path,beforeChapterBattleScene(path,source)):source;
+ };
  const anchor=feedbackProductionPaths[0];
- assert.equal(sourceEpoch.preCombinedSource(anchor,raw(anchor),{target:'stsFeedbackPrior',readSource:raw}),stsStyleEpoch.proof.current[anchor].source);
+ assert.equal(sourceEpoch.preCombinedSource(anchor,history(anchor),{target:'stsFeedbackPrior',readSource:history}),stsStyleEpoch.proof.current[anchor].source);
  for(const path of feedbackProductionPaths){
   assert(p.owners.includes(path),'current owner must guard every changed feedback source: '+path);
-  for(const missing of [null,raw(path)+'\n'])assert.throws(()=>sourceEpoch.preCombinedSource(anchor,raw(anchor),
-   {target:'stsFeedbackPrior',readSource:p=>p===path?missing:raw(p)}),/linked owner identity/,path);
+  for(const missing of [null,history(path)+'\n'])assert.throws(()=>sourceEpoch.preCombinedSource(anchor,history(anchor),
+   {target:'stsFeedbackPrior',readSource:p=>p===path?missing:history(p)}),/linked owner identity/,path);
  }
  const {assertStsStyleCiCurrent,stsStyleCiProof,stsStyleBeforeFeedbackCiProof:previousCi}=await import('./helpers/sts-style-ci-source.mjs');assertStsStyleCiCurrent(discoverJs());
  const {menuRedPriorEpoch}=await import('./helpers/closeout-source-epoch.mjs');

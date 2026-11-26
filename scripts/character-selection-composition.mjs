@@ -24,7 +24,7 @@ export function styleCharacterFlag(button,key,theme){
  }
 }
 export function characterSelectionComposition(panel,theme){
- panel.children=panel.children.filter(node=>node.name!=='deckView');
+ panel.children=panel.children.filter(n=>n.name!=='deckView');
  for(const name of ['v25HeadingEmblem','v25HeadingDivider','v25HeadingRule'])child(panel,name).visible=false;
  const title=child(panel,'title');
  Object.assign(title,frame(400,470,480,60));title.text.content='选择你的角色';

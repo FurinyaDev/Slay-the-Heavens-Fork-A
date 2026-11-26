@@ -197,11 +197,14 @@ const layout=JSON.parse(readFileSync(join(directory,'game-ui.json'),'utf8'));
 const panel=child(child(layout,'stage'),'characterPanel');
 
 test('generated official character selection follows the approved details revision',()=>{
- const revisions=loadUiReferences().filter(row=>row.targetVersion==='v2.0.0'&&
-  row.codePath==='scripts/character-selection-composition.mjs'&&row.state==='details');
- assert.deepEqual(revisions.filter(row=>['APPROVED','CURRENT_IMPLEMENTATION'].includes(row.status))
-  .map(row=>[row.revision,row.status]),[['release-sts1-20261122','APPROVED']]);
- assert.equal(revisions.find(row=>row.revision==='sts1-open-copy-20261119')?.status,'SUPERSEDED');
+ const references=loadUiReferences();
+ for(const version of ['v2.0.0','v2.2.0']){
+  const revisions=references.filter(row=>row.targetVersion===version&&
+   row.codePath==='scripts/character-selection-composition.mjs'&&row.state==='details');
+  assert.deepEqual(revisions.filter(row=>['APPROVED','CURRENT_IMPLEMENTATION'].includes(row.status))
+   .map(row=>[row.revision,row.status]),[['release-sts1-20261122','APPROVED']]);
+  assert.equal(revisions.find(row=>row.revision==='sts1-open-copy-20261119')?.status,'SUPERSEDED');
+ }
  const output=join(directory,'refined-release');
  buildUI(output,undefined,{officialAssets:true,refinedReleaseMonsterArt:true,nativePageLifecycle:true,experimentalCharacters:false});
  const tree=JSON.parse(readFileSync(join(output,'game-ui.json'),'utf8'));
@@ -318,4 +321,102 @@ test('default opt-out retains its existing backdrop shade and no approved native
  assert.notEqual(child(selection,'officialBackdropVeil').visible,false);
  assert.equal(child(selection,'lumineSelectionBackground'),undefined);
  assert.equal(child(selection,'veil').opacity,1);
+});
+
+async function selectionEntranceFixtureRead(read=readFileSync){
+ const {beforeBattlePeriphery}=await import('./helpers/battle-periphery-source.mjs');
+ const {beforeChapterBattleScene}=await import('./helpers/chapter-battle-scene-source.mjs');
+ const {beforeOfficialCharacterBackflow}=await import('./helpers/current-replay-fix-sources.mjs');
+ const {chapterEvidenceCurrentRead}=await import('./helpers/fork-preflight-source.mjs');
+ const {beforeKnownMasterBackflowSource}=await import('./helpers/master-backflow-source.mjs');
+ const {checkedSelectionEntranceRead}=await import('./helpers/ui-selection-current-source.mjs');
+ const readLive=checkedSelectionEntranceRead(read);
+ const readCurrent=chapterEvidenceCurrentRead(path=>{
+  const raw=readLive(path,'utf8');
+  if(beforeOfficialCharacterBackflow(path,raw)!==raw)return raw;
+  return beforeKnownMasterBackflowSource(path,raw);
+ });
+ return path=>beforeBattlePeriphery(path,beforeChapterBattleScene(path,readCurrent(path,'utf8')));
+}
+
+test('selection replay authenticates the current source for both changed owners',async()=>{
+ const {beforeOfficialCharacterBackflow}=await import('./helpers/current-replay-fix-sources.mjs');
+ const {assertCurrentUiEntrance,authenticateUiEntrance,beforeUiEntrance}=await import('./helpers/ui-entrance-source.mjs');
+ const read=await selectionEntranceFixtureRead();
+ authenticateUiEntrance(read);
+ for(const path of ['src/lua/abyss_character_select_view.lua','src/lua/abyss_game_ui_input.lua']){
+  const current=read(path),previous=beforeOfficialCharacterBackflow(path,current);
+  assert.notEqual(previous,current);
+  assert.equal(beforeUiEntrance(path,previous),beforeUiEntrance(path,current));
+  assert.throws(()=>assertCurrentUiEntrance(path,previous),/fresh current production owner/);
+  assert.throws(()=>authenticateUiEntrance(owner=>owner===path?previous:read(owner)),/combined linked owner identity/);
+ }
+});
+
+test('selection replay rejects stale owners after approved develop changes',async()=>{
+ const {beforeApprovedUiEntrance}=await import('./helpers/ui-entrance-approved-sources.mjs');
+ const {authenticateUiEntrance,beforeUiEntrance}=await import('./helpers/ui-entrance-source.mjs');
+ const read=await selectionEntranceFixtureRead();
+ authenticateUiEntrance(read);
+ for(const path of ['config/architecture.json',...['game_ui','game_ui_lifecycle','game_ui_run','game_ui_view',
+  'node_ui','node_ui_input','page_reveal'].map(name=>`src/lua/abyss_${name}.lua`)]){
+  const current=read(path),prior=beforeApprovedUiEntrance(path,current);
+  assert.notEqual(current,prior,path);
+  assert.equal(beforeUiEntrance(path,current),beforeUiEntrance(path,prior));
+  for(const invalid of [prior,current+'\n',current.slice(0,-1)+'!',null,Buffer.from(current)]){
+   assert.throws(()=>authenticateUiEntrance(owner=>owner===path?invalid:read(owner)),
+    {message:'combined linked owner identity: '+path+' during entrance validation'});
+  }
+  authenticateUiEntrance(owner=>owner===path?current.replaceAll('\r\n','\n').replaceAll('\n','\r\n'):read(owner));
+ }
+ const owner='src/lua/abyss_node_ui.lua';
+ const lf=readFileSync(owner,'utf8').replaceAll('\r\n','\n'),crlf=lf.replaceAll('\n','\r\n');
+ for(const mixed of [lf.replace('\n','\r\n'),crlf.replace('\r\n','\n')]){
+  let reads=0;
+  const changing=await selectionEntranceFixtureRead((path,encoding)=>
+   path===owner&&++reads>1?mixed:readFileSync(path,encoding));
+  assert.equal(changing(owner),read(owner));
+  assert.throws(()=>changing(owner),{message:'uniform current Selection entrance source: '+owner});
+ }
+});
+
+test('approved selection composition retains the exact historical views and checks the live revision',async()=>{
+ const {beforeOfficialCharacterBackflow}=await import('./helpers/current-replay-fix-sources.mjs');
+ const {beforeCharacterPreparationSource,beforeCurrentProductionSource}=await import('./helpers/character-preparation-source.mjs');
+ const {beforeRebasedCi,beforeRebasedRelease,beforeRebasedStsUi,
+  authorizeRebasedDevelop,authorizeRebasedRelease,authorizeRebasedStsUi}=await import('./helpers/rebased-release-source.mjs');
+ const path='scripts/character-selection-composition.mjs';
+ const read=owner=>readFileSync(owner,'utf8');
+ const current=read(path),prior=beforeOfficialCharacterBackflow(path,current);
+ const drift='!'+current.slice(1);
+ const reader=source=>owner=>owner===path?source:read(owner);
+ const missing=owner=>{if(owner===path)throw Error('fixture missing');return read(owner);};
+ const foreign=/combined linked owner identity: scripts\/character-selection-composition\.mjs/;
+ assert.notEqual(current,prior);
+ for(const [project,authorize] of [[beforeRebasedCi,authorizeRebasedDevelop],
+  [beforeRebasedRelease,authorizeRebasedRelease],[beforeRebasedStsUi,authorizeRebasedStsUi]]){
+  const historic=project(path,prior);
+  assert.notEqual(historic,prior);
+  assert.equal(project(path,current),historic);
+  assert.equal(project(path,drift),drift);
+  const crlf=current.replaceAll('\r\n','\n').replaceAll('\n','\r\n');
+  assert.equal(project(path,crlf).replaceAll('\r\n','\n'),historic.replaceAll('\r\n','\n'));
+  authorize([[path,current]],read);
+  authorize([[path,prior]],reader(prior));
+  assert.throws(()=>authorize([[path,current],[path,prior]],read),/mixed live and predecessor sources/);
+  assert.throws(()=>authorize([[path,prior],[path,current]],reader(prior)),/mixed live and predecessor sources/);
+  assert.throws(()=>authorize([[path,prior]],read),foreign);
+  for(const invalid of [prior,drift,null,Buffer.from(current)]){
+   assert.throws(()=>authorize([[path,current]],reader(invalid)),foreign);
+  }
+  assert.throws(()=>authorize([[path,current]],missing),/combined linked owner missing/);
+ }
+ const prepared=beforeCharacterPreparationSource(path,prior,reader(prior));
+ assert.equal(createHash('sha256').update(prepared.replaceAll('\r\n','\n')).digest('hex'),
+  'c4d35a804a2f3febf216f1dd68cfed87dcac3728098ca9a182e9acaa008dd93f');
+ assert.equal(beforeCurrentProductionSource(path,current,read),prepared);
+ assert.throws(()=>beforeCurrentProductionSource(path,current,reader(prior)),foreign);
+ for(const invalid of [prior,drift,null,Buffer.from(current)]){
+  assert.throws(()=>beforeCurrentProductionSource(path,invalid,read),/fresh current production owner/);
+ }
 });

@@ -1,6 +1,8 @@
 // Exact predecessors for the current replay and test repairs. Current
 // discovery and test execution continue to use the files on disk.
 import {restoreExactFixtureHunks} from './exact-fixture-hunks.mjs';
+import {exactSourceMatches} from './source-fingerprint.mjs';
+import {beforeApprovedUiEntrance} from './ui-entrance-approved-sources.mjs';
 
 const bindings = new Map([
  {
@@ -2364,9 +2366,366 @@ const bindings = new Map([
  }
 ].map(row=>[row.path,row]));
 
+// The official selection backflow projects only its reviewed full sources.
+const characterBackflowBindings = new Map([
+ {
+  "path": "scripts/character-selection-composition.mjs",
+  "beforeSha256": "ce9370cbc26811a295e9282164f23e40cdd349649d493537b2ede414bcd622fe",
+  "afterSha256": "ade82ac447a2180cd9e1cf218d4abb5a8b5b0a2492d53c83d8e964505a6c7f88",
+  "hunks": [
+   {
+    "at": 24,
+    "before": "}\nexport function characterSelectionComposition(panel,theme){\n const modal=child(panel,'deckView');modal.visible=false;modal.children=[];\n for(const name of ['v25HeadingEmblem','v25HeadingDivider','v25HeadingRule'])child(panel,name).visible=false;\n const title=child(panel,'title');",
+    "after": "}\nexport function characterSelectionComposition(panel,theme){\n panel.children=panel.children.filter(n=>n.name!=='deckView');\n for(const name of ['v25HeadingEmblem','v25HeadingDivider','v25HeadingRule'])child(panel,name).visible=false;\n const title=child(panel,'title');"
+   },
+   {
+    "at": 30,
+    "before": " Object.assign(title.text,{fontSize:30,minFontSize:30,align:'centre'});title.visible=true;\n const details=child(panel,'details');\n const specs={name:[[115,216,505,60],48,'#E8C75C'],stats:[[145,280,145,30],18,'#F36C65'],gold:[[328,280,160,30],18,'#DFC552'],\n  v25Story:[[115,326,475,48],17,'#F3EFDA'],relic:[[162,379,430,30],20,'#E7CA5A'],relicText:[[162,403,440,35],17,'#F3EFDA']};\n for(const [name,[box,font,colour]]of Object.entries(specs))placeText(child(details,name),box,font,colour);\n details.children=details.children.filter(n=>!['deckOpen','deckTitle','deckSummary','deckRule'].includes(n.name));",
+    "after": " Object.assign(title.text,{fontSize:30,minFontSize:30,align:'centre'});title.visible=true;\n const details=child(panel,'details');\n const story=child(details,'v25Story');\n story.text.content=story.text.content.replace(/。(?=\\S)/,'。\\n');\n const specs={name:[[115,216,505,60],48,'#E8C75C'],stats:[[145,280,145,30],18,'#F36C65'],gold:[[328,280,160,30],18,'#DFC552'],\n  v25Story:[[115,316,475,theme.layout.nativeText.lineHeight*2],17,'#F3EFDA'],\n  relic:[[162,405,430,30],20,'#E7CA5A'],relicText:[[162,429,440,35],17,'#F3EFDA']};\n for(const [name,[box,font,colour]]of Object.entries(specs))placeText(child(details,name),box,font,colour);\n details.children=details.children.filter(n=>!['deckOpen','deckTitle','deckSummary','deckRule'].includes(n.name));"
+   },
+   {
+    "at": 41,
+    "before": " const bag=child(details,'v25GoldIcon');Object.assign(bag,frame(295,284,25,28));\n const relic=child(details,'v25RelicIcon');\n Object.assign(relic,frame(115,383,36,44),{visible:true});\n const relicArt=theme.lowCostArt.relic;\n const relicScale=40/relicArt.canvas;",
+    "after": " const bag=child(details,'v25GoldIcon');Object.assign(bag,frame(295,284,25,28));\n const relic=child(details,'v25RelicIcon');\n Object.assign(relic,frame(115,409,36,44),{visible:true});\n const relicArt=theme.lowCostArt.relic;\n const relicScale=40/relicArt.canvas;"
+   }
+  ]
+ },
+ {
+  "path": "src/lua/abyss_character_select_view.lua",
+  "beforeSha256": "16cdd1223cd9ea74232351b5bdce9faa86eccba6256c12b892f3b1290aa12dc7",
+  "afterSha256": "000d76cbf4734a91d513c427b170e32bebf7b183867c5b7daf850770df54acaf",
+  "hunks": [
+   {
+    "at": 4,
+    "before": "local Motion=require('abyss_character_entrance')\nlocal M={}\n-- 选角只做一眼扫读（对标 STS 选角页）：牌组按 攻击→技能→能力→其它 排好直接列出，不提供筛选。\nlocal typeOrder={attack=1,skill=2,power=3,status=4,curse=5}\nlocal function sortedDeck(info)",
+    "after": "local Motion=require('abyss_character_entrance')\nlocal M={}\n-- The legacy layout lists cards in type order.\nlocal typeOrder={attack=1,skill=2,power=3,status=4,curse=5}\nlocal function sortedDeck(info)"
+   },
+   {
+    "at": 17,
+    "before": "    return cards\nend\n-- Selection owns the summary only; the shared deck browser owns all card faces.\nlocal function renderStarterDeck(details,info)\n    local parts={}",
+    "after": "    return cards\nend\n-- The legacy selection summary shares no card faces with the deck browser.\nlocal function renderStarterDeck(details,info)\n    local parts={}"
+   },
+   {
+    "at": 23,
+    "before": "    details:GetChild('deckTitle').text='初始牌组 · '..number(info.deckSize)..' 张'\n    details:GetChild('deckSummary').text=table.concat(parts,'  ')\nend\nlocal function selected(box,value)",
+    "after": "    details:GetChild('deckTitle').text='初始牌组 · '..number(info.deckSize)..' 张'\n    details:GetChild('deckSummary').text=table.concat(parts,'  ')\nend\nlocal function paintLegacyDeck(panel,details,info)\n    panel:GetChild('deckView'):SetVisible(false)\n    if info and details:GetChild('deckSummary') then renderStarterDeck(details,info) end\nend\nlocal function selected(box,value)"
+   },
+   {
+    "at": 103,
+    "before": "    details:GetChild('relic').text=#relics>0 and table.concat(relics,'、') or '无'\n    details:GetChild('relicText').text=table.concat(texts,' ')\n    if details:GetChild('deckSummary') then renderStarterDeck(details,info) end\nend\nlocal function paintFigure(details,state,platform,originalSts,info)",
+    "after": "    details:GetChild('relic').text=#relics>0 and table.concat(relics,'、') or '无'\n    details:GetChild('relicText').text=table.concat(texts,' ')\nend\nlocal function paintFigure(details,state,platform,originalSts,info)"
+   },
+   {
+    "at": 156,
+    "before": "    paintThemesAndElements(panel,state,platform,elementsOpen)\n    local details=panel:GetChild('details');details:SetVisible(info~=nil)\n    panel:GetChild('deckView'):SetVisible(false)\n    local roster=panel:GetChild('v25Roster')\n    if nativeV25 and roster then",
+    "after": "    paintThemesAndElements(panel,state,platform,elementsOpen)\n    local details=panel:GetChild('details');details:SetVisible(info~=nil)\n    local roster=panel:GetChild('v25Roster')\n    if nativeV25 and roster then"
+   },
+   {
+    "at": 162,
+    "before": "        roster:GetChild('selected'):GetChild('selection'):SetVisible(info~=nil)\n        panel:GetChild('traveler'):GetChild('selected'):SetVisible(false)\n    end\n    paintPublished(panel,details,state,platform,motion,info,originalSts,nativeV25)",
+    "after": "        roster:GetChild('selected'):GetChild('selection'):SetVisible(info~=nil)\n        panel:GetChild('traveler'):GetChild('selected'):SetVisible(false)\n    else\n        paintLegacyDeck(panel,details,info)\n    end\n    paintPublished(panel,details,state,platform,motion,info,originalSts,nativeV25)"
+   }
+  ]
+ },
+ {
+  "path": "src/lua/abyss_game_ui_input.lua",
+  "beforeSha256": "fa0495b933c783b40d559f356f746a6f4ae49771636e916f8959207594868636",
+  "afterSha256": "de281dad9178309bfb4c4119b7ed2e091c37449a1f65ff481394b6be15c1d18f",
+  "hunks": [
+   {
+    "at": 324,
+    "before": "    bindCommand(characterPanel:GetChild('confirm'),'character_confirm',function()return self:confirmCharacter()end,\n        function()return self.characterSelection:canConfirm() and not self.characterSelection.deckOpen end)\n    local starterDeck=characterPanel:GetChild('details'):GetChild('deckOpen')\n    if starterDeck then\n        bindCommand(starterDeck,'character_deck',function()",
+    "after": "    bindCommand(characterPanel:GetChild('confirm'),'character_confirm',function()return self:confirmCharacter()end,\n        function()return self.characterSelection:canConfirm() and not self.characterSelection.deckOpen end)\n    local starterDeck=Theme.presentationProfile~='official-assets-first' and characterPanel:GetChild('details'):GetChild('deckOpen')\n    if starterDeck then\n        bindCommand(starterDeck,'character_deck',function()"
+   }
+  ]
+ },
+ {
+  "path": "tests/noncombat-v25-layout.test.mjs",
+  "beforeSha256": "c2d275a928d9f168c28d5dea5c78d60e3b7a480447463723eabe2bcb4d34ca13",
+  "afterSha256": "52a1a10dada404e7dc3101bde1404500af83360de70984755befff67f9a02bed",
+  "hunks": [
+   {
+    "at": 17,
+    "before": "import {attachOfficialPortraits} from '../scripts/official-portraits.mjs';\nimport {applyOfficialNoncombatLayout} from '../scripts/noncombat-v25-layout.mjs';\nconst parts=n=>n?.controls??n?.children??[],child=(n,name)=>parts(n).find(c=>c.name===name);\nconst all=n=>[n,...parts(n).flatMap(all)];",
+    "after": "import {attachOfficialPortraits} from '../scripts/official-portraits.mjs';\nimport {applyOfficialNoncombatLayout} from '../scripts/noncombat-v25-layout.mjs';\nimport {loadUiReferences} from '../scripts/check-ui-references.mjs';\nimport {capacityProblems} from './helpers/ui-readability.mjs';\nconst parts=n=>n?.controls??n?.children??[],child=(n,name)=>parts(n).find(c=>c.name===name);\nconst all=n=>[n,...parts(n).flatMap(all)];"
+   },
+   {
+    "at": 25,
+    "before": " attachOfficialPortraits(layout,{selectionAvatar:true,battlePortrait:true});\n const stage=child(layout,'stage')??layout,menu=child(stage,'menuPanel'),panel=child(stage,'characterPanel');\n const start=child(child(menu,'start'),'hit'),confirm=child(child(panel,'confirm'),'hit'),modal=child(panel,'deckView');\n const resultLabel=structuredClone(child(child(menu,'start'),'label'));\n const oldBattle=JSON.stringify(child(stage,'battlePanel'));",
+    "after": " attachOfficialPortraits(layout,{selectionAvatar:true,battlePortrait:true});\n const stage=child(layout,'stage')??layout,menu=child(stage,'menuPanel'),panel=child(stage,'characterPanel');\n const start=child(child(menu,'start'),'hit'),confirm=child(child(panel,'confirm'),'hit');\n const resultLabel=structuredClone(child(child(menu,'start'),'label'));\n const oldBattle=JSON.stringify(child(stage,'battlePanel'));"
+   },
+   {
+    "at": 31,
+    "before": " assert.equal(child(child(menu,'start'),'hit'),start);\n assert.equal(child(child(panel,'confirm'),'hit'),confirm);\n assert.equal(parts(panel).at(-1),modal);\n assert.equal(modal.visible,false);assert.deepEqual(modal.children,[],'retire the duplicated selection deck; reuse the shared browser');\n assert.equal(JSON.stringify(child(stage,'battlePanel')),oldBattle);\n assert.equal(child(menu,'vista').visible,false);",
+    "after": " assert.equal(child(child(menu,'start'),'hit'),start);\n assert.equal(child(child(panel,'confirm'),'hit'),confirm);\n assert.equal(child(panel,'deckView'),undefined,'retire the duplicated selection deck; reuse the shared browser');\n assert.equal(JSON.stringify(child(stage,'battlePanel')),oldBattle);\n assert.equal(child(menu,'vista').visible,false);"
+   },
+   {
+    "at": 172,
+    "before": "const panel=child(child(layout,'stage'),'characterPanel');\n\ntest('official generated selection retires the legacy full-screen shade above its approved artwork',()=>{\n const background=child(panel,'lumineSelectionBackground'),shade=child(panel,'officialBackdropVeil');",
+    "after": "const panel=child(child(layout,'stage'),'characterPanel');\n\ntest('generated official character selection follows the approved details revision',()=>{\n const revisions=loadUiReferences().filter(row=>row.targetVersion==='v2.0.0'&&\n  row.codePath==='scripts/character-selection-composition.mjs'&&row.state==='details');\n assert.deepEqual(revisions.filter(row=>['APPROVED','CURRENT_IMPLEMENTATION'].includes(row.status))\n  .map(row=>[row.revision,row.status]),[['release-sts1-20261122','APPROVED']]);\n assert.equal(revisions.find(row=>row.revision==='sts1-open-copy-20261119')?.status,'SUPERSEDED');\n const output=join(directory,'refined-release');\n buildUI(output,undefined,{officialAssets:true,refinedReleaseMonsterArt:true,nativePageLifecycle:true,experimentalCharacters:false});\n const tree=JSON.parse(readFileSync(join(output,'game-ui.json'),'utf8'));\n const selection=child(child(tree,'stage'),'characterPanel');\n const details=child(selection,'details');\n const motion=child(details,'infoMotion'),infoLayers=motion?parts(motion):[details];\n assert(infoLayers.length>0);\n for(const info of infoLayers)for(const name of ['name','stats','gold','v25Story','relic','relicText']){\n  assert.equal(child(info,name)?.kind,'text',name);\n }\n const retired=new Set(['deckTitle','deckSummary','deckRule','deckOpen','deckView']);\n const found=all(selection).filter(node=>retired.has(node.name)||/初始牌组|查看牌组/.test(node.text?.content??''));\n assert.deepEqual(found.map(node=>node.name),[],'obsolete starter deck controls in the official selection tree');\n for(const info of infoLayers){\n  const story=child(info,'v25Story'),{content,fontSize,minFontSize}=story.text;\n  const problems=capacityProblems([{path:'characterPanel/details/v25Story',kind:story.kind,visible:true,\n   text:content,size:story.size,font:fontSize,minimum:minFontSize}],nativeTheme.layout.nativeText.lineHeight);\n  assert.deepEqual(problems,[],'reserve both native lines for the mobile synopsis');\n  assert(story.size[1]>=nativeTheme.layout.nativeText.lineHeight*2,'reserve two lines for longer synopses');\n  assert.equal(content,'使用岩元素护盾与结晶应对敌人。');\n  assert.equal(minFontSize,fontSize,'retain the authored text size');\n  const stats=child(info,'stats'),relic=child(info,'relic');\n  assert(story.position[1]+story.size[1]/2<stats.position[1]-stats.size[1]/2,'story clears health');\n  assert(story.position[1]-story.size[1]/2>relic.position[1]+relic.size[1]/2,'story clears the relic title');\n }\n});\n\ntest('official generated selection retires the legacy full-screen shade above its approved artwork',()=>{\n const background=child(panel,'lumineSelectionBackground'),shade=child(panel,'officialBackdropVeil');"
+   },
+   {
+    "at": 298,
+    "before": "});\n",
+    "after": "});\n\ntest('selection replay authenticates the current source for both changed owners',async()=>{\n const {beforeOfficialCharacterBackflow}=await import('./helpers/current-replay-fix-sources.mjs');\n const {assertCurrentUiEntrance,authenticateUiEntrance,beforeUiEntrance}=await import('./helpers/ui-entrance-source.mjs');\n const read=path=>readFileSync(path,'utf8');\n authenticateUiEntrance(read);\n for(const path of ['src/lua/abyss_character_select_view.lua','src/lua/abyss_game_ui_input.lua']){\n  const current=read(path),previous=beforeOfficialCharacterBackflow(path,current);\n  assert.notEqual(previous,current);\n  assert.equal(beforeUiEntrance(path,previous),beforeUiEntrance(path,current));\n  assert.throws(()=>assertCurrentUiEntrance(path,previous),/fresh current production owner/);\n  assert.throws(()=>authenticateUiEntrance(owner=>owner===path?previous:read(owner)),/combined linked owner identity/);\n }\n});\n"
+   }
+  ]
+ },
+ {
+  "path": "tests/official-assets.test.mjs",
+  "beforeSha256": "da4c8de1a7585309afcb548cc44efc0729880095ffbfef14c0e86e16ab8d74b3",
+  "afterSha256": "9c8f77cb1fee968f4115824559023e7d0cdb441c1ad2c778645e5fce0e8a3663",
+  "hunks": [
+   {
+    "at": 106,
+    "before": " const current=new Map([...paths(layout),...paths(template)]);\n const retiredDeckPrefix='/SlayTheAbyss/characterPanel/deckView/';\n const retiredStarterEntry=path=>/^\\/SlayTheAbyss\\/characterPanel\\/details\\/deck(?:Open|Title|Summary|Rule)(?:\\/|$)/.test(path);\n const retiredOverlay=path=>/^\\/SlayTheAbyss\\/(?:prologuePanel(?:\\/|$)|(?:exitPanel|runMenu)\\/(?:help|guide)(?:\\/|$)|potionPanel\\/)/.test(path);\n const retiredPickerChild=path=>/^\\/SlayTheAbyss\\/nodePanel\\/pickerView\\/card[4-6]\\//.test(path);\n const retiredChoice=path=>/^\\/SlayTheAbyss\\/choicePanel\\/card(?:[3-9]|10)(?:\\/|$)/.test(path);\n const retiredDeck=child(child(layout,'characterPanel'),'deckView');\n assert.equal(retiredDeck.visible,false);assert.deepEqual(retiredDeck.children,[],\n  'selection must use the shared deck browser instead of keeping twelve independent card slots');\n const merchant=new Map(paths(merchantControl(theme),'/SlayTheAbyss/nodePanel'));\n  for(const [path,node,before] of semantic){",
+    "after": " const current=new Map([...paths(layout),...paths(template)]);\n const retiredDeckPrefix='/SlayTheAbyss/characterPanel/deckView/';\n const retiredStarterEntry=path=>/^\\/SlayTheAbyss\\/characterPanel\\/(?:deckView$|details\\/deck(?:Open|Rule|Title|Summary)(?:\\/|$))/.test(path);\n const retiredOverlay=path=>/^\\/SlayTheAbyss\\/(?:prologuePanel(?:\\/|$)|(?:exitPanel|runMenu)\\/(?:help|guide)(?:\\/|$)|potionPanel\\/)/.test(path);\n const retiredPickerChild=path=>/^\\/SlayTheAbyss\\/nodePanel\\/pickerView\\/card[4-6]\\//.test(path);\n const retiredChoice=path=>/^\\/SlayTheAbyss\\/choicePanel\\/card(?:[3-9]|10)(?:\\/|$)/.test(path);\n assert.equal(child(child(layout,'characterPanel'),'deckView'),undefined);\n const merchant=new Map(paths(merchantControl(theme),'/SlayTheAbyss/nodePanel'));\n  for(const [path,node,before] of semantic){"
+   }
+  ]
+ },
+ {
+  "path": "tests/sts-character-browser.test.mjs",
+  "beforeSha256": "4a2e6165ce047aebea29fedcc4d8f3166916b634e9581e1a44de304b9c56a376",
+  "afterSha256": "53c2a8b2edda1414bde82131decf898ea04f89b8d5515706bfaaa7dd3565e7b3",
+  "hunks": [
+   {
+    "at": 76,
+    "before": "assert(deck.browserShell and not deck.pileView and not deck.pileKind and not deck.choiceToken and not deck.battle)\nassert(deck.run.readOnlyPreview and #deck.cards==info.deckSize and deckPanel:GetChild('pileGrid').visible)\nassert(not panel.visible and not panel:GetChild('deckView').visible and #panel:GetChild('deckView'):GetChildren()==0)\nassert(host.pointerBlocked(),'preparation must keep preview input covered')\nassert(not host:openStarterDeck(),'covered/reentrant opening must fail')",
+    "after": "assert(deck.browserShell and not deck.pileView and not deck.pileKind and not deck.choiceToken and not deck.battle)\nassert(deck.run.readOnlyPreview and #deck.cards==info.deckSize and deckPanel:GetChild('pileGrid').visible)\nassert(not panel.visible and not panel:GetChild('deckView'))\nassert(host.pointerBlocked(),'preparation must keep preview input covered')\nassert(not host:openStarterDeck(),'covered/reentrant opening must fail')"
+   }
+  ]
+ }
+].map(row=>[row.path,row]));
+
+// These combined owners retain the approved Selection changes and the published runtime behavior.
+const combinedCharacterOwners=Object.freeze({
+ "scripts/character-selection-composition.mjs": {
+  "current": {
+   "sha256": "3e340fbcd52449a08e9d2a9d710734a593581f1933692a6e543c90accffb056a",
+   "gitBlob": "fc148877c410b91ad2c52108ae84e8c58a0cb629"
+  },
+  "previous": {
+   "sha256": "ade82ac447a2180cd9e1cf218d4abb5a8b5b0a2492d53c83d8e964505a6c7f88",
+   "gitBlob": "3cd138448bb0e2b5b0448dfe39bbba72036424e0"
+  },
+  "hunks": [
+   {
+    "at": 38,
+    "before": " details.children=details.children.filter(n=>!['deckOpen','deckTitle','deckSummary','deckRule'].includes(n.name));\n for(const name of ['relicTag','portraitFrame','floorShadow','officialSelectionFigure']){const n=child(details,name);if(n)n.visible=false;}",
+    "after": " details.children=details.children.filter(n=>!['deckOpen','deckTitle','deckSummary','deckRule'].includes(n.name));\n const portraits=child(details,'portraits');\n portraits.children=portraits.children.filter(node=>node.name!=='traveler_ironclad');\n Object.assign(child(details,'portraitLoading'),frame(885,455,72,30));\n Object.assign(child(details,'portraitFade'),frame(645,84,552,451));\n for(const name of ['relicTag','portraitFrame','floorShadow','officialSelectionFigure']){const n=child(details,name);if(n)n.visible=false;}"
+   }
+  ]
+ },
+ "src/lua/abyss_character_select_view.lua": {
+  "current": {
+   "sha256": "7ec3b9d7acb6d47dcfa67f5482731711e23faa4eceaa6538f52acc45b4982276",
+   "gitBlob": "78786b3471a36f363fc81ead2febac0f67ce206b"
+  },
+  "previous": {
+   "sha256": "000d76cbf4734a91d513c427b170e32bebf7b183867c5b7daf850770df54acaf",
+   "gitBlob": "e677ced9fb053466f654928b797232f6a8e5618b"
+  },
+  "hunks": [
+   {
+    "at": 5,
+    "before": "local M={}\n-- The legacy layout lists cards in type order.",
+    "after": "local M={}\nlocal function visible(control,value)\n    if control and control.visible~=value then control:SetVisible(value)end\nend\nlocal function text(control,value)\n    if control.text~=value then control.text=value end\nend\nlocal function image(control,platform,entry)\n    if control and entry and platform.imageSource and control.imageId~=entry.id then\n        control:SetImage(platform.imageSource,entry.id)\n    end\nend\n-- The legacy layout lists cards in type order."
+   },
+   {
+    "at": 33,
+    "before": "    for _,card in ipairs(sortedDeck(info))do parts[#parts+1]=card.name..'×'..number(card.count)end\n    details:GetChild('deckTitle').text='初始牌组 · '..number(info.deckSize)..' 张'\n    details:GetChild('deckSummary').text=table.concat(parts,'  ')\nend\nlocal function paintLegacyDeck(panel,details,info)\n    panel:GetChild('deckView'):SetVisible(false)\n    if info and details:GetChild('deckSummary') then renderStarterDeck(details,info) end\nend\nlocal function selected(box,value)\n    box:GetChild('selected'):SetVisible(value)\nend",
+    "after": "    for _,card in ipairs(sortedDeck(info))do parts[#parts+1]=card.name..'×'..number(card.count)end\n    text(details:GetChild('deckTitle'),'初始牌组 · '..number(info.deckSize)..' 张')\n    text(details:GetChild('deckSummary'),table.concat(parts,'  '))\nend\nlocal function selected(box,value)\n    visible(box:GetChild('selected'),value)\nend"
+   },
+   {
+    "at": 45,
+    "before": "        local bust=face and face:GetChild('bust')\n        if bust then bust:SetImage(platform.imageSource,entry.id) end\n    end",
+    "after": "        local bust=face and face:GetChild('bust')\n        image(bust,platform,entry)\n    end"
+   },
+   {
+    "at": 53,
+    "before": "end\nlocal function paintPortraits(details,state,platform)\n    local large=largeSlot(state.character,state.element)",
+    "after": "end\nlocal function showTravelerPortrait(portraits,key,native)\n    for _,element in ipairs(Select.elements)do\n        local name='traveler_'..element\n        visible(portraits:GetChild(name),key==name and (element~='ironclad' or not native))\n    end\nend\nlocal function paintPortraits(details,state,platform,originalSts)\n    local large=largeSlot(state.character,state.element)"
+   },
+   {
+    "at": 63,
+    "before": "    local key=state.character=='traveler' and ('traveler_'..(state.element or 'ironclad')) or state.character\n    for _,id in ipairs(Select.characters)do\n        if id=='traveler' then\n            for _,element in ipairs(Select.elements)do\n                portraits:GetChild('traveler_'..element):SetVisible(key=='traveler_'..element)\n            end\n        else portraits:GetChild(id):SetVisible(id==key) end\n    end\n    if platform.imageSource and large then portraits:GetChild(key):SetImage(platform.imageSource,large.id) end\n    return large,key,portraits\nend\nlocal function paintPortraitNote(details,info,platform,large,key,portraits)\n    local note=info.name\n    local native=platform.portraits and platform.portraits.status and platform.portraits:status().selection\n    if key=='traveler_ironclad' and native then portraits:GetChild(key):SetVisible(false)end\n    if (not large or large.status=='placeholder') and not native then note=note..' · 肖像待补' end\n    if large and large.playable==false then note=note..' · 非本次正式角色' end\n    details:GetChild('portraitNote').text=note\nend\nlocal function paintCharacterButtons(panel,state,platform,originalSts,open,hideSelection)\n    for i,id in ipairs(Select.characters)do",
+    "after": "    local key=state.character=='traveler' and ('traveler_'..(state.element or 'ironclad')) or state.character\n    local native=platform.portraits and platform.portraits.status and platform.portraits:status().selection\n    if originalSts then visible(portraits,false)end\n    for _,id in ipairs(Select.characters)do\n        if id=='traveler' then\n            showTravelerPortrait(portraits,key,native)\n        else visible(portraits:GetChild(id),id==key) end\n    end\n    local portrait=portraits:GetChild(key)\n    if portrait and portrait.visible and not originalSts then image(portrait,platform,large)end\n    return large,native,not originalSts and portrait or nil\nend\nlocal function paintPortraitNote(details,info,large,native)\n    local note=info.name\n    if (not large or large.status=='placeholder') and not native then note=note..' · 肖像待补' end\n    if large and large.playable==false then note=note..' · 非本次正式角色' end\n    text(details:GetChild('portraitNote'),note)\nend\nlocal function paintCharacterButtons(panel,state,platform,originalSts,open,selection)\n    for i,id in ipairs(Select.characters)do"
+   },
+   {
+    "at": 84,
+    "before": "        local allowed=(originalSts or open>1 or id=='traveler') and state:allowsCharacter(id)\n        if box.visible~=allowed then box:SetVisible(allowed)end\n        selected(box,not hideSelection and state.character==id)\n        local _,bust=largeSlot(id,id=='traveler' and (state.element or 'ironclad') or nil)\n        if not originalSts or id~='traveler' then paintBust(box,bust,platform)end\n    end",
+    "after": "        local allowed=(originalSts or open>1 or id=='traveler') and state:allowsCharacter(id)\n        visible(box,allowed)\n        selected(box,selection==id)\n        local _,bust=largeSlot(id,id=='traveler' and (state.element or 'ironclad') or nil)\n        if allowed and (not originalSts or id~='traveler') then paintBust(box,bust,platform)end\n    end"
+   },
+   {
+    "at": 94,
+    "before": "    local theme=traveler and state.element or state.character\n    for _,layer in ipairs({'themes'})do\n        local group=panel:GetChild(layer)\n        for _,id in ipairs(Select.characters)do if id~='traveler' then group:GetChild(id):SetVisible(id==theme)end end\n        for _,id in ipairs(Select.elements)do group:GetChild(id):SetVisible(id==theme)end\n    end\n    panel:GetChild('elements'):SetVisible(traveler and elementsOpen>1)\n    for i,id in ipairs(Select.elements)do\n        local box=panel:GetChild('elements'):GetChild('element'..i)\n        local allowed=state:allowsElement(id)\n        if box.visible~=allowed then box:SetVisible(allowed)end\n        selected(box,state.element==id)\n        paintBust(box,Theme.icon.heroSlots.bust.traveler[id],platform)\n    end\nend\nlocal function paintInfo(details,info,nativeV25)\n    details:GetChild('name').text=info.name\n    details:GetChild('stats').text=(nativeV25 and '生命：' or '生命  ')..number(info.maxHp)..(nativeV25 and '/' or ' / ')..number(info.maxHp)\n    details:GetChild('gold').text=(nativeV25 and '金币：' or '金币  ')..number(info.gold)\n    local relics,texts={},{}\n    for _,r in ipairs(info.relics)do relics[#relics+1]=r.name;if r.text and r.text~='' then texts[#texts+1]=r.text end end\n    details:GetChild('relic').text=#relics>0 and table.concat(relics,'、') or '无'\n    details:GetChild('relicText').text=table.concat(texts,' ')\nend\nlocal function paintFigure(details,state,platform,originalSts,info)\n    local large,key,portraits=paintPortraits(details,state,platform)\n    if originalSts then portraits:SetVisible(false)end\n    paintPortraitNote(details,info,platform,large,key,portraits)\n    return not originalSts and portraits:GetChild(key) or nil\nend",
+    "after": "    local theme=traveler and state.element or state.character\n    local group=panel:GetChild('themes')\n    for _,id in ipairs(Select.characters)do if id~='traveler' then visible(group:GetChild(id),id==theme)end end\n    for _,id in ipairs(Select.elements)do visible(group:GetChild(id),id==theme)end\n    local elements=panel:GetChild('elements')\n    visible(elements,traveler and elementsOpen>1)\n    for i,id in ipairs(Select.elements)do\n        local box=elements:GetChild('element'..i)\n        local allowed=state:allowsElement(id)\n        visible(box,allowed)\n        selected(box,state.element==id)\n        if allowed and elements.visible then paintBust(box,Theme.icon.heroSlots.bust.traveler[id],platform)end\n    end\nend\nlocal function paintRelics(details,relicList)\n    local relics,texts={},{}\n    for _,r in ipairs(relicList)do relics[#relics+1]=r.name;if r.text and r.text~='' then texts[#texts+1]=r.text end end\n    text(details:GetChild('relic'),#relics>0 and table.concat(relics,'、') or '无')\n    text(details:GetChild('relicText'),table.concat(texts,' '))\nend\nlocal function paintInfo(details,info,nativeV25)\n    text(details:GetChild('name'),info.name)\n    text(details:GetChild('stats'),(nativeV25 and '生命：' or '生命  ')..number(info.maxHp)..(nativeV25 and '/' or ' / ')..number(info.maxHp))\n    text(details:GetChild('gold'),(nativeV25 and '金币：' or '金币  ')..number(info.gold))\n    paintRelics(details,info.relics)\n    if not nativeV25 and details:GetChild('deckSummary') then renderStarterDeck(details,info) end\n    for _,name in ipairs({'v25Story','v25RelicIcon'})do\n        local detail=details:GetChild(name)\n        if detail then visible(detail,info.id=='ironclad')end\n    end\nend\nlocal function paintFigure(details,state,platform,originalSts,info)\n    local large,native,portrait=paintPortraits(details,state,platform,originalSts)\n    paintPortraitNote(details,info,large,native)\n    return portrait\nend"
+   },
+   {
+    "at": 141,
+    "before": "    local open=countAllowed(Select.characters,function(id)return state:allowsCharacter(id)end)\n    if roster then roster:SetVisible(open==1) end\n    paintCharacterButtons(panel,state,platform,panel:GetChild('stsCharacter')~=nil,open,true)\nend",
+    "after": "    local open=countAllowed(Select.characters,function(id)return state:allowsCharacter(id)end)\n    if roster then visible(roster,open==1) end\n    paintCharacterButtons(panel,state,platform,panel:GetChild('stsCharacter')~=nil,open,nil)\nend"
+   },
+   {
+    "at": 158,
+    "before": "        motion:show(info,info and info.id=='ironclad' and native and native.phase=='ready',portrait)\n    else panel:GetChild('confirm'):SetVisible(info~=nil) end\n    local confirm=panel:GetChild('confirm'):GetChild('hit')\n    local enabled=state:canConfirm()\n    confirm.interactable,confirm.raycastTarget=enabled,enabled\nend",
+    "after": "        motion:show(info,info and info.id=='ironclad' and native and native.phase=='ready',portrait)\n    else visible(panel:GetChild('confirm'),info~=nil) end\n    local confirm=panel:GetChild('confirm'):GetChild('hit')\n    local enabled=info~=nil and state:canConfirm()\n    if confirm.interactable~=enabled then confirm.interactable=enabled end\n    if confirm.raycastTarget~=enabled then confirm.raycastTarget=enabled end\nend"
+   },
+   {
+    "at": 169,
+    "before": "    local nativeV25=officialPanel(panel)\n    panel:GetChild('hint').text=state.notice or (nativeV25 and '' or (info and '查看初始信息，确认后开始冒险。' or '点击下方角色查看详情，再确认出发。'))\n    -- 只剩一个可选角色/元素时不摆假选择钮（Pan 2026-10-31：单角色发版）。",
+    "after": "    local nativeV25=officialPanel(panel)\n    text(panel:GetChild('hint'),state.notice or (nativeV25 and '' or (info and '查看初始信息，确认后开始冒险。' or '点击下方角色查看详情，再确认出发。')))\n    -- 只剩一个可选角色/元素时不摆假选择钮（Pan 2026-10-31：单角色发版）。"
+   },
+   {
+    "at": 173,
+    "before": "    local elementsOpen=countAllowed(Select.elements,function(id)return state:allowsElement(id)end)\n    paintCharacterButtons(panel,state,platform,originalSts,open)\n    paintThemesAndElements(panel,state,platform,elementsOpen)\n    local details=panel:GetChild('details');details:SetVisible(info~=nil)\n    local roster=panel:GetChild('v25Roster')\n    if nativeV25 and roster then\n        roster:SetVisible(open==1)\n        panel:GetChild('title'):SetVisible(info==nil)\n        roster:GetChild('selected'):GetChild('selection'):SetVisible(info~=nil)\n        panel:GetChild('traveler'):GetChild('selected'):SetVisible(false)\n    else\n        paintLegacyDeck(panel,details,info)\n    end",
+    "after": "    local elementsOpen=countAllowed(Select.elements,function(id)return state:allowsElement(id)end)\n    local roster=nativeV25 and panel:GetChild('v25Roster')\n    local selection=state.character\n    if roster and (open==1 or selection=='traveler') then selection=nil end\n    paintCharacterButtons(panel,state,platform,originalSts,open,selection)\n    paintThemesAndElements(panel,state,platform,elementsOpen)\n    local details=panel:GetChild('details');visible(details,info~=nil)\n    if not nativeV25 then visible(panel:GetChild('deckView'),false)end\n    if roster then\n        visible(roster,open==1)\n        visible(panel:GetChild('title'),info==nil)\n        visible(roster:GetChild('selected'):GetChild('selection'),info~=nil)\n    end"
+   }
+  ]
+ },
+ "src/lua/abyss_game_ui_input.lua": {
+  "current": {
+   "sha256": "fd999a08f6fa48fab50083e1999633e5c7eecd11d9032556de695bd0c8678d1f",
+   "gitBlob": "5bec5f194bba6b1548ebd34c7682de5e2b294725"
+  },
+  "previous": {
+   "sha256": "de281dad9178309bfb4c4119b7ed2e091c37449a1f65ff481394b6be15c1d18f",
+   "gitBlob": "80be33ac375be64a176769db270e15ee6705d6a5"
+  },
+  "hunks": [
+   {
+    "at": 14,
+    "before": "local function mapReturnCovered(self)\n    return self.characterOpen or self.easterEggOpen\n        or self.deckUI.visible or self.potionUI.visible",
+    "after": "local function mapReturnCovered(self)\n    return self.menuOpen or self.characterOpen or self.easterEggOpen\n        or self.deckUI.visible or self.potionUI.visible"
+   },
+   {
+    "at": 45,
+    "before": "\nfunction M.dismissFromOutside(platform,self)\n    return function()\n            if Pointer.blocked(platform) then return true end\n            if self.settlementRequested or self.settlementBusy then return true end\n            self:closeExit()\n            return true\n        end\nend\n\nlocal function bindV25Hover(box,hit,cursor,available)\n    local officialMenu=Theme.presentationProfile=='official-assets-first' and (box:GetChild('v25MenuFace') or box:GetChild('v25Face'))",
+    "after": "\nlocal function bindV25Hover(box,hit,cursor,available,color)\n    local officialMenu=Theme.presentationProfile=='official-assets-first' and (box:GetChild('v25MenuFace') or box:GetChild('v25Face'))"
+   },
+   {
+    "at": 49,
+    "before": "    if not box:GetChild('v25Face') and not box:GetChild('v25MenuFace')then return end\n    hit:AddCursorEventListener(cursor.CursorEnter,function()V25View.pointer(box,'enter',available())end)\nend",
+    "after": "    if not box:GetChild('v25Face') and not box:GetChild('v25MenuFace')then return end\n    hit:AddCursorEventListener(cursor.CursorEnter,function()V25View.pointer(box,'enter',available(),color)end)\nend"
+   },
+   {
+    "at": 68,
+    "before": "\nfunction M.bindCommand(platform,self,canManagePotions,clickEvent,owner)\n    return function(box, kind, action, enabled, potionSlot)\n            local hit = box:GetChild(\"hit\")\n            local held, released, observed",
+    "after": "\nlocal function otherPointer(token,event)\n    return token and event and token.touch~=event.touchId and token or nil\nend\n\nfunction M.bindCommand(platform,self,canManagePotions,clickEvent,owner)\n    return function(box, kind, action, enabled, potionSlot)\n            local hit = kind=='run_dismiss' and box or box:GetChild(\"hit\")\n            local held, released, observed"
+   },
+   {
+    "at": 80,
+    "before": "            local resourceAction = kind:match('^resource_')~=nil\n            local mapReturn = kind=='mapReturn'\n            local routeMode = routeModes[kind]",
+    "after": "            local resourceAction = kind:match('^resource_')~=nil\n            local utilityAction=resourceAction or kind=='open'\n            local mapReturn = kind=='mapReturn' or kind=='mapHudReturn'\n            local routeMode = routeModes[kind]"
+   },
+   {
+    "at": 86,
+    "before": "            local runMenuAction = kind:sub(1, 4) == 'run_'\n            local function eggAvailable()",
+    "after": "            local runMenuAction = kind:sub(1, 4) == 'run_'\n            local outsideMenu=kind=='run_dismiss'\n            local function eggAvailable()"
+   },
+   {
+    "at": 119,
+    "before": "                if runMenuAction then\n                    if kind~='run_mainMenu' and Navigation.minimalRunMenu(self) then return false end\n                    return self.exitOpen and self.menuOpen == true and not self.routeOpen and (not enabled or enabled())",
+    "after": "                if runMenuAction then\n                    if outsideMenu then return self.exitOpen and self.menuOpen==true end\n                    if kind=='run_mainMenu' then return Navigation.canReturnToMainMenu(self) end\n                    if Navigation.minimalRunMenu(self) then return false end\n                    return self.exitOpen and self.menuOpen == true and not self.routeOpen and (not enabled or enabled())"
+   },
+   {
+    "at": 129,
+    "before": "                if menuAction and self.motion.deathReveal then return false end\n                if kind == 'routeClose' then return self.exitOpen and self.routeOpen == true end\n                if mapReturn then return M.mapReturnAvailable(self) end",
+    "after": "                if menuAction and self.motion.deathReveal then return false end\n                if kind=='open' then return Navigation.canOpenMenu(self) end\n                if kind=='routeClose' or kind=='mapHudReturn' then\n                    return self.exitOpen and self.routeOpen==true and not mapReturnCovered(self)\n                end\n                if mapReturn then return M.mapReturnAvailable(self) end"
+   },
+   {
+    "at": 161,
+    "before": "                return token and token.generation == owner.exitGeneration and token.run == self.run\n                    and (not resourceAction or token.deckGeneration==self.deckUI.generation and token.mode==self.mode\n                        and token.potionGeneration==self.potionUI.generation)",
+    "after": "                return token and token.generation == owner.exitGeneration and token.run == self.run\n                    and (not utilityAction or token.deckGeneration==self.deckUI.generation and token.mode==self.mode\n                        and token.potionGeneration==self.potionUI.generation)"
+   },
+   {
+    "at": 169,
+    "before": "            local function touch(event) return event and event.touchId end\n            bindV25Hover(box,hit,cursor,available)\n            if cursor.CursorDown and cursor.CursorUp then",
+    "after": "            local function touch(event) return event and event.touchId end\n            if not outsideMenu then bindV25Hover(box,hit,cursor,available,platform.color) end\n            local function paintPointer(event,enabledNow)\n                if not outsideMenu then V25View.pointer(box,event,enabledNow,platform.color) end\n            end\n            if cursor.CursorDown and cursor.CursorUp then"
+   },
+   {
+    "at": 184,
+    "before": "                        mapReturn=mapContext and mapReturnIdentity(self) or nil} end\n                    V25View.pointer(box,'down',held~=nil)\n                end)",
+    "after": "                        mapReturn=mapContext and mapReturnIdentity(self) or nil} end\n                    paintPointer('down',held~=nil)\n                end)"
+   },
+   {
+    "at": 190,
+    "before": "                    held = nil\n                    V25View.pointer(box,'up',available())\n                end)",
+    "after": "                    held = nil\n                    paintPointer('up',available())\n                end)"
+   },
+   {
+    "at": 198,
+    "before": "                        end\n                        if not pointerOwner or not pointer or pointerOwner.touch==touch(pointer)then V25View.pointer(box,'exit',available())end\n                    end) end",
+    "after": "                        end\n                        if not pointerOwner or not pointer or pointerOwner.touch==touch(pointer)then paintPointer('exit',available())end\n                    end) end"
+   },
+   {
+    "at": 203,
+    "before": "            hit:AddCursorEventListener(clickEvent, function(event)\n                if covered() then return false end\n                if observed or cursor.CursorDown and cursor.CursorUp and touch(event) ~= nil then",
+    "after": "            hit:AddCursorEventListener(clickEvent, function(event)\n                if outsideMenu and Pointer.dragged(event,Theme.layout.cardDrag.threshold) then\n                    held,released=otherPointer(held,event),otherPointer(released,event)\n                    return true\n                end\n                if covered() then return outsideMenu end\n                if observed or cursor.CursorDown and cursor.CursorUp and touch(event) ~= nil then"
+   },
+   {
+    "at": 212,
+    "before": "                        if not held or held.touch == touch(event) then held, released = nil, nil end\n                        return false\n                    end\n                    if token.touch ~= touch(event) then return false end\n                    held, released = nil, nil\n                elseif not available() then return false end\n                return action()",
+    "after": "                        if not held or held.touch == touch(event) then held, released = nil, nil end\n                        return outsideMenu\n                    end\n                    if token.touch ~= touch(event) then return outsideMenu end\n                    held, released = nil, nil\n                elseif not available() then return outsideMenu end\n                if outsideMenu then action();return true end\n                return action()"
+   },
+   {
+    "at": 223,
+    "before": "\nfunction M.installUtilities(self,child,clickEvent,platform,inCombat,exitPanel,runMenu)\n    child(\"deckEntry\"):GetChild(\"open\"):GetChild(\"hit\"):AddCursorEventListener(clickEvent, function() return self:openDeck() end)",
+    "after": "\nfunction M.installUtilities(self,child,clickEvent,inCombat,exitPanel,runMenu)\n    child(\"deckEntry\"):GetChild(\"open\"):GetChild(\"hit\"):AddCursorEventListener(clickEvent, function() return self:openDeck() end)"
+   },
+   {
+    "at": 237,
+    "before": "    runMenu.disableCursorEventPassthrough = true\n    -- 点击菜单外的空白继续游戏，并吞掉点击以避免穿透到战斗或地图。\n    local dismissFromOutside = M.dismissFromOutside(platform,self)\n    runMenu:GetChild('blocker'):AddCursorEventListener(clickEvent, function()\n        if self.exitOpen and self.menuOpen and not self.routeOpen then return dismissFromOutside() end\n        return true\n    end)\n    runMenu:GetChild('catch'):AddCursorEventListener(clickEvent, function() return true end)",
+    "after": "    runMenu.disableCursorEventPassthrough = true\n    runMenu:GetChild('catch'):AddCursorEventListener(clickEvent, function() return true end)"
+   },
+   {
+    "at": 266,
+    "before": "            bindCommand(box,'resource_potion',function()return self:openPotions(i)end,\n                function()return box.visible and self.run.phase~='combat' and self.run.potions[i]~=nil end,i)\n        end",
+    "after": "            bindCommand(box,'resource_potion',function()return self:openPotions(i)end,\n                function()return box.visible and (self.run.phase~='combat' or self.routeOpen) and self.run.potions[i]~=nil end,i)\n        end"
+   },
+   {
+    "at": 289,
+    "before": "    local function openRoute()\n        if not self:openMenu()then return false end\n        self.routeOpen=true;self:refresh();return true\n    end",
+    "after": "    local function openRoute()\n        owner.exitGeneration=owner.exitGeneration+1\n        self.exitOpen,self.menuOpen,self.routeOpen,self.exitError=true,false,true,nil\n        Navigation.cancelNodeEntry(self)\n        self:refresh()\n        return true\n    end"
+   },
+   {
+    "at": 297,
+    "before": "    if shortcut then bindCommand(shortcut,'battleRoute',openRoute,canViewRoute)end\n    local nodeShortcut=Theme.presentationProfile=='official-assets-first' and child('nodePanel'):GetChild('runRoute')\n    if nodeShortcut then bindCommand(nodeShortcut,'runRoute',openRoute,canViewRoute)end\n    bindCommand(runMenu:GetChild('resume'), 'run_resume', function() return self:closeExit() end)",
+    "after": "    if shortcut then bindCommand(shortcut,'battleRoute',openRoute,canViewRoute)end\n    local mapShortcut=Theme.presentationProfile=='official-assets-first' and child('mapPanel'):GetChild('mapRoute')\n    if mapShortcut then bindCommand(mapShortcut,'mapHudReturn',function()return self:closeExit()end)end\n    local nodeShortcut=Theme.presentationProfile=='official-assets-first' and child('nodePanel'):GetChild('runRoute')\n    if nodeShortcut then bindCommand(nodeShortcut,'runRoute',openRoute,canViewRoute)end\n    bindCommand(runMenu:GetChild('blocker'),'run_dismiss',function()return self:closeExit()end)\n    bindCommand(runMenu:GetChild('resume'), 'run_resume', function() return self:closeExit() end)"
+   },
+   {
+    "at": 316,
+    "before": "    end)\n    bindCommand(runMenu:GetChild('map'), 'run_map', function()\n        owner.exitGeneration = owner.exitGeneration + 1\n        self.routeOpen = true\n        self:refresh()\n        return true\n    end, canViewRoute)\n    local v25=Theme.presentationProfile=='v25-reference'",
+    "after": "    end)\n    bindCommand(runMenu:GetChild('map'),'run_map',openRoute,canViewRoute)\n    local v25=Theme.presentationProfile=='v25-reference'"
+   }
+  ]
+ }
+});
+export const combinedCharacterBackflowOwns=path=>Object.hasOwn(combinedCharacterOwners,path);
+
+export function beforeCombinedCharacterBackflow(path,source){
+ if(!combinedCharacterBackflowOwns(path)||typeof source!=='string')return source;
+ const {current,previous,hunks}=combinedCharacterOwners[path];
+ const lf=source.replaceAll('\r\n','\n');
+ if(lf.includes('\r')||(source!==lf&&source!==lf.replaceAll('\n','\r\n'))||!exactSourceMatches(source,current))return source;
+ const prior=restoreExactFixtureHunks({path,beforeSha256:previous.sha256,afterSha256:current.sha256,hunks},path,source);
+ if(!exactSourceMatches(prior,previous))throw Error('Invalid exact Selection source predecessor: '+path);
+ return source===lf?prior:prior.replaceAll('\n','\r\n');
+}
+
+export function beforeOfficialCharacterBackflow(path,source){
+ source=beforeCombinedCharacterBackflow(path,source);
+ const backflow=characterBackflowBindings.get(path);
+ if(!backflow)return source;
+ const prior=restoreExactFixtureHunks(backflow,path,source);
+ return prior!==source&&source.includes('\r\n')?prior.replaceAll('\n','\r\n'):prior;
+}
+
 // Retain at most one verified byte-for-byte projection per declared path.
 const lastVerifiedProjection=new Map();
 export function beforeCurrentReplayFixes(path, source){
+ source=beforeCombinedCharacterBackflow(path,source);
+ source=beforeOfficialCharacterBackflow(path,beforeApprovedUiEntrance(path,source));
  const binding=bindings.get(path);
  if(!binding)return source;
  const cached=lastVerifiedProjection.get(path);

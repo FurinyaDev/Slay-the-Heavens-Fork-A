@@ -78,7 +78,9 @@ assert(deck.browserShell and not deck.pileView and not deck.pileKind and not dec
 assert(deck.run.readOnlyPreview and deck.paged and #deck.cards==info.deckSize,'starter browser lost its paged read-only source')
 assert(not panel.visible and not panel:GetChild('deckView'),'retired selection shell was restored')
 assert(host.pageReveal.localFrame and not host.pointerBlocked(),'preview preparation must cover only the owned card area')
-for _,cell in ipairs(deckPanel:GetChild('pileGrid'):GetChildren())do
+local pendingGrid=deckPanel:GetChild('pileGrid')
+assert(not pendingGrid.visible,'unprepared cards must remain hidden under the local cover')
+for _,cell in ipairs(pendingGrid:GetChildren())do
  assert(not cell:GetChild('hit').raycastTarget,'preparation enabled an unready card')
 end
 assert(not host:openStarterDeck(),'covered/reentrant opening must fail')
