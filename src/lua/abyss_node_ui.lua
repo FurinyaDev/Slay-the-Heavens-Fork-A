@@ -60,6 +60,14 @@ local function merchantVisible(ctx, node, active)
     return true
 end
 
+local function refreshMerchant(ctx, node, active)
+    if node and node.type == "shop" and (ctx.self.merchantNode ~= node.id or ctx.self.merchantRun ~= ctx.self.run) then
+        ctx.self.merchantNode, ctx.self.merchantRun = node.id, ctx.self.run
+        ctx.merchant:enter(ctx.self.run)
+    end
+    ctx.merchant:setVisible(merchantVisible(ctx, node, active))
+end
+
 function M.new(root, run, map, presentation, clickEvent, onChange, options)
     local ctx = {root=root,run=run,map=map,presentation=presentation,clickEvent=clickEvent,onChange=onChange,options=options}
     ctx.options = ctx.options or {}
@@ -222,16 +230,9 @@ function M.new(root, run, map, presentation, clickEvent, onChange, options)
     local function setRoomNoticePosition(notice,screen)
         if ctx.options.mobileRunHud then positionNotice(notice,screen,ctx.options.mobileRunHud.contentTop) end
     end
-    local function enterMerchant(node)
-        if node and node.type=='shop' and (ctx.self.merchantNode~=node.id or ctx.self.merchantRun~=ctx.self.run) then
-            ctx.self.merchantNode,ctx.self.merchantRun=node.id,ctx.self.run
-            ctx.merchant:enter(ctx.self.run)
-        end
-    end
     function ctx.refreshNodeNotice(node,active,hint,screen)
         -- The merchant speaks in his own dialogue box; the notice keeps only shop facts.
-        enterMerchant(node)
-        ctx.merchant:setVisible(merchantVisible(ctx, node, active))
+        refreshMerchant(ctx, node, active)
         local message=ctx.self.notice ~= "" and ctx.self.notice or hint or ""
         local notice=ctx.child("notice")
         setRoomNoticePosition(notice,screen)

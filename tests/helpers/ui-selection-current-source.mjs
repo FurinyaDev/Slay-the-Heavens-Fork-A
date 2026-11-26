@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {restoreExactFixtureHunks} from './exact-fixture-hunks.mjs';
 import {exactSourceMatches} from './source-fingerprint.mjs';
 import {uiEntranceOwns} from './ui-entrance-source.mjs';
+import {beforeNodeNoticeSource} from './reward-current-source.mjs';
 
 // Replay the exact active fixture and copier predecessors without replacing prior receipts.
 const receipts=Object.freeze({
@@ -259,12 +260,12 @@ const combinedReceipts=Object.freeze({
  },
  "tests/helpers/copy-integration-source-closure.mjs": {
   "current": {
-   "sha256": "2d668d444da41638ecfff5ebad9d96eb50592d3106e6c23e511609a37de70c09",
-   "gitBlob": "dc360b0c9f447ccdff56a0c0e111846851401a16"
+   "sha256": "f919805dd64136193e50a8d6cf8b2d03dd5c2f8a4d842c73c7f7920c4439847a",
+   "gitBlob": "ae9fa12c82d2a01d0e2f907f77b00d43871ed20d"
   },
   "previous": {
-   "sha256": "afa853afb92fccdd8c458cbe59c9e8e802facf422f9e3f460666c91eb6267bcf",
-   "gitBlob": "4f42b1c3cca2582f88b9a6a03767e98e0c17cb7f"
+   "sha256": "8c234674a484ac9aba9e10eae21bdb0ce43372636a20b13e84d28c6a2f266bd4",
+   "gitBlob": "46291e76636a7543686e62c0d893e02fc099c4a6"
   },
   "hunks": [
    {
@@ -274,8 +275,8 @@ const combinedReceipts=Object.freeze({
    },
    {
     "at": 377,
-    "before": " 'tests/helpers/reward-current-source.json.gz':'a68d10abe6e6f3bd33a69f85326d34dce1250b34b6892543cb5c1314c01f3b9f',\n});\nconst inside=(root,path)=>{const r=relative(root,path);return r!==''&&!isAbsolute(r)&&r!=='..'&&!r.startsWith('../')&&!r.startsWith('..\\\\');};\nexport function copyIntegrationSourceClosure(directory,{sourceRoot=process.cwd()}={}){\n const destination=realpathSync.native(directory);\n assert.notEqual(destination,realpathSync.native(sourceRoot),'isolated helper copy destination');\n for(const [path,sha]of Object.entries(entranceFiles)){\n  assert((path.startsWith('tests/helpers/')||path.startsWith('tests/fixtures/'))&&!path.split('/').includes('..'),'fixed helper path');\n  const source=join(sourceRoot,path),content=integrationClosureBytes(path,readFileSync(source));assert.equal(hash(content),sha,'fresh helper copy identity: '+path);\n  const target=join(directory,path);mkdirSync(dirname(target),{recursive:true});\n  assert(inside(destination,realpathSync.native(dirname(target))),'helper destination parent escaped');",
-    "after": " 'tests/helpers/reward-current-source.json.gz':'a68d10abe6e6f3bd33a69f85326d34dce1250b34b6892543cb5c1314c01f3b9f',\n});\n// The live copier targets the approved #1022 helper closure. Other replay\n// readers continue to use their original Master backflow predecessor.\nconst reviewedCopySources=Object.freeze({\n \"tests/helpers/character-preparation-source.mjs\": {\n  \"current\": {\n   \"sha256\": \"59e4952da8df25d3c6808a03c05475f1799012f2838880be4f7d76c2d68f68b2\",\n   \"gitBlob\": \"59cb86a27add71e38a679cefc82a1c2f8b03b5d2\"\n  },\n  \"previous\": {\n   \"sha256\": \"b556363648dd13827dacb603038423caf4a1c2693e618747df58fc29da7be2fd\",\n   \"gitBlob\": \"b9262d101ea11eed7836cf1091bc44f94eb94ce3\"\n  },\n  \"edits\": [\n   {\n    \"at\": 0,\n    \"remove\": 3,\n    \"previous\": []\n   },\n   {\n    \"at\": 24,\n    \"remove\": 1,\n    \"previous\": []\n   },\n   {\n    \"at\": 45,\n    \"remove\": 1,\n    \"previous\": [\n     \"    const source = read(path);\"\n    ]\n   },\n   {\n    \"at\": 149,\n    \"remove\": 2,\n    \"previous\": []\n   },\n   {\n    \"at\": 189,\n    \"remove\": 13,\n    \"previous\": [\n     \"  if (pc13RewardCoverSourcePaths.includes(path)) {\"\n    ]\n   }\n  ]\n },\n \"tests/helpers/current-replay-fix-sources.mjs\": {\n  \"current\": {\n   \"sha256\": \"b09df63dd432eaa4796047bd4ba8f64a3d224963eeab15e1bc90f7732c8afae2\",\n   \"gitBlob\": \"bb8df89c3ca48e98c48c31ae961d53fd76231fcc\"\n  },\n  \"previous\": {\n   \"sha256\": \"cceed97f15f0f91ab37ea27d3bf6f5659d213c54dcf11225eaa0fed7adc8ccdf\",\n   \"gitBlob\": \"ac19a597d6be7427dd05816dc85dd580d6454c3a\"\n  },\n  \"edits\": [\n   {\n    \"at\": 3,\n    \"remove\": 1,\n    \"previous\": []\n   },\n   {\n    \"at\": 2499,\n    \"remove\": 216,\n    \"previous\": []\n   },\n   {\n    \"at\": 2716,\n    \"remove\": 1,\n    \"previous\": []\n   },\n   {\n    \"at\": 2726,\n    \"remove\": 1,\n    \"previous\": []\n   }\n  ]\n },\n \"tests/helpers/ui-entrance-source.mjs\": {\n  \"current\": {\n   \"sha256\": \"db68a4fbfb77de2972cea9a750e6df941fb492e74e95e666ee24ca1aca0c3834\",\n   \"gitBlob\": \"66a8db632e59f0e84f19a8f9d97e7eedbd2ef880\"\n  },\n  \"previous\": {\n   \"sha256\": \"c64976a04e877f65315ad8553bd8f6380b6e50a5ab5fce60e3b37bbbb98825c1\",\n   \"gitBlob\": \"2da2af0441e00d0893184b7f401a9848b491b9de\"\n  },\n  \"edits\": [\n   {\n    \"at\": 8,\n    \"remove\": 1,\n    \"previous\": [\n     \"import {beforeCurrentReplayFixes,beforeOfficialCharacterBackflow} from './current-replay-fix-sources.mjs';\"\n    ]\n   },\n   {\n    \"at\": 37,\n    \"remove\": 3,\n    \"previous\": [\n     \" if(!matchesApprovedUiEntranceOwner(path,source))return false;\"\n    ]\n   }\n  ]\n }\n});\nfunction beforeReviewedCopySource(path,raw){\n if(!Object.hasOwn(reviewedCopySources,path))return beforeMasterBackflowSource(path,raw);\n const {current,previous,edits}=reviewedCopySources[path];\n const source=raw.toString('utf8');\n const text=integrationClosureBytes(path,raw).toString('utf8');\n assert(source===text||source===text.replaceAll('\\n','\\r\\n'),'uniform current copy owner: '+path);\n assert(exactSourceMatches(text,current),'exact current copy owner: '+path);\n const lines=text.split('\\n');\n for(const {at,remove,previous:replacement} of [...edits].reverse())lines.splice(at,remove,...replacement);\n const prior=lines.join('\\n');\n assert(exactSourceMatches(prior,previous),'exact reviewed copy predecessor: '+path);\n return Buffer.from(prior);\n}\nconst inside=(root,path)=>{const r=relative(root,path);return r!==''&&!isAbsolute(r)&&r!=='..'&&!r.startsWith('../')&&!r.startsWith('..\\\\');};\nexport function copyIntegrationSourceClosure(directory,{sourceRoot=process.cwd()}={}){\n const destination=realpathSync.native(directory);\n const sourceDirectory=realpathSync.native(sourceRoot);\n assert.notEqual(destination,sourceDirectory,'isolated helper copy destination');\n const liveSource=sourceDirectory===realpathSync.native(new URL('../../',import.meta.url));\n for(const [path,sha]of Object.entries(entranceFiles)){\n  assert((path.startsWith('tests/helpers/')||path.startsWith('tests/fixtures/'))&&!path.split('/').includes('..'),'fixed helper path');\n  const source=join(sourceDirectory,path),raw=readFileSync(source);\n  let prior=raw;\n  if(liveSource){\n   try{prior=beforeReviewedCopySource(path,raw);}\n   catch(error){assert.fail('fresh helper copy identity: '+path+': '+error.message);}\n  }\n  const content=integrationClosureBytes(path,prior);\n  assert.equal(hash(content),sha,'fresh helper copy identity: '+path);\n  const target=join(directory,path);mkdirSync(dirname(target),{recursive:true});\n  assert(inside(destination,realpathSync.native(dirname(target))),'helper destination parent escaped');"
+    "before": " 'tests/helpers/reward-current-source.json.gz':'a68d10abe6e6f3bd33a69f85326d34dce1250b34b6892543cb5c1314c01f3b9f',\n});\nconst inside=(root,path)=>{const r=relative(root,path);return r!==''&&!isAbsolute(r)&&r!=='..'&&!r.startsWith('../')&&!r.startsWith('..\\\\');};\nexport function copyIntegrationSourceClosure(directory,{sourceRoot=process.cwd()}={}){\n const destination=realpathSync.native(directory);\n assert.notEqual(destination,realpathSync.native(sourceRoot),'isolated helper copy destination');\n for(const [path,sha]of Object.entries(entranceFiles)){\n  assert((path.startsWith('tests/helpers/')||path.startsWith('tests/fixtures/'))&&!path.split('/').includes('..'),'fixed helper path');\n  const source=join(sourceRoot,path),raw=readFileSync(source),content=integrationClosureBytes(path,raw);\n  if(path==='tests/helpers/reward-current-source.mjs'&&!raw.equals(content))\n   assert(raw.equals(Buffer.from(content.toString('utf8').replaceAll('\\n','\\r\\n'))),'fresh helper copy identity: '+path);",
+    "after": " 'tests/helpers/reward-current-source.json.gz':'a68d10abe6e6f3bd33a69f85326d34dce1250b34b6892543cb5c1314c01f3b9f',\n});\n// The live copier targets the approved #1022 helper closure. Other replay\n// readers continue to use their original Master backflow predecessor.\nconst reviewedCopySources=Object.freeze({\n \"tests/helpers/character-preparation-source.mjs\": {\n  \"current\": {\n   \"sha256\": \"59e4952da8df25d3c6808a03c05475f1799012f2838880be4f7d76c2d68f68b2\",\n   \"gitBlob\": \"59cb86a27add71e38a679cefc82a1c2f8b03b5d2\"\n  },\n  \"previous\": {\n   \"sha256\": \"b556363648dd13827dacb603038423caf4a1c2693e618747df58fc29da7be2fd\",\n   \"gitBlob\": \"b9262d101ea11eed7836cf1091bc44f94eb94ce3\"\n  },\n  \"edits\": [\n   {\n    \"at\": 0,\n    \"remove\": 3,\n    \"previous\": []\n   },\n   {\n    \"at\": 24,\n    \"remove\": 1,\n    \"previous\": []\n   },\n   {\n    \"at\": 45,\n    \"remove\": 1,\n    \"previous\": [\n     \"    const source = read(path);\"\n    ]\n   },\n   {\n    \"at\": 149,\n    \"remove\": 2,\n    \"previous\": []\n   },\n   {\n    \"at\": 189,\n    \"remove\": 13,\n    \"previous\": [\n     \"  if (pc13RewardCoverSourcePaths.includes(path)) {\"\n    ]\n   }\n  ]\n },\n \"tests/helpers/current-replay-fix-sources.mjs\": {\n  \"current\": {\n   \"sha256\": \"b09df63dd432eaa4796047bd4ba8f64a3d224963eeab15e1bc90f7732c8afae2\",\n   \"gitBlob\": \"bb8df89c3ca48e98c48c31ae961d53fd76231fcc\"\n  },\n  \"previous\": {\n   \"sha256\": \"cceed97f15f0f91ab37ea27d3bf6f5659d213c54dcf11225eaa0fed7adc8ccdf\",\n   \"gitBlob\": \"ac19a597d6be7427dd05816dc85dd580d6454c3a\"\n  },\n  \"edits\": [\n   {\n    \"at\": 3,\n    \"remove\": 1,\n    \"previous\": []\n   },\n   {\n    \"at\": 2499,\n    \"remove\": 216,\n    \"previous\": []\n   },\n   {\n    \"at\": 2716,\n    \"remove\": 1,\n    \"previous\": []\n   },\n   {\n    \"at\": 2726,\n    \"remove\": 1,\n    \"previous\": []\n   }\n  ]\n },\n \"tests/helpers/ui-entrance-source.mjs\": {\n  \"current\": {\n   \"sha256\": \"db68a4fbfb77de2972cea9a750e6df941fb492e74e95e666ee24ca1aca0c3834\",\n   \"gitBlob\": \"66a8db632e59f0e84f19a8f9d97e7eedbd2ef880\"\n  },\n  \"previous\": {\n   \"sha256\": \"c64976a04e877f65315ad8553bd8f6380b6e50a5ab5fce60e3b37bbbb98825c1\",\n   \"gitBlob\": \"2da2af0441e00d0893184b7f401a9848b491b9de\"\n  },\n  \"edits\": [\n   {\n    \"at\": 8,\n    \"remove\": 1,\n    \"previous\": [\n     \"import {beforeCurrentReplayFixes,beforeOfficialCharacterBackflow} from './current-replay-fix-sources.mjs';\"\n    ]\n   },\n   {\n    \"at\": 37,\n    \"remove\": 3,\n    \"previous\": [\n     \" if(!matchesApprovedUiEntranceOwner(path,source))return false;\"\n    ]\n   }\n  ]\n }\n});\nfunction beforeReviewedCopySource(path,raw){\n if(!Object.hasOwn(reviewedCopySources,path))return beforeMasterBackflowSource(path,raw);\n const {current,previous,edits}=reviewedCopySources[path];\n const source=raw.toString('utf8');\n const text=integrationClosureBytes(path,raw).toString('utf8');\n assert(source===text||source===text.replaceAll('\\n','\\r\\n'),'uniform current copy owner: '+path);\n assert(exactSourceMatches(text,current),'exact current copy owner: '+path);\n const lines=text.split('\\n');\n for(const {at,remove,previous:replacement} of [...edits].reverse())lines.splice(at,remove,...replacement);\n const prior=lines.join('\\n');\n assert(exactSourceMatches(prior,previous),'exact reviewed copy predecessor: '+path);\n return Buffer.from(prior);\n}\nconst inside=(root,path)=>{const r=relative(root,path);return r!==''&&!isAbsolute(r)&&r!=='..'&&!r.startsWith('../')&&!r.startsWith('..\\\\');};\nexport function copyIntegrationSourceClosure(directory,{sourceRoot=process.cwd()}={}){\n const destination=realpathSync.native(directory);\n const sourceDirectory=realpathSync.native(sourceRoot);\n assert.notEqual(destination,sourceDirectory,'isolated helper copy destination');\n const liveSource=sourceDirectory===realpathSync.native(new URL('../../',import.meta.url));\n for(const [path,sha]of Object.entries(entranceFiles)){\n  assert((path.startsWith('tests/helpers/')||path.startsWith('tests/fixtures/'))&&!path.split('/').includes('..'),'fixed helper path');\n  const source=join(sourceDirectory,path),raw=readFileSync(source);\n  let prior=raw;\n  if(liveSource){\n   try{prior=beforeReviewedCopySource(path,raw);}\n   catch(error){assert.fail('fresh helper copy identity: '+path+': '+error.message);}\n  }\n  const content=integrationClosureBytes(path,prior);\n  if(path==='tests/helpers/reward-current-source.mjs'&&!raw.equals(content))\n   assert(raw.equals(Buffer.from(content.toString('utf8').replaceAll('\\n','\\r\\n'))),'fresh helper copy identity: '+path);"
    }
   ]
  },
@@ -386,7 +387,24 @@ function decodedSelectionSource(raw){
 }
 
 const copierPath='tests/helpers/copy-integration-source-closure.mjs';
-const currentCopier=(combinedReceipt(copierPath)??receipt(copierPath)).current;
+const nodeNoticeCopier=Object.freeze({
+ current:{"sha256":"8c234674a484ac9aba9e10eae21bdb0ce43372636a20b13e84d28c6a2f266bd4","gitBlob":"46291e76636a7543686e62c0d893e02fc099c4a6"},
+ previous:receipts[copierPath].current,
+ hunks:[
+  {
+   "at": 374,
+   "before": " 'tests/helpers/reward-current-source.mjs':'3ef0c1268abbd8758655d4898b3d62edba8c877eab76fff2ad7e5406e4613dfd',",
+   "after": " 'tests/helpers/reward-current-source.mjs':'3b67c5b2cce6c6ab8c76610da98d3ceb3c96e6ccfb8f0c3b58754ac7ea9ff641',"
+  },
+  {
+   "at": 383,
+   "before": "  const source=join(sourceRoot,path),content=integrationClosureBytes(path,readFileSync(source));assert.equal(hash(content),sha,'fresh helper copy identity: '+path);",
+   "after": "  const source=join(sourceRoot,path),raw=readFileSync(source),content=integrationClosureBytes(path,raw);\n  if(path==='tests/helpers/reward-current-source.mjs'&&!raw.equals(content))\n   assert(raw.equals(Buffer.from(content.toString('utf8').replaceAll('\\n','\\r\\n'))),'fresh helper copy identity: '+path);\n  assert.equal(hash(content),sha,'fresh helper copy identity: '+path);"
+  }
+ ]
+});
+const activeReceipt=path=>combinedReceipt(path)??(path===copierPath?nodeNoticeCopier:receipt(path));
+const currentCopier=activeReceipt(copierPath).current;
 export const selectionCopierReceipt=Object.freeze({path:copierPath,
  afterSha256:currentCopier.sha256,afterBlob:currentCopier.gitBlob});
 
@@ -399,12 +417,14 @@ function beforeReceipt(path,source,binding){
 }
 
 export function beforeSelectionReceiptSource(path,source){
- return beforeReceipt(path,beforeReceipt(path,source,combinedReceipt(path)),receipt(path));
+ source=beforeReceipt(path,source,combinedReceipt(path));
+ if(path===copierPath)source=beforeReceipt(path,source,nodeNoticeCopier);
+ return beforeReceipt(path,source,receipt(path));
 }
 
 export function checkedSelectionReceiptRead(read){
  const checked=(path,encoding)=>{
-  const raw=read(path,encoding),binding=combinedReceipt(path)??receipt(path);
+  const raw=read(path,encoding),binding=activeReceipt(path);
   if(binding){
    const source=decodedSelectionSource(raw);
    assert(uniformSelectionSource(source)&&exactSourceMatches(source,binding.current),
@@ -419,8 +439,10 @@ export function checkedSelectionReceiptRead(read){
 export function checkedSelectionEntranceRead(read){
  return (path,encoding)=>{
   const raw=read(path,encoding);
-  if(uiEntranceOwns(path))
-   assert(uniformSelectionSource(decodedSelectionSource(raw)),'uniform current Selection entrance source: '+path);
-  return raw;
+  if(!uiEntranceOwns(path))return raw;
+  const source=decodedSelectionSource(raw);
+  assert(uniformSelectionSource(source),'uniform current Selection entrance source: '+path);
+  const prior=beforeNodeNoticeSource(path,source);
+  return prior===source?raw:Buffer.isBuffer(raw)?Buffer.from(prior):prior;
  };
 }
