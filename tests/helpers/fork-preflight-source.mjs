@@ -916,10 +916,49 @@ function beforeBattleSceneCopyClosure(path,source){
  assert.equal(blob(previous),battleSceneCopyClosure.beforeBlob,'exact previous battle scene copier blob');
  return source===lf?previous:previous.replaceAll('\n','\r\n');
 }
+const relicCloseoutIntegratedSuccessor={
+ "path": "tests/helpers/integrated-ci-source.mjs",
+ "afterSha256": "3050fb4626b7417c3a98392d82f770657d6769cc34674a5d05baf90884438bdc",
+ "beforeSha256": "9c0f0d77c30692b4220fc3bf38f84c221c9409ca73e21567cd1ec6565ce09aa6",
+ "hunks": [
+  {
+   "at": 57,
+   "before": "});",
+   "after": "});\nconst relicCloseoutOwner='tests/helpers/closeout-ci-source.mjs';"
+  },
+  {
+   "at": 59,
+   "before": "const integratedEvidenceSuccessors=Object.freeze({",
+   "after": "const integratedEvidenceSuccessors=Object.freeze({\n // #1010 changes the live relic inventory reader; the sealed integration view remains byte-exact.\n [relicCloseoutOwner]:{\n  sha256:'34c1a1ae32357055166de58dc68676d9adb9a99a88c7ac97ab3b1f649ef3cbff',\n  gitBlob:'ce89dff7d6ee40d504cb4ab7d0fc5cbf7310229d',\n },"
+  },
+  {
+   "at": 130,
+   "before": "}",
+   "after": "}\nfunction matchesIntegratedEvidence(path,source,binding){\n if(!exactSourceMatches(source,binding))return false;\n if(path!==relicCloseoutOwner)return true;\n const lf=norm(source);\n return source===lf||source===lf.replaceAll('\\n','\\r\\n');\n}"
+  },
+  {
+   "at": 140,
+   "before": " if(!binding||!exactSourceMatches(source,binding))return source;",
+   "after": " if(!binding||!matchesIntegratedEvidence(path,source,binding))return source;"
+  },
+  {
+   "at": 185,
+   "before": "  if(binding)assert(exactSourceMatches(source,binding),'fresh complete integration source: '+path);",
+   "after": "  if(binding)assert(matchesIntegratedEvidence(path,source,binding),'fresh complete integration source: '+path);"
+  }
+ ]
+};
+const relicCloseoutIntegratedIdentity=["3050fb4626b7417c3a98392d82f770657d6769cc34674a5d05baf90884438bdc", "cb755c920a43e60b93d41a29f97e8888dabfabfc"];
+function beforeRelicCloseoutIntegratedFixture(path,source){
+ if(path!==integratedFixture||!exactCheckoutSource(source,relicCloseoutIntegratedIdentity))return source;
+ const prior=restoreExactFixtureHunks(relicCloseoutIntegratedSuccessor,path,source);
+ assert.equal(blob(prior),'2f628ab1013c999dc38c55b87537d573c4bbcd40','exact #1010 integration fixture predecessor');
+ return source.includes('\r\n')?prior.replaceAll('\n','\r\n'):prior;
+}
 function beforeCalibrationReplayOwner(path,source){
  source=beforeReviewedOfficialAssetReplay(path,source);
  source=beforeBattleSceneCopyClosure(path,source);
- if(path===integratedFixture)source=beforeChapterBattleScene(path,source);
+ if(path===integratedFixture)source=beforeChapterBattleScene(path,beforeRelicCloseoutIntegratedFixture(path,source));
  source=beforeVisualLegibility(path,source);
  if(!calibrationReplayPaths.includes(path))return source;
  if(!calibrationReplayPredecessor){
@@ -1121,6 +1160,7 @@ function beforeIntegrationSuccessor(path,source){
 }
 // The current gate uses these two replay modules to verify the composed hand and scene owners.
 const responsiveReplayHelpers=Object.freeze({
+ [integratedFixture]:relicCloseoutIntegratedIdentity,
  'tests/helpers/chapter-battle-scene-source.mjs':['1270c293d79c04ac4a5b15483dd4cc8f9c4279362e2f5c551f6e98c20c9ad293','5306929645881d562b4d4322c5b3fa2ecb91edbd'],
  'tests/helpers/rebased-release-source.mjs':['9c06103ee6926bb5def608470430784145880f69d4c3aee3fb35787c1309d509','0016df7289d6b274b533496c48a6fd75a1f66e42'],
 });
@@ -1129,7 +1169,8 @@ function responsiveReplayCurrentRead(read){
   const raw=read(path,...args);
   if(Object.hasOwn(responsiveReplayHelpers,path)){
    const source=Buffer.isBuffer(raw)?raw.toString('utf8'):raw;
-   assert(exactCheckoutSource(source,responsiveReplayHelpers[path]),'fresh responsive replay helper: '+path);
+   const error=path===integratedFixture?'fresh complete integration source: ':'fresh responsive replay helper: ';
+   assert(exactCheckoutSource(source,responsiveReplayHelpers[path]),error+path);
   }
   return raw;
  };
@@ -1202,7 +1243,13 @@ export function assertIntegrationSuccessorsCurrent(read=readFileSync){
  const replayRead=cursesReceiptCurrentRead(responsiveReplayCurrentRead(currentReviewedSelectionRead(read)));
  for(const path of Object.keys(cursesReceiptSources))replayRead(path,'utf8');
  for(const path of Object.keys(responsiveReplayHelpers))replayRead(path,'utf8');
- const rawRead=actorAlphaCurrentRead(chapterSceneCurrentRead(replayRead,refinedByrdPoolCopyClosure));
+ // The chapter guard consumes its exact reviewed predecessor. Current
+ // consumers still read and authenticate the new fixture at every read.
+ const chapterRead=chapterSceneCurrentRead((path,encoding)=>{
+  const raw=replayRead(path,encoding);
+  return beforeRelicCloseoutIntegratedFixture(path,raw);
+ },refinedByrdPoolCopyClosure);
+ const rawRead=actorAlphaCurrentRead((path,...args)=>(path===integratedFixture?replayRead:chapterRead)(path,...args));
  rawRead(officialLegibilityFixture,'utf8');
  rawRead(reviewedSelectionFixture,'utf8');
  rawRead(officialAssetsFixture,'utf8');
@@ -1301,6 +1348,17 @@ function beforeV220HostedTiming(path,source){
 }
 export function beforePreflightSource(path,source,view='prior',read=readFileSync){
  source=beforeCursesReceiptFixture(path,source);
+ const integratedPrior=beforeRelicCloseoutIntegratedFixture(path,source);
+ if(integratedPrior!==source){
+  source=integratedPrior;
+  const liveRead=read;
+  read=(owner,encoding)=>{
+   const raw=liveRead(owner,encoding);
+   if(owner===integratedFixture)assert(exactCheckoutSource(raw,relicCloseoutIntegratedIdentity),
+    'fresh complete integration source: '+owner);
+   return beforeRelicCloseoutIntegratedFixture(owner,raw);
+  };
+ }
  source=beforeV220HostedTiming(path,source);
  const before=beforeBattlePeriphery(path,beforeChapterBattleScene(path,source));
  if(before!==source){
