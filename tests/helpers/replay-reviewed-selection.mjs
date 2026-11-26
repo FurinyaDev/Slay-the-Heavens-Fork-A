@@ -12,12 +12,14 @@ import {beforeReviewedBuildInput} from './fork-preflight-source.mjs';
 import {reviewedSelectionRead} from './reviewed-selection-current-source.mjs';
 import {stsStylePriorRuntime} from './sts-style-prior-runtime.mjs';
 import {beforeDeckPagesSuiteSource,readRetiredController,retiredControllerPath} from './input-retirement-source.mjs';
+import {readReviewedOfficialAssetInput,reviewedOfficialAssetInputPaths} from './reviewed-official-asset-inputs.mjs';
 const hash=s=>createHash('sha256').update(s).digest('hex'),norm=s=>s.replaceAll('\r\n','\n');
+const archivedOfficialAssets='tests/official-assets.test.mjs';
 const reviewedContracts=Object.freeze({
  'tests/sts-character-reference.test.mjs':5,
  'tests/official-assets-legibility.test.mjs':10,
  'tests/sts-card-reference.test.mjs':13,
- 'tests/official-assets.test.mjs':6,
+ [archivedOfficialAssets]:6,
 });
 export function replayReviewedSelection(script='tests/sts-character-reference.test.mjs'){
  assert(Object.hasOwn(reviewedContracts,script),'exact reviewed selection contract');
@@ -35,11 +37,13 @@ export function replayReviewedSelection(script='tests/sts-character-reference.te
  const original=integratedCiProof.files[script].views.release;assert(original,'complete original selection contract');
  const directory=mkdtempSync(join(tmpdir(),'abyss-reviewed-selection-'));
  const started=Date.now(),remaining=()=>{const ms=60000-(Date.now()-started);assert(ms>0,'original selection replay deadline');return ms;};
+ const useArchivedOfficialInputs=script===archivedOfficialAssets;
  try{
   const paths=execFileSync('git',['ls-files','scripts','data','config','tools','tests/helpers'],{encoding:'utf8'}).trim().split('\n');
   for(const path of paths){
    assert(!isAbsolute(path)&&!path.split('/').includes('..'));const target=join(directory,path);mkdirSync(dirname(target),{recursive:true});
-   const predecessor=exactReviewedBuildInput(path,readOwner,{beforeReviewedInput:beforeReviewedBuildInput});
+   const input=useArchivedOfficialInputs?readReviewedOfficialAssetInput(path):undefined;
+   const predecessor=input??exactReviewedBuildInput(path,readOwner,{beforeReviewedInput:beforeReviewedBuildInput});
    if(predecessor===undefined)copyFileSync(path,target);
    else writeFileSync(target,predecessor);
   }
@@ -78,6 +82,12 @@ export function replayReviewedSelection(script='tests/sts-character-reference.te
   }
   const target=join(directory,script);mkdirSync(dirname(target),{recursive:true});writeFileSync(target,original.source);
   assert.equal(hash(readFileSync(target)),original.sha256,'unaltered complete historical assertions');
+  if(useArchivedOfficialInputs){
+   for(const path of reviewedOfficialAssetInputPaths){
+    const expected=readReviewedOfficialAssetInput(path);
+    assert.equal(norm(readFileSync(join(directory,path),'utf8')),norm(expected),'exact staged official-assets input: '+path);
+   }
+  }
   const env={...process.env};delete env.NODE_TEST_CONTEXT;
   const result=spawnSync(process.execPath,['--test','--test-reporter=tap',script],{cwd:directory,encoding:'utf8',timeout:remaining(),maxBuffer:4*1024*1024,windowsHide:true,env});
   assert.ifError(result.error);assert.equal(result.status,0,result.stdout+result.stderr);

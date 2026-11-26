@@ -26,6 +26,7 @@ import {assertRefinedReleasePackingCurrent,assertRefinedReleaseSourcesCurrent,be
 import {beforeV2UiAdmission} from './v2-ui-admission-ci-source.mjs';
 import {beforeV2UiEvidence,beforeV2UiPreTinyHouseSource,beforeFieldConfirmation,beforeRelicCrystal} from './v2-p1-ci-source.mjs';
 import {beforeCharacterPreparationCiSource} from './character-preparation-source.mjs';
+import {beforeReviewedOfficialAssetReplay} from './reviewed-official-asset-inputs.mjs';
 import {integratedCiBytes} from './integrated-ci-binding.mjs';
 import {assertIntegratedLuaFixturesCurrent} from './integrated-ci-source.mjs';
 import {stsStylePriorRuntime} from './sts-style-prior-runtime.mjs';
@@ -779,6 +780,7 @@ const calibrationReplayPaths=Object.freeze([
 ]);
 let calibrationReplayPredecessor;
 function beforeCalibrationReplayOwner(path,source){
+ source=beforeReviewedOfficialAssetReplay(path,source);
  if(!calibrationReplayPaths.includes(path))return source;
  if(!calibrationReplayPredecessor){
   calibrationReplayPredecessor=releaseUiRestoreArchive(
@@ -971,6 +973,7 @@ export function currentReviewedSelectionRead(read){
   const source=read(path,encoding);
   if(path===reviewedSelectionFixture){
    const text=!encoding&&Buffer.isBuffer(source)?source.toString('utf8'):source;
+   assert.notEqual(beforeReviewedOfficialAssetReplay(path,text),text,'fresh current reviewed Selection replay fixture: '+path);
    assert.notEqual(beforeCalibrationReplayOwner(path,text),text,'fresh current reviewed Selection replay fixture: '+path);
   }else if(path===officialAssetsFixture){
    const text=!encoding&&Buffer.isBuffer(source)?source.toString('utf8'):source;
