@@ -1,0 +1,45 @@
+{
+  "sourceCommit": "aaf8008875896f24acc8fda0d4df47df2564ec1d",
+  "stageMode": "超限模式",
+  "players": { "min": 1, "max": 1 },
+  "template": {
+    "name": "STH_EXP_SAVE_V1",
+    "entries": [{ "structure": "STH_EXP_SAVE_ROW", "outerLength": 1 }]
+  },
+  "v1Fields": [
+    { "name": "schema", "type": "整数", "default": 0 },
+    { "name": "token", "type": "整数", "default": 0 },
+    { "name": "flag", "type": "布尔值", "default": false },
+    { "name": "label", "type": "字符串", "default": "" },
+    { "name": "samples", "type": "整数列表", "default": [0, 0], "innerLength": 2 }
+  ],
+  "v2AppendField": { "name": "added", "type": "整数", "default": 707 },
+  "v2AppendEntry": {
+    "structure": "STH_EXP_SAVE_EXTRA",
+    "outerLength": 1,
+    "fields": [{ "name": "addedDefault", "type": "整数", "default": 708 }]
+  },
+  "graph": {
+    "name": "STH_EXP_SAVE_PLAYER",
+    "owner": "玩家服务器节点图",
+    "runtimeOnlyInt": { "name": "sessionToken", "default": 0 },
+    "request": { "name": "STH_EXP_SAVE_REQUEST", "params": ["op:整数", "requestToken:整数"] },
+    "reply": {
+      "name": "STH_EXP_SAVE_OBSERVATION",
+      "params": ["op:整数", "requestToken:整数", "rowCount:整数", "sessionToken:整数", "schema:整数", "savedToken:整数", "flag:布尔值", "label:字符串", "samples:整数列表"]
+    }
+  },
+  "buttons": [
+    { "name": "read", "op": 0, "token": 0 },
+    { "name": "baseline", "op": 1, "token": 101 },
+    { "name": "net_before", "op": 1, "token": 211 },
+    { "name": "net_after", "op": 1, "token": 212 },
+    { "name": "kill_before", "op": 1, "token": 311 },
+    { "name": "kill_after", "op": 1, "token": 312 },
+    { "name": "inner", "op": 2, "token": 401 },
+    { "name": "outer", "op": 3, "token": 402 }
+  ],
+  "writeRow": { "schema": 1, "flag": true, "label": "EXP-é-千", "samples": [11, 22] },
+  "overflowInnerSuffix": 33,
+  "overflowOuterTailToken": 499
+}
