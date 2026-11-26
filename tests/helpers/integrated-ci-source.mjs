@@ -26,10 +26,10 @@ const luaFixtureSuccessors=Object.freeze({
   sha256:'e8f5c000ae62bb8997c5abf996ed64320cf8a916d0973d37645da19e44ebdf35',gitBlob:'de401a3a1fad9faaa8a71cfaabf02ce850ff6347',
  },
  'tests/lua/session_menu_choices.lua':{
-  sha256:'704f77d7a3a9efd5feffd3659cd2b6d1416d13e5c177bc4c06c89212a24bcaf9',gitBlob:'474b88996f4b6469a5b6dad660b2b6240aba63bb',
+  sha256:'a5f67deae9967c009bdee7182e4f0479bcc07a31e44739442f6710711bdaaea4',gitBlob:'4bcba7540064d617b04649ff4e908ba6050ddf6a',
  },
  'tests/lua/session_menu_navigation.lua':{
-  sha256:'15e495490244a447d8f9311bce88f03dc3ed30f6282ec108a5b4a4421b88624d',gitBlob:'53a04c8d5e53b4a62c789bc083e385b41bb04255',
+  sha256:'eeffe6b3e94357583ccb13053c0a7381babd783fd75d40e6bd2687e2b78f37bf',gitBlob:'135f0567a6cebc98e2e861ec9c6debebe673da37',
  },
 });
 // These approved test revisions remain executable in the raw Full inventory.
