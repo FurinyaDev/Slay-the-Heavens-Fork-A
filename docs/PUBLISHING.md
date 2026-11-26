@@ -58,7 +58,7 @@ node scripts/verify-release-admission.mjs vX.Y.Z <develop-HEAD>
 
 冻结后单个必要修复 PR 使用 `fix(...)` 标题，在正文写 `Release-Fix: TASK-编号 | 影响和必要性 | 复现与回归证据`。必要测试和证据可随修复交付，纯证据 PR 使用 `docs(release)` 或 `test(release)`。新增产品范围默认进入后续版本。
 
-经明确批准的例外，在正式规划加入 `<!-- scope-exception: #PR编号 | 决策摘要 -->`，保留相应 Backlog 决策。协调者核对实际独立审查，在准确 HEAD 提交 `Release scope approved: 决策摘要` 原生 Review。PR 正文填 `Release-Exception: Review编号 | 决策摘要`。Quality 校验实际合成树、原生 Review 与当前协调者权限。
+经明确批准的例外，在正式规划加入 `<!-- scope-exception: #PR编号 | 决策摘要 -->`，保留相应 Backlog 决策。协调者核对实际独立审查，在准确 HEAD 提交 `Release scope approved: 决策摘要` 原生 Review。将 `Release-Exception: Review编号 | 决策摘要` 填入 PR 正文，再重跑该 HEAD 的 Quality。Quality 重新读取当前 PR 正文，校验实际合成树、原生 Review 与当前协调者权限。
 
 ### 正式上线
 
@@ -67,7 +67,7 @@ node scripts/verify-release-admission.mjs vX.Y.Z <develop-HEAD>
 ```markdown
 <!-- release-acceptance: 完整候选源码SHA 完整GIL-SHA256 #验收PR编号 -->
 
-### 同候选人工验收证据
+## 同候选人工验收证据
 
 | 项目 | 原始证据 | 签署协调者 |
 | --- | --- | --- |

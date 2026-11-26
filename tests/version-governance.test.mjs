@@ -112,12 +112,12 @@ test('version engineering task may leave M8 without affecting legacy or ordinary
 
 const repo = 'FurinyaWorks/Slay-the-Heavens';
 const [base, head, candidate] = ['a', 'b', 'c'].map(x => x.repeat(40));
-const pr = { number: 40, base: { ref: 'release/v2.2.0', sha: base, repo: { id: 1429751262, full_name: repo } },
+const pr = { number: 40, state: 'open', base: { ref: 'release/v2.2.0', sha: base, repo: { id: 1429751262, full_name: repo } },
   head: { sha: head }, user: { login: 'developer' }, title: 'fix(ui): 修复暂停',
   body: 'Release-Fix: TASK-10.1 | failure after pause | link to replay' };
 const inputs = (after = original, changed = ['src/lua/game.lua']) => ({
   checkout: () => [candidate, base, head], read: ref => ref === base ? original : after,
-  tasks: backlog, files: () => changed,
+  tasks: backlog, files: () => changed, refresh: async pull => pull,
 });
 const unexpectedRequest = async () => { throw new Error('Unexpected API request'); };
 
@@ -134,7 +134,11 @@ test('frozen PR rejects undocumented additions, removed scope and old checkout',
   await assert.rejects(auditReleaseFreeze(pr, repo, unexpectedRequest,
     inputs(original.replace('| 展示 |', '| 新增 |'))), /scope is frozen/);
   await assert.rejects(auditReleaseFreeze(pr, repo, unexpectedRequest,
+    inputs(original.replace('| 插画 |', '| 删除原延期记录 |'))), /scope is frozen/);
+  await assert.rejects(auditReleaseFreeze(pr, repo, unexpectedRequest,
     { ...inputs(), checkout: () => [candidate, head, base] }), /differs from HEAD\/BASE/);
+  await assert.rejects(auditReleaseFreeze(pr, repo, unexpectedRequest,
+    { ...inputs(), refresh: async () => ({ ...pr, head: { sha: base } }) }), /PR HEAD\/BASE changed/);
 });
 
 test('exception requires plan decision, exact independent GitHub review and release permissions', async () => {
@@ -145,6 +149,8 @@ test('exception requires plan decision, exact independent GitHub review and rele
     body: `Release scope approved: ${reason}` };
   const request = (review = record, permission = 'admin') => async endpoint => endpoint.endsWith('/reviews/71') ? review : { permission, user: record.user };
   assert.equal((await auditReleaseFreeze(declared, repo, request(), decision)).status, 'reviewed-exception');
+  assert.equal((await auditReleaseFreeze({ ...declared, body: '' }, repo, request(),
+    { ...decision, refresh: async () => declared })).status, 'reviewed-exception');
   await assert.rejects(auditReleaseFreeze(declared, repo, request({ ...record, commit_id: base }), decision), /exact HEAD/);
   await assert.rejects(auditReleaseFreeze(declared, repo, request(record, 'write'), decision), /lacks approval/);
   await assert.rejects(auditReleaseFreeze(declared, repo, request(), inputs()), /scope is frozen/);

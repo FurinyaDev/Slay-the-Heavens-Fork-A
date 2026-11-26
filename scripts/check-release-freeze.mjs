@@ -37,6 +37,7 @@ export async function auditReleaseFreeze(pr, repository, request, {
   readTask = readIfPresent,
   files = (base, target) => git('diff', '--name-only', '--no-renames', '-z', base, target, '--').split('\0').filter(Boolean),
   tasks = () => readBacklogRecords('.').filter(task => task.location !== 'archive'),
+  refresh = pull => request(`/repos/${repository}/pulls/${pull.number}`),
 } = {}) {
   const version = pr?.base?.ref?.match(/^release\/(v[\d.]+)$/)?.[1];
   if (!managedVersion(version)) return { status: 'release-policy', base: pr?.base?.ref };
@@ -45,12 +46,17 @@ export async function auditReleaseFreeze(pr, repository, request, {
       !Number.isSafeInteger(pr.number) || pr.number < 1) throw new Error('Invalid frozen Release PR identity');
   const [candidate, checkoutBase, checkoutHead] = checkout();
   if (!sha.test(candidate ?? '') || base !== checkoutBase || head !== checkoutHead) throw new Error('Frozen Release PR checkout differs from HEAD/BASE');
+  const live = await refresh(pr);
+  if (live?.number !== pr.number || live.state !== 'open' || live.base?.ref !== pr.base.ref ||
+      live.base.sha !== base || live.head?.sha !== head || !projectRepositoryMatches(live.base.repo, repository)) {
+    throw new Error('Frozen Release PR HEAD/BASE changed; validate the current checkout');
+  }
   const original = readVersionPlan(read(base, path));
   const candidateText = read(candidate, path), proposed = readVersionPlan(candidateText);
   if (!original || !proposed || original.version !== version || proposed.version !== version || original.main !== proposed.main) {
     throw new Error('Frozen Release requires an unchanged official plan identity');
   }
-  const body = pr.body ?? '';
+  const body = live.body ?? '';
   const fix = declaration(body, 'Release-Fix', /^Release-Fix: (TASK-\d+(?:\.\d+)*) \| ([^|\r\n]+) \| ([^|\r\n]+)$/);
   const changed = files(base, candidate);
   const oldAssignments = assignments(changed, base, version, readTask);
@@ -59,15 +65,16 @@ export async function auditReleaseFreeze(pr, repository, request, {
   // Existing assignments and their hard dependencies remain frozen.
   if (fix && !oldAssignments.has(normalizeTaskId(fix[1]))) newAssignments.delete(normalizeTaskId(fix[1]));
   const unchanged = isDeepStrictEqual(scope(original), scope(proposed)) &&
-    isDeepStrictEqual(original.integrations, proposed.integrations) && isDeepStrictEqual(oldAssignments, newAssignments);
+    isDeepStrictEqual(original.integrations, proposed.integrations) && isDeepStrictEqual(oldAssignments, newAssignments) &&
+    original.deferrals.every(row => proposed.deferrals.some(next => isDeepStrictEqual(row, next)));
   const manager = tasks();
   const validFixTask = fix && manager.filter(task => normalizeTaskId(task.id) === normalizeTaskId(fix[1]) &&
     !task.metadataErrors.length && task.labels.includes(version) && task.labels.includes('release-scope')).length === 1;
-  if (unchanged && validFixTask && /^fix(?:\([^\n)]+\))?: .+/.test(pr.title ?? '')) {
+  if (unchanged && validFixTask && /^fix(?:\([^\n)]+\))?: .+/.test(live.title ?? '')) {
     return { status: 'necessary-fix', version, task: fix[1] };
   }
   if (unchanged && changed.length && changed.every(file => file === path || evidencePath(file) || backlogPath.test(file)) &&
-      /^(?:docs|test)\(release\): .+/.test(pr.title ?? '')) {
+      /^(?:docs|test)\(release\): .+/.test(live.title ?? '')) {
     return { status: 'evidence-only', version };
   }
   const exception = declaration(body, 'Release-Exception', /^Release-Exception: ([1-9]\d*) \| ([^|\r\n]+)$/);
