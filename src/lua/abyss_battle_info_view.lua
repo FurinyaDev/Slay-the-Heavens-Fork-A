@@ -221,6 +221,23 @@ local function paintCardTips(panel, rows, anchor, beginCompact, finishCompact)
     finishCompact(panel,layer,index,false)
 end
 
+local function cardAnchor(self, child, info)
+    local slot=info.slot
+    local box=child('card'..slot)
+    local pose=self.cardPositions[info.uid]
+    if info.reward then
+        local anim=self.rewardView and self.rewardView.cards[slot]
+        if not anim then return end
+        local pick=L.rewardPick
+        pose={(slot-(#info.reward.cards+1)/2)*pick.step,pick.y+anim.lift+anim.rise}
+    end
+    if not pose or box.visible==false then return end
+    local r=(box.localRotationZ or 0)*math.pi/180
+    local w,h=L.card.size[1]*(box.localScaleX or 1),L.card.size[2]*(box.localScaleY or 1)
+    return {x=pose[1],y=pose[2],halfW=(math.abs(math.cos(r))*w+math.abs(math.sin(r))*h)/2,
+        halfH=(math.abs(math.cos(r))*h+math.abs(math.sin(r))*w)/2}
+end
+
 function M.new(self, child, enemyPosition, describeInfo, paginate, tint, ink, picture)
     local textStyles={}
     local function readingSize(control,name,font)
@@ -231,22 +248,6 @@ function M.new(self, child, enemyPosition, describeInfo, paginate, tint, ink, pi
         end
         control.fontSize=font or original.font
         control.minimumFontSize=font and math.min(original.minimum,font) or original.minimum
-    end
-    local function cardAnchor(info)
-        local slot=info.slot
-        local box=child('card'..slot)
-        local pose=self.cardPositions[info.uid]
-        if info.reward then
-            local anim=self.rewardView and self.rewardView.cards[slot]
-            if not anim then return end
-            local pick=L.rewardPick
-            pose={(slot-(#info.reward.cards+1)/2)*pick.step,pick.y+anim.lift+anim.rise}
-        end
-        if not pose or box.visible==false then return end
-        local r=(box.localRotationZ or 0)*math.pi/180
-        local w,h=L.card.size[1]*(box.localScaleX or 1),L.card.size[2]*(box.localScaleY or 1)
-        return {x=pose[1],y=pose[2],halfW=(math.abs(math.cos(r))*w+math.abs(math.sin(r))*h)/2,
-            halfH=(math.abs(math.cos(r))*h+math.abs(math.sin(r))*w)/2}
     end
     local function pageGeometry(battle, info, height, width)
         local x, portrait
@@ -493,7 +494,7 @@ function M.new(self, child, enemyPosition, describeInfo, paginate, tint, ink, pi
         return info and (info.kind=='card' or info.kind=='rewardCard')
     end
     local function renderCardTips(panel,battle,info,positionOnly)
-        local anchor=battle and cardAnchor(info)
+        local anchor=battle and cardAnchor(self, child, info)
         local prior=info.sideAnchor
         if positionOnly and prior and anchor and prior.x==anchor.x and prior.y==anchor.y
             and prior.halfW==anchor.halfW and prior.halfH==anchor.halfH then return end

@@ -26,6 +26,7 @@ const updatedSources = new Map([
   ['config/ci-media-lfs.json', ['2c8470c78d11cddfa0a33c234f624175636fa5f42fa2a9a558eb92425507ce00', '8e97088d1172eaa434a9f032166ca09325900983']],
   ['docs/legal/assets.json', ['2fd4b435b871db820568656d28d6afb7e755bc08bcc1afd870a53d8dbba57737', '8d2d572f49b288faa19abb5fb516f7f6b00f140f']],
   ['scripts/ci-media-lfs.mjs', ['e0e71dca9c631734d1cf52f9eae7684428095d949eb4b956d592899652ef0d63', '3803eaa2637dc1e8370bf98dba77e82cd52c71d9']],
+  ['src/lua/abyss_battle_info_view.lua', ['b75f7d00694d7ef2b4eebaf49ba9f4ac65e6cbd3190cbe9b0375d8947a8d09a5', '0b5667e67981698397544f064d312c695137bc33']],
   ['src/lua/abyss_game_ui.lua', ['607192763b5ed9b93e4be3cb0ebddfae78aabe8710b274104ac26f6cef672e4a', 'c533ebfef1f88c30a4c45cadac43414400f4151e']],
   ['src/lua/abyss_game_ui_lifecycle.lua', ['6e3967351a581630c2c352742fdfc3fecc20fefbaf2c26c7ddc8f21e052b3e14', 'abf67a2ab3994df9058d32a3554420c6317d133c']],
   ['src/lua/abyss_game_ui_navigation.lua', ['89c0b1d90b00e97ca6bfaa5cffc13c7317064017e86da285d6792e56e726d477', 'a98e73313e33629917ca535933d35a79d91a287f']],
