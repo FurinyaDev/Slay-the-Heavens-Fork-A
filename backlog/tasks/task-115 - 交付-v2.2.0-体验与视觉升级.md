@@ -5,8 +5,10 @@ status: In Progress
 assignee:
   - '@Furinya'
 created_date: '2026-11-25 20:59'
+updated_date: '2026-11-26 03:45'
 labels:
   - v2.2.0
+  - version-main
 milestone: m-8
 dependencies: []
 documentation:
@@ -34,3 +36,9 @@ ordinal: 207000
 - [ ] #2 实现者以外的评审确认精确证据，PC、实体手机与官方平台通过
 - [ ] #3 Owner 正式发布后绑定版本说明、发布记录和最终产物
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+2026-11-26 范围复审通过：四个核心交付目标。TASK-115 与现有 V2.2.0-RELEASE.md 持续维护。先对账，再并行集成产品、回流和发布治理；Release 准入、正式上线、发布后结项分开验收。保留 13 条历史直接子任务并明确分工，由版本规划记录范围复杂度例外。
+<!-- SECTION:PLAN:END -->
