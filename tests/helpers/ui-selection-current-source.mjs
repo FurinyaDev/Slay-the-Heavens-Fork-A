@@ -164,8 +164,19 @@ const deckArchitectureCopier=Object.freeze({
   }
 ],
 });
+const mapRoomBattleActionsCopier=Object.freeze({
+ current:{"sha256":"eda5c410a75c5ac92659ec477fee195652b38273c6438ee826c828aca8d5bc6e","gitBlob":"85ad4d1c1c77331689e21006e49210aa94db496a"},
+ previous:deckArchitectureCopier.current,
+ hunks:[
+  {
+    "at": 359,
+    "before": " 'tests/helpers/develop-release-backflow-source.mjs':'3f14f8c02058d83c00314be990754099cddf46020b1b0f64aabc93afef26d771',",
+    "after": " 'tests/helpers/develop-release-backflow-source.mjs':'dfaa31e83dbd633b57a1f309e9ed2f2de83510f2827e10492d6266d97c20417d',\n 'tests/fixtures/map-room-battle-actions-source.json.gz':'45918da82006880941ab23f10ccc49b7fe11fc2c7978b4f1508f923216e142ec',"
+  }
+],
+});
 export const selectionCopierReceipt=Object.freeze({path:copierPath,
- afterSha256:deckArchitectureCopier.current.sha256,afterBlob:deckArchitectureCopier.current.gitBlob});
+ afterSha256:mapRoomBattleActionsCopier.current.sha256,afterBlob:mapRoomBattleActionsCopier.current.gitBlob});
 
 function beforeReceipt(path,source,binding){
  if(!binding||!uniformSelectionSource(source)||!exactSourceMatches(source,binding.current))return source;
@@ -176,13 +187,17 @@ function beforeReceipt(path,source,binding){
 }
 
 export function beforeSelectionReceiptSource(path,source){
- if(path===copierPath)source=beforeReceipt(path,beforeReceipt(path,source,deckArchitectureCopier),nodeNoticeCopier);
+ if(path===copierPath){
+  source=beforeReceipt(path,source,mapRoomBattleActionsCopier);
+  source=beforeReceipt(path,source,deckArchitectureCopier);
+  source=beforeReceipt(path,source,nodeNoticeCopier);
+ }
  return beforeReceipt(path,source,receipt(path));
 }
 
 export function checkedSelectionReceiptRead(read){
  const checked=(path,encoding)=>{
-  const raw=read(path,encoding),binding=path===copierPath?deckArchitectureCopier:receipt(path);
+  const raw=read(path,encoding),binding=path===copierPath?mapRoomBattleActionsCopier:receipt(path);
   if(binding){
    const source=decodedSelectionSource(raw);
    assert(uniformSelectionSource(source)&&exactSourceMatches(source,binding.current),
