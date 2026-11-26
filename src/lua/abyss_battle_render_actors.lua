@@ -108,7 +108,8 @@ local function paintEnemyHealthTarget(box,enemy,geometry)
     local hpHit = box:GetChild('hpHit')
     if hpHit then
         hpHit:SetAnchoredPosition(geometry.healthX, geometry.healthY)
-        hpHit:SetSizeDelta(geometry.hitWidth + S.border * 2, geometry.healthHeight + S.border * 2)
+        local width=geometry.healthWidth or geometry.hitWidth
+        hpHit:SetSizeDelta(width + S.border * 2, geometry.healthHeight + S.border * 2)
         hpHit:SetVisible(Actors.isPresent(enemy))
     end
 end
