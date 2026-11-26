@@ -13,7 +13,7 @@ import {beforeNativeFlowFixture} from './native-flow-fixture-source.mjs';
 import {authenticateActionButtons,beforeActionButtons,actionButtonsOwns} from './action-buttons-source.mjs';
 import {beforeNodeNoticeSource} from './reward-current-source.mjs';
 import {beforeKnownMasterBackflowSource} from './master-backflow-source.mjs';
-import {beforeReleaseVocabulary,releaseVocabularyOwns} from './develop-release-vocabulary-source.mjs';
+import {beforeReleaseVocabulary,isReleaseVocabularyPredecessor,releaseVocabularyOwns} from './develop-release-vocabulary-source.mjs';
 
 const hash=(bytes,algorithm='sha256')=>createHash(algorithm).update(bytes).digest('hex');
 const blob=source=>hash(`blob ${Buffer.byteLength(source)}\0${source}`,'sha1');
@@ -401,7 +401,8 @@ function recentBackflowOwnerReader(read,historicalOwners){
   if(Object.hasOwn(battleInputHistory,path))return beforeBattleInputHistory(path,source);
   if(path===battleActionsPath){
    const prior=beforeMapRoomBattleActions(path,source);
-   assert.notEqual(prior,source,mapRoomOwnerError(path));
+   // Selection has already bound this exact linked Map Room predecessor.
+   assert(prior!==source||(uniformSource(source)&&matches(source,battleActionsTransitions.at(-1).before)),mapRoomOwnerError(path));
    return prior;
   }
   if(path===nodeNoticeOwner){
@@ -411,6 +412,8 @@ function recentBackflowOwnerReader(read,historicalOwners){
    return beforeNodeNoticeSource(path,source);
   }
   if(vocabulary){
+   // Selection authenticates these complete predecessors before the older replay.
+   if(uniformSource(source)&&isReleaseVocabularyPredecessor(path,source))return source;
    const prior=beforeVocabularyOwner(path,source);
    assert.notEqual(prior,source,'combined linked owner identity: '+path+' changed during Develop backflow validation');
    return prior;

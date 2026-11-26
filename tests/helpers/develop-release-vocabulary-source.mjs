@@ -16,6 +16,8 @@ for(const [path,row] of Object.entries(files)){
 }
 
 export const releaseVocabularyOwns=path=>Object.hasOwn(files,path);
+export const isReleaseVocabularyPredecessor=(path,source)=>
+ releaseVocabularyOwns(path)&&exactSourceMatches(source,files[path].before);
 export function beforeReleaseVocabulary(path,source){
  const row=releaseVocabularyOwns(path)?files[path]:undefined;
  if(!row||!exactSourceMatches(source,row.after))return source;
