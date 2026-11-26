@@ -1,0 +1,181 @@
+{
+  "mode": "offline",
+  "timestampUtc": "2026-11-26T15:36:06.368Z",
+  "compilerVersion": "0.2.2",
+  "resources": [
+    {
+      "uri": "miliastra://workflow",
+      "sha256": "77a67691e9ec7cf6769c3e94575f3d3232f86662827be4874b02ceb9f5371bda"
+    },
+    {
+      "uri": "miliastra://platform-rules",
+      "sha256": "0e46eaaf1b0f10f0961f972c53de61b43b7f32c38c228b7545accea7f890ba35"
+    }
+  ],
+  "capabilities": {
+    "editorConnection": {
+      "status": "not_configured",
+      "scope": "Historical official editor connection messages only; not a live connection or gameplay test",
+      "configuration": "Set MILIASTRA_EDITOR_LOG to the official BeyondAssistEditor/Log/log.txt"
+    },
+    "runtimeVerification": "not_available",
+    "liveWriteEnabled": false,
+    "achievementConfigTools": []
+  },
+  "documentation": {
+    "source": "genshin-ts@0.2.2 bundled definitions",
+    "note": "Server graph nodes are called as f.<name>(...) inside an event handler; events are listened to with .on(name, handler). scope \"raw\" searches every bundled definition file instead (client graphs, enums).",
+    "searches": [
+      {
+        "query": "queryIfAchievementIsCompleted",
+        "total": 1,
+        "results": [
+          {
+            "kind": "node",
+            "name": "queryIfAchievementIsCompleted",
+            "signature": "queryIfAchievementIsCompleted(targetEntity: EntityValue, achievementId: IntValue): boolean;",
+            "overloads": 1,
+            "summary": "Searches whether the Achievement corresponding to a specific ID on the Target Entity is complete",
+            "zh": "查询成就是否完成: 查询目标实体上特定序号对应的成就是否完成 是否完成",
+            "params": [
+              {
+                "name": "targetEntity",
+                "en": "",
+                "zh": "目标实体"
+              },
+              {
+                "name": "achievementId",
+                "en": "",
+                "zh": "成就序号"
+              }
+            ],
+            "returns": ""
+          }
+        ],
+        "otherMatches": []
+      },
+      {
+        "query": "setAchievementProgressTally",
+        "total": 1,
+        "results": [
+          {
+            "kind": "node",
+            "name": "setAchievementProgressTally",
+            "signature": "setAchievementProgressTally(setEntity: EntityValue, achievementId: IntValue, progressTally: IntValue): void;",
+            "overloads": 1,
+            "summary": "Set the progress counter for the specified Achievement ID on the Target Entity",
+            "zh": "设置成就进度计数: 设置指定实体上对应成就序号的成就进度计数",
+            "params": [
+              {
+                "name": "setEntity",
+                "en": "",
+                "zh": "设置实体"
+              },
+              {
+                "name": "achievementId",
+                "en": "",
+                "zh": "成就序号"
+              },
+              {
+                "name": "progressTally",
+                "en": "Sets the Progress Count to the input value",
+                "zh": "进度计数: 修改后的进度计数为输入的值"
+              }
+            ],
+            "returns": ""
+          }
+        ],
+        "otherMatches": []
+      },
+      {
+        "query": "changeAchievementProgressTally",
+        "total": 1,
+        "results": [
+          {
+            "kind": "node",
+            "name": "changeAchievementProgressTally",
+            "signature": "changeAchievementProgressTally(changeEntity: EntityValue, achievementId: IntValue, progressTallyChangeValue: IntValue): void;",
+            "overloads": 1,
+            "summary": "Change the progress counter for the specified Achievement ID on the Target Entity",
+            "zh": "变更成就进度计数: 变更指定实体上对应成就序号的成就进度计数",
+            "params": [
+              {
+                "name": "changeEntity",
+                "en": "",
+                "zh": "变更实体"
+              },
+              {
+                "name": "achievementId",
+                "en": "",
+                "zh": "成就序号"
+              },
+              {
+                "name": "progressTallyChangeValue",
+                "en": "New Value = Previous Value + Change Value Progress Tally Increase Value",
+                "zh": "进度计数变更值: 变更后值=变更前值+变更值"
+              }
+            ],
+            "returns": ""
+          }
+        ],
+        "otherMatches": []
+      }
+    ]
+  },
+  "bindings": {
+    "mapPath": "compiler-fixture.gil",
+    "graphId": 1073741825,
+    "serial": 917,
+    "buttonIndices": {
+      "query": 1073741900,
+      "setPartial": 1073741901,
+      "addOne": 1073741902,
+      "setThreshold": 1073741903,
+      "guardedSet": 1073741904,
+      "settle": 1073741905
+    }
+  },
+  "sourceSha256": "3f6ccff9918dae241889f37d13d9bcd991c030523adaafe9f0c967c967882613",
+  "graphBefore": {
+    "id": 1073741825,
+    "name": "_GSTS_EXP_Achievement",
+    "type": 20000,
+    "nodeCount": 0,
+    "editorCount": 0,
+    "nodePayloadHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "topology": {
+      "version": 1,
+      "nodeCount": 0,
+      "connectionCount": 0,
+      "hash": "a461bf77bc4e4d732f7afc121c70e7f70ed8bf225a082a4e01951d1eb6b5c278",
+      "scope": "Node indices, generic/concrete IDs and directed pin connections only; excludes layout, literal values, pin types, graph variables, bindings and runtime"
+    },
+    "signalReferences": [],
+    "writable": true
+  },
+  "graphAfter": {
+    "id": 1073741825,
+    "name": "_GSTS_EXP_Achievement",
+    "type": 20000,
+    "nodeCount": 39,
+    "editorCount": 58,
+    "nodePayloadHash": "78cd4106a67a478d47c57143a8f451ec1360692135f8fb02871abab0ac41dde1",
+    "topology": {
+      "version": 1,
+      "nodeCount": 39,
+      "connectionCount": 52,
+      "hash": "e17e79b31652cd59c0b8aca5b89aee110802893649e41b6b5710acbbf185bb9a",
+      "scope": "Node indices, generic/concrete IDs and directed pin connections only; excludes layout, literal values, pin types, graph variables, bindings and runtime"
+    },
+    "signalReferences": [],
+    "writable": true
+  },
+  "outputMap": "wmwxpssfp-0/working.gil",
+  "outputMapSha256": "bf2200f0ae84b6bf8afad42049e132cd4578dd821e94e119ce750342b697fe26",
+  "registration": "synthetic_id_for_compiler_only",
+  "officialImport": "not_run",
+  "runtime": "not_run",
+  "repositoryBaseline": "aaf8008875896f24acc8fda0d4df47df2564ec1d",
+  "mcpCommit": "70470757d6fcb319c5afec13b178c87f2d8d54b3",
+  "binaryScope": "Synthetic compiler fixture. Output path is relative to the offline runner output directory. No platform achievement ID, official asset import, or runtime result."
+}

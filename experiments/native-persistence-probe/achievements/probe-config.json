@@ -1,0 +1,21 @@
+{
+  "achievement": {
+    "serial": null,
+    "enabled": true,
+    "allowRoomProgress": true,
+    "name": "EXP 成就验证",
+    "rarity": "辉铜",
+    "threshold": 2,
+    "description": "在隔离测试关卡验证原生成就计数。",
+    "kind": "普通成就"
+  },
+  "graphName": "_GSTS_EXP_Achievement",
+  "buttons": {
+    "query": { "key": 1, "name": "EXP_ACH_Query", "position": [-375, -230] },
+    "setPartial": { "key": 2, "name": "EXP_ACH_SetPartial", "position": [-225, -230] },
+    "addOne": { "key": 3, "name": "EXP_ACH_AddOne", "position": [-75, -230] },
+    "setThreshold": { "key": 4, "name": "EXP_ACH_SetThreshold", "position": [75, -230] },
+    "guardedSet": { "key": 5, "name": "EXP_ACH_GuardedSet", "position": [225, -230] },
+    "settle": { "key": 6, "name": "EXP_ACH_Settle", "position": [375, -230] }
+  }
+}
