@@ -96,6 +96,15 @@ local function touchBounds(source,bodyScale,portrait,compact)
   math.max(L.statusIcon.minimumTouch,portrait*(ByrdTrial.foot+ByrdTrial.crown)+Theme.space.s),
   portrait*ByrdTrial.crown,width
 end
+-- Raised targeting bounds need room for one complete power row above the
+-- hand on both input modes. Grounded actors instead use their contact plane.
+local function reservePowerRow(bottom,source,sy,native,foot,healthOffset,healthHeight)
+ if native and not foot and source.hbY>0 then
+  local icon,countY=powerSize(sy,true)
+  return math.max(bottom,L.enemyRow.nativePowerFloorY+healthOffset+powerGap(healthHeight)+powerDepth(icon,countY))
+ end
+ return bottom
+end
 function M.geometry(actor,nativeArtEnabled)
  local source=SourceGeometry.resolve(actor)
  local sx,sy=Theme.canvas.base[1]/1920,Theme.canvas.base[2]/1080
@@ -105,11 +114,7 @@ function M.geometry(actor,nativeArtEnabled)
  local native=Theme.presentationProfile=='official-assets-first'
  local ground=L.enemyRow.groundContact
  local foot,footprints,compactTarget=groundFoot(ground,actor,nativeArtEnabled)
- if native and not foot and source.hbY>0 then
-  -- Leave room for one complete power row above the hand on both input modes.
-  local icon,countY=powerSize(sy,true)
-  bottom=math.max(bottom,L.enemyRow.nativePowerFloorY+healthOffset+powerGap(healthHeight)+powerDepth(icon,countY))
- end
+ bottom=reservePowerRow(bottom,source,sy,native,foot,healthOffset,healthHeight)
  local bodyScale=presentationScale(source,bottom,sy)
  local portrait=math.max(source.width,source.height)*bodyScale
  local contact=foot and ground.y+source.y*sy*ground.depth

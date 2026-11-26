@@ -112,6 +112,19 @@ local function paintEnemyHealthTarget(box,enemy,geometry)
         hpHit:SetVisible(Actors.isPresent(enemy))
     end
 end
+local function hideEscapingHud(owner,box,id)
+    if not owner.feedback.escaping[id] then return end
+    local hp=box:GetChild('hpHit')
+    if hp then hp:SetVisible(false) end
+    for _,name in ipairs({'hpBorder','hpTrack','hpGhost','hpFill','hp','blockEdge','blockIcon','block','name','statusRow','intentIcon','intentBadge','intentExtra','intent','intentHit'})do
+        local control=box:GetChild(name)
+        intentVisibilities[control]=nil
+        local ok,why=pcall(control.SetVisible,control,false)
+        intentVisibilities[control]=nil
+        if not ok then error(why,0) end
+    end
+end
+
 function M.install(owner, ownership, host, dependencies)
     -- A new view binding starts fresh; weak native keys cannot retain retired actors.
     local intentGeometryOwner={}
@@ -318,18 +331,6 @@ function M.install(owner, ownership, host, dependencies)
         end)
         for id in pairs(ownership.nameStates)do if not wanted[id]then ownership.nameStates[id]=nil end end
     end
-    local function hideEscapingHud(box,id)
-        if not owner.feedback.escaping[id] then return end
-        local hp=box:GetChild('hpHit')
-        if hp then hp:SetVisible(false) end
-        for _,name in ipairs({'hpBorder','hpTrack','hpGhost','hpFill','hp','blockEdge','blockIcon','block','name','statusRow','intentIcon','intentBadge','intentExtra','intent','intentHit'})do
-            local control=box:GetChild(name)
-            intentVisibilities[control]=nil
-            local ok,why=pcall(control.SetVisible,control,false)
-            intentVisibilities[control]=nil
-            if not ok then error(why,0) end
-        end
-    end
     local function suspendEnemies(rows)
         local ok,why=pcall(function()
             host.monsterSurfaces:select(rows,owner.run.combat)
@@ -363,7 +364,7 @@ function M.install(owner, ownership, host, dependencies)
         for index,entry in ipairs(rows)do
             local box=assert(host.monsterSurfaces:find(entry.id))
             renderEnemySlot(frame,box,entry,index,#rows,aim)
-            hideEscapingHud(box,entry.id)
+            hideEscapingHud(owner,box,entry.id)
             box:SetVisible(true)
         end
         updateEnemyNames(0)
