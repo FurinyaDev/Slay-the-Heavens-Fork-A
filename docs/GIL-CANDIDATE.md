@@ -42,7 +42,7 @@ Windows Job 使用 Node 24.18.0、锁定的 MCP 提交和 v3 生产预设。冻�
    ```
 
 3. 独立评审依据构建现场记录复核实际构建命令、Node 和 Python 版本、清洁源码、授权底图、两份回执及最终产物。维护者确认许可后在 `gil-candidate` Environment 的 `GIL_CANDIDATE_APPROVAL` 填冻结记录，并将 `localBundleSha256`、`localCandidateSha256` 分别设为输出的 `bundleSha256`、`candidateSha256`。在 `reference` 关联批准记录。将私有传输包保留在授权存储，Environment Secret `GIL_LOCAL_BUILD_URL` 填 Runner 可访问的直连 HTTPS。公开发布制品只有经审计的最终 GIL、可移植回执、清单及校验和。
-4. 从受保护 `develop` 运行 **GIL candidate**，选择 `build_origin=local` 与对应冻结源码。工作流重新校验 Full、Licenses、传输包、底图、两阶段回执、发布说明和最终 GIL，再用相同的正式来源审计、归档和 SHA-256 下载读回。清单记载本地来源及审批引用。用所得 Artifact ID 执行 [正式性能及平台流程](PUBLISHING.md)。每个受限档测量从实际归档 GIL 读取的 Lua、UI 和模板。
+4. 从受保护 `develop` 运行 **GIL candidate**，选择 `build_origin=local` 与对应冻结源码。工作流重新校验 Full、Licenses、传输包、底图、两阶段回执、发布说明和最终 GIL，再用相同的正式来源审计、归档和 SHA-256 下载读回。清单保留本地来源、审批引用、可复现配方及原始构建输入摘要。公开回执使用固定路径标签核验同一组源码输入。用所得 Artifact ID 执行 [正式性能及平台流程](PUBLISHING.md)。每个受限档测量从实际归档 GIL 读取的 Lua、UI 和模板。
 
 保留 `candidate.json` 和 `candidate.gil` 在同一解压目录。使用精确源码、已水合的审核素材和清单指定的 MCP 提交，从项目根目录执行 `npm run verify:platform-load -- <解压目录>/candidate.json <official-load.json>`。将 `MILIASTRA_MCP_ROOT` 指向本机 MCP 检出。原生复审可运行 `node scripts/audit-native-candidate.mjs --source <SHA> --candidate <解压目录>/candidate.gil --receipt <解压目录>/candidate.json --output <新证据目录> --bgm`。
 

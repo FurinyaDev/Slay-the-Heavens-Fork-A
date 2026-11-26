@@ -65,7 +65,9 @@ test('uses approved local GIL bytes from the same archive authority and rejects 
   const f = fixture();
   const manifest = JSON.parse(f.files['manifest.json']);
   manifest.buildOrigin = 'local';
-  manifest.localBuild = { bundleSha256:'6'.repeat(64), candidateSha256:manifest.candidate.sha256, approvalReference:'release/220' };
+  manifest.localBuild = { bundleSha256:'6'.repeat(64), candidateSha256:manifest.candidate.sha256, approvalReference:'release/220',
+    buildPayloadDigest:'8'.repeat(64), recipe:{ node:'24.18.0', python:'3.12.10',
+      command:'npm run build:native -- <approved-base.gil> build/local-gil --release-candidate --work-key=' + manifest.parameters.workKey } };
   const seal = () => {
     f.files['manifest.json'] = Buffer.from(JSON.stringify(manifest));
     f.files.SHA256SUMS = Buffer.from(['candidate.gil', 'candidate.json', 'manifest.json']
@@ -77,7 +79,8 @@ test('uses approved local GIL bytes from the same archive authority and rejects 
   assert.deepEqual(proof.binding.localBuild, manifest.localBuild);
   assert.deepEqual(proof.gilBytes, f.files['candidate.gil']);
   const accepted = { ...manifest.localBuild };
-  for (const change of [{ candidateSha256:'0'.repeat(64) }, { bundleSha256:null }, { approvalReference:'' }]) {
+  for (const change of [{ candidateSha256:'0'.repeat(64) }, { bundleSha256:null }, { approvalReference:'' }, { buildPayloadDigest:'missing' },
+    { recipe:{ ...accepted.recipe, command:'unapproved command' } }]) {
     manifest.localBuild = { ...accepted, ...change };
     seal();
     await assert.rejects(verifyGilArtifact(f.request, 1, target, f.load), /local approval identity differs/);

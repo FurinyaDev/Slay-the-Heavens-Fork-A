@@ -7,7 +7,7 @@ import { join } from 'node:path';
 import { test } from 'node:test';
 import { verifyDownloadedArtifact, verifyLocalBuild, verifyLocalProductionPreset, verifyReceipts } from '../scripts/gil-candidate.mjs';
 import { downloadLocalGilBundle, localGilRecord, readLocalGilBundle, writeLocalGilBundle } from '../scripts/local-gil-bundle.mjs';
-import { importedGilReceipt } from '../scripts/hosted-gil-receipt.mjs';
+import { importedGilReceipt, localArchiveReceipt } from '../scripts/hosted-gil-receipt.mjs';
 import { nativeAudioBuildArgs } from '../scripts/build-native-audio-game.mjs';
 import { encoderSha256 } from '../scripts/gil-candidate-preflight.mjs';
 
@@ -159,6 +159,13 @@ test('verify local base, intermediate, audio receipt and candidate before storin
   const receipt = importedGilReceipt(verified.full, verified.audio, candidateRow, 'hotfix/' + version);
   assert.deepEqual(receipt.candidate, candidateRow);
   assert.equal(receipt.productionManifest.modules[0].path, 'payload/abyss_bgm.lua');
+  const digestInputs = rows => localGilRecord(Buffer.from(JSON.stringify(rows))).sha256;
+  const archived = localArchiveReceipt(receipt, full.inputs, digestInputs);
+  assert.deepEqual(archived.encoderPayloadPaths, ['/release/encoder/src/scene-save.mjs', '/release/source/scripts/native-client-check.mjs']);
+  assert(!JSON.stringify(archived).includes('candidate\\release'));
+  assert.equal(archived.payloadDigest, digestInputs([full.inputs[0], ...archived.encoderPayloadPaths.map(path => ({ path }))]));
+  assert.throws(() => localArchiveReceipt(receipt, [{ path:'wrong/source.mjs' }, full.inputs.at(-1)], digestInputs), /labels differ/);
+
   assert.throws(() => importedGilReceipt(verified.full, { ...verified.audio,
     productionManifest: { ...verified.audio.productionManifest, layout: { path: fullRoot + '\\..\\unreviewed.json' } },
   }, candidateRow, 'hotfix/' + version), /Invalid local receipt path label/);

@@ -7,7 +7,7 @@ import { pipeline } from 'node:stream/promises';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { api, approvedRequest, artifactName, candidateTarget, digest, encoderSha256, findArtifact,
   GateError, nativeBuildVersions, profile, repository, repositoryId, requireGate, sha, toolCommit, verifyFrozenQuality, verifySource } from './gil-candidate-preflight.mjs';
-import { hostedGilReceipt, importedGilReceipt, verifiedPayloadInputs } from './hosted-gil-receipt.mjs';
+import { hostedGilReceipt, importedGilReceipt, localArchiveReceipt, verifiedPayloadInputs } from './hosted-gil-receipt.mjs';
 import { downloadLocalGilBundle, localGilRecord, readLocalGilBundle, writeLocalGilBundle } from './local-gil-bundle.mjs';
 
 const uuid = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/;
@@ -226,7 +226,8 @@ async function candidateInputs(out, expected, fileRecord) {
     requireGate(payloadDigest(payload) === receipt.payloadDigest && payloadDigest(full.inputs) === receipt.payloadDigest &&
       release.build.version === expected.version && notesSha256(release.currentNotice) === receipt.release.notesSha256,
     'Local GIL inputs or release notes do not match the reviewed source checkout.');
-    return { audio, fullReceipt, audioReceipt, finalGil, mapPath, receipt };
+    return { audio, fullReceipt, audioReceipt, finalGil, mapPath, buildPayloadDigest: receipt.payloadDigest,
+      receipt: localArchiveReceipt(receipt, payload, payloadDigest) };
   }
   requireGate(hash(readFileSync(basePath())) === baseSha256, 'Approved base GIL changed during the build.');
   const { fullRoot, audio, fullReceiptPath, audioReceiptPath, mapPath } = buildPaths(out);
@@ -249,7 +250,7 @@ async function deliver() {
   toolchain(toolRoot);
   const out = bundleSha256 ? 'build/local-gil-intake' : 'build/hosted-gil';
   const { fileRecord } = await moduleAt('.', 'scripts/evidence-files.mjs');
-  const { audio, fullReceipt, audioReceipt, finalGil, mapPath, receipt } = await candidateInputs(out,
+  const { audio, fullReceipt, audioReceipt, finalGil, mapPath, receipt, buildPayloadDigest } = await candidateInputs(out,
     { branch, sourceSha, baseSha256, workKey, version, bundleSha256, candidateSha256 }, fileRecord);
   const { inspectFile } = await moduleAt(toolRoot, 'src/adapter.mjs');
   const { nativeBgmSignals } = await moduleAt('.', 'scripts/native-bgm-graph.mjs');
@@ -288,7 +289,7 @@ async function deliver() {
     sourceChecks,
     receipts: { nativeSha256: hash(fullReceipt), audioSha256: hash(audioReceipt) },
     buildOrigin: bundleSha256 ? 'local' : 'hosted',
-    ...(bundleSha256 && { localBuild: { bundleSha256, candidateSha256, approvalReference, recipe: localBuildRecipe(workKey) } }),
+    ...(bundleSha256 && { localBuild: { bundleSha256, candidateSha256, approvalReference, buildPayloadDigest, recipe: localBuildRecipe(workKey) } }),
     nativeAudit: 'pass',
     platformVersion: null,
     parameters: { workKey, profile, nativePageLifecycle: true, releaseCandidate: Boolean(version), liveWrite: false },

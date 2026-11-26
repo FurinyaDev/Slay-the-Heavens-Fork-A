@@ -62,6 +62,19 @@ export function importedGilReceipt(full, audio, candidate, sourceBranch) {
   return hostedGilReceipt(root, fullRoot, full, audio, candidate, sourceBranch, { pickFile, pathOf: path => path });
 }
 
+// The private transport binds the original labels. The public receipt uses
+// fixed labels so an archived payload can be rechecked without workstation paths.
+export function localArchiveReceipt(receipt, verifiedInputs, digestInputs) {
+  const encoderPayloadPaths = ['/release/encoder/' + paths.source, '/release/source/' + paths.helper];
+  const encoderInputs = verifiedInputs.slice(-2);
+  if (encoderInputs.length !== 2 || !encoderInputs.every((row, index) => row.path === receipt.encoderPayloadPaths[index])) {
+    throw Error('Local payload encoder labels differ from the verified inventory');
+  }
+  const portableInputs = [...verifiedInputs.slice(0, -2),
+    ...encoderInputs.map((row, index) => ({ ...row, path: encoderPayloadPaths[index] }))];
+  return { ...receipt, encoderPayloadPaths, payloadDigest: digestInputs(portableInputs) };
+}
+
 export function hostedCandidatePath(receiptFile, receipt) {
   if (receipt.receiptSchema !== schema) return receipt.candidate.path;
   if (receipt.candidate.path !== 'candidate.gil') throw Error('Unexpected candidate filename in the hosted receipt');

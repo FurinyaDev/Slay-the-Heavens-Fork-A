@@ -83,6 +83,9 @@ function verifyGilFiles(files, locator, target) {
   assert.deepEqual(manifest.candidate, {path:'candidate.gil', bytes:files['candidate.gil'].length, sha256:gilSha256});
   const { buildOrigin = 'hosted', localBuild } = manifest;
   assert(buildOrigin === 'local' ? digest.test(localBuild?.bundleSha256) && localBuild?.candidateSha256 === gilSha256 &&
+    digest.test(localBuild.buildPayloadDigest) && /^\d+\.\d+\.\d+$/.test(localBuild.recipe?.node ?? '') &&
+    /^\d+\.\d+\.\d+$/.test(localBuild.recipe?.python ?? '') &&
+    localBuild.recipe.command === 'npm run build:native -- <approved-base.gil> build/local-gil --release-candidate --work-key=' + manifest.parameters.workKey &&
     /^[A-Za-z0-9._/-]{1,120}$/.test(localBuild.approvalReference ?? '') : buildOrigin === 'hosted' && localBuild === undefined,
   'Production GIL build origin or local approval identity differs');
   assert.deepEqual(receipt.candidate, manifest.candidate, 'Audited candidate files disagree');
