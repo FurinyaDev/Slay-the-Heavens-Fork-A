@@ -34,6 +34,8 @@ const updatedSources = new Map([
   ['src/lua/abyss_page_reveal.lua', ['64cd428bc1744eb46ce420f4dd9639673f929ca665de3f32c648fd44e60f6ffb', 'b6af02700b2b0caecec59f89c8910088fe54df2d']],
   ['src/lua/abyss_shop_ui.lua', ['caa2a9e292c671e8caccda3c04905bad9f930b53bb5c52d14491452845b7cb1c', 'e7956c45a252b2595fb5af636b56e3a12d4a4581']],
   ['tests/ci-reviewed-lfs.test.mjs', ['2a9a520742fc514b7edfad5ae8b636caf5834cfd8e7c8cd49b971ea054a9c119', '0d61e4d967a2a9946cd2adb9d32762064215a73c']],
+  ['tests/defect-utility-planning.test.mjs', ['d7b64a1189fce508eab45275d33dbbf442a46f085d0c2c3fe10c6c2caccab6ab', 'ba92ddb97178c4ccf977c5148db23d69f06b4485']],
+  ['tests/helpers/isolated-current-source.mjs', ['b839ff3ffa5985995b5720350e5554816f87d0365069b76bc5c447d495f9e5e6', '6cfa35ef0d27fef1acaae4f5db501ec52fbef3b1']],
   ['tests/game-ui.test.mjs', ['24e4ac5ceaa35a28372b53ab1e7baf4f0442383b96b0218f7457f94f37e49fec', '69aa3d7748b13116293ae97a31347cca31b6d643']],
   ['tests/helpers/fork-preflight-source.mjs', ['cb6c0ad1e737f50712a5ec25f219a112ef3defdfb4eeb9d6322c7a8202e62a24', '03e4327edef1d4aa5ce1a0b08ff89f7d39f9311f']],
   ['tests/integration-source-epoch.test.mjs', ['fd0cb659920b58cb0354c37acba7344028847c06211bb0339cc0deb38bbc2a8b', '8ec5fab8e038c2b0a3e1201a353283a28f02293f']],

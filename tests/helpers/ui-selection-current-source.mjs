@@ -394,18 +394,23 @@ const nodeNoticeCopier=Object.freeze({
  ]
 });
 const deckArchitectureCopier=Object.freeze({
- current:{"sha256":"728af7e6fe0e40e03a4494f3ab3f1ba38e189b03f91572b6a235f5e4ee25e8b2","gitBlob":"aef20802636f57823a5e5e8bfc3ea8bb5e25e7f6"},
+ current:{"sha256":"f91356992df348455d12d1c46cff3939abb466a659d6067f7a05741762194c77","gitBlob":"81455b6dc430a44de255071736496b0b4228642b"},
  previous:combinedReceipt(copierPath).current,
  hunks:[
  {
   "at": 357,
   "before": " 'tests/helpers/m7-core-final-source-inverse.mjs':'c9d98969785466649e0e915df0d912f81b774d8b937b4fb63e74eed731635133',",
-  "after": " 'tests/helpers/m7-core-final-source-inverse.mjs':'5214ed8974838b06158bfb075daeb82e71ca20b9d7aea6225ffde6fef7e5f4f7',"
+  "after": " 'tests/helpers/m7-core-final-source-inverse.mjs':'f3c74ae48bc3d0f030caaf30c2a6140e096146316dab115a75ebfba87b1dcfe8',"
  },
  {
   "at": 361,
   "before": " 'tests/helpers/develop-release-backflow-source.mjs':'2834679eef440cf54e64cfb2c144c2fc6dbb5dc7ed048c3767435c250827337f',",
-  "after": " 'tests/helpers/develop-release-backflow-source.mjs':'5120ebd8f1029f2f41265dbffb3a54a3a3911bc62d4928dec8ca1aea6c8ad59f',\n 'tests/helpers/develop-release-vocabulary-source.mjs':'6120c2639aeb77972adcab7571c384d2d53f8a28794f99cc389f108a8bf0aeb5',\n 'tests/fixtures/develop-release-vocabulary-source.json.gz':'2b3d606fc142f2c8c5cfaaff386c70f6e1f741f24fbc1879b78399b7c477e914',\n 'tests/fixtures/map-room-battle-actions-source.json.gz':'45918da82006880941ab23f10ccc49b7fe11fc2c7978b4f1508f923216e142ec',\n 'tests/fixtures/develop-battle-input-source.json.gz':'ee0eeaf23242e8307a2b4f06a27319d89477c5d19d7507eddc54477dc878611e',\n 'tests/fixtures/develop-linked-backflow-source.json.gz':'adeb361744f91d99b1dc48675d4566b24d3040440e34428b61d2302b47bd0d0b',\n 'tests/fixtures/develop-architecture-linked-source.json.gz':'b4b7a1401cde7ceb914ae6875dcf4f20045c7db23ca07d631a2ccffe9f636070',\n 'tests/helpers/master-backflow-source.mjs':'d407ed01df122de1f793c7fbaae1127b8a339b05aebb40e5f10e196cc7fe853a',\n 'tests/fixtures/master-backflow-predecessors.json.gz':'b16492b78553e53e675537d95d3f9ef24557d792f657ba41f0f280e43fab325f',"
+  "after": " 'tests/helpers/develop-release-backflow-source.mjs':'5f4ae517a51a79bc5c855c5ca1e5b82e461503130cf02a7fed135a140ddab49d',\n 'tests/helpers/develop-release-vocabulary-source.mjs':'6120c2639aeb77972adcab7571c384d2d53f8a28794f99cc389f108a8bf0aeb5',\n 'tests/fixtures/develop-release-vocabulary-source.json.gz':'2b3d606fc142f2c8c5cfaaff386c70f6e1f741f24fbc1879b78399b7c477e914',\n 'tests/fixtures/map-room-battle-actions-source.json.gz':'45918da82006880941ab23f10ccc49b7fe11fc2c7978b4f1508f923216e142ec',\n 'tests/fixtures/develop-battle-input-source.json.gz':'ee0eeaf23242e8307a2b4f06a27319d89477c5d19d7507eddc54477dc878611e',\n 'tests/fixtures/develop-linked-backflow-source.json.gz':'7f803c657102e0f9a804ca68117af34f1067d32eabbc3b5fc0c99752b590d522',\n 'tests/fixtures/develop-architecture-linked-source.json.gz':'4e8500c1232bc5bcd5c19d08dbed21cea262be94a30f3a2e8195eeb04ebde859',\n 'tests/helpers/master-backflow-source.mjs':'7c9fb40ae14704f317e6cc0983bf468709216540a1da347303ad4903aa0434c7',\n 'tests/fixtures/master-backflow-predecessors.json.gz':'b16492b78553e53e675537d95d3f9ef24557d792f657ba41f0f280e43fab325f',"
+ },
+ {
+  "at": 383,
+  "before": " 'tests/helpers/relic-query-source-inverse.mjs':'41b4cddcba283db2cbcdc4d9c19fdd8bb14321378bd1151fc76a74b7ec9b1120',",
+  "after": " 'tests/helpers/relic-query-source-inverse.mjs':'ba7525e0fd153e59f59538114ecace70c6475ab65f578dea2f4fc29fb9e71a20',"
  },
  {
   "at": 504,
@@ -425,7 +430,7 @@ const deckArchitectureCopier=Object.freeze({
  {
   "at": 526,
   "before": "  if(path==='tests/helpers/reward-current-source.mjs'&&!raw.equals(content))",
-  "after": "  if((path==='tests/helpers/reward-current-source.mjs'||path==='tests/helpers/develop-release-backflow-source.mjs'||\n      path==='tests/helpers/develop-release-vocabulary-source.mjs'||path==='tests/helpers/master-backflow-source.mjs'||\n      path==='tests/helpers/m7-core-final-source-inverse.mjs')&&!raw.equals(content))"
+  "after": "  if((path==='tests/helpers/reward-current-source.mjs'||path==='tests/helpers/develop-release-backflow-source.mjs'||\n      path==='tests/helpers/develop-release-vocabulary-source.mjs'||path==='tests/helpers/master-backflow-source.mjs'||\n      path==='tests/helpers/m7-core-final-source-inverse.mjs'||path==='tests/helpers/relic-query-source-inverse.mjs')&&!raw.equals(content))"
  }
 ],
 });

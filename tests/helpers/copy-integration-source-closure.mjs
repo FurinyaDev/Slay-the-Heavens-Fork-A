@@ -355,18 +355,18 @@ const entranceFiles=Object.freeze({
  'tests/helpers/chapter-battle-scene-source.mjs':'1270c293d79c04ac4a5b15483dd4cc8f9c4279362e2f5c551f6e98c20c9ad293',
  'tests/helpers/release-integration-source.mjs':'74093921a53a94ba842afac199e579a622b60fea5abf2519d416ede77bbfa1a7',
  'tests/fixtures/release-lazy-monster-art-source.json.gz':'211c3588a53b1f97c98d9f9b905349d82b244a2e81a940d4ebe48022381ca92e',
- 'tests/helpers/m7-core-final-source-inverse.mjs':'5214ed8974838b06158bfb075daeb82e71ca20b9d7aea6225ffde6fef7e5f4f7',
+ 'tests/helpers/m7-core-final-source-inverse.mjs':'f3c74ae48bc3d0f030caaf30c2a6140e096146316dab115a75ebfba87b1dcfe8',
  'tests/helpers/release-ui-restore-source.mjs':'2ec5855476f1b4c8cf762ca1a7ee366028322841b07996a518af96fdd87259b9',
  'tests/helpers/current-replay-fix-sources.mjs':'cceed97f15f0f91ab37ea27d3bf6f5659d213c54dcf11225eaa0fed7adc8ccdf',
  'tests/helpers/character-preparation-source.mjs':'b556363648dd13827dacb603038423caf4a1c2693e618747df58fc29da7be2fd',
- 'tests/helpers/develop-release-backflow-source.mjs':'5120ebd8f1029f2f41265dbffb3a54a3a3911bc62d4928dec8ca1aea6c8ad59f',
+ 'tests/helpers/develop-release-backflow-source.mjs':'5f4ae517a51a79bc5c855c5ca1e5b82e461503130cf02a7fed135a140ddab49d',
  'tests/helpers/develop-release-vocabulary-source.mjs':'6120c2639aeb77972adcab7571c384d2d53f8a28794f99cc389f108a8bf0aeb5',
  'tests/fixtures/develop-release-vocabulary-source.json.gz':'2b3d606fc142f2c8c5cfaaff386c70f6e1f741f24fbc1879b78399b7c477e914',
  'tests/fixtures/map-room-battle-actions-source.json.gz':'45918da82006880941ab23f10ccc49b7fe11fc2c7978b4f1508f923216e142ec',
  'tests/fixtures/develop-battle-input-source.json.gz':'ee0eeaf23242e8307a2b4f06a27319d89477c5d19d7507eddc54477dc878611e',
- 'tests/fixtures/develop-linked-backflow-source.json.gz':'adeb361744f91d99b1dc48675d4566b24d3040440e34428b61d2302b47bd0d0b',
- 'tests/fixtures/develop-architecture-linked-source.json.gz':'b4b7a1401cde7ceb914ae6875dcf4f20045c7db23ca07d631a2ccffe9f636070',
- 'tests/helpers/master-backflow-source.mjs':'d407ed01df122de1f793c7fbaae1127b8a339b05aebb40e5f10e196cc7fe853a',
+ 'tests/fixtures/develop-linked-backflow-source.json.gz':'7f803c657102e0f9a804ca68117af34f1067d32eabbc3b5fc0c99752b590d522',
+ 'tests/fixtures/develop-architecture-linked-source.json.gz':'4e8500c1232bc5bcd5c19d08dbed21cea262be94a30f3a2e8195eeb04ebde859',
+ 'tests/helpers/master-backflow-source.mjs':'7c9fb40ae14704f317e6cc0983bf468709216540a1da347303ad4903aa0434c7',
  'tests/fixtures/master-backflow-predecessors.json.gz':'b16492b78553e53e675537d95d3f9ef24557d792f657ba41f0f280e43fab325f',
  'tests/helpers/native-fixture-replay-source.mjs':'7dbd2ded60c5b155b958a5e6e2ff44537b2b62c15e113642aaf8f6194771832d',
  'tests/helpers/native-flow-fixture-source.mjs':'8ad7157fd4f3973ffba4f17f9eba440731ddf952e859fee53970d6c3879968e3',
@@ -381,7 +381,7 @@ const entranceFiles=Object.freeze({
  'tests/helpers/input-retirement-source.mjs':'886cc9b65d51c5e5507691f516439d3475f44a3fdfba5dcf96cfb2dde1c5cf2e',
  'tests/fixtures/event-readability-source.json.gz':'1ccc3098014ebf726a776928f5d0b41c29b6a2a1cff21f096ee42a53b0da9cd5',
  'tests/helpers/reward-query-boundary-source-inverse.mjs':'07d2abf826061305510cebfd60a4c13b2d07e86352d63a5db1868a40c9cc082c',
- 'tests/helpers/relic-query-source-inverse.mjs':'41b4cddcba283db2cbcdc4d9c19fdd8bb14321378bd1151fc76a74b7ec9b1120',
+ 'tests/helpers/relic-query-source-inverse.mjs':'ba7525e0fd153e59f59538114ecace70c6475ab65f578dea2f4fc29fb9e71a20',
  'tests/helpers/reward-current-source.mjs':'3b67c5b2cce6c6ab8c76610da98d3ceb3c96e6ccfb8f0c3b58754ac7ea9ff641',
  'tests/helpers/reward-current-source.json.gz':'a68d10abe6e6f3bd33a69f85326d34dce1250b34b6892543cb5c1314c01f3b9f',
 });
@@ -526,7 +526,7 @@ export function copyIntegrationSourceClosure(directory,{sourceRoot=process.cwd()
   const content=integrationClosureBytes(path,prior);
   if((path==='tests/helpers/reward-current-source.mjs'||path==='tests/helpers/develop-release-backflow-source.mjs'||
       path==='tests/helpers/develop-release-vocabulary-source.mjs'||path==='tests/helpers/master-backflow-source.mjs'||
-      path==='tests/helpers/m7-core-final-source-inverse.mjs')&&!raw.equals(content))
+      path==='tests/helpers/m7-core-final-source-inverse.mjs'||path==='tests/helpers/relic-query-source-inverse.mjs')&&!raw.equals(content))
    assert(raw.equals(Buffer.from(content.toString('utf8').replaceAll('\n','\r\n'))),'fresh helper copy identity: '+path);
   assert.equal(hash(content),sha,'fresh helper copy identity: '+path);
   const target=join(directory,path);mkdirSync(dirname(target),{recursive:true});
