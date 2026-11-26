@@ -101,7 +101,128 @@ const runtimeFixtureSuccessors = [
  }
 ];
 
+// #820, #877 and the recovered enemy reader each changed this live test.
+// The original StS inventory still authenticates the fixture from #661.
+const enemyStatusFixture='tests/enemy-status-hand-clearance.test.mjs';
+const enemyStatusContinuations=[
+ {
+  "after": {
+   "sha256": "1bedfb69d287476ba4bef9e5bb040fa6f2e0c977427fa91ee70aa05dfebfd232",
+   "gitBlob": "e162e4a75211b80296b7e6111bc00dfdb0ecb25a"
+  },
+  "before": {
+   "sha256": "913b331159bf9c97f73246977e521a70658c2b28d445fa58965710c0675eeb7b",
+   "gitBlob": "3b03dedbc3bba278046a29a093404be7e9ce97a9"
+  },
+  "hunks": [
+   {
+    "at": 23,
+    "before": "local host,root=F.fixture(nil,nil,nil,nil,nil,nil,{position=function()return px,py end,touchScreen=function()return touch end})",
+    "after": "local cursor={CursorEnter='enter',CursorExit='exit',CursorDown='down',CursorUp='up'}\nlocal host,root=F.fixture(nil,nil,nil,cursor,nil,nil,{position=function()return px,py end,touchScreen=function()return touch end})"
+   },
+   {
+    "at": 48,
+    "before": "end",
+    "after": "end\nlocal function openReader(hit,actor)\n if touch then\n  local event={touchId=90}\n  hit.listeners.down(event);hit.listeners.up(event);hit.listeners.click(event)\n else\n  hit.listeners.click()\n  assert(not host.battleUI.info,'a bare desktop click must not open a reader')\n  hit.listeners.enter()\n end\n local info=assert(host.battleUI.info,'native reader did not open')\n assert(info.source==hit and info.actor==actor and info.transient==not touch,'native reader lost its input owner')\n return info\nend\nlocal function closeReader(hit)\n if touch then panel:GetChild('statusDismiss').click({touchId=91}) else hit.listeners.exit() end\n assert(not host.battleUI.info and not panel:GetChild('statusInfo').visible,'native reader stayed open after dismissal')\nend\nlocal function readerText(info)\n local text={}\n local status=panel:GetChild('statusInfo')\n local tips=status:GetChild('powerTips')\n for page=1,info.pages do\n  if page>1 then info.page=page;host.battleUI:renderDetailsOnly()end\n  assert(status.visible and tips.visible,'status content is not visible')\n  for i=1,Theme.layout.powerTips.rows do\n   local tip=tips:GetChild('tip'..i)\n   if tip.visible then text[#text+1]=tip:GetChild('copy').text end\n  end\n end\n return table.concat(text,'\\\\n')\nend"
+   },
+   {
+    "at": 117,
+    "before": "   if entry.id=='strength' then hit.click();assert(host.battleUI.info and host.battleUI.info.statusId=='strength','power detail lost native identity');host.battleUI.info=nil end",
+    "after": "   if entry.id=='strength' then\n    assert(openReader(hit,actor).statusId=='strength','power detail lost native identity')\n    closeReader(hit)\n   end"
+   },
+   {
+    "at": 123,
+    "before": "    assert(count.text=='+'..(#entries-layout.columns*layout.rows+1),'more count omitted a real status')\n    hit.click();assert(host.battleUI.info and not host.battleUI.info.statusId,'more must open the existing complete status view')\n    local text={}\n    local function collect(control)\n     if not control.visible then return end\n     text[#text+1]=control.text or'';for _,child in pairs(control.children)do collect(child)end",
+    "after": "    local firstHidden=layout.columns*layout.rows\n    assert(count.text=='+'..(#entries-firstHidden+1),'more count omitted a real status')\n    local info=openReader(hit,actor)\n    assert(not info.statusId and info.offset==firstHidden,'more must start at the first overflowed status')\n    local more=readerText(info)\n    for i,status in ipairs(entries)do\n     assert(pool:find(status.id),'overflow removed native source membership')\n     if i>=firstHidden then assert(more:find(status.name,1,true),'overflow detail lost '..status.id)end"
+   },
+   {
+    "at": 132,
+    "before": "    for page=1,host.battleUI.info.pages do\n     host.battleUI.info.page=page;host.battleUI:render();collect(panel:GetChild('statusInfo'))\n    end\n    local all=table.concat(text,'\\\\n')\n    for _,status in ipairs(entries)do assert(pool:find(status.id),'overflow removed native source membership');assert(all:find(status.name,1,true),'complete status detail lost '..status.id)end\n    host.battleUI.info=nil",
+    "after": "    closeReader(hit)\n    local overview=box:GetChild('hpHit')\n    info=openReader(overview,actor)\n    assert(not info.statusId and not info.offset,'HP must open the complete status overview')\n    local all=readerText(info)\n    for _,status in ipairs(entries)do assert(all:find(status.name,1,true),'complete status detail lost '..status.id)end\n    closeReader(overview)"
+   }
+  ]
+ },
+ {
+  "after": {
+   "sha256": "913b331159bf9c97f73246977e521a70658c2b28d445fa58965710c0675eeb7b",
+   "gitBlob": "3b03dedbc3bba278046a29a093404be7e9ce97a9"
+  },
+  "before": {
+   "sha256": "8ea1f7b59d006682590f350c88814d4a37335044cb137ee468472c246acf335d",
+   "gitBlob": "b57c1e09001ac4d13f11e57e7e357cd3f8dd6694"
+  },
+  "hunks": [
+   {
+    "at": 48,
+    "before": "local function check(state,twoRows)",
+    "after": "local function check(state,expectedRows)"
+   },
+   {
+    "at": 54,
+    "before": "  local intent=box:GetChild('intent')",
+    "after": "  local portrait,hpBorder=box:GetChild('portrait'),box:GetChild('hpBorder')\n  local feet=portrait.y-portrait.sizeDeltaY/2\n  assert(hpBorder.y+hpBorder.sizeDeltaY/2<feet,'HP bar overlaps portrait: '..actor.definitionId)\n  assert(hp.y+Theme.font.small/2<feet,'HP digits overlap portrait: '..actor.definitionId)\n  if actor.block>0 then\n   local fill,block=box:GetChild('hpFill'),box:GetChild('blockIcon')\n   assert(block.visible and block.x<fill.x-fill.sizeDeltaX/2,'block must stay left of HP')\n   assert(math.abs(block.y-fill.y-4*g.sourceScale)<.00001,'block must move with HP')\n  end\n  local intent=box:GetChild('intent')"
+   },
+   {
+    "at": 88,
+    "before": "    assert(count.text=='+'..(#entries-layout.columns*Theme.layout.statusIcon.rows+1),'more count omitted a real status')",
+    "after": "    assert(count.text=='+'..(#entries-layout.columns*layout.rows+1),'more count omitted a real status')"
+   },
+   {
+    "at": 104,
+    "before": "  if twoRows then assert(n==2,'long power list must use two bounded rows')end",
+    "after": "  if expectedRows==2 then\n   assert(n==2,'long power list must use two bounded rows: '..actor.definitionId..' at '..(g.y+g.healthY))\n  end\n  if expectedRows==1 then\n   assert(n==1 and pool:find('@more').visible,'low enemy must keep its overflow above the hand')\n  end"
+   },
+   {
+    "at": 119,
+    "before": " check(fresh({'acid_slime_s'},10,{'weak','vulnerable','poison'}),true)\n check(fresh({'acid_slime_s'},10,powers),true)\n check(fresh(nil,10,{'weak','vulnerable','poison','strength','artifact'},'Lots of Slimes'),true)\n check(fresh({'acid_slime_l'},10,powers),true)\n check(fresh({'spike_slime_l'},10,powers),true)",
+    "after": " check(fresh({'acid_slime_s'},10,{'weak','vulnerable','poison'}),2)\n check(fresh({'acid_slime_s'},10,powers),2)\n check(fresh(nil,10,{'weak','vulnerable','poison','strength','artifact'},'Lots of Slimes'),2)\n check(fresh({'acid_slime_l'},10,powers),2)\n check(fresh({'spike_slime_l'},10,powers),2)"
+   },
+   {
+    "at": 125,
+    "before": " local multi=fresh({'sentry','sentry','sentry'},10,{'strength','weak','vulnerable','artifact'})",
+    "after": " local guardian=fresh({'guardian'},10,powers)\n guardian.enemies[1].aiPhase='defense';guardian.enemies[1].block=20\n host:refresh();check(guardian,1)\n local multi=fresh({'sentry','sentry','sentry'},10,{'strength','weak','vulnerable','artifact'})"
+   },
+   {
+    "at": 130,
+    "before": " host:refresh();check(multi,true)",
+    "after": " host:refresh();check(multi,2)"
+   }
+  ]
+ },
+ {
+  "after": {
+   "sha256": "8ea1f7b59d006682590f350c88814d4a37335044cb137ee468472c246acf335d",
+   "gitBlob": "b57c1e09001ac4d13f11e57e7e357cd3f8dd6694"
+  },
+  "before": {
+   "sha256": "a3faec70280ea71143e460672b158c96a49dce8e840712ef14ae34ecb8e1696f",
+   "gitBlob": "5dc8a7cccd26921402a897cf3e0ce8b4ee9ed520"
+  },
+  "hunks": [
+   {
+    "at": 6,
+    "before": "import {buildUI} from '../scripts/build-ui.mjs';",
+    "after": "import './helpers/mobile-composite-intent.cases.mjs';\nimport {buildUI} from '../scripts/build-ui.mjs';"
+   }
+  ]
+ }
+];
+
+function beforeEnemyStatusFixture(path,source){
+ if(typeof source!=='string')return source;
+ const lf=source.replaceAll('\r\n','\n');
+ if(source!==lf&&source!==lf.replaceAll('\n','\r\n'))return source;
+ let prior=source;
+ for(const {before,after,hunks} of enemyStatusContinuations){
+  if(!exactSourceMatches(prior,after))continue;
+  prior=restoreExactFixtureHunks({path,beforeSha256:before.sha256,afterSha256:after.sha256,hunks},path,prior);
+  assert(exactSourceMatches(prior,before),'exact StS enemy-status fixture predecessor');
+ }
+ return prior===source||source===lf?prior:prior.replaceAll('\n','\r\n');
+}
+
 export function beforeStsRuntimeFixtureSuccessor(path,source){
+ if(path===enemyStatusFixture)return beforeEnemyStatusFixture(path,source);
  const proof=runtimeFixtureSuccessors.find(row=>row.path===path);
  const original=proof?restoreExactFixtureHunks(proof,path,source):source;
  return original!==source&&source.includes('\r\n')?original.replaceAll('\n','\r\n'):original;
