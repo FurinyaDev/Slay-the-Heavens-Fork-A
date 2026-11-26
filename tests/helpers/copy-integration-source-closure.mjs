@@ -388,6 +388,7 @@ const entranceFiles=Object.freeze({
 // The live copier targets the approved #1022 helper closure. Other replay
 // readers continue to use their original Master backflow predecessor.
 const reviewedCopySources=Object.freeze({
+ "tests/helpers/ui-entrance-approved-sources.mjs": {"current":{"sha256":"bb8cbccdfa6fe91ae5585ff12eec7aa544e5b81d07a2496c023d7cc52a05a925","gitBlob":"2f6f1c76b0f1281a48bcbe207ec6d6415fb63d54"},"previous":{"sha256":"b5c903614eb19f512e365c8c4024e1c40c37f5ab5df790a016dbeecf7b0efdcb","gitBlob":"01d014fa21cf6ff4c88ef8fb99a55ae3d644802f"},"edits":[{"at":3,"remove":1,"previous":[]},{"at":14,"remove":20,"previous":[]},{"at":35,"remove":8,"previous":[]}]},
  "tests/helpers/develop-release-backflow-source.mjs": {
   "current": {
    "sha256": "7989de2a06f877bf2dc2d0dcb991eef3a0cceda234adcd8724258b2ead1c26c2",
@@ -472,8 +473,8 @@ const reviewedCopySources=Object.freeze({
  },
  "tests/helpers/master-backflow-source.mjs": {
   "current": {
-   "sha256": "c03fb1b5bf312b8834aeef53204030ea8544622761278b3ae626cdd1b8d842d5",
-   "gitBlob": "28124a00ba0ebe7d58b6b62e41c9061fddf007f5"
+   "sha256": "46d77936ac5c3221eba5676cc295b0da80737230abdb0b415bbc21f7c8f128a1",
+   "gitBlob": "9c884564a8bff1884783d0d2a96a94661886dded"
   },
   "previous": {
    "sha256": "374935c2c76b47b65319202a3f3d60eb9884149f4224cd9c1dc432a81f523a7c",
@@ -493,14 +494,29 @@ const reviewedCopySources=Object.freeze({
     ]
    },
    {
-    "at": 49,
+    "at": 39,
+    "remove": 4,
+    "previous": []
+   },
+   {
+    "at": 53,
     "remove": 1,
     "previous": [
      "  ['tests/helpers/release-map-deck-source.mjs', ['e825e98356085765d46166f6ee5994181ade9548569d0c28e6ee62f195fef5d7', '67ab3e7f739ccbe9e63f6e54235d1378b72f5983']],"
     ]
    },
    {
-    "at": 57,
+    "at": 61,
+    "remove": 1,
+    "previous": []
+   },
+   {
+    "at": 144,
+    "remove": 6,
+    "previous": []
+   },
+   {
+    "at": 153,
     "remove": 1,
     "previous": []
    }
@@ -694,7 +710,8 @@ function beforeReviewedCopySource(path,raw){
  return Buffer.from(prior);
 }
 const inside=(root,path)=>{const r=relative(root,path);return r!==''&&!isAbsolute(r)&&r!=='..'&&!r.startsWith('../')&&!r.startsWith('..\\');};
-const currentEntranceHelpers=new Set(['tests/helpers/current-replay-fix-sources.mjs','tests/helpers/ui-entrance-source.mjs']);
+const currentEntranceHelpers=new Set(['tests/helpers/current-replay-fix-sources.mjs','tests/helpers/ui-entrance-source.mjs',
+ 'tests/helpers/ui-entrance-approved-sources.mjs','tests/helpers/master-backflow-source.mjs']);
 export function copyIntegrationSourceClosure(directory,{sourceRoot=process.cwd(),currentProduction=false}={}){
  const destination=realpathSync.native(directory);
  const sourceDirectory=realpathSync.native(sourceRoot);

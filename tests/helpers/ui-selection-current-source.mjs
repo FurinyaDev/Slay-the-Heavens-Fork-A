@@ -500,9 +500,40 @@ const currentBackflowCopier=Object.freeze({
   }
 ],
 });
+const openingButtonCopier=Object.freeze({
+ current:{"sha256":"bcfab22a2cde081386bc9a9563cd358ca8a11a5fb109f69089155573935f26fc","gitBlob":"fec40c7f18afa93d99d74c7fb407a20477e2ce7f"},
+ previous:currentBackflowCopier.current,
+ hunks:[
+ {
+  "at": 389,
+  "before": "const reviewedCopySources=Object.freeze({",
+  "after": "const reviewedCopySources=Object.freeze({\n \"tests/helpers/ui-entrance-approved-sources.mjs\": {\"current\":{\"sha256\":\"bb8cbccdfa6fe91ae5585ff12eec7aa544e5b81d07a2496c023d7cc52a05a925\",\"gitBlob\":\"2f6f1c76b0f1281a48bcbe207ec6d6415fb63d54\"},\"previous\":{\"sha256\":\"b5c903614eb19f512e365c8c4024e1c40c37f5ab5df790a016dbeecf7b0efdcb\",\"gitBlob\":\"01d014fa21cf6ff4c88ef8fb99a55ae3d644802f\"},\"edits\":[{\"at\":3,\"remove\":1,\"previous\":[]},{\"at\":14,\"remove\":20,\"previous\":[]},{\"at\":35,\"remove\":8,\"previous\":[]}]},"
+ },
+ {
+  "at": 475,
+  "before": "   \"sha256\": \"c03fb1b5bf312b8834aeef53204030ea8544622761278b3ae626cdd1b8d842d5\",\n   \"gitBlob\": \"28124a00ba0ebe7d58b6b62e41c9061fddf007f5\"",
+  "after": "   \"sha256\": \"46d77936ac5c3221eba5676cc295b0da80737230abdb0b415bbc21f7c8f128a1\",\n   \"gitBlob\": \"9c884564a8bff1884783d0d2a96a94661886dded\""
+ },
+ {
+  "at": 496,
+  "before": "    \"at\": 49,",
+  "after": "    \"at\": 39,\n    \"remove\": 4,\n    \"previous\": []\n   },\n   {\n    \"at\": 53,"
+ },
+ {
+  "at": 508,
+  "before": "    \"at\": 57,",
+  "after": "    \"at\": 61,\n    \"remove\": 1,\n    \"previous\": []\n   },\n   {\n    \"at\": 144,\n    \"remove\": 6,\n    \"previous\": []\n   },\n   {\n    \"at\": 153,"
+ },
+ {
+  "at": 712,
+  "before": "const currentEntranceHelpers=new Set(['tests/helpers/current-replay-fix-sources.mjs','tests/helpers/ui-entrance-source.mjs']);",
+  "after": "const currentEntranceHelpers=new Set(['tests/helpers/current-replay-fix-sources.mjs','tests/helpers/ui-entrance-source.mjs',\n 'tests/helpers/ui-entrance-approved-sources.mjs','tests/helpers/master-backflow-source.mjs']);"
+ }
+],
+});
 function activeReceipt(path){
  if(path===selectionLayoutPath)return selectionLayoutCurrent;
- if(path===copierPath)return currentBackflowCopier;
+ if(path===copierPath)return openingButtonCopier;
  if(path===returnedReadingReplayPath)return returnedReadingReplay;
  return combinedReceipt(path)??receipt(path);
 }
@@ -521,6 +552,7 @@ function beforeReceipt(path,source,binding){
 export function beforeSelectionReceiptSource(path,source){
  if(path===selectionLayoutPath)source=beforeReceipt(path,source,selectionLayoutCurrent);
  if(path===returnedReadingReplayPath)source=beforeReceipt(path,source,returnedReadingReplay);
+ if(path===copierPath)source=beforeReceipt(path,source,openingButtonCopier);
  if(path===copierPath)source=beforeReceipt(path,source,currentBackflowCopier);
  if(path===copierPath)source=beforeReceipt(path,source,returnedCardReadingCopier);
  if(path===copierPath)source=beforeReceipt(path,source,deckArchitectureCopier);

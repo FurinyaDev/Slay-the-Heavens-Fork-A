@@ -37,6 +37,10 @@ const updatedSources = new Map([
   ['src/lua/abyss_game_ui_lifecycle.lua', ['6e3967351a581630c2c352742fdfc3fecc20fefbaf2c26c7ddc8f21e052b3e14', 'abf67a2ab3994df9058d32a3554420c6317d133c']],
   ['src/lua/abyss_game_ui_navigation.lua', ['89c0b1d90b00e97ca6bfaa5cffc13c7317064017e86da285d6792e56e726d477', 'a98e73313e33629917ca535933d35a79d91a287f']],
   ['src/lua/abyss_game_ui_view.lua', ['b64cc28d1242af7fd219d1ccce46c9a043f42e3f602772e775896f3ea28fdf84', 'd865b4d6b0d4e8b6043b9e84f6a595b2d7f78bc6']],
+  // #1035 opening-button repair on the exact backflow owners.
+  ['src/lua/abyss_node_ui_camp_actions.lua', ['b90a96f31530eac70d5b1e8398d911452b5fc6c76e9b46d7a43f3cb9087adca1', 'd9c99f32a67c6f364af710db59af55a4847b8c09']],
+  ['src/lua/abyss_node_ui_feedback.lua', ['0342c0449968775ec2ac95ea4b82323a7a11cdf0ae3757d22be5f09bce896a86', 'c882a9c47d1f58a5ce4b9f52883bdefeb1d35575']],
+  ['src/lua/abyss_node_ui_treasure.lua', ['b9f7cc738c288cf387892e87338dc28aae48ed31653c37a99c104cf3636b87c3', '56545e3fb92f6adc492f84bd1ad6327abedc05c5']],
   ['src/lua/abyss_page_reveal.lua', ['e78b78ff3db4c173736839b87c9fdc001f5aa5e2f192f297f2ff46b9fce76485', '9ef23fdb2e68b008903ade8eef3575789bb651a8']],
   ['src/lua/abyss_shop_ui.lua', ['caa2a9e292c671e8caccda3c04905bad9f930b53bb5c52d14491452845b7cb1c', 'e7956c45a252b2595fb5af636b56e3a12d4a4581']],
   ['tests/ci-reviewed-lfs.test.mjs', ['2a9a520742fc514b7edfad5ae8b636caf5834cfd8e7c8cd49b971ea054a9c119', '0d61e4d967a2a9946cd2adb9d32762064215a73c']],
@@ -138,9 +142,16 @@ const pageRevealContinuation = {
   gitBlob: '9ef23fdb2e68b008903ade8eef3575789bb651a8',
 };
 
+const openingFixtureReaderContinuation = {
+  path: "tests/helpers/fork-preflight-source.mjs",
+  sha256: "bde1dc56935d4d27e2dc29f5fcc731837d238a4f123419600be71c86dc866ee0",
+  gitBlob: "76712ea8da4a21b296fc09d25ef3e7ff58b7a338",
+};
+
 function matchesSuccessor(path, source, original) {
   if (exactSourceMatches(source, original)) return true;
   if (path === pageRevealContinuation.path && exactSourceMatches(source, pageRevealContinuation)) return true;
+  if (path === openingFixtureReaderContinuation.path && exactSourceMatches(source, openingFixtureReaderContinuation)) return true;
   const updated = updatedSources.get(path);
   return updated !== undefined && exactSourceMatches(source, { sha256: updated[0], gitBlob: updated[1] });
 }

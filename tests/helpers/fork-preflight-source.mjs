@@ -1719,10 +1719,28 @@ const prologueRuntimeFixture={
 };
 const prologueCurrent=['d8376058d5623f3e86090319ae4180e6c2cf85e320a1e4ed7436254ecc7629ae','2874a9ce9cc8af9fda6af59990e224c3ca53db2c'];
 const prologuePrevious=['7e964df798323c66d434584750fe6c62cf5ccd898a1dfe65a33b5540e3eb10b2','43ea5d1100ad7d3dbc2c435115578dc5c60a8a05'];
+const openingButtonRuntimeFixture={
+ "path": "tests/lua/game_ui_prologue_readiness.lua",
+ "beforeSha256": "7f6dd189490b895dabf014c6a633374a8b87920d653cd33643a83c908f63c2bf",
+ "afterSha256": "2ac7d82ac274e8ede9d3858fbd7a012ef8c5d1589be76d0f2fa3089a40e86893",
+ "hunks": [
+  {
+   "at": 20,
+   "before": "",
+   "after": "\nlocal F=dofile('tests/lua/support/game_ui_fixture.lua')\nlocal cursors={CursorDown='down',CursorUp='up',CursorEnter='enter',CursorExit='exit',CursorEndDrag='endDrag'}\n\nlocal function wrappedIntro(id,touchId)\n    local canvas=F.control({children=F.Layout})\n    local root=F.Viewport.apply(canvas,1280,720)\n    local eventView=root:GetChild('nodePanel'):GetChild('eventView')\n    local getChild=eventView.GetChild\n    local option=getChild(eventView,'option1')\n    option.id=id\n    local wrapper={__index=option,__newindex=option,__eq=function(a,b)\n        return rawequal(rawget(a,'native') or a,rawget(b,'native') or b)\n    end}\n    function eventView:GetChild(name)\n        if name=='option1' then return setmetatable({native=option},wrapper) end\n        return getChild(self,name)\n    end\n    local a,b=eventView:GetChild('option1'),eventView:GetChild('option1')\n    assert(a==b and not rawequal(a,b),'test must use different Lua wrappers for the same live native control')\n    local ui=F.GameUI.new(root,F.Data,F.Presentation,'click',{\n        seed=42,prologue=true,campaign=true,campaignProfile='competition-two-act',\n        characterProfile='production',imageSource='static',cursorEvents=cursors,\n        color=function(r,g,b,a)return {r=r,g=g,b=b,a=a}end,\n    })\n    root.ui=ui\n    local function startIntro()\n        assert(F.start(ui))\n        for _=1,80 do if not ui.prologue:covering() then break end;ui:update(.05)end\n        assert(ui.nodeUI.visible and not ui.prologue:covering())\n        assert(ui.run.nodeFlow.event.stage=='neow_intro')\n    end\n    local hit=option:GetChild('hit')\n    local function emit(name,x)\n        return assert(hit.listeners[name])({touchId=touchId,GetUIPos=function()return x or 414,84 end})\n    end\n    local function continueIntro()\n        emit('down');emit('up')\n        local ok,reason=emit('click')\n        assert(ok,'fresh opening pointer must advance: '..tostring(reason))\n        assert(ui.run.nodeFlow.event.stage=='neow_blessing')\n    end\n    startIntro()\n    emit('down');emit('exit',4);emit('up',4)\n    assert(not emit('click') and ui.run.nodeFlow.event.stage=='neow_intro','dragging out must cancel')\n    continueIntro()\n    assert(not emit('click') and ui.run.nodeFlow.event.stage=='neow_blessing','duplicated click changed the blessing')\n    assert(ui:openMenu() and ui:requestNavigation('abandon') and ui:confirmNavigation())\n    startIntro()\n    assert(not emit('click') and ui.run.nodeFlow.event.stage=='neow_intro','old click advanced a new run')\n    continueIntro()\nend\n\nwrappedIntro('neow-option-1')\nwrappedIntro(101,7)\nprint('LUA_OPENING_NATIVE_ALIAS_PASS mouse=yes touch=yes drag_out=yes reentry=yes')\n"
+  }
+ ]
+};
+const openingButtonRuntimeCurrent=["2ac7d82ac274e8ede9d3858fbd7a012ef8c5d1589be76d0f2fa3089a40e86893", "0e943bbc8711b565196879554ea78163d57e79ff"];
+const openingButtonRuntimePrevious=["7f6dd189490b895dabf014c6a633374a8b87920d653cd33643a83c908f63c2bf", "e872dc23c6c7006d1f7d092eac250ef1acfebf29"];
 function beforePrologueRuntimeFixture(path,source){
- if(path!==prologueRuntimeFixture.path||!exactCheckoutSource(source,prologueCurrent))return source;
- const prior=restoreExactFixtureHunks(prologueRuntimeFixture,path,source);
- assert(exactCheckoutSource(prior,prologuePrevious),'exact Prologue runtime fixture predecessor');
+ const opening=path===openingButtonRuntimeFixture.path;
+ const fixture=opening?openingButtonRuntimeFixture:prologueRuntimeFixture;
+ const current=opening?openingButtonRuntimeCurrent:prologueCurrent;
+ const previous=opening?openingButtonRuntimePrevious:prologuePrevious;
+ if(path!==fixture.path||!exactCheckoutSource(source,current))return source;
+ const prior=restoreExactFixtureHunks(fixture,path,source);
+ assert(exactCheckoutSource(prior,previous),'exact Prologue runtime fixture predecessor');
  return source.includes('\r\n')?prior.replaceAll('\n','\r\n'):prior;
 }
 export function beforePreflightSource(path,source,view='prior',read=readFileSync){
