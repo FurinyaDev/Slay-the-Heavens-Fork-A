@@ -47,8 +47,16 @@ const updatedSources = new Map([
   ['tests/lua/support/dynamic_monster_game_ui.lua', ['abfe82b4330839610a3b495db737078ba2f4704ee951e8c1ac53cc8ee8056b94', '05e5c56c220b537f9a5fbaa68e49d0d5345dcdb8']],
 ]);
 
+// The local map return repair follows the already authenticated backflow.
+const pageRevealContinuation = {
+  path: 'src/lua/abyss_page_reveal.lua',
+  sha256: 'e78b78ff3db4c173736839b87c9fdc001f5aa5e2f192f297f2ff46b9fce76485',
+  gitBlob: '9ef23fdb2e68b008903ade8eef3575789bb651a8',
+};
+
 function matchesSuccessor(path, source, original) {
   if (exactSourceMatches(source, original)) return true;
+  if (path === pageRevealContinuation.path && exactSourceMatches(source, pageRevealContinuation)) return true;
   const updated = updatedSources.get(path);
   return updated !== undefined && exactSourceMatches(source, { sha256: updated[0], gitBlob: updated[1] });
 }
