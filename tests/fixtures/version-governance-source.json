@@ -76,5 +76,27 @@
         "after": " if(view==='official'&&path===historyProof.path&&typeof source==='string'&&!source.includes('\\r\\r\\n')){\n  const lf=beforeVersionGovernanceSource(path,source).replaceAll('\\r\\n','\\n');\n  if(lf===historyProof.after.source&&hash(lf)===historyProof.after.sha256)return historyProof.before.source;"
       }
     ]
+  },
+  "tests/pr-history.test.mjs": {
+    "path": "tests/pr-history.test.mjs",
+    "beforeSha256": "670d63a96197c8310b7cbfe3c98b1dbf64a7c918b1d22502c0807d9a8801e02e",
+    "afterSha256": "bb9cb191765bc0f0742f179251cd022ce521c97138496a706e7d7d1d1ed16e6d",
+    "hunks": [
+      {
+        "at": 8,
+        "before": "import { preRunHudCiSource } from './helpers/run-hud-ci-source.mjs';\n",
+        "after": "import { preRunHudCiSource } from './helpers/run-hud-ci-source.mjs';\nimport { beforeVersionGovernanceSource } from './helpers/version-governance-source.mjs';\n"
+      },
+      {
+        "at": 13,
+        "before": "  const source = readFileSync(row.path, 'utf8').replaceAll('\\r\\n', '\\n');\n  assert.equal(source, row.after.source);\n  for (const input of [source, source.replaceAll('\\n', '\\r\\n')])\n    assert.equal(preRunHudCiSource(row.path, input), row.before.source);\n  for (const input of [source + '\\n', source.slice(1), source.slice(0, -1), source.replaceAll('\\n', '\\r\\r\\n'), null, {}, 17])",
+        "after": "  const source = readFileSync(row.path, 'utf8').replaceAll('\\r\\n', '\\n');\n  assert.equal(beforeVersionGovernanceSource(row.path, source), row.after.source);\n  for (const input of [source, source.replaceAll('\\n', '\\r\\n')])\n    assert.equal(preRunHudCiSource(row.path, beforeVersionGovernanceSource(row.path, input)), row.before.source);\n  for (const input of [source + '\\n', source.slice(1), source.slice(0, -1), source.replaceAll('\\n', '\\r\\r\\n'), null, {}, 17])"
+      },
+      {
+        "at": 25,
+        "before": "  const source = readFileSync(row.path, 'utf8').replaceAll('\\r\\n', '\\n');\n  assert.equal(source, row.after.source);\n  for (const input of [source, source.replaceAll('\\n', '\\r\\n')])",
+        "after": "  const source = readFileSync(row.path, 'utf8').replaceAll('\\r\\n', '\\n');\n  assert.equal(beforeVersionGovernanceSource(row.path, source), row.after.source);\n  for (const input of [source, source.replaceAll('\\n', '\\r\\n')])"
+      }
+    ]
   }
 }
