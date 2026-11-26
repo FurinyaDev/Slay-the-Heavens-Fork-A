@@ -6,6 +6,7 @@ import { managedVersion, planPath, readVersionPlan } from './version-governance.
 import { projectRepositoryMatches } from './repository-identity.mjs';
 import { readBacklogRecords } from './backlog-closeout.mjs';
 import { readTaskHeader } from './backlog-metadata.mjs';
+import { independentAiReportErrors, parseIndependentAiReview } from './independent-ai-review.mjs';
 import { requireReleaseCoordinator } from './verify-release-acceptance.mjs';
 import { requiresProductScope } from './verify-release-product-scope.mjs';
 
@@ -14,6 +15,10 @@ const git = (...args) => execFileSync('git', ['--no-replace-objects', ...args], 
 const scope = plan => plan.scope.map(row => row.slice(0, 3));
 const evidencePath = path => /^docs\/(?:evidence|reviews)\//.test(path);
 const backlogPath = /^backlog\/(?:tasks|completed)\/task-[\d.]+ - .+\.md$/;
+const productInputs = paths => paths.some(path => /^package(?:-lock)?\.json$/.test(path) ||
+  /^(?:src|data|config|scripts|tools|art|experiments|\.github)\//.test(path));
+const checkoutIdentity = () => git('rev-parse', 'HEAD', 'HEAD^1', 'HEAD^2', 'HEAD^{tree}').trimEnd().split('\n');
+const changedPaths = (base, target) => git('diff', '--name-only', '--no-renames', '-z', base, target, '--').split('\0').filter(Boolean);
 const readIfPresent = (ref, path) => git('ls-tree', '-z', ref, '--', path) ? git('show', `${ref}:${path}`) : '';
 
 function assignments(paths, ref, version, readTask) {
@@ -33,55 +38,166 @@ function declaration(body, key, expression) {
   return lines.length === 1 ? lines[0].match(expression) : null;
 }
 
-export async function auditFrozenProductReview(pr, tree, version, request, repository, fixTask) {
-  const scope = declaration(pr.body ?? '', 'Product-Scope',
-    /^Product-Scope: (v[\d.]+) \| (TASK-\d+(?:\.\d+)*) \| ([^|\r\n]+) \| (https:\/\/github\.com\/[^|\s]+)$/);
-  const signed = declaration(pr.body ?? '', 'Product-Review', /^Product-Review: ([1-9]\d*)$/);
-  const id = Number(signed?.[1]);
-  const evidence = scope?.[4].slice(`https://github.com/${repository}/`.length);
+function matchesApprovedClause(document, path, version, taskId, behavior) {
+  if (document?.type !== 'file' || document.path !== path || document.encoding !== 'base64' ||
+      typeof document.content !== 'string') return false;
+  const text = Buffer.from(document.content, 'base64').toString('utf8');
+  if (backlogPath.test(path)) {
+    const task = readTaskHeader(text);
+    const description = text.match(/<!-- SECTION:DESCRIPTION:BEGIN -->([\s\S]*?)<!-- SECTION:DESCRIPTION:END -->/)?.[1] ?? '';
+    const criteria = text.match(/<!-- AC:BEGIN -->([\s\S]*?)<!-- AC:END -->/)?.[1] ?? '';
+    const clauses = [description, criteria].flatMap(block => block.split(/\r?\n/).flatMap(line => {
+      const match = line.match(/^(?:任务：|\s*- \[[ xX]\] #\d+ )(.+)$/);
+      return match ? [match[1].trim()] : [];
+    }));
+    return task.id === taskId && task.labels.includes(version) && !task.metadataErrors.length && clauses.includes(behavior);
+  }
+  if (path === planPath(version)) {
+    const plan = readVersionPlan(text);
+    return plan?.version === version && plan.scope.some(([name, dimension, tasks]) =>
+      dimension === 'Scope' && name === behavior && tasks?.match(/\bTASK-\d+(?:\.\d+)*\b/g)?.includes(taskId));
+  }
+  if (path === 'docs/design/ui-references.json') {
+    const rows = JSON.parse(text).references;
+    return Array.isArray(rows) && rows.filter(row => row.targetVersion === version && row.backlogTask === taskId &&
+      row.status === 'APPROVED' && row.note === behavior).length === 1;
+  }
+  return false;
+}
+
+async function verifyApprovalReview(api, repository, pr, scope, native, request) {
+  const [, pull, approvalId] = native;
+  if (!Number.isSafeInteger(Number(pull)) || !Number.isSafeInteger(Number(approvalId)) || Number(pull) === pr.number ||
+      !Number.isSafeInteger(pr.user?.id) || !Number.isFinite(Date.parse(pr.created_at))) {
+    throw new Error('Product approval must come from a separate decision PR');
+  }
+  const [source, approval] = await Promise.all([
+    request(`${api}/pulls/${pull}`), request(`${api}/pulls/${pull}/reviews/${approvalId}`),
+  ]);
+  if (source?.number !== Number(pull) || source.merged !== true || source.base?.ref !== 'develop' ||
+      !projectRepositoryMatches(source.base.repo, repository) || !sha.test(source.head?.sha ?? '') ||
+      !sha.test(source.merge_commit_sha ?? '') || !(Date.parse(source.merged_at) < Date.parse(pr.created_at)) ||
+      approval?.id !== Number(approvalId) || approval.commit_id !== source.head.sha || approval.user?.id === pr.user.id ||
+      approval.user?.id === source.user?.id || !['COMMENTED', 'APPROVED'].includes(approval.state) ||
+      !(Date.parse(approval.submitted_at) < Date.parse(pr.created_at)) ||
+      !approval.body?.split(/\r?\n/).includes(`Product change approved: ${scope[1]} ${scope[2]} ${scope[3]}`)) {
+    throw new Error('Product scope must have its own approved decision for this version and behavior before the implementation PR');
+  }
+  await requireReleaseCoordinator(repository, approval.user, request);
+  const path = planPath(scope[1]), merge = source.merge_commit_sha;
+  const [ancestry, document] = await Promise.all([
+    request(`${api}/compare/${merge}...${pr.base.sha}?per_page=1`),
+    request(`${api}/contents/${path}?ref=${merge}`),
+  ]);
+  const record = `<!-- product-approval: ${scope[1]} | ${scope[2]} | ${scope[3]} -->`;
+  if (ancestry?.merge_base_commit?.sha !== merge || !['ahead', 'identical'].includes(ancestry.status) ||
+      document?.type !== 'file' || document.path !== path || document.encoding !== 'base64' ||
+      typeof document.content !== 'string' ||
+      !Buffer.from(document.content, 'base64').toString('utf8').split(/\r?\n/).includes(record)) {
+    throw new Error('Product approval must also exist in the already-merged version plan');
+  }
+}
+
+const productScopeLine = /^Product-Scope: (v[\d.]+) \| (TASK-\d+(?:\.\d+)*) \| ([^|\r\n]+) \| (https:\/\/github\.com\/[^|\s]+)$/;
+
+async function verifyClaim(api, repository, pr, version, scope, request) {
+  const prefix = `https://github.com/${repository}/`;
+  if (scope?.[1] !== version || !scope[4].startsWith(prefix)) {
+    throw new Error('Product scope requires the current version, task, observed behavior and fixed approval source');
+  }
+  const evidence = scope[4].slice(prefix.length);
   const pinned = /^blob\/([a-f0-9]{40})\/((?:backlog\/(?:tasks|completed)\/task-|docs\/(?:versions\/|design\/))[^#?]+)$/.exec(evidence);
   const native = /^pull\/([1-9]\d*)#pullrequestreview-([1-9]\d*)$/.exec(evidence);
-  if (scope?.[1] !== version || !scope[4].startsWith(`https://github.com/${repository}/`) ||
-      (!pinned && !native) || (fixTask && scope[2] !== fixTask) ||
-      !Number.isSafeInteger(id) || !sha.test(tree ?? '')) {
-    throw new Error('Frozen product changes require a version, task, actual behavior, fixed approval source and native review');
+  if (native) return verifyApprovalReview(api, repository, pr, scope, native, request);
+  if (!pinned) throw new Error('Product scope requires a fixed protected source or separate native Owner decision');
+  const [, ref, path] = pinned;
+  const [ancestry, document] = await Promise.all([
+    request(`${api}/compare/${ref}...${pr.base.sha}?per_page=1`),
+    request(`${api}/contents/${path}?ref=${ref}`),
+  ]);
+  if (ancestry?.merge_base_commit?.sha !== ref || !['ahead', 'identical'].includes(ancestry.status) ||
+      !matchesApprovedClause(document, decodeURIComponent(path), version, scope[2], scope[3])) {
+    throw new Error('Product approval source must cite an exact approved clause in protected release history');
   }
+}
+
+function productDeclaration(pr, version, tree, { fixTask, develop } = {}) {
+  const body = (pr.body ?? '').replace(/<!--[\s\S]*?(?:-->|$)/g, '');
+  const rows = body.split(/\r?\n/).filter(line => line.startsWith('Product-Scope:'));
+  const claims = rows.map(line => productScopeLine.exec(line));
+  const none = develop && rows.length === 1 && rows[0] === `Product-Scope: ${version} | none`;
+  const id = Number(declaration(body, 'Product-Review', /^Product-Review: ([1-9]\d*)$/)?.[1]);
+  if (!rows.length || new Set(rows).size !== rows.length || (!none && claims.some(row => row?.[1] !== version)) ||
+      (fixTask && !claims.some(row => row?.[2] === fixTask)) || !Number.isSafeInteger(id) || !sha.test(tree ?? '')) {
+    throw new Error('Product changes require a version, task, actual behavior, fixed approval source and native review');
+  }
+  return { id, proof: createHash('sha256').update(rows.join('\n')).digest('hex'), claims: none ? [] : claims };
+}
+
+async function productReview(pr, tree, version, request, repository, { fixTask, candidate } = {}) {
+  const { id, proof, claims } = productDeclaration(pr, version, tree, { fixTask, develop: Boolean(candidate) });
   const api = `/repos/${repository}`;
-  const proof = createHash('sha256').update(scope[0]).digest('hex');
   const review = await request(`${api}/pulls/${pr.number}/reviews/${id}`);
-  if (review?.id !== id || review.commit_id !== pr.head.sha || !['APPROVED', 'COMMENTED'].includes(review.state) ||
-      !review.body?.split(/\r?\n/).includes(`Release product scope verified: ${version} ${pr.base.sha} ${tree} ${proof}`)) {
-    throw new Error('Frozen product changes lack independent native review of their exact behavior, HEAD, BASE and tree');
+  if (review?.id !== id || review.commit_id !== pr.head.sha || !['APPROVED', 'COMMENTED'].includes(review.state)) {
+    throw new Error('Product scope lacks a native review of the exact HEAD');
   }
   await requireReleaseCoordinator(repository, review.user, request);
-  if (pinned) {
-    const [, ref, source] = pinned;
-    const [ancestry, document] = await Promise.all([
-      request(`${api}/compare/${ref}...${pr.base.sha}?per_page=1`),
-      request(`${api}/contents/${source}?ref=${ref}`),
-    ]);
-    if (ancestry?.merge_base_commit?.sha !== ref || !['ahead', 'identical'].includes(ancestry.status) ||
-        document?.type !== 'file' || document.path !== decodeURIComponent(source)) {
-      throw new Error('Product approval source must already exist in protected release history');
+  if (candidate) {
+    const report = parseIndependentAiReview(review.body);
+    const sourceCommit = await request(`${api}/git/commits/${candidate}`);
+    const errors = independentAiReportErrors(report, { repository: pr.base.repo, pr, baseSha: pr.base.sha,
+      sourceCommit, coordinator: review.user });
+    if (errors.length || report.reviewedTreeSha !== tree || report.productScope?.version !== version ||
+        report.productScope?.declarationSha256 !== proof) {
+      throw new Error('Develop product scope lacks an exact independent AI review of its actual behavior and declaration');
     }
-  } else {
-    const [, pull, approvalId] = native;
-    const approval = await request(`${api}/pulls/${pull}/reviews/${approvalId}`);
-    if (Number(approvalId) === id || approval?.id !== Number(approvalId) ||
-        !['COMMENTED', 'APPROVED'].includes(approval.state) ||
-        !approval.body?.split(/\r?\n/).includes(`Product change approved: ${version} ${scope[2]} ${scope[3]}`)) {
-      throw new Error('Product scope must have its own approved decision for this version and behavior');
-    }
-    await requireReleaseCoordinator(repository, approval.user, request);
+  } else if (!review.body?.split(/\r?\n/).includes(`Release product scope verified: ${version} ${pr.base.sha} ${tree} ${proof}`)) {
+    throw new Error('Frozen product changes lack independent native review of their exact behavior, HEAD, BASE and tree');
   }
+  await Promise.all(claims.map(scope => verifyClaim(api, repository, pr, version, scope, request)));
   return { productReviewId: id };
 }
 
+export const auditFrozenProductReview = (pr, tree, version, request, repository, fixTask) =>
+  productReview(pr, tree, version, request, repository, { fixTask });
+
+export async function auditDevelopProductScope(pr, repository, request, {
+  checkout = checkoutIdentity, read = readIfPresent, files = changedPaths,
+} = {}) {
+  const base = pr?.base?.sha, head = pr?.head?.sha;
+  if (pr?.base?.ref !== 'develop' || !projectRepositoryMatches(pr.base.repo, repository) ||
+      ![base, head].every(value => sha.test(value ?? ''))) throw new Error('Invalid develop product PR identity');
+  // Install from the protected base. A proposed change cannot disable its gate.
+  if (!read(base, 'scripts/verify-release-product-scope.mjs')) return null;
+  const version = 'v2.2.0';
+  const plan = readVersionPlan(read(base, planPath(version)));
+  if (!requiresProductScope(plan)) throw new Error('Protected v2.2.0 product scope plan is unavailable');
+  if (plan.closed) return null;
+  const [candidate, checkoutBase, checkoutHead, tree] = checkout();
+  if (!sha.test(candidate ?? '') || checkoutBase !== base || checkoutHead !== head) {
+    throw new Error('Develop product PR checkout differs from HEAD/BASE');
+  }
+  if (!productInputs(files(base, candidate))) return null;
+  const pullPath = `/repos/${repository}/pulls/${pr.number}`;
+  const live = await request(pullPath);
+  if (live?.number !== pr.number || live.base?.ref !== 'develop' || live.base.sha !== base || live.head?.sha !== head ||
+      live.merge_commit_sha !== candidate || !projectRepositoryMatches(live.base.repo, repository)) {
+    throw new Error('Develop product PR changed during governance check');
+  }
+  const result = await productReview(live, tree, version, request, repository, { candidate });
+  const current = await request(pullPath);
+  if (current?.state !== 'open' || current.base?.sha !== base || current.head?.sha !== head ||
+      current.merge_commit_sha !== candidate || current.body !== live.body) {
+    throw new Error('Develop product PR changed during governance check');
+  }
+  return result;
+}
+
 export async function auditReleaseFreeze(pr, repository, request, {
-  checkout = () => git('rev-parse', 'HEAD', 'HEAD^1', 'HEAD^2', 'HEAD^{tree}').trimEnd().split('\n'),
+  checkout = checkoutIdentity,
   read = (ref, path) => git('show', `${ref}:${path}`),
   readTask = readIfPresent,
-  files = (base, target) => git('diff', '--name-only', '--no-renames', '-z', base, target, '--').split('\0').filter(Boolean),
+  files = changedPaths,
   tasks = () => readBacklogRecords('.').filter(task => task.location !== 'archive'),
   refresh = pull => request(`/repos/${repository}/pulls/${pull.number}`),
 } = {}) {
@@ -105,7 +221,7 @@ export async function auditReleaseFreeze(pr, repository, request, {
   const body = live.body ?? '';
   const fix = declaration(body, 'Release-Fix', /^Release-Fix: (TASK-\d+(?:\.\d+)*) \| ([^|\r\n]+) \| ([^|\r\n]+)$/);
   const changed = files(base, candidate);
-  const verifyProduct = () => requiresProductScope(original) && changed.some(file => /^package(?:-lock)?\.json$/.test(file) || /^(?:src|data|config|scripts|tools|art|experiments|\.github)\//.test(file))
+  const verifyProduct = () => requiresProductScope(original) && productInputs(changed)
     ? auditFrozenProductReview(live, tree, version, request, repository, fix?.[1]) : {};
   const oldAssignments = assignments(changed, base, version, readTask);
   const newAssignments = assignments(changed, candidate, version, readTask);

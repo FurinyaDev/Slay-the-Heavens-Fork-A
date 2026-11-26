@@ -3,7 +3,7 @@ import { createHash } from 'node:crypto';
 import { restoreExactFixtureHunks } from './exact-fixture-hunks.mjs';
 
 const content = readFileSync(new URL('../fixtures/version-governance-source.json', import.meta.url), 'utf8').replaceAll('\r\n', '\n');
-if (createHash('sha256').update(content).digest('hex') !== '61106a4abf5a75b8999db9fd388caa513aca09142f1181b36a7be2c281bb4fe9') {
+if (createHash('sha256').update(content).digest('hex') !== '2923101edbb32164dcb75f7ac8653868cfd25f7b283ac243ee303ca3243800d7') {
   throw new Error('Exact pre-governance tool evidence differs');
 }
 const proofs = JSON.parse(content);

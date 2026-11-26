@@ -2,17 +2,17 @@
   "scripts/check-pr-history.mjs": {
     "path": "scripts/check-pr-history.mjs",
     "beforeSha256": "521edad4de907232928e9f0fee1414bf88cdfde6bab8aa8400502ceb646d45d9",
-    "afterSha256": "8e451cc5e4fce89be7c332f632bd00a6fb4aa0c911b2f813aa9f62b6f95c5569",
+    "afterSha256": "f7a99721bc5ce32a247903a2f0e1efbe34290f86236e759d083f4811c1cefcd2",
     "hunks": [
       {
         "at": 2,
         "before": "import { pathToFileURL } from 'node:url';\n",
-        "after": "import { pathToFileURL } from 'node:url';\nimport { auditReleaseFreeze } from './check-release-freeze.mjs';\n"
+        "after": "import { pathToFileURL } from 'node:url';\nimport { auditDevelopProductScope, auditReleaseFreeze } from './check-release-freeze.mjs';\n"
       },
       {
         "at": 64,
         "before": "    console.log(JSON.stringify(await auditHistory(event, process.env.GITHUB_REPOSITORY, request)));\n  } catch (error) { console.error(error.message); process.exitCode = 1; }",
-        "after": "    console.log(JSON.stringify(await auditHistory(event, process.env.GITHUB_REPOSITORY, request)));\n    if (event.pull_request?.base.ref.startsWith('release/')) {\n      console.log(JSON.stringify(await auditReleaseFreeze(event.pull_request, process.env.GITHUB_REPOSITORY, request)));\n    }\n  } catch (error) { console.error(error.message); process.exitCode = 1; }"
+        "after": "    console.log(JSON.stringify(await auditHistory(event, process.env.GITHUB_REPOSITORY, request)));\n    if (event.pull_request?.base.ref === 'develop') {\n      const scope = await auditDevelopProductScope(event.pull_request, process.env.GITHUB_REPOSITORY, request);\n      if (scope) console.log(JSON.stringify(scope));\n    }\n    if (event.pull_request?.base.ref.startsWith('release/')) {\n      console.log(JSON.stringify(await auditReleaseFreeze(event.pull_request, process.env.GITHUB_REPOSITORY, request)));\n    }\n  } catch (error) { console.error(error.message); process.exitCode = 1; }"
       }
     ]
   },

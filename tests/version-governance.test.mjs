@@ -1,8 +1,9 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import test from 'node:test';
-import { auditFrozenProductReview, auditReleaseFreeze } from '../scripts/check-release-freeze.mjs';
+import { auditDevelopProductScope, auditFrozenProductReview, auditReleaseFreeze } from '../scripts/check-release-freeze.mjs';
 import { auditVersionGovernance, planPath, readVersionPlan } from '../scripts/version-governance.mjs';
+import { INDEPENDENT_AI_REVIEW_MARKER } from '../scripts/independent-ai-review.mjs';
 import { auditRoadmap } from '../scripts/verify-backlog-roadmap.mjs';
 import { verifyReleaseAdmission } from '../scripts/verify-release-admission.mjs';
 import { acceptanceRecord, verifyReleaseAcceptance } from '../scripts/verify-release-acceptance.mjs';
@@ -241,20 +242,28 @@ test('native product review admits approved width adaptation and necessary detai
   const cases = [
     { number: 984, task: 'TASK-115.6', behavior: 'wide viewport touch coordinate adaptation', url: taskUrl },
     { number: 981, task: 'TASK-115.10', behavior: 'correct detail writes without altering targeting',
-      url: `https://github.com/${repo}/pull/981#pullrequestreview-81` },
+      url: `https://github.com/${repo}/pull/81#pullrequestreview-81` },
   ];
   for (const { number, task, behavior, url } of cases) {
     const scope = `Product-Scope: ${version} | ${task} | ${behavior} | ${url}`;
-    const live = { ...pr, number, body: `${scope}\nProduct-Review: 71` };
+    const live = { ...pr, number, created_at: '2026-11-27T00:00:00Z', user: { id: 8 }, body: `${scope}\nProduct-Review: 71` };
     const proof = createHash('sha256').update(scope).digest('hex');
     const review = { id: 71, commit_id: head, state: 'COMMENTED', user,
       body: `Release product scope verified: ${version} ${base} ${candidate} ${proof}` };
-    const approval = { id: 81, state: 'COMMENTED', user, body: `Product change approved: ${version} ${task} ${behavior}` };
-    const request = ({ decision = approval, ancestor = approvalRef, permission = 'admin' } = {}) => async endpoint => {
+    const approval = { id: 81, state: 'COMMENTED', user, commit_id: base, submitted_at: '2026-11-25T00:00:00Z',
+      body: `Product change approved: ${version} ${task} ${behavior}` };
+    const source = { number: 81, merged: true, merged_at: '2026-11-26T00:00:00Z', merge_commit_sha: approvalRef,
+      base: { ref: 'develop', repo: repository }, head: { sha: base }, user: { id: 9 } };
+    const taskDocument = `---\nid: ${task}\ntitle: Width\nstatus: In Progress\nlabels: [${version}]\ndependencies: []\n---\n` +
+      `<!-- SECTION:DESCRIPTION:BEGIN -->\n任务：${behavior}\n<!-- SECTION:DESCRIPTION:END -->`;
+    const sourceDocument = original + `\n<!-- product-approval: ${version} | ${task} | ${behavior} -->\n`;
+    const request = ({ decision = approval, decisionSource = source, ancestor = approvalRef, permission = 'admin', text } = {}) => async endpoint => {
       if (endpoint.endsWith('/reviews/71')) return review;
       if (endpoint.endsWith('/reviews/81')) return decision;
+      if (endpoint.endsWith('/pulls/81')) return decisionSource;
       if (endpoint.includes('/compare/')) return comparison(ancestor);
-      if (endpoint.includes('/contents/')) return { type: 'file', path: taskPath };
+      if (endpoint.includes('/contents/')) return { type: 'file', encoding: 'base64', path: number === 984 ? taskPath : path,
+        content: Buffer.from(text ?? (number === 984 ? taskDocument : sourceDocument)).toString('base64') };
       if (endpoint.endsWith('/permission')) return { permission, user };
       return unexpectedRequest();
     };
@@ -264,9 +273,24 @@ test('native product review admits approved width adaptation and necessary detai
     await assert.rejects(auditFrozenProductReview(live, candidate, version, request({ permission: 'write' }), repo, task), /lacks approval/);
     if (number === 984) {
       await assert.rejects(auditFrozenProductReview(live, candidate, version, request({ ancestor: head }), repo, task), /protected release history/);
-    } else {
+      const postHoc = taskDocument.replace(`任务：${behavior}`, '任务：wide layout only') +
+        `\n<!-- SECTION:NOTES:BEGIN -->\n${behavior}\n<!-- SECTION:NOTES:END -->`;
+      await assert.rejects(auditFrozenProductReview(live, candidate, version, request({ text: postHoc }), repo, task), /exact approved clause/);
       await assert.rejects(auditFrozenProductReview(live, candidate, version,
-        request({ decision: { ...approval, body: approval.body.replace(version, 'v2.3.0') } }), repo, task), /own approved decision/);
+        request({ text: taskDocument.replace(task, 'TASK-15') }), repo, task), /exact approved clause/);
+    } else {
+      for (const decision of [
+        { ...approval, body: approval.body.replace(version, 'v2.3.0') },
+        { ...approval, user: live.user },
+        { ...approval, user: source.user },
+        { ...approval, commit_id: head },
+        { ...approval, submitted_at: live.created_at },
+      ]) {
+        await assert.rejects(auditFrozenProductReview(live, candidate, version,
+          request({ decision }), repo, task), /own approved decision/);
+      }
+      await assert.rejects(auditFrozenProductReview(live, candidate, version,
+        request({ text: original }), repo, task), /already-merged version plan/);
     }
   }
 });
@@ -287,4 +311,42 @@ test('candidate configuration mismatch cannot yield an admission receipt', async
   await assert.rejects(verifyReleaseAdmission(version, head, request, { ...checks, verifyProduct: async () => {
     throw new Error('formal profile rejected');
   } }), /formal profile rejected/);
+});
+
+test('develop product changes require the existing native independent report and immutable semantic scope', async () => {
+  const actor = { id: 111138384, login: 'owner' };
+  const scope = `Product-Scope: ${version} | none`;
+  const tree = 'd'.repeat(40);
+  const live = { ...pr, state: 'open', draft: false, merged: false, mergeable: true,
+    head: { sha: head, repo: repository }, base: { sha: base, ref: 'develop', repo: repository },
+    merge_commit_sha: candidate, body: `${scope}\nProduct-Review: 71` };
+  const report = { schemaVersion: 1, kind: 'independent-ai-review', repositoryId: repository.id, repositoryFullName: repo,
+    prNumber: live.number, reviewedHeadSha: head, reviewedBaseSha: base, reviewedTreeSha: tree,
+    conclusion: 'pass', unresolved: [], reviewerAgent: '/root/review', implementationAgents: ['/root/impl'],
+    coordinator: { ...actor, verifiedActualSessions: true },
+    provenance: { kind: 'coordinator-verified-agent-session', reviewId: 'review', sessionId: 'session' },
+    productScope: { version, declarationSha256: createHash('sha256').update(scope).digest('hex') } };
+  const options = {
+    checkout: () => [candidate, base, head, tree],
+    read: (ref, file) => { assert.equal(ref, base); return file === path ? original.replace('TASK-10 -->', 'TASK-115 -->') : 'installed'; },
+    files: () => ['config/formal-build.json'],
+  };
+  const request = ({ current = live, receipt = report, signer = actor } = {}) => async endpoint => {
+    if (endpoint.endsWith(`/pulls/${live.number}`)) return current;
+    if (endpoint.endsWith('/reviews/71')) return { id: 71, commit_id: head, state: 'COMMENTED', user: signer,
+      body: INDEPENDENT_AI_REVIEW_MARKER + '\n' + JSON.stringify(receipt) };
+    if (endpoint.endsWith('/permission')) return { permission: 'admin', user: signer };
+    if (endpoint.endsWith(`/git/commits/${candidate}`)) return { sha: candidate, tree: { sha: tree }, parents: [{ sha: base }, { sha: head }] };
+    return unexpectedRequest();
+  };
+  assert.deepEqual(await auditDevelopProductScope(live, repo, request(), options), { productReviewId: 71 });
+  await assert.rejects(auditDevelopProductScope(live, repo, request({ current: { ...live, body: 'Backlog: TASK-115.6\nTests: 34/34' } }), options), /require a version/);
+  for (const receipt of [
+    { ...report, reviewerAgent: '/root/impl' },
+    { ...report, reviewedBaseSha: head },
+    { ...report, productScope: { ...report.productScope, version: 'v2.3.0' } },
+    { ...report, productScope: { ...report.productScope, declarationSha256: 'a'.repeat(64) } },
+  ]) await assert.rejects(auditDevelopProductScope(live, repo, request({ receipt }), options), /exact independent AI review/);
+  await assert.rejects(auditDevelopProductScope(live, repo, request({ signer: { id: 7, login: 'implementer' } }), options), /trusted coordinator identity/);
+  assert.equal(await auditDevelopProductScope(live, repo, unexpectedRequest, { ...options, files: () => ['tests/lua/battle.lua'] }), null);
 });

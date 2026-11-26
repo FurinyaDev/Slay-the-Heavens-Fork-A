@@ -67,7 +67,7 @@ Product-Scope: v2.2.0 | TASK-编号 | 实际玩家行为 | 固定批准来源链
 Product-Review: 原生评审ID
 ```
 
-批准来源指向冻结基线已有的 Backlog 正文、正式规划、已批准设计，或单独的原生 Owner 决策。显式决策在原生 Review 写 `Product change approved: v2.2.0 TASK-编号 实际玩家行为`，协调者核对 Owner 决定原件。独审双向对照实际差异与批准范围后，在当前 HEAD 的原生 Review 写 `Release product scope verified: v2.2.0 <BASE> <合并树> <Product-Scope整行SHA256>`。线上脚本重读批准来源、合并树、账号权限和评审。配置与运行回执在候选变化时重跑。
+固定链接指向同一版本及任务的原 Backlog 任务段或验收项、正式规划 Scope 行、UI 参考索引 APPROVED 条目。`Product-Scope` 引用批准条款原文，正文另说明实际操作和差异。新的 Owner 决定先在单独的规划 PR 登记 `<!-- product-approval: v2.2.0 | TASK-编号 | 实际玩家行为 -->`，并由有权限且独立于决定 PR 和实施 PR 作者的账号在精确 HEAD 提交 `Product change approved: v2.2.0 TASK-编号 实际玩家行为` 原生 Review。批准 PR 先合入受保护的 develop。独审双向对照实际差异与批准范围后，在当前 HEAD 的原生 Review 写 `Release product scope verified: v2.2.0 <BASE> <合并树> <Product-Scope整行SHA256>`。线上脚本重读批准来源、合并树、账号权限和评审。配置与运行回执在候选变化时重跑。每项行为使用一行 `Product-Scope`，多行时以 LF 连接后计算 SHA-256。
 
 经明确批准的例外，在正式规划加入 `<!-- scope-exception: #PR编号 | 决策摘要 -->`，保留相应 Backlog 决策。协调者核对实际独立审查，在准确 HEAD 提交 `Release scope approved: 决策摘要` 原生 Review。将 `Release-Exception: Review编号 | 决策摘要` 填入 PR 正文，再重跑该 HEAD 的 Quality。Quality 重新读取当前 PR 正文，校验实际合成树、原生 Review 与当前协调者权限。
 
