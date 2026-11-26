@@ -137,7 +137,7 @@ else
  local s,uid
  for seed=1,100 do
   local deck={'cut_through_fate'};for i=1,6 do deck[#deck+1]='defend'end
-  s=C.new(W.withFoundationCards(D),{seed=seed,enemies={'cultist'},enableStances=true,deck=deck})
+  s=C.new(W.withFoundationCards(D),{seed=seed,enemies={'raven_adept'},enableStances=true,deck=deck})
   for _,card in ipairs(s.hand)do if card.cardId=='cut_through_fate'then uid=card.uid end end
   if uid then break end
  end
