@@ -7,19 +7,33 @@ import {discoverSources,dependencyCycles} from '../scripts/lua-quality-metrics.m
 import {reviewResponsibilityComplexity} from '../scripts/check-lua-static.mjs';
 import {m7FinalBefore,preM7FinalSource} from './helpers/m7-core-final-source-inverse.mjs';
 import {finalCoreVm} from './helpers/m7-core-final-vm.mjs';
+import {beforeKnownMasterBackflowSource} from './helpers/master-backflow-source.mjs';
+import {readReviewedSelectionSource} from './helpers/replay-reviewed-selection.mjs';
 const source=p=>readFileSync(p,'utf8').replaceAll('\r\n','\n');
 const v4='src/lua/abyss_original_v4.lua',combat='src/lua/abyss_combat.lua';
 test('the final source epoch freshly authenticates all three complete Git sources and rejects partial owners',()=>{
+ const currentCombat=source(combat);
+ const replayCombat=readReviewedSelectionSource(combat);
+ assert.notEqual(beforeKnownMasterBackflowSource(combat,currentCombat),currentCombat,'authenticate the production Combat successor');
+ assert.notEqual(replayCombat,currentCombat,'frozen M7 Combat predates the production successor');
+ const project=(path,input,{readSource=source}={})=>preM7FinalSource(path,
+  path===combat&&input===currentCombat?replayCombat:input,{readSource:owner=>{
+   const witness=readSource(owner);
+   if(owner!==combat)return witness;
+   assert.equal(witness,currentCombat,'final M7 linked owner identity: '+owner);
+   return replayCombat;
+  }});
  for(const name of Object.keys(m7FinalBefore.files)){
   const path='src/lua/'+name+'.lua',current=source(path);
-  assert.equal(preM7FinalSource(path,current),m7FinalBefore.files[name].source);
-  for(const missing of Object.keys(m7FinalBefore.files))for(const drift of ['foreign','missing','null','throw'])assert.throws(()=>preM7FinalSource(path,current,{readSource:p=>{
+  assert.equal(project(path,current),m7FinalBefore.files[name].source);
+  assert.throws(()=>project(path,current,{readSource:p=>p===combat?replayCombat:source(p)}),/linked owner/);
+  for(const missing of Object.keys(m7FinalBefore.files))for(const drift of ['foreign','missing','null','throw'])assert.throws(()=>project(path,current,{readSource:p=>{
    if(p!=='src/lua/'+missing+'.lua')return source(p);
    if(drift==='throw')throw Error('reader sentinel');
    return drift==='foreign'?source(p)+'\n':drift==='null'?null:undefined;
   }}),/linked owner/);
   let reads=0;const readSource=()=>{reads++;throw Error('unexpected read');};
-  for(const value of [m7FinalBefore.files[name].source,current+'\n',null,''])assert.equal(preM7FinalSource(path,value,{readSource}),value);
+  for(const value of [m7FinalBefore.files[name].source,current+'\n',null,''])assert.equal(project(path,value,{readSource}),value);
   assert.equal(reads,0);
  }
 });
