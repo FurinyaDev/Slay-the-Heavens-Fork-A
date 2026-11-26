@@ -1,16 +1,19 @@
 ---
 id: TASK-115.5
 title: 修复阻塞正常游玩的严重缺陷
-status: To Do
+status: In Progress
 assignee:
   - '@Furinya'
 created_date: '2026-11-25 21:00'
-updated_date: '2026-11-26 03:45'
+updated_date: '2026-11-26 03:52'
 labels:
   - v2.2.0
   - release-scope
 milestone: m-8
 dependencies: []
+references:
+  - 'https://github.com/FurinyaWorks/Slay-the-Heavens/pull/772'
+  - 'https://github.com/FurinyaWorks/Slay-the-Heavens/pull/969'
 documentation:
   - docs/versions/V2.2.0-RELEASE.md
 parent_task_id: TASK-115
@@ -35,3 +38,9 @@ ordinal: 212000
 <!-- AC:BEGIN -->
 - [ ] #1 正式配置中已确认的阻塞缺陷逐条有回归和独立复验，覆盖正常完成两幕的玩家路径
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+独立复核 develop 8a5f8681。正式生成配置的 Host 用 #969 原始快速拖牌夹具通过 20/20。小屋首领奖励的受控实际结算通过，奖励可读且只结算一次并进入第二幕。原默认生成配置下，退出、重开和结算重试夹具通过。未在这些定向路径复现现行严重阻塞。最终真实有声候选的自然两幕通关、PC 拖牌延迟、手机输入与长时稳定性待验，验收项保持未勾。
+<!-- SECTION:NOTES:END -->
