@@ -800,7 +800,7 @@ export function beforeReleaseAdditionalInventory(paths,kind,read=readFileSync){
   const live=read(path,'utf8');
   if(kind==='lua'&&exactCurrentReleaseLuaFixture(path,live))continue;
   const predecessor=path===gilCandidateTest?beforeKnownMasterBackflowSource(path,live):live;
-  const source=beforeFormalAct2ReleaseTest(path,beforeDevelopBackflow(path,predecessor));
+  const source=beforeFormalAct2ReleaseTest(path,beforeDevelopBackflow(path,beforeVersionGovernanceSource(path,predecessor)));
   assert(typeof source==='string'&&!source.includes('\r\r\n')&&hash(normalize(source))===sha,'fresh added inventory source: '+path);
  }
  return paths.filter(path=>!Object.hasOwn(newerTests[kind],path));
