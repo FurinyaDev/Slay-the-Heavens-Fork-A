@@ -1,10 +1,11 @@
 ---
 id: TASK-115.7.5
 title: 把透明缺陷检测接入美术生产质量门禁
-status: To Do
+status: In Progress
 assignee:
   - '@Furinya'
 created_date: '2026-11-25 21:02'
+updated_date: '2026-11-26 00:29'
 labels:
   - v2.2.0
 milestone: m-8
@@ -12,6 +13,7 @@ dependencies:
   - TASK-115.7.4
 references:
   - docs/design/characters/PRODUCTION.md
+  - 'https://github.com/FurinyaWorks/Slay-the-Heavens/pull/995'
 documentation:
   - docs/versions/V2.2.0-RELEASE.md
 parent_task_id: TASK-115.7
@@ -36,3 +38,11 @@ ordinal: 219000
 <!-- AC:BEGIN -->
 - [ ] #1 正例、真实缺陷负例及预算检查可重复运行，独立评审确认生产入口
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+已实现准入检测及批准输入对照。独立评审确认拒绝未批准的自证掩模。正式 GIL 同包绑定、可信 Simulator 采集回执和对照截图来源仍待复审。
+
+#995 已按独立评审 6066774297 的精确树合入 develop 454b589793c8d3a171ccbcaee0db1c809136c683。单元及正式候选来源契约通过。Fork A 45726412067 第二次通过 LFS 恢复和 Advisory Quick，扩展受影响步骤此次跳过。待获批原图、掩模、正式 GIL 与实际捕获。43 个资产验收保持未勾。
+<!-- SECTION:NOTES:END -->
