@@ -1149,8 +1149,52 @@ export function currentReviewedSelectionRead(read){
   return source;
  };
 }
+// Keep the original calibration fixture available to its sealed source views.
+const cursesReceiptFixture={
+ "path": "tests/ci-complete-calibration.test.mjs",
+ "afterSha256": "27c89e80fa88fddb6c7f0c2efaf270d7292e1279307d4e2cec521cfb4ce3b93a",
+ "beforeSha256": "116e479ab202d2012dc4910de98ace5a8f5f5ab544ad6116abe35ec08aeb03fc",
+ "hunks": [
+  {
+   "at": 8,
+   "before": "import {cursesPlanningFloors,cursesGateProof,preCursesGateSource} from './helpers/curses-ci-planning.mjs';",
+   "after": "import {cursesPlanningFloors,cursesGateProof,preCursesGateSource} from './helpers/curses-ci-planning.mjs';\nimport {historicalCursesReceiptReader} from './helpers/curses-historical-custody.mjs';"
+  },
+  {
+   "at": 1469,
+   "before": "  assert.deepEqual(receipt.inputHashes,receipt.afterInputHashes);",
+   "after": "  assert.deepEqual(receipt.inputHashes,receipt.afterInputHashes);\n  const readReceiptInput=historicalCursesReceiptReader(file,bytes,rawBootstrapReadFileSync);"
+  },
+  {
+   "at": 1472,
+   "before": "   assert.equal(replayHash(path,sha,()=>{const raw=diskReadFileSync(path);return path.endsWith('.gz')?raw:beforeCharacterPreparationSource(path,receiptToolingSource(path,raw.toString('utf8'),'curses')).replaceAll('\\r\\n','\\n');}),sha,path);",
+   "after": "   assert.equal(hash(readReceiptInput(path,sha)),sha,path);"
+  }
+ ]
+};
+const cursesReceiptSources=Object.freeze({
+ [cursesReceiptFixture.path]:["27c89e80fa88fddb6c7f0c2efaf270d7292e1279307d4e2cec521cfb4ce3b93a", "a69967b62ef5a2df1a36d3589901d75b4fe75634"],
+ 'tests/helpers/curses-historical-custody.mjs':["a068636ba187c353f69d8ec19d432cb052ea99f455a58feb2f6973bd63e60aaa", "2ac231d4d269e8138cd1c0e6bf3fe77db576f4f0"],
+});
+function beforeCursesReceiptFixture(path,source){
+ if(path!==cursesReceiptFixture.path||!exactCheckoutSource(source,cursesReceiptSources[path]))return source;
+ const prior=restoreExactFixtureHunks(cursesReceiptFixture,path,source);
+ assert.equal(blob(prior),'5a8992502b7c5d1ebee37dd6d8eb26c439968695','exact Curses receipt fixture predecessor');
+ return source.includes('\r\n')?prior.replaceAll('\n','\r\n'):prior;
+}
+function cursesReceiptCurrentRead(read){
+ return (path,...args)=>{
+  const raw=read(path,...args);
+  if(Object.hasOwn(cursesReceiptSources,path)){
+   const source=Buffer.isBuffer(raw)?raw.toString('utf8'):raw;
+   assert(exactCheckoutSource(source,cursesReceiptSources[path]),'fresh current Curses receipt source: '+path);
+  }
+  return raw;
+ };
+}
 export function assertIntegrationSuccessorsCurrent(read=readFileSync){
- const replayRead=responsiveReplayCurrentRead(currentReviewedSelectionRead(read));
+ const replayRead=cursesReceiptCurrentRead(responsiveReplayCurrentRead(currentReviewedSelectionRead(read)));
+ for(const path of Object.keys(cursesReceiptSources))replayRead(path,'utf8');
  for(const path of Object.keys(responsiveReplayHelpers))replayRead(path,'utf8');
  const rawRead=actorAlphaCurrentRead(chapterSceneCurrentRead(replayRead,refinedByrdPoolCopyClosure));
  rawRead(officialLegibilityFixture,'utf8');
@@ -1160,7 +1204,7 @@ export function assertIntegrationSuccessorsCurrent(read=readFileSync){
   const alpha=Object.hasOwn(actorAlphaBuildInputs,path);
   const raw=rawRead(path,alpha?'utf8':encoding);
   const input=alpha?beforeActorAlphaBuildInput(path,raw):raw;
-  return beforeForkPush(path,beforeCalibrationReplayOwner(path,beforeOfficialAssetsFocusFixture(path,input)));
+  return beforeForkPush(path,beforeCalibrationReplayOwner(path,beforeOfficialAssetsFocusFixture(path,beforeCursesReceiptFixture(path,input))));
  };
  assertReleaseCandidateToolsCurrent(rawRead);
  assertAudioDeckBrowserCurrent(rawRead);
@@ -1250,6 +1294,7 @@ function beforeV220HostedTiming(path,source){
  return source.includes('\r\n')?current.replaceAll('\n','\r\n'):current;
 }
 export function beforePreflightSource(path,source,view='prior',read=readFileSync){
+ source=beforeCursesReceiptFixture(path,source);
  source=beforeV220HostedTiming(path,source);
  const before=beforeBattlePeriphery(path,beforeChapterBattleScene(path,source));
  if(before!==source){
