@@ -5,8 +5,10 @@ status: In Progress
 assignee:
   - '@Furinya'
 created_date: '2026-11-25 21:02'
+updated_date: '2026-11-26 03:45'
 labels:
   - v2.2.0
+  - release-scope
 milestone: m-8
 dependencies: []
 references:
@@ -17,6 +19,7 @@ references:
   - 'https://github.com/FurinyaWorks/Slay-the-Heavens/pull/958'
   - 'https://github.com/FurinyaWorks/Slay-the-Heavens/pull/964'
   - 'https://github.com/FurinyaWorks/Slay-the-Heavens/pull/965'
+  - 'https://github.com/FurinyaWorks/Slay-the-Heavens/pull/989'
 documentation:
   - docs/versions/V2.2.0-RELEASE.md
 parent_task_id: TASK-115
@@ -41,3 +44,9 @@ ordinal: 222000
 <!-- AC:BEGIN -->
 - [ ] #1 每个 PR 有合入或归档理由、固定来源和验证；已合更新通过相应定向验收，由 TASK-115.13 联合复验
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+2026-11-26 必要切片为 #964 及 #924 的未继承差异。#989 只在低成本时合入。#932、#933、#909 的原引用继续保留，延期登记见 TASK-115.12。
+<!-- SECTION:NOTES:END -->

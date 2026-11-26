@@ -5,9 +5,9 @@ status: In Progress
 assignee:
   - '@Furinya'
 created_date: '2026-11-25 21:00'
-updated_date: '2026-11-25 21:28'
+updated_date: '2026-11-26 03:49'
 labels:
-  - v2.2.0
+  - engineering
 milestone: m-8
 dependencies: []
 references:

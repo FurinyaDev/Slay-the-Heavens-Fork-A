@@ -5,8 +5,9 @@ status: In Progress
 assignee:
   - '@Furinya'
 created_date: '2026-11-25 21:02'
+updated_date: '2026-11-26 03:49'
 labels:
-  - v2.2.0
+  - engineering
 milestone: m-8
 dependencies: []
 references:
@@ -38,3 +39,9 @@ ordinal: 223000
 <!-- AC:BEGIN -->
 - [ ] #1 已有工程 PR 有确切接续结果、独审与精确源码验证，Backlog 通过一致性检查
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+独立推进工程成果。扩展既有 Backlog 校验和发布工具，验证 Scope、Release Gate、Engineering、冻结及生产回流。通过正反例、原生 CI 和独立审查。保留既有 #911、#967 的接续记录。
+<!-- SECTION:PLAN:END -->

@@ -5,9 +5,10 @@ status: In Progress
 assignee:
   - '@Furinya'
 created_date: '2026-11-25 21:00'
-updated_date: '2026-11-25 21:28'
+updated_date: '2026-11-26 03:45'
 labels:
   - v2.2.0
+  - release-gate
 milestone: m-8
 dependencies: []
 references:
@@ -17,6 +18,7 @@ references:
   - docs/backlog-details/TASK-100.md
   - docs/backlog-details/TASK-4.21.md
   - docs/PLATFORM_LOAD.md
+  - 'https://github.com/FurinyaWorks/Slay-the-Heavens/pull/1008'
 documentation:
   - docs/versions/V2.2.0-RELEASE.md
 parent_task_id: TASK-115

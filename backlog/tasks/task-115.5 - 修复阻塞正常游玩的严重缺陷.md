@@ -5,8 +5,10 @@ status: To Do
 assignee:
   - '@Furinya'
 created_date: '2026-11-25 21:00'
+updated_date: '2026-11-26 03:45'
 labels:
   - v2.2.0
+  - release-scope
 milestone: m-8
 dependencies: []
 documentation:

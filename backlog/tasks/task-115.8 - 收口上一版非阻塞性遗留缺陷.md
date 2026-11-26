@@ -5,10 +5,14 @@ status: To Do
 assignee:
   - '@Furinya'
 created_date: '2026-11-25 21:02'
+updated_date: '2026-11-26 03:45'
 labels:
   - v2.2.0
+  - release-scope
 milestone: m-8
 dependencies: []
+references:
+  - 'https://github.com/FurinyaWorks/Slay-the-Heavens/pull/969'
 documentation:
   - docs/versions/V2.2.0-RELEASE.md
 parent_task_id: TASK-115

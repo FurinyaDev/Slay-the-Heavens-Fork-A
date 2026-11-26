@@ -5,8 +5,9 @@ status: To Do
 assignee:
   - '@Furinya'
 created_date: '2026-11-25 21:02'
+updated_date: '2026-11-26 03:45'
 labels:
-  - v2.2.0
+  - release-deferral
 milestone: m-8
 dependencies: []
 documentation:
@@ -33,3 +34,9 @@ ordinal: 224000
 <!-- AC:BEGIN -->
 - [ ] #1 明确延期归属和证据，保留历史任务及来源
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+2026-11-26 已决定将 #932、#933、#909 及非本版内容移出发版依赖。目标 v2.3.0 为建议接续版本，届时在对应版本规划审定。固定 PR、开发 HEAD 与接续 Task 登记在正式版本规划的延期表，保留原分支和审查。
+<!-- SECTION:NOTES:END -->
