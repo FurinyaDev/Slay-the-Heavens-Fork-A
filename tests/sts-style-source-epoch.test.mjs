@@ -1,7 +1,7 @@
 import {actorFocusAdded,assertActorFocusInventory,deckPagesAdded,stasisUpgradeAddedPaths} from './helpers/develop-release-backflow-source.mjs';
 import {pointerInputPath,readRetiredController,retiredControllerPath} from './helpers/input-retirement-source.mjs';
 import {beforeCharacterPreparationSource,beforeCurrentProductionSource} from './helpers/character-preparation-source.mjs';
-import {reviewedSelectionRead} from './helpers/reviewed-selection-current-source.mjs';
+import {reviewedSelectionRead,reviewedStsStyleInventory,reviewedStsStyleRead} from './helpers/reviewed-selection-current-source.mjs';
 import {entranceInventory} from './helpers/ui-entrance-source.mjs';
 import {assertCurrentJsInventory,assertCurrentLuaInventory,beforeShopEntryInventory} from './helpers/fork-preflight-source.mjs';
 import test from 'node:test';
@@ -19,7 +19,7 @@ import {discoverJs,jsPlanningWeights,timings} from '../scripts/ci-shards.mjs';
 const hash=source=>createHash('sha256').update(source).digest('hex');
 const bind=source=>({source,sha256:hash(source)}),commit='c'.repeat(40);
 const readProduction=path=>readFileSync(path,'utf8');
-const readProductionHistory=path=>path===retiredControllerPath?readRetiredController(readProduction).source:readProduction(path);
+const readProductionHistory=(path,read)=>path===retiredControllerPath?readRetiredController(read).source:read(path);
 function fixture(){
  const config='config/architecture.json',one='src/lua/one.lua',two='src/lua/two.lua',added='src/lua/abyss_page_reveal.lua';
  const current={[config]:bind('{}\n'),[one]:bind('return 1\n'),[two]:bind('return 2\n')};
@@ -111,7 +111,7 @@ test('incomplete inventories, invented predecessors and unowned additions cannot
 
 test('real style source retains the complete CI-repair and every older target while authenticating all current raw owners',async()=>{
  const {sourceEpoch,ciRepairSourceEpoch,releaseSourceEpoch,prePowerMembershipEpoch}=await import('./helpers/closeout-source-epoch.mjs');
- const p=sourceEpoch.proof,before=ciRepairSourceEpoch.proof,read=readProduction;
+ const p=sourceEpoch.proof,before=ciRepairSourceEpoch.proof,read=reviewedStsStyleRead(readProduction);
  assert.equal(Object.keys(before.current).length,347); // config plus all 346 prior Lua modules.
  assert.equal(Object.keys(releaseSourceEpoch.proof.current).length,350); // Frozen release: page reveal, low-cost art, merchant pages.
  assert.equal(Object.keys(prePowerMembershipEpoch.proof.current).length,352); // Final menu adds navigation and navigation view.
@@ -119,15 +119,35 @@ test('real style source retains the complete CI-repair and every older target wh
  const actual=['config/architecture.json',...readdirSync('src/lua').filter(n=>n.endsWith('.lua')).map(n=>'src/lua/'+n)].sort();
  assert(Object.hasOwn(p.current,retiredControllerPath),'the archived controller must remain available to historical targets');
  const previous=Object.keys(p.current).filter(path=>path!==retiredControllerPath);
- assert.deepEqual([...previous,...stasisUpgradeAddedPaths,...actorFocusAdded,...deckPagesAdded,pointerInputPath].sort(),entranceInventory(actual,read));
- assertActorFocusInventory(actual.filter(path=>path!=='config/architecture.json'),read);
+ const inventory=reviewedStsStyleInventory(actual,readProduction);
+ assert.deepEqual([...previous,...stasisUpgradeAddedPaths,...actorFocusAdded,...deckPagesAdded,pointerInputPath].sort(),entranceInventory(inventory,read));
+ assertActorFocusInventory(inventory.filter(path=>path!=='config/architecture.json'),read);
+ const inventoryError=/missing live (?:renamed )?StS runtime module|unique live StS runtime inventory/;
+ const projectedPaths=actual.filter(path=>!inventory.includes(path));
+ for(const path of projectedPaths){
+  assert.throws(()=>reviewedStsStyleInventory(actual.filter(owner=>owner!==path),readProduction),inventoryError);
+  assert.throws(()=>reviewedStsStyleInventory([...actual,path],readProduction),inventoryError);
+  for(const invalid of [null,readProduction(path)+'\n'])
+   assert.throws(()=>reviewedStsStyleInventory(actual,owner=>owner===path?invalid:readProduction(owner)),
+    /fresh (?:added StS runtime module|reviewed Selection production owner)/);
+ }
+ for(const retired of inventory.filter(path=>!actual.includes(path))){
+  assert.throws(()=>reviewedStsStyleInventory([...actual,retired],readProduction),/legacy StS runtime module must stay absent/);
+  assert.throws(()=>reviewedStsStyleInventory(actual,owner=>owner===retired?'return {}':readProduction(owner)),/legacy Selection owner must stay absent/);
+ }
+ for(const path of deckPagesAdded)for(const invalid of [null,readProduction(path)+'\n',read(path)])
+  assert.throws(()=>reviewedStsStyleRead(owner=>owner===path?invalid:readProduction(owner))(path),/fresh StS deck browser source/);
  for(const [path,row]of Object.entries(before.current))assert.deepEqual(p.targets.stsStylePrior.files[path],row,path+' complete prior');
  for(const [name,target]of Object.entries(before.targets))for(const [path,row]of Object.entries(target.files))assert.deepEqual(p.targets[name].files[path],row,name+'/'+path);
- for(const path of Object.keys(p.current))assert.equal(beforeCharacterPreparationSource(path,readProductionHistory(path)).replaceAll('\r\n','\n'),p.current[path].source,path+' exact historical input');
+ for(const [path,row]of Object.entries(p.current)){
+  const input=readProductionHistory(path,read);
+  const source=path===retiredControllerPath?beforeCharacterPreparationSource(path,input,read):beforeCurrentProductionSource(path,input,read);
+  assert.equal(source.replaceAll('\r\n','\n'),row.source,path+' exact historical input');
+ }
  const config='config/architecture.json',raw=read(config),prior=p.targets.stsStylePrior.files[config].source;
  assert.equal(sourceEpoch.preCombinedSource(config,raw,{target:'stsStylePrior',readSource:read}),prior);
  for(const owner of p.owners.filter(path=>!before.owners.includes(path))){
-  const foreign=readProductionHistory(owner)+'\n';
+  const foreign=readProductionHistory(owner,read)+'\n';
   // The retired controller has an absence witness. Removing its live replacement must still fail.
   const missing=owner===retiredControllerPath?pointerInputPath:owner;
   for(const [changed,value] of [[missing,null],[owner,foreign]]){
