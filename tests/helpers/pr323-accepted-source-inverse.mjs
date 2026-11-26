@@ -18,6 +18,7 @@ import {prePlayerDeathSource} from './player-death-transition-inverse.mjs';
 import {preDeathSettlementGuardSource} from './death-settlement-guard-inverse.mjs';
 import {readFileSync} from 'node:fs';
 import {createHash} from 'node:crypto';
+import {exactSourceMatches} from './source-fingerprint.mjs';
 const normalize=source=>source.replaceAll('\r\n','\n');
 const hash=source=>createHash('sha256').update(source).digest('hex');
 const bytes=readFileSync(new URL('../fixtures/pr323-accepted-source-inverse.json',import.meta.url),'utf8');
@@ -129,6 +130,14 @@ export function projectHistoricalPr323Source(path,source,target){
  if(!binding||hash(normalized)!==binding.afterSha256)return normalized;
  return binding[target+'Source']===null?null:normalize(binding[target+'Source']);
 }
-export function preAcceptedPr323Source(path,source){return project(path,source,'accepted');}
+const releaseArchitecture={
+ sha256:'cec427dcede62ac3efe295bfc976eb58cffb073a69bab7be12da02051de58dbe',
+ gitBlob:'fc35277cdbd7809afbe934cfdb63b6ee0828abe5',
+};
+export function preAcceptedPr323Source(path,source){
+ // The current Release config is admitted by the combined epoch with fresh owners.
+ if(path==='config/architecture.json'&&exactSourceMatches(source,releaseArchitecture))return source;
+ return project(path,source,'accepted');
+}
 export function preOriginalPr323Source(path,source){return project(path,source,'original');}
 export function readAcceptedPr323Source(path){return preAcceptedPr323Source(path,readFileSync(path,'utf8'));}
