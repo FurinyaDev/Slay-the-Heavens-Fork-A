@@ -1,14 +1,21 @@
 import assert from 'node:assert/strict';
-import { spawnSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import { verifyDownloadedArtifact, verifyLocalBuild, verifyLocalProductionPreset, verifyReceipts } from '../scripts/gil-candidate.mjs';
 import { downloadLocalGilBundle, localGilRecord, readLocalGilBundle, writeLocalGilBundle } from '../scripts/local-gil-bundle.mjs';
 import { importedGilReceipt, localArchiveReceipt } from '../scripts/hosted-gil-receipt.mjs';
-import { nativeAudioBuildArgs } from '../scripts/build-native-audio-game.mjs';
+import { buildNativeAudioGame, nativeAudioBuildArgs } from '../scripts/build-native-audio-game.mjs';
+import { payloadDigest, sourceInputs } from '../scripts/build-native-candidate.mjs';
+import { artBuildOptionsFromReceipt, artFeatureReceipt } from '../scripts/art-features.mjs';
+import { fileRecord } from '../scripts/evidence-files.mjs';
+import { officialAssetsProfile, refinedReleaseOfficialAssetsProfile } from '../scripts/official-assets-profile.mjs';
+import { portraitInventory, portraitRuntimeInputs } from '../scripts/official-portraits.mjs';
+import { prepareRefinedReleaseMonsterArt, refinedReleaseMonsterRegistry } from '../scripts/refined-release-monsters.mjs';
+import { uiProfileFromReceipt, uiProfileReceipt } from '../scripts/ui-profile.mjs';
 import { encoderSha256 } from '../scripts/gil-candidate-preflight.mjs';
 
 const sourceSha = '1'.repeat(40);
@@ -196,4 +203,72 @@ test('local intake accepts the frozen default preset and rejects other valid nat
   }
   assert.throws(() => check({ ...defaultOptions, lightweight2d: true }), /default production preset/);
   assert.throws(() => check({ ...defaultOptions, nativePageLifecycle: false }), /default production preset/);
+});
+
+test('local intake accepts generated full and audio receipt shapes and rejects a valid v2 audio profile', async t => {
+  const root = realpathSync.native(mkdtempSync(join(tmpdir(), 'gil-local-production-')));
+  t.after(() => rmSync(root, { recursive:true, force:true }));
+  const registry = readFileSync(new URL('../' + refinedReleaseMonsterRegistry, import.meta.url));
+  const registryFile = join(root, refinedReleaseMonsterRegistry);
+  mkdirSync(join(root, 'data/release'), { recursive:true });
+  writeFileSync(registryFile, registry);
+  writeFileSync(join(root, '.gitignore'), 'build/\n');
+  writeFileSync(join(root, 'base.gil'), 'base fixture');
+  const git = (...args) => execFileSync('git', args, { cwd:root, encoding:'utf8' }).trim();
+  git('init', '--quiet');
+  git('add', '.');
+  git('-c', 'user.name=GIL Fixture', '-c', 'user.email=gil@example.invalid', 'commit', '--quiet', '-m', 'fixture');
+  const defaults = nativeAudioBuildArgs([]).options;
+  const admitted = receipt => verifyLocalProductionPreset(defaults, artBuildOptionsFromReceipt(receipt), uiProfileFromReceipt(receipt));
+
+  async function packaged(options, output) {
+    let full;
+    const buildFull = async build => {
+      const buildId = '11111111-1111-4111-a111-111111111111';
+      const directory = join(build.output, buildId);
+      mkdirSync(directory, { recursive:true });
+      const mapPath = join(directory, 'candidate.gil');
+      writeFileSync(mapPath, 'full game fixture');
+      const flags = build.artFeatures;
+      const refined = build.refinedReleaseMonsterArt;
+      full = {
+        mapPath, receiptPath:join(directory, 'candidate.json'), buildId, candidate:fileRecord(mapPath),
+        sourceCommit:git('rev-parse', 'HEAD'), sourceDirty:false, payloadDigest:payloadDigest(sourceInputs(root, build)),
+        release:{ version, workKey, notesSha256:'e'.repeat(64) }, artFeatures:artFeatureReceipt(flags),
+        officialAssetsProfile:refined ? refinedReleaseOfficialAssetsProfile : officialAssetsProfile,
+        uiProfile:uiProfileReceipt(build.nativePageLifecycle),
+        officialPortraits:{ ...portraitInventory(flags, { officialAssets:build.officialAssets }),
+          inputs:portraitRuntimeInputs(flags).map(path => ({ path, bytes:1, sha256:'d'.repeat(64) })) },
+      };
+      if (refined) {
+        const monsters = prepareRefinedReleaseMonsterArt(JSON.parse(registry));
+        full.refinedReleaseMonsterArt = true;
+        full.nativeMonsterArt = {
+          enabled:true, assetCount:Object.keys(monsters.assets).length, bindingCount:Object.keys(monsters.bindings).length,
+          capacity:monsters.poolCapacity, allocation:monsters.surfaceAllocation,
+          inputs:[{ ...fileRecord(registryFile, root), path:refinedReleaseMonsterRegistry }],
+        };
+      }
+      writeFileSync(full.receiptPath, JSON.stringify(full));
+      return full;
+    };
+    const run = (_script, [base, directory]) => {
+      const mapPath = join(directory, 'candidate.gil');
+      writeFileSync(mapPath, 'full game with audio fixture');
+      const candidate = fileRecord(mapPath);
+      writeFileSync(join(directory, 'candidate.json'), JSON.stringify({
+        ...full, mapPath, candidate, sha256:candidate.sha256,
+        baseSha256:fileRecord(base).sha256, baseAfter:fileRecord(base).sha256,
+      }));
+    };
+    const audio = await buildNativeAudioGame({ ...options, root, baseMap:'base.gil', output, releaseCandidate:true, workKey, buildFull, run });
+    return { full, audio };
+  }
+
+  const approved = await packaged(defaults, 'build/default');
+  assert.doesNotThrow(() => admitted(approved.full));
+  assert.doesNotThrow(() => admitted(approved.audio));
+  const v2 = await packaged(nativeAudioBuildArgs(['--official-assets']).options, 'build/v2');
+  assert.equal(artBuildOptionsFromReceipt(v2.audio).officialAssets, true);
+  assert.throws(() => admitted(v2.audio), /default production preset/);
 });

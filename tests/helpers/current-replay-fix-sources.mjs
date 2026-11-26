@@ -1,3 +1,4 @@
+import {beforeLocalGilFixture} from './local-gil-fixture-source.mjs';
 // Exact predecessors for the current replay and test repairs. Current
 // discovery and test execution continue to use the files on disk.
 import {restoreExactFixtureHunks} from './exact-fixture-hunks.mjs';
@@ -2367,6 +2368,8 @@ const bindings = new Map([
 // Retain at most one verified byte-for-byte projection per declared path.
 const lastVerifiedProjection=new Map();
 export function beforeCurrentReplayFixes(path, source){
+ const localGilPrior=beforeLocalGilFixture(path,source);
+ if(localGilPrior!==source)return localGilPrior;
  const binding=bindings.get(path);
  if(!binding)return source;
  const cached=lastVerifiedProjection.get(path);
