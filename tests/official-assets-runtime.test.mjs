@@ -639,19 +639,31 @@ route.listeners.down({touchId=1});route.listeners.up({touchId=1})
 assert(route.click({touchId=1})and host.routeOpen)
 local back=root:GetChild('mapPanel'):GetChild('previewBack')
 local label,hit,face=back:GetChild('label'),back:GetChild('hit'),assert(back:GetChild('v25Face'))
+local surface=assert(face:GetChild('roundedButtonState'))
+local material=assert(surface:GetChild('v25Flag'))
+local action=H.F.Theme.officialAssets.actionButton
 local function state(expected)
- for _,name in ipairs({'normal','hover','pressed','disabled'})do
-  assert(face:GetChild(name).visible==(name==expected),'map return state '..name)
+ assert(#face:GetChildren()==1 and surface.visible,'map return must reuse one visible material')
+ local scale=expected=='pressed' and action.pressedScale or 1
+ assert(surface.localScaleX==scale and surface.localScaleY==scale and surface.scale[3]==1,
+     'map return scale '..expected)
+ local palette=expected=='disabled' and action.disabled or action.secondary[expected]
+ for index,layer in ipairs({'rim','cloth'})do
+  local parts=material:GetChild(layer):GetChildren()
+  assert(#parts>0,'missing map return material '..layer)
+  for _,part in ipairs(parts)do
+   sameColour(part.imageColor,palette[index],'map return '..expected..' '..layer..' '..part.name)
+  end
  end
 end
-assert(label.text=='返回战斗');state('normal')
+assert(back.visible and label.text=='返回战斗');state('normal')
 hit.listeners.enter({});state('hover')
 hit.listeners.down({touchId=703});state('pressed')
 hit.listeners.endDrag({touchId=703});state('normal')
 assert(not hit.click({touchId=703})and host.routeOpen)
 hit.listeners.down({touchId=704});hit.listeners.up({touchId=704})
 assert(hit.click({touchId=704})and not host.routeOpen and host.mode=='battle')
-assert(label.text~='返回战斗');state('disabled')
+assert(not back.visible and label.text~='返回战斗');state('disabled')
 print('OFFICIAL_MAP_RETURN_STATES_PASS')
 `, 'OFFICIAL_MAP_RETURN_STATES_PASS');
 });
