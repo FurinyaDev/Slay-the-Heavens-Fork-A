@@ -17,6 +17,14 @@ source.extension={};source.extension.self=source.extension
 local root=F.Viewport.apply(F.control({children=F.Layout}),1280,720)
 local panel=root:GetChild('characterPanel')
 local details=panel:GetChild('details')
+local publishedInfo
+for _,row in ipairs(details:GetChild('infoMotion'):GetChildren())do
+    local raise=row.SetAsLastSibling
+    row.SetAsLastSibling=function(self)
+        raise(self)
+        publishedInfo=self
+    end
+end
 local pageReady,seedCalls=true,0
 local host=F.GameUI.new(root,source,F.Presentation,'click',{
     characterProfile='full-source',imageSource='static',
@@ -31,8 +39,9 @@ end
 local function tap(box)return box:GetChild('hit').click()end
 local function check(id,key)
     local info=assert(host.characterSelection.info)
-    assert(info.id==id and details.visible and details:GetChild('name').text==info.name)
-    for _,name in ipairs({'stats','gold','relic','deckSummary'})do assert(details:GetChild(name).text~='',name)end
+    assert(info.id==id and details.visible and publishedInfo and publishedInfo.visible)
+    assert(publishedInfo:GetChild('name').text==info.name)
+    for _,name in ipairs({'stats','gold','relic','deckSummary'})do assert(publishedInfo:GetChild(name).text~='',name)end
     local visible=0
     for _,part in ipairs(details:GetChild('portraits'):GetChildren())do
         if part.visible then visible=visible+1;assert(part.name==key,'old portrait under a new loadout')end
@@ -92,7 +101,9 @@ assert(check('hutao','hutao')==first.hutao and firstBorder.visible and not secon
 
 assert(host:closeCharacters() and host.characterSelection.info==nil)
 tick();tick()
-assert(host:start() and tap(panel:GetChild('traveler')))
+assert(host:start())
+tick();tick()
+assert(tap(panel:GetChild('traveler')))
 assert(check('ironclad','traveler_ironclad')==first.ironclad and count==8)
 host:disable()
 assert(not panel.visible and not host:confirmCharacter() and seedCalls==0)
