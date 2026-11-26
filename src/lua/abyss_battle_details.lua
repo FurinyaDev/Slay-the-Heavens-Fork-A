@@ -53,7 +53,10 @@ function M.install(owner, ownership, host, dependencies)
             host.stage:SetLocalScale(k, k, 1)
             host.root:GetChild("backdrop"):SetSizeDelta(width, height)
         end
-        if cancelled then self:render() end
+        local handWidth = host.pileLayout.extraWidth()
+        local handChanged = handWidth ~= (self.handWidthExtra or 0)
+        self.handWidthExtra = handWidth
+        if cancelled or (handChanged and self.active and self.run and self.run.phase=='combat') then self:render() end
     end
     local function describeInfo(battle, info, actor)
         return host.infoContent(owner.data, owner.presentation, battle, info, actor)

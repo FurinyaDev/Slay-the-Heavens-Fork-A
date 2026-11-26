@@ -46,27 +46,43 @@ for(const [path,{before,after,inputRetirement}] of Object.entries(files)){
  }
 }
 
-function currentSource(source,after){
- return typeof source==='string'&&!source.includes('\r\r\n')&&source.replaceAll('\r\n','\n')===after.source;
+// Reviewed #940 and #951 fixture changes leave the earlier archive intact.
+const releaseFixtures=Object.freeze({
+ 'tests/lua/game_ui.lua':['ef7677b1aee7ab9491227bca8afac4d01b3130a4d79c6ac9c7526f29fb4091ae','41482970b54d7c8adcb566d2cb1d8ac8fa7542da'],
+ 'tests/lua/game_ui_deck.lua':['6c1b6d9dfc03f71711478823a6e8ed0173bc63ae0959f6b6380938b5801a3882','dd48a60e8a010256a196170cebb00e922c590ff7'],
+ 'tests/lua/support/native_card_art_contexts.lua':['1ab1d06f6d1bb1d33ad39cdd76c5facb3ea10560166ed306148cbdb21c4aacfb','c34f8910afde3065d8d15117d42637c2944d407f'],
+ 'tests/lua/support/native_card_art_runtime_contexts.lua':['13ebcfbb1bd0a649e43dbd3d8af29ab9fbf34ab19c014881abe57f4ebe846cf3','46d96aa83422b9eb682be4a26218bf817db8035b'],
+ 'tests/lua/support/official_portrait_game_lifecycle.lua':['4f11f300a65de86b91959d20a363f89886963e3cbdbb6a9d3ed83e2c9cfaf361','f3cbdec00e1d27c160f42e74d3cda0017d505899'],
+ 'tests/native-candidate-rebuild.test.mjs':['70c84225ac44eeb4d4fb891b071a5b7691e955528a78fff3ffaaa578e49a565c','bcc20ef97fa83430d7dd804603f3cc3991514c75'],
+});
+
+function fixtureMatches(path,source,after,{allowArchived=true}={}){
+ if(typeof source!=='string'||source.includes('\r\r\n'))return false;
+ const normalized=source.replaceAll('\r\n','\n'),archived=normalized===after.source;
+ if(allowArchived&&archived)return true;
+ const release=releaseFixtures[path];
+ return release?sha256(normalized)===release[0]&&blob(normalized)===release[1]:archived;
 }
 
 export function assertNativeFixturesCurrent(read){
- for(const [path,{after}] of Object.entries(files))
-  assert(currentSource(beforeUiEntranceWitness(path,read(path,'utf8')),after),'fresh complete native fixture source: '+path);
+ for(const [path,{after}] of Object.entries(files)){
+  const source=read(path,'utf8');
+  assert(fixtureMatches(path,source,after,{allowArchived:false}),'fresh complete native fixture source: '+path);
+ }
 }
 
 export function beforeNativeFixtureReplay(path,source){
  if(!Object.hasOwn(files,path))return source;
  source=beforeUiEntranceWitness(path,source);
  const {before,after}=files[path];
- if(!currentSource(source,after))return source;
+ if(!fixtureMatches(path,source,after))return source;
  return source.includes('\r\n')?before.source.replaceAll('\n','\r\n'):before.source;
 }
 
 // Restore #899's complete post-retirement fixture before its own historical inverse.
 export function beforeNativeFixtureInputRetirement(path,source,{requireCurrent=false}={}){
  if(!Object.hasOwn(files,path)||!files[path].inputRetirement)return source;
- const {after,inputRetirement}=files[path],current=currentSource(source,after);
+ const {after,inputRetirement}=files[path],current=fixtureMatches(path,source,after);
  if(requireCurrent)assert(current,'fresh composed input retirement fixture: '+path);
  if(!current)return source;
  return source.includes('\r\n')?inputRetirement.source.replaceAll('\n','\r\n'):inputRetirement.source;
