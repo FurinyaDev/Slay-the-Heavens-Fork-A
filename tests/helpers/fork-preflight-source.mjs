@@ -1024,6 +1024,22 @@ function beforeRelicCloseoutIntegratedFixture(path,source){
  assert.equal(blob(prior),'2f628ab1013c999dc38c55b87537d573c4bbcd40','exact #1010 integration fixture predecessor');
  return source.includes('\r\n')?prior.replaceAll('\n','\r\n'):prior;
 }
+const relicCloseoutInventoryFixture={
+ "path": "tests/helpers/closeout-ci-source.mjs",
+ "afterSha256": "c97afc128c650e030c02d98797e6510310ded8e2371a657bbbccd226d8f37ba5",
+ "beforeSha256": "34c1a1ae32357055166de58dc68676d9adb9a99a88c7ac97ab3b1f649ef3cbff",
+ "hunks": [
+  {"at": 4, "before": "// Exact named views for immutable receipts. Current Full uses raw discovery.", "after": "import {beforeKnownMasterBackflowSource} from './master-backflow-source.mjs';\n// Exact named views for immutable receipts. Current Full uses raw discovery."},
+  {"at": 53, "before": " if(path!==relicIconsFixture)return source;", "after": " if(path!==relicIconsFixture)return source;\n source=beforeKnownMasterBackflowSource(path,source);"}
+ ]
+};
+const relicCloseoutInventoryIdentity=[relicCloseoutInventoryFixture.afterSha256,'9ab9906ecf861d838ef88c5dd3e0c7aea9e0d734'];
+function beforeRelicCloseoutInventoryFixture(path,source){
+ if(path!==relicCloseoutInventoryFixture.path||!exactCheckoutSource(source,relicCloseoutInventoryIdentity))return source;
+ const prior=restoreExactFixtureHunks(relicCloseoutInventoryFixture,path,source);
+ assert.equal(blob(prior),'ce89dff7d6ee40d504cb4ab7d0fc5cbf7310229d','exact relic inventory fixture predecessor');
+ return source.includes('\r\n')?prior.replaceAll('\n','\r\n'):prior;
+}
 const reviewedStsFeedbackFixture={
  "path": "tests/sts-style-source-epoch.test.mjs",
  "beforeSha256": "d5dab6191c676a0520ecf6052ce7ffe6b8f60318a8b31c6022e84df191a59d45",
@@ -1369,9 +1385,10 @@ function beforeIntegrationSuccessor(path,source){
  assert.equal(hash(prior.source),prior.sha256,'immutable integration predecessor: '+path);
  return source.includes('\r\n')?prior.source.replaceAll('\n','\r\n'):prior.source;
 }
-// The current gate uses these two replay modules to verify the composed hand and scene owners.
+// Verify the live replay helpers before restoring their reviewed predecessors.
 const responsiveReplayHelpers=Object.freeze({
  [integratedFixture]:relicCloseoutIntegratedIdentity,
+ [relicCloseoutInventoryFixture.path]:relicCloseoutInventoryIdentity,
  'tests/helpers/chapter-battle-scene-source.mjs':['1270c293d79c04ac4a5b15483dd4cc8f9c4279362e2f5c551f6e98c20c9ad293','5306929645881d562b4d4322c5b3fa2ecb91edbd'],
  'tests/helpers/rebased-release-source.mjs':['b1e42ded7f05f580fb25ab0417ccd8db45832f5e9e50db83a38d6aaa2767dc20','4b22a3e61459334c6d85b247ea188976313d549e'],
 });
@@ -1380,7 +1397,8 @@ function responsiveReplayCurrentRead(read){
   const raw=read(path,...args);
   if(Object.hasOwn(responsiveReplayHelpers,path)){
    const source=Buffer.isBuffer(raw)?raw.toString('utf8'):raw;
-   const error=path===integratedFixture?'fresh complete integration source: ':'fresh responsive replay helper: ';
+   const error=path===integratedFixture||path===relicCloseoutInventoryFixture.path
+    ?'fresh complete integration source: ':'fresh responsive replay helper: ';
    assert(exactCheckoutSource(source,responsiveReplayHelpers[path]),error+path);
   }
   return raw;
@@ -1551,7 +1569,13 @@ export function assertIntegrationSuccessorsCurrent(read=readFileSync){
   assert(typeof source==='string'&&!source.includes('\r\r\n')&&hash(normalize(source))===sha,'fresh complete integration source: '+path);
  }
  for(const path of Object.keys(responsiveReplayHelpers))rawRead(path,'utf8');
- return rawRead;
+ // The sealed integration receipt expects the closeout helper's predecessor.
+ return (path,encoding)=>{
+  const raw=rawRead(path,encoding);
+  if(path!==relicCloseoutInventoryFixture.path)return raw;
+  if(typeof raw==='string')return beforeRelicCloseoutInventoryFixture(path,raw);
+  return Buffer.from(beforeRelicCloseoutInventoryFixture(path,raw.toString('utf8')));
+ };
 }
 // The live planner reads its measured Linux map directly. Historical CI views
 // restore each exact predecessor in reverse observation order.
@@ -1589,6 +1613,7 @@ export function beforePreflightSource(path,source,view='prior',read=readFileSync
  else if(typeof path==='string'&&!path.startsWith('src/')&&path!=='config/architecture.json')
   source=beforeKnownMasterBackflowSource(path,source);
  source=beforeCursesReceiptFixture(path,source);
+ source=beforeRelicCloseoutInventoryFixture(path,source);
  const integratedPrior=beforeRelicCloseoutIntegratedFixture(path,source);
  if(integratedPrior!==source){
   source=integratedPrior;
