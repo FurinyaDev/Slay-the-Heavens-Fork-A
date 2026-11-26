@@ -534,6 +534,32 @@ const reviewedCopySources=Object.freeze({
     ]
    }
   ]
+ },
+ "tests/helpers/native-flow-fixture-source.mjs": {
+  "current": {
+   "sha256": "1ea4f6524ec42e6b9f907988f6e716b9560bff6a33a1a35117a050836f1723f1",
+   "gitBlob": "1a3c57078fa15b56609aa8fb4e1a73848e1d472b"
+  },
+  "previous": {
+   "sha256": "8ad7157fd4f3973ffba4f17f9eba440731ddf952e859fee53970d6c3879968e3",
+   "gitBlob": "ec07991f5d6b17bca5d5e40eed75f42b0110b7ae"
+  },
+  "edits": [
+   {
+    "at": 30,
+    "remove": 8,
+    "previous": [
+     "}",
+     "",
+     "// Approved release backflows #912, #940, #942 and #951 supersede these witnesses.",
+     "const releaseFixtures=Object.freeze({",
+     " 'tests/lua/support/native_monster_only_entry.lua':{",
+     "  sha256:'0c192425a730c27bab65e5ebc18fc340c9b2414e8558485922041e01fbaf00c1',gitBlob:'29e0bb8b789624f2128780c7711d122bb0687368',",
+     " },",
+     " 'tests/official-assets-runtime.test.mjs':{"
+    ]
+   }
+  ]
  }
 });
 function beforeReviewedCopySource(path,raw){
