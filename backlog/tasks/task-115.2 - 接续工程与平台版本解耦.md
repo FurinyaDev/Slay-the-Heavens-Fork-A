@@ -5,9 +5,9 @@ status: Done
 assignee:
   - '@Furinya'
 created_date: '2026-11-25 20:59'
-updated_date: '2026-11-25 21:28'
+updated_date: '2026-11-26 03:45'
 labels:
-  - v2.2.0
+  - engineering
 milestone: m-8
 dependencies: []
 references:
