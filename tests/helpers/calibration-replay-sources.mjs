@@ -1,6 +1,7 @@
 import {beforeMapRoomReplayCohort} from './develop-replay-merge-source.mjs';
 import {beforeMapNodeVisualsLineEndings} from './input-retirement-sts-binding.mjs';
 import {readCloseoutLuaVocabularyReceipt} from './closeout-lua-vocabulary-source.mjs';
+import {readCloseoutCurrentBackflowReceipt} from './closeout-current-backflow-source.mjs';
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import {readFileSync} from 'node:fs';
@@ -183,6 +184,8 @@ export function readCalibrationReceiptInput(path,digest,read,readCurrent=readFil
  if(path===relicEquipReceipt.path&&digest===relicEquipReceipt.prior.sha256)return readRelicEquipReceipt(readCurrent);
  const vocabulary=readCloseoutLuaVocabularyReceipt(path,digest,readCurrent);
  if(vocabulary!==undefined)return vocabulary;
+ const closeout=readCloseoutCurrentBackflowReceipt(path,digest,readCurrent);
+ if(closeout!==undefined)return closeout;
  const fallback=()=>{
   const source=read(),prior=beforeCurrentReplayFixes(path,source);
   return typeof prior==='string'&&hash(lf(prior))===digest?prior:source;
