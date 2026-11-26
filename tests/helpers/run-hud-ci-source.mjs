@@ -9,6 +9,7 @@ import {preStsStyleCiSource,stsStylePriorInventory,stsStylePriorRead} from './st
 import {beforePotionReadabilityEvidence} from './v2-ui-admission-ci-source.mjs';
 import {beforeCloseoutHistoryTooling,beforeCloseoutRunHudFixture} from './closeout-current-backflow-source.mjs';
 import {preMenuRedCiSource} from './menu-red-ci-source.mjs';
+import {exactSourceMatches} from './source-fingerprint.mjs';
 const hash=s=>createHash('sha256').update(s).digest('hex');
 const normalize=s=>s.replaceAll('\r\n','\n');
 const toolingBytes=normalize(readFileSync(new URL('../fixtures/pr-history-tooling-continuation.json',import.meta.url),'utf8'));
@@ -33,7 +34,20 @@ for(const [path,row]of Object.entries(runHudCiProof.files))for(const side of ['b
 const freeze=value=>{if(value&&typeof value==='object'&&!Object.isFrozen(value)){Object.values(value).forEach(freeze);Object.freeze(value);}return value;};
 freeze(runHudCiProof);
 freeze(runHudBeforeCiRepairProof);
+function beforeSilentPlanningSource(path,source){
+ if(path!=='tests/lua/silent_final_potions.lua'||!exactSourceMatches(source,{
+  sha256:'68a55e5dd554fb96a911dd4b69e3f596ab0ccfe5a58b630292149849314ccaa7',gitBlob:'0e712bd58829ad95c89822c9c56b2757f1c8d006',
+ }))return source;
+ const lf=normalize(source);
+ if(source!==lf&&source!==lf.replaceAll('\n','\r\n'))return source;
+ const prior=lf.replace("'raven_adept_solo'","'cultist_solo'");
+ assert(exactSourceMatches(prior,{
+  sha256:'c84da8727d33ce9e3f50f47bf1abc7a46fa40a9f4e703153e4eb35e5af6dc0d4',gitBlob:'0646eeaefec1cdd3c122214f95a95f8b25eab5f6',
+ }),'exact Silent planning fixture predecessor');
+ return source===lf?prior:prior.replaceAll('\n','\r\n');
+}
 export function preRunHudCiSource(path,source){
+ source=beforeSilentPlanningSource(path,source);
  source=preMenuRedCiSource(path,beforePotionReadabilityEvidence(path,source));
  source=preStsStyleCiSource(path,source);
  source=preNativePreviewCiSource(path,source);

@@ -27,24 +27,11 @@ const freeze=value=>{if(value&&typeof value==='object'&&!Object.isFrozen(value))
 export const closeoutCiProof=freeze(packed);
 function target(name){assert(Object.hasOwn(packed.targets,name),'known closeout CI view');return packed.targets[name];}
 const productionSource=path=>path==='config/architecture.json'||path.startsWith('src/lua/');
-function beforeSilentPlanningSource(path,source,view){
- if(view!=='pr620'||path!=='tests/lua/silent_final_potions.lua'||!exactSourceMatches(source,{
-  sha256:'68a55e5dd554fb96a911dd4b69e3f596ab0ccfe5a58b630292149849314ccaa7',gitBlob:'0e712bd58829ad95c89822c9c56b2757f1c8d006',
- }))return source;
- const normalized=source.replaceAll('\r\n','\n');
- if(source!==normalized&&source!==normalized.replaceAll('\n','\r\n'))return source;
- const prior=normalized.replace("'raven_adept_solo'","'cultist_solo'");
- assert(exactSourceMatches(prior,{
-  sha256:'c84da8727d33ce9e3f50f47bf1abc7a46fa40a9f4e703153e4eb35e5af6dc0d4',gitBlob:'0646eeaefec1cdd3c122214f95a95f8b25eab5f6',
- }),'exact Silent planning fixture predecessor');
- return source===normalized?prior:prior.replaceAll('\n','\r\n');
-}
 export function preCloseoutCiSource(path,source,view){
  const before=target(view);
  if(before.scope==='workflow-only'&&path!=='.github/workflows/quality.yml')return source;
  // Runtime projections authenticate the current production closure together.
  if(productionSource(path))return source;
- source=beforeSilentPlanningSource(path,source,view);
  source=beforePreflightSource(path,source);
  if(path===capacityRoadmapBinding.path&&typeof source==='string'&&hash(source.replaceAll('\r\n','\n'))===capacityRoadmapBinding.current)return capacityRoadmapBinding.source;
  if(path===naming.path&&typeof source==='string'&&!source.includes('\r\r\n')&&hash(source.replaceAll('\r\n','\n'))===naming.current)return naming.source;
