@@ -12,6 +12,8 @@ const renamedOwners=Object.freeze({
  'src/lua/abyss_drug_dealer_event.lua':'src/lua/abyss_augmenter_event.lua',
  'src/lua/abyss_red_slaver_ai.lua':'src/lua/abyss_red_guard_ai.lua',
 });
+const reviewedReaders=new WeakSet();
+export const isReviewedSelectionRead=read=>reviewedReaders.has(read);
 let owners;
 function reviewedSelectionOwners(){
  if(owners)return owners;
@@ -36,7 +38,7 @@ export function reviewedSelectionRead(read=readFileSync){
  read=readBeforeMasterBackflowSource(read);
  const registered=reviewedSelectionOwners();
  const readOwner=visualSelectionOwnerRead(read);
- return (path,encoding='utf8')=>{
+ const reviewed=(path,encoding='utf8')=>{
   const row=registered.get(path);
   if(!row)return read(path,encoding);
   const active=Object.hasOwn(renamedOwners,path)?renamedOwners[path]:path;
@@ -44,6 +46,8 @@ export function reviewedSelectionRead(read=readFileSync){
   const source=readOwner(active,row);
   return encoding==='utf8'?source:Buffer.from(source);
  };
+ reviewedReaders.add(reviewed);
+ return reviewed;
 }
 
 // #962 preserved the #899 browser and changed its live publication fast path.
@@ -112,7 +116,7 @@ const addedStsOwners=Object.freeze({
 
 export function reviewedStsStyleRead(read=readFileSync){
  const selection=reviewedSelectionRead(read);
- return path=>{
+ const reviewed=path=>{
   if(path!==deckBrowser.path)return selection(path);
   const current=read(path,'utf8');
   assert(exactSourceMatches(current,{sha256:deckBrowser.afterSha256,gitBlob:deckBrowser.afterBlob}),
@@ -122,6 +126,8 @@ export function reviewedStsStyleRead(read=readFileSync){
    'exact StS deck browser predecessor: '+path);
   return prior;
  };
+ reviewedReaders.add(reviewed);
+ return reviewed;
 }
 
 export function reviewedStsStyleInventory(paths,read=readFileSync){

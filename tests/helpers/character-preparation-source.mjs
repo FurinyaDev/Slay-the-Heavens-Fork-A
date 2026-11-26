@@ -1,3 +1,4 @@
+import {isReviewedSelectionRead} from './reviewed-selection-current-source.mjs';
 import {beforeRefinedReleaseProduction,refinedReleaseProductionPaths} from './refined-release-source.mjs';
 import {beforeReleaseCompoundIntent,beforeReleaseControlsGuideRemoval,beforeReleaseForgeGridUi,beforeReleaseRightClick,beforeReleaseSharedRelicUi,beforeReleaseUiRestore,releaseControlsGuideRemovalSourcePaths,releaseForgeSourcePaths,releaseRightClickSourcePaths,releaseSharedRelicSourcePaths,releaseUiRestoreSourcePaths} from './release-ui-restore-source.mjs';
 import { assertCurrentUiEntrance, entrancePredecessor } from './ui-entrance-source.mjs';
@@ -146,7 +147,7 @@ const currentContinuationOwners = new Set([
 ]);
 
 export function beforeCurrentProductionSource(path, source, read = readRaw) {
-  const compound=beforeReleaseCompoundIntent(path,source,read,{requireCurrent:true});
+  const compound=beforeReleaseCompoundIntent(path,source,read,{requireCurrent:true,reviewed:isReviewedSelectionRead(read)});
   if(compound!==source)return beforeCharacterPreparationSource(path,compound,owner=>beforeReleaseCompoundIntent(owner,read(owner)));
   ({source,read}=chapterBattleSceneReader(path,source,read));
   ({source,read}=battlePeripheryPredecessor(path,source,read));

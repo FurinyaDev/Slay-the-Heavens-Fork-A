@@ -136,13 +136,15 @@ export const releaseUiRestoreSourcePaths=Object.freeze([...new Set([...Object.ke
 export const beforeReleaseRightClick=(path,source)=>rightClick.project(path,fieldCancel.project(path,source));
 const compoundIntentPaths=['src/lua/abyss_battle_intent_view.lua','src/lua/abyss_battle_render_actors.lua'];
 let compoundIntent;
-export function beforeReleaseCompoundIntent(path,source,read,{requireCurrent=false}={}){
+export function beforeReleaseCompoundIntent(path,source,read,{requireCurrent=false,reviewed=false}={}){
  if(!compoundIntentPaths.includes(path))return source;
  compoundIntent??=releaseUiRestoreArchive(readFileSync(new URL('../fixtures/release-compound-intent-source.json.gz',import.meta.url)),
   '4d1d0ca90bc98c95fef49584283807598edd42f995d230357d28fa41efa14111','5acff84e14816711fd9f7a86e1b994069b2c8af6');
  const prior=compoundIntent.project(path,source);
  if(source===prior){
-  if(requireCurrent)assert(!matches(source,compoundIntent.files[path].before),'fresh current production owner: '+path);
+  const predecessor=compoundIntent.files[path].before;
+  if(requireCurrent&&matches(source,predecessor))
+   assert(reviewed&&matches(read(path),predecessor),'fresh current production owner: '+path);
   return source;
  }
  if(read)for(const owner of compoundIntentPaths)
