@@ -196,6 +196,7 @@
     "abyss_combat": "core",
     "abyss_curses": "core",
     "abyss_deck_ui": "ui",
+    "abyss_deck_grid": "ui",
     "abyss_relic_view_ui": "ui",
     "abyss_relic_names": "ui",
     "abyss_effects": "core",
