@@ -123,6 +123,7 @@ local function opening(host,root,bossCount)
 end
 local function selectedGeo(host,root)
     local panel=root:GetChild('characterPanel')
+    awaitNativePage(host)
     assert(host.characterOpen and panel.visible)
     assert(not panel:GetChild('elements').visible,'single-element formal entry must hide redundant selectors')
     if not host.characterSelection.info then
@@ -285,6 +286,7 @@ assert(host.nodeUI:press('treasureView/chest'));host.nodeUI:update(2)
 awaitNativePage(host)
 assert(not host.run.nodeFlow.reward.sapphireKey)
 for _,item in ipairs(host.run.nodeFlow.reward.items)do assert(item.kind~='sapphire' and not item.linkedSlot)end
+awaitNativePage(host)
 local function noVisibleKeyPromise(control)
     if control.visible==false then return end
     assert(not (control.text and control.text:find('钥匙',1,true)),'competition chest advertised a key')
@@ -305,6 +307,7 @@ for index,item in ipairs(host.run.nodeFlow.reward.items)do
     if item.available then rewardKey='treasureView/rewardItem'..index;break end
 end
 assert(rewardKey,'seed must offer an implemented boss relic')
+awaitNativePage(host)
 local stale=host.nodeUI.actions[rewardKey].handler
 assert(host.nodeUI:press(rewardKey))
 awaitNativePage(host)

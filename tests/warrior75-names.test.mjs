@@ -18,14 +18,27 @@ test('all 75 rules retain original identity while traveler display names stay Ch
   }
 });
 
-test('the 40 existing traveler names survive card pool expansion unchanged',()=>{
+test('the 40 tracked traveler names preserve the historical baseline and approved renames',()=>{
   const baseline=JSON.parse(readFileSync('tests/fixtures/traveler-card-names-baseline.json','utf8').replace(/^\uFEFF/,''));
   const display=JSON.parse(readFileSync('data/presentation/traveler.zh-CN.json','utf8')).cards;
   assert.equal(Object.keys(baseline.names).length,40);
-  for(const [id,name] of Object.entries(baseline.names)) assert.equal(display[id].name,name,id);
+  for(const id of Object.keys(baseline.approvedNameOverrides)) assert.ok(id in baseline.names,id);
+  for(const [id,name] of Object.entries({...baseline.names,...baseline.approvedNameOverrides})) assert.equal(display[id].name,name,id);
   assert.equal(display.cleave.name,'星陨剑');
   assert.equal(display.whirlwind.name,'岩潮叠嶂');
   assert.equal(display.barricade.name,'永世的磐岩');
+});
+
+test('exactly five traveler card names identify the Sword Strike family',()=>{
+  const display=JSON.parse(readFileSync('data/presentation/traveler.zh-CN.json','utf8')).cards;
+  const series={
+    strike:'剑势·初式',twin_strike:'剑势·双斩',pommel_strike:'剑势·试锋',
+    wild_strike:'剑势·猛进',perfected_strike:'剑势如虹',
+  };
+  assert.deepEqual(Object.fromEntries(Object.entries(display)
+    .filter(([,card])=>card.name.includes('剑势')).map(([id,card])=>[id,card.name])),series);
+  assert.equal(display.anger.name,'连续出剑');
+  assert.equal(display.dual_wield.name,'再演剑招');
 });
 
 test('power and status labels never leak original English names into Chinese combat UI',()=>{

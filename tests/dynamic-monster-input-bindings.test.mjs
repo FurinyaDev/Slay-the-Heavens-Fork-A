@@ -26,8 +26,8 @@ test('dynamic monster controls retain actor ownership and precisely retire stale
   const result=runLua(fixture);
   assert.equal(result.status,0,result.stdout+result.stderr);
   assert.match(result.stdout,/DYNAMIC_MONSTER_INPUT_BINDINGS_PASS/);
-  assert.match(result.stdout,/REENTRANT_RETIRE_SITES=11/);
-  assert.match(result.stdout,/PARTIAL_BIND_FAILURE_SITES=11/);
+  assert.match(result.stdout,/REENTRANT_RETIRE_SITES=17/);
+  assert.match(result.stdout,/PARTIAL_BIND_FAILURE_SITES=17/);
 });
 
 test('old actor pointers cannot target the same ID in a replacement battle', t => {
@@ -41,7 +41,7 @@ test('old actor pointers cannot target the same ID in a replacement battle', t =
 test('partial-bind injection requires intent cleanup to precede native registration', t => {
   const source=moduleSource(detail);
   const cleanup='if cleanups then cleanups[#cleanups+1]={control=control,cancel=cancel} end';
-  const nextListener='if not current() then return end\n            on(host.cursor.CursorExit,cancel)';
+  const nextListener='if not current() then return end\n            on(host.cursor.CursorExit,function(event) cancel(false,false,event) end)';
   assert.equal(source.split(cleanup).length,2);
   assert.equal(source.split(nextListener).length,2);
   assert.ok(source.indexOf(cleanup)<source.indexOf(nextListener));
@@ -51,8 +51,8 @@ test('partial-bind injection requires intent cleanup to precede native registrat
 
 test('reentrant retirement regression rejects continuation after intent cursor registration', t => {
   const source=moduleSource(detail);
-  const fence='if not current() then return end\n            on(host.cursor.CursorExit,cancel)';
+  const fence='if not current() then return end\n            on(host.cursor.CursorExit,function(event) cancel(false,false,event) end)';
   assert.equal(source.split(fence).length,2);
-  assertMutationFailure(t,detail,source.replace(fence,'on(host.cursor.CursorExit,cancel)'),
+  assertMutationFailure(t,detail,source.replace(fence,'on(host.cursor.CursorExit,function(event) cancel(false,false,event) end)'),
     /registration continued after retirement at 6/);
 });

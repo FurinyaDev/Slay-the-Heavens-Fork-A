@@ -1,3 +1,4 @@
+local advanceShop=dofile('tests/lua/support/shop_timeline.lua')
 local testStart=dofile('tests/lua/support/game_ui_fixture.lua').start
 local advanceShop=dofile('tests/lua/support/shop_timeline.lua')
 package.path='tests/lua/?.lua;'..package.path

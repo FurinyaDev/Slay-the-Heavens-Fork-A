@@ -17,7 +17,7 @@ import {measureSources} from '../scripts/lua-quality-metrics.mjs';
 const file='src/lua/abyss_defect_utility_cards.lua';
 const read=p=>readFileSync(p,'utf8').replaceAll('\r\n','\n');
 const actorRead=currentDefectActorReader(read);
-const actorSource=p=>preDefectActorSource(p,read(p),{readSource:actorRead});
+const actorSource=path=>preDefectActorSource(path,read(path),{readSource:actorRead});
 const before=read('tests/fixtures/defect-utility-planning-before.lua');
 function replay(source,fixture='tests/lua/defect_utility_planning.lua'){
  const dir=mkdtempSync(join(tmpdir(),'defect-utility-'));

@@ -8,10 +8,17 @@ import {spawnSync} from 'node:child_process';
 import {lfsArguments,lfsEnvironment,prepareRuntimePreviews,runtimePreviewPaths,runtimePreviewObjects} from './ci-reviewed-lfs.mjs';
 const hash=bytes=>createHash('sha256').update(bytes).digest('hex');
 const bytes=readFileSync(new URL('../config/ci-media-lfs.json',import.meta.url));
-assert.equal(hash(bytes),'80e6bae0a63426858864d5d13d50b86e7fa2369a4b89715b2f0d264b8068092e','exact media and evidence manifest');
+assert.equal(hash(bytes),'ce49659b7b2947b34fcbdffe669aa27b77c2f8b14f8a7b875f28a4bc40b88aca','exact media and evidence manifest');
 const manifest=JSON.parse(bytes);
 assert.equal(manifest.schemaVersion,1);
-const original={...manifest};delete original.evidenceExtension;delete original.archiveExtension;delete original.helperExtension;delete original.replayArchiveExtension;
+const {checkoutExtension,replayArchiveExtension,...sharedManifest}=manifest;
+assert.equal(hash(JSON.stringify({...sharedManifest,replayArchiveExtension},null,2)+'\n'),
+ '80e6bae0a63426858864d5d13d50b86e7fa2369a4b89715b2f0d264b8068092e','complete develop replay contract');
+assert.equal(hash(JSON.stringify({...sharedManifest,checkoutExtension},null,2)+'\n'),
+ '6116501b13bea235c3aab03da6a8b0776b07a6cf22914bb4b4c7caef646853bd','complete released checkout contract');
+assert.equal(hash(JSON.stringify(sharedManifest,null,2)+'\n'),
+ 'a744f84701e638657569cf3211443adbace935c28435b2742ebc28b2a666e89d','complete pre-checkout media contract');
+const original={...sharedManifest};delete original.evidenceExtension;delete original.archiveExtension;delete original.helperExtension;
 assert.equal(hash(JSON.stringify(original,null,2)+'\n'),'732a8b8b64611a2a3f714bf41a7c2bc1f458b1a6f9dfb86f5d37d0dc0c3a715a','complete original media contract');
 const freeze=row=>Object.freeze({...row,oldBinaryGitBlobs:Object.freeze(row.oldBinaryGitBlobs)});
 export const originalMediaFiles=Object.freeze(manifest.files.map(freeze));
@@ -19,7 +26,17 @@ export const evidenceFiles=Object.freeze(manifest.evidenceExtension.files.map(fr
 export const archiveFiles=Object.freeze(manifest.archiveExtension.files.map(freeze));
 export const helperArchiveFiles=Object.freeze(manifest.helperExtension.files.map(freeze));
 export const replayArchiveFiles=Object.freeze(manifest.replayArchiveExtension.files.map(freeze));
-export const mediaFiles=Object.freeze([...originalMediaFiles,...evidenceFiles,...archiveFiles,...helperArchiveFiles,...replayArchiveFiles]);
+export const checkoutFiles=Object.freeze(checkoutExtension.files.map(freeze));
+const replayByPath=new Map(replayArchiveFiles.map(row=>[row.path,row]));
+const sharedReplayFiles=checkoutFiles.filter(row=>replayByPath.has(row.path));
+for(const row of sharedReplayFiles){
+ const {sourceCommit:publishedSource,...published}=row;
+ const {sourceCommit:developSource,...develop}=replayByPath.get(row.path);
+ assert.notEqual(publishedSource,developSource);
+ assert.deepEqual(published,develop,'shared replay archive payload and provenance: '+row.path);
+}
+export const mediaFiles=Object.freeze([...originalMediaFiles,...evidenceFiles,...archiveFiles,...helperArchiveFiles,
+ ...replayArchiveFiles,...checkoutFiles.filter(row=>!replayByPath.has(row.path))]);
 const mediaMap=new Map(mediaFiles.map(row=>[row.path,row]));
 export const mediaByPath=Object.freeze({size:mediaMap.size,has:path=>mediaMap.has(path),get:path=>mediaMap.get(path)});
 export const maxMediaPayloadBytes=117369505;
@@ -27,6 +44,8 @@ export const maxEvidencePayloadBytes=37495268;
 export const maxArchivePayloadBytes=6584075;
 export const maxHelperArchivePayloadBytes=5435595;
 export const maxReplayArchivePayloadBytes=20312962;
+export const maxCheckoutPayloadBytes=26457288;
+const sharedReplayPayloadBytes=18767343;
 assert.equal(manifest.maxPayloadBytes,maxMediaPayloadBytes);
 assert.equal(manifest.evidenceExtension.maxPayloadBytes,maxEvidencePayloadBytes);
 assert.equal(manifest.evidenceExtension.sourceCommit,'f34723b6d54b6153de8a333a8abcc77884737f8f');
@@ -48,6 +67,11 @@ assert.deepEqual(replayArchiveFiles.map(row=>row.path),[
  'tests/helpers/rebased-release-source.json.gz',
  'tests/helpers/sts-style-prior-runtime.json.gz',
 ]);
+assert.equal(checkoutExtension.sourceCommit,'6492e8dccbcf847a0eba7ad3995da50257032e08');
+assert.equal(checkoutExtension.maxPayloadBytes,maxCheckoutPayloadBytes);
+assert.equal(checkoutFiles.length,11);
+assert(checkoutFiles.every(row=>/^(?:(?:docs|experiments)\/.+\.(?:gz|png)|tests\/(?:fixtures|helpers)\/.+\.json\.gz)$/.test(row.path)
+ &&row.sourceCommit===checkoutExtension.sourceCommit),'exact published checkout paths and provenance');
 assert.equal(mediaByPath.size,mediaFiles.length);
 const unique=new Map();
 for(const row of mediaFiles){
@@ -55,7 +79,8 @@ for(const row of mediaFiles){
  const scoped=evidenceFiles.includes(row)?/^docs\/evidence\/.+\.json\.gz$/.test(row.path)&&row.sourceCommit===manifest.evidenceExtension.sourceCommit
   :archiveFiles.includes(row)?row.sourceCommit===manifest.archiveExtension.sourceCommit
   :helperArchiveFiles.includes(row)?row.sourceCommit===manifest.helperExtension.sourceCommit
-  :replayArchiveFiles.includes(row)?row.sourceCommit===manifest.replayArchiveExtension.sourceCommit:/\.(png|jpe?g|gif)$/i.test(row.path);
+  :replayArchiveFiles.includes(row)?row.sourceCommit===replayArchiveExtension.sourceCommit
+  :checkoutFiles.includes(row)||/\.(png|jpe?g|gif)$/i.test(row.path);
  assert(scoped&&/^[0-9a-f]{64}$/.test(row.sha256)&&Number.isSafeInteger(row.bytes)&&row.bytes>0);
  assert(row.oldBinaryGitBlobs.length>0&&row.oldBinaryGitBlobs.every(id=>/^[0-9a-f]{40}$/.test(id))&&typeof row.category==='string');
  if(unique.has(row.sha256))assert.equal(unique.get(row.sha256),row.bytes);unique.set(row.sha256,row.bytes);
@@ -67,7 +92,10 @@ assert.equal(payload(evidenceFiles),maxEvidencePayloadBytes,'distinct exact evid
 assert.equal(payload(archiveFiles),maxArchivePayloadBytes,'distinct exact existing history payload');
 assert.equal(payload(helperArchiveFiles),maxHelperArchivePayloadBytes,'distinct exact existing helper history payload');
 assert.equal(payload(replayArchiveFiles),maxReplayArchivePayloadBytes,'distinct exact existing replay archive payload');
-const maxStoragePayloadBytes=maxMediaPayloadBytes+maxEvidencePayloadBytes+maxArchivePayloadBytes+maxHelperArchivePayloadBytes+maxReplayArchivePayloadBytes;
+assert.equal(payload(checkoutFiles),maxCheckoutPayloadBytes,'distinct exact checkout payload');
+assert.equal(payload(sharedReplayFiles),sharedReplayPayloadBytes,'shared replay and checkout payload');
+const maxStoragePayloadBytes=maxMediaPayloadBytes+maxEvidencePayloadBytes+maxArchivePayloadBytes+maxHelperArchivePayloadBytes
+ +maxReplayArchivePayloadBytes+maxCheckoutPayloadBytes-sharedReplayPayloadBytes;
 assert.equal([...unique.values()].reduce((a,b)=>a+b,0),maxStoragePayloadBytes,'distinct exact storage payload');
 export const mediaPointer=row=>Buffer.from(`version https://git-lfs.github.com/spec/v1\noid sha256:${row.sha256}\nsize ${row.bytes}\n`);
 export function validateMediaPointers(pointers){

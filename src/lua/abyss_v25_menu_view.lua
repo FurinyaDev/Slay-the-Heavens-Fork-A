@@ -1,6 +1,7 @@
 -- V25 presentation adapter. Reads the existing Run and never submits commands.
 local Theme=require('abyss_theme')
 local number=require('abyss_numbers').integer
+local RoundedButton=require('abyss_rounded_button')
 local M={}
 local pointers=setmetatable({},{__mode='k'})
 local states={'normal','hover','pressed','disabled'}
@@ -23,7 +24,19 @@ local function menuTarget(box,pointer,available,state)
     pointer.available=available
     pointer.state=state
 end
-function M.button(box,available)
+local function paintButtonState(group,state,color)
+    if not group then return end
+    local material=group:GetChild('roundedButtonState')
+    if material then
+        if not color then return false end
+        RoundedButton.paint(material:GetChild('v25Flag'),Theme.officialAssets.mapReturnPalette[state],color)
+        local scales=Theme.officialAssets.mapReturnScales
+        if scales then material:SetLocalScale(scales[state][1],scales[state][2],1) end
+        return
+    end
+    for _,key in ipairs(states)do group:GetChild(key):SetVisible(key==state)end
+end
+function M.button(box,available,color)
     if not enabled()then return end
     local pointer=pointers[box] or {}
     pointers[box]=pointer
@@ -31,20 +44,18 @@ function M.button(box,available)
     local state=not available and 'disabled' or pointer.down and 'pressed' or pointer.hover and 'hover' or 'normal'
     if pointer.painted==state then return end
     menuTarget(box,pointer,available,state)
-    for _,name in ipairs({'v25Face','v25MenuFace'})do
-        local group=box:GetChild(name)
-        if group then for _,key in ipairs(states)do group:GetChild(key):SetVisible(key==state)end end
-    end
+    if paintButtonState(box:GetChild('v25Face'),state,color) == false then return end
+    paintButtonState(box:GetChild('v25MenuFace'),state,color)
     pointer.painted=state
 end
-function M.pointer(box,event,available)
+function M.pointer(box,event,available,color)
     if not enabled()then return end
     local pointer=pointers[box] or {};pointers[box]=pointer
     if event=='enter'then pointer.hover=true
     elseif event=='down'then pointer.hover,pointer.down=true,true
     elseif event=='up'then pointer.down=false
     else pointer.hover,pointer.down=false,false end
-    M.button(box,available)
+    M.button(box,available,color)
 end
 local function hideLegacy(button)
     for _,name in ipairs({'plate','border','normal','disabled','selected'})do

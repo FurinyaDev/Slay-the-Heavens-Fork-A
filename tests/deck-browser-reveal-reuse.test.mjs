@@ -67,6 +67,17 @@ for i=1,3 do local instance=F.Combat.copy(i==2 and card or other);instance.uid=9
 local originalPile=F.Combat.copy(run.combat.draw)
 local renderOriginal=host.battleUI.render;local openRenders=0
 host.battleUI.render=function(self,...)openRenders=openRenders+1;return renderOriginal(self,...)end
+local definition=F.Combat.cardDefinition;local definitionReads,coveredHandReads=0,0
+local handUids={};for _,instance in ipairs(run.combat.hand)do handUids[instance.uid]=true end
+F.Combat.cardDefinition=function(state,instance,...)
+ if state==run.combat then
+  if instance.uid>=901 and instance.uid<=903 then definitionReads=definitionReads+1 end
+  if handUids[instance.uid] then coveredHandReads=coveredHandReads+1 end
+ end
+ return definition(state,instance,...)
+end
+local handBox=root:GetChild('battlePanel'):GetChild('card1')
+local handTitle=handBox:GetChild('name').text
 local itemSize=pile.GetItemSize;local geometryReads=0
 pile.GetItemSize=function(self)geometryReads=geometryReads+1;return itemSize(self)end
 sizes={};assert(host:openDeck('draw'));local deck=host.deckUI
@@ -74,8 +85,20 @@ assert(openRenders==1,'opening the deck rendered the covered battle twice')
 host.battleUI.render=renderOriginal
 assert(probeHidden,'calibration painted a provisional card')
 assert(not deck.calibrating and not deck.pendingGrid and not host.pageReveal:covered(),'synchronous combat pile missed the opening turn')
-assert(geometryReads==1,'synchronous card callbacks repeatedly read native grid geometry')
+assert(geometryReads==1,'synchronous pile callbacks repeatedly read native grid geometry')
+assert(definitionReads==3,'pile face preview resolved a definition twice: '..definitionReads)
+assert(coveredHandReads==0,'opening the pile projected the covered battle hand')
+assert(not handBox:GetChild('nativePlayableRim').visible and handBox:GetChild('name').text==handTitle,
+    'suspending the hand failed to retire the playable glow or preserve the backdrop')
+F.Combat.cardDefinition=definition
 pile.GetItemSize=itemSize
+local Display=require('abyss_card_display')
+for i=0,2 do
+ local cell=pile.items[i];local instance=deck.bindings[cell].instance
+ local displayed=host.nodeUI.presentation[instance.cardId]
+ local expected=Display.combatText(displayed,definition(run.combat,instance),instance,F.Combat.cardPreview(run.combat,instance),run.combat)
+ assert(cell:GetChild('face'):GetChild('label').text==expected,'reused definition changed a combat card description')
+end
 settle()
 assert(deck.indexBase==0 and sizes[1]==1 and sizes[2]==3,'first nonempty list did not calibrate its actual zero base')
 assert(not panel:GetChild('deckSort').visible and panel:GetChild('rarityTip').visible)
@@ -83,6 +106,8 @@ assert(deck.setPileSort==nil and not deck:setSort('type'))
 assert(require('abyss_art_features').flags.cards==false)
 for i,c in ipairs(run.combat.draw)do assert(c.uid==originalPile[i].uid and c.cardId==originalPile[i].cardId,'display sort changed the real pile order')end
 assert(host:closeDeck());settle()
+assert(host.battleUI.active and handBox:GetChild('name').text==handTitle,
+    'closing the browser failed to restore the battle hand')
 for _,instance in ipairs(run.combat.draw)do instance.cardId=card.cardId end
 -- Opt into a one-slot runtime source on the real visible faces only. This is
 -- an isolated native-API counter fixture, not an SDK rendering/performance claim.
@@ -96,6 +121,24 @@ assert(deck.indexBase==0 and #sizes==1 and sizes[1]==3 and created>0,'known base
 local count,removed=created,destroyed;local shown=0;local cover=root:GetChild('pageReveal');local visibility=cover.SetVisible
 cover.SetVisible=function(self,v)if v then shown=shown+1 end;return visibility(self,v)end
 local before=F.Combat.copy(run.combat.draw);local initialSession=deck.openSession;local back=panel:GetChild('pileReturn'):GetChild('hit')
+local focus=panel:GetChild('cardFocus');local focusFace=focus:GetChild('face')
+focusFace.children.artSamples=F.control({name='artSamples',kind='container',size={144,64}},focusFace)
+local sameGridRefresh=pile.refreshCallback
+assert(pile.items[0]:GetChild('hit').click() and focus.visible and not pile.visible)
+local toggle=panel:GetChild('upgradePreview'):GetChild('hit')
+assert(toggle.click() and deck.cardDetail.preview and toggle.click() and not deck.cardDetail.preview)
+assert(not host.pageReveal:covered(),'single-card preview must publish without a cover when ready')
+back.listeners.down({touchId=42});back.listeners.up({touchId=42})
+assert(back.click({touchId=42}) and pile.visible and not focus.visible and not host.pageReveal:covered())
+back.listeners.down({touchId=43})
+assert(pile.items[0]:GetChild('hit').click(),'same-card click was rejected after detail return')
+assert(deck:back(),'detail back did not return to the deck')
+back.listeners.up({touchId=43})
+assert(not back.click({touchId=43}) and deck.visible,'a return press cannot survive a round trip through detail')
+Art.update()
+assert(pile.refreshCallback==sameGridRefresh and created==count and destroyed==removed and shown==0,
+    'viewing, toggling and returning must retain ready cells and their artwork')
+
 assert(host:closeDeck());settle()
 run.deck=F.Combat.copy(run.combat.draw)
 assert(host:openDeck());settle()
@@ -124,7 +167,14 @@ pile.deferRefresh=true;assert(deck:setSort('type'));assert(deck.pendingGrid and 
 assert(host.pageReveal.localFrame==F.Theme.layout.deckView.pileViewport,'deck preparation covered title or sort controls')
 pile:recycle(0,pile.indexBase);assert(deck.pendingGrid,'one cell cannot certify all prior visible slots')
 pile:flush();assert(not deck.pendingGrid);pile.deferRefresh=false;settle()
-assert(host:closeDeck());settle();assert(host:openDeck('draw'));assert(host.pageReveal:covered(),'new deck session bypassed preparation');settle();assert(deck.openSession>initialSession)
+local retiredCallback,retiredControl=pile.refreshCallback,pile.items[0]
+assert(host:closeDeck());settle();pile.deferRefresh=true
+assert(host:openDeck('draw'));assert(host.pageReveal:covered(),'new deck session bypassed preparation')
+local currentCallback,oldBinding=pile.refreshCallback,deck.bindings[retiredControl]
+retiredCallback(retiredControl,pile.indexBase)
+assert(deck.pendingGrid and pile.refreshCallback==currentCallback and deck.bindings[retiredControl]==oldBinding
+ and (not oldBinding or oldBinding.generation~=deck.generation),'a retired callback repainted the current session')
+pile:flush();pile.deferRefresh=false;settle();assert(deck.openSession>initialSession)
 assert(host:closeDeck());settle()
 -- The second native grid has an independent one-based callback contract.
 local choice={token='grid-base',cards=F.Combat.copy(run.combat.draw),op='discover'};assert(deck:open(run,choice));deck:update();assert(deck.indexBase==1);assert(deck:close())
@@ -168,7 +218,17 @@ coveredCallback(function()withoutEvents(function()return Run.discardPotion(run,1
 assert(not host.battleUI.potionSlots[1],'eventless discard left a stale potion control')
 assert(host:closeDeck());settle()
 local cap=run.maxHp
-coveredCallback(function()withoutEvents(function()return Run.increaseMaxHp(run,1)end)end)
+coveredCallback(function()
+ withoutEvents(function()
+  local raised=Run.increaseMaxHp(run,1)
+  if not raised then return false end
+  -- The current combat actor is the HUD's health owner during battle.
+  local actor=run.combat.player
+  actor.maxHp=actor.maxHp+1
+  actor.hp=math.min(actor.maxHp,actor.hp+1)
+  return true
+ end)
+end)
 assert(run.maxHp==cap+1 and root:GetChild('battlePanel'):GetChild('player').text:match('/'..(cap+1)..'$'),
  'eventless max-health change left a stale HUD')
 assert(host:closeDeck());settle()
@@ -219,13 +279,26 @@ local C=F.Combat;local Gate=require('abyss_page_reveal')
 package.loaded.abyss_art_features={schemaVersion=2,flags={cards=false,menuBackground=false,selectionAvatar=false,battlePortrait=false,monsters=false}}
 Color=setmetatable({FromRGBA=function(r,g,b,a)return{r=r,g=g,b=b,a=a}end},{__call=function(_,r,g,b,a)return{r=r,g=g,b=b,a=a}end})
 Enum={ImageSource={StaticReference='static'},ImageType={Basic='basic',Stretch='stretch'},CursorEventType={CursorClick='click'},Device={Controller='controller',MobileController='mobileController',Mobile='mobile'}}
-local function boot(amount,origin)
- local canvas=F.control({children=F.Layout});local host,p;local actors=F.monsterActors()
+local function boot(amount,origin,deferred)
+ local canvas=F.control({children=F.Layout});local host,p,grid;local actors=F.monsterActors()
+ local submitted={}
  package.loaded.abyss_monster_actor_binding={enabled=true,templateIndex=actors.templateIndex,containerTemplateIndex=actors.containerTemplateIndex,powerTemplateIndex=actors.powerTemplateIndex}
  game={GetUICanvasSize=function()return 1280,720 end,IsTestPlay=function()return true end,GetDevice=function()return'desktop'end,GetCursorUIPos=function()return 0,0 end,
   InstantiateClientUIControl=actors.instantiate,DestroyClientUIControl=actors.destroy}
  script={object=canvas,GetParam=function()return false end,EnableUpdate=function()end}
- G.new=function(root,data,presentation,event,platform)F.legacyPileGrid(root:GetChild('deckPanel'));p=platform;host=create(root,data,presentation,event,platform);return host end
+ G.new=function(root,data,presentation,event,platform)
+  -- Exercise the compatibility Grid contract with no pooled template factory.
+  platform.deckBrowser=nil
+  F.legacyPileGrid(root:GetChild('deckPanel'))
+  p=platform;host=create(root,data,presentation,event,platform)
+  grid=root:GetChild('deckPanel'):GetChild('pileGrid');grid.indexBase=origin;grid.deferRefresh=deferred~=false
+  local refresh=grid.RefreshItems
+  function grid:RefreshItems(count,callback)
+   submitted[#submitted+1]={amount=count,visible=host.deckUI.visible}
+   return refresh(self,count,callback)
+  end
+  return host
+ end
  dofile('src/lua/abyss_ui.lua');OnStart();G.new=create;local update=OnUpdate
  for i=1,60 do update(1/60)end;assert(host and not host.pageReveal:covered());assert(host:start())
  for i=1,60 do update(1/60)end;assert(F.confirmStart(host))
@@ -234,13 +307,42 @@ local function boot(amount,origin)
   update(1/60)
  end
  assert(host.run and not host.starting and not(host.prologue and host.prologue:covering())and not host.pageReveal:covered(),'native deck opening did not finish')
+ if deferred==false and host.run.phase=='node' then
+  for _,choice in ipairs({'continue','reward_1','leave'})do assert(F.Nodes.chooseEvent(host.run,choice))end
+  host:refresh()
+  for _=1,60 do if not host.pageReveal:covered()then break end;update(.05)end
+  -- An already-ready route now publishes in its click turn. Drive the idle
+  -- native update that owns hidden grid warmup before assuming it has run.
+  update(1/60)
+ end
  local original=C.copy(host.run.deck);host.run.deck={}
  for i=1,amount do local card=C.copy(original[(i-1)%#original+1]);card.uid=1000+i;host.run.deck[i]=card end
- local grid=host.root:GetChild('deckPanel'):GetChild('pileGrid');grid.indexBase=origin;grid.deferRefresh=true
- assert(host:openDeck());return host,p,grid,update
+ if deferred==false then
+  assert(#submitted==1 and submitted[1].amount==1 and not submitted[1].visible,
+      'eligible idle frame did not prepare one hidden native index')
+  assert(not host.deckUI.visible and next(host.deckUI.bindings)==nil,'preparation painted a speculative card')
+  local hit=host.root:GetChild('deckEntry'):GetChild('open'):GetChild('hit')
+  assert(host.mode=='map' and not host.pageReveal:covered() and hit.click(),'map top-bar input did not reach the browser')
+  assert(#submitted==2 and submitted[2].amount==amount and submitted[2].visible,
+      'first click repeated calibration despite its idle callback')
+ else
+  local idleCallback=grid.refreshCallback
+  assert(host:openDeck())
+  if idleCallback then
+   idleCallback(nil,1-origin)
+   assert(host.deckUI.calibrating and host.deckUI.indexBase==nil,'late warmup callback changed the active refresh')
+  end
+ end
+ return host,p,grid,update
 end
 local function turns(update)for i=1,3 do update(1/60)end end
 local function fill(grid,first,last)for i=first,last do grid:recycle(i-1,i-1+grid.indexBase)end end
+do
+ local host,p,grid=boot(10,1,false)
+ assert(grid.itemCount==10 and p.presentationReady(Gate.intent(host)) and not host.pageReveal:covered(),
+    'the real map entry failed to publish its synchronous first screen on click')
+ assert(host.deckUI.bindings[grid.items[0]].uid==1001)
+end
 for _,origin in ipairs({0,1})do
  local host,p,grid,update=boot(10,origin);local deck=host.deckUI
  assert(deck.calibrating and grid.itemCount==1,'cold grid must calibrate its own native origin')
@@ -361,7 +463,7 @@ local function settle()for _=1,5 do tick()end;assert(not host.pageReveal:covered
 local Run=require('abyss_run');local Surfaces=require('abyss_monster_surfaces')
 local function managedBattle()
  host,root=F.fixture();settle();assert(F.start(host));settle()
- assert(Run.startCombat(host.run,'cultist_solo'));host:refresh();settle()
+ assert(Run.startCombat(host.run,'raven_adept_solo'));host:refresh();settle()
  return root:GetChild('battlePanel'),F.actorControl(root:GetChild('battlePanel'),'enemy1')
 end
 do

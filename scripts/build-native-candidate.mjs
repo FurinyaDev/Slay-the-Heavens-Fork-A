@@ -22,6 +22,7 @@ import { toLua } from './build-lua-data.mjs';
 import { nativeCardArtArgs, prepareNativeCardArt, nativeCardArtBuildReceipt, verifyNativeCardArtReceipt } from './card-art-samples.mjs';
 import {reusableUi} from './native-candidate-ui-cache.mjs';
 import {embeddedScripts} from './native-script-inventory.mjs';
+import {nativeScriptStorageProfile,packNativeScript} from './native-script-storage.mjs';
 import {runNativeClientCheck} from './native-client-check.mjs';
 import {assertCandidateArtPolicy,assertCandidateArtReceipt} from './candidate-art-policy.mjs';
 import {lightweightProfile} from './lightweight-2d-profile.mjs';
@@ -336,13 +337,18 @@ export async function buildNativeCandidate({baseMap,output='build/candidates',ro
     const reusable=await call('scene_list_client_scripts',{mapPath,includeSource:true});
     const existingSources=new Map((reusable.scripts??[]).filter(row=>typeof row.source==='string').map(row=>[row.name,row.source]));
     receipt.reusedModules=[];
+    if(officialAssets)receipt.nativeScriptStorage={profile:nativeScriptStorageProfile,modules:[]};
     const moduleDigests={},pendingScripts=[];
     const scriptInputs=[...modules].map(([name,path])=>({name,source:readFileSync(fileRecord(path).path,'utf8').replace(/^\uFEFF/,'')}));
     const {assertClientScriptText}=await import('./check-release-text.mjs');
     assertClientScriptText(scriptInputs,'candidate-source');
     for(const {name,source} of scriptInputs) {
-      const bytes=Buffer.from(source),destination=join(payload,`${name}.lua`);
-      writeFileSync(destination,name==='abyss_ui'?Buffer.concat([Buffer.from(`print("ABYSS_BUILD ${buildId}")\n`),bytes]):bytes,{flag:'wx'});
+      const packed=packNativeScript(name,source,receipt.nativeScriptStorage?.profile);
+      const deployed=name==='abyss_ui'?`print("ABYSS_BUILD ${buildId}")\n${packed}`:packed;
+      const bytes=Buffer.from(deployed),destination=join(payload,`${name}.lua`);
+      receipt.nativeScriptStorage?.modules.push({name,sourceSha256:sha256(source),sourceBytes:Buffer.byteLength(source),
+        packedSha256:sha256(bytes),packedBytes:bytes.length});
+      writeFileSync(destination,bytes,{flag:'wx'});
       receipt.outputs.push(fileRecord(destination,workspace));
       moduleDigests[name]=fileRecord(destination).sha256;
       if(name!=='abyss_ui'&&existingSources.get(name)===readFileSync(destination,'utf8')) {

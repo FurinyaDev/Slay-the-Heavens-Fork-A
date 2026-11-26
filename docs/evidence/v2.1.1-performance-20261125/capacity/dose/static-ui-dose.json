@@ -1,0 +1,137 @@
+{
+  "method": "Actual fixture native GIL, diagnostic copies with whole hidden UI branches removed. Linux Node MCP reading native layout, including file read; no rendering, compilation, Lua or playback.",
+  "sourceCommit": "b6ba4614362ba32cd38eb0b457fbf28187d0c536",
+  "buildId": "e14dcac3-3161-4d77-b729-8e1f337b22d7",
+  "sourceGilSha256": "015e8d77bec8bf9cae6c6997cb6e92be8820404d7587c9b262ca2d394d937a0a",
+  "node": "v24.22.3",
+  "probes": 32,
+  "latinSquareOrders": [
+    [
+      0,
+      1,
+      3,
+      2
+    ],
+    [
+      1,
+      2,
+      0,
+      3
+    ],
+    [
+      2,
+      3,
+      1,
+      0
+    ],
+    [
+      3,
+      0,
+      2,
+      1
+    ]
+  ],
+  "summary": [
+    {
+      "index": 0,
+      "sha256": "015e8d77bec8bf9cae6c6997cb6e92be8820404d7587c9b262ca2d394d937a0a",
+      "fileBytes": 23777846,
+      "uiSectionBytes": 19577951,
+      "controls": 24127,
+      "removedRoots": [],
+      "removedRecords": 0,
+      "n": 8,
+      "wallMs": {
+        "p50": 3985.7870930000063,
+        "max": 6896.804108
+      },
+      "cpuMs": {
+        "p50": 4221.2275,
+        "max": 12898.979
+      },
+      "heapDeltaBytes": {
+        "p50": 67270292,
+        "max": 285085072
+      }
+    },
+    {
+      "index": 1,
+      "sha256": "b6058bf4afa6a3c4e848c4bf9b9ad4d067e013e55e62f06d4b5d575c066e2265",
+      "fileBytes": 16391588,
+      "uiSectionBytes": 12191693,
+      "controls": 14527,
+      "removedRoots": [
+        "nodePanel"
+      ],
+      "removedRecords": 9600,
+      "n": 8,
+      "wallMs": {
+        "p50": 2240.032284000008,
+        "max": 3727.1968899999993
+      },
+      "cpuMs": {
+        "p50": 2457.0835,
+        "max": 7490.628
+      },
+      "heapDeltaBytes": {
+        "p50": 55402752,
+        "max": 119781992
+      }
+    },
+    {
+      "index": 2,
+      "sha256": "f4171595d90f54c1849eec3eaaceac8f25e4c42774fda41d9ba5240708a43d37",
+      "fileBytes": 11692107,
+      "uiSectionBytes": 7492212,
+      "controls": 8382,
+      "removedRoots": [
+        "nodePanel",
+        "battlePanel"
+      ],
+      "removedRecords": 15745,
+      "n": 8,
+      "wallMs": {
+        "p50": 1331.4999965000025,
+        "max": 2062.6623959999997
+      },
+      "cpuMs": {
+        "p50": 1438.9255,
+        "max": 3924.132
+      },
+      "heapDeltaBytes": {
+        "p50": 73849300,
+        "max": 230309424
+      }
+    },
+    {
+      "index": 3,
+      "sha256": "3b20e319633b0980c9a32b953cd11fbc9133f838e452b1648b64dd5b35a9c664",
+      "fileBytes": 8403580,
+      "uiSectionBytes": 4203685,
+      "controls": 3948,
+      "removedRoots": [
+        "nodePanel",
+        "battlePanel",
+        "mapPanel",
+        "deckPanel",
+        "relicBar",
+        "relicPanel",
+        "characterPanel"
+      ],
+      "removedRecords": 20179,
+      "n": 8,
+      "wallMs": {
+        "p50": 720.3471395000015,
+        "max": 1032.842024999998
+      },
+      "cpuMs": {
+        "p50": 810.3455,
+        "max": 1891.147
+      },
+      "heapDeltaBytes": {
+        "p50": 62749144,
+        "max": 206600392
+      }
+    }
+  ]
+}

@@ -103,7 +103,7 @@ test('actual Lua map validates pointer navigation, scrolling, locked input and m
   buildMapLayout();
   const result = runLua('tests/lua/map_ui.lua');
   assert.equal(result.status, 0, result.stderr + result.stdout);
-  assert.match(result.stdout, /LUA_MAP_UI_PASS 28/);
+  assert.match(result.stdout, /LUA_MAP_UI_PASS 29/);
 });
 
  test('complete native interface respects MCP per-container import limits', async () => {

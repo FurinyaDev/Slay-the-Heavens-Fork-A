@@ -1,0 +1,64 @@
+name: Release backflow
+
+on:
+  push:
+    branches: [master, develop]
+  pull_request:
+    branches: [master, develop]
+    types: [opened, synchronize, reopened, ready_for_review]
+  merge_group:
+    types: [checks_requested]
+    branches: [develop]
+  schedule:
+    # The default branch also checks master updates that use a frozen workflow.
+    - cron: '23,53 * * * *'
+  workflow_dispatch:
+    inputs:
+      master_sha:
+        description: Exact merged Release or Hotfix commit on master
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  release-backflow:
+    if: github.repository_id == '1429751262'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+          sparse-checkout: |
+            scripts/check-release-backflow.mjs
+            scripts/repository-identity.mjs
+          sparse-checkout-cone-mode: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '24.18.0'
+      - name: Verify production history
+        run: node scripts/check-release-backflow.mjs
+
+  release-closeout:
+    if: github.repository_id == '1429751262' && github.event_name == 'workflow_dispatch'
+    needs: release-backflow
+    permissions:
+      contents: read
+      actions: read
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+          sparse-checkout: scripts
+          sparse-checkout-cone-mode: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '24.18.0'
+      - name: Verify exact develop push Full and inventory
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/verify-release-backflow-closeout.mjs

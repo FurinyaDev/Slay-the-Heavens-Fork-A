@@ -244,7 +244,7 @@ test('Act1 current source enters the unchanged historical chain and rereads ever
  assert.throws(()=>preRelicQuerySource(file,source,{readSource:p=>{if(p===file)throw Error('missing');return read(p);}}),/combined linked owner missing/);
  // A reader for another target is projected data, not this facade's raw owner.
  // Accepting it would silently combine #546 architecture with the current tree.
- const act1Reader=act1ChoiceReader(p=>read(p));
+ const act1Reader=act1ChoiceReader(read);
  assert.equal(act1Reader('config/architecture.json'),sourceEpoch.proof.targets.act1.files['config/architecture.json'].source);
  assert.throws(()=>preRelicQuerySource(file,source,{readSource:act1Reader}),/combined linked owner identity: config\/architecture.json/);
 });

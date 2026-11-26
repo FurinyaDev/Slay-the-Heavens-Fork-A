@@ -9,6 +9,7 @@ import {assertOfficialRunContracts} from '../scripts/official-run-layout.mjs';
 import {deckCardTemplate,battlePileCardTemplate} from '../scripts/deck-ui-layout.mjs';
 import {toLua,luaString} from '../scripts/build-lua-data.mjs';
 import {colourToLua} from '../scripts/build-ui-theme.mjs';
+import {projectRoundedStates} from '../scripts/native-rounded-button.mjs';
 
 const child=(node,name)=>(node?.children??node?.controls??[]).find(part=>part.name===name);
 const all=node=>[node,...(node.children??node.controls??[]).flatMap(all)];
@@ -26,6 +27,30 @@ test('official HUD renders a native settings icon in every button state',()=>{
   assert.deepEqual(child(overlay,'symbol'),{
    name:'symbol',kind:'image',position:[0,0],size:[28,28],image:theme.icon.settings,colour,
   });
+ }
+});
+
+test('official HUD shows a fanned stack of cards alongside the count in every deck button state',()=>{
+ const layout=gameLayout(),theme=officialAssetsTheme(nativeTheme);
+ const open=child(child(layout,'deckEntry'),'open'),hit=child(open,'hit');
+ applyOfficialAssets([layout],theme);
+ assert.equal(child(open,'hit'),hit);
+ for(const state of hit.children){
+  const overlay=child(state,'officialBattleHud'),symbol=child(overlay,'symbol');
+  assert.equal(symbol.kind,'container');
+  assert.equal(symbol.children.length,3);
+  const [back,middle,front]=symbol.children;
+  assert(back.rotation>middle.rotation&&middle.rotation>front.rotation);
+  for(const card of symbol.children){
+   assert(card.size[1]>card.size[0]);
+   assert.deepEqual(card.children.map(part=>part.image),[theme.image.rect,theme.image.rect]);
+   assert(card.children.every(part=>part.raycastTarget===false));
+  }
+  const count=child(overlay,'count');
+  assert.equal(count.text.align,'left');
+  assert.equal(count.text.autoSize,false);
+  assert(count.size[0]>=4*.6*count.text.fontSize+8,'four-digit count fits at the preferred size');
+  assert(count.position[0]+count.size[0]/2<=overlay.size[0]/2,'count must stay within its visual container');
  }
 });
 
@@ -90,7 +115,7 @@ test('final contracts cover every card host and reject local skin, bar and relic
  assert.throws(()=>assertOfficialRunContracts(trees),/bar covered/);
  map.children.shift();map.children.splice(index,0,bar);
  const relic=child(layout,'relicPanel');relic.children.push({name:'regressedCatalog',kind:'image',image:107311,size:[600,400]});
- assert.throws(()=>assertOfficialRunContracts(trees),/Shared relic surface/);
+ assert.throws(()=>assertOfficialRunContracts(trees),/Shared relic surface replaced by catalog panel: retired ornate panel/);
  relic.children.pop();assert.doesNotThrow(()=>assertOfficialRunContracts(trees));
 });
 test('reward overview retains live rows while adopting measured compact rows and the shared flag',()=>{
@@ -190,7 +215,7 @@ test('official build adopts the existing paper map without replacing graph or in
  assert.deepEqual(legend.children.filter(n=>n.name.endsWith('Label')).map(n=>n.text.content),['未知','商人','宝箱','休息','敌人','精英']);
  assert(!legend.children.some(n=>n.name==='bossIcon'||n.name==='bossLabel'));
  for(const [expected,selected]of [[nodes,n=>/^node\d+$/.test(n.name)],[edges,n=>/^edge\d+$/.test(n.name)],[hits,n=>n.kind==='cursorArea']]){
-  const current=all(map).filter(selected);assert.equal(current.length,expected.length);
+  const current=all(map).filter(n=>selected(n)&&n!==child(child(map,'mapRoute'),'hit'));assert.equal(current.length,expected.length);
   current.forEach((node,index)=>assert.strictEqual(node,expected[index],'retain live graph/input owner '+node.name));
  }
  assert(edges.every(n=>n.children?.length===8),'reuse the existing dashed-ink edge adapter');
@@ -207,10 +232,25 @@ test('official build adopts the existing paper map without replacing graph or in
  assert.deepEqual(hit.size,token.size);
  assert.deepEqual(rewardHit.size,token.size);
  assert.deepEqual(back.position.map((v,i)=>v+(theme.canvas.base[i]-back.size[i])/2),token.inset);
- const face=child(back,'v25Face');
- assert.deepEqual(face,child(reward,'v25Face'));
- assert.deepEqual(face.children.map(n=>n.name),['normal','hover','pressed','disabled']);
- assert(face.children.every(s=>child(s,'roundedButton')));
+ const states=['normal','hover','pressed','disabled'];
+ const face=child(back,'v25Face'),rewardFace=child(reward,'v25Face');
+ assert.deepEqual(rewardFace.children.map(n=>n.name),states);
+ assert(rewardFace.children.every(s=>child(s,'roundedButton')));
+ assert.deepEqual(face.children.map(n=>n.name),['roundedButtonState']);
+ const state=child(face,'roundedButtonState'),material=child(state,'v25Flag');
+ const expanded=states.map(name=>{
+  const copy=structuredClone(state);
+  Object.assign(copy,{name,visible:name==='normal'});
+  const paint=child(copy,material.name);
+  for(const [index,layer] of ['rim','cloth'].entries())for(const part of child(paint,layer).children)
+   part.colour=(name==='disabled'?theme.officialAssets.actionButton.disabled:theme.officialAssets.actionButton.secondary[name])[index];
+  return copy;
+ });
+ assert.deepEqual(projectRoundedStates(expanded,material.name).face,state);
+ expanded[2].scale=[.9,.9];
+ assert.deepEqual(projectRoundedStates(expanded,material.name).scales.pressed,[.9,.9],'retain the pressed scale');
+ expanded[2].position=[1,0];
+ assert.equal(projectRoundedStates(expanded,material.name),null,'retain an explicitly distinct state position');
  assert.equal(child(reward,'panelShade').visible,false);
 
 });
@@ -295,7 +335,7 @@ test('shop relics and potions clear every card at rest and on hover',()=>{
 test('official potion slots survive battle rewards, map, node and return-to-combat transitions',()=>{
  const {theme}=officialLayout(),require=createRequire(import.meta.url),f=require('fengari');
  const L=f.lauxlib.luaL_newstate();f.lualib.luaL_openlibs(L);
- const modules=['abyss_game_ui_view','abyss_game_ui_overlays','abyss_potion_discard_ui','abyss_v25_menu_view'];
+ const modules=['abyss_game_ui_view','abyss_game_ui_overlays','abyss_potion_discard_ui','abyss_run_hud','abyss_v25_menu_view'];
  const sources=Object.fromEntries(modules.map(name=>[name,readFileSync('src/lua/'+name+'.lua','utf8')]));
  const deps=new Set(Object.values(sources).flatMap(source=>[...source.matchAll(/require\(['"]([^'"]+)['"]\)/g)].map(match=>match[1])));
  const selected={presentationProfile:theme.presentationProfile,officialAssets:theme.officialAssets,layout:theme.layout,icon:theme.icon,color:theme.color};
@@ -321,7 +361,7 @@ local function node()
 end
 local root=node();local function child(name)return root:GetChild(name)end
 local View=require('abyss_game_ui_view');local Overlays=require('abyss_game_ui_overlays')
-local self={battleUI={busy=false},potionUI={},relicUI={refreshBar=function()end}}
+local self={battleUI={busy=false},deckUI={visible=false},potionUI={},relicUI={refreshBar=function()end}}
 local platform={imageSource='static',color=function(r,g,b,a)return{r=r,g=g,b=b,a=a}end}
 local inCombat=Overlays.inCombat(self)
 local refreshPotion=View.refreshPotionEntry(child,inCombat,function()return true end,platform)

@@ -1,3 +1,4 @@
+import {readBeforeMasterBackflowSource} from './master-backflow-source.mjs';
 import {beforePosixDeadlineWorkflow,beforeWindowsDeadlineWorkflow} from './auto-merge-workflow.mjs';
 import {beforeHotfixPublicationGate} from './release-ci-workflow.mjs';
 import {assertInputRetirementLuaCurrent,beforeInputRetirementTestInventory,readRetiredInputLuaReceipt} from './input-retirement-inventory.mjs';
@@ -1133,8 +1134,11 @@ function responsiveReplayCurrentRead(read){
   return raw;
  };
 }
+const currentReviewReaders=new WeakSet();
 export function currentReviewedSelectionRead(read){
- return (path,encoding)=>{
+ if(currentReviewReaders.has(read))return read;
+ read=readBeforeMasterBackflowSource(read);
+ const current=(path,encoding)=>{
   const source=read(path,encoding);
   if(path!==reviewedSelectionFixture&&path!==officialLegibilityFixture&&path!==officialAssetsFixture)return source;
   const raw=Buffer.isBuffer(source)?source.toString('utf8'):source;
@@ -1148,6 +1152,8 @@ export function currentReviewedSelectionRead(read){
   }
   return source;
  };
+ currentReviewReaders.add(current);
+ return current;
 }
 // Keep the original calibration fixture available to its sealed source views.
 const cursesReceiptFixture={
