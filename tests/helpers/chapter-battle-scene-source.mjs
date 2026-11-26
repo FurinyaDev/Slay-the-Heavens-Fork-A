@@ -816,16 +816,31 @@ const cardReadingScopeProjections = {
   }
 };
 
-export function beforeCardReadingScope(path,source) {
+function uniformReadingSource(source) {
+  return typeof source==='string' && (source===source.replaceAll('\r\n','\n') || !source.replaceAll('\r\n','').includes('\n'));
+}
+
+function readingScopeIdentity(path,source) {
+  if (!Object.hasOwn(cardReadingScopeProjections,path) || !uniformReadingSource(source)) return;
   const row=cardReadingScopeProjections[path];
-  if (!row || typeof source!=='string') return source;
+  if (matches(source,{sha256:row.afterSha256,gitBlob:row.afterBlob})) return 'current';
+  if (matches(source,{sha256:row.beforeSha256,gitBlob:row.beforeBlob})) return 'historical';
+}
+
+export function assertCurrentCardReadingScope(path,source) {
+  if (Object.hasOwn(cardReadingScopeProjections,path)) {
+    assert(readingScopeIdentity(path,source)==='current','fresh complete integration source: ' + path);
+  }
+  return source;
+}
+
+export function beforeCardReadingScope(path,source) {
+  if (readingScopeIdentity(path,source)!=='current') return source;
+  const row=cardReadingScopeProjections[path];
   const lf=source.replaceAll('\r\n','\n');
-  const crlf=source!==lf;
-  if (crlf && source!==lf.replaceAll('\n','\r\n')) return source;
-  if (!matches(lf,{sha256:row.afterSha256,gitBlob:row.afterBlob})) return source;
   const prior=restoreExactFixtureHunks(row,path,lf);
   assert(matches(prior,{sha256:row.beforeSha256,gitBlob:row.beforeBlob}),'exact card reading predecessor: '+path);
-  return crlf?prior.replaceAll('\n','\r\n'):prior;
+  return source!==lf?prior.replaceAll('\n','\r\n'):prior;
 }
 
 export function beforeResponsiveHand(path, source) {
@@ -858,7 +873,7 @@ const chapterCurrentOwners = [
 ];
 export function chapterSceneCurrentRead(read, copier) {
   const bindings = new Map([...chapterCurrentOwners.map(path => [path, projections[path]]),
-    ...Object.entries(responsiveHandProjections)]);
+    ...Object.entries(responsiveHandProjections), ...Object.entries(cardReadingScopeProjections)]);
   if (copier) bindings.set(copier.path,copier);
   function current(path, ...args) {
     const raw = read(path, ...args);
@@ -866,7 +881,8 @@ export function chapterSceneCurrentRead(read, copier) {
     if (binding) {
       const source = Buffer.isBuffer(raw) ? raw.toString('utf8') : raw;
       const {afterSha256:sha256, afterBlob:gitBlob} = binding;
-      assert(matches(beforeCardReadingScope(path,source),{sha256,gitBlob}), 'fresh complete integration source: ' + path);
+      assertCurrentCardReadingScope(path,source);
+      assert(matches(source,{sha256,gitBlob}), 'fresh complete integration source: ' + path);
     }
     return raw;
   }
@@ -877,23 +893,35 @@ export function chapterSceneCurrentRead(read, copier) {
 export function chapterBattleSceneReader(path, source, read) {
   const handSource = beforeResponsiveHand(path, source);
   const hand = handSource !== source ? responsiveHandProjections[path] : undefined;
+  const layoutPath='src/lua/abyss_battle_card_layout.lua';
+  const readingScope = readingScopeIdentity(path,source) ?? (hand && readingScopeIdentity(layoutPath,read(layoutPath,'utf8')));
+  if (hand) assert(readingScope,'combined linked owner identity: ' + layoutPath + ' changed during card reading validation');
   const before = beforeChapterBattleScene(path, source);
   const row = Object.hasOwn(projections, path) ? projections[path] : undefined;
   const candidate = row && {sha256: row.afterSha256, gitBlob: row.afterBlob};
   const predecessor = row && {sha256: row.beforeSha256, gitBlob: row.beforeBlob};
   const expected = hand ? {sha256: hand.afterSha256, gitBlob: hand.afterBlob}
     : before !== handSource ? candidate : matches(handSource, predecessor) ? predecessor : undefined;
+  const assertReadingScope = (owner,live) => {
+    assert(readingScopeIdentity(owner,live)===readingScope,
+      'combined linked owner identity: ' + owner + ' changed during card reading validation');
+  };
   function readOwner(owner, ...args) {
     const live = read(owner, ...args);
     const linkedHand = hand && Object.hasOwn(responsiveHandProjections, owner) && responsiveHandProjections[owner];
-    if (linkedHand) assert(matches(beforeCardReadingScope(owner,live), {sha256: linkedHand.afterSha256, gitBlob: linkedHand.afterBlob}),
+    const linkedScope = Object.hasOwn(cardReadingScopeProjections,owner);
+    if (readingScope && linkedScope) assertReadingScope(owner,live);
+    if (linkedHand && !linkedScope) assert(matches(live, {sha256: linkedHand.afterSha256, gitBlob: linkedHand.afterBlob}),
       'combined linked owner identity: ' + owner + ' changed during responsive hand validation');
     const prior = beforeChapterBattleScene(owner, live);
-    if (owner === path && (expected || prior !== live)) {
-      assert(matches(beforeCardReadingScope(path,live), expected),
+    if (owner === path && !readingScope && (expected || prior !== live)) {
+      assert(matches(live, expected),
         'combined linked owner identity: ' + path + ' changed during chapter scene validation');
     }
     return prior;
+  }
+  if (readingScope==='historical') {
+    for (const owner of Object.keys(cardReadingScopeProjections)) assertReadingScope(owner,read(owner,'utf8'));
   }
   if (expected) readOwner(path);
   return {source: before, read: readOwner};

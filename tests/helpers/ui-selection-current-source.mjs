@@ -150,8 +150,8 @@ const nodeNoticeCopier=Object.freeze({
 });
 const cardReadingCopier=Object.freeze({
  "current": {
-  "sha256": "729d814976efb4341ed14105d7e058d47be080be0af486bb0ecc6f7b53a7b471",
-  "gitBlob": "4dc9c1d8ed61cb50057904c10453926da44425a7"
+  "sha256": "6601d0b9ff0c1e9633efdf3fa2e8a8d498599f3ded3d0fab007e6ce918cd70e3",
+  "gitBlob": "8fea5e45c5e6d034a5d6807bf5546f396b0f78c9"
  },
  "previous": {
   "sha256": "8c234674a484ac9aba9e10eae21bdb0ce43372636a20b13e84d28c6a2f266bd4",
@@ -161,7 +161,7 @@ const cardReadingCopier=Object.freeze({
   {
    "at": 352,
    "before": " 'tests/helpers/chapter-battle-scene-source.mjs':'1270c293d79c04ac4a5b15483dd4cc8f9c4279362e2f5c551f6e98c20c9ad293',",
-   "after": " 'tests/helpers/chapter-battle-scene-source.mjs':'b2def7b519baed76f0b8e38c362bf33aa688f43edeac18dbbdcc7477a7ac7526',"
+   "after": " 'tests/helpers/chapter-battle-scene-source.mjs':'28dcccf5f5e6f87b622f86e79676a18b0fcf8657f9084642782687e43cac4e87',"
   }
  ]
 });
