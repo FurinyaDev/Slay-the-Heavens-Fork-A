@@ -7,7 +7,7 @@ import {authorizeSts1MapSource,beforeSts1MapSource} from './helpers/sts1-map-sou
 import {beforePc13RewardCover,pc13RewardCoverSourcePaths} from './helpers/pc13-reward-cover-source.mjs';
 import {authorizeReleaseUiRestore,beforeAuthenticatedReleaseUiRestore,beforeReleaseControlsGuideRemoval,releaseControlsGuideRemovalSourcePaths} from './helpers/release-ui-restore-source.mjs';
 import {assertCharacterPreparationSources,beforeCharacterPreparationSource,beforeCurrentProductionSource,characterPreparationOwners} from './helpers/character-preparation-source.mjs';
-import {authenticateInputRetirement,beforeDeckBrowserBackflow,beforePotionBackflow,beforeInputRetirement,beforeInputRetirementReader,assertPointerInputSource,pointerInputPath,retiredControllerPath} from './helpers/input-retirement-source.mjs';
+import {authenticateInputRetirement,beforeDeckBrowserBackflow,beforePotionBackflow,beforeInputRetirement,beforeInputRetirementReader,assertPointerInputSource,pointerInputPath,readRetiredController,retiredControllerPath} from './helpers/input-retirement-source.mjs';
 import {actorFocusAdded,deckPagesAdded,assertActorFocusInventory,assertDevelopBackflowCurrent,assertStasisUpgradeAdded,authenticateDevelopBackflow,beforeDevelopBackflow,stasisUpgradeAddedPaths} from './helpers/develop-release-backflow-source.mjs';
 import test from 'node:test';
 import {addedEntranceModules,beforeUiEntrance,entranceInventory,entrancePredecessor} from './helpers/ui-entrance-source.mjs';
@@ -409,16 +409,30 @@ for(const [file,name,target,module]of cases){
   // The M7 Actor adapter authenticates its current admission against physical
   // owners before exposing the frozen target; a captured epoch is not live IO.
   const currentRead=name==='preM7FinalSource'?p=>readFileSync(p,'utf8'):raw;
+  const projectCurrent=(path,input,readSource)=>{
+   if(name!=='preM7FinalSource')return fn(path,input,{readSource});
+   const reviewed=owner=>{
+    if(owner!==retiredControllerPath)return readReviewedSelectionSource(owner,readSource);
+    assert(readRetiredController(reviewedSelectionRead(readSource)).restored,'combined linked owner identity: '+owner);
+    return readReviewedSelectionSource(owner);
+   };
+   if(path==='config/architecture.json'){
+    assert(input===readSource(path)||input===raw(path),'combined linked owner identity: '+path);
+    // Reuse the complete live-owner admission before the frozen M7 projection.
+    input=sourceEpoch.preCombinedSource(path,reviewed(path),{target,readSource:reviewed});
+   }
+   return fn(path,input,{readSource:reviewed});
+  };
   for(const path of [`src/lua/${module}.lua`,'config/architecture.json']){
    const expected=fn(path,targetRead(path),{readSource:targetRead});
    const inputs=name==='preM7FinalSource'?new Set([raw(path),currentRead(path)]):[raw(path)];
    for(const input of inputs){
-    const projected=fn(path,input,{readSource:currentRead});
+    const projected=projectCurrent(path,input,currentRead);
     assert.equal(projected,expected,path);
     if(name==='preM7FinalSource'){
      assert.notEqual(projected,input,'current M7 input must actually project to its frozen target');
      if(path==='config/architecture.json'&&input===currentRead(path))
-      assert.throws(()=>fn(path,input,{readSource:raw}),/combined linked owner/,
+      assert.throws(()=>projectCurrent(path,input,raw),/combined linked owner/,
        'a captured configuration cannot authenticate current M7 owners');
     }
    }
