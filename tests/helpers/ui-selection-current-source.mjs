@@ -148,8 +148,25 @@ const nodeNoticeCopier=Object.freeze({
   }
  ]
 });
+const cardReadingCopier=Object.freeze({
+ "current": {
+  "sha256": "6601d0b9ff0c1e9633efdf3fa2e8a8d498599f3ded3d0fab007e6ce918cd70e3",
+  "gitBlob": "8fea5e45c5e6d034a5d6807bf5546f396b0f78c9"
+ },
+ "previous": {
+  "sha256": "8c234674a484ac9aba9e10eae21bdb0ce43372636a20b13e84d28c6a2f266bd4",
+  "gitBlob": "46291e76636a7543686e62c0d893e02fc099c4a6"
+ },
+ "hunks": [
+  {
+   "at": 352,
+   "before": " 'tests/helpers/chapter-battle-scene-source.mjs':'1270c293d79c04ac4a5b15483dd4cc8f9c4279362e2f5c551f6e98c20c9ad293',",
+   "after": " 'tests/helpers/chapter-battle-scene-source.mjs':'28dcccf5f5e6f87b622f86e79676a18b0fcf8657f9084642782687e43cac4e87',"
+  }
+ ]
+});
 export const selectionCopierReceipt=Object.freeze({path:copierPath,
- afterSha256:nodeNoticeCopier.current.sha256,afterBlob:nodeNoticeCopier.current.gitBlob});
+ afterSha256:cardReadingCopier.current.sha256,afterBlob:cardReadingCopier.current.gitBlob});
 
 function beforeReceipt(path,source,binding){
  if(!binding||!uniformSelectionSource(source)||!exactSourceMatches(source,binding.current))return source;
@@ -160,13 +177,16 @@ function beforeReceipt(path,source,binding){
 }
 
 export function beforeSelectionReceiptSource(path,source){
- if(path===copierPath)source=beforeReceipt(path,source,nodeNoticeCopier);
+ if(path===copierPath){
+  source=beforeReceipt(path,source,cardReadingCopier);
+  source=beforeReceipt(path,source,nodeNoticeCopier);
+ }
  return beforeReceipt(path,source,receipt(path));
 }
 
 export function checkedSelectionReceiptRead(read){
  const checked=(path,encoding)=>{
-  const raw=read(path,encoding),binding=path===copierPath?nodeNoticeCopier:receipt(path);
+  const raw=read(path,encoding),binding=path===copierPath?cardReadingCopier:receipt(path);
   if(binding){
    const source=decodedSelectionSource(raw);
    assert(uniformSelectionSource(source)&&exactSourceMatches(source,binding.current),

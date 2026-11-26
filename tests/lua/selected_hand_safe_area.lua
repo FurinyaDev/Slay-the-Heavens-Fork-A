@@ -43,41 +43,55 @@ end
 Theme.motion.hoverScale=original
 print('ok selected hand safety '..cases..' actual Lua placements')
 
-local Viewport=require('abyss_viewport')
-local x,baseY,angle=Viewport.handSlot(10,9,400)
-local ceiling=-152
-local health={{left=x-40,right=x+40,bottom=ceiling}}
-local y,scale,protectedY=Viewport.handFocus(baseY,x,health)
-local halfHeight=Theme.layout.card.size[2]*scale/2
-local floor=-Theme.canvas.base[2]/2+Theme.canvas.safe.y
-assert(protectedY==ceiling and scale<=Theme.motion.hoverScale)
-assert(y+halfHeight<ceiling and y-halfHeight>=floor-1e-8,'focused card exceeded health or safe bounds')
-assert(Viewport.limitHandFocus(y+15,angle,scale,ceiling)<y,'rotated focus tween crossed the health lane')
-local originalY,originalScale=Viewport.handFocus(baseY,-x)
-local clearY,clearScale=Viewport.handFocus(baseY,-x,health)
-assert(originalY==clearY and originalScale==clearScale,'a clear card slot changed its focus')
-local lowBar=-180
-local lowY,lowScale=Viewport.handFocus(baseY,x,{{left=x-40,right=x+40,bottom=lowBar}})
-local lowHalf=Theme.layout.card.size[2]*lowScale/2
-assert(lowY+lowHalf<lowBar and lowY-lowHalf>=floor-1e-8,'a low health bar pushed the settled card below the safe area')
-print('ok wide selected hand preserves nearby health and the screen bottom')
-
 do
-    local profile=Theme.presentationProfile
-    Theme.presentationProfile='official-assets-first'
+    local H=dofile('tests/lua/support/battle_gesture_fixture.lua')
     local EnemyView=require('abyss_battle_enemy_view')
     local measure=EnemyView.geometry
-    local observed=false
-    EnemyView.geometry=function(_,nativeArt)
-        assert(nativeArt==false,'hand focus ignored the enemy renderer fallback mode')
-        observed=true
-        return {x=x,y=0,healthX=0,healthY=-130,healthTextY=-130,healthHeight=12,hitWidth=80}
+    local barX,barY=460,-145
+    EnemyView.geometry=function(enemy,nativeArt)
+        local geometry=measure(enemy,nativeArt)
+        geometry.healthX=barX-geometry.x
+        geometry.healthY=barY-geometry.y
+        geometry.healthTextY=geometry.healthY
+        return geometry
     end
-    local wide=require('abyss_battle_card_layout').install({handWidthExtra=400},nil,{platform={nativeMonsterArtEnabled=false}})
-    wide.prepareHandFocus({enemies={{hp=1}}})
-    local focus=wide.placeCard(box(),10,9,true)
+    local host,ui,panel,event,tap,_,_,stage=H.setup({'strike'},nil,{touchScreen=function()return false end})
+    local _,_,frame=H.F.Viewport.apply(stage.parent,1680,720)
+    host:resize(1680,720,frame)
+    host:update(10)
+    local card=panel:GetChild('card1')
+    local hit=card:GetChild('hit')
+    local enemy=H.F.actorControl(panel,'enemy1')
+    local hp=enemy:GetChild('hp')
+    local battle=host.run.combat
+    local idleY=card.y
+    local expectedY=math.max(idleY+Theme.motion.hoverLift,
+        -Theme.canvas.base[2]/2+Theme.canvas.safe.y+Theme.layout.card.size[2]*original/2)
+    local function pose()
+        return table.concat({card.x,card.y,card.localScaleX,card.localRotationZ,hit.x,hit.y,hit.sizeDeltaX,hit.sizeDeltaY},',')
+    end
+    assert(ui.handWidthExtra>0 and math.abs(enemy.x+hp.x-barX)<1e-8,'wide fixture did not draw the clear health label')
+    tap('card1',7)
+    host:update(10)
+    assert(ui.selected==battle.hand[1].uid,'tap did not select the card')
+    assert(math.abs(card.y-expectedY)<1e-8 and math.abs(card.localScaleX-original)<1e-8 and card.localRotationZ==0)
+    local clear=pose()
+    for _,y in ipairs({-145,-180}) do
+        barX,barY=card.x,y
+        host:refresh()
+        host:update(1/60)
+        assert(math.abs(enemy.x+hp.x-barX)<1e-8 and math.abs(enemy.y+hp.y-y)<1e-8,
+            'fixture did not move the rendered health label into the reading lane')
+        assert(pose()==clear,'enemy health changed the selected hand pose or hit area')
+        host:update(10)
+        assert(pose()==clear,'enemy health changed the settled hand pose or hit area')
+    end
+    tap('card1',7)
+    event('card1','exit',7)
+    host:update(10)
+    assert(not ui.selected and card.y==idleY and card.localScaleX==1 and #battle.hand==1 and battle.energy==3,
+        'same-card cancel did not restore the idle pose without playing the card')
     EnemyView.geometry=measure
-    Theme.presentationProfile=profile
-    assert(observed and focus.ceiling,'fallback health bounds did not reach wide focus')
-    print('ok wide selected hand shares enemy fallback art geometry')
+    host:disable()
+    print('ok wide selected hand ignores enemy health geometry')
 end
