@@ -1,4 +1,4 @@
-import {readFileSync,mkdtempSync,rmSync,mkdirSync,writeFileSync,appendFileSync} from 'node:fs';
+import {existsSync,readFileSync,mkdtempSync,rmSync,mkdirSync,writeFileSync,appendFileSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {join,resolve} from 'node:path';
 import {spawnSync} from 'node:child_process';
@@ -10,6 +10,7 @@ import {autoMergeErrors} from './arm-auto-merge.mjs';
 import {projectRepositoryId,projectRepositoryMatches} from './repository-identity.mjs';
 import {main as fullMain,beginFullQuality} from './publish-full-quality.mjs';
 import {prFastErrors,collectFastCheckout} from './pr-quality-evidence.mjs';
+import {auditDevelopProductScope} from './check-release-freeze.mjs';
 
 export const prQualityContext='pr-quality';
 function gh(...args){
@@ -74,9 +75,25 @@ export function main(env=process.env,query=gh,{pending=false,loadCheckout}={}){
  if(errors.length)throw Error(errors.join('\n'));
  return {state,runId,head};
 }
+async function verifyDevelopProductScope(pr, repo, review, api) {
+ const prefix='/repos/'+repo;
+ const files=async (base, candidate)=>{
+  const comparison=await api(`${prefix}/compare/${base}...${candidate}?per_page=1`);
+  if(comparison?.base_commit?.sha!==base||comparison.merge_base_commit?.sha!==base||comparison.status!=='ahead'||
+    !Array.isArray(comparison.files)||!comparison.files.length||comparison.files.some(row=>typeof row.filename!=='string')){
+   throw Error('Exact develop product comparison unavailable');
+  }
+  // A capped comparison cannot establish that a PR changes only test or docs.
+  if(comparison.files.length>=300) return ['config/'];
+  return comparison.files.flatMap(row=>[row.filename,...(row.previous_filename?[row.previous_filename]:[])]);
+ };
+ return auditDevelopProductScope(pr,repo,api,{checkout:()=>[review.mergeCommitSha,review.base,review.head,review.tree],
+  read:(_base,path)=>existsSync(path)?readFileSync(path,'utf8'):'',files,reviewId:review.githubReviewId});
+}
+
 // Runs in the existing Licenses workflow. The connector is never a status
 // signer. Shadow runs save evidence but cannot release the required status.
-export function independentReviewGate(env=process.env,query=gh,{release=false,loadCheckout,proofFile='build/native-ai-review-proof.json'}={}){
+export async function independentReviewGate(env=process.env,query=gh,{release=false,loadCheckout,proofFile='build/native-ai-review-proof.json',verifyProductScope=verifyDevelopProductScope}={}){
  const event=JSON.parse(readFileSync(env.GITHUB_EVENT_PATH,'utf8'));
  const repo=env.GITHUB_REPOSITORY,number=Number(env.AI_REVIEW_PR??event.workflow_run?.pull_requests?.[0]?.number);
  const expectedHead=env.AI_REVIEW_HEAD||event.workflow_run?.head_sha;
@@ -105,6 +122,7 @@ export function independentReviewGate(env=process.env,query=gh,{release=false,lo
  if(bootstrap&&String(env.GITHUB_ACTOR_ID)!==String(review.coordinator.id))sourceErrors.push('Bootstrap execution actor differs from the signing coordinator');
  if(!bootstrap&&env.GITHUB_REF!=='refs/heads/'+settings.default_branch)sourceErrors.push('Cloud gate is not executing the trusted default branch');
  if(sourceErrors.length)throw Error(sourceErrors.join('\n'));
+ const productScope=bootstrap?null:await verifyProductScope(pr,repo,review,path=>get(path.slice(1)));
  const legacyReview={repo,prNumber:number,reviewId:review.reviewId,reviewedHeadSha:review.head,reviewedBaseSha:review.base,conclusion:'pass',unresolved:[]};
  const collected=collectPrDelivery(repo,number,legacyReview,query,loadCheckout);
  const errors=verifyDelivery(collected.evidence);
@@ -117,7 +135,7 @@ export function independentReviewGate(env=process.env,query=gh,{release=false,lo
  const admissionErrors=autoMergeErrors({repo,settings:hostedMergeSettings(repo,settingsNow,query),pr:freshPr,ruleset:policyNow,nativeReview:current});
  if(!isDeepStrictEqual(pr.labels,freshPr.labels)||pr.changed_files!==freshPr.changed_files||mode==='publish'&&admissionErrors.length)throw Error('PR labels, files or native admission changed during evidence collection');
  if(!isDeepStrictEqual(current,review)||!isDeepStrictEqual(policyNow,ruleset)||settings.default_branch!==settingsNow.default_branch)throw Error('Review or native policy changed during evidence collection');
- const envelope={schemaVersion:1,kind:'native-ai-review-proof',mode,state:mode==='publish'?'pr_passed':'shadow_verified',repo,prNumber:number,head:review.head,base:review.base,nativeReview:review,nativePolicy:ruleset,sourceObservations:source.observations,preflight:collected.evidence,gate:{runId:Number(env.GITHUB_RUN_ID),attempt:Number(env.GITHUB_RUN_ATTEMPT),ref:env.GITHUB_REF,bootstrap},policyErrors};
+ const envelope={schemaVersion:1,kind:'native-ai-review-proof',mode,state:mode==='publish'?'pr_passed':'shadow_verified',repo,prNumber:number,head:review.head,base:review.base,nativeReview:review,nativePolicy:ruleset,...(productScope&&{productScope}),sourceObservations:source.observations,preflight:collected.evidence,gate:{runId:Number(env.GITHUB_RUN_ID),attempt:Number(env.GITHUB_RUN_ATTEMPT),ref:env.GITHUB_REF,bootstrap},policyErrors};
  if(!release){mkdirSync(resolve(proofFile,'..'),{recursive:true});writeFileSync(proofFile,JSON.stringify(envelope,null,2)+'\n');return {state:envelope.state,policyErrors};}
  if(mode!=='publish')return {state:'shadow-no-status'};
  const saved=JSON.parse(readFileSync(proofFile,'utf8'));
@@ -139,7 +157,7 @@ export function independentReviewProofReady(result){
 if(process.argv[1]&&import.meta.url===pathToFileURL(resolve(process.argv[1])).href){
  try{
   const result=process.argv[2]==='--independent-review'||process.argv[2]==='--release-independent-review'?
-   independentReviewGate(process.env,gh,{release:process.argv[2]==='--release-independent-review'}):main(process.env,gh,{pending:process.argv[2]==='--pending'});
+   await independentReviewGate(process.env,gh,{release:process.argv[2]==='--release-independent-review'}):main(process.env,gh,{pending:process.argv[2]==='--pending'});
   if(process.argv[2]==='--independent-review'){
    const ready=independentReviewProofReady(result);
    if(process.env.GITHUB_OUTPUT)appendFileSync(process.env.GITHUB_OUTPUT,`proof_ready=${ready}\n`);

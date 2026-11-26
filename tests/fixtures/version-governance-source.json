@@ -2,17 +2,17 @@
   "scripts/check-pr-history.mjs": {
     "path": "scripts/check-pr-history.mjs",
     "beforeSha256": "521edad4de907232928e9f0fee1414bf88cdfde6bab8aa8400502ceb646d45d9",
-    "afterSha256": "f7a99721bc5ce32a247903a2f0e1efbe34290f86236e759d083f4811c1cefcd2",
+    "afterSha256": "8e451cc5e4fce89be7c332f632bd00a6fb4aa0c911b2f813aa9f62b6f95c5569",
     "hunks": [
       {
         "at": 2,
         "before": "import { pathToFileURL } from 'node:url';\n",
-        "after": "import { pathToFileURL } from 'node:url';\nimport { auditDevelopProductScope, auditReleaseFreeze } from './check-release-freeze.mjs';\n"
+        "after": "import { pathToFileURL } from 'node:url';\nimport { auditReleaseFreeze } from './check-release-freeze.mjs';\n"
       },
       {
         "at": 64,
         "before": "    console.log(JSON.stringify(await auditHistory(event, process.env.GITHUB_REPOSITORY, request)));\n  } catch (error) { console.error(error.message); process.exitCode = 1; }",
-        "after": "    console.log(JSON.stringify(await auditHistory(event, process.env.GITHUB_REPOSITORY, request)));\n    if (event.pull_request?.base.ref === 'develop') {\n      const scope = await auditDevelopProductScope(event.pull_request, process.env.GITHUB_REPOSITORY, request);\n      if (scope) console.log(JSON.stringify(scope));\n    }\n    if (event.pull_request?.base.ref.startsWith('release/')) {\n      console.log(JSON.stringify(await auditReleaseFreeze(event.pull_request, process.env.GITHUB_REPOSITORY, request)));\n    }\n  } catch (error) { console.error(error.message); process.exitCode = 1; }"
+        "after": "    console.log(JSON.stringify(await auditHistory(event, process.env.GITHUB_REPOSITORY, request)));\n    if (event.pull_request?.base.ref.startsWith('release/')) {\n      console.log(JSON.stringify(await auditReleaseFreeze(event.pull_request, process.env.GITHUB_REPOSITORY, request)));\n    }\n  } catch (error) { console.error(error.message); process.exitCode = 1; }"
       }
     ]
   },
@@ -41,22 +41,22 @@
   "scripts/release-ci.mjs": {
     "path": "scripts/release-ci.mjs",
     "beforeSha256": "b852f1e5e5c43d028f4cb5627ed9f8a637771d55e462af5b69e37cf7a6c5b7d8",
-    "afterSha256": "a450763a5021fcfb2148ced4b960abec4d2be62863e104e879e177b36279b257",
+    "afterSha256": "92c39a330737d8990267a52ef67780e5a9d86e36c68913812a08b6f5321fa0ff",
     "hunks": [
       {
         "at": 147,
         "before": "  const repo='FurinyaWorks/Slay-the-Heavens';\n  if(command==='verify-pr'||command==='verify-hotfix-pr') {",
-        "after": "  const repo='FurinyaWorks/Slay-the-Heavens';\n  const publication=['verify-publish','verify-pr','verify-hotfix-pr'].includes(command);\n  if(command==='verify-pr'||command==='verify-hotfix-pr') {"
+        "after": "  const repo='FurinyaWorks/Slay-the-Heavens';\n  const publication=['verify-publish','verify-pr','verify-hotfix-pr'].includes(command);\n  const physicalRelease=command==='verify-publish'&&branch==='release/v2.2.0';\n  if(command==='verify-pr'||command==='verify-hotfix-pr') {"
       },
       {
-        "at": 153,
+        "at": 154,
         "before": "  }\n  if(!['freeze','verify'].includes(command)||!frozenBranch(branch)||!validSha(head))\n   throw Error('Usage: node scripts/release-ci.mjs freeze|verify <release/name|hotfix/vX.Y.Z> <frozen-HEAD>');\n  if(command==='freeze') {",
         "after": "  }\n  if(!['freeze','verify','verify-publish'].includes(command)||!frozenBranch(branch)||!validSha(head))\n   throw Error('Usage: node scripts/release-ci.mjs freeze|verify|verify-publish <release/name|hotfix/vX.Y.Z> <frozen-HEAD>');\n  if(command==='freeze') {"
       },
       {
-        "at": 160,
-        "before": "   const performance=await (await import('./runtime-baseline/require-release-performance.mjs')).requireReleasePerformance(full,githubRequest);\n   console.log(JSON.stringify({...full,performance},null,2));\n  }",
-        "after": "   const performance=await (await import('./runtime-baseline/require-release-performance.mjs')).requireReleasePerformance(full,githubRequest);\n   const acceptance=publication&&await (await import('./verify-release-acceptance.mjs')).verifyReleaseAcceptance(full,performance,githubRequest);\n   console.log(JSON.stringify({...full,performance,...(acceptance?{acceptance}:{})},null,2));\n  }"
+        "at": 159,
+        "before": "  } else {\n   const full=await verifyReleaseFull(repo,branch,head,githubRequest);\n   const performance=await (await import('./runtime-baseline/require-release-performance.mjs')).requireReleasePerformance(full,githubRequest);\n   console.log(JSON.stringify({...full,performance},null,2));\n  }",
+        "after": "  } else {\n   if(physicalRelease) await (await import('./verify-release-acceptance.mjs')).verifyTrustedPublicationSource(repo,githubRequest);\n   const full=await verifyReleaseFull(repo,branch,head,githubRequest);\n   const performance=await (await import('./runtime-baseline/require-release-performance.mjs')).requireReleasePerformance(full,githubRequest);\n   const acceptance=publication&&await (await import('./verify-release-acceptance.mjs')).verifyReleaseAcceptance(full,performance,githubRequest);\n   console.log(JSON.stringify({...full,performance,...(acceptance?{acceptance}:{})},null,2));\n  }"
       }
     ]
   },
@@ -96,6 +96,145 @@
         "at": 25,
         "before": "  const source = readFileSync(row.path, 'utf8').replaceAll('\\r\\n', '\\n');\n  assert.equal(source, row.after.source);\n  for (const input of [source, source.replaceAll('\\n', '\\r\\n')])",
         "after": "  const source = readFileSync(row.path, 'utf8').replaceAll('\\r\\n', '\\n');\n  assert.equal(beforeVersionGovernanceSource(row.path, source), row.after.source);\n  for (const input of [source, source.replaceAll('\\n', '\\r\\n')])"
+      }
+    ]
+  },
+  "scripts/publish-pr-quality.mjs": {
+    "path": "scripts/publish-pr-quality.mjs",
+    "beforeSha256": "e918f7bb12474f60a5272e72d285e22bb207765e098847ff726cb54621b277f7",
+    "afterSha256": "75e01206cffc56a45f40775c0c3418eda58775586ac9aef3e13fc249b51c1cee",
+    "hunks": [
+      {
+        "at": 0,
+        "before": "import {readFileSync,mkdtempSync,rmSync,mkdirSync,writeFileSync,appendFileSync} from 'node:fs';\nimport {tmpdir} from 'node:os';",
+        "after": "import {existsSync,readFileSync,mkdtempSync,rmSync,mkdirSync,writeFileSync,appendFileSync} from 'node:fs';\nimport {tmpdir} from 'node:os';"
+      },
+      {
+        "at": 11,
+        "before": "import {prFastErrors,collectFastCheckout} from './pr-quality-evidence.mjs';\n",
+        "after": "import {prFastErrors,collectFastCheckout} from './pr-quality-evidence.mjs';\nimport {auditDevelopProductScope} from './check-release-freeze.mjs';\n"
+      },
+      {
+        "at": 76,
+        "before": "}\n// Runs in the existing Licenses workflow. The connector is never a status\n// signer. Shadow runs save evidence but cannot release the required status.\nexport function independentReviewGate(env=process.env,query=gh,{release=false,loadCheckout,proofFile='build/native-ai-review-proof.json'}={}){\n const event=JSON.parse(readFileSync(env.GITHUB_EVENT_PATH,'utf8'));",
+        "after": "}\nasync function verifyDevelopProductScope(pr, repo, review, api) {\n const prefix='/repos/'+repo;\n const files=async (base, candidate)=>{\n  const comparison=await api(`${prefix}/compare/${base}...${candidate}?per_page=1`);\n  if(comparison?.base_commit?.sha!==base||comparison.merge_base_commit?.sha!==base||comparison.status!=='ahead'||\n    !Array.isArray(comparison.files)||!comparison.files.length||comparison.files.some(row=>typeof row.filename!=='string')){\n   throw Error('Exact develop product comparison unavailable');\n  }\n  // A capped comparison cannot establish that a PR changes only test or docs.\n  if(comparison.files.length>=300) return ['config/'];\n  return comparison.files.flatMap(row=>[row.filename,...(row.previous_filename?[row.previous_filename]:[])]);\n };\n return auditDevelopProductScope(pr,repo,api,{checkout:()=>[review.mergeCommitSha,review.base,review.head,review.tree],\n  read:(_base,path)=>existsSync(path)?readFileSync(path,'utf8'):'',files,reviewId:review.githubReviewId});\n}\n\n// Runs in the existing Licenses workflow. The connector is never a status\n// signer. Shadow runs save evidence but cannot release the required status.\nexport async function independentReviewGate(env=process.env,query=gh,{release=false,loadCheckout,proofFile='build/native-ai-review-proof.json',verifyProductScope=verifyDevelopProductScope}={}){\n const event=JSON.parse(readFileSync(env.GITHUB_EVENT_PATH,'utf8'));"
+      },
+      {
+        "at": 123,
+        "before": " if(sourceErrors.length)throw Error(sourceErrors.join('\\n'));\n const legacyReview={repo,prNumber:number,reviewId:review.reviewId,reviewedHeadSha:review.head,reviewedBaseSha:review.base,conclusion:'pass',unresolved:[]};",
+        "after": " if(sourceErrors.length)throw Error(sourceErrors.join('\\n'));\n const productScope=bootstrap?null:await verifyProductScope(pr,repo,review,path=>get(path.slice(1)));\n const legacyReview={repo,prNumber:number,reviewId:review.reviewId,reviewedHeadSha:review.head,reviewedBaseSha:review.base,conclusion:'pass',unresolved:[]};"
+      },
+      {
+        "at": 136,
+        "before": " if(!isDeepStrictEqual(current,review)||!isDeepStrictEqual(policyNow,ruleset)||settings.default_branch!==settingsNow.default_branch)throw Error('Review or native policy changed during evidence collection');\n const envelope={schemaVersion:1,kind:'native-ai-review-proof',mode,state:mode==='publish'?'pr_passed':'shadow_verified',repo,prNumber:number,head:review.head,base:review.base,nativeReview:review,nativePolicy:ruleset,sourceObservations:source.observations,preflight:collected.evidence,gate:{runId:Number(env.GITHUB_RUN_ID),attempt:Number(env.GITHUB_RUN_ATTEMPT),ref:env.GITHUB_REF,bootstrap},policyErrors};\n if(!release){mkdirSync(resolve(proofFile,'..'),{recursive:true});writeFileSync(proofFile,JSON.stringify(envelope,null,2)+'\\n');return {state:envelope.state,policyErrors};}",
+        "after": " if(!isDeepStrictEqual(current,review)||!isDeepStrictEqual(policyNow,ruleset)||settings.default_branch!==settingsNow.default_branch)throw Error('Review or native policy changed during evidence collection');\n const envelope={schemaVersion:1,kind:'native-ai-review-proof',mode,state:mode==='publish'?'pr_passed':'shadow_verified',repo,prNumber:number,head:review.head,base:review.base,nativeReview:review,nativePolicy:ruleset,...(productScope&&{productScope}),sourceObservations:source.observations,preflight:collected.evidence,gate:{runId:Number(env.GITHUB_RUN_ID),attempt:Number(env.GITHUB_RUN_ATTEMPT),ref:env.GITHUB_REF,bootstrap},policyErrors};\n if(!release){mkdirSync(resolve(proofFile,'..'),{recursive:true});writeFileSync(proofFile,JSON.stringify(envelope,null,2)+'\\n');return {state:envelope.state,policyErrors};}"
+      },
+      {
+        "at": 158,
+        "before": "  const result=process.argv[2]==='--independent-review'||process.argv[2]==='--release-independent-review'?\n   independentReviewGate(process.env,gh,{release:process.argv[2]==='--release-independent-review'}):main(process.env,gh,{pending:process.argv[2]==='--pending'});\n  if(process.argv[2]==='--independent-review'){",
+        "after": "  const result=process.argv[2]==='--independent-review'||process.argv[2]==='--release-independent-review'?\n   await independentReviewGate(process.env,gh,{release:process.argv[2]==='--release-independent-review'}):main(process.env,gh,{pending:process.argv[2]==='--pending'});\n  if(process.argv[2]==='--independent-review'){"
+      }
+    ]
+  },
+  "tests/auto-merge.test.mjs": {
+    "path": "tests/auto-merge.test.mjs",
+    "beforeSha256": "f0c1597a357cbfd20f23186aa53c0670c5fa82e4b37b8d755a1e57d09a3def4c",
+    "afterSha256": "a0fb4b2d4e6b4135322f74282da699e5918e082d28523786837a155b6e4cd7b4",
+    "hunks": [
+      {
+        "at": 286,
+        "before": "});\ntest('native enable dispatches the existing gate and records an intent rather than manufacturing preflight',()=>{\n const f=nativeFixture(),r=armAutoMerge(aiRepo,712,100,f.query);",
+        "after": "});\ntest('native enable dispatches the existing gate and records an intent rather than manufacturing preflight',async()=>{\n const f=nativeFixture(),r=armAutoMerge(aiRepo,712,100,f.query);"
+      },
+      {
+        "at": 294,
+        "before": "});\nfunction gateExecute(f,{mode='publish',release=false,mutateEnv=()=>{},saved,proofFile,readProof=true}={}){\n const dir=mkdtempSync(join(tmpdir(),'native-gate-test-')),event=join(dir,'event.json');writeFileSync(event,'{}');",
+        "after": "});\nasync function gateExecute(f,{mode='publish',release=false,mutateEnv=()=>{},saved,proofFile,readProof=true,verifyProductScope=async()=>null}={}){\n const dir=mkdtempSync(join(tmpdir(),'native-gate-test-')),event=join(dir,'event.json');writeFileSync(event,'{}');"
+      },
+      {
+        "at": 298,
+        "before": " const env={GITHUB_EVENT_NAME:'workflow_dispatch',GITHUB_EVENT_PATH:event,GITHUB_REPOSITORY:aiRepo,GITHUB_REPOSITORY_ID:String(projectRepositoryId),GITHUB_SHA:sha('b'),GITHUB_REF:'refs/heads/develop',GITHUB_ACTOR_ID:String(aiRoleId),GITHUB_RUN_ID:'9',GITHUB_RUN_ATTEMPT:'1',AI_REVIEW_PR:'712',AI_REVIEW_HEAD:sha('a'),AI_REVIEW_MODE:mode,AI_REVIEW_ARTIFACT_ID:'99'};mutateEnv(env);\n try{const result=independentReviewGate(env,f.query,{release,loadCheckout:f.loadCheckout,proofFile:file});return {result,proof:readProof?JSON.parse(readFileSync(file,'utf8')):undefined};}finally{rmSync(dir,{recursive:true,force:true});}\n}\ntest('proof handoff reflects real publish, shadow and superseded verifier outcomes',()=>{\n for(const mode of ['publish','shadow'])assert.equal(independentReviewProofReady(gateExecute(nativeFixture(),{mode}).result),true);\n const closed=nativeFixture();closed.pr.state='closed';\n const result=gateExecute(closed,{readProof:false}).result;\n assert.deepEqual(result,{state:'superseded'});assert.equal(independentReviewProofReady(result),false);",
+        "after": " const env={GITHUB_EVENT_NAME:'workflow_dispatch',GITHUB_EVENT_PATH:event,GITHUB_REPOSITORY:aiRepo,GITHUB_REPOSITORY_ID:String(projectRepositoryId),GITHUB_SHA:sha('b'),GITHUB_REF:'refs/heads/develop',GITHUB_ACTOR_ID:String(aiRoleId),GITHUB_RUN_ID:'9',GITHUB_RUN_ATTEMPT:'1',AI_REVIEW_PR:'712',AI_REVIEW_HEAD:sha('a'),AI_REVIEW_MODE:mode,AI_REVIEW_ARTIFACT_ID:'99'};mutateEnv(env);\n try{const result=await independentReviewGate(env,f.query,{release,loadCheckout:f.loadCheckout,proofFile:file,verifyProductScope});return {result,proof:readProof?JSON.parse(readFileSync(file,'utf8')):undefined};}finally{rmSync(dir,{recursive:true,force:true});}\n}\ntest('proof handoff reflects real publish, shadow and superseded verifier outcomes',async()=>{\n for(const mode of ['publish','shadow'])assert.equal(independentReviewProofReady((await gateExecute(nativeFixture(),{mode})).result),true);\n const closed=nativeFixture();closed.pr.state='closed';\n const result=(await gateExecute(closed,{readProof:false})).result;\n assert.deepEqual(result,{state:'superseded'});assert.equal(independentReviewProofReady(result),false);"
+      },
+      {
+        "at": 307,
+        "before": "});\ntest('a requested review cannot release status with missing proof or a failed proof write',()=>{\n const missing=nativeFixture();assert.throws(()=>gateExecute(missing,{release:true}),/ENOENT/);\n assert(!missing.calls.some(a=>a.includes('POST')));",
+        "after": "});\ntest('a requested review cannot release status with missing proof or a failed proof write',async()=>{\n const missing=nativeFixture();await assert.rejects(gateExecute(missing,{release:true}),/ENOENT/);\n assert(!missing.calls.some(a=>a.includes('POST')));"
+      },
+      {
+        "at": 313,
+        "before": "  const file=join(dir,'not-a-directory');writeFileSync(file,'blocked');\n  const failed=nativeFixture();assert.throws(()=>gateExecute(failed,{proofFile:join(file,'proof.json')}),/EEXIST|ENOTDIR/);\n  assert(!failed.calls.some(a=>a.includes('POST')));",
+        "after": "  const file=join(dir,'not-a-directory');writeFileSync(file,'blocked');\n  const failed=nativeFixture();await assert.rejects(gateExecute(failed,{proofFile:join(file,'proof.json')}),/EEXIST|ENOTDIR/);\n  assert(!failed.calls.some(a=>a.includes('POST')));"
+      },
+      {
+        "at": 317,
+        "before": "});\ntest('CI native review gate uploads genuine preflight before releasing a truthful Required status',()=>{\n const f=nativeFixture(),prepared=gateExecute(f);assert.equal(prepared.result.state,'pr_passed');assert.equal(prepared.proof.preflight.schemaVersion,3);\n assert(!f.calls.some(a=>a.includes('POST')));\n const released=gateExecute(f,{release:true,saved:prepared.proof});assert.equal(released.result.state,'published');assert.equal(released.result.artifactId,99);\n assert(f.calls.some(a=>a.includes('POST')&&a.includes('context=independent-review')));\n});\ntest('hosted review gate verifies redacted repository settings before preparing and releasing proof',()=>{\n const f=nativeFixture();",
+        "after": "});\ntest('CI native review gate uploads genuine preflight before releasing a truthful Required status',async()=>{\n const f=nativeFixture(),prepared=await gateExecute(f);assert.equal(prepared.result.state,'pr_passed');assert.equal(prepared.proof.preflight.schemaVersion,3);\n assert(!f.calls.some(a=>a.includes('POST')));\n const released=await gateExecute(f,{release:true,saved:prepared.proof});assert.equal(released.result.state,'published');assert.equal(released.result.artifactId,99);\n assert(f.calls.some(a=>a.includes('POST')&&a.includes('context=independent-review')));\n});\ntest('hosted review gate verifies redacted repository settings before preparing and releasing proof',async()=>{\n const f=nativeFixture();"
+      },
+      {
+        "at": 327,
+        "before": " f.ruleset.bypass_actors=[{actor_id:5,actor_type:'RepositoryRole',bypass_mode:'pull_request'}];\n const prepared=gateExecute(f);\n assert.equal(prepared.result.state,'pr_passed');\n assert.equal(f.calls.filter(args=>args.some(arg=>arg.includes('autoMergeAllowed'))).length,2);\n const released=gateExecute(f,{release:true,saved:prepared.proof});\n assert.equal(released.result.state,'published');",
+        "after": " f.ruleset.bypass_actors=[{actor_id:5,actor_type:'RepositoryRole',bypass_mode:'pull_request'}];\n const prepared=await gateExecute(f);\n assert.equal(prepared.result.state,'pr_passed');\n assert.equal(f.calls.filter(args=>args.some(arg=>arg.includes('autoMergeAllowed'))).length,2);\n const released=await gateExecute(f,{release:true,saved:prepared.proof});\n assert.equal(released.result.state,'published');"
+      },
+      {
+        "at": 334,
+        "before": "});\ntest('hosted review gate denies false or malformed settings and foreign or changed GraphQL answers',()=>{\n for(const field of ['allow_auto_merge','allow_squash_merge'])for(const invalid of [false,null,'true']){",
+        "after": "});\ntest('hosted review gate denies false or malformed settings and foreign or changed GraphQL answers',async()=>{\n for(const field of ['allow_auto_merge','allow_squash_merge'])for(const invalid of [false,null,'true']){"
+      },
+      {
+        "at": 339,
+        "before": "  f.repository[field]=invalid;\n  assert.throws(()=>gateExecute(f),/auto-merge and squash/);\n  assert(!f.calls.some(args=>args[1]==='graphql'||args.includes('POST')));",
+        "after": "  f.repository[field]=invalid;\n  await assert.rejects(gateExecute(f),/auto-merge and squash/);\n  assert(!f.calls.some(args=>args[1]==='graphql'||args.includes('POST')));"
+      },
+      {
+        "at": 347,
+        "before": "  change(f.nativeSettings);\n  assert.throws(()=>gateExecute(f),/merge settings|auto-merge and squash/);\n  assert(!f.calls.some(args=>args.includes('POST')));",
+        "after": "  change(f.nativeSettings);\n  await assert.rejects(gateExecute(f),/merge settings|auto-merge and squash/);\n  assert(!f.calls.some(args=>args.includes('POST')));"
+      },
+      {
+        "at": 356,
+        "before": " };\n assert.throws(()=>gateExecute(f),/native admission changed/);\n assert(!f.calls.some(args=>args.includes('POST')));\n});\ntest('shadow cannot publish and stale signed review, policy, CI, artifact or untrusted source fails closed',()=>{\n const shadow=nativeFixture(),s=gateExecute(shadow,{mode:'shadow'});assert.equal(s.result.state,'shadow_verified');\n gateExecute(shadow,{mode:'shadow',release:true,saved:s.proof});assert(!shadow.calls.some(a=>a.includes('POST')));\n for(const mutate of [f=>f.ruleset.rules[3].parameters.strict_required_status_checks_policy=false,f=>f.reviews[0].state='DISMISSED',f=>f.run.conclusion='failure',f=>f.jobs[0].conclusion='failure']){\n  const f=nativeFixture();mutate(f);assert.throws(()=>gateExecute(f));assert(!f.calls.some(a=>a.includes('POST')));\n }\n const f=nativeFixture(),p=gateExecute(f).proof;f.proofArtifact.expired=true;assert.throws(()=>gateExecute(f,{release:true,saved:p}),/artifact/);assert(!f.calls.some(a=>a.includes('POST')));\n assert.throws(()=>gateExecute(nativeFixture(),{mutateEnv:e=>e.GITHUB_REF='refs/heads/untrusted'}),/actual develop BASE|foreign repository|trusted default|actual execution/);\n});",
+        "after": " };\n await assert.rejects(gateExecute(f),/native admission changed/);\n assert(!f.calls.some(args=>args.includes('POST')));\n});\ntest('shadow cannot publish and stale signed review, policy, CI, artifact or untrusted source fails closed',async()=>{\n const shadow=nativeFixture(),s=await gateExecute(shadow,{mode:'shadow'});assert.equal(s.result.state,'shadow_verified');\n await gateExecute(shadow,{mode:'shadow',release:true,saved:s.proof});assert(!shadow.calls.some(a=>a.includes('POST')));\n for(const mutate of [f=>f.ruleset.rules[3].parameters.strict_required_status_checks_policy=false,f=>f.reviews[0].state='DISMISSED',f=>f.run.conclusion='failure',f=>f.jobs[0].conclusion='failure']){\n  const f=nativeFixture();mutate(f);await assert.rejects(gateExecute(f));assert(!f.calls.some(a=>a.includes('POST')));\n }\n const f=nativeFixture(),p=(await gateExecute(f)).proof;f.proofArtifact.expired=true;await assert.rejects(gateExecute(f,{release:true,saved:p}),/artifact/);assert(!f.calls.some(a=>a.includes('POST')));\n await assert.rejects(gateExecute(nativeFixture(),{mutateEnv:e=>e.GITHUB_REF='refs/heads/untrusted'}),/actual develop BASE|foreign repository|trusted default|actual execution/);\n});"
+      },
+      {
+        "at": 374,
+        "before": "\ntest('rerun proof names bind the immutable gate run and attempt without overwriting earlier evidence',()=>{\n const f=nativeFixture(),p=gateExecute(f).proof;\n f.proofArtifact.name=f.proofArtifact.name.replace('-9-1','-9-2');\n assert.throws(()=>gateExecute(f,{release:true,saved:p}),/artifact/);assert(!f.calls.some(a=>a.includes('POST')));\n});",
+        "after": "\ntest('rerun proof names bind the immutable gate run and attempt without overwriting earlier evidence',async()=>{\n const f=nativeFixture(),p=(await gateExecute(f)).proof;\n f.proofArtifact.name=f.proofArtifact.name.replace('-9-1','-9-2');\n await assert.rejects(gateExecute(f,{release:true,saved:p}),/artifact/);assert(!f.calls.some(a=>a.includes('POST')));\n});"
+      },
+      {
+        "at": 407,
+        "before": "\ntest('a hold added during artifact collection prevents the CI gate from releasing success',()=>{\n const f=nativeFixture(),load=f.loadCheckout;f.loadCheckout=()=>{const result=load();f.pr.labels=[{name:'hold'}];return result;};\n assert.throws(()=>gateExecute(f),/admission changed/);assert(!f.calls.some(a=>a.includes('POST')));\n});",
+        "after": "\ntest('a hold added during artifact collection prevents the CI gate from releasing success',async()=>{\n const f=nativeFixture(),load=f.loadCheckout;f.loadCheckout=()=>{const result=load();f.pr.labels=[{name:'hold'}];return result;};\n await assert.rejects(gateExecute(f),/admission changed/);assert(!f.calls.some(a=>a.includes('POST')));\n});"
+      },
+      {
+        "at": 425,
+        "before": "\ntest('the existing zero-approval ruleset accepts an actual same-account signed independent cloud review',()=>{\n const f=nativeFixture();assert.equal(f.pr.user.id,f.reviews[0].user.id);assert.equal(f.reviews[0].state,'COMMENTED');\n const prepared=gateExecute(f);assert.equal(prepared.result.state,'pr_passed');\n assert(!f.calls.some(a=>a.some(v=>typeof v==='string'&&(/CODEOWNERS|collaborators\\?/).test(v))),'no new owner/reviewer infrastructure');",
+        "after": "\ntest('the existing zero-approval ruleset accepts an actual same-account signed independent cloud review',async()=>{\n const f=nativeFixture();assert.equal(f.pr.user.id,f.reviews[0].user.id);assert.equal(f.reviews[0].state,'COMMENTED');\n const prepared=await gateExecute(f);assert.equal(prepared.result.state,'pr_passed');\n assert(!f.calls.some(a=>a.some(v=>typeof v==='string'&&(/CODEOWNERS|collaborators\\?/).test(v))),'no new owner/reviewer infrastructure');"
+      },
+      {
+        "at": 437,
+        "before": "const bootstrapEnv=e=>{e.AI_REVIEW_BOOTSTRAP='true';e.GITHUB_REF='refs/heads/feat/native';e.GITHUB_SHA=sha('a');};\ntest('gate installation requires an explicitly reviewed uninstalled BASE and actual signing dispatch actor',()=>{\n assert.equal(gateExecute(bootstrapFixture(),{mutateEnv:bootstrapEnv}).result.state,'pr_passed');\n for(const change of [",
+        "after": "const bootstrapEnv=e=>{e.AI_REVIEW_BOOTSTRAP='true';e.GITHUB_REF='refs/heads/feat/native';e.GITHUB_SHA=sha('a');};\ntest('gate installation requires an explicitly reviewed uninstalled BASE and actual signing dispatch actor',async()=>{\n assert.equal((await gateExecute(bootstrapFixture(),{mutateEnv:bootstrapEnv})).result.state,'pr_passed');\n for(const change of ["
+      },
+      {
+        "at": 442,
+        "before": "  f=>f.gateRun.actor.id=337201427,\n ]){const f=bootstrapFixture();change(f);assert.throws(()=>gateExecute(f,{mutateEnv:bootstrapEnv}),/coordinator dispatcher/);assert(!f.calls.some(a=>a.includes('POST')));}\n assert.throws(()=>gateExecute(nativeFixture(),{mutateEnv:bootstrapEnv}),/explicitly reviewed install BASE/);\n assert.throws(()=>gateExecute(bootstrapFixture(),{mutateEnv:e=>{bootstrapEnv(e);e.GITHUB_SHA=sha('f');}}),/actual execution/);\n assert.throws(()=>gateExecute(bootstrapFixture(),{mutateEnv:e=>{bootstrapEnv(e);e.GITHUB_ACTOR_ID='999';}}),/execution actor/);\n});\ntest('ordinary proof publication executes current actual BASE code and never PR or stale default code',()=>{\n for(const envChange of [e=>e.GITHUB_SHA=sha('a'),e=>{e.GITHUB_REF='refs/heads/feat/native';e.GITHUB_SHA=sha('a');}]){\n  const f=nativeFixture();assert.throws(()=>gateExecute(f,{mutateEnv:envChange}),/actual develop BASE|foreign repository|trusted default|actual execution/);assert(!f.calls.some(a=>a.includes('POST')));\n }",
+        "after": "  f=>f.gateRun.actor.id=337201427,\n ]){const f=bootstrapFixture();change(f);await assert.rejects(gateExecute(f,{mutateEnv:bootstrapEnv}),/coordinator dispatcher/);assert(!f.calls.some(a=>a.includes('POST')));}\n await assert.rejects(gateExecute(nativeFixture(),{mutateEnv:bootstrapEnv}),/explicitly reviewed install BASE/);\n await assert.rejects(gateExecute(bootstrapFixture(),{mutateEnv:e=>{bootstrapEnv(e);e.GITHUB_SHA=sha('f');}}),/actual execution/);\n await assert.rejects(gateExecute(bootstrapFixture(),{mutateEnv:e=>{bootstrapEnv(e);e.GITHUB_ACTOR_ID='999';}}),/execution actor/);\n});\ntest('ordinary proof publication executes current actual BASE code and never PR or stale default code',async()=>{\n for(const envChange of [e=>e.GITHUB_SHA=sha('a'),e=>{e.GITHUB_REF='refs/heads/feat/native';e.GITHUB_SHA=sha('a');}]){\n  const f=nativeFixture();await assert.rejects(gateExecute(f,{mutateEnv:envChange}),/actual develop BASE|foreign repository|trusted default|actual execution/);assert(!f.calls.some(a=>a.includes('POST')));\n }"
+      },
+      {
+        "at": 489,
+        "before": "\ntest('a legitimately advanced uninstalled BASE can be explicitly signed without changing CI code',()=>{\n const f=bootstrapFixture(),base=sha('f');f.baseSha=base;f.pr.base.sha=base;f.report.reviewedBaseSha=base;f.report.installBaseSha=base;f.sourceCommit.parents[0].sha=base;f.checkout.base=base;f.checkout.parents[0]=base;f.reviews[0].body=aiBody(f.report);\n const result=gateExecute(f,{mutateEnv:bootstrapEnv});assert.equal(result.result.state,'pr_passed');assert.equal(result.proof.base,base);assert.equal(result.proof.sourceObservations.installation.commit.sha,base);\n});\ntest('producer cannot bootstrap an already installed BASE or infer absence from denied Git metadata',()=>{\n for(const broken of ['installed','denied']){",
+        "after": "\ntest('a legitimately advanced uninstalled BASE can be explicitly signed without changing CI code',async()=>{\n const f=bootstrapFixture(),base=sha('f');f.baseSha=base;f.pr.base.sha=base;f.report.reviewedBaseSha=base;f.report.installBaseSha=base;f.sourceCommit.parents[0].sha=base;f.checkout.base=base;f.checkout.parents[0]=base;f.reviews[0].body=aiBody(f.report);\n const result=await gateExecute(f,{mutateEnv:bootstrapEnv});assert.equal(result.result.state,'pr_passed');assert.equal(result.proof.base,base);assert.equal(result.proof.sourceObservations.installation.commit.sha,base);\n});\ntest('producer cannot bootstrap an already installed BASE or infer absence from denied Git metadata',async()=>{\n for(const broken of ['installed','denied']){"
+      },
+      {
+        "at": 502,
+        "before": "  };\n  assert.throws(()=>gateExecute(f,{mutateEnv:bootstrapEnv}),/already contains|403/);assert(!f.calls.some(a=>a.includes('POST')));\n }",
+        "after": "  };\n  await assert.rejects(gateExecute(f,{mutateEnv:bootstrapEnv}),/already contains|403/);assert(!f.calls.some(a=>a.includes('POST')));\n }"
+      },
+      {
+        "at": 563,
+        "before": "",
+        "after": "\n\ntest('product scope uses the main repository native gate and leaves both regular Fork workflows alone',async()=>{\n const gate=readFileSync('.github/workflows/licenses.yml','utf8').split('  independent-ai-review:\\n')[1].split('  cancel-obsolete-queue:\\n')[0];\n assert.match(gate,/github\\.repository_id == '1429751262'/);\n const history=readFileSync('scripts/check-pr-history.mjs','utf8');\n assert.doesNotMatch(history,/auditDevelopProductScope/);\n for(const repo of ['FurinyaDev/Slay-the-Heavens-Fork-A','v5g95m7t8m-max/Slay-the-Heavens-Fork-B']){\n  const f=nativeFixture();\n  await assert.rejects(gateExecute(f,{mutateEnv:env=>{env.GITHUB_REPOSITORY=repo;env.GITHUB_REPOSITORY_ID='123';}}),/fixed main repository/);\n  assert(!f.calls.some(a=>a.includes('POST')));\n }\n});\n\ntest('protected native status publisher binds product scope and rejects missing product proof without status mutation',async()=>{\n const f=nativeFixture();\n await assert.rejects(gateExecute(f,{verifyProductScope:async()=>{throw Error('missing product approval');}}),/missing product approval/);\n assert(!f.calls.some(a=>a.includes('POST')));\n const verifyProductScope=async()=>({productReviewId:100});\n const prepared=await gateExecute(f,{verifyProductScope});\n assert.deepEqual(prepared.proof.productScope,{productReviewId:100});\n await assert.rejects(gateExecute(f,{release:true,saved:prepared.proof}),/differs from the fresh current gate evidence/);\n assert(!f.calls.some(a=>a.includes('POST')));\n});\n"
       }
     ]
   }

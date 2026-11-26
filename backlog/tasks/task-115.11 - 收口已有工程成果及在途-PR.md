@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@Furinya'
 created_date: '2026-11-25T21:02:00Z'
-updated_date: '2026-11-26T13:07:15Z'
+updated_date: '2026-11-26T13:23:39Z'
 labels:
   - engineering
 dependencies: []
@@ -56,4 +56,6 @@ ordinal: 223000
 #999 本地接续候选 cda3fca9bcf168548120c4ea463616d7de3cccb0 建在待合入的 #1000 a87a8d40 上，已独立复审。真实 Git 治理用例通过 8/8，正式构建协议 24/24。各现行入口拒绝旧源码及重新读取时回退，历史 LF/CRLF 和原 #1000 归档适用。待实际基线和 Hosted 验证。
 
 #967 工程切片在实际 454b 的本地接续 652bf5b2 和假定 #1000 a87 上的 03a2f0bf 获独立源码复审。五个文件仍是原切片范围，九项受控回调按原执行且验证通过。实际 Windows 和 Stop/SubagentStop、主仓 Hosted 回调继续待验。
+
+02 接续 #1016。以正式范围批准基线、受保护原生独审、正式配置及同包 GIL 读回区分玩家行为、批准和启用。#1007 为历史反例，宽屏与普通缺陷修复保持已批准归属。正式纠偏依赖 #1033，生产回流准入依赖 #1008。源提交、定向和独审按 #1016 原 PR 留存。
 <!-- SECTION:NOTES:END -->

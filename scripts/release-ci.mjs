@@ -147,6 +147,7 @@ if(process.argv[1]&&import.meta.url===pathToFileURL(resolve(process.argv[1])).hr
   let [command,branch,head]=process.argv.slice(2);
   const repo='FurinyaWorks/Slay-the-Heavens';
   const publication=['verify-publish','verify-pr','verify-hotfix-pr'].includes(command);
+  const physicalRelease=command==='verify-publish'&&branch==='release/v2.2.0';
   if(command==='verify-pr'||command==='verify-hotfix-pr') {
    const event=JSON.parse(readFileSync(process.env.GITHUB_EVENT_PATH,'utf8'));
    ({branch,head}=publicationTarget(event,repo,command==='verify-hotfix-pr'));
@@ -157,6 +158,7 @@ if(process.argv[1]&&import.meta.url===pathToFileURL(resolve(process.argv[1])).hr
   if(command==='freeze') {
    console.log(JSON.stringify(await freezeReleaseFull(repo,branch,head,githubRequest)));
   } else {
+   if(physicalRelease) await (await import('./verify-release-acceptance.mjs')).verifyTrustedPublicationSource(repo,githubRequest);
    const full=await verifyReleaseFull(repo,branch,head,githubRequest);
    const performance=await (await import('./runtime-baseline/require-release-performance.mjs')).requireReleasePerformance(full,githubRequest);
    const acceptance=publication&&await (await import('./verify-release-acceptance.mjs')).verifyReleaseAcceptance(full,performance,githubRequest);

@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { auditDevelopProductScope, auditReleaseFreeze } from './check-release-freeze.mjs';
+import { auditReleaseFreeze } from './check-release-freeze.mjs';
 
 const validSha = value => typeof value === 'string' && /^[0-9a-f]{40}$/.test(value);
 
@@ -63,10 +63,6 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
       return response.json();
     };
     console.log(JSON.stringify(await auditHistory(event, process.env.GITHUB_REPOSITORY, request)));
-    if (event.pull_request?.base.ref === 'develop') {
-      const scope = await auditDevelopProductScope(event.pull_request, process.env.GITHUB_REPOSITORY, request);
-      if (scope) console.log(JSON.stringify(scope));
-    }
     if (event.pull_request?.base.ref.startsWith('release/')) {
       console.log(JSON.stringify(await auditReleaseFreeze(event.pull_request, process.env.GITHUB_REPOSITORY, request)));
     }

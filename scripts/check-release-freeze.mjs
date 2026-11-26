@@ -11,6 +11,10 @@ import { requireReleaseCoordinator } from './verify-release-acceptance.mjs';
 import { requiresProductScope } from './verify-release-product-scope.mjs';
 
 const sha = /^[a-f0-9]{40}$/;
+// #994 is the existing protected v2.2.0 scope baseline. Later decisions use native approval.
+const v220ApprovalBaseline = 'c36a8049560c05eddde6d9596cf9100fc7184c5d';
+// #1022 copied already approved character-selection designs into this version.
+const v220SelectionInheritance = 'f9513b58a0d2ef836178001773eabbbc3459777a';
 const git = (...args) => execFileSync('git', ['--no-replace-objects', ...args], { encoding: 'utf8' });
 const scope = plan => plan.scope.map(row => row.slice(0, 3));
 const evidencePath = path => /^docs\/(?:evidence|reviews)\//.test(path);
@@ -75,7 +79,7 @@ async function verifyApprovalReview(api, repository, pr, scope, native, request)
     request(`${api}/pulls/${pull}`), request(`${api}/pulls/${pull}/reviews/${approvalId}`),
   ]);
   if (source?.number !== Number(pull) || source.merged !== true || source.base?.ref !== 'develop' ||
-      !projectRepositoryMatches(source.base.repo, repository) || !sha.test(source.head?.sha ?? '') ||
+      !projectRepositoryMatches(source.base.repo, repository) || !Number.isSafeInteger(source.user?.id) || !sha.test(source.head?.sha ?? '') ||
       !sha.test(source.merge_commit_sha ?? '') || !(Date.parse(source.merged_at) < Date.parse(pr.created_at)) ||
       approval?.id !== Number(approvalId) || approval.commit_id !== source.head.sha || approval.user?.id === pr.user.id ||
       approval.user?.id === source.user?.id || !['COMMENTED', 'APPROVED'].includes(approval.state) ||
@@ -111,11 +115,14 @@ async function verifyClaim(api, repository, pr, version, scope, request) {
   if (native) return verifyApprovalReview(api, repository, pr, scope, native, request);
   if (!pinned) throw new Error('Product scope requires a fixed protected source or separate native Owner decision');
   const [, ref, path] = pinned;
-  const [ancestry, document] = await Promise.all([
+  const inheritedSelection = ref === v220SelectionInheritance && path === 'docs/design/ui-references.json' && scope[2] === 'TASK-115.10';
+  const [ancestry, approvalHistory, document] = await Promise.all([
     request(`${api}/compare/${ref}...${pr.base.sha}?per_page=1`),
+    inheritedSelection ? null : request(`${api}/compare/${ref}...${v220ApprovalBaseline}?per_page=1`),
     request(`${api}/contents/${path}?ref=${ref}`),
   ]);
   if (ancestry?.merge_base_commit?.sha !== ref || !['ahead', 'identical'].includes(ancestry.status) ||
+      (!inheritedSelection && (approvalHistory?.merge_base_commit?.sha !== ref || !['ahead', 'identical'].includes(approvalHistory.status))) ||
       !matchesApprovedClause(document, decodeURIComponent(path), version, scope[2], scope[3])) {
     throw new Error('Product approval source must cite an exact approved clause in protected release history');
   }
@@ -151,7 +158,8 @@ async function productReview(pr, tree, version, request, repository, { fixTask, 
         report.productScope?.declarationSha256 !== proof) {
       throw new Error('Develop product scope lacks an exact independent AI review of its actual behavior and declaration');
     }
-  } else if (!review.body?.split(/\r?\n/).includes(`Release product scope verified: ${version} ${pr.base.sha} ${tree} ${proof}`)) {
+  } else if (!Number.isSafeInteger(pr.user?.id) || review.user.id === pr.user.id ||
+      !review.body?.split(/\r?\n/).includes(`Release product scope verified: ${version} ${pr.base.sha} ${tree} ${proof}`)) {
     throw new Error('Frozen product changes lack independent native review of their exact behavior, HEAD, BASE and tree');
   }
   await Promise.all(claims.map(scope => verifyClaim(api, repository, pr, version, scope, request)));
@@ -162,7 +170,7 @@ export const auditFrozenProductReview = (pr, tree, version, request, repository,
   productReview(pr, tree, version, request, repository, { fixTask });
 
 export async function auditDevelopProductScope(pr, repository, request, {
-  checkout = checkoutIdentity, read = readIfPresent, files = changedPaths,
+  checkout = checkoutIdentity, read = readIfPresent, files = changedPaths, reviewId,
 } = {}) {
   const base = pr?.base?.sha, head = pr?.head?.sha;
   if (pr?.base?.ref !== 'develop' || !projectRepositoryMatches(pr.base.repo, repository) ||
@@ -177,7 +185,7 @@ export async function auditDevelopProductScope(pr, repository, request, {
   if (!sha.test(candidate ?? '') || checkoutBase !== base || checkoutHead !== head) {
     throw new Error('Develop product PR checkout differs from HEAD/BASE');
   }
-  if (!productInputs(files(base, candidate))) return null;
+  if (!productInputs(await files(base, candidate))) return null;
   const pullPath = `/repos/${repository}/pulls/${pr.number}`;
   const live = await request(pullPath);
   if (live?.number !== pr.number || live.base?.ref !== 'develop' || live.base.sha !== base || live.head?.sha !== head ||
@@ -185,6 +193,9 @@ export async function auditDevelopProductScope(pr, repository, request, {
     throw new Error('Develop product PR changed during governance check');
   }
   const result = await productReview(live, tree, version, request, repository, { candidate });
+  if (reviewId !== undefined && result.productReviewId !== reviewId) {
+    throw new Error('Product scope receipt must be in the currently selected independent review');
+  }
   const current = await request(pullPath);
   if (current?.state !== 'open' || current.base?.sha !== base || current.head?.sha !== head ||
       current.merge_commit_sha !== candidate || current.body !== live.body) {

@@ -1,3 +1,4 @@
+import { execFileSync } from 'node:child_process';
 import { managedVersion, planPath, readVersionPlan } from './version-governance.mjs';
 import { projectRepositoryMatches } from './repository-identity.mjs';
 import { TRUSTED_REVIEW_COORDINATOR_IDS } from './independent-ai-review.mjs';
@@ -25,6 +26,16 @@ export async function protectedRef(repo, branch, request) {
     throw new Error(`Exact protected ${branch} identity required`);
   }
   return ref.object.sha;
+}
+
+export async function verifyTrustedPublicationSource(repo, request, {
+  git = (...args) => execFileSync('git', ['--no-replace-objects', ...args], { encoding: 'utf8' }).trim(),
+} = {}) {
+  const develop = await protectedRef(repo, 'develop', request);
+  if (git('rev-parse', 'HEAD') !== develop || git('status', '--porcelain', '--untracked-files=all')) {
+    throw new Error('Verify publication from the exact clean protected develop checkout');
+  }
+  return develop;
 }
 
 export function acceptanceRecord(source, head, gilSha256) {
@@ -96,7 +107,8 @@ export async function verifyReleaseAcceptance(fullProof, performance, request) {
       throw new Error(`Missing exact independent native release acceptance review by @${reviewer}`);
     }
     await requireReleaseCoordinator(repo, review.user, request);
-    if (review.body.split(/\r?\n/).includes(productDecision)) productReviewer = review.id;
+    if (Number.isSafeInteger(pr.user?.id) && review.user.id !== pr.user.id &&
+        review.body.split(/\r?\n/).includes(productDecision)) productReviewer = review.id;
   }
   if (productScope && !Number.isSafeInteger(productReviewer)) {
     throw new Error('Exact native release product-scope verification is missing');

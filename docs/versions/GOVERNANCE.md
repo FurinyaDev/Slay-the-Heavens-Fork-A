@@ -19,7 +19,7 @@
 
 产品 PR 写明玩家实际能观察到的变化、Backlog 编号、目标版本与固定批准来源。设计批准复用现有[参考索引](../design/UI_REFERENCES.md)的相同版本、标签和状态。已有必要修复可引用对应批准范围和回放。新增行为需要可追溯的 Owner 决定。独立审查从实际差异逐条核对批准，并反向检查批准的范围是否被如实实现。任务标签、阶段备注、测试结果分别提供归属和验证信息。
 
-v2.2.0 期间，`develop` PR 的实际生产、打包配置或工作流差异进入既有 Quality 历史检查，沿用原生独立 AI Review。PR 写 `Product-Scope: v2.2.0 | TASK-编号 | 批准条款原文 | 固定批准来源`，每项行为一行，配合正文说明实际行为。经独立复核只有内部工程变化的 PR 使用 `Product-Scope: v2.2.0 | none`。签署原有独立评审 JSON 时增加 `productScope: { "version": "v2.2.0", "declarationSha256": "<精确各行以 LF 连接的 SHA-256>" }`。将现有原生评审 ID 填入 `Product-Review`，沿用当前 HEAD/BASE/合并树。可先复用 Fork 定向验证与独审，再重跑主仓 Quality 读取完整回执。
+v2.2.0 期间，`develop` PR 的实际生产、打包配置或工作流差异由现有 Licenses 独审发布器从受保护的 develop 核对，沿用原生独立 AI Review。PR 写 `Product-Scope: v2.2.0 | TASK-编号 | 批准条款原文 | 固定批准来源`，每项行为一行，配合正文说明实际行为。经独立复核只有内部工程变化的 PR 使用 `Product-Scope: v2.2.0 | none`。签署原有独立评审 JSON 时增加 `productScope: { "version": "v2.2.0", "declarationSha256": "<精确各行以 LF 连接的 SHA-256>" }`。将现有原生评审 ID 填入 `Product-Review`，沿用当前 HEAD/BASE/合并树。独审收据仍与精确主仓 Quality 对账。
 
 先在实验目录或 Fork 隔离未获准的研究。确需提前集成且已有授权时，沿用既有构建配置默认关闭，在关闭路径验证没有模块加载、分配、订阅或可达入口，保留配置、构建读回与独审回执。正式启用由目标版本的批准决定和正式配置共同确定。普通已批准修复直接进入其原有运行路径。明确否决的行为删除。
 

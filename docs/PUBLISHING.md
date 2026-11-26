@@ -12,6 +12,8 @@ Release 日常修复走受影响 Fast；通过[版本治理与 Release 准入](v
 node scripts/runtime-baseline/verify-release-performance.mjs <final.gil> <candidate.json> <audit.json> <report.json>
 ```
 
+v2.2.0 的正式操作人从最新且干净的受保护 `develop` 工作树执行 `verify-publish`，并先获取精确冻结 Release 提交。冻结 PR 的普通 Quality 检查使用合成候选，正式启用仍需受保护源码执行的核验、精确 GIL 和独立原生 Review。
+
 归档生成的 `build/release-performance-evidence.json`、原始测量和对应运行环境。失败、少档、实限不一致、候选身份不符或不可比均阻塞。六档之外的独立诊断需保存极端内存限制下的 OOM 退出和回到支持档后的完整 Host 复跑。`REVIEW_REQUIRED` 保留原信号，待独立评审核对已知开销、设备预算和候选原因。正式线上门禁还要求真实平台冷暖加载、可点击、帧时间及持续游玩等设备证据，按下文同候选负载门禁执行。
 
 正式 Hotfix 发布使用同仓库 `hotfix/v<工程版本>` → `master` PR，并在官方客户端操作前立即执行 `node scripts/release-ci.mjs verify-publish hotfix/v<工程版本> <候选source SHA>`。沿用既有生产 Environment 审批。历史 Hotfix 继续引用各自归档回执。
@@ -67,13 +69,13 @@ Product-Scope: v2.2.0 | TASK-编号 | 实际玩家行为 | 固定批准来源链
 Product-Review: 原生评审ID
 ```
 
-固定链接指向同一版本及任务的原 Backlog 任务段或验收项、正式规划 Scope 行、UI 参考索引 APPROVED 条目。`Product-Scope` 引用批准条款原文，正文另说明实际操作和差异。新的 Owner 决定先在单独的规划 PR 登记 `<!-- product-approval: v2.2.0 | TASK-编号 | 实际玩家行为 -->`，并由有权限且独立于决定 PR 和实施 PR 作者的账号在精确 HEAD 提交 `Product change approved: v2.2.0 TASK-编号 实际玩家行为` 原生 Review。批准 PR 先合入受保护的 develop。独审双向对照实际差异与批准范围后，在当前 HEAD 的原生 Review 写 `Release product scope verified: v2.2.0 <BASE> <合并树> <Product-Scope整行SHA256>`。线上脚本重读批准来源、合并树、账号权限和评审。配置与运行回执在候选变化时重跑。每项行为使用一行 `Product-Scope`，多行时以 LF 连接后计算 SHA-256。
+固定链接指向 [#994 的已审范围基线](https://github.com/FurinyaWorks/Slay-the-Heavens/commit/c36a8049560c05eddde6d9596cf9100fc7184c5d)或其祖先的同一版本及任务的原 Backlog 任务段或验收项、正式规划 Scope 行、UI 参考索引 APPROVED 条目。[#1022 的选角参考索引](https://github.com/FurinyaWorks/Slay-the-Heavens/blob/f9513b58a0d2ef836178001773eabbbc3459777a/docs/design/ui-references.json)保留已批准设计在 TASK-115.10 的继承来源。`Product-Scope` 引用批准条款原文，正文另说明实际操作和差异。新的 Owner 决定先在单独的规划 PR 登记 `<!-- product-approval: v2.2.0 | TASK-编号 | 实际玩家行为 -->`，并由有权限且独立于决定 PR 和实施 PR 作者的账号在精确 HEAD 提交 `Product change approved: v2.2.0 TASK-编号 实际玩家行为` 原生 Review。批准 PR 先合入受保护的 develop。与实施 PR 作者不同账号的可信独审双向对照实际差异与批准范围后，在当前 HEAD 的原生 Review 写 `Release product scope verified: v2.2.0 <BASE> <合并树> <Product-Scope整行SHA256>`。线上脚本重读批准来源、合并树、账号权限和评审。配置与运行回执在候选变化时重跑。每项行为使用一行 `Product-Scope`，多行时以 LF 连接后计算 SHA-256。
 
 经明确批准的例外，在正式规划加入 `<!-- scope-exception: #PR编号 | 决策摘要 -->`，保留相应 Backlog 决策。协调者核对实际独立审查，在准确 HEAD 提交 `Release scope approved: 决策摘要` 原生 Review。将 `Release-Exception: Review编号 | 决策摘要` 填入 PR 正文，再重跑该 HEAD 的 Quality。Quality 重新读取当前 PR 正文，校验实际合成树、原生 Review 与当前协调者权限。
 
 ### 正式上线
 
-使用现有 Full、正式 GIL、六档压力、事故负对照与共享平台负载入口，技术预验入口仍为 `release-ci.mjs verify`。v2.2.0 按正式资源报告核对同包行为读回，独审在原生验收 Review 同时写入 `Release product scope verified: v2.2.0 <候选源码SHA> <源码树> <GIL-SHA256> <payloadDigest>`，复核实际启用行为及各自批准依据。收集同一候选的 Simulator、PC、实体手机、官方平台、美术质量和稳定性原始证据。受保护 `develop` 的正式版本规划通过单独 PR 登记以下实测回执。通过前保留待验状态。
+使用现有 Full、正式 GIL、六档压力、事故负对照与共享平台负载入口，技术预验入口仍为 `release-ci.mjs verify`。v2.2.0 按正式资源报告核对同包行为读回，与验收 PR 作者不同账号的可信独审在原生验收 Review 同时写入 `Release product scope verified: v2.2.0 <候选源码SHA> <源码树> <GIL-SHA256> <payloadDigest>`，复核实际启用行为及各自批准依据。收集同一候选的 Simulator、PC、实体手机、官方平台、美术质量和稳定性原始证据。受保护 `develop` 的正式版本规划通过单独 PR 登记以下实测回执。通过前保留待验状态。
 
 ```markdown
 <!-- release-acceptance: 完整候选源码SHA 完整GIL-SHA256 #验收PR编号 -->

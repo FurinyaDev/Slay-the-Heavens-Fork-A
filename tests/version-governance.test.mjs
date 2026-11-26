@@ -6,7 +6,8 @@ import { auditVersionGovernance, planPath, readVersionPlan } from '../scripts/ve
 import { INDEPENDENT_AI_REVIEW_MARKER } from '../scripts/independent-ai-review.mjs';
 import { auditRoadmap } from '../scripts/verify-backlog-roadmap.mjs';
 import { verifyReleaseAdmission } from '../scripts/verify-release-admission.mjs';
-import { acceptanceRecord, verifyReleaseAcceptance } from '../scripts/verify-release-acceptance.mjs';
+import { productScopePass } from '../scripts/verify-release-product-scope.mjs';
+import { acceptanceRecord, verifyReleaseAcceptance, verifyTrustedPublicationSource } from '../scripts/verify-release-acceptance.mjs';
 
 const version = 'v2.2.0';
 const path = planPath(version);
@@ -257,10 +258,11 @@ test('native product review admits approved width adaptation and necessary detai
     const taskDocument = `---\nid: ${task}\ntitle: Width\nstatus: In Progress\nlabels: [${version}]\ndependencies: []\n---\n` +
       `<!-- SECTION:DESCRIPTION:BEGIN -->\n任务：${behavior}\n<!-- SECTION:DESCRIPTION:END -->`;
     const sourceDocument = original + `\n<!-- product-approval: ${version} | ${task} | ${behavior} -->\n`;
-    const request = ({ decision = approval, decisionSource = source, ancestor = approvalRef, permission = 'admin', text } = {}) => async endpoint => {
+    const request = ({ decision = approval, decisionSource = source, ancestor = approvalRef, approvalThrough = approvalRef, permission = 'admin', text } = {}) => async endpoint => {
       if (endpoint.endsWith('/reviews/71')) return review;
       if (endpoint.endsWith('/reviews/81')) return decision;
       if (endpoint.endsWith('/pulls/81')) return decisionSource;
+      if (endpoint.includes('...c36a8049560c05eddde6d9596cf9100fc7184c5d?')) return comparison(approvalThrough);
       if (endpoint.includes('/compare/')) return comparison(ancestor);
       if (endpoint.includes('/contents/')) return { type: 'file', encoding: 'base64', path: number === 984 ? taskPath : path,
         content: Buffer.from(text ?? (number === 984 ? taskDocument : sourceDocument)).toString('base64') };
@@ -271,8 +273,10 @@ test('native product review admits approved width adaptation and necessary detai
     await assert.rejects(auditFrozenProductReview(live, candidate, 'v2.3.0', request(), repo, task), /require a version/);
     await assert.rejects(auditFrozenProductReview(live, base, version, request(), repo, task), /exact behavior/);
     await assert.rejects(auditFrozenProductReview(live, candidate, version, request({ permission: 'write' }), repo, task), /lacks approval/);
+    await assert.rejects(auditFrozenProductReview({ ...live, user }, candidate, version, request(), repo, task), /exact behavior/);
     if (number === 984) {
       await assert.rejects(auditFrozenProductReview(live, candidate, version, request({ ancestor: head }), repo, task), /protected release history/);
+      await assert.rejects(auditFrozenProductReview(live, candidate, version, request({ approvalThrough: head }), repo, task), /protected release history/);
       const postHoc = taskDocument.replace(`任务：${behavior}`, '任务：wide layout only') +
         `\n<!-- SECTION:NOTES:BEGIN -->\n${behavior}\n<!-- SECTION:NOTES:END -->`;
       await assert.rejects(auditFrozenProductReview(live, candidate, version, request({ text: postHoc }), repo, task), /exact approved clause/);
@@ -349,4 +353,40 @@ test('develop product changes require the existing native independent report and
   ]) await assert.rejects(auditDevelopProductScope(live, repo, request({ receipt }), options), /exact independent AI review/);
   await assert.rejects(auditDevelopProductScope(live, repo, request({ signer: { id: 7, login: 'implementer' } }), options), /trusted coordinator identity/);
   assert.equal(await auditDevelopProductScope(live, repo, unexpectedRequest, { ...options, files: () => ['tests/lua/battle.lua'] }), null);
+});
+
+
+test('formal product acceptance cannot be signed by the acceptance PR author', async () => {
+  const tree = 'd'.repeat(40), payload = '2'.repeat(64);
+  const author = { id: 111138384, login: 'owner' };
+  const signer = { id: 337201427, login: 'reviewer' };
+  const sourceText = acceptance.replace('TASK-10 -->', 'TASK-115 -->').replaceAll('@owner', '@reviewer');
+  const source = { path, encoding: 'base64', type: 'file', sha: 'f'.repeat(40), content: Buffer.from(sourceText).toString('base64') };
+  const review = { id: 125, commit_id: candidate, state: 'COMMENTED', user: signer,
+    body: `Release acceptance approved: ${head} ${gilSha256}\nRelease product scope verified: ${version} ${head} ${tree} ${gilSha256} ${payload}` };
+  const request = (prAuthor = author) => async endpoint => {
+    if (endpoint.endsWith('/heads/develop')) return ref('develop', base);
+    if (endpoint.endsWith('/heads/' + branch)) return ref(branch, head);
+    if (endpoint.endsWith('?ref=' + base) || endpoint.endsWith('?ref=' + candidate)) return source;
+    if (endpoint.endsWith('/pulls/138')) return { number: 138, merged: true, merge_commit_sha: candidate,
+      base: { ref: 'develop', repo: repository }, head: { sha: candidate }, user: prAuthor };
+    if (endpoint.includes(`/compare/${candidate}...${base}?`)) return comparison(candidate);
+    if (endpoint.endsWith('/pulls/138/reviews?per_page=100&page=1')) return [review];
+    if (endpoint.endsWith('/collaborators/reviewer/permission')) return { permission: 'admin', user: signer };
+    return unexpectedRequest();
+  };
+  const full = { repo, head, branch }, performance = { head, branch, tree, productScope: productScopePass,
+    gil: { gilSha256, payloadDigest: payload } };
+  assert.equal((await verifyReleaseAcceptance(full, performance, request())).productReviewer, review.id);
+  await assert.rejects(verifyReleaseAcceptance(full, performance, request(signer)), /native release product-scope verification is missing/);
+  await assert.rejects(verifyReleaseAcceptance(full, { ...performance, productScope: undefined }, request()), /formal product-scope readback/);
+});
+
+
+test('v2.2.0 manual publication requires clean protected controller source', async () => {
+  const request = async () => ref('develop', base);
+  const git = (head, dirty = '') => (...args) => args[0] === 'rev-parse' ? head : dirty;
+  assert.equal(await verifyTrustedPublicationSource(repo, request, { git: git(base) }), base);
+  await assert.rejects(verifyTrustedPublicationSource(repo, request, { git: git(head) }), /clean protected develop/);
+  await assert.rejects(verifyTrustedPublicationSource(repo, request, { git: git(base, ' M scripts/check-release-freeze.mjs') }), /clean protected develop/);
 });
