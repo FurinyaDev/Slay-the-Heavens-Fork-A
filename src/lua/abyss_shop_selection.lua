@@ -103,7 +103,7 @@ function M.new(owner, root, options)
         if self.selected and (not observe(self.selected) or self.selected.purchasable and owner.run.gold < self.selected.price) then self.selected = nil end
     end
     function state.inspectable(_self,category,offer)
-        return mobile() and category~='cards' and not offer.sold and not offer.unavailable
+        return mobile() and category=='relics' and not offer.sold and not offer.unavailable
     end
     function state:bind(key, category, slot, handler, name, description, enabled, reason)
         local flow = owner.run.nodeFlow
@@ -115,7 +115,15 @@ function M.new(owner, root, options)
         return function()
             if self.entries[key]~=q or not observe(q) then return false, 'stale_action' end
             if enabled and owner.run.gold<q.price then return false,'insufficient_gold' end
-            if self.selected and self.selected.key == key then self.selected = nil else self.selected = q end
+            if category=='potions' and not mobile() then
+                self.selected = nil
+                return q.handler()
+            end
+            if category~='potions' and self.selected and self.selected.key==key then
+                self.selected = nil
+            else
+                self.selected = q
+            end
             owner.notice=not enabled and reason or ''
             owner:render()
             return true
