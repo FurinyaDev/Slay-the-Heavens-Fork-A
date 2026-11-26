@@ -10,6 +10,7 @@ import {beforePotionReadabilityEvidence} from './v2-ui-admission-ci-source.mjs';
 import {beforeCloseoutHistoryTooling,beforeCloseoutRunHudFixture} from './closeout-current-backflow-source.mjs';
 import {preMenuRedCiSource} from './menu-red-ci-source.mjs';
 import {exactSourceMatches} from './source-fingerprint.mjs';
+import {beforeRunHudMapIcon} from './run-hud-successors.mjs';
 import {restoreExactFixtureHunks} from './exact-fixture-hunks.mjs';
 const hash=s=>createHash('sha256').update(s).digest('hex');
 const normalize=s=>s.replaceAll('\r\n','\n');
@@ -81,6 +82,7 @@ function beforeDefectPlanningSource(path,source){
  return source===lf?prior:prior.replaceAll('\n','\r\n');
 }
 export function preRunHudCiSource(path,source){
+ source=beforeRunHudMapIcon(path,source);
  source=beforeSilentPlanningSource(path,source);
  source=beforeDefectPlanningSource(path,source);
  source=preMenuRedCiSource(path,beforePotionReadabilityEvidence(path,source));

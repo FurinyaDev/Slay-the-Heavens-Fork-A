@@ -2,6 +2,7 @@ import {beforeKnownMasterBackflowSource} from './master-backflow-source.mjs';
 import {assertCurrentJsInventory,assertCurrentLuaInventory,assertIntegrationSuccessorsCurrent,beforePreflightSource,exactReviewedBuildInput,beforeM05ShopCiSource,assertDevelopBackflowCurrent,authenticateDevelopBackflow,developBackflowOwns,readHistoricalPreflightInput} from './fork-preflight-source.mjs';
 import {beforeCloseoutReviewedDeckBuild,beforeCloseoutRunHudBuild} from './closeout-current-backflow-source.mjs';
 import {beforeInputRetirement} from './input-retirement-source.mjs';
+import {beforeRunHudMapIcon,beforeRunHudDeckLabel} from './run-hud-successors.mjs';
 // CI-only complete bootstrap continuation. No gameplay source or production projector.
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
@@ -86,11 +87,11 @@ function guidanceBefore(path,source){
  }
  return source;
 }
-// The live disk reader feeds the Run HUD predecessor chain. Authenticate these
-// two descendants before entering that chain; already-historical readers are unchanged.
 function beforeRunHudDiskInput(path,source,read){
+ source=beforeRunHudMapIcon(path,source);
  if(path!=='scripts/deck-ui-layout.mjs'&&path!=='tests/node-ui-layout.test.mjs')return source;
- if(path==='tests/node-ui-layout.test.mjs')source=beforeInputRetirement(path,source);
+ if(path==='scripts/deck-ui-layout.mjs')source=beforeRunHudDeckLabel(source);
+ else source=beforeInputRetirement(path,source);
  if(developBackflowOwns(path))assertDevelopBackflowCurrent(path,source);
  source=authenticateDevelopBackflow(path,source,owner=>read(owner,'utf8'));
  if(path==='scripts/deck-ui-layout.mjs')return exactReviewedBuildInput(path,()=>beforeCloseoutReviewedDeckBuild(path,source));

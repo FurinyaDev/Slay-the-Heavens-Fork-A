@@ -142,8 +142,7 @@ function uniformCurrent(source,binding){
 }
 
 function assertProductionMapDeckOwners(path,source,read){
-  const owner=productionMapDeckSources[path];
-  if(!owner||!uniformCurrent(source,owner.after))return;
+  if(!Object.hasOwn(productionMapDeckSources,path)||!uniformCurrent(source,productionMapDeckSources[path].after))return;
   for(const [name,{after}] of Object.entries(productionMapDeckSources)){
     let live;
     try{live=read(name,'utf8');}catch{assert.fail('map deck linked owner missing: '+name);}
