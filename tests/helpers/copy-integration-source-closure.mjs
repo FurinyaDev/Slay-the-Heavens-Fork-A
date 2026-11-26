@@ -359,14 +359,14 @@ const entranceFiles=Object.freeze({
  'tests/helpers/release-ui-restore-source.mjs':'2ec5855476f1b4c8cf762ca1a7ee366028322841b07996a518af96fdd87259b9',
  'tests/helpers/current-replay-fix-sources.mjs':'cceed97f15f0f91ab37ea27d3bf6f5659d213c54dcf11225eaa0fed7adc8ccdf',
  'tests/helpers/character-preparation-source.mjs':'b556363648dd13827dacb603038423caf4a1c2693e618747df58fc29da7be2fd',
- 'tests/helpers/develop-release-backflow-source.mjs':'5f4ae517a51a79bc5c855c5ca1e5b82e461503130cf02a7fed135a140ddab49d',
+ 'tests/helpers/develop-release-backflow-source.mjs':'d5ef1fe63d3f697e44b40016231cb260eba047fd72604c62edf4468fb1c8d390',
  'tests/helpers/develop-release-vocabulary-source.mjs':'6120c2639aeb77972adcab7571c384d2d53f8a28794f99cc389f108a8bf0aeb5',
  'tests/fixtures/develop-release-vocabulary-source.json.gz':'2b3d606fc142f2c8c5cfaaff386c70f6e1f741f24fbc1879b78399b7c477e914',
  'tests/fixtures/map-room-battle-actions-source.json.gz':'45918da82006880941ab23f10ccc49b7fe11fc2c7978b4f1508f923216e142ec',
  'tests/fixtures/develop-battle-input-source.json.gz':'ee0eeaf23242e8307a2b4f06a27319d89477c5d19d7507eddc54477dc878611e',
  'tests/fixtures/develop-linked-backflow-source.json.gz':'7f803c657102e0f9a804ca68117af34f1067d32eabbc3b5fc0c99752b590d522',
  'tests/fixtures/develop-architecture-linked-source.json.gz':'4e8500c1232bc5bcd5c19d08dbed21cea262be94a30f3a2e8195eeb04ebde859',
- 'tests/helpers/master-backflow-source.mjs':'bb9776e3f49d88c2a6878840db782b8e11b99eec8f3126635646d3b0f420e95f',
+ 'tests/helpers/master-backflow-source.mjs':'aac48ea9474de04f9cd291050b1dbe8ef97edbc298c4fbab7b9e0e55f1fee2ee',
  'tests/fixtures/master-backflow-predecessors.json.gz':'b16492b78553e53e675537d95d3f9ef24557d792f657ba41f0f280e43fab325f',
  'tests/helpers/native-fixture-replay-source.mjs':'7dbd2ded60c5b155b958a5e6e2ff44537b2b62c15e113642aaf8f6194771832d',
  'tests/helpers/native-flow-fixture-source.mjs':'8ad7157fd4f3973ffba4f17f9eba440731ddf952e859fee53970d6c3879968e3',
@@ -463,8 +463,8 @@ const reviewedCopySources=Object.freeze({
  },
  "tests/helpers/ui-entrance-source.mjs": {
   "current": {
-   "sha256": "db68a4fbfb77de2972cea9a750e6df941fb492e74e95e666ee24ca1aca0c3834",
-   "gitBlob": "66a8db632e59f0e84f19a8f9d97e7eedbd2ef880"
+   "sha256": "47074fa0193ace25307ad13f497818f16c52af8ff6d70316703c7248cdd46b22",
+   "gitBlob": "9f61b73f111f25daf38b9a3bf3f66ea50d58c6a9"
   },
   "previous": {
    "sha256": "c64976a04e877f65315ad8553bd8f6380b6e50a5ab5fce60e3b37bbbb98825c1",
@@ -472,17 +472,42 @@ const reviewedCopySources=Object.freeze({
   },
   "edits": [
    {
-    "at": 8,
-    "remove": 1,
+    "at": 6,
+    "remove": 8,
     "previous": [
-     "import {beforeCurrentReplayFixes,beforeOfficialCharacterBackflow} from './current-replay-fix-sources.mjs';"
+     "import {exactSourceMatches as matches,sourceConfigLayoutMatches} from './source-fingerprint.mjs';",
+     "import {restoreExactFixtureHunks} from './exact-fixture-hunks.mjs';",
+     "import {beforeCurrentReplayFixes,beforeOfficialCharacterBackflow} from './current-replay-fix-sources.mjs';",
+     "import {beforeApprovedUiEntrance,matchesApprovedUiEntranceOwner} from './ui-entrance-approved-sources.mjs';",
+     "",
+     "const archive=readFileSync(new URL('../fixtures/ui-entrance-source.json.gz',import.meta.url));"
     ]
    },
    {
-    "at": 37,
-    "remove": 3,
+    "at": 36,
+    "remove": 18,
     "previous": [
-     " if(!matchesApprovedUiEntranceOwner(path,source))return false;"
+     "const currentInput=(path,source)=>replaySources.includes(path)",
+     " ?beforeCurrentReplayFixes(path,source):beforeApprovedUiEntrance(path,source);",
+     "function currentMatches(path,source,expected){",
+     " if(!matchesApprovedUiEntranceOwner(path,source))return false;",
+     " const normalized=currentInput(path,source);",
+     " if(requiredCurrentOwners.includes(path)&&normalized===source)return false;",
+     " return matches(normalized,expected);",
+     "}",
+     "const predecessors=new Map();",
+     ""
+    ]
+   },
+   {
+    "at": 68,
+    "remove": 7,
+    "previous": [
+     "",
+     "export function beforeUiEntrance(path,source){",
+     " return project(path,source,binding(path));",
+     "}",
+     ""
     ]
    }
   ]
