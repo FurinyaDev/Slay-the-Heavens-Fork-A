@@ -745,14 +745,14 @@ test('shop potion stock buys into a vacancy and rejects full sold and missing sl
     local slot
     for i,o in ipairs(ui.run.nodeFlow.potions) do if not o.unavailable then slot=i;break end end
     assert(slot)
+    local description=get('shopView/potion'..slot..'/description').text
     ui.run.potions={'fire_potion','block_potion','regen_potion'};ui:render()
     local before=Combat.copy(ui.run)
-    assert(not click('shopView/potion'..slot));same(before,ui.run)
-    assert(get('shopView/potion'..slot..'/description').text=='药水槽已满')
+    local ok,why=click('shopView/potion'..slot);assert(not ok and why=='potion_slots_full');same(before,ui.run)
+    assert(get('shopView/potion'..slot..'/description').text==description)
     ui.run.potions[2]=nil;ui:render()
     local offer=Combat.copy(ui.run.nodeFlow.potions[slot]);local gold=ui.run.gold
-    assert(click('shopView/potion'..slot));assert(ui.run.gold==gold)
-    assert(click('confirm'));assert(ui.run.potions[2]==offer.id and ui.run.gold==gold-offer.price)
+    assert(click('shopView/potion'..slot));assert(ui.run.potions[2]==offer.id and ui.run.gold==gold-offer.price)
     assert(ui.merchant.current.kind=='buy', 'potion transactions trigger the merchant sale reaction')
     before=Combat.copy(ui.run);assert(not click('shopView/potion'..slot));same(before,ui.run)
     assert(get('shopView/potionPrice'..slot..'/value').text=='已售出')

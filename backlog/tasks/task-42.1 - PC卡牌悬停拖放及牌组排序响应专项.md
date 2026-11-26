@@ -1,11 +1,11 @@
 ---
 id: TASK-42.1
 title: PC卡牌悬停拖放及牌组排序响应专项
-status: To Do
+status: In Progress
 assignee:
   - Furinya
-created_date: 2026-11-15 20:14
-updated_date: '2026-11-18T14:00:00Z'
+created_date: '2026-11-15T20:14:00Z'
+updated_date: '2026-11-25T15:57:13Z'
 labels: []
 milestone: m-8
 dependencies: []
@@ -37,8 +37,16 @@ type: bug
 - [ ] #5 经实际 PC 和相关手机回归、独立评审及当前最终候选验证后才可标验收；性能改善以同机同路数据证明，不捏造 FPS 或刚性延迟目标。
 <!-- AC:END -->
 
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+develop 基线 27e2f8304bcbaedffa0efbc02d739bd4aeab38b6；Fork A 分支 test/task-42-1-rapid-mouse-release。第一片仅补正式 Host 键鼠快速拖放 20 轮验收：有效单次、无效无扣费、取消归位；不重复牌组排序或战斗详情。使用仓库定向 Host 测试，PC 实机与系统负载另行保留。
+<!-- SECTION:PLAN:END -->
+
 ## Implementation Notes
 
 <!-- SECTION:NOTES:BEGIN -->
 2026-11-15 实机反馈已观察到操作症状，但现有 PR #672 未宣称修好快速甩牌或系统卡顿根因，故新子任务 To Do。#670 中 TASK-109（数字键、预输入）严格为 post-release，不得偷换成本次发版范围。严重度 P0/P1，实际根因及指标待测。
+
+第一片给现有正式 UI 配置增加 20 轮离线鼠标回调测试。每轮验证越界不扣费、回拖到手牌归位、同槽两张不同 UID 各出一次，上一手势迟到回调不能打下一张。定向用例通过；不是 PC 实机或性能测量，其他验收不勾。
 <!-- SECTION:NOTES:END -->

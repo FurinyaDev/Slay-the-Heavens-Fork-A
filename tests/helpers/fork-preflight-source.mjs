@@ -595,6 +595,68 @@ function exactCheckoutSource(source,binding){
  const lf=normalize(source);
  return source===lf||source===lf.replaceAll('\n','\r\n');
 }
+// Shop fixture receipts keep the reviewed live transaction and the old replay distinct.
+const shopPotionFixture={
+ path:'tests/lua/support/node_ui_cases.lua',
+ beforeSha256:'593b6e6a91941a7cdb110045bd953db0633eb2d13424d25edec0ddd34ad2aaa0',
+ afterSha256:'ec9647d8d8a155735e90a1f76c98c1f015df0adb5b1383e97c474723767aec44',
+ beforeBlob:'d9c00c3abc5c4c13b0b4de3c7673d44e00651e6b',
+ afterBlob:'dd254a4651bd5c3db2c5edab7293ee345cf03c46',
+ hunks:[{at:747,
+  before:[
+   "    ui.run.potions={'fire_potion','block_potion','regen_potion'};ui:render()",
+   "    local before=Combat.copy(ui.run)",
+   "    assert(not click('shopView/potion'..slot));same(before,ui.run)",
+   "    assert(get('shopView/potion'..slot..'/description').text=='药水槽已满')",
+   "    ui.run.potions[2]=nil;ui:render()",
+   "    local offer=Combat.copy(ui.run.nodeFlow.potions[slot]);local gold=ui.run.gold",
+   "    assert(click('shopView/potion'..slot));assert(ui.run.gold==gold)",
+   "    assert(click('confirm'));assert(ui.run.potions[2]==offer.id and ui.run.gold==gold-offer.price)",
+  ].join('\n'),
+  after:[
+   "    local description=get('shopView/potion'..slot..'/description').text",
+   "    ui.run.potions={'fire_potion','block_potion','regen_potion'};ui:render()",
+   "    local before=Combat.copy(ui.run)",
+   "    local ok,why=click('shopView/potion'..slot);assert(not ok and why=='potion_slots_full');same(before,ui.run)",
+   "    assert(get('shopView/potion'..slot..'/description').text==description)",
+   "    ui.run.potions[2]=nil;ui:render()",
+   "    local offer=Combat.copy(ui.run.nodeFlow.potions[slot]);local gold=ui.run.gold",
+   "    assert(click('shopView/potion'..slot));assert(ui.run.potions[2]==offer.id and ui.run.gold==gold-offer.price)",
+  ].join('\n'),
+ }],
+};
+function beforeShopPotionFixture(path,source){
+ const {afterSha256,afterBlob,beforeSha256,beforeBlob}=shopPotionFixture;
+ if(path!==shopPotionFixture.path||!exactCheckoutSource(source,[afterSha256,afterBlob]))return source;
+ const prior=restoreExactFixtureHunks(shopPotionFixture,path,source);
+ assert(exactCheckoutSource(prior,[beforeSha256,beforeBlob]),'exact shop fixture predecessor');
+ return source.includes('\r\n')?prior.replaceAll('\n','\r\n'):prior;
+}
+function shopPotionFixtureRead(read){
+ const current=(path,encoding)=>{
+  const raw=read(path,encoding);
+  if(path!==shopPotionFixture.path)return raw;
+  const source=Buffer.isBuffer(raw)?raw.toString('utf8'):raw;
+  const prior=beforeShopPotionFixture(path,source);
+  assert.notEqual(prior,source,'fresh complete integration source: '+path);
+  return typeof raw==='string'?prior:Buffer.from(prior);
+ };
+ current(shopPotionFixture.path,'utf8');
+ return current;
+}
+const shopPotionTest='tests/official-shop-potion-retry.test.mjs';
+const shopPotionRegression={
+ [shopPotionTest]:['602a45ccc42d203bdac8374d437c023fddc2d127572f9c0a660ff6ac1b5a8246','9db6e625b7113f9e0859175d9acb2ab66ccf7071'],
+ 'tests/lua/support/official_shop_potion_retry.lua':['9108b24a933bdfee0a1dbb20412c33db2d04991303ab3c6cfd4d291bc4721f58','fb70fafb2d8010d1d20b4da3df97d86bc53f7d6f'],
+};
+function beforeShopPotionInventory(paths,read,required=false){
+ const count=paths.filter(path=>path===shopPotionTest).length;
+ if(!required&&count===0)return paths;
+ assert.equal(count,1,'complete current raw discovery inventory: '+shopPotionTest);
+ for(const [path,binding] of Object.entries(shopPotionRegression))
+  assert(exactCheckoutSource(read(path,'utf8'),binding),'fresh added inventory source: '+path);
+ return paths.filter(path=>path!==shopPotionTest);
+}
 const formalAct2ReleaseTest='tests/release-performance.test.mjs';
 const formalAct2ReleaseTestBefore=[currentReleaseTests[formalAct2ReleaseTest],'1d63817e885fd314045193f48e2bd9aa16760009'];
 const formalAct2ReleaseTestCurrent=['0fef6761800e815ef402e807163b8da69731dcb342f1e0b6aef72ae639ff1791',
@@ -707,8 +769,10 @@ export function beforeReleaseAdditionalInventory(paths,kind,read=readFileSync){
 export function beforeShopEntryInventory(paths,kind,read=readFileSync){
  if(kind==='lua')paths=beforeChapterPoolFixtureInventory(paths,read);
  paths=beforeInputRetirementTestInventory(paths,kind,read);
- if(kind==='js')paths=beforeIntegratedStsInventory(paths,(path,encoding)=>beforeNativeFlowFixture(path,read(path,encoding)));
- else paths=beforeCurrentReleaseLuaNames(paths,read);
+ if(kind==='js'){
+  paths=beforeShopPotionInventory(paths,read);
+  paths=beforeIntegratedStsInventory(paths,(path,encoding)=>beforeNativeFlowFixture(path,read(path,encoding)));
+ }else paths=beforeCurrentReleaseLuaNames(paths,read);
  paths=beforeReleaseAdditionalInventory(paths,kind,read);
  const [path,...authenticated]=shopEntryTests[kind];
  const position=paths.indexOf(path);
@@ -730,6 +794,7 @@ export function assertCurrentJsInventory(paths,preceding,read=readFileSync){
    assert(exactCheckoutSource(source,formalAct2ReleaseTestCurrent),'fresh current Release performance test source: '+path);
   return source;
  };
+ paths=beforeShopPotionInventory(paths,read,true);
  paths=beforeInputRetirementTestInventory(paths,'js',read,{required:true});
  paths=beforeRefinedReleaseJsInventory(beforeShopEntryInventory(paths,'js',read),[...preceding,coopLabTest],read,true);
  assertCoopJsInventory(paths,preceding,read);
@@ -1144,11 +1209,15 @@ function beforeDevelopEpochReplayRuntime(path,source){
 const replayAssetLedger='docs/legal/assets.json';
 const referenceAssetLedger=['6e618cdf519fbe4c252dcc1a33b42eac4e737e89641ad215d93fcf50fecab8c3','69d938af08e70e12466cb44b5375b669993fab33'];
 const preReferenceAssetLedger=['3c4b140e7d432bb1de89289e516723dafa14daecd414b1ffe94b4f39d267f5c2','94e5b7f8a05e190d59e603b7b0760fc968d2a600'];
+const peripheryAssetLedger=['bd6482cadc9de9ee77f402709c28949d693eaaf2b0283332ea548a5b8259fb88','a1ca830829f045b31941c750ac6cbf0191765c05'];
 function currentAssetLedgerRead(read){
  return (path,...args)=>{
   const raw=read(path,...args);
-  if(path===replayAssetLedger)assert(exactCheckoutSource(Buffer.isBuffer(raw)?raw.toString('utf8'):raw,referenceAssetLedger),
-   'fresh complete integration source: '+path);
+  if(path===replayAssetLedger){
+   const source=Buffer.isBuffer(raw)?raw.toString('utf8'):raw;
+   assert(exactCheckoutSource(source,peripheryAssetLedger)||exactCheckoutSource(source,referenceAssetLedger),
+    'fresh complete integration source: '+path);
+  }
   return raw;
  };
 }
@@ -1168,8 +1237,14 @@ function beforeDeckBrowserAssetLedger(source){
  if(typeof source!=='string'||source.includes('\r\r\n'))return source;
  let current=normalize(source);
  if(source!==current&&source!==current.replaceAll('\n','\r\n'))return source;
+ // #988 registers five reviewed battle control captures.
+ if(exactCheckoutSource(source,peripheryAssetLedger)){
+  current=withoutArchiveRecords(current,'    "docs/evidence/v2.2.0-viewport/mobile-16-9-periphery.png": {\n',
+   '    "data/presentation/event-native-controls.json": {\n');
+  assert(exactSourceBinding(current,referenceAssetLedger),'exact pre-#988 asset ledger');
+ }
  // #1017 registers six reviewed design and simulator evidence files.
- if(exactCheckoutSource(source,referenceAssetLedger)){
+ if(exactSourceBinding(current,referenceAssetLedger)){
   current=withoutArchiveRecords(current,'    "docs/design/reference-assets/v2.2.0/battle-scene/act1-geometry.svg": {\n',
    '    "data/presentation/event-native-controls.json": {\n');
   assert(exactSourceBinding(current,preReferenceAssetLedger),'exact pre-#1017 asset ledger');
@@ -1289,7 +1364,7 @@ function beforeIntegrationSuccessor(path,source){
 // The current gate uses these two replay modules to verify the composed hand and scene owners.
 const responsiveReplayHelpers=Object.freeze({
  [integratedFixture]:relicCloseoutIntegratedIdentity,
- 'tests/helpers/chapter-battle-scene-source.mjs':['1270c293d79c04ac4a5b15483dd4cc8f9c4279362e2f5c551f6e98c20c9ad293','5306929645881d562b4d4322c5b3fa2ecb91edbd'],
+ 'tests/helpers/chapter-battle-scene-source.mjs':['28dcccf5f5e6f87b622f86e79676a18b0fcf8657f9084642782687e43cac4e87','c71698f86795129c9de9835942cb7e7626b717f0'],
  'tests/helpers/rebased-release-source.mjs':['b1e42ded7f05f580fb25ab0417ccd8db45832f5e9e50db83a38d6aaa2767dc20','4b22a3e61459334c6d85b247ea188976313d549e'],
 });
 function responsiveReplayCurrentRead(read){
@@ -1454,7 +1529,7 @@ export function assertIntegrationSuccessorsCurrent(read=readFileSync){
   assert(typeof source==='string'&&!source.includes('\r\r\n')&&hash(normalize(source))===sha,'fresh complete integration source: '+path);
  }
  for(const path of Object.keys(responsiveReplayHelpers))rawRead(path,'utf8');
- return rawRead;
+ return shopPotionFixtureRead(rawRead);
 }
 // The live planner reads its measured Linux map directly. Historical CI views
 // restore each exact predecessor in reverse observation order.
@@ -1480,12 +1555,33 @@ function beforeV220HostedTiming(path,source){
  if(current===raw)return source;
  return source.includes('\r\n')?current.replaceAll('\n','\r\n'):current;
 }
+// Older replays retain the exact wrapper bytes from before the Prologue count fix.
+const prologueRuntimeFixture={
+ "path": "tests/game-ui.test.mjs",
+ "beforeSha256": "7e964df798323c66d434584750fe6c62cf5ccd898a1dfe65a33b5540e3eb10b2",
+ "afterSha256": "d8376058d5623f3e86090319ae4180e6c2cf85e320a1e4ed7436254ecc7629ae",
+ "hunks": [
+  {
+   "at": 90,
+   "before": "    ['tests/lua/game_ui_prologue.lua', /^LUA_GAME_UI_PROLOGUE_PASS 13$/m],",
+   "after": "    ['tests/lua/game_ui_prologue.lua',\n      /^ok prologue 14 - transition stays silent on entry, completion and cancellation\\r?\\nLUA_GAME_UI_PROLOGUE_PASS 14$/m],"
+  }
+ ]
+};
+const prologueCurrent=['d8376058d5623f3e86090319ae4180e6c2cf85e320a1e4ed7436254ecc7629ae','2874a9ce9cc8af9fda6af59990e224c3ca53db2c'];
+const prologuePrevious=['7e964df798323c66d434584750fe6c62cf5ccd898a1dfe65a33b5540e3eb10b2','43ea5d1100ad7d3dbc2c435115578dc5c60a8a05'];
+function beforePrologueRuntimeFixture(path,source){
+ if(path!==prologueRuntimeFixture.path||!exactCheckoutSource(source,prologueCurrent))return source;
+ const prior=restoreExactFixtureHunks(prologueRuntimeFixture,path,source);
+ assert(exactCheckoutSource(prior,prologuePrevious),'exact Prologue runtime fixture predecessor');
+ return source.includes('\r\n')?prior.replaceAll('\n','\r\n'):prior;
+}
 export function beforePreflightSource(path,source,view='prior',read=readFileSync){
  if(path===replayAssetLedger&&typeof source==='string'){
   const lf=normalize(source);
   if(source!==lf&&source!==lf.replaceAll('\n','\r\n'))return source;
  }
- source=beforeCursesReceiptFixture(path,source);
+ source=beforeShopPotionFixture(path,beforeCursesReceiptFixture(path,source));
  const integratedPrior=beforeRelicCloseoutIntegratedFixture(path,source);
  if(integratedPrior!==source){
   source=integratedPrior;
@@ -1520,6 +1616,7 @@ export function beforePreflightSource(path,source,view='prior',read=readFileSync
  source=beforeDevelopReplayMerge(path,source);
  source=beforeReplayFingerprintSource(path,source);
  source=beforeDevelopEpochReplayRuntime(path,source);
+ source=beforePrologueRuntimeFixture(path,source);
  source=beforeDevelopBackflow(path,beforeDeckPagesSuiteSource(path,source));
  source=beforeNativeHostReplay(path,source);
  source=beforeNativeFixtureReplay(path,source);

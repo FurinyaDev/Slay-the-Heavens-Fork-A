@@ -113,26 +113,22 @@ local function pointerDriver(ui,get,emit)
  return tick,bounds
 end
 
-test('desktop relic and potion preview cancel freely and confirm exactly once',function()
- for _,category in ipairs({'relics','potions'})do
-  local ui,get,emit,tap=setup(false);local run=ui.run
-  local key=category=='relics' and 'shopView/relic3' or 'shopView/potion1'
-  local slot=category=='relics' and 3 or 1
-  local offer=run.nodeFlow[category][slot];local gold=run.gold
-  local function count()return category=='relics' and #run.relics or Run.potionCount(run)end
-  local before=count();local old=ui.actions[key].handler
-  assert(tap(key,1));assert(run.gold==gold and count()==before,'item preview charged')
-  assert(get('shopView/detail').visible and #get('shopView/detail/description').text>0)
-  assert(not old(),'pre-render item callback must be stale')
-  assert(tap('back',2));assert(run.gold==gold and count()==before)
-  assert(tap(key,3));local confirm=ui.actions.confirm.handler
-  assert(tap('confirm',4));assert(run.gold==gold-offer.price and count()==before+1)
-  assert(not confirm());assert(run.gold==gold-offer.price and count()==before+1)
- end
+test('desktop relic preview cancels freely and confirms exactly once',function()
+ local ui,get,_,tap=setup(false);local run=ui.run
+ local key='shopView/relic3'
+ local offer=run.nodeFlow.relics[3];local gold=run.gold
+ local before=#run.relics;local old=ui.actions[key].handler
+ assert(tap(key,1));assert(run.gold==gold and #run.relics==before,'item preview charged')
+ assert(get('shopView/detail').visible and #get('shopView/detail/description').text>0)
+ assert(not old(),'pre-render item callback must be stale')
+ assert(tap('back',2));assert(run.gold==gold and #run.relics==before)
+ assert(tap(key,3));local confirm=ui.actions.confirm.handler
+ assert(tap('confirm',4));assert(run.gold==gold-offer.price and #run.relics==before+1)
+ assert(not confirm());assert(run.gold==gold-offer.price and #run.relics==before+1)
 end)
-test('desktop item confirmation cannot buy a Courier replacement',function()
+test('relic and touch potion confirmations cannot buy a Courier replacement',function()
  for _,category in ipairs({'relics','potions'})do
-  local ui,get,emit,tap=setup(false);local run=ui.run
+  local ui,_,_,tap=setup(category=='potions');local run=ui.run
   run.relics[#run.relics+1]='courier';ui:render()
   local slot=category=='relics' and 3 or 1
   local key=category=='relics' and 'shopView/relic3' or 'shopView/potion1'
@@ -143,6 +139,23 @@ test('desktop item confirmation cannot buy a Courier replacement',function()
   local before=Combat.copy(run)
   assert(not stale(),'confirmation may not buy the replacement offer');same(before,run)
  end
+end)
+test('desktop potion click only buys the Courier quote held by that gesture',function()
+ local ui,get,emit,tap=setup(false);local run=ui.run
+ run.relics[#run.relics+1]='courier';ui:render()
+ local key='shopView/potion1'
+ local offer=run.nodeFlow.potions[1]
+ emit(key,'down',1)
+ assert(Nodes.buyPotion(run,1));ui:render()
+ assert(run.nodeFlow.potions[1]~=offer,'Courier must replace the old offer')
+ emit(key,'up',1)
+ local before=Combat.copy(run)
+ assert(not emit(key,'click',1));same(before,run)
+ local replacement=run.nodeFlow.potions[1]
+ assert(tap(key,2));assert(run.potions[2]==replacement.id and run.gold==before.gold-replacement.price)
+ assert(not get('confirm').visible)
+ before=Combat.copy(run)
+ assert(not emit(key,'click',2));same(before,run)
 end)
 test('hovering any card leaves every unselected card and price anchored',function()
  local ui,get,emit=setup(false)
@@ -257,14 +270,22 @@ test('touch can inspect unaffordable relics without arming a purchase',function(
  assert(tap('back',3));assert(not get('shopView/detail').visible);same(before,ui.run)
 end)
 
-test('touch can inspect stocked potions with full slots and still cannot buy them',function()
+test('touch full-belt potion confirmation rejects without removing stock or leaving a selection',function()
  local ui,get,emit,tap=setup(true)
  while Run.potionCount(ui.run)<Run.potionCapacity(ui.run)do assert(Run.obtainPotion(ui.run,'fire_potion'))end
  ui:render();local before=Combat.copy(ui.run)
  assert(tap('shopView/potion1',1));ui:update(.2)
  assert(get('shopView/detail').visible and #get('shopView/detail/description').text>0)
- assert(get('confirm/label').text=='暂不可购买' and not ui.actions.confirm.enabled)
- assert(not tap('confirm',2));same(before,ui.run)
+ assert(get('confirm/label').text:find('购买',1,true) and ui.actions.confirm.enabled)
+ local ok,why=tap('confirm',2);assert(not ok and why=='potion_slots_full');same(before,ui.run)
+ assert(not get('confirm').visible and get('back/label').text=='关闭')
+ assert(tap('shopView/potion1',3))
  ui:setVisible(false);ui:setVisible(true);ui:render()
  assert(not get('shopView/detail').visible and not get('confirm').visible and get('back/label').text=='关闭');same(before,ui.run)
+end)
+test('touch unaffordable potion reports the shortfall without opening confirmation',function()
+ local ui,get,_,tap=setup(true);ui.run.gold=0;ui:render()
+ local before=Combat.copy(ui.run)
+ assert(not tap('shopView/potion1',1));same(before,ui.run)
+ assert(not get('confirm').visible and ui.notice:find('金币不足',1,true))
 end)

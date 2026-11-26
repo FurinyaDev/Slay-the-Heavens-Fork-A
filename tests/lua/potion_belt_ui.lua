@@ -7,8 +7,9 @@ local function eq(a,b)assert(a==b,tostring(a)..' ~= '..tostring(b))end
 local function same(a,b)eq(type(a),type(b));if type(a)~='table'then eq(a,b);return end;for k,v in pairs(a)do same(v,b[k])end;for k in pairs(b)do assert(a[k]~=nil)end end
 local count=0
 local function test(name,fn)fn();count=count+1;print('PASS potion belt UI '..count..' '..name)end
-local function setup(belt)
- local h,r=F.fixture(nil,nil,nil,{CursorDown='down',CursorDrag='drag',CursorUp='up',CursorExit='exit',CursorEndDrag='endDrag'})
+local function setup(belt,touch)
+ local h,r=F.fixture(nil,nil,nil,{CursorDown='down',CursorDrag='drag',CursorUp='up',CursorExit='exit',CursorEndDrag='endDrag'},
+  nil,nil,touch and {touchScreen=function()return true end})
  assert(testStart(h));if belt then assert(Run.obtainRelic(h.run,'Potion Belt'))end
  h:refresh();return h,r
 end
@@ -69,7 +70,7 @@ test('fourth and fifth native battle buttons use real bottles and expose indepen
  drain(h);eq(h.run.combat.player.statuses.strength,2);eq(h.run.potions[5],nil);counter(r,3,5)
 end)
 test('shop inventory admission and shared counter use actual five-slot capacity',function()
- local h,r=setup(true)
+ local h,r=setup(true,true)
  for _,id in ipairs({'fire_potion','block_potion','regen_potion','energy_potion'})do assert(Run.obtainPotion(h.run,id))end
  local path=dofile('tests/lua/support/map_routes.lua').to(h.map,function(n)return n.type=='shop'end)
  for i=1,#path-1 do assert(Map.choose(h.map,path[i]))end

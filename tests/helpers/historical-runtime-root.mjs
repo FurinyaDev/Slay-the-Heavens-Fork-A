@@ -19,7 +19,8 @@ function readonlyResources(source,target){
  if(statSync(source).isDirectory())symlinkSync(source,target,process.platform==='win32'?'junction':'dir');
  else cpSync(source,target,{errorOnExist:true,force:false});
 }
-export function writeHistoricalRuntimeSnapshot(directory,inputs){
+export function writeHistoricalRuntimeSnapshot(directory,inputs,{dependenciesOnly=false}={}){
+ assert.equal(typeof dependenciesOnly,'boolean','explicit historical resource selection');
  mkdirSync(directory,{recursive:true});
  const root=realpathSync(directory),implementation=realpathSync(implementationRoot),inside=relative(implementation,root);
  assert.ok(inside&&((inside.startsWith('..'+sep))||isAbsolute(inside)),'historical source must be outside the working tree');
@@ -34,8 +35,8 @@ export function writeHistoricalRuntimeSnapshot(directory,inputs){
  }
  // art/performance contains archived JSON. Merge only missing resource entries
  // under that real directory; never replace art or overlay a linked directory.
- readonlyResources(join(implementationRoot,'art'),join(root,'art'));
- for(const path of ['tests/helpers','tests/fixtures','node_modules'])
+ const resources=dependenciesOnly?['node_modules']:['art','tests/helpers','tests/fixtures','node_modules'];
+ for(const path of resources)
   readonlyResources(join(implementationRoot,path),join(root,path));
  return root;
 }

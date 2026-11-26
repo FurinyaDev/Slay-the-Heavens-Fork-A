@@ -195,3 +195,86 @@ print('V25_RUNTIME_PILES_REWARD_PASS')
  assert.equal(result.status,0,result.stdout+result.stderr+String(result.error??''));
  for(const marker of ['ENERGY','BUTTON','PILES_REWARD'])assert.match(result.stdout,new RegExp(`V25_RUNTIME_${marker}_PASS`));
 });
+
+test('official mouse Host: 20 rapid drag rounds commit once, reject outside, and snap back on cancellation',t=>{
+ const root=resolve('.artifacts/test-tmp');mkdirSync(root,{recursive:true});
+ const directory=mkdtempSync(join(root,'official-mouse-release-'));
+ t.after(()=>rmSync(directory,{recursive:true,force:true}));
+ buildLuaData('data',join(directory,'abyss_data.lua'));
+ buildUI(directory,undefined,{officialAssets:true,nativePageLifecycle:true});
+ const modules=readdirSync(directory).filter(name=>name.endsWith('.lua')).map(name=>name.slice(0,-4));
+ const source=`
+local generated=${luaString(directory.replaceAll('\\','/'))}
+package.path=generated..'/?.lua;src/lua/?.lua'
+for _,name in ipairs(${toLua(modules)})do package.preload[name]=assert(loadfile(generated..'/'..name..'.lua'))end
+assert(require('abyss_ui_profile').nativePageLifecycle)
+local H=dofile('tests/lua/support/battle_gesture_fixture.lua')
+assert(H.F.Theme.presentationProfile=='official-assets-first')
+local deck,enemies={'defend','defend'},{'jaw_worm'}
+local host,ui,panel,event,_,drain=H.setup(deck,enemies,{touchScreen=function()return false end})
+local first,last=tonumber(arg[1]),tonumber(arg[2])
+for round=first,last do
+ if round>first then
+  host.run.combat=H.F.Combat.new(H.F.Data,{deck=deck,enemies=enemies})
+  host:refresh()
+ end
+ local battle=host.run.combat
+ local hand,drag=panel:GetChild('card1'),panel:GetChild('dragLayer')
+ local uid,nextUid=battle.hand[1].uid,battle.hand[2].uid
+ assert(uid~=nextUid)
+ for _=1,4 do host:update(.25) end
+ local x,y=hand.x,hand.y
+ local function unchanged(message)
+  assert(battle.energy==3 and battle.player.block==0 and #battle.hand==2 and #battle.discard==0,message)
+ end
+ local function neutral(message)
+  unchanged(message)
+  assert(battle.hand[1].uid==uid and ui.selected==nil and ui.carry==nil and ui.gesture==nil,message)
+  for _=1,4 do host:update(.25) end
+  assert(hand.visible and math.abs(hand.x-x)<.01 and math.abs(hand.y-y)<.01 and not drag.visible,message)
+ end
+ local function move(px,py)
+  event('card1','down',0)
+  host:update(.01)
+  event('card1','drag',0,px,py)
+  assert(ui.gesture and ui.gesture.moving and drag.visible,'mouse input did not start a real drag')
+ end
+ local function release(px,py)
+  event('dragLayer','up',0,px,py)
+  event('card1','endDrag',0,px,py)
+  event('card1','click',0,px,py)
+ end
+ -- A quick invalid desktop release may enter carry, but must not spend.
+ move(690,80);release(690,80);unchanged('off-canvas release or its tail spent a card')
+ -- Fixture reset only; the next trace verifies cancellation through mouse events.
+ if ui.carry then assert(ui:cancelAim(),'cannot retire rejected desktop carry') end
+ neutral('retiring the rejected gesture did not restore the active slot')
+ move(0,80);event('card1','drag',0,x,y);release(x,y)
+ neutral('return-to-hand cancellation or its late tail altered rules or pose')
+ move(0,80);release(0,80);drain()
+ assert(battle.energy==2 and battle.player.block==5 and #battle.hand==1 and #battle.discard==1
+  and battle.discard[1].uid==uid and not ui.gesture and not drag.visible,'valid release must commit exactly once')
+ assert(battle.hand[1].uid==nextUid,'second card did not occupy the reused first slot')
+ release(0,80) -- delayed callbacks now address a slot containing a different UID
+ assert(battle.energy==2 and battle.player.block==5 and #battle.discard==1
+  and battle.hand[1].uid==nextUid and not ui.gesture and not ui.selected,'old callbacks affected the next card')
+ move(0,80);release(0,80);drain()
+ assert(battle.energy==1 and battle.player.block==10 and #battle.hand==0 and #battle.discard==2
+  and battle.discard[1].uid==uid and battle.discard[2].uid==nextUid and not drag.visible,
+  'fresh mouse Down could not play the second card exactly once')
+ print('TASK_42_1_MOUSE_ROUND '..round)
+end
+`;
+ const rounds=[];
+ // Keep the existing per-VM deadline with room for slower hosted workers.
+ for(const [first,last] of [[1,10],[11,20]]){
+  const entry=`local arg={${first},${last}}\n${source}`;
+  const result=spawnSync(process.execPath,[require.resolve('fengari-node-cli/src/lua-cli.js'),'-e',entry],{
+   cwd:process.cwd(),encoding:'utf8',maxBuffer:2*1024*1024,timeout:30000,
+   env:{...process.env,LUA_INIT:'',LUA_INIT_5_3:''},
+  });
+  assert.equal(result.status,0,result.stdout+result.stderr+String(result.error??''));
+  rounds.push(...[...result.stdout.matchAll(/^TASK_42_1_MOUSE_ROUND (\d+)$/gm)].map(match=>Number(match[1])));
+ }
+ assert.deepEqual(rounds,Array.from({length:20},(_,i)=>i+1));
+});

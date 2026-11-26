@@ -65,23 +65,22 @@ function M.new(controller, ui)
         box:GetChild('value'):SetSizeDelta(price.size[1]-price.coin-Theme.space.s,price.size[2])
     end
 
-    local function offerState(offer, full)
+    local function offerState(offer)
         local poor = self.run.gold < offer.price
         return {
             poor = poor,
-            enabled = not offer.sold and not poor and not offer.unavailable and not full,
-            attention = poor and not offer.sold and not offer.unavailable and not full,
+            enabled = not offer.sold and not poor and not offer.unavailable,
+            attention = poor and not offer.sold and not offer.unavailable,
             price = priceStatus(offer, poor),
         }
     end
 
-    local function offerNotice(kind, offer, name, full)
+    local function offerNotice(kind, offer, name)
         if offer.unavailable then return missingReasons[kind] end
         if offer.sold then
             if kind == "potion" then return "药水已售出" end
             return "「" .. name .. "」已售出"
         end
-        if full then return "药水槽已满" end
         return shortfall(offer.price)
     end
 
@@ -228,41 +227,41 @@ function M.new(controller, ui)
         action("shopView/relicNext", false)
     end
 
-    local function potionDescription(offer, full)
+    local function potionDescription(offer)
         if offer.unavailable then return '此稀有度暂无可售内容' end
         if offer.sold then return '已售出' end
-        if full then return '药水槽已满' end
         return potionText(offer.id)
     end
 
-    local function writePotion(tile, offer, definition, availability, full)
-        state(tile, availability.enabled or selection:inspectable('potions',offer))
+    local function writePotion(tile, offer, definition, availability)
+        state(tile, availability.enabled)
         picture(tile:GetChild('icon'), Theme.icon.potion[offer.id])
         tile:GetChild('name').text = definition and definition.name or (rarityNames[offer.rarity] or '') .. '药水'
-        tile:GetChild('description').text = potionDescription(offer, full)
+        tile:GetChild('description').text = potionDescription(offer)
         show(tile:GetChild('veil'), offer.sold)
     end
 
-    local function bindPotion(i, offer, availability, full)
+    local function bindPotion(i, offer, availability)
         local definition = find(self.run.data.potions.potions, offer.id)
         purchase('shopView/potion' .. i, 'potions', i, availability.enabled, function()
             return commit('buyPotion', i, function(before)
                 return '已购买药水 · 支付 ' .. number(before.gold - self.run.gold) .. ' 金币'
             end)
-        end, definition and definition.name or '', potionText(offer.id), offerNotice("potion", offer, nil, full), availability.attention)
+        end, definition and definition.name or '', potionText(offer.id), offerNotice("potion", offer), availability.attention)
     end
 
-    local function renderPotionSlot(i, offer, paint, full)
+    local function renderPotionSlot(i, offer, paint)
         local tile, price = ui.product('potion' .. i), ui.product('potionPrice' .. i)
         if paint then show(tile, offer ~= nil);show(price, offer ~= nil) end
         if not offer then return end
-        local availability = offerState(offer, full)
+        -- Admission reads the current belt at purchase time, independently of the quote.
+        local availability = offerState(offer)
         if paint then
             local definition = find(self.run.data.potions.potions, offer.id)
-            writePotion(tile, offer, definition, availability, full)
+            writePotion(tile, offer, definition, availability)
             fillPrice(price, offer.price, availability.price)
         end
-        bindPotion(i, offer, availability, full)
+        bindPotion(i, offer, availability)
     end
 
     local shop = ui.child('shopView')
@@ -272,7 +271,7 @@ function M.new(controller, ui)
     local function quote(hasPurgeCandidates)
         local run = self.run
         local flow = run.nodeFlow
-        local fields = {run.gold, Run.potionCount(run), Run.potionCapacity(run),
+        local fields = {run.gold, Run.potionCapacity(run),
             tostring(hasPurgeCandidates), Shop.removePrice(run), tostring(flow.removalUsed)}
         for _, category in ipairs(categories) do
             fields[#fields + 1] = category
@@ -320,9 +319,8 @@ function M.new(controller, ui)
         if paint then cardFooter(shop) end
         renderRemoval(node, paint)
         renderRelics(goods, node.relics, paint)
-        local full = Run.potionCount(self.run) >= Run.potionCapacity(self.run)
         for i = 1, #Theme.layout.nativeNode.shop.potions.columns do
-            renderPotionSlot(i, node.potions[i], paint, full)
+            renderPotionSlot(i, node.potions[i], paint)
         end
         selection:paint(0)
         previousRun, previousNode, previousQuote = self.run, self.run.nodeFlow.id, quoted
