@@ -16,15 +16,6 @@ local function locations(frame)
     end end
     return found
 end
-local function handPoint(index,count)
-    local w,h=L.card.size[1],L.card.size[2]
-    local spacing=count<=1 and 0 or math.max(L.hand.spacingMin,math.min(L.hand.spacingMax,(L.hand.maxWidth-w)/(count-1)))
-    local distance=index-1-(count-1)/2
-    local radians=math.abs(distance*L.hand.arcDegrees)*math.pi/180
-    local halfHeight=(h*math.cos(radians)+w*math.sin(radians))/2
-    local floor=-Theme.canvas.base[2]/2+Theme.canvas.safe.y+halfHeight-(L.hand.overhang or 0)
-    return {distance*spacing,math.max(floor,L.hand.y-math.abs(distance)*L.hand.arcDrop)}
-end
 function M.new(stage,platform,pileLayout)
     pileLayout=pileLayout or Viewport.pileLayout(stage)
     local self={active={},waiting={},inPlay={},moving={}}
@@ -32,14 +23,20 @@ function M.new(stage,platform,pileLayout)
     local overlay=stage:GetChild('feedback')
     local function colour(c,alpha)return platform.color(c.r,c.g,c.b,math.floor((c.a or 255)*alpha))end
     local function box(slot)return overlay:GetChild('cardTrail'..slot)end
+    local function endpoint(pile,hand)
+        if hand then return Viewport.handSlot(hand.count,hand.index-1,extra)end
+        return pileLayout.point(pile,extra)
+    end
+    local function handSlot(place)
+        if place.pile=='hand'or place.pile=='retain'then return place end
+    end
     local function point(place)
-        if place.pile=='hand'or place.pile=='retain'then return handPoint(place.index,place.count)end
-        local x,y=pileLayout.point(place.pile,extra)
+        local x,y=endpoint(place.pile,handSlot(place))
         return x and {x,y} or L.player.position
     end
     local function retarget(entry)
-        local sx=pileLayout.point(entry.from,extra)
-        local tx=pileLayout.point(entry.to,extra)
+        local sx=endpoint(entry.from,entry.startHand)
+        local tx=endpoint(entry.to,entry.finishHand)
         if sx then entry.start[1]=sx end
         if tx then entry.finish[1]=tx end
     end
@@ -62,7 +59,7 @@ function M.new(stage,platform,pileLayout)
         local finish=point(to)
         self.waiting[#self.waiting+1]={uid=card.uid,cardId=card.cardId,from=from.pile,to=to.pile,
             start={start[1],start[2]},finish={finish[1],finish[2]},age=0,label=label,
-            order=to.pile=='discard'and #self.waiting or 0}
+            order=to.pile=='discard'and #self.waiting or 0,startHand=handSlot(from),finishHand=handSlot(to)}
     end
     local function settleInPlay(after)
         for uid,entry in pairs(self.inPlay)do

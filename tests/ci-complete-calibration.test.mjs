@@ -7,6 +7,7 @@ import {runHudPriorRead,runHudPriorInventory,preRunHudCiSource,runHudCiProof,run
 import {stsStylePriorRead,stsStylePriorInventory} from './helpers/sts-style-ci-source.mjs';
 import {receiptToolingSource,toolingProof} from './helpers/integration-1111-tooling.mjs';
 import {cursesPlanningFloors,cursesGateProof,preCursesGateSource} from './helpers/curses-ci-planning.mjs';
+import {historicalCursesReceiptReader} from './helpers/curses-historical-custody.mjs';
 import {jointCiSourceAt,jointCiInventoryAt,jointCiMatches,preCurrentPlanningSource,preRatchetInventory,ratchetInventoryFile} from './helpers/joint-ui-ci-source-inverse.mjs';
 
 import {battleQueueCiProof,preBattleQueueCiInventory,preBattleQueueCiSource} from './helpers/battle-queue-ci-source-epoch.mjs';
@@ -1467,8 +1468,9 @@ test('Curses planning floors authenticate complete current file runs without hos
   assert.deepEqual([receipt.exitCode,receipt.signal,receipt.error,receipt.inputsUnchanged],[0,null,null,true]);
   assert.deepEqual([receipt.tests,receipt.pass,receipt.fail,receipt.cancelled,receipt.skipped,receipt.todo],[count,count,0,0,0,0]);
   assert.deepEqual(receipt.inputHashes,receipt.afterInputHashes);
+  const readReceiptInput=historicalCursesReceiptReader(file,bytes,rawBootstrapReadFileSync);
   for(const [path,sha]of Object.entries(receipt.inputHashes)){
-   assert.equal(replayHash(path,sha,()=>{const raw=diskReadFileSync(path);return path.endsWith('.gz')?raw:beforeCharacterPreparationSource(path,receiptToolingSource(path,raw.toString('utf8'),'curses')).replaceAll('\r\n','\n');}),sha,path);
+   assert.equal(hash(readReceiptInput(path,sha)),sha,path);
   }
   assert.equal(hash(output),receipt.stdoutSha256);assert.equal(hash(errors),receipt.stderrSha256);assert.equal(errors.length,0);
   for(const line of ['tests '+count,'pass '+count,'fail 0','cancelled 0','skipped 0','duration_ms '+receipt.durationMs])assert.ok(output.toString().includes('ℹ '+line),line);

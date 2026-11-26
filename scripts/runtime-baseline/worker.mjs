@@ -1,10 +1,27 @@
 import {createRequire} from 'node:module';
 import {readFileSync} from 'node:fs';
+import {join} from 'node:path';
 import {performance} from 'node:perf_hooks';
 const require=createRequire(import.meta.url);
 const {lua,lauxlib,lualib,to_luastring,to_jsstring}=require('fengari');
 const L=lauxlib.luaL_newstate();lualib.luaL_openlibs(L);
 const generated=process.argv[2];
+const runtime=process.argv[3]==='gil-native-readback' ? JSON.parse(readFileSync(join(generated, 'performance-readback.json'))) : null;
+let artFeatures;
+if(runtime){
+ lua.lua_pushboolean(L,true);
+ lua.lua_setglobal(L,to_luastring('BASELINE_GIL'));
+ lua.lua_pushjsfunction(L,state=>{
+  artFeatures={};
+  for(const key of ['cards','menuBackground','selectionAvatar','battlePortrait','monsters']){
+   lua.lua_getfield(state,1,to_luastring(key));
+   if(lua.lua_type(state,-1)!==lua.LUA_TBOOLEAN)throw Error('Missing packaged art flag: '+key);
+   artFeatures[key]=lua.lua_toboolean(state,-1);lua.lua_pop(state,1);
+  }
+  return 0;
+ });
+ lua.lua_setglobal(L,to_luastring('BASELINE_ART_FEATURES'));
+}
 if(generated){
  lua.lua_pushstring(L,to_luastring(generated.replaceAll('\\','/')));
  lua.lua_setglobal(L,to_luastring('BASELINE_GENERATED'));
@@ -36,4 +53,6 @@ lua.lua_pushstring(L,to_luastring(fixture.replace(needle, 'local control=NativeC
 lua.lua_setglobal(L,to_luastring('BASELINE_FIXTURE'));
 const code=readFileSync(new URL('./host.lua',import.meta.url),'utf8');
 if(lauxlib.luaL_dostring(L,to_luastring(code))!==lua.LUA_OK)throw Error(to_jsstring(lua.lua_tostring(L,-1)));
-console.log('RUNTIME_BASELINE_JSON '+JSON.stringify({rows,maxRssKiB:process.resourceUsage().maxRSS}));
+if(runtime&&!artFeatures)throw Error('Packaged production entry did not report its live art flags');
+console.log('RUNTIME_BASELINE_JSON '+JSON.stringify({rows,maxRssKiB:process.resourceUsage().maxRSS,
+ ...(runtime&&{runtime,artFeatures})}));

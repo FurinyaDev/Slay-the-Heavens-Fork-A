@@ -167,7 +167,8 @@ local function duration(entry,style,fastMode)
     return 0
 end
 
-function M.new(stage, platform, present, complete, pileLayout)
+local function unchangedGroundY(_,_,_,y) return y end
+function M.new(stage, platform, present, complete, pileLayout, poseGroundShadow)
     local self = { busy = false, fastMode = false, effects = {}, deaths = {}, dying = {}, poses = {}, escaping = {}, escaped = {}, slotOwners = {}, tints = {} }
     local overlay = stage:GetChild("feedback")
     local v25Notice=require('abyss_v25_turn_notice').new(overlay,platform)
@@ -191,18 +192,19 @@ function M.new(stage, platform, present, complete, pileLayout)
         if surfaces then
             local box=surfaces:find(id)
             for _,entry in ipairs(self.shadow.enemies)do if entry.id==id then
-                local x,_,_,_,y=EnemyView.position(0,0,entry)
+                local x,_,_,_,y=EnemyView.position(0,0,entry,platform.nativeMonsterArtEnabled)
                 return entry,box,x,y
             end end
         end
         local rows=self.busy and self.enemyRows or EnemyView.slots(self.shadow,self)
         for slot,entry in ipairs(rows)do if entry.id==id then
-            local x,_,_,_,y=EnemyView.position(#rows,slot,entry.actor)
+            local x,_,_,_,y=EnemyView.position(#rows,slot,entry.actor,platform.nativeMonsterArtEnabled)
             return entry.actor,stage:GetChild('enemy'..slot),x,y
         end end
         for _,a in ipairs(self.shadow.enemies)do if a.id==id then return a end end
     end
-    local painter = {state=self, actor=actor, platform=platform, surfaces=surfaces}
+    local painter = {state=self, actor=actor, platform=platform, surfaces=surfaces,
+        poseGroundShadow=poseGroundShadow or unchangedGroundY}
     local function banner(text, danger)
         local label = overlay:GetChild("banner")
         self.bannerInk = danger and C.danger or C.goldBright

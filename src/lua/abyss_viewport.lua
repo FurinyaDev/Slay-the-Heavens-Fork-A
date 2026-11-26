@@ -30,6 +30,60 @@ function M.toStage(x, y, width, height)
     return validX and (x - width / 2) / scale or nil, validY and (y - height / 2) / scale or nil, invalid
 end
 
+local cardWidth, cardHeight = table.unpack(Theme.layout.card.size)
+local hand = Theme.layout.hand
+local card = Theme.layout.card
+local disc = card.costDisc
+local ring = math.max(disc + card.trim.costRing, Theme.layout.nativeText.lineHeight) / 2
+local cardLeft = math.max(cardWidth / 2, cardWidth / 2 - disc / 2 + card.trim.costOverhang + ring)
+local cardTop = math.max(cardHeight / 2, cardHeight / 2 - disc / 2 + card.trim.costOverhang + ring,
+    card.title.position[2] + math.max(card.nameBand, Theme.layout.nativeText.lineHeight) / 2) + Theme.space.border
+
+function M.handSpacing(count, extraWidth)
+    if count <= 1 then return 0 end
+    -- The side controls keep the remaining space as they move to the edges.
+    local width = hand.maxWidth + math.max(0, extraWidth or 0) / 2
+    return math.max(hand.spacingMin, math.min(hand.spacingMax, (width - cardWidth) / (count - 1)))
+end
+
+function M.handSlot(count, index, extraWidth)
+    local spacing = M.handSpacing(count, extraWidth)
+    local distance = index - (count - 1) / 2
+    local angle = -distance * hand.arcDegrees
+    local radians = math.abs(angle) * math.pi / 180
+    local halfHeight = (cardHeight * math.cos(radians) + cardWidth * math.sin(radians)) / 2
+    local floor = -baseHeight / 2 + Theme.canvas.safe.y + halfHeight - (hand.overhang or 0)
+    return distance * spacing, math.max(floor, hand.y - math.abs(distance) * hand.arcDrop), angle, spacing
+end
+
+function M.limitHandFocus(y, angle, scale, ceiling)
+    if not ceiling then return y end
+    local radians = math.abs(angle) * math.pi / 180
+    local top = cardTop * math.cos(radians) + cardLeft * math.sin(radians)
+    return math.min(y, ceiling - top * scale)
+end
+
+function M.handFocus(baseY, x, health)
+    local scale = Theme.motion.hoverScale
+    local y = math.max(baseY + Theme.motion.hoverLift, -baseHeight / 2 + Theme.canvas.safe.y + cardHeight * scale / 2)
+    if not health then return y, scale end
+    local ceiling
+    for _, bar in ipairs(health) do
+        if x + cardWidth * scale / 2 > bar.left and x - cardLeft * scale < bar.right then
+            ceiling = math.min(ceiling or bar.bottom, bar.bottom)
+        end
+    end
+    if ceiling and y + cardTop * scale > ceiling then
+        -- Keep the whole reading face on screen under the nearby enemy health.
+        local height = ceiling + baseHeight / 2 - Theme.canvas.safe.y
+        if height > 0 then
+            scale = math.min(scale, height / (cardTop + cardHeight / 2))
+            return M.limitHandFocus(y, 0, scale, ceiling), scale, ceiling
+        end
+    end
+    return y, scale
+end
+
 -- Keep the authored launch/landing offset inside each icon at 16:9. The
 -- generated native anchors determine how both the icon and its motion move.
 function M.pileLayout(panel)

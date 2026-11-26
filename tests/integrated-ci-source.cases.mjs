@@ -5,15 +5,17 @@ import {readFileSync as rawReadFileSync,readdirSync} from 'node:fs';
 import {releaseBootstrapCiRead,releaseBootstrapCiPacket,releaseBootstrapCiSource,releaseBootstrapWorkflowBefore,assertReleaseBootstrapCiCurrent,assertReleaseBootstrapRawInventory} from './helpers/release-bootstrap-ci-source.mjs';
 import {createHash} from 'node:crypto';
 import {discoverJs} from '../scripts/ci-shards.mjs';
-import {integratedCiProof as proof,integratedSource,assertIntegratedCurrent,renderIntegratedCiBinding,extendIntegratedHelperClosure} from './helpers/integrated-ci-source.mjs';
+import {integratedCiProof as proof,integratedHistoricalInput,integratedSource,assertIntegratedCurrent,renderIntegratedCiBinding,extendIntegratedHelperClosure} from './helpers/integrated-ci-source.mjs';
 const raw=p=>beforePreflightSource(p,readFileSync(p,'utf8')).replaceAll('\r\n','\n'),hash=s=>createHash('sha256').update(s).digest('hex');
 const readFileSync=releaseBootstrapCiRead(rawReadFileSync);
 
 test('integration validates complete raw sources and leaves every foreign byte and production owner visible',()=>{
  assertIntegratedCurrent();assertCurrentJsInventory(discoverJs(),proof.inventory);assert.equal(new Set(proof.inventory).size,proof.inventory.length);
  for(const [path,row]of Object.entries(proof.files))for(const target of Object.keys(proof.sources)){
-  const source=raw(path),production=path.startsWith('src/')||path==='config/architecture.json';
+  const live=raw(path),source=integratedHistoricalInput(path,live);
+  const production=path.startsWith('src/')||path==='config/architecture.json';
   const expected=production?source:row.views[target]?.source??source;
+  if(live!==source)assert.equal(integratedSource(path,live,target),expected);
   assert.equal(integratedSource(path,source,target),expected);
   if(!production&&row.views[target]){
    const crlf=source.replaceAll('\n','\r\n');

@@ -3,6 +3,24 @@ import { createHash } from 'node:crypto';
 import { counters, percentile } from '../benchmark-runtime-path.mjs';
 
 const GiB = 1024 ** 3;
+export const resourceImage = 'node:24.19.0-bookworm-slim@sha256:a9f5f7c91a432850b2a8a7797adf5eadb6c733ceed61167806cee7ea7fbc29df';
+export const formalImageId = 'sha256:622f209f6c16ba5af4d9a337cae6577d096f17174b904cfc6a5b0c81a2679c24';
+export const productionHeapMiB = 768;
+export const workload = ['worker.mjs', 'host.lua', 'observer.lua', 'turn.lua'].map(file => `scripts/runtime-baseline/${file}`);
+workload.push('tests/lua/support/game_ui_fixture.lua', 'tests/lua/support/native_ui_contract.lua', 'tests/lua/support/shop_timeline.lua');
+export const productionWorkload = [...workload, 'tests/lua/support/production_performance.lua'];
+export const productionReportKind = 'offline-production-host-resource-pressure';
+
+export function workloadIdentity(paths, read) {
+  const hash = bytes => createHash('sha256').update(bytes).digest('hex');
+  return hash(JSON.stringify(paths.map(path => ({path, sha256:hash(read(path))}))));
+}
+
+export function resourceResultStatus({release, pass, paired, signals}) {
+  if (!pass || release && !paired) return 'FAIL';
+  return release && signals ? 'REVIEW_REQUIRED' : 'PASS';
+}
+
 export const profiles = {
   baseline: { cpus: null, memoryBytes: null },
   'cpu-only': { cpus: 0.5, memoryBytes: null },
@@ -11,6 +29,17 @@ export const profiles = {
   medium: { cpus: 1, memoryBytes: 2 * GiB },
   stress: { cpus: 0.5, memoryBytes: GiB },
 };
+export const unsupportedFormalProfile = {cpus: .5, memoryBytes: 128 * 1024 ** 2};
+
+export function guardExtremeCgroup(caps, state) {
+  assert.equal(caps.cpuMax, '50000 100000', 'Extreme probe must read back the 0.5-CPU quota');
+  assert.equal(caps.memoryMax, String(unsupportedFormalProfile.memoryBytes), 'Extreme probe memory limit mismatch');
+  assert.equal(caps.swapMax, '0', 'Extreme probe swap limit mismatch');
+  assert(state.Running === false && state.OOMKilled === true && state.ExitCode === 137,
+    'Unsupported formal load must end as a bounded cgroup OOM');
+  assert(Number.isFinite(Date.parse(state.StartedAt)) && Date.parse(state.FinishedAt) >= Date.parse(state.StartedAt),
+    'Extreme probe lifecycle missing');
+}
 
 export function lockfileIdentity(bytes) {
   const dependencies = JSON.parse(bytes);

@@ -55,11 +55,31 @@ const recording=releaseUiRestoreArchive(readFileSync(new URL('./recording-0401-s
 const shopEntry=releaseUiRestoreArchive(readFileSync(new URL('./release-shop-entry-source.json.gz',import.meta.url)),
  'd3c114b39aa8affa1ae5c2b3ee54117640dcacce750efc24d78312792d8d2ff7','b0505f57def990f9d80d7cf917402d7616164f4f');
 export const shopEntrySourcePaths=Object.freeze(Object.keys(shopEntry.files).filter(path=>path.startsWith('src/lua/')));
-export const beforeReleaseShopEntry=shopEntry.project;
+const nodePickerFixture='tests/lua/support/official_node_picker_pagination.lua';
+const approvedNodePicker=Object.freeze({
+ sha256:'8ff274bff2d7003ca35ae72da8fc867191778a926f97ab4983a30a56064545bc',
+ gitBlob:'ca0809084c134c8d1ec947f0272275e76da03100',
+});
+const nodePickerTimeline=Object.freeze({
+ sha256:'ba6e805f24fa5ffb79b1a8adc9a278e5f8ee53a2d06a18958353c5dec3519369',
+ gitBlob:'a487c818b24e80b912e42f5d7137b2a4ea34579b',
+});
+export function beforeReleaseShopEntry(path,source){
+ if(path===nodePickerFixture&&matches(source,approvedNodePicker)){
+  // #951 renamed the event while retaining the current shop timeline fixture.
+  const timeline=source.replaceAll('\r\n','\n').replace("H.fixture('augmenter')","H.fixture('drug_dealer')");
+  assert(matches(timeline,nodePickerTimeline),'exact Node Picker event rename predecessor');
+  const prior=timeline.replace("local advanceShop = dofile('tests/lua/support/shop_timeline.lua')\n",'')
+   .replace("assert(ui:press('merchant/talk'));advanceShop(ui)","assert(ui:press('merchant/talk'));ui:update(.31)");
+  assert(matches(prior,shopEntry.files[path].after),'exact Node Picker shop replay predecessor');
+  source=source.includes('\r\n')?prior.replaceAll('\n','\r\n'):prior;
+ }
+ return shopEntry.project(path,source);
+}
 export function shopEntryPriorRead(read){
  return (path,...args)=>beforeReleaseShopEntry(path,read(path,...args));
 }
-export const beforeRecordingUi=(path,source)=>beforeReleaseDetailSource(path,recording.project(path,beforeCombatVisualSource(path,source)));
+export const beforeRecordingUi=(path,source,read)=>beforeReleaseDetailSource(path,recording.project(path,beforeCombatVisualSource(path,source,read)));
 const officialRuntimePath='tests/official-assets-runtime.test.mjs';
 const currentOfficialRuntime={
  sha256:'a3341b88551a035189ccc811fa7aa2b7f2eb9c1b6377baa22df6ff3b1fc8c828',
@@ -110,7 +130,7 @@ export const beforeReleaseForgeGridUi=forgeGrid.project;
 export const releaseControlsGuideRemovalSourcePaths=Object.freeze(Object.keys(controlsGuideRemoval.files).filter(path=>path.startsWith('src/lua/')));
 export const releaseSharedRelicSourcePaths=Object.freeze(Object.keys(sharedRelics.files).filter(path=>path.startsWith('src/lua/')));
 export const beforeReleaseSharedRelicUi=sharedRelics.project;
-export const beforeReleaseControlsGuideRemoval=(path,source)=>controlsGuideRemoval.project(path,beforeRecordingUi(path,source));
+export const beforeReleaseControlsGuideRemoval=(path,source,read)=>controlsGuideRemoval.project(path,beforeRecordingUi(path,source,read));
 export const releaseRightClickSourcePaths=Object.freeze(Object.keys(rightClick.files));
 export const releaseUiRestoreSourcePaths=Object.freeze([...new Set([...Object.keys(files),...Object.keys(fieldCancel.files)])]);
 export const beforeReleaseRightClick=(path,source)=>rightClick.project(path,fieldCancel.project(path,source));
