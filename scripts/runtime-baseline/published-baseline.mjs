@@ -1,4 +1,7 @@
 import assert from 'node:assert/strict';
+import {execFileSync} from 'node:child_process';
+import {createHash} from 'node:crypto';
+import {readFileSync, statSync, writeFileSync} from 'node:fs';
 import {pathToFileURL} from 'node:url';
 import {resolve} from 'node:path';
 import {readMappings, verifyMetadata} from '../release-metadata.mjs';
@@ -95,6 +98,41 @@ export async function resolvePublishedBaseline(candidateVersion, request = githu
   const metadata = verifyMetadata(release, commit, newest.version);
   return {version: metadata.version, commit, tree: await sourceTree(request, commit),
     gilSha256: metadata.artifact.sha256, source: release.html_url, releaseId: release.id};
+}
+
+export async function downloadPublishedBaselineGil(published, output, request = githubRequest) {
+  const {version, gilSha256, releaseId} = published;
+  versionParts(version);
+  assert(digest.test(gilSha256) && Number.isSafeInteger(releaseId) && releaseId > 0, 'Resolved published GIL identity required');
+  if (version === legacy.version) {
+    assert.equal(releaseId, legacy.releaseId, 'Unknown historical publication');
+    const file = `${legacy.directory}/slay-the-heavens-v2.1.1-2026-11-25.gil`;
+    const git = (...args) => execFileSync('git', args, {encoding:'utf8', timeout:120_000}).trim();
+    git('-c', 'credential.helper=', 'fetch', '--depth=1', '--no-tags', '--no-write-fetch-head', 'origin', legacy.archive);
+    const pointer = git('show', `${legacy.archive}:${file}`);
+    assert.match(pointer, new RegExp('^version https://git-lfs[.]github[.]com/spec/v1\\noid sha256:' + gilSha256 + '\\nsize [1-9][0-9]*$'),
+      'Archived GIL LFS pointer differs from the published digest');
+    const size = Number(pointer.split('size ').at(-1));
+    assert(size <= 64 * 1024 ** 2, 'Archived GIL exceeds the supported evidence size');
+    git('-c', 'credential.helper=', '-c', 'lfs.transfer.maxretries=0', '-c', 'lfs.activitytimeout=30', 'lfs', 'fetch',
+      '--include=' + file, '--exclude=', 'origin', legacy.archive);
+    const object = resolve(git('rev-parse', '--path-format=absolute', '--git-common-dir'), 'lfs/objects',
+      gilSha256.slice(0, 2), gilSha256.slice(2, 4), gilSha256);
+    const bytes = readFileSync(object);
+    assert.equal(bytes.length, size, 'Archived GIL size differs');
+    writeFileSync(output, bytes, {flag:'wx'});
+  } else {
+    const release = await request(`${repo}/releases/${releaseId}`);
+    assert(release?.id === releaseId && release.draft === false && release.prerelease === false &&
+      release.tag_name === `engine-v${version}`, 'Earlier published Release changed');
+    const matches = release.assets.filter(asset => asset.state === 'uploaded' && asset.digest === 'sha256:' + gilSha256 &&
+      /^[A-Za-z0-9][A-Za-z0-9._-]*[.]gil$/.test(asset.name) && asset.size > 0 && asset.size <= 64 * 1024 ** 2);
+    assert.equal(matches.length, 1, 'Exact published GIL attachment required');
+    execFileSync('gh', ['release', 'download', release.tag_name, '--repo', repo.slice('/repos/'.length),
+      '--pattern', matches[0].name, '--output', output], {timeout:120_000, encoding:'utf8'});
+    assert.equal(statSync(output).size, matches[0].size, 'Published GIL attachment size differs');
+  }
+  assert.equal(createHash('sha256').update(readFileSync(output)).digest('hex'), gilSha256, 'Published GIL download digest differs');
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {

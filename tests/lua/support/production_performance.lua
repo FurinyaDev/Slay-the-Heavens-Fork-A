@@ -1,4 +1,4 @@
--- Formal generation and real Lua entry, with generated templates cloned by the Host fixture.
+-- Real Lua entry and templates cloned by the Host fixture. Formal releases load both from the archived GIL.
 local F,counts,mark=...
 local GameUI=require('abyss_game_ui')
 local artBinding=require('abyss_monster_actor_binding')
@@ -61,7 +61,7 @@ local function start()
         DestroyClientUIControl=destroy,
         ServerSignal=function()return {SendSignal=function()end} end,
     }
-    dofile('src/lua/abyss_ui.lua')
+    dofile(BASELINE_GIL and (BASELINE_GENERATED..'/abyss_ui.lua') or 'src/lua/abyss_ui.lua')
     OnStart()
     GameUI.new=new
     assert(host and script.updating,'formal startup did not install the update callback')
@@ -244,6 +244,7 @@ destroy(script.object)
 OnDestroy()
 assert(not script.updating,'destroy left the old scheduler active')
 mark('reenter')
+if BASELINE_GIL then BASELINE_ART_FEATURES(require('abyss_art_features').flags) end
 print('PRODUCTION coldFrames='..coldFrames..' mapGroupLookups='..coldLookups..' monsterDecodes='..coldDecoded..'/'..firstDecoded
     ..' deckColdFrames='..coldOpen..' deckWarmFrames='..warmOpen)
 print('PRODUCTION_HOST_PASS seed=42')

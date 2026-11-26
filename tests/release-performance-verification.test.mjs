@@ -4,7 +4,7 @@ import test from 'node:test';
 import {formalPublishBranch, publicationTarget} from '../scripts/release-ci.mjs';
 import {requireReleasePerformance} from '../scripts/runtime-baseline/require-release-performance.mjs';
 import {sha256} from '../scripts/runtime-baseline/release-performance-artifacts.mjs';
-import {head, tree, published, sha256 as workloadSha256, reportFixture, receipt} from './helpers/release-performance-fixture.mjs';
+import {head, tree, published, sha256 as workloadSha256, reportFixture, receipt, moduleDigestsSha256} from './helpers/release-performance-fixture.mjs';
 import {beforeHotfixPublicationGate, hotfixPublicationGate} from './helpers/release-ci-workflow.mjs';
 
 const repo = 'FurinyaWorks/Slay-the-Heavens';
@@ -52,7 +52,7 @@ function fixture(source = full) {
   responses.set('/actions/runs/40/artifacts?per_page=100&page=1', {artifacts:[artifact]});
   const report = Buffer.from(JSON.stringify(reportFixture()));
   const evidence = {schemaVersion:1, kind:'release-performance', source:{head, branch, version, tree}, runId:40, attempt:2,
-    gil, published, workloadSha256, reportSha256:sha256(report), artFeatures:receipt.artFeatures};
+    gil, published, workloadSha256, reportSha256:sha256(report), artFeatures:receipt.artFeatures, moduleDigestsSha256};
   const options = {
     readSource:() => ({version, tree, workloadSha256}), readBaseline:async () => published,
     readArtifact:async locator => {

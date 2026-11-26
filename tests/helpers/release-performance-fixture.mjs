@@ -1,18 +1,25 @@
 import {productionPhases} from '../../scripts/runtime-baseline/production-inputs.mjs';
 import {formalImageId, profiles, productionHeapMiB, productionReportKind, resourceImage} from '../../scripts/runtime-baseline/resource-receipt.mjs';
+import {encoderSha256, toolCommit} from '../../scripts/gil-candidate-preflight.mjs';
+import {gilModuleInventoryHash, gilRuntimeKind} from '../../scripts/runtime-baseline/gil-inputs.mjs';
 
 export const head = 'a'.repeat(40);
 export const tree = 'b'.repeat(40);
-export const published = {commit:'c'.repeat(40), tree:'e'.repeat(40)};
 export const sha256 = 'd'.repeat(64);
+export const published = {commit:'c'.repeat(40), tree:'e'.repeat(40), gilSha256:sha256};
 export const flags = {cards:false, menuBackground:false, selectionAvatar:true, battlePortrait:true, monsters:true};
-export const receipt = {artFeatures:{flags}};
+export const receipt = {candidate:{sha256:'4'.repeat(64)}, artFeatures:{flags}, moduleDigests:{abyss_ui:sha256}};
+export const moduleDigestsSha256 = gilModuleInventoryHash(receipt.moduleDigests);
 
 export function reportFixture() {
   const evidence = {
-    tree, workloadSha256:sha256, generatedLuaSha256:sha256, lockfile:{dependencies:sha256},
-    configuration:{officialAssets:true, refinedReleaseMonsterArt:true, nativePageLifecycle:true, artFeatures:flags},
+    tree, workloadSha256:sha256, readbackLuaSha256:sha256, lockfile:{dependencies:sha256},
   };
+  const runtime = gilSha256 => ({kind:gilRuntimeKind, gilSha256, readerCommit:toolCommit, encoderSha256,
+    nativeBgmEnabled:true, moduleCount:1, moduleDigestsSha256, templateCount:1,
+    fixtureDigests:{abyss_ui_layout:sha256, abyss_ui_templates:sha256, performance_templates:sha256}});
+  const candidateRuntime = runtime(receipt.candidate.sha256);
+  const baselineRuntime = runtime(published.gilSha256);
   let sequence = 0;
   const results = Object.fromEntries(Object.entries(profiles).map(([name, profile]) => {
     const rows = productionPhases.map(phase => ({
@@ -24,12 +31,12 @@ export function reportFixture() {
       memoryMax:String(profile.memoryBytes ?? 'max'), swapMax:profile.memoryBytes === null ? 'max' : '0',
       oom:0, oomKill:0, peakBytes:100, cpuUsageUsec:1, cpuPeriods:1, throttledPeriods:0, throttledUsec:0,
     };
-    const arm = () => structuredClone({samples:Array.from({length:3}, () => ({rows, resources, wallMs:1,
+    const arm = runtime => structuredClone({samples:Array.from({length:3}, () => ({rows, resources, wallMs:1, runtime, artFeatures:flags,
       executionId:(++sequence).toString(16).padStart(12, '0')})), pass:true});
     const pairOrder = [['baseline', 'candidate'], ['candidate', 'baseline'], ['baseline', 'candidate']];
-    return [name, {profile, pairOrder, candidate:arm(), baseline:arm(), comparisonStatus:'PAIRED', signals:[]}];
+    return [name, {profile, pairOrder, candidate:arm(candidateRuntime), baseline:arm(baselineRuntime), comparisonStatus:'PAIRED', signals:[]}];
   }));
-  const candidate = {commit:head, ...evidence};
+  const candidate = {commit:head, ...evidence, runtime:candidateRuntime};
   const extreme = {
     status:'PASS', candidate,
     probe:{containerId:'a'.repeat(64), executionId:'a'.repeat(12), resources:{cpuMax:'50000 100000', memoryMax:'134217728', swapMax:'0'},
@@ -42,6 +49,6 @@ export function reportFixture() {
     seed:42, alertPercent:20, repetitions:3, timeUtc:'2026-11-25T12:00:00Z',
     engine:{cpuModel:'fixture', kernel:'fixture', arch:'x64', docker:'28.4.0 2 linux amd64', imageId:formalImageId,
       image:resourceImage, productionHeapMiB},
-    candidate, baseline:{...evidence, ...published}, results, extreme,
+    candidate, baseline:{...evidence, ...published, runtime:baselineRuntime}, results, extreme,
   });
 }
