@@ -390,8 +390,8 @@ const entranceFiles=Object.freeze({
 const reviewedCopySources=Object.freeze({
  "tests/helpers/develop-release-backflow-source.mjs": {
   "current": {
-   "sha256": "10082d86e1a08c3b2a91ec6e9fffd68cfd4620a6cf94e7f8dbfade4826576d91",
-   "gitBlob": "952d4a8e16e4698e88ae66a52a316d0dc0ba43e2"
+   "sha256": "7989de2a06f877bf2dc2d0dcb991eef3a0cceda234adcd8724258b2ead1c26c2",
+   "gitBlob": "a0180aa40bdb51b02ebcb7445305265b5e421638"
   },
   "previous": {
    "sha256": "d9b04593b5ed2af93096091a53d0043361d9ae3019cdbc64c766100f5d694e39",
@@ -437,6 +437,14 @@ const reviewedCopySources=Object.freeze({
     ]
    },
    {
+    "at": 294,
+    "remove": 2,
+    "previous": [
+     " 'src/lua/abyss_battle_info_content.lua':{sha256:'0d96375df2bcdd3e323413c09e27e802e53b450d3053dadbc4eef3d8da715d57',",
+     "  gitBlob:'989f7129614b8c8637bf3e78167e98b33db3e9c4'},"
+    ]
+   },
+   {
     "at": 316,
     "remove": 1,
     "previous": []
@@ -464,8 +472,8 @@ const reviewedCopySources=Object.freeze({
  },
  "tests/helpers/master-backflow-source.mjs": {
   "current": {
-   "sha256": "3aa7064b648d8afc8732508815a656874cf106bc6634146cb1c1399029a36498",
-   "gitBlob": "e23f35aeb39f4fa94c8b66ac5cc59ec4c49f04d9"
+   "sha256": "c03fb1b5bf312b8834aeef53204030ea8544622761278b3ae626cdd1b8d842d5",
+   "gitBlob": "28124a00ba0ebe7d58b6b62e41c9061fddf007f5"
   },
   "previous": {
    "sha256": "374935c2c76b47b65319202a3f3d60eb9884149f4224cd9c1dc432a81f523a7c",
@@ -476,6 +484,13 @@ const reviewedCopySources=Object.freeze({
     "at": 30,
     "remove": 1,
     "previous": []
+   },
+   {
+    "at": 33,
+    "remove": 1,
+    "previous": [
+     "  ['src/lua/abyss_battle_info_content.lua', ['0d96375df2bcdd3e323413c09e27e802e53b450d3053dadbc4eef3d8da715d57', '989f7129614b8c8637bf3e78167e98b33db3e9c4']],"
+    ]
    },
    {
     "at": 49,

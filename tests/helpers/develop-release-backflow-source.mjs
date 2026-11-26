@@ -292,8 +292,8 @@ for(const [path,{before,after}] of Object.entries(architectureOwners)){
 const architectureSuccessors={
  'src/lua/abyss_battle_details.lua':{sha256:'eda327547a5399714320309d5cda22ed264123a8747ec5827ec9ee1a42409aab',
   gitBlob:'53a076d7a7c0958b02a968ca5125d3f65c744a2c'},
- 'src/lua/abyss_battle_info_content.lua':{sha256:'0d96375df2bcdd3e323413c09e27e802e53b450d3053dadbc4eef3d8da715d57',
-  gitBlob:'989f7129614b8c8637bf3e78167e98b33db3e9c4'},
+ 'src/lua/abyss_battle_info_content.lua':{sha256:'e5be45b603c6a38f863d7589c9553ebb52a6c3ec9ab1be6d436cf7fceb1b409b',
+  gitBlob:'57a59fac16323440d756b6ed771ef4d87207167d'},
  'src/lua/abyss_battle_info_view.lua':{sha256:'310fb87f002004b8bdbc8fc1b269b8dc1cbb6ecf0cf03256840fbdaed0d756ff',
   gitBlob:'7a24b24c0d1ccaa246bbb17afbf1cb4f0ce555dd'},
 };

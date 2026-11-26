@@ -23,6 +23,26 @@ const battleDetailView='src/lua/abyss_battle_info_view.lua';
 assert.equal(anchorRefactor.commit,'c7ea71bd084f27a8c5ace07ee8747e40f7e2ad35');
 assert.deepEqual(anchorRefactor.before,owners[battleDetailView]);
 assert.equal(actorDetail.commit,'cb85a291a83de761e6462d0b98e54c8fc85dc5b8');
+const battleDetailContent='src/lua/abyss_battle_info_content.lua';
+const splitTooltip={sha256:'e5be45b603c6a38f863d7589c9553ebb52a6c3ec9ab1be6d436cf7fceb1b409b',
+ gitBlob:'57a59fac16323440d756b6ed771ef4d87207167d'};
+const splitTooltipFixture={
+ beforeSha256:actorDetail.owners[battleDetailContent].sha256,
+ beforeBlob:actorDetail.owners[battleDetailContent].gitBlob,
+ afterSha256:splitTooltip.sha256,afterBlob:splitTooltip.gitBlob,
+ hunks:[{at:250,before:'            return M.intentTip(describe.displayedIntent(battle, actor.id))',
+  after:[
+   '            local enum, damage, times = describe.displayedIntent(battle, actor.id)',
+   '            local tip = M.intentTip(enum, damage, times)',
+   "            if enum == 'UNKNOWN' and actor.ai and actor.ai.splitEnemy then",
+   '                local intent = Combat.intent(battle, info.index)',
+   "                if intent and intent.kind == 'split' and intent.id == actor.ai.splitIntent then",
+   '                    tip.body = projectedIntent(battle, info.index).text',
+   '                end',
+   '            end',
+   '            return tip',
+  ].join('\n')}],
+};
 const pageRevealPath='src/lua/abyss_page_reveal.lua';
 assert.equal(pageReveal.commit,'a25784d9814d0a2daf07a506ba416015ac02ec11');
 const cardLayoutPath='src/lua/abyss_battle_card_layout.lua';
@@ -109,12 +129,13 @@ function readCloseoutFixture(path,row,read){
  const successorFixture=row.successor;
  const predecessorBinding={sha256:row.afterSha256,gitBlob:row.afterBlob};
  const catalogue=path===tooling.path&&exactSourceMatches(fixture,catalogueToolingBinding);
- // Reuse the reviewed HUD sources for the current wording and map icon.
- const beforeRunHud=path===reviewedDeckBuild.path?beforeRunHudDeckLabel:source=>beforeRunHudMapIcon(path,source);
- const candidate=catalogue?beforeExactFixture(path,toolingCatalogue,fixture):beforeRunHud(fixture);
+ // Restore the reviewed predecessor before reading the original receipt.
+ const project=path===battleDetailContent?source=>beforeExactFixture(path,splitTooltipFixture,source)
+  :path===reviewedDeckBuild.path?beforeRunHudDeckLabel:source=>beforeRunHudMapIcon(path,source);
+ const candidate=catalogue?beforeExactFixture(path,toolingCatalogue,fixture):project(fixture);
  const updated=successorFixture!==undefined&&exactSourceMatches(candidate,successorFixture);
  const binding=catalogue?catalogueToolingBinding:updated?successorFixture:predecessorBinding;
- const source=readExactOwner(path,binding,read,beforeRunHud);
+ const source=readExactOwner(path,binding,read,project);
  assert.equal(source,fixture,'closeout owner changed during the receipt read: '+path);
  const previous=updated?restoreFixtureSuccessor(path,row,candidate):candidate;
  const prior=restoreFixturePredecessor(path,row,previous);
@@ -155,8 +176,12 @@ export function readCloseoutCurrentBackflowReceipt(path,digest,read){
  const detail=session?read(battleDetailView,'utf8'):null;
  const current=session?{...successor,...sessionRoute}:guardian?successor:{};
  // Actor Detail follows the anchor refactor and advances all four owners.
- if(exactSourceMatches(detail,actorDetail.owners[battleDetailView]))Object.assign(current,actorDetail.owners);
- else if(exactSourceMatches(detail,anchorRefactor.after))current[battleDetailView]=anchorRefactor.after;
+ const actorRevision=exactSourceMatches(detail,actorDetail.owners[battleDetailView]);
+ const content=actorRevision?read(battleDetailContent,'utf8'):null;
+ if(actorRevision){
+  Object.assign(current,actorDetail.owners);
+  if(exactSourceMatches(content,splitTooltip))current[battleDetailContent]=splitTooltip;
+ }else if(exactSourceMatches(detail,anchorRefactor.after))current[battleDetailView]=anchorRefactor.after;
  // Local map return was reviewed both with the anchor and with Actor Detail.
  const readPageReveal=Object.hasOwn(current,battleDetailView);
  const reveal=readPageReveal?read(pageRevealPath,'utf8'):null;
@@ -176,6 +201,7 @@ export function readCloseoutCurrentBackflowReceipt(path,digest,read){
   if(owner===markerPath)assert.equal(live,marker,'closeout owner changed during the receipt read: '+owner);
   if(owner===sessionNavigation&&guardian)assert.equal(live,navigation,'closeout owner changed during the receipt read: '+owner);
   if(owner===battleDetailView&&session)assert.equal(live,detail,'closeout owner changed during the receipt read: '+owner);
+  if(owner===battleDetailContent&&actorRevision)assert.equal(live,content,'closeout owner changed during the receipt read: '+owner);
   if(owner===pageRevealPath&&readPageReveal)assert.equal(live,reveal,'closeout owner changed during the receipt read: '+owner);
   if(owner===cardLayoutPath)assert.equal(live,layout,'closeout owner changed during the receipt read: '+owner);
  }

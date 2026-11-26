@@ -31,7 +31,7 @@ const updatedSources = new Map([
   ['scripts/official-battle-hud.mjs', ['af6ffdb50e11d77cf9c2046931f3e455d3bc780fcde9b265fd003d33b1c07a9b', '9956f4ded7b99023522ffc3f59b49b11b1916e85']],
   ['src/lua/abyss_battle_detail_bindings.lua', ['fc3e819c62455d966db30172055d2c3b4aa721daed943418519252fd38ad1852', '951d6e972052ed08a0638140b156ee2ffaea5166']],
   ['src/lua/abyss_battle_details.lua', ['eda327547a5399714320309d5cda22ed264123a8747ec5827ec9ee1a42409aab', '53a076d7a7c0958b02a968ca5125d3f65c744a2c']],
-  ['src/lua/abyss_battle_info_content.lua', ['0d96375df2bcdd3e323413c09e27e802e53b450d3053dadbc4eef3d8da715d57', '989f7129614b8c8637bf3e78167e98b33db3e9c4']],
+  ['src/lua/abyss_battle_info_content.lua', ['e5be45b603c6a38f863d7589c9553ebb52a6c3ec9ab1be6d436cf7fceb1b409b', '57a59fac16323440d756b6ed771ef4d87207167d']],
   ['src/lua/abyss_battle_info_view.lua', ['310fb87f002004b8bdbc8fc1b269b8dc1cbb6ecf0cf03256840fbdaed0d756ff', '7a24b24c0d1ccaa246bbb17afbf1cb4f0ce555dd']],
   ['src/lua/abyss_game_ui.lua', ['607192763b5ed9b93e4be3cb0ebddfae78aabe8710b274104ac26f6cef672e4a', 'c533ebfef1f88c30a4c45cadac43414400f4151e']],
   ['src/lua/abyss_game_ui_lifecycle.lua', ['6e3967351a581630c2c352742fdfc3fecc20fefbaf2c26c7ddc8f21e052b3e14', 'abf67a2ab3994df9058d32a3554420c6317d133c']],

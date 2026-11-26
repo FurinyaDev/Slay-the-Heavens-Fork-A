@@ -248,7 +248,15 @@ function M.new(self, describe)
     local function sourcePowerTip(battle, info, actor)
         if info.powerTips and not info.statusId and not info.offset
             and not require('abyss_boss_relics').hidesIntents(self.run) then
-            return M.intentTip(describe.displayedIntent(battle, actor.id))
+            local enum, damage, times = describe.displayedIntent(battle, actor.id)
+            local tip = M.intentTip(enum, damage, times)
+            if enum == 'UNKNOWN' and actor.ai and actor.ai.splitEnemy then
+                local intent = Combat.intent(battle, info.index)
+                if intent and intent.kind == 'split' and intent.id == actor.ai.splitIntent then
+                    tip.body = projectedIntent(battle, info.index).text
+                end
+            end
+            return tip
         end
     end
 
