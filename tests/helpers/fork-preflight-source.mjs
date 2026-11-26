@@ -595,6 +595,68 @@ function exactCheckoutSource(source,binding){
  const lf=normalize(source);
  return source===lf||source===lf.replaceAll('\n','\r\n');
 }
+// Shop fixture receipts keep the reviewed live transaction and the old replay distinct.
+const shopPotionFixture={
+ path:'tests/lua/support/node_ui_cases.lua',
+ beforeSha256:'593b6e6a91941a7cdb110045bd953db0633eb2d13424d25edec0ddd34ad2aaa0',
+ afterSha256:'ec9647d8d8a155735e90a1f76c98c1f015df0adb5b1383e97c474723767aec44',
+ beforeBlob:'d9c00c3abc5c4c13b0b4de3c7673d44e00651e6b',
+ afterBlob:'dd254a4651bd5c3db2c5edab7293ee345cf03c46',
+ hunks:[{at:747,
+  before:[
+   "    ui.run.potions={'fire_potion','block_potion','regen_potion'};ui:render()",
+   "    local before=Combat.copy(ui.run)",
+   "    assert(not click('shopView/potion'..slot));same(before,ui.run)",
+   "    assert(get('shopView/potion'..slot..'/description').text=='药水槽已满')",
+   "    ui.run.potions[2]=nil;ui:render()",
+   "    local offer=Combat.copy(ui.run.nodeFlow.potions[slot]);local gold=ui.run.gold",
+   "    assert(click('shopView/potion'..slot));assert(ui.run.gold==gold)",
+   "    assert(click('confirm'));assert(ui.run.potions[2]==offer.id and ui.run.gold==gold-offer.price)",
+  ].join('\n'),
+  after:[
+   "    local description=get('shopView/potion'..slot..'/description').text",
+   "    ui.run.potions={'fire_potion','block_potion','regen_potion'};ui:render()",
+   "    local before=Combat.copy(ui.run)",
+   "    local ok,why=click('shopView/potion'..slot);assert(not ok and why=='potion_slots_full');same(before,ui.run)",
+   "    assert(get('shopView/potion'..slot..'/description').text==description)",
+   "    ui.run.potions[2]=nil;ui:render()",
+   "    local offer=Combat.copy(ui.run.nodeFlow.potions[slot]);local gold=ui.run.gold",
+   "    assert(click('shopView/potion'..slot));assert(ui.run.potions[2]==offer.id and ui.run.gold==gold-offer.price)",
+  ].join('\n'),
+ }],
+};
+function beforeShopPotionFixture(path,source){
+ const {afterSha256,afterBlob,beforeSha256,beforeBlob}=shopPotionFixture;
+ if(path!==shopPotionFixture.path||!exactCheckoutSource(source,[afterSha256,afterBlob]))return source;
+ const prior=restoreExactFixtureHunks(shopPotionFixture,path,source);
+ assert(exactCheckoutSource(prior,[beforeSha256,beforeBlob]),'exact shop fixture predecessor');
+ return source.includes('\r\n')?prior.replaceAll('\n','\r\n'):prior;
+}
+function shopPotionFixtureRead(read){
+ const current=(path,encoding)=>{
+  const raw=read(path,encoding);
+  if(path!==shopPotionFixture.path)return raw;
+  const source=Buffer.isBuffer(raw)?raw.toString('utf8'):raw;
+  const prior=beforeShopPotionFixture(path,source);
+  assert.notEqual(prior,source,'fresh complete integration source: '+path);
+  return typeof raw==='string'?prior:Buffer.from(prior);
+ };
+ current(shopPotionFixture.path,'utf8');
+ return current;
+}
+const shopPotionTest='tests/official-shop-potion-retry.test.mjs';
+const shopPotionRegression={
+ [shopPotionTest]:['602a45ccc42d203bdac8374d437c023fddc2d127572f9c0a660ff6ac1b5a8246','9db6e625b7113f9e0859175d9acb2ab66ccf7071'],
+ 'tests/lua/support/official_shop_potion_retry.lua':['9108b24a933bdfee0a1dbb20412c33db2d04991303ab3c6cfd4d291bc4721f58','fb70fafb2d8010d1d20b4da3df97d86bc53f7d6f'],
+};
+function beforeShopPotionInventory(paths,read,required=false){
+ const count=paths.filter(path=>path===shopPotionTest).length;
+ if(!required&&count===0)return paths;
+ assert.equal(count,1,'complete current raw discovery inventory: '+shopPotionTest);
+ for(const [path,binding] of Object.entries(shopPotionRegression))
+  assert(exactCheckoutSource(read(path,'utf8'),binding),'fresh added inventory source: '+path);
+ return paths.filter(path=>path!==shopPotionTest);
+}
 const formalAct2ReleaseTest='tests/release-performance.test.mjs';
 const formalAct2ReleaseTestBefore=[currentReleaseTests[formalAct2ReleaseTest],'1d63817e885fd314045193f48e2bd9aa16760009'];
 const formalAct2ReleaseTestCurrent=['0fef6761800e815ef402e807163b8da69731dcb342f1e0b6aef72ae639ff1791',
@@ -707,8 +769,10 @@ export function beforeReleaseAdditionalInventory(paths,kind,read=readFileSync){
 export function beforeShopEntryInventory(paths,kind,read=readFileSync){
  if(kind==='lua')paths=beforeChapterPoolFixtureInventory(paths,read);
  paths=beforeInputRetirementTestInventory(paths,kind,read);
- if(kind==='js')paths=beforeIntegratedStsInventory(paths,(path,encoding)=>beforeNativeFlowFixture(path,read(path,encoding)));
- else paths=beforeCurrentReleaseLuaNames(paths,read);
+ if(kind==='js'){
+  paths=beforeShopPotionInventory(paths,read);
+  paths=beforeIntegratedStsInventory(paths,(path,encoding)=>beforeNativeFlowFixture(path,read(path,encoding)));
+ }else paths=beforeCurrentReleaseLuaNames(paths,read);
  paths=beforeReleaseAdditionalInventory(paths,kind,read);
  const [path,...authenticated]=shopEntryTests[kind];
  const position=paths.indexOf(path);
@@ -730,6 +794,7 @@ export function assertCurrentJsInventory(paths,preceding,read=readFileSync){
    assert(exactCheckoutSource(source,formalAct2ReleaseTestCurrent),'fresh current Release performance test source: '+path);
   return source;
  };
+ paths=beforeShopPotionInventory(paths,read,true);
  paths=beforeInputRetirementTestInventory(paths,'js',read,{required:true});
  paths=beforeRefinedReleaseJsInventory(beforeShopEntryInventory(paths,'js',read),[...preceding,coopLabTest],read,true);
  assertCoopJsInventory(paths,preceding,read);
@@ -1421,7 +1486,7 @@ export function assertIntegrationSuccessorsCurrent(read=readFileSync){
   assert(typeof source==='string'&&!source.includes('\r\r\n')&&hash(normalize(source))===sha,'fresh complete integration source: '+path);
  }
  for(const path of Object.keys(responsiveReplayHelpers))rawRead(path,'utf8');
- return rawRead;
+ return shopPotionFixtureRead(rawRead);
 }
 // The live planner reads its measured Linux map directly. Historical CI views
 // restore each exact predecessor in reverse observation order.
@@ -1452,7 +1517,7 @@ export function beforePreflightSource(path,source,view='prior',read=readFileSync
   const lf=normalize(source);
   if(source!==lf&&source!==lf.replaceAll('\n','\r\n'))return source;
  }
- source=beforeCursesReceiptFixture(path,source);
+ source=beforeShopPotionFixture(path,beforeCursesReceiptFixture(path,source));
  const integratedPrior=beforeRelicCloseoutIntegratedFixture(path,source);
  if(integratedPrior!==source){
   source=integratedPrior;
