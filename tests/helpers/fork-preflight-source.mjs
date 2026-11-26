@@ -761,6 +761,7 @@ function closeoutPredecessor(path){
  }
  return closeoutPredecessors.get(path);
 }
+const officialLegibilityFixture='tests/official-assets-legibility.test.mjs';
 const calibrationReplayPaths=Object.freeze([
  'tests/helpers/integrated-ci-source.mjs',
  'tests/helpers/copy-integration-source-closure.mjs',
@@ -772,6 +773,7 @@ const calibrationReplayPaths=Object.freeze([
  'tests/helpers/reward-query-boundary-source-inverse.mjs',
  'tests/helpers/m7-core-final-source-inverse.mjs',
  'tests/helpers/relic-query-source-inverse.mjs',
+ officialLegibilityFixture,
 ]);
 let calibrationReplayPredecessor;
 function beforeCalibrationReplayOwner(path,source){
@@ -779,7 +781,7 @@ function beforeCalibrationReplayOwner(path,source){
  if(!calibrationReplayPredecessor){
   calibrationReplayPredecessor=releaseUiRestoreArchive(
    readFileSync(new URL('./calibration-v220-replay-owners.json.gz',import.meta.url)),
-   '72bb3d5b6959847b874d358457eb7f27492883b202b5e06f140b6db08b1d3ca2','8b4172d59779ad9fa21b4ba91ef750ab22fcdaf1');
+   '04ff0be87926f4b5105e513f4b4f72a596f0dc667196baf267419158fb35a1b8','8b4172d59779ad9fa21b4ba91ef750ab22fcdaf1');
   assert.deepEqual(Object.keys(calibrationReplayPredecessor.files),calibrationReplayPaths,'ordered v2.2 calibration replay owners');
  }
  return calibrationReplayPredecessor.project(path,source);
@@ -950,6 +952,9 @@ function beforeIntegrationSuccessor(path,source){
 }
 export function assertIntegrationSuccessorsCurrent(read=readFileSync){
  const rawRead=read;
+ const legibilitySource=rawRead(officialLegibilityFixture,'utf8');
+ assert.notEqual(beforeCalibrationReplayOwner(officialLegibilityFixture,legibilitySource),legibilitySource,
+  'fresh current official legibility fixture: '+officialLegibilityFixture);
  const alphaBuildPredecessors=Object.fromEntries(Object.keys(actorAlphaBuildInputs).map(path=>
   [path,checkedActorAlphaBuildPredecessor(path,rawRead(path,'utf8'))]));
  const liveRead=(path,encoding)=>{
