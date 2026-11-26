@@ -54,6 +54,7 @@ local function connect(links, services)
 end
 local function configureInputSurface(host, self)
     host.stage = host.options.embedded and host.root or assert(host.root:GetChild("stage"), "missing stage")
+    host.pileLayout = require('abyss_viewport').pileLayout(host.stage)
     host.cursor = host.platform.cursorEvents
     self.dragEnabled = host.cursor and host.cursor.CursorDown and host.cursor.CursorDrag and host.cursor.CursorUp and host.cursor.CursorEndDrag
     self.instructions = self.dragEnabled and "拖到战场出牌区域松手，目标牌拖向敌人；再点原牌取消。"
@@ -131,6 +132,7 @@ function M.new(root, data, presentation, clickEvent, platform, options)
     services = {
         picture=services.picture, tint=services.tint, ink=services.ink, child=services.child, enemyPosition=services.enemyPosition, renderEnemies=services.renderEnemies,
         describeInfo=services.describeInfo, show=services.show, placeCard=services.placeCard, placeReward=services.placeReward, dragTarget=services.dragTarget,
+        prepareHandFocus=services.prepareHandFocus,
         dragPose=services.dragPose, notice=services.notice, refresh=services.refresh, bind=services.bind, cancelPotionAim=services.cancelPotionAim,
         rewardScreen=services.rewardScreen, bindPotionControls=services.bindPotionControls, bindCardControls=services.bindCardControls, bindEnemyControl=services.bindEnemyControl, unbindEnemyControl=services.unbindEnemyControl,
         bindEnemyPowerControl=services.bindEnemyPowerControl, unbindEnemyPowerControl=services.unbindEnemyPowerControl,
@@ -162,6 +164,7 @@ function M.new(root, data, presentation, clickEvent, platform, options)
         local failure
         local function cleanup(fn)local ok,why=pcall(fn);if not ok then failure=why end end
         cleanup(function()if host.monsterPowers then host.monsterPowers:release(box,engineDestroyed)end end)
+        host.retireGroundShadow(box)
         cleanup(function()if host.monsterIntentParticles then host.monsterIntentParticles:release(box,engineDestroyed)end end)
         cleanup(function()services.unbindEnemyControl(slot,box)end)
         cleanup(function()services.unbindEnemyDetailControls(slot,box,engineDestroyed)end)
@@ -189,7 +192,8 @@ function M.new(root, data, presentation, clickEvent, platform, options)
         end
         assert(not failure,failure)
     end
-    host.unit = UnitView.new(services.picture, services.tint, services.ink, statusKind)
+    local poseGroundShadow
+    host.unit,poseGroundShadow,host.retireGroundShadow = UnitView.new(services.picture, services.tint, services.ink, statusKind)
     host.lines = InfoContent.lines
     host.infoContent = InfoContent.new(self, {
         statusDetail = statusDetail, statusKind = statusKind, intentView = intentView, potionText = potionText,
@@ -205,10 +209,11 @@ function M.new(root, data, presentation, clickEvent, platform, options)
     -- under the pointer and neighbours never overlap (step > hover width).
     host.cardView = CardView.new(self, {
         child = services.child, show = services.show, ink = services.ink, tint = services.tint, picture = services.picture, platform = host.platform,
-        placeCard = services.placeCard, placeReward = services.placeReward,
+        placeCard = services.placeCard, placeReward = services.placeReward, prepareHandFocus=services.prepareHandFocus,
         dragTarget = services.dragTarget, dragPose = services.dragPose, enemyPosition = services.enemyPosition,
         renderAimActors = services.renderEnemies,
         potionTarget = services.potionDragTarget,
+        pileLayout = host.pileLayout,
     })
     self.feedback = Feedback.new(host.stage, host.platform, function(battle, acting)
         self.displayBattle, self.acting = battle, acting
@@ -237,7 +242,7 @@ function M.new(root, data, presentation, clickEvent, platform, options)
             error(message)
         end
         if not refreshed then error(why)end
-    end)
+    end,host.pileLayout,poseGroundShadow)
     -- An open detail panel owns the next pointer sequence: its Down closes the panel and
     -- the matching Click is swallowed, so no card, target or button acts underneath it.
     services.bind("start", function() if not self.run or self.run.phase == "defeat" then self:start() end end)

@@ -1,4 +1,5 @@
 // Reverse the current input retirement for exact legacy presentation replays.
+import {beforeChapterBattleScene} from './chapter-battle-scene-source.mjs';
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import {readFileSync} from 'node:fs';
@@ -245,15 +246,16 @@ const releaseCandidateTools=Object.freeze({
 });
 export function assertReleaseCandidateToolsCurrent(read){
  for(const [path,binding] of Object.entries(releaseCandidateTools))
-  assert(matches(read(path,'utf8'),binding),'fresh current candidate tool source: '+path);
+  assert(matches(beforeChapterBattleScene(path,read(path,'utf8')),binding),'fresh current candidate tool source: '+path);
 }
 export function beforeDeckPagesSuiteSource(path,source,{requireCurrent=false}={}){
  if(!Object.hasOwn(suite.deck.files,path))return source;
  const {before,after}=suite.deck.files[path];
+ const projected=beforeChapterBattleScene(path,source);
  // #951 adds Lua text audits and #975 adds exact hosted candidate provenance.
- const current=matches(beforeInputRetirement(path,source),after)||
-  Object.hasOwn(releaseCandidateTools,path)&&matches(source,releaseCandidateTools[path]);
- if(requireCurrent)assert(current&&(!inputRetirementOwns(path)||isCurrentInputRetirementSource(path,source)),
+ const current=matches(beforeInputRetirement(path,projected),after)||
+  Object.hasOwn(releaseCandidateTools,path)&&matches(projected,releaseCandidateTools[path]);
+ if(requireCurrent)assert(current&&(!inputRetirementOwns(path)||isCurrentInputRetirementSource(path,projected)),
   'fresh complete integration source: '+path);
  if(!current)return source;
  return source.includes('\r\n')?before.source.replaceAll('\n','\r\n'):before.source;

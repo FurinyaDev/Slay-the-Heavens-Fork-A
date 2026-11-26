@@ -122,7 +122,9 @@ local function control(spec, parent)
     local self = { name = spec.name, kind=spec.kind, children = {}, visible = spec.visible ~= false,
         text = spec.text and spec.text.content or "", parent = parent, raycastTarget = true,
         sizeDeltaX = spec.size and spec.size[1], sizeDeltaY = spec.size and spec.size[2],
-        anchoredPositionX = (spec.position or {})[1] or 0, anchoredPositionY = (spec.position or {})[2] or 0 }
+        anchoredPositionX = (spec.position or {})[1] or 0, anchoredPositionY = (spec.position or {})[2] or 0,
+        anchorMinX = spec.anchor and spec.anchor.min[1] or .5,
+        anchorMaxX = spec.anchor and spec.anchor.max[1] or .5 }
     if spec.kind~='cursorArea' then self.interactable=true end
     self.GetChild = Control.GetChild
     self.AddKeyEventListener = Control.AddKeyEventListener

@@ -5,6 +5,7 @@ import {gameLayout} from '../scripts/game-ui-layout.mjs';
 import {nativeTheme} from '../scripts/native-ui-theme.mjs';
 import {applyOfficialAssets,officialAssetsTheme} from '../scripts/official-assets-layout.mjs';
 import {battleLayout} from '../scripts/ui-layout.mjs';
+import {chapterBattleScenes,chapterBattleSceneHost} from '../scripts/v220-chapter-battle-scenes.mjs';
 import {deckCardTemplate} from '../scripts/deck-ui-layout.mjs';
 import {geoCardReferenceTokens,stsReferenceRuntimeGeometry} from '../scripts/sts-card-reference-profile.mjs';
 const children=n=>n.controls??n.children??[];
@@ -194,6 +195,33 @@ test('official battle reuses the approved complete V25 architecture instead of s
  }
  const foreground=child(child(layout,'battlePanel'),'v25BattleScene');assert(foreground);
  assert(child(foreground,'gate')&&child(foreground,'floor')&&child(foreground,'perspective'));
+});
+test('chapter artwork publishes a single bounded pool for the official stage',()=>{
+ const layout=gameLayout(),theme=officialAssetsTheme(nativeTheme);
+ const plan=chapterBattleScenes(theme);
+ applyOfficialAssets([layout],theme,{chapterScenes:plan});
+ const stage=child(layout,'stage')??layout,battle=child(stage,'battlePanel');
+ const scene=child(battle,chapterBattleSceneHost);
+ assert.deepEqual(child(battle,'hero').position,[-324,-35]);
+ assert.deepEqual(child(battle,'notice').position,theme.layout.battleNotice.position);
+ assert.deepEqual(theme.layout.player.groundedStatusLane,[-168,42]);
+ assert.equal(theme.layout.enemyRow.groundContact.feet.blue_guard,47/106);
+ assert.equal(theme.layout.enemyRow.groundContact.feet.sentry,undefined);
+ assert.equal(theme.layout.enemyRow.groundContact.feet.champ,48/106);
+ assert.equal(Object.keys(theme.layout.enemyRow.groundContact.feet).length,33);
+ assert(Object.values(theme.layout.enemyRow.groundContact.footprints).every(footprints=>footprints.length<=2));
+ assert(!child(battle,'v25BattleScene')&&!child(battle,'lowpolyScene'));
+ assert.equal(children(battle)[0],scene,'scene paints behind battle interaction');
+ assert.equal(children(scene).length,5);
+ assert(children(scene).every(batch=>children(batch).length<=60));
+ assert.equal(all(scene).length,256);
+ assert.deepEqual(plan.rows.map(rows=>rows.filter(Boolean).length),[229,249]);
+ const slots=all(scene).filter(node=>node.kind==='image');
+ assert.equal(slots.length,250);
+ assert.equal(slots.filter(node=>node.visible===false).length,21);
+ for(const rows of plan.rows)for(const [i,row]of rows.entries()){
+  if(row)assert.equal(row[0]>100006,slots[i].image>100006,'one renderer family per native slot');
+ }
 });
 test('measured type frames share one native pool and preserve original illustration identities',()=>{
  const layout=gameLayout(),theme=officialAssetsTheme(nativeTheme);applyOfficialAssets([layout],theme);

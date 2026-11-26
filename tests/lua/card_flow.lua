@@ -61,4 +61,44 @@ flow:update(0,catalog,{})
 local concurrent=0;for _,entry in pairs(flow.active)do if entry.uid==a.uid then concurrent=concurrent+1 end end
 assert(concurrent==1,'the same UID cannot be in two simultaneous native trajectories')
 assert(#flow.waiting==1,'the next route must wait for its UID to arrive')
+
+local wide=control()
+wide.parent={sizeDeltaX=1680}
+wide.anchorMinX,wide.anchorMaxX=0,1
+for pile,anchor in pairs({draw=0,discard=1,exhaust=1})do
+    wide:GetChild(pile..'Icon').anchorMinX=anchor
+end
+local animated=Flow.new(wide,{color=function(r,g,b,a)return{r=r,g=g,b=b,a=a}end,imageSource='static'})
+local function route(from,to)
+    local before,after=frame(),frame()
+    before[from],after[to]={a},{a}
+    animated:sync(before,after)
+end
+route('hand','discard')
+animated:update(0,catalog,{})
+route('discard','draw')
+assert(animated.active[1].finish[1]==Theme.layout.discardPile.position[1]+200)
+assert(animated.waiting[1].start[1]==Theme.layout.discardPile.position[1]+200)
+assert(animated.waiting[1].finish[1]==Theme.layout.drawPile.position[1]-200)
+wide.parent.sizeDeltaX=1560
+animated:update(0,catalog,{})
+assert(animated.active[1].finish[1]==Theme.layout.discardPile.position[1]+140)
+assert(animated.waiting[1].start[1]==Theme.layout.discardPile.position[1]+140)
+assert(animated.waiting[1].finish[1]==Theme.layout.drawPile.position[1]-140)
+animated:update(Theme.motion.slow,catalog,{})
+local moved=wide:GetChild('feedback'):GetChild('cardTrail1')
+assert(moved.x==Theme.layout.discardPile.position[1]+140 and moved.y==Theme.layout.discardPile.position[2])
+animated:update(.01,catalog,{})
+animated:update(Theme.motion.slow,catalog,{})
+local drawSlot,drawEntry=next(animated.active)
+assert(drawEntry.to=='draw' and drawEntry.arrived)
+local drawn=wide:GetChild('feedback'):GetChild('cardTrail'..drawSlot)
+assert(drawn.x==Theme.layout.drawPile.position[1]-140 and math.abs(drawn.y-Theme.layout.drawPile.position[2])<1e-8)
+animated:reset()
+route('hand','exhaust')
+animated:update(B.hold+B.burn+B.fly,catalog,{})
+assert(moved.x==Theme.layout.topBar.exhaustIcon[1]+140 and moved.y==Theme.layout.topBar.y)
+wide.parent.sizeDeltaX=1280
+animated:update(0,catalog,{})
+assert(moved.x==Theme.layout.topBar.exhaustIcon[1] and moved.y==Theme.layout.topBar.y)
 print('ok card_flow - UID destinations, endpoints, retain, power, shuffle and bounded pool')

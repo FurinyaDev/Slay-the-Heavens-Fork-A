@@ -328,7 +328,7 @@ function M.new(cover,ready,onIntent,frames,motion)
     end
     function gate:begin(intent)
         local localChange=localFrame(intent,self.intent)~=nil
-        local fast=not needsSchedulerConfirmation(intent) and
+        local fast=not self.entry and not needsSchedulerConfirmation(intent) and
             (self.state=='visible' and (canUpdate(intent,self.intent) or localChange)
             or localChange and same(intent,self.published))
         if self.departure then return false end

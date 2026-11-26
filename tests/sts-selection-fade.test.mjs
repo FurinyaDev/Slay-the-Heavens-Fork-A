@@ -180,7 +180,8 @@ local gate=Gate.new(cover,function()return true end,nil,frames,{duration=.2,colo
  entryTrace=function(phase)if phase=='input_enabled'then enabled=enabled+1 end end})
 local a={page='mapPanel',mode='map',phase='map',run={},act=1}
 local b={page='nodePanel',mode='node',phase='node',run=a.run,act=1,nodeId='room',nodeType='camp',nodePage=1}
-gate:begin(a);gate:step(a,0);gate:step(a,0)
+gate:begin(a);gate:step(a,0);gate:step(a,0);gate:step(a,.2)
+assert(not gate:covered(),'initial map must publish before departure')
 assert(gate:depart(function()return gate:begin(b)end,nil,{id=1}))
 gate:step(a,.2);gate:step(a,0);gate:step(b,0);gate:step(b,0);gate:step(b,.1)
 assert(gate.state=='fadingIn' and veil.imageColor.a>0 and veil.imageColor.a<255)

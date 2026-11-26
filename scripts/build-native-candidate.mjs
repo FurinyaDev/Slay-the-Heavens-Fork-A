@@ -37,6 +37,7 @@ import {prepareComponentControlLayout,assertComponentControlOutput,componentBind
 export const generatedRuntimeModules = {
   [deckBrowserBindingModule]:'scripts/build-ui.mjs',
   abyss_component_binding:'scripts/build-ui.mjs',
+  abyss_chapter_battle_scene_data:'scripts/build-ui.mjs',
   [v25CardModule]:'scripts/build-ui.mjs',
   [uiProfileModule]:'scripts/build-ui.mjs',
   abyss_data:'scripts/build-lua-data.mjs', abyss_original_v4_data:'scripts/build-lua-data.mjs', abyss_theme:'scripts/build-ui.mjs',

@@ -1,5 +1,6 @@
 -- Screen slots are presentation only. Every entry retains its core index/ID.
 local Actors=require('abyss_actor')
+local ByrdTrial=require('abyss_byrd_ground_trial')
 local SourceGeometry=require('abyss_monster_source_geometry')
 local Theme=require('abyss_theme')
 local number=require('abyss_numbers').integer
@@ -81,27 +82,52 @@ local function presentationScale(source,bottom,sy)
  local ceiling=top-line-Theme.space.xs
  return math.min(sy,math.max(1,ceiling-bottom)/math.max(source.width,source.height,source.hbY+source.height))
 end
-function M.geometry(actor)
+local function groundFoot(ground,actor,nativeArtEnabled)
+ if not ground then return end
+ if nativeArtEnabled~=false and ByrdTrial.isGrounded(actor) then
+  return ByrdTrial.foot,ByrdTrial.footprints,true
+ end
+ return ground.feet[actor.definitionId],ground.footprints[actor.definitionId]
+end
+local function touchBounds(source,bodyScale,portrait,compact)
+ local width,height=source.width*bodyScale,source.height*bodyScale
+ if not compact then return width,height,portrait/2 end
+ return math.max(L.statusIcon.minimumTouch,portrait*ByrdTrial.touchWidth),
+  math.max(L.statusIcon.minimumTouch,portrait*(ByrdTrial.foot+ByrdTrial.crown)+Theme.space.s),
+  portrait*ByrdTrial.crown,width
+end
+function M.geometry(actor,nativeArtEnabled)
  local source=SourceGeometry.resolve(actor)
  local sx,sy=Theme.canvas.base[1]/1920,Theme.canvas.base[2]/1080
  local x=(1440+source.x)*sx-Theme.canvas.base[1]/2
  local bottom=(M.floorY+source.y)*sy-Theme.canvas.base[2]/2
  local healthOffset,healthHeight=18*sy,20*sy
  local native=Theme.presentationProfile=='official-assets-first'
- if native and source.hbY>0 then
+ local ground=L.enemyRow.groundContact
+ local foot,footprints,compactTarget=groundFoot(ground,actor,nativeArtEnabled)
+ if native and not foot and source.hbY>0 then
   -- Leave room for one complete power row above the hand on both input modes.
   local icon,countY=powerSize(sy,true)
   bottom=math.max(bottom,L.enemyRow.nativePowerFloorY+healthOffset+powerGap(healthHeight)+powerDepth(icon,countY))
  end
  local bodyScale=presentationScale(source,bottom,sy)
  local portrait=math.max(source.width,source.height)*bodyScale
- local hitX,hitBottom=x+source.hbX*bodyScale,bottom+source.hbY*bodyScale
+ local contact=foot and ground.y+source.y*sy*ground.depth
+ if contact then bottom=contact-portrait*(.5-foot) end
+ -- Grounded art may have transparent padding under its feet. HUD and
+ -- input use the contact plane while the portrait retains its native size.
+ local hitOffset=source.hbY*bodyScale
+ local hitX=x+source.hbX*bodyScale
+ local hitBottom=(contact or bottom)+(contact and math.min(0,hitOffset) or hitOffset)
  local rootY=bottom+portrait/2
- -- A raised source hitbox can cut through our portrait (e.g. the Guardian's legs).
- -- Keep the lower annotations together beneath both the hitbox and the portrait.
- local healthBase=math.min(hitBottom,bottom)-rootY
- return {x=x,y=rootY,portrait=portrait,
-  hitX=hitX,hitY=hitBottom+source.height*bodyScale/2,hitWidth=source.width*bodyScale,hitHeight=source.height*bodyScale,
+ -- Grounded art uses the contact plane. Older scenes keep annotations
+ -- below both the portrait and any raised targeting bounds.
+ local hudBottom=contact and hitBottom-ground.healthGap or math.min(hitBottom,bottom)
+ local healthBase=hudBottom-rootY
+ local hitWidth,hitHeight,crown,healthWidth=touchBounds(source,bodyScale,portrait,compactTarget)
+ return {x=x,y=rootY,portrait=portrait,groundY=contact and contact-rootY,
+  footprints=contact and footprints,compactTarget=compactTarget,
+  hitX=hitX,hitY=hitBottom+hitHeight/2,hitWidth=hitWidth,hitHeight=hitHeight,healthWidth=healthWidth,
   statusWidth=source.width*sx,statusCountWidth=native and statusCountWidth(actor)or L.nativeText.lineHeight,
   nameX=hitX-x,nameY=healthBase-36*sy,sourceScale=sy,
   healthX=hitX-x,healthY=healthBase-healthOffset,healthTextY=healthBase-17*sy,healthHeight=healthHeight,
@@ -109,14 +135,14 @@ function M.geometry(actor)
   blockWidth=64*sx,blockHeight=64*sy,
   intentX=hitX-x+(actor.definitionId=='gremlin_nob' and -30*sx or 0),
   -- Full-bleed native glyphs and their 40px text line must clear both art and hitbox.
-  intentY=math.max(portrait/2,hitBottom+source.height*bodyScale-rootY)+math.max(L.nativeText.lineHeight,L.intent.size)/2+Theme.space.xs,
+  intentY=math.max(crown,hitBottom+hitHeight-rootY)+math.max(L.nativeText.lineHeight,L.intent.size)/2+Theme.space.xs,
   intentWidth=128*sx,intentHeight=128*sy,
   intentHitWidth=64*sx,intentHitHeight=64*sy}
 
 end
 function M.rowY(_,_,actor)return M.geometry(actor).y end
-function M.position(_,_,actor)
- local g=M.geometry(actor)
+function M.position(_,_,actor,nativeArtEnabled)
+ local g=M.geometry(actor,nativeArtEnabled)
  return g.x,L.battleUnit.nameWidth,g.portrait,g.hitWidth,g.y
 end
 local function fade(value,dt,speed)

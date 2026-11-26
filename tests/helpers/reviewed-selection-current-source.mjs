@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {exactSourceMatches} from './source-fingerprint.mjs';
 import {releaseUiRestoreArchive} from './release-ui-restore-source.mjs';
+import {visualSelectionOwnerRead} from './visual-selection-source.mjs';
 
 const replayBase='02dcb2466b2c90308f9a9e42896c2c5af3ed288c';
 const renamedOwners=Object.freeze({
@@ -31,13 +31,13 @@ function reviewedSelectionOwners(){
 // known current owners here and reread each one whenever that closure asks.
 export function reviewedSelectionRead(read=readFileSync){
  const registered=reviewedSelectionOwners();
+ const readOwner=visualSelectionOwnerRead(read);
  return (path,encoding='utf8')=>{
   const row=registered.get(path);
   if(!row)return read(path,encoding);
   const active=Object.hasOwn(renamedOwners,path)?renamedOwners[path]:path;
   if(active!==path)assert.throws(()=>read(path,'utf8'),{code:'ENOENT'},'legacy Selection owner must stay absent: '+path);
-  const source=read(active,'utf8');
-  assert(exactSourceMatches(source,row.after),'fresh reviewed Selection production owner: '+active);
-  return encoding==='utf8'?row.before.source:Buffer.from(row.before.source);
+  const source=readOwner(active,row);
+  return encoding==='utf8'?source:Buffer.from(source);
  };
 }

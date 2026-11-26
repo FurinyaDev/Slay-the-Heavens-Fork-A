@@ -2,6 +2,8 @@
   "layers": {
     "abyss_checkpoint_identities": "core",
     "abyss_page_reveal": "ui",
+    "abyss_chapter_battle_scene": "ui",
+    "abyss_chapter_battle_scene_data": "ui",
     "abyss_lowcost_art": "ui",
     "abyss_game_ui_navigation": "ui",
     "abyss_game_ui_navigation_view": "ui",
@@ -355,6 +357,7 @@
     "abyss_v25_card_surface": "ui",
     "abyss_v25_card_assets": "ui",
     "abyss_monster_art": "ui",
+    "abyss_byrd_ground_trial": "ui",
     "abyss_monster_source_geometry": "core",
     "abyss_monster_source_positions": "core",
     "abyss_monster_surfaces": "ui",
