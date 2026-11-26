@@ -185,6 +185,22 @@ const inputs={
  }
 };
 
+// The live visual viewport retains the #984 backdrop input before its periphery.
+const visualViewport={
+ "path": "scripts/viewport-layout.mjs",
+ "beforeSha256": "3057525b8864f6af75393a1a124238136766350fa064729b4c35495e7bf038d4",
+ "afterSha256": "c20bdd3432d7ce5831359d53efcc3dae049249004350d3f7d2ed320ad966197e",
+ "beforeBlob": "8f6ab7c549eb1db1ee79f365e6004e8a1b0a71f2",
+ "afterBlob": "4f93e1b6697fdf303c2f8f6ebb392e3ed536c44c",
+ "hunks": [
+  {
+   "at": 9,
+   "before": "",
+   "after": "\nconst leftBattleControls = [\n  'energyRing', 'energyDisc', 'energyIcon', 'energy',\n  'drawIcon', 'drawBadgeRing', 'drawBadge', 'draw', 'drawLabel',\n];\nconst rightBattleControls = [\n  'endTurn', 'discardIcon', 'discardBadgeRing', 'discardBadge', 'discard', 'discardLabel',\n];\n\nfunction stretchWidth(control, baseWidth) {\n  control.anchor = { min: [0, .5], max: [1, .5] };\n  control.size = [control.size[0] - baseWidth, control.size[1]];\n}\n\n// Attach after design profiles supply the final 16:9 positions. Translating\n// both the face and its counter preserves their authored margins and hitboxes.\nexport function anchorBattlePeriphery(stage, baseWidth, officialAssets) {\n  const panel = stage.children.find(control => control.name === 'battlePanel');\n  const parts = new Map(panel.children.map(control => [control.name, control]));\n  stretchWidth(panel, baseWidth);\n  const right = officialAssets ? [...rightBattleControls, 'exhaustIcon', 'exhaust'] : rightBattleControls;\n  for (const [anchor, names] of [[0, leftBattleControls], [1, right]]) {\n    for (const name of names) {\n      const control = parts.get(name);\n      control.anchor = { min: [anchor, .5], max: [anchor, .5] };\n      control.position = [control.position[0] + (.5 - anchor) * baseWidth, control.position[1]];\n    }\n  }\n  stretchWidth(parts.get('statusDismiss'), baseWidth);\n  const status = parts.get('statusInfo');\n  stretchWidth(status, baseWidth);\n  stretchWidth(status.children.find(control => control.name === 'hit'), baseWidth);\n}\n"
+  }
+ ]
+};
+
 // Retain the exact #1002 driver expected by the frozen calibration archive.
 const replayDriver={
  "path": "tests/helpers/replay-reviewed-selection.mjs",
@@ -237,8 +253,13 @@ export const reviewedOfficialAssetInputPaths=Object.freeze(Object.keys(inputs));
 export function readReviewedOfficialAssetInput(path,read=readFileSync){
  if(!Object.hasOwn(inputs,path))return undefined;
  const source=read(path,'utf8');
- const prior=predecessor(inputs[path],path,source);
- assert.notEqual(prior,source,'fresh current official-assets input: '+path);
+ let current=source;
+ if(path===visualViewport.path){
+  current=predecessor(visualViewport,path,source);
+  assert.notEqual(current,source,'fresh current official-assets input: '+path);
+ }
+ const prior=predecessor(inputs[path],path,current);
+ assert.notEqual(prior,current,'fresh current official-assets input: '+path);
  return prior;
 }
 
