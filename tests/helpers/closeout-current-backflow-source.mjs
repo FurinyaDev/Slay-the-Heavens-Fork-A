@@ -7,8 +7,8 @@ import {exactSourceMatches} from './source-fingerprint.mjs';
 
 const bytes=readFileSync(new URL('../fixtures/closeout-current-backflow-source.json.gz',import.meta.url));
 assert.equal(createHash('sha256').update(bytes).digest('hex'),
- 'f214dfb607a3c31a2cfcc4d59fbe57e5f720d32c73054331a368b45403a0a187','exact current closeout backflow packet');
-const {schemaVersion,base,head,files,owners,continuation,sessionRoute,anchorRefactor,actorDetail,tooling,pageReveal,independentFiles}=JSON.parse(gunzipSync(bytes));
+ '87639e2e8f5bf70efa58ba9bd9a4f8a715940a0cdd0f52e7d3257e78165ca9dd','exact current closeout backflow packet');
+const {schemaVersion,base,head,files,owners,continuation,sessionRoute,anchorRefactor,actorDetail,tooling,pageReveal,independentFiles,preMasterRelicIcons}=JSON.parse(gunzipSync(bytes));
 assert.equal(schemaVersion,1);
 assert.equal(base,'903bf2a31e91f10fb24763ab4cea23d586d0bb83');
 assert.equal(head,'7228aaa83b0995e1dc6e36955cfd6e773c199f07');
@@ -23,7 +23,9 @@ assert.deepEqual(anchorRefactor.before,owners[battleDetailView]);
 assert.equal(actorDetail.commit,'cb85a291a83de761e6462d0b98e54c8fc85dc5b8');
 const pageRevealPath='src/lua/abyss_page_reveal.lua';
 assert.equal(pageReveal.commit,'a25784d9814d0a2daf07a506ba416015ac02ec11');
-assert.equal(files['tests/official-battle-relic-icons.test.mjs'].successor.commit,
+const relicIconsFixture='tests/official-battle-relic-icons.test.mjs';
+assert.equal(preMasterRelicIcons.commit,'b2f74d99a3d80e60b99165b6380987cda8b4488d');
+assert.equal(files[relicIconsFixture].successor.commit,
  'dfcc35416f127693b2f0323b8168b0e29590af7d');
 assert.equal(tooling.commit,'e65d9b98fbec69442047650254238cd9244df805');
 assert.equal(tooling.successor.commit,'73ae746609eef41c192d04e836dc474f0aa9b303');
@@ -56,6 +58,26 @@ export function beforeCloseoutHistoryTooling(path,source){
  return source===lf?prior:prior.replaceAll('\n','\r\n');
 }
 
+function restoreFixturePredecessor(path,row,source){
+ const prior=restoreExactFixtureHunks({...row,path},path,source);
+ assert(exactSourceMatches(prior,{sha256:row.beforeSha256,gitBlob:row.beforeBlob}),'exact current closeout predecessor: '+path);
+ return prior;
+}
+
+// The frozen Run HUD reader also feeds the Battle and Actor views. Reuse
+// their authenticated Closeout-era fixtures solely when reading old slices.
+export function beforeCloseoutRunHudFixture(path,source){
+ let row;
+ if(path===relicIconsFixture)row=preMasterRelicIcons;
+ else if(path==='tests/helpers/m7-core-final-source-inverse.mjs')row=independentFiles[path];
+ else return source;
+ if(!exactSourceMatches(source,{sha256:row.afterSha256,gitBlob:row.afterBlob}))return source;
+ const lf=source.replaceAll('\r\n','\n');
+ if(source!==lf&&source!==lf.replaceAll('\n','\r\n'))return source;
+ const prior=restoreFixturePredecessor(path,row,lf);
+ return source===lf?prior:prior.replaceAll('\n','\r\n');
+}
+
 function readCloseoutFixture(path,row,read){
  const fixture=read(path,'utf8');
  const successorFixture=row.successor;
@@ -64,8 +86,7 @@ function readCloseoutFixture(path,row,read){
  const source=readExactOwner(path,updated?successorFixture:predecessorBinding,read);
  assert.equal(source,fixture,'closeout owner changed during the receipt read: '+path);
  const previous=updated?restoreFixtureSuccessor(path,row,source):source;
- const prior=restoreExactFixtureHunks({...row,path},path,previous);
- assert(exactSourceMatches(prior,{sha256:row.beforeSha256,gitBlob:row.beforeBlob}),'exact current closeout predecessor: '+path);
+ const prior=restoreFixturePredecessor(path,row,previous);
  return {source,prior};
 }
 

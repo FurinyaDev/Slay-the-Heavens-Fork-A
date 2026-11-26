@@ -67,8 +67,16 @@ function beforeOfficialBattleWitness(path,source) {
 function beforeRunHudReadabilityAdapter(path,source) {
   if (path!=='tests/helpers/run-hud-ci-source.mjs' || typeof source!=='string' || source.includes('\r\r\n')) return source;
   let current=source.replaceAll('\r\n','\n');
-  if (sha256(current)==='68e97aac87f90aea3e0c165d308744e2bc6e4190902b514b2a0c47e6fd88eb28') {
+  if (sha256(current)==='8f463d1f24f7c3cb0b59d2d62bd9850ff6bea924d03e231be06c01b64b8a884f') {
     if (source!==current && source!==current.replaceAll('\n','\r\n')) return source;
+    current=current
+      .replace('beforeCloseoutHistoryTooling,beforeCloseoutRunHudFixture','beforeCloseoutHistoryTooling')
+      .replace(" source=beforeCloseoutRunHudFixture(path,source);\n",'');
+    assert.equal(sha256(current),'68e97aac87f90aea3e0c165d308744e2bc6e4190902b514b2a0c47e6fd88eb28','exact Run HUD replay predecessor');
+  }
+  if (sha256(current)==='68e97aac87f90aea3e0c165d308744e2bc6e4190902b514b2a0c47e6fd88eb28') {
+    const normalized=source.replaceAll('\r\n','\n');
+    if (source!==normalized && source!==normalized.replaceAll('\n','\r\n')) return source;
     current=current
       .replace("import {beforeCloseoutHistoryTooling} from './closeout-current-backflow-source.mjs';\n",'')
       .replace(" source=beforeCloseoutHistoryTooling(path,source);\n",'');
