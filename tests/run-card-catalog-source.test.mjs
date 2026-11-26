@@ -8,13 +8,22 @@ const colors=new Set(['RED','GREEN','BLUE','PURPLE']);
 const snake=s=>s.replace(/([A-Z]+)([A-Z][a-z])/g,'$1_$2').replace(/([a-z\d])([A-Z])/g,'$1_$2').toLowerCase();
 const aliases={Strike_Red:'strike',Defend_Red:'defend',ThunderClap:'thunderclap',AThousandCuts:'thousand_cuts',
  ConserveBattery:'charge_battery',Heatsinks:'heat_sinks',Defend_Watcher:'defend_purple',Judgement:'judgment'};
-const expected=new Map(registration.filter(c=>colors.has(c.color)).map(c=>[aliases[c.class]||snake(c.class),c]));
+// Keep the original STS1 registration immutable. The released display/ID
+// change (#949) only changes this card's two runtime identity fields.
+const releasedIdentities={CalculatedGamble:{
+ originalSourceId:'Calculated Gamble',localId:'calculated_exchange',sourceId:'Calculated Exchange',
+}};
+const expected=new Map(registration.filter(c=>colors.has(c.color)).map(c=>{
+ const released=Object.hasOwn(releasedIdentities,c.class)?releasedIdentities[c.class]:null;
+ if(released)assert.equal(c.id,released.originalSourceId,'original registration for '+c.class);
+ return [released?.localId??aliases[c.class]??snake(c.class),{...c,sourceId:released?.sourceId??c.id}];
+}));
 function verify(rows){
  assert.equal(expected.size,300);assert.equal(rows.length,300);
  const actual=new Map(rows.map(row=>[row[0],row]));assert.equal(actual.size,300);
  for(const [id,want]of expected){
   const got=actual.get(id);assert.ok(got,`fixed class ${want.class} must exist under stable local ${id}`);
-  assert.equal(got[1],want.id,`sourceId ${id}`);
+  assert.equal(got[1],want.sourceId,`sourceId ${id}`);
   assert.equal(got[2],want.type.toLowerCase(),`type ${id}`);
   assert.equal(got[3],want.color.toLowerCase(),`color ${id}`);
   assert.equal(got[4],want.rarity.toLowerCase(),`rarity ${id}`);
@@ -29,8 +38,16 @@ test('ordinary Run definitions match all independent fixed300 registration class
 });
 test('another valid registered source ID and metadata-only HEALING cannot conceal incorrect actual definitions',()=>{
  assert.ok(rows,'runtime definitions were exported');
- for(const [id,column,value,message]of [['cold_snap',1,'Coolheaded','sourceId cold_snap'],['self_repair',5,'false','actual HEALING self_repair']]){
+ for(const [id,column,value,message]of [['cold_snap',1,'Coolheaded','sourceId cold_snap'],['self_repair',5,'false','actual HEALING self_repair'],
+  ['calculated_exchange',1,'Calculated Gamble','sourceId calculated_exchange'],
+  ['calculated_exchange',6,'1','base cost calculated_exchange']]){
   const mutated=rows.map(row=>[...row]);mutated.find(row=>row[0]===id)[column]=value;
   assert.throws(()=>verify(mutated),new RegExp(message));
  }
+});
+
+test('the retired local ID cannot satisfy the released registration',()=>{
+ assert.ok(rows,'runtime definitions were exported');
+ const mutated=rows.map(row=>row[0]==='calculated_exchange'?['calculated_gamble',...row.slice(1)]:row);
+ assert.throws(()=>verify(mutated),/stable local calculated_exchange/);
 });

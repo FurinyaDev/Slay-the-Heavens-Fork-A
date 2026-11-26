@@ -7,10 +7,13 @@ local EnemyView = require('abyss_battle_enemy_view')
 local M = {}
 local L = Theme.layout
 -- Explicit ports preserve the approved implementation without a shared constructor closure.
-function M.install(owner, _ownership, _host, dependencies)
+function M.install(owner, _ownership, host, dependencies)
     local D = L.cardDrag
+    local function nativeMonsterArtEnabled()
+        return not host.platform or host.platform.nativeMonsterArtEnabled~=false
+    end
     local function enemySlot(count, i, enemy)
-        return EnemyView.position(count, i, enemy)
+        return EnemyView.position(count, i, enemy, nativeMonsterArtEnabled())
     end
     local function enemyPosition(battle,index)
         local entry,slot,count=EnemyView.find(battle,index,battle==owner.displayBattle and owner.feedback or nil)
@@ -40,7 +43,7 @@ function M.install(owner, _ownership, _host, dependencies)
         local rows = EnemyView.slots(battle,owner.feedback)
         for _, entry in ipairs(rows) do
             local enemy = entry.actor
-            local geometry=EnemyView.geometry(enemy)
+            local geometry=EnemyView.geometry(enemy,nativeMonsterArtEnabled())
             if math.abs(g.x-geometry.hitX)<=geometry.hitWidth/2
                 and math.abs(g.y-geometry.hitY)<=geometry.hitHeight/2
                 and Actors.isActive(enemy) then
@@ -57,7 +60,7 @@ function M.install(owner, _ownership, _host, dependencies)
         if math.abs(aim.x)>Theme.canvas.base[1]/2 or math.abs(aim.y)>Theme.canvas.base[2]/2 then return false,nil,true end
         local rows=EnemyView.slots(aim.battle,owner.feedback)
         for _,entry in ipairs(rows)do
-            local geometry=EnemyView.geometry(entry.actor)
+            local geometry=EnemyView.geometry(entry.actor,nativeMonsterArtEnabled())
             if Actors.isActive(entry.actor) and math.abs(aim.x-geometry.hitX)<=geometry.hitWidth/2
                 and math.abs(aim.y-geometry.hitY)<=geometry.hitHeight/2 then
                 return true,entry.index,true

@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { createHash } from 'node:crypto';
+import {currentEnemyId} from './helpers/released-encounter-identities.mjs';
 
 const read = path => readFileSync(new URL(`../${path}`, import.meta.url));
 const json = path => JSON.parse(read(path));
@@ -25,7 +26,7 @@ test('monster roster covers exactly current Acts1–2 enemy definitions', () => 
   assert.equal(new Set(ids).size,42);
   const catalog = json(root+'catalog.json');
   assert.equal(catalog.targetCount,42);
-  assert.deepEqual([...catalog.roster].sort(),[...new Set(ids)].sort());
+  assert.deepEqual(catalog.roster.map(currentEnemyId).sort(),[...new Set(ids)].sort());
   const ready=Object.keys(catalog.candidates), missing=Object.keys(catalog.unavailable);
   assert.deepEqual([...ready,...missing].sort(),[...catalog.roster].sort());
   assert.equal(new Set([...ready,...missing]).size,42);

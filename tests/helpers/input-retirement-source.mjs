@@ -1,4 +1,5 @@
 // Reverse the current input retirement for exact legacy presentation replays.
+import {beforeChapterBattleScene} from './chapter-battle-scene-source.mjs';
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import {readFileSync} from 'node:fs';
@@ -47,8 +48,21 @@ for(const [path,row] of Object.entries(combatEvents.files)){
  assert(/^(?:scripts|src\/lua|tests)\//.test(path)&&matches(row.before.source,row.before),'exact combat/event predecessor: '+path);
  assert.match(row.after.sha256,/^[a-f0-9]{64}$/);assert.match(row.after.gitBlob,/^[a-f0-9]{40}$/);
 }
+const eventReadabilityArchive=readFileSync(new URL('../fixtures/event-readability-source.json.gz',import.meta.url));
+assert.equal(hash(eventReadabilityArchive),'1ccc3098014ebf726a776928f5d0b41c29b6a2a1cff21f096ee42a53b0da9cd5');
+const eventReadability=JSON.parse(gunzipSync(eventReadabilityArchive));
+assert.equal(eventReadability.path,'src/lua/abyss_node_ui_events.lua');
+for(const {before,after} of eventReadability.transitions){
+ assert(matches(before.source,before),'exact event UI predecessor');
+ assert.match(after.sha256,/^[a-f0-9]{64}$/);assert.match(after.gitBlob,/^[a-f0-9]{40}$/);
+}
 export const combatEventsOwns=path=>Object.hasOwn(combatEvents.files,path);
 export function beforeCombatEvents(path,source){
+ if(path===eventReadability.path){
+  for(const {before,after} of eventReadability.transitions){
+   if(matches(source,after))source=source.includes('\r\n')?before.source.replaceAll('\n','\r\n'):before.source;
+  }
+ }
  const row=Object.hasOwn(combatEvents.files,path)&&combatEvents.files[path];
  if(!row||!matches(source,row.after))return source;
  return source.includes('\r\n')?row.before.source.replaceAll('\n','\r\n'):row.before.source;
@@ -220,11 +234,28 @@ function suitePredecessor(path,source,layer){
 }
 
 // Release and StS receipts share the same signed deck-pages predecessors.
+const releaseCandidateTools=Object.freeze({
+ 'scripts/build-native-candidate.mjs':{
+  sha256:'da36fc09e30e5c64e248dbe5a8e00e9d2cacbfbb93275f676d0aa7b0ee1e8aab',
+  gitBlob:'5d9a0c2a7efa71b1b547d9ada4b4bff374166b05',
+ },
+ 'scripts/audit-native-candidate.mjs':{
+  sha256:'b6c423fb947a8071459d5954ec5f35b5aad28f1455ae49251692d96d1237d35d',
+  gitBlob:'8cdcb2926adb60ca0a1f6f17544fef09c95c81e9',
+ },
+});
+export function assertReleaseCandidateToolsCurrent(read){
+ for(const [path,binding] of Object.entries(releaseCandidateTools))
+  assert(matches(beforeChapterBattleScene(path,read(path,'utf8')),binding),'fresh current candidate tool source: '+path);
+}
 export function beforeDeckPagesSuiteSource(path,source,{requireCurrent=false}={}){
  if(!Object.hasOwn(suite.deck.files,path))return source;
  const {before,after}=suite.deck.files[path];
- const current=matches(beforeInputRetirement(path,source),after);
- if(requireCurrent)assert(current&&(!inputRetirementOwns(path)||isCurrentInputRetirementSource(path,source)),
+ const projected=beforeChapterBattleScene(path,source);
+ // #951 adds Lua text audits and #975 adds exact hosted candidate provenance.
+ const current=matches(beforeInputRetirement(path,projected),after)||
+  Object.hasOwn(releaseCandidateTools,path)&&matches(projected,releaseCandidateTools[path]);
+ if(requireCurrent)assert(current&&(!inputRetirementOwns(path)||isCurrentInputRetirementSource(path,projected)),
   'fresh complete integration source: '+path);
  if(!current)return source;
  return source.includes('\r\n')?before.source.replaceAll('\n','\r\n'):before.source;

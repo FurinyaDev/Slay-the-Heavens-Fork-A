@@ -26,8 +26,11 @@ test('only the opt-in transform removes decoration, preserving every text/input/
  const layout=gameLayout(),templates=[deckCardTemplate()],source=structuredClone(layout),before=count(layout);
  const prior=paths(layout),templateBefore=count(templates[0]);
  const result=compactBoundedCardFaces(layout,templates);
- assert.equal(result.cardHosts,61);assert.equal(before-count(layout),2940);
- assert.equal(templateBefore-count(templates[0]),49);assert.equal(result.removedControls,2989);
+ // #940 adds one standalone face for inspecting a card in the deck browser.
+ assert.equal(result.cardHosts,62);assert.equal(before-count(layout),2989);
+ assert.equal(templateBefore-count(templates[0]),49);assert.equal(result.removedControls,3038);
+ const focusFace=child(child(child(layout,'deckPanel'),'cardFocus'),'face');
+ for(const group of groups(focusFace))assert.deepEqual(group.children.map(node=>node.name),['flat']);
  const after=paths(layout);
  for(const[path,node]of Object.entries(prior))if(node.kind==='text'||['cursorArea','presetButton','grid'].includes(node.kind)
    ||/\/(?:roleMark|costDisc|costHalo|blockedLock|art(?:_|$))/.test('/'+path))assert.deepEqual(after[path],node,path);

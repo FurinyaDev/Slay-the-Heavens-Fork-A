@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - Furinya
 created_date: '2026-11-13 09:23'
-updated_date: '2026-11-15 13:53'
+updated_date: '2026-11-25 20:53'
 labels:
   - capacity
   - scalability
@@ -18,7 +18,7 @@ references:
   - docs/backlog-details/M7-CAPACITY-RECONCILIATION-20261113.md
 documentation:
   - docs/backlog-details/TASK-105-CAPACITY.md
-priority: high
+priority: medium
 type: task
 ordinal: 172000
 ---
@@ -57,4 +57,6 @@ ordinal: 172000
 状态对账：原pr-641已认领In Progress，task-105-offline及backlog-continuation-1115已有离线成果；当前基线To Do过时，本轮是明确授权接续而非自主新领。保留原全部6项未验AC与Furinya。来源2e8d5d95实现/92e79424记录只读，3张已还原LFS图片不改。
 
 接续验证：来源最终g的results/28档及639输入、旧39档逐hash核对，83成员恢复包100548673B仅保存在本树.artifacts并全部读回，不提交约100MB原始档；f/g28档压缩字节一致，a-e原树保留。c2409ad7定向合同7组6过0失败1本机symlink能力跳过；未重跑矩阵、不生成本轮候选。完整输入/历史数据不作为当前官方容量，6项AC仍未验；官方MB、ready、PC手机与长期GO均UNVERIFIED。详细验证、失败/跳过、恢复路径见docs/evidence/capacity-105-integration-20261115/README.md；独审与托管交付交主控。
+
+v2.2.0 排程时移出当前 High 队列。角色批量量产可并行并继续受本任务容量 GO 约束；本版正式候选继续执行独立的容量和负载门禁。
 <!-- SECTION:NOTES:END -->

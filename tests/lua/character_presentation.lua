@@ -233,7 +233,9 @@ test('new effect order counts upgrades and historical keywords are not generic p
  assert(s.sneaky_strike.text:find('12 点伤害',1,true)and s.sneaky_strike.upgradeText:find('16 点伤害',1,true));eq(s.sneaky_strike.cost,'2')
  assert(s.sneaky_strike.text:find('若本回合主动弃过牌',1,true)and s.sneaky_strike.text:find('2 点能量',1,true))
  assert(s.eviscerate.text:find('7 点伤害，重复 3 次',1,true)and s.eviscerate.upgradeText:find('9 点伤害，重复 3 次',1,true))
- assert(s.eviscerate.text:find('费用降低 1',1,true))
+ local discardCostRule='本回合每主动弃 1 张牌，本牌少费 1（最低 0）。'
+ assert(s.eviscerate.text:find(discardCostRule,1,true)and s.eviscerate.upgradeText:find(discardCostRule,1,true),
+  'both Eviscerate descriptions retain the active-discard discount and zero floor')
  assert(s.calculated_exchange.text:find('其余所有手牌，再抽等量牌',1,true)and s.calculated_exchange.text:find('消耗',1,true))
  assert(not s.calculated_exchange.upgradeText:find('消耗',1,true))
  local d=P.prepare(Existing,extendedData().defect)

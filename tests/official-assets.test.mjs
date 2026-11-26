@@ -270,7 +270,8 @@ test('approved pages keep live input identities while unrelated pages retain the
     assert.deepEqual(node[key],key==='size'&&cardHosts.has(node)?theme.layout.card.size:expected[key],path+' '+key);
    }
   }
- const cards=[...all(layout),...all(template)].filter(node=>child(node,'roundFrame')&&child(node,'costDisc'));
+ const cardPaths=[...paths(layout),...paths(template)].filter(([,node])=>child(node,'roundFrame')&&child(node,'costDisc'));
+ const cards=cardPaths.map(([,node])=>node);
  const retiredDeckCards=nodes.filter(([path,node])=>path.startsWith(retiredDeckPrefix)&&cardHosts.has(node)).map(([,node])=>node);
  const retiredPickerCards=nodes.filter(([path,node])=>/^\/SlayTheAbyss\/nodePanel\/pickerView\/card[4-6]$/.test(path)&&cardHosts.has(node)).map(([,node])=>node);
  const retiredChoiceCards=nodes.filter(([path,node])=>retiredChoice(path)&&cardHosts.has(node)).map(([,node])=>node);
@@ -279,7 +280,19 @@ test('approved pages keep live input identities while unrelated pages retain the
  assert.equal(retiredChoiceCards.length,8,'only choice faces three through ten are retired');
  const retiredCards=[...retiredDeckCards,...retiredPickerCards,...retiredChoiceCards];
  assert.equal(result.cardHosts,cardHosts.size-retiredPickerCards.length-retiredChoiceCards.length,'composition authenticates all capacity-bounded hosts before retiring the duplicate modal');
- assert.equal(cards.length,cardHosts.size-retiredCards.length);assert.equal(cards.length,38);assert(result.removedControls>500);
+ assert.equal(cards.length,cardHosts.size-retiredCards.length);
+ const focusFacePath='/SlayTheAbyss/deckPanel/cardFocus/face';
+ const originalCardPaths=nodes.filter(([path,node])=>path!==focusFacePath&&cardHosts.has(node)&&!retiredCards.includes(node)).map(([path])=>path).sort();
+ const liveOriginalPaths=cardPaths.filter(([path])=>path!==focusFacePath).map(([path])=>path).sort();
+ assert.equal(originalCardPaths.length,38,'retain the original 38 official card hosts');
+ assert.deepEqual(liveOriginalPaths,originalCardPaths,'retain every original active card host path');
+ const focusFaces=cardPaths.filter(([path])=>path===focusFacePath);
+ assert.equal(focusFaces.length,1,'exactly one approved read-only deck focus face');
+ const focus=child(child(layout,'deckPanel'),'cardFocus');
+ assert.strictEqual(focusFaces[0][1],child(focus,'face'));
+ assert.equal(focus.visible,false,'the deck focus starts closed');
+ assert(!all(focus).some(node=>node.kind==='cursorArea'),'the focus face adds no input receiver');
+ assert(result.removedControls>500);
  for(const face of cardHosts)assert.equal(cards.includes(face),!retiredCards.includes(face),'retain every active original card host');
  assertOfficialRunContracts([layout,template]);
  for(const card of cards){

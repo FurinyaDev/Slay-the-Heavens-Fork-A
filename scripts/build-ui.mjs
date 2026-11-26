@@ -1,6 +1,7 @@
 import {prepareRefinedReleaseMonsterArt,refinedReleaseMonsterRegistry} from './refined-release-monsters.mjs';
 import {validateOfficialAssets,candidateAssetsArgs,officialAssetFlagsFor} from './official-assets-profile.mjs';
 import {applyOfficialAssets,officialAssetsTheme} from './official-assets-layout.mjs';
+import {chapterBattleScenes} from './v220-chapter-battle-scenes.mjs';
 import {assertOfficialRunContracts} from './official-run-layout.mjs';
 import {resolveArtFeatures,artFeatureArgs,writeArtFeatures,artFeatureModule} from './art-features.mjs';
 import {portraitRuntimeInputs,portraitSources,attachOfficialPortraits,attachLowpolyScenes,writePortraitModule} from './official-portraits.mjs';
@@ -16,7 +17,7 @@ import { toLua } from './build-lua-data.mjs';
 import { battleLayout, enemyPowerTemplate } from './ui-layout.mjs';
 import { attachEntranceLayers } from './ui-entrance-layout.mjs';
 import { gameLayout } from './game-ui-layout.mjs';
-import { withViewport } from './viewport-layout.mjs';
+import { withViewport, anchorBattlePeriphery } from './viewport-layout.mjs';
 import { buildUiTheme } from './build-ui-theme.mjs';
 import { buildMapUI } from './map-ui-layout.mjs';
 import { deckCardTemplate, battlePileCardTemplate, plainBrowserCardTemplate, deckBrowserBindingModule, deckBrowserBindingSource, deckBrowserParts, splitDeckBrowserCard } from './deck-ui-layout.mjs';
@@ -98,10 +99,12 @@ function rejectInputOutputAliases(outputDirectory, extraInputs = []) {
     fileURLToPath(new URL('./ui-profile.mjs', import.meta.url)),
     fileURLToPath(new URL('./official-assets-profile.mjs', import.meta.url)),
     fileURLToPath(new URL('./official-assets-layout.mjs', import.meta.url)),
+    fileURLToPath(new URL('./v220-chapter-battle-scenes.mjs', import.meta.url)),
+    fileURLToPath(new URL('./v220-battle-scene-geometry.mjs', import.meta.url)),
     fileURLToPath(new URL('./art/lightweight-2d-assets.mjs', import.meta.url)), ...releaseInputPaths()];
   const identities = inputs.map(input => ({ input, realPath: realpathSync.native(input),
     stat: statSync(input, { bigint: true }) }));
-  const outputs = ['abyss_theme.lua', 'map-ui.json', 'abyss_map_layout.lua', 'abyss_map_controls.lua',
+  const outputs = ['abyss_theme.lua', 'abyss_chapter_battle_scene_data.lua', 'map-ui.json', 'abyss_map_layout.lua', 'abyss_map_controls.lua',
     'abyss_narrative.lua', 'abyss_presentation.lua', 'battle-ui.json', 'game-ui.json', 'abyss_ui_layout.lua',
     'game-ui-templates.json', 'abyss_ui_templates.lua', `${deckBrowserBindingModule}.lua`, 'native-card-art-receipt.json', 'lightweight-2d.json', 'v25-theme.json', 'official-assets-theme.json', `${uiProfileModule}.lua`, `${backgroundModule}.lua`,
     'abyss_ready_card_binding.lua','abyss_ready_card_assets.lua','abyss_traveler_portrait_assets.lua',`${artFeatureModule}.lua`,'abyss_monster_art_data.lua','abyss_monster_actor_binding.lua','abyss_component_binding.lua','art-performance.json','art-render-v2.json'];
@@ -196,8 +199,9 @@ export function buildUI(outputDirectory = 'build/lua', python = process.env.ABYS
   if(options.lightweight2d===true&&!options.legacyCardFrames){
     compactBoundedCardFaces(battle);compactBoundedCardFaces(layout,templates);
   }
+  const chapterScenes = refined ? chapterBattleScenes(theme) : undefined;
   if(officialAssets){
-    applyOfficialAssets([battle,layout,...templates],theme);
+    applyOfficialAssets([battle,layout,...templates],theme,{chapterScenes});
     templates.push(battlePileCardTemplate(layout,templates[0]));
   }else if(!v25BattleChrome){
     applyV25RewardLayout(battle,theme);
@@ -214,6 +218,7 @@ export function buildUI(outputDirectory = 'build/lua', python = process.env.ABYS
   forgeCard.children = forgeCard.children.filter(control => control.name !== 'matchBack');
   templates.push(forgeCard);
   if (officialAssets) assertOfficialRunContracts([battle, layout, ...templates]);
+  anchorBattlePeriphery(stage, theme.canvas.base[0], officialAssets);
   const browserParts=officialAssets&&nativePageLifecycle?deckBrowserParts:[];
   if(browserParts.length)templates.push(...splitDeckBrowserCard(templates.find(t=>t.name==='AbyssBattlePileCard')));
   for (const tree of [battle, layout, ...templates]) assertNativeUiCapacity(tree);
@@ -227,6 +232,9 @@ export function buildUI(outputDirectory = 'build/lua', python = process.env.ABYS
   mkdirSync(outputDirectory, { recursive: true });
   writeFileSync(join(outputDirectory,'abyss_component_binding.lua'),'-- Original-component comparison is opt-in.\nreturn {schemaVersion=1,enabled=false}\n');
   writeV25CardBinding(outputDirectory);
+  const {scene: _chapterSceneLayout, ...chapterSceneData} = chapterScenes ?? {};
+  writeFileSync(join(outputDirectory,'abyss_chapter_battle_scene_data.lua'),
+    'return '+toLua(chapterSceneData)+'\n');
   writeFileSync(join(outputDirectory, deckBrowserBindingModule+'.lua'), deckBrowserBindingSource(0,browserParts));
   writeFileSync(join(outputDirectory,uiProfileModule+'.lua'),uiProfileSource(nativePageLifecycle));
   if(options.lightweight2d===true)writeLightweightProfile(outputDirectory);

@@ -1,6 +1,6 @@
 // Read-only CI materialization for the six current reviewed PNGs, not a general asset downloader.
 import { createHash } from 'node:crypto';
-import { readFileSync } from 'node:fs';
+import { lstatSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
 import * as filesystem from 'node:fs';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -113,22 +113,24 @@ export const maxRuntimePreviewBytes = 181870;
 export const runtimePreviewArguments = [...lfsArguments.slice(0, -6),
   'lfs', 'pull', '--include', runtimePreviewPaths.join(','), '--exclude', ''];
 
-function verifyRuntimePreview(root, index) {
-    const path = runtimePreviewPaths[index];
+function verifyRuntimePreview(path, index) {
     const [oid, size] = runtimePreviewObjects[index];
     let bytes;
-    try { bytes = readFileSync(resolve(root, path)); }
-    catch (error) { if (error.code !== 'ENOENT') throw error; bytes = Buffer.alloc(0); }
-    if (bytes.length !== size || !bytes.subarray(0, 8).equals(pngSignature)
+    try {
+      if (lstatSync(path).isFile() && realpathSync.native(path) === path) bytes = readFileSync(path);
+    }
+    catch (error) { if (error.code !== 'ENOENT') throw error; }
+    if (!bytes || bytes.length !== size || !bytes.subarray(0, 8).equals(pngSignature)
       || createHash('sha256').update(bytes).digest('hex') !== oid) {
-      const error = new Error(`File is not the frozen runtime preview PNG: ${path}`);
+      const error = new Error(`File is not the frozen runtime preview PNG: ${runtimePreviewPaths[index]}`);
       error.code = 'ERR_RUNTIME_PREVIEW_PNG'; throw error;
     }
-    return bytes.length;
+    return bytes;
 }
 
 export function verifyRuntimePreviews(root) {
-  const bytes = runtimePreviewPaths.reduce((total, _, index) => total + verifyRuntimePreview(root, index), 0);
+  root = realpathSync.native(root);
+  const bytes = runtimePreviewPaths.reduce((total, path, index) => total + verifyRuntimePreview(resolve(root, path), index).length, 0);
   return { count: runtimePreviewPaths.length, bytes };
 }
 
@@ -142,6 +144,7 @@ export function needsRuntimePreviews(files) {
 export function prepareRuntimePreviews({ root = process.cwd(), needed = false, env = process.env } = {}) {
   if (needed !== true && needed !== false) throw new Error('Runtime preview selection must be boolean');
   if (!needed) return { status: 'not-needed' };
+  root = realpathSync.native(root);
   let total = 0;
   for (const [index, path] of runtimePreviewPaths.entries()) {
     const shown = spawnSync('git', ['show', ':' + path], { cwd: root,
@@ -160,11 +163,24 @@ export function prepareRuntimePreviews({ root = process.cwd(), needed = false, e
   catch (error) { if (error.code !== 'ERR_RUNTIME_PREVIEW_PNG') throw error; }
   // Pull only missing/corrupt members of the frozen group. Shared reviewed
   // previews already verified above need no transfer even if their cache is gone.
-  const missing = runtimePreviewPaths.filter((_, index) => {
-    try { verifyRuntimePreview(root, index); return false; }
+  const missing = runtimePreviewPaths.filter((path, index) => {
+    try { verifyRuntimePreview(resolve(root, path), index); return false; }
     catch (error) { if (error.code !== 'ERR_RUNTIME_PREVIEW_PNG') throw error; return true; }
   });
   if (!missing.length) return { status: 'cached', ...verifyRuntimePreviews(root) };
+  if (env.CI_MEDIA_BUNDLE) {
+    const bundle = realpathSync.native(env.CI_MEDIA_BUNDLE);
+    const restores = missing.map(path => {
+      const index = runtimePreviewPaths.indexOf(path);
+      const [oid] = runtimePreviewObjects[index];
+      const destination = resolve(root, path);
+      if (!lstatSync(destination).isFile() || realpathSync.native(destination) !== destination)
+        throw new Error(`Runtime preview destination is not a regular checkout file: ${path}`);
+      return [destination, verifyRuntimePreview(resolve(bundle, oid), index)];
+    });
+    for (const [destination, bytes] of restores) writeFileSync(destination, bytes);
+    return { status: 'restored', ...verifyRuntimePreviews(root) };
+  }
   const args = [...runtimePreviewArguments];
   args[args.indexOf('--include') + 1] = missing.join(',');
   const pulled = spawnSync('git', args, { cwd: root, env: lfsEnvironment(env), encoding: 'utf8', windowsHide: true, timeout: 90000, maxBuffer: 1024 * 1024 });

@@ -1,6 +1,10 @@
 import {beforePosixDeadlineWorkflow,beforeWindowsDeadlineWorkflow} from './auto-merge-workflow.mjs';
-import {beforeInputRetirementTestInventory,readRetiredInputLuaReceipt} from './input-retirement-inventory.mjs';
-import {beforeDeckPagesSuiteSource} from './input-retirement-source.mjs';
+import {beforeHotfixPublicationGate} from './release-ci-workflow.mjs';
+import {assertInputRetirementLuaCurrent,beforeInputRetirementTestInventory,readRetiredInputLuaReceipt} from './input-retirement-inventory.mjs';
+import {assertReleaseCandidateToolsCurrent,beforeDeckPagesSuiteSource} from './input-retirement-source.mjs';
+import {beforeChapterBattleScene,beforeChapterPoolFixtureInventory,chapterBattleSceneReader,chapterSceneCurrentRead} from './chapter-battle-scene-source.mjs';
+import {restoreExactFixtureHunks} from './exact-fixture-hunks.mjs';
+import {beforeVisualLegibility} from './visual-selection-source.mjs';
 export {beforeInputRetirementTestInventory} from './input-retirement-inventory.mjs';
 import {assertDevelopBackflowCurrent,authenticateDevelopBackflow,beforeDevelopBackflow,developBackflowOwns} from './develop-release-backflow-source.mjs';
 import {beforeCalibrationReplay,beforeCurrentReplayCopier} from './calibration-replay-sources.mjs';
@@ -9,23 +13,26 @@ import {assertNativeFixturesCurrent,beforeNativeFixtureReplay} from './native-fi
 import {assertNativeFlowFixturesCurrent,beforeNativeFlowFixture} from './native-flow-fixture-source.mjs';
 import {beforeUiEntranceWitness} from './ui-entrance-source.mjs';
 import {beforeOfficialBackgroundFixture} from './official-background-fixture-source.mjs';
-import {beforeMapRoomReplayCohort,beforeDevelopReplayMerge} from './develop-replay-merge-source.mjs';
+import {assertAudioDeckBrowserCurrent,beforeMapRoomReplayCohort,beforeDevelopReplayMerge} from './develop-replay-merge-source.mjs';
 import {beforeStsUiCloseoutSource} from './sts-ui-closeout-source.mjs';
 import {beforeStsFadeCi} from './sts-fade-ci-source.mjs';
 import {beforeCurrentReplayFixes} from './current-replay-fix-sources.mjs';
 import {beforeIntegratedStsInventory} from './sts-selection-fade-source.mjs';
 import {beforeNativeButtonRepair,beforeRebasedCi,beforeRebasedRelease,historicalReleaseCopier} from './rebased-release-source.mjs';
+import {battlePeripheryPredecessor,beforeBattlePeriphery} from './battle-periphery-source.mjs';
 import {beforeTinyHouseIntegratedSource} from './tiny-house-integrated-source.mjs';
 import {assertReleaseCapacityCohort,beforeReleaseCapacitySource} from './release-integration-source.mjs';
 import {beforeM05BackflowInventory} from './m05-shop-ci-source.mjs';
 import {beforeReleaseShopEntry,releaseUiRestoreArchive,shopEntryPriorRead} from './release-ui-restore-source.mjs';
 import {beforeCombatVisualSource,combatVisualPriorRead} from './combat-visual-source.mjs';
-import {beforeSts1MenuCiSource} from './sts1-menu-ci-source.mjs';
-import {assertRefinedReleaseSourcesCurrent,beforeRefinedReleaseCiSource,beforeRefinedReleaseJsInventory,refinedReleaseHistoricalInput} from './refined-release-source.mjs';
+import {beforeOfficialAssetsFocusFixture,beforeSts1MenuCiSource,officialAssetsFixture} from './sts1-menu-ci-source.mjs';
+import {assertRefinedReleasePackingCurrent,assertRefinedReleaseSourcesCurrent,beforeRefinedReleaseCiSource,beforeRefinedReleaseJsInventory,refinedReleaseHistoricalInput} from './refined-release-source.mjs';
 import {beforeV2UiAdmission} from './v2-ui-admission-ci-source.mjs';
 import {beforeV2UiEvidence,beforeV2UiPreTinyHouseSource,beforeFieldConfirmation,beforeRelicCrystal} from './v2-p1-ci-source.mjs';
 import {beforeCharacterPreparationCiSource} from './character-preparation-source.mjs';
+import {beforeReviewedOfficialAssetReplay} from './reviewed-official-asset-inputs.mjs';
 import {integratedCiBytes} from './integrated-ci-binding.mjs';
+import {assertIntegratedLuaFixturesCurrent} from './integrated-ci-source.mjs';
 import {stsStylePriorRuntime} from './sts-style-prior-runtime.mjs';
 export {exactReviewedBuildInput} from './rebased-release-source.mjs';
 export {beforeM05ShopCiSource} from './m05-shop-ci-source.mjs';
@@ -96,13 +103,17 @@ for(const [path,row] of Object.entries(transport.files)){
 const normalize=s=>s.replaceAll('\r\n','\n');
 // Exact complete successor bytes preserve the existing immutable historical CI views.
 const forkPushBytes=readFileSync(new URL('../fixtures/fork-push-ci-source.json.gz',import.meta.url));
-assert.equal(hash(forkPushBytes),'3e336d4dc79dc2dcb5f5d2297212034bf074aed8eea184dca73c0d02bab91f18','complete Fork push CI continuation');
+assert.equal(hash(forkPushBytes),'d8f0cb25d3884387b232a67ce8a99bf6570bdb50dcbecbba15b25ec3bcfd9d83','complete Fork push CI continuation');
 const forkPushPacket=JSON.parse(gunzipSync(forkPushBytes));
 assert.equal(forkPushPacket.baseCommit,'73c21489efaab409d4c0c46bee517d410d3427fc');
 for(const row of Object.values(forkPushPacket.files))assert.equal(hash(row.before),row.beforeSha256);
 export function beforeForkPush(path,source){
- const row=forkPushPacket.files[path];
- return row&&typeof source==='string'&&!source.includes('\r\r\n')&&hash(normalize(source))===row.afterSha256?(source.includes('\r\n')?row.before.replaceAll('\n','\r\n'):row.before):source;
+ if(path==='.github/workflows/quality.yml'&&typeof source==='string')source=beforeHotfixPublicationGate(source);
+ const row=Object.hasOwn(forkPushPacket.files,path)?forkPushPacket.files[path]:undefined;
+ if(!row||typeof source!=='string'||source.includes('\r\r\n'))return source;
+ const digest=hash(normalize(source));
+ if(digest!==row.afterSha256&&digest!==row.afterSuccessorSha256)return source;
+ return source.includes('\r\n')?row.before.replaceAll('\n','\r\n'):row.before;
 }
 // Receipt readers retain the actual Q1 current-source predecessor before their existing replay layers.
 for(const row of Object.values(forkPushPacket.receiptSuccessors??{}))assert.equal(hash(row.before),row.beforeSha256);
@@ -336,14 +347,14 @@ function beforeReleaseUiBuildSource(path,source,read=readFileSync){
  source=beforeShopEntryCopier(path,beforeReleaseShopEntry(path,source));
  source=beforeCombatVisualSource(path,source,shopEntryPreflightRead(owner=>beforeIntegratedReleaseCopier(owner,read(owner,'utf8'))));
  source=beforeSts1MenuCiSource(path,source);
- source=beforeRefinedReleaseCiSource(path,beforeRefinedReleaseCopier(path,beforeReleaseCapacitySource(path,source)));
+ source=beforeRefinedReleaseCiSource(path,beforeRefinedReleaseCopier(path,beforeReleaseCapacitySource(path,source)),owner=>read(owner,'utf8'));
  if(!Object.hasOwn(releaseUiBuild.files,path)||typeof source!=='string'||source.includes('\r\r\n'))return source;
  const text=normalize(source),{before,after}=releaseUiBuild.files[path];
  if(hash(text)!==after.sha256||blob(text)!==after.gitBlob)return source;
  return source.includes('\r\n')?before.source.replaceAll('\n','\r\n'):before.source;
 }
 function releaseHistoricalInput(path,source){
- source=beforeCurrentReplayCopier(path,source);
+ source=beforeCurrentReplayCopier(path,beforeActorAlphaBuildInput(path,source));
  return beforeRebasedCopier(path,source)!==source?historicalReleaseCopier(source):beforeRebasedRelease(path,source);
 }
 export function beforeReleaseTinyHouseSource(path,source,read=readFileSync){
@@ -518,14 +529,14 @@ function beforeLuaInventoryTest(path,source){
  assert.equal(blob(prior),'dfc38c230b942012183773414d04d5e89ca37315','exact Lua inventory test predecessor blob');
  return source.includes('\r\n')?prior.replaceAll('\n','\r\n'):prior;
 }
-function beforeCoopCiSource(path,source){
+function beforeCoopCiSource(path,source,read){
  source=beforeLuaInventoryTest(path,source);
  source=beforeStsFadeCi(path,source);
- source=beforeReleaseUiBuildSource(path,beforeRebasedCi(path,beforeRebasedCopier(path,source)));
+ source=beforeReleaseUiBuildSource(path,beforeRebasedCi(path,beforeRebasedCopier(path,source)),read);
  source=beforePowerMembershipConfig(path,beforePowerMembershipHelper(path,source));
  source=beforeFieldConfirmation(path,beforeRewardScreenCiSource(path,beforeCardFeedbackCiSource(path,beforeRelicCrystal(path,beforeMapCiSource(path,source)))));
  source=beforeDevelopCapacityBuildSource(path,beforeTinyHouseIntegratedSource(path,source));
- source=beforeV2UiEvidence(path,beforeLoadingRecoveryCopier(path,source));
+ source=beforeV2UiEvidence(path,beforeLoadingRecoveryCopier(path,source),read&&((owner,encoding='utf8')=>read(owner,encoding)));
  const row=Object.hasOwn(coopLabCi.files,path)?coopLabCi.files[path]:null;
  if(!row || typeof source!=='string' || source.includes('\r\r\n') || hash(normalize(source))!==row.afterSha)return source;
  return source.includes('\r\n')?row.before.replaceAll('\n','\r\n'):row.before;
@@ -544,8 +555,66 @@ const shopEntryTests={
  lua:['tests/lua/shop_entry.lua','85547fda98f035ff78a0cebdf56e91ba43899f0579d706c4cb045e13a55f6259',
   'e2b0e5297f87eb64525710b871ba23bd9bbcf81e942623c316759e9991dcebeb'],
 };
+const currentReleaseTests=Object.freeze({
+ 'tests/battle-ui-publication.test.mjs':'a2d4d911de18b48f4b01cbaf52384b4d133b77a8e646c15d2149185052fb7759',
+ 'tests/check-release-text.test.mjs':'1b3d0db323d89b0e6035f504b8c84ac1c564df528cca917ba2c89db29567993a',
+ 'tests/event-readability.test.mjs':'95e888cc87e48e8d6a161eaea9da54a410444c9966cafe1b263cffc66882dbb0',
+ 'tests/formal-startup-budget.test.mjs':'8a3d66d9b7c963cd3592c92750d6b41cecba2fed3cde933a81f34aee048df2ef',
+ 'tests/gil-candidate-preflight.test.mjs':'7ec29cdbeaf1572fa9713d37fdc17003e4f7843479c5af5ebe3c3c8787b93068',
+ 'tests/gil-candidate.test.mjs':'e8a08db32ea8a237575f428566093ab18cc60fd0d0ce4acb0b5e2d7e30b364de',
+ 'tests/production-performance.test.mjs':'102893c9285fc52693ee9a7d1bae36d8cefef418ecf8da5d40e53b4eb98b2947',
+ 'tests/release-metadata.test.mjs':'eceb8ab92f616084fdcdac875e69e761cf2c9674a804be9f0295e89213453cb8',
+ 'tests/release-performance-artifacts.test.mjs':'c1d0d51314ab0dffac68236a3f722a4a4cdb8a0ebbfc292d1ca36cd0b2b2a941',
+ 'tests/release-performance-verification.test.mjs':'81aad82bba133bcf372158c5163cb328438a7b4027065436105c2dbaea243fbf',
+ 'tests/release-performance.test.mjs':'95c9fae47f63841957292b11f0c576c2703af9a2e5d7f0cf102d14be064f655b',
+});
+// The live alpha entry point and portable preview extend the exact #996 inputs.
+// Only historical CI readers receive the preceding bytes.
+const actorAlphaBuildInputs=Object.freeze({
+ 'package.json':{
+  current:['d91d720bcde425c27f93e34f41619c9c4ee7120fd5c922dc5099163c46c7b55c','057a6efe7a97fa4530087d69f31c2c6b874fd82d'],
+  before:['ba29a08fc203195bba8c9acd047274167f2de046f8a29e54a681f72faa314e77','8b3f35c25c42aa7276a5ab334ae7112fe9dbe01b'],
+  undo:source=>source.replace('    "verify:actor-alpha": "node scripts/art/check-actor-alpha.mjs",\n',''),
+ },
+ 'scripts/native-candidate-preview.mjs':{
+  current:['d64df368f17f626e8949ac6abae9177307914c3211ce8d91047022f78841e5ec','29e9563e4500302c5c080d0e62589addd58e4f76'],
+  before:['dc3534fa5a2eb34fb1e7c5b30873893ae663e42d331ba9dfe926e5600845f56d','cdc9acd403d8ab0d01bdcfe34f91d21e88a3a400'],
+  undo:source=>source.replace("import {hostedCandidatePath} from './hosted-gil-receipt.mjs';\n",'')
+   .replace('const gil=hostedCandidatePath(candidatePath,candidate)??candidate.mapPath;',
+    'const gil=candidate.candidate.path??candidate.mapPath;'),
+ },
+});
+function exactCheckoutSource(source,binding){
+ if(!exactSourceBinding(source,binding))return false;
+ const lf=normalize(source);
+ return source===lf||source===lf.replaceAll('\n','\r\n');
+}
+function beforeActorAlphaBuildInput(path,source){
+ if(!Object.hasOwn(actorAlphaBuildInputs,path))return source;
+ const {current,before,undo}=actorAlphaBuildInputs[path];
+ if(!exactCheckoutSource(source,current))return source;
+ const prior=undo(normalize(source));
+ assert(exactSourceBinding(prior,before),'exact alpha build predecessor: '+path);
+ return source.includes('\r\n')?prior.replaceAll('\n','\r\n'):prior;
+}
+export function checkedActorAlphaBuildPredecessor(path,source){
+ assert(Object.hasOwn(actorAlphaBuildInputs,path)&&exactCheckoutSource(source,actorAlphaBuildInputs[path].current),
+  'fresh alpha build input: '+path);
+ return beforeActorAlphaBuildInput(path,source);
+}
+function actorAlphaCurrentRead(read){
+ function current(path,...args){
+  const raw=read(path,...args);
+  if(Object.hasOwn(actorAlphaBuildInputs,path))
+   checkedActorAlphaBuildPredecessor(path,Buffer.isBuffer(raw)?raw.toString('utf8'):raw);
+  return raw;
+ }
+ for(const path of Object.keys(actorAlphaBuildInputs))current(path,'utf8');
+ return current;
+}
 const newerTests={
  js:{
+  ...currentReleaseTests,
   'tests/detail-latency.test.mjs':'310f906435fbbfa45899b30a5344ca83f9de32860d09394b9824de95ee9cffee',
   'tests/potion-sts-structure.test.mjs':'56b91c313e26d1129a39b7678a39df7df38a71a2252deb060351c5cc115e6118'
  },
@@ -555,20 +624,67 @@ const newerTests={
   'tests/lua/traveler_power_tooltip.lua':'eacaefc663ef5800d114a4118546a170ee7c93be09800df02108a223285afda0'
  },
 };
+// These live Lua fixtures retain #981's additional checks and #951's approved
+// runtime IDs. Historical inventories still use the same original paths.
+const currentReleaseLuaFixtures=Object.freeze({
+ 'tests/lua/detail_latency.lua':['0d886fb386da8f6c7b938138bd8dafc935f96abf9a48f608ad89f6f810709654','7b2a025c5005a90919de2d1239e38187dcc14565'],
+ 'tests/lua/traveler_power_tooltip.lua':['7d2684b7c627301cb435af6c2d45040be039a9624cc85e121a7fded90aa006af','1e381500795ccc639100192dd8b513f4dc90edf2'],
+});
+const additionalReleaseLuaFixtures=Object.freeze({
+ 'tests/lua/battle_ui_publication.lua':['73a3d97356202f4943152acaa32fd14bf8e257c5b3229374d76e9a936973a6e2','6aa2a4c9a8c1195a7fda5d118ac0d5d66cfba0c4'],
+ 'tests/lua/card_body_catalog.lua':['9ec720cb8c67c95338f497094a36e894bcefe6c2171954271ba8c73e49f6706b','933398a096b075b6739a2c811318e4d7e0a16033'],
+ 'tests/lua/card_body_focus.lua':['bb5683abf45cb5427fbbd9e40841d54d966f722b2879f84b0dedfebb6a8f9937','5889006b9cc8e4217a098c60dbb21eb431f0f029'],
+ 'tests/lua/traveling_merchant_event_content.lua':['19872217244484f650323e9332ab7bbb3903540dd9ae718e5b28192759a03b60','2e287211403fdb4f0923f387161565389df3fa40'],
+});
+function exactSourceBinding(source,binding){
+ if(!binding||typeof source!=='string'||source.includes('\r\r\n'))return false;
+ const normalized=normalize(source);
+ return hash(normalized)===binding[0]&&gitBlob(normalized)===binding[1];
+}
+function exactCurrentReleaseLuaFixture(path,source){
+ return exactSourceBinding(source,currentReleaseLuaFixtures[path]);
+}
+function assertCurrentReleaseLuaFixtureSources(read){
+ for(const path of Object.keys(currentReleaseLuaFixtures))
+  assert(exactCurrentReleaseLuaFixture(path,read(path,'utf8')),'fresh current Release Lua fixture source: '+path);
+}
+// #940 and #962 added three cases, and #951 renamed the Act 2 event case.
+function beforeCurrentReleaseLuaNames(paths,read,{required=false}={}){
+ const currentPaths=Object.keys(additionalReleaseLuaFixtures);
+ if(!required&&!currentPaths.some(path=>paths.includes(path)))return paths;
+ const names=new Set(paths);
+ assert.equal(names.size,paths.length,'unique live Release Lua inventory');
+ for(const path of currentPaths){
+  const found=names.delete(path);
+  if(required)assert(found,'missing live Release Lua inventory source: '+path);
+  if(found)assert(exactSourceBinding(read(path,'utf8'),additionalReleaseLuaFixtures[path]),'fresh added inventory source: '+path);
+ }
+ if(paths.includes('tests/lua/traveling_merchant_event_content.lua')){
+  const retired='tests/lua/addict_event_content.lua';
+  assert(!names.has(retired),'retired event fixture must be absent from live Lua inventory');
+  assert.throws(()=>read(retired,'utf8'),{code:'ENOENT'},'retired event fixture must be absent');
+  names.add(retired);
+ }
+ return [...names].sort();
+}
 export function beforeReleaseAdditionalInventory(paths,kind,read=readFileSync){
  paths=beforeM05BackflowInventory(paths,kind,(path,encoding)=>beforeCurrentReplayFixes(path,beforeUiEntranceWitness(path,read(path,encoding))));
  for(const [path,sha] of Object.entries(newerTests[kind])){
   const count=paths.filter(candidate=>candidate===path).length;
   if(!count)continue;
   assert.equal(count,1,'single added Release test: '+path);
-  const source=beforeDevelopBackflow(path,read(path,'utf8'));
+  const live=read(path,'utf8');
+  if(kind==='lua'&&exactCurrentReleaseLuaFixture(path,live))continue;
+  const source=beforeDevelopBackflow(path,live);
   assert(typeof source==='string'&&!source.includes('\r\r\n')&&hash(normalize(source))===sha,'fresh added inventory source: '+path);
  }
  return paths.filter(path=>!Object.hasOwn(newerTests[kind],path));
 }
 export function beforeShopEntryInventory(paths,kind,read=readFileSync){
+ if(kind==='lua')paths=beforeChapterPoolFixtureInventory(paths,read);
  paths=beforeInputRetirementTestInventory(paths,kind,read);
  if(kind==='js')paths=beforeIntegratedStsInventory(paths,(path,encoding)=>beforeNativeFlowFixture(path,read(path,encoding)));
+ else paths=beforeCurrentReleaseLuaNames(paths,read);
  paths=beforeReleaseAdditionalInventory(paths,kind,read);
  const [path,...authenticated]=shopEntryTests[kind];
  const position=paths.indexOf(path);
@@ -579,17 +695,25 @@ export function beforeShopEntryInventory(paths,kind,read=readFileSync){
  return paths.filter(test=>test!==path);
 }
 export function assertCurrentJsInventory(paths,preceding,read=readFileSync){
+ // These tests remain mandatory in live Full. Only exact authenticated
+ // successor paths can be omitted from the older replay inventory.
+ for(const path of Object.keys(currentReleaseTests))
+  assert.equal(paths.filter(candidate=>candidate===path).length,1,'complete current raw discovery inventory: '+path);
  paths=beforeInputRetirementTestInventory(paths,'js',read,{required:true});
  paths=beforeRefinedReleaseJsInventory(beforeShopEntryInventory(paths,'js',read),[...preceding,coopLabTest],read,true);
  assertCoopJsInventory(paths,preceding,read);
 }
 export function assertCurrentLuaInventory(paths,preceding,read=readFileSync){
- paths=beforeInputRetirementTestInventory(paths,'lua',read,{required:true});
+ paths=beforeChapterPoolFixtureInventory(paths,read,true);
+ paths=beforeInputRetirementTestInventory(paths,'lua',read,{required:true,requireLive:true});
+ assertCurrentReleaseLuaFixtureSources(read);
+ assertIntegratedLuaFixturesCurrent(read);
+ paths=beforeCurrentReleaseLuaNames(paths,read,{required:true});
  const additions=[...Object.keys(newerTests.lua),shopEntryTests.lua[0],'tests/lua/shop_dismiss.lua'];
  assert.deepEqual([...paths].sort(),[...preceding,...additions].sort(),'complete current raw discovery inventory (Lua)');
  const prior=beforeShopEntryInventory(paths,'lua',(path,encoding)=>{
   const source=beforeForkFirstCi(path,beforeUiEntranceWitness(path,read(path,encoding)));
-  if(developBackflowOwns(path))assertDevelopBackflowCurrent(path,source);
+  if(developBackflowOwns(path)&&!exactCurrentReleaseLuaFixture(path,source))assertDevelopBackflowCurrent(path,source);
   return source;
  });
  assert.deepEqual([...prior].sort(),preceding,'complete Release bootstrap raw discovery inventory');
@@ -659,6 +783,163 @@ function closeoutPredecessor(path){
  }
  return closeoutPredecessors.get(path);
 }
+const integratedFixture='tests/helpers/integrated-ci-source.mjs';
+const officialLegibilityFixture='tests/official-assets-legibility.test.mjs';
+const reviewedSelectionFixture='tests/helpers/replay-reviewed-selection.mjs';
+const visualIntegratedPredecessor=['35c66b01602d1b6f956cda4863768f9c1fd7ecdd3f8965ffee6ebc597811b882','d5bc70a847df670c100c9fd0809537fdcee725e1'];
+const calibrationReplayPaths=Object.freeze([
+ integratedFixture,
+ 'tests/helpers/copy-integration-source-closure.mjs',
+ 'data/presentation/narrative.zh-CN.json',
+ 'tests/lore-v2.test.mjs',
+ 'tests/watcher-actor-boundary.test.mjs',
+ 'tests/sts-style-source-epoch.test.mjs',
+ 'tests/integrated-ci-source.cases.mjs',
+ 'tests/helpers/reward-query-boundary-source-inverse.mjs',
+ 'tests/helpers/m7-core-final-source-inverse.mjs',
+ 'tests/helpers/relic-query-source-inverse.mjs',
+ officialLegibilityFixture,
+ reviewedSelectionFixture,
+]);
+let calibrationReplayPredecessor;
+// Keep this exact copier input here. The copier pins the chapter helper itself.
+const battleSceneCopyClosure={
+ "path": "tests/helpers/copy-integration-source-closure.mjs",
+ "beforeSha256": "234548d4a91abc189059c5e83171e0118054b1f1b7e8844e47a7295b9c05d08a",
+ "afterSha256": "2d0d3635870a2d3bbb1bd5b72ad280beedf46d60c21ded39c36a46f3a732c9b3",
+ "beforeBlob": "52177644878b5cc24a36e4fe5ec0fecc65c34fd5",
+ "afterBlob": "966cd18195af3b65e854ca000536c8360796bcda",
+ "hunks": [
+  {
+   "at": 346,
+   "before": "const entranceFiles=Object.freeze({\n ...currentReplayFiles,\n 'tests/helpers/release-integration-source.mjs':'74093921a53a94ba842afac199e579a622b60fea5abf2519d416ede77bbfa1a7',\n 'tests/fixtures/release-lazy-monster-art-source.json.gz':'211c3588a53b1f97c98d9f9b905349d82b244a2e81a940d4ebe48022381ca92e',\n 'tests/helpers/m7-core-final-source-inverse.mjs':'8e0d432cd1ecf668bad14a614a61772e495e13cce67ab0168babcaac5bfda1e6',\n 'tests/helpers/release-ui-restore-source.mjs':'846781b9a6b31c7b85dfca9cdca0447d1880f9a220d1488c18278c4189d6ad48',\n 'tests/helpers/current-replay-fix-sources.mjs':'bfef80da2fc30501c3b2e82cd14bdb8130e4a089f2db231ff2587804fa83a08b',\n 'tests/helpers/character-preparation-source.mjs':'ae3b89b99224cf8bb86b8e569e6488db68ac2d30bf1233ed6652c90808df1984',\n 'tests/helpers/develop-release-backflow-source.mjs':'4ac2a7c073d78f0029d85e9834f6063a4a797f215a529e349bdfc4f19ab5484c',\n 'tests/helpers/refined-release-source.mjs':'cdc740ca1ab04e423eef6462d2c61f68161a9431955d17b098749e6d473ae303',\n 'tests/helpers/native-fixture-replay-source.mjs':'7dbd2ded60c5b155b958a5e6e2ff44537b2b62c15e113642aaf8f6194771832d',\n 'tests/helpers/native-flow-fixture-source.mjs':'8ad7157fd4f3973ffba4f17f9eba440731ddf952e859fee53970d6c3879968e3',\n 'tests/helpers/ui-entrance-source.mjs':'55bbaca21af744a48dff1c5b445160b993bcf0862f813ce328a630408247e315',\n 'tests/helpers/exact-fixture-hunks.mjs':'83f9cb15d9d745c86c555a77875b6b2bfc283a12ec380bcd2af518aa6526a935',\n 'tests/fixtures/ui-entrance-source.json.gz':'7ac3f53b242819cdb569c0a1ebf60de0605b72297a1072ea612bfeb11b0597c9',\n 'tests/helpers/combined-epoch/source-epoch-runtime.mjs':'e4d3f37edd23a2040290b1091540d17776fe6f7f7a129f4c31e48e71a8f9a0c0',\n [runtime]: 'e4d3f37edd23a2040290b1091540d17776fe6f7f7a129f4c31e48e71a8f9a0c0',\n [closeout]: '4f559399c631fbd0fd25ea7f1ceb8f3b8c6643e167f0116d9f151e12ee0a0ecb',\n 'tests/helpers/input-retirement-source.mjs':'0ca50356e7e2cb5a0755e7a7b203a8d2168ab59d542fb5eeb3729a3984b5e9b8',\n 'tests/fixtures/event-readability-source.json.gz':'1ccc3098014ebf726a776928f5d0b41c29b6a2a1cff21f096ee42a53b0da9cd5',\n});",
+   "after": "const entranceFiles=Object.freeze({\n ...currentReplayFiles,\n 'tests/helpers/v2-p1-ci-source.mjs':'add40fc31930e44b7b5d62a21aa30f9aa476b818c924c791682df7dd8ccadf46',\n 'tests/helpers/refined-release-source.mjs':'747f63088f1830dad97f7fa116df16f265c555639c9a01161ba9ba3b3b5ecc5c',\n 'tests/helpers/battle-periphery-source.mjs':'d436c48e4fb14039a53361fdf8464512f6a95226c81ff32ffe4d2930877db210',\n 'tests/helpers/rebased-release-source.mjs':'3600f5fcafa161bb74c2f57574b3a3e78c8041b784ca531168b606620974da9d',\n 'tests/helpers/chapter-battle-scene-source.mjs':'ed071afd55c485c280c17232441692bf922b811dca60db93debef595da7e7445',\n 'tests/helpers/release-integration-source.mjs':'74093921a53a94ba842afac199e579a622b60fea5abf2519d416ede77bbfa1a7',\n 'tests/fixtures/release-lazy-monster-art-source.json.gz':'211c3588a53b1f97c98d9f9b905349d82b244a2e81a940d4ebe48022381ca92e',\n 'tests/helpers/m7-core-final-source-inverse.mjs':'8e0d432cd1ecf668bad14a614a61772e495e13cce67ab0168babcaac5bfda1e6',\n 'tests/helpers/release-ui-restore-source.mjs':'2ec5855476f1b4c8cf762ca1a7ee366028322841b07996a518af96fdd87259b9',\n 'tests/helpers/current-replay-fix-sources.mjs':'bfef80da2fc30501c3b2e82cd14bdb8130e4a089f2db231ff2587804fa83a08b',\n 'tests/helpers/character-preparation-source.mjs':'30f20a242e7b9e6f86570e58c0dfb6ba72776599d6428a263062c5b074be88ce',\n 'tests/helpers/develop-release-backflow-source.mjs':'2834679eef440cf54e64cfb2c144c2fc6dbb5dc7ed048c3767435c250827337f',\n 'tests/helpers/native-fixture-replay-source.mjs':'7dbd2ded60c5b155b958a5e6e2ff44537b2b62c15e113642aaf8f6194771832d',\n 'tests/helpers/native-flow-fixture-source.mjs':'8ad7157fd4f3973ffba4f17f9eba440731ddf952e859fee53970d6c3879968e3',\n 'tests/helpers/ui-entrance-source.mjs':'55bbaca21af744a48dff1c5b445160b993bcf0862f813ce328a630408247e315',\n 'tests/helpers/exact-fixture-hunks.mjs':'83f9cb15d9d745c86c555a77875b6b2bfc283a12ec380bcd2af518aa6526a935',\n 'tests/fixtures/ui-entrance-source.json.gz':'7ac3f53b242819cdb569c0a1ebf60de0605b72297a1072ea612bfeb11b0597c9',\n 'tests/helpers/combined-epoch/source-epoch-runtime.mjs':'e4d3f37edd23a2040290b1091540d17776fe6f7f7a129f4c31e48e71a8f9a0c0',\n [runtime]: 'e4d3f37edd23a2040290b1091540d17776fe6f7f7a129f4c31e48e71a8f9a0c0',\n [closeout]: '4f559399c631fbd0fd25ea7f1ceb8f3b8c6643e167f0116d9f151e12ee0a0ecb',\n 'tests/helpers/input-retirement-source.mjs':'886cc9b65d51c5e5507691f516439d3475f44a3fdfba5dcf96cfb2dde1c5cf2e',\n 'tests/fixtures/event-readability-source.json.gz':'1ccc3098014ebf726a776928f5d0b41c29b6a2a1cff21f096ee42a53b0da9cd5',\n});"
+  }
+ ]
+};
+const responsiveHandCopyClosure = {
+  "path": "tests/helpers/copy-integration-source-closure.mjs",
+  "beforeSha256": "2d0d3635870a2d3bbb1bd5b72ad280beedf46d60c21ded39c36a46f3a732c9b3",
+  "afterSha256": "7d8f5d98d92a93dabb956c38d83f37add5fe3ee99a46be26dcb8aae4fe557906",
+  "beforeBlob": "966cd18195af3b65e854ca000536c8360796bcda",
+  "afterBlob": "47112793d7f7c1af74444be8861f36060c4b19e1",
+  "hunks": [
+    {
+      "at": 349,
+      "before": " 'tests/helpers/refined-release-source.mjs':'747f63088f1830dad97f7fa116df16f265c555639c9a01161ba9ba3b3b5ecc5c',\n 'tests/helpers/battle-periphery-source.mjs':'d436c48e4fb14039a53361fdf8464512f6a95226c81ff32ffe4d2930877db210',\n 'tests/helpers/rebased-release-source.mjs':'3600f5fcafa161bb74c2f57574b3a3e78c8041b784ca531168b606620974da9d',\n 'tests/helpers/chapter-battle-scene-source.mjs':'ed071afd55c485c280c17232441692bf922b811dca60db93debef595da7e7445',\n 'tests/helpers/release-integration-source.mjs':'74093921a53a94ba842afac199e579a622b60fea5abf2519d416ede77bbfa1a7',\n 'tests/fixtures/release-lazy-monster-art-source.json.gz':'211c3588a53b1f97c98d9f9b905349d82b244a2e81a940d4ebe48022381ca92e',",
+      "after": " 'tests/helpers/refined-release-source.mjs':'747f63088f1830dad97f7fa116df16f265c555639c9a01161ba9ba3b3b5ecc5c',\n 'tests/helpers/battle-periphery-source.mjs':'d436c48e4fb14039a53361fdf8464512f6a95226c81ff32ffe4d2930877db210',\n 'tests/helpers/rebased-release-source.mjs':'9c06103ee6926bb5def608470430784145880f69d4c3aee3fb35787c1309d509',\n 'tests/helpers/chapter-battle-scene-source.mjs':'838a99fe6edf863da9adde709cc46b9979c24089a3d3f2b189482c47d61b7ee5',\n 'tests/helpers/release-integration-source.mjs':'74093921a53a94ba842afac199e579a622b60fea5abf2519d416ede77bbfa1a7',\n 'tests/fixtures/release-lazy-monster-art-source.json.gz':'211c3588a53b1f97c98d9f9b905349d82b244a2e81a940d4ebe48022381ca92e',"
+    }
+  ]
+};
+// The joined copy owner first restores the exact reward/CRLF-side copier.
+const rewardHandCopyClosure={
+ "path": "tests/helpers/copy-integration-source-closure.mjs",
+ "beforeSha256": "73a38d069953b7bd095a7cfb33b04ab58a2b4623cf86b219876061188f450e7c",
+ "afterSha256": "6c80e63686ce2cf2fa469acdaa27a0e061dc0fa0158042af684c188fda90c289",
+ "beforeBlob": "5cf5de877fa6472f87d778e1686e1f8a046312ca",
+ "afterBlob": "676355849e4d5fb6e336fb8b0a8c01be5d80abae",
+ "hunks": [
+  {
+   "at": 347,
+   "before": " ...currentReplayFiles,\n 'tests/helpers/release-integration-source.mjs':'74093921a53a94ba842afac199e579a622b60fea5abf2519d416ede77bbfa1a7',",
+   "after": " ...currentReplayFiles,\n 'tests/helpers/v2-p1-ci-source.mjs':'add40fc31930e44b7b5d62a21aa30f9aa476b818c924c791682df7dd8ccadf46',\n 'tests/helpers/refined-release-source.mjs':'747f63088f1830dad97f7fa116df16f265c555639c9a01161ba9ba3b3b5ecc5c',\n 'tests/helpers/battle-periphery-source.mjs':'d436c48e4fb14039a53361fdf8464512f6a95226c81ff32ffe4d2930877db210',\n 'tests/helpers/rebased-release-source.mjs':'9c06103ee6926bb5def608470430784145880f69d4c3aee3fb35787c1309d509',\n 'tests/helpers/chapter-battle-scene-source.mjs':'838a99fe6edf863da9adde709cc46b9979c24089a3d3f2b189482c47d61b7ee5',\n 'tests/helpers/release-integration-source.mjs':'74093921a53a94ba842afac199e579a622b60fea5abf2519d416ede77bbfa1a7',"
+  },
+  {
+   "at": 355,
+   "before": " 'tests/helpers/m7-core-final-source-inverse.mjs':'c9d98969785466649e0e915df0d912f81b774d8b937b4fb63e74eed731635133',\n 'tests/helpers/release-ui-restore-source.mjs':'846781b9a6b31c7b85dfca9cdca0447d1880f9a220d1488c18278c4189d6ad48',\n 'tests/helpers/current-replay-fix-sources.mjs':'bfef80da2fc30501c3b2e82cd14bdb8130e4a089f2db231ff2587804fa83a08b',\n 'tests/helpers/character-preparation-source.mjs':'ae3b89b99224cf8bb86b8e569e6488db68ac2d30bf1233ed6652c90808df1984',\n 'tests/helpers/develop-release-backflow-source.mjs':'4ac2a7c073d78f0029d85e9834f6063a4a797f215a529e349bdfc4f19ab5484c',\n 'tests/helpers/refined-release-source.mjs':'cdc740ca1ab04e423eef6462d2c61f68161a9431955d17b098749e6d473ae303',\n 'tests/helpers/native-fixture-replay-source.mjs':'7dbd2ded60c5b155b958a5e6e2ff44537b2b62c15e113642aaf8f6194771832d',",
+   "after": " 'tests/helpers/m7-core-final-source-inverse.mjs':'c9d98969785466649e0e915df0d912f81b774d8b937b4fb63e74eed731635133',\n 'tests/helpers/release-ui-restore-source.mjs':'2ec5855476f1b4c8cf762ca1a7ee366028322841b07996a518af96fdd87259b9',\n 'tests/helpers/current-replay-fix-sources.mjs':'bfef80da2fc30501c3b2e82cd14bdb8130e4a089f2db231ff2587804fa83a08b',\n 'tests/helpers/character-preparation-source.mjs':'30f20a242e7b9e6f86570e58c0dfb6ba72776599d6428a263062c5b074be88ce',\n 'tests/helpers/develop-release-backflow-source.mjs':'2834679eef440cf54e64cfb2c144c2fc6dbb5dc7ed048c3767435c250827337f',\n 'tests/helpers/native-fixture-replay-source.mjs':'7dbd2ded60c5b155b958a5e6e2ff44537b2b62c15e113642aaf8f6194771832d',"
+  },
+  {
+   "at": 367,
+   "before": " [closeout]: '4f559399c631fbd0fd25ea7f1ceb8f3b8c6643e167f0116d9f151e12ee0a0ecb',\n 'tests/helpers/input-retirement-source.mjs':'0ca50356e7e2cb5a0755e7a7b203a8d2168ab59d542fb5eeb3729a3984b5e9b8',\n 'tests/fixtures/event-readability-source.json.gz':'1ccc3098014ebf726a776928f5d0b41c29b6a2a1cff21f096ee42a53b0da9cd5',",
+   "after": " [closeout]: '4f559399c631fbd0fd25ea7f1ceb8f3b8c6643e167f0116d9f151e12ee0a0ecb',\n 'tests/helpers/input-retirement-source.mjs':'886cc9b65d51c5e5507691f516439d3475f44a3fdfba5dcf96cfb2dde1c5cf2e',\n 'tests/fixtures/event-readability-source.json.gz':'1ccc3098014ebf726a776928f5d0b41c29b6a2a1cff21f096ee42a53b0da9cd5',"
+  },
+  {
+   "at": 371,
+   "before": " 'tests/helpers/relic-query-source-inverse.mjs':'41b4cddcba283db2cbcdc4d9c19fdd8bb14321378bd1151fc76a74b7ec9b1120',\n 'tests/helpers/reward-current-source.mjs':'32beb13dbdd789feb8f79b583e6fabc91a1dc5aedcf21d6484f48c4db90a2d0c',\n 'tests/helpers/reward-current-source.json.gz':'a68d10abe6e6f3bd33a69f85326d34dce1250b34b6892543cb5c1314c01f3b9f',",
+   "after": " 'tests/helpers/relic-query-source-inverse.mjs':'41b4cddcba283db2cbcdc4d9c19fdd8bb14321378bd1151fc76a74b7ec9b1120',\n 'tests/helpers/reward-current-source.mjs':'3ef0c1268abbd8758655d4898b3d62edba8c877eab76fff2ad7e5406e4613dfd',\n 'tests/helpers/reward-current-source.json.gz':'a68d10abe6e6f3bd33a69f85326d34dce1250b34b6892543cb5c1314c01f3b9f',"
+  }
+ ]
+};
+// Bind the latest contact helper without changing either historical copier witness.
+const groundedContactCopyClosure={
+ "path": "tests/helpers/copy-integration-source-closure.mjs",
+ "beforeSha256": "6c80e63686ce2cf2fa469acdaa27a0e061dc0fa0158042af684c188fda90c289",
+ "afterSha256": "5d05c36db6fdbee600cc2f7150f85a2e548701c6a1baefeb5909a6de15d4f391",
+ "beforeBlob": "676355849e4d5fb6e336fb8b0a8c01be5d80abae",
+ "afterBlob": "32d777fb09b1bfbf60f06aab7d91e53b26d71dda",
+ "hunks": [
+  {
+   "at": 350,
+   "before": " 'tests/helpers/battle-periphery-source.mjs':'d436c48e4fb14039a53361fdf8464512f6a95226c81ff32ffe4d2930877db210',\n 'tests/helpers/rebased-release-source.mjs':'9c06103ee6926bb5def608470430784145880f69d4c3aee3fb35787c1309d509',\n 'tests/helpers/chapter-battle-scene-source.mjs':'838a99fe6edf863da9adde709cc46b9979c24089a3d3f2b189482c47d61b7ee5',\n 'tests/helpers/release-integration-source.mjs':'74093921a53a94ba842afac199e579a622b60fea5abf2519d416ede77bbfa1a7',\n 'tests/fixtures/release-lazy-monster-art-source.json.gz':'211c3588a53b1f97c98d9f9b905349d82b244a2e81a940d4ebe48022381ca92e',",
+   "after": " 'tests/helpers/battle-periphery-source.mjs':'d436c48e4fb14039a53361fdf8464512f6a95226c81ff32ffe4d2930877db210',\n 'tests/helpers/rebased-release-source.mjs':'9c06103ee6926bb5def608470430784145880f69d4c3aee3fb35787c1309d509',\n 'tests/helpers/chapter-battle-scene-source.mjs':'2c281a2dba02dce5fd8c9e40a43dc971c8428d19844125311f5ca58afa7a33af',\n 'tests/helpers/release-integration-source.mjs':'74093921a53a94ba842afac199e579a622b60fea5abf2519d416ede77bbfa1a7',\n 'tests/fixtures/release-lazy-monster-art-source.json.gz':'211c3588a53b1f97c98d9f9b905349d82b244a2e81a940d4ebe48022381ca92e',"
+  }
+ ]
+};
+// Bind the current refined Byrd pool helper without changing the older copier witnesses.
+const refinedByrdPoolCopyClosure={
+ "path": "tests/helpers/copy-integration-source-closure.mjs",
+ "beforeSha256": "5d05c36db6fdbee600cc2f7150f85a2e548701c6a1baefeb5909a6de15d4f391",
+ "afterSha256": "94a17264d5283f4e57edec8dd99d116e3b7ffd94543f1bc96e587cd8131d8157",
+ "beforeBlob": "32d777fb09b1bfbf60f06aab7d91e53b26d71dda",
+ "afterBlob": "3418cf344390eb729c5b5f012d76512a190750c2",
+ "hunks": [
+  {
+   "at": 350,
+   "before": " 'tests/helpers/battle-periphery-source.mjs':'d436c48e4fb14039a53361fdf8464512f6a95226c81ff32ffe4d2930877db210',\n 'tests/helpers/rebased-release-source.mjs':'9c06103ee6926bb5def608470430784145880f69d4c3aee3fb35787c1309d509',\n 'tests/helpers/chapter-battle-scene-source.mjs':'2c281a2dba02dce5fd8c9e40a43dc971c8428d19844125311f5ca58afa7a33af',\n 'tests/helpers/release-integration-source.mjs':'74093921a53a94ba842afac199e579a622b60fea5abf2519d416ede77bbfa1a7',\n 'tests/fixtures/release-lazy-monster-art-source.json.gz':'211c3588a53b1f97c98d9f9b905349d82b244a2e81a940d4ebe48022381ca92e',",
+   "after": " 'tests/helpers/battle-periphery-source.mjs':'d436c48e4fb14039a53361fdf8464512f6a95226c81ff32ffe4d2930877db210',\n 'tests/helpers/rebased-release-source.mjs':'9c06103ee6926bb5def608470430784145880f69d4c3aee3fb35787c1309d509',\n 'tests/helpers/chapter-battle-scene-source.mjs':'1270c293d79c04ac4a5b15483dd4cc8f9c4279362e2f5c551f6e98c20c9ad293',\n 'tests/helpers/release-integration-source.mjs':'74093921a53a94ba842afac199e579a622b60fea5abf2519d416ede77bbfa1a7',\n 'tests/fixtures/release-lazy-monster-art-source.json.gz':'211c3588a53b1f97c98d9f9b905349d82b244a2e81a940d4ebe48022381ca92e',"
+  }
+ ]
+};
+function beforeBattleSceneCopyClosure(path,source){
+ if(path!==battleSceneCopyClosure.path||typeof source!=='string')return source;
+ const lf=normalize(source);
+ if(source!==lf&&source!==lf.replaceAll('\n','\r\n'))return source;
+ const byrd=refinedByrdPoolCopyClosure;
+ const contactSource=exactCheckoutSource(lf,[byrd.afterSha256,byrd.afterBlob])
+  ?restoreExactFixtureHunks(byrd,path,lf):lf;
+ const contact=groundedContactCopyClosure;
+ const joined=exactCheckoutSource(contactSource,[contact.afterSha256,contact.afterBlob])
+  ?restoreExactFixtureHunks(contact,path,contactSource):contactSource;
+ const combined=rewardHandCopyClosure;
+ if(exactCheckoutSource(joined,[combined.afterSha256,combined.afterBlob])){
+  const previous=restoreExactFixtureHunks(combined,path,joined);
+  assert.equal(blob(previous),combined.beforeBlob,'exact reward copier predecessor blob');
+  return source===lf?previous:previous.replaceAll('\n','\r\n');
+ }
+ const hand=responsiveHandCopyClosure;
+ const previousHand=blob(lf)===hand.afterBlob&&hash(lf)===hand.afterSha256
+  ?restoreExactFixtureHunks(hand,path,lf):lf;
+ if(blob(previousHand)!==battleSceneCopyClosure.afterBlob||hash(previousHand)!==battleSceneCopyClosure.afterSha256)return source;
+ const previous=restoreExactFixtureHunks(battleSceneCopyClosure,path,previousHand);
+ assert.equal(blob(previous),battleSceneCopyClosure.beforeBlob,'exact previous battle scene copier blob');
+ return source===lf?previous:previous.replaceAll('\n','\r\n');
+}
+function beforeCalibrationReplayOwner(path,source){
+ source=beforeReviewedOfficialAssetReplay(path,source);
+ source=beforeBattleSceneCopyClosure(path,source);
+ if(path===integratedFixture)source=beforeChapterBattleScene(path,source);
+ source=beforeVisualLegibility(path,source);
+ if(!calibrationReplayPaths.includes(path))return source;
+ if(!calibrationReplayPredecessor){
+  calibrationReplayPredecessor=releaseUiRestoreArchive(
+   readFileSync(new URL('./calibration-v220-replay-owners.json.gz',import.meta.url)),
+   '180009ee25a276c4c1ed3a9f1b7d07a9323582e72296ffc066f898e890355ae3','8b4172d59779ad9fa21b4ba91ef750ab22fcdaf1');
+  assert.deepEqual(Object.keys(calibrationReplayPredecessor.files),calibrationReplayPaths,'ordered v2.2 calibration replay owners');
+ }
+ if(path===battleSceneCopyClosure.path&&exactCheckoutSource(source,[battleSceneCopyClosure.beforeSha256,battleSceneCopyClosure.beforeBlob])){
+  const {before}=calibrationReplayPredecessor.files[path];
+  assert.equal(before.sha256,'9c0b358a3b75b59ebe7218f988297661b71a42b47d20e34a3b9734a2c0a71a10','shared exact standalone copier predecessor');
+  assert.equal(before.gitBlob,'143ce2350c049fa4fe641e86dc34b18d094a8c73');
+  return source.includes('\r\n')?before.source.replaceAll('\n','\r\n'):before.source;
+ }
+ if(path===integratedFixture&&exactCheckoutSource(source,visualIntegratedPredecessor)){
+  const {before}=calibrationReplayPredecessor.files[path];
+  assert.equal(before.gitBlob,'a191206e710368b4a5ad5adc68c704462a246405','shared exact integrated predecessor');
+  return source.includes('\r\n')?before.source.replaceAll('\n','\r\n'):before.source;
+ }
+ return calibrationReplayPredecessor.project(path,source);
+}
 function beforeIntegrationReplayTests(path,source){
  if(path!=='tests/integration-source-epoch.test.mjs'||typeof source!=='string'||source.includes('\r\r\n'))return source;
  const current=normalize(source);
@@ -724,6 +1005,14 @@ function withoutArchiveRecords(current,first,after){
 function beforeDeckBrowserAssetLedger(source){
  if(typeof source!=='string'||source.includes('\r\r\n'))return source;
  let current=normalize(source);
+ // #951 updates the native event manifest hash after its approved text edits.
+ if(hash(current)==='3c4b140e7d432bb1de89289e516723dafa14daecd414b1ffe94b4f39d267f5c2'&&
+    blob(current)==='94e5b7f8a05e190d59e603b7b0760fc968d2a600'){
+  current=current.replace('eac9cfc53f1203d635ba1ed77acee1bfd6d12073be53fcb7b4d0af56262bb1b5',
+   'db7a1393c4fae90fc9d7cc30b2ee762394a8ab041b19a6a9aa33973a263eeb13');
+  assert.equal(hash(current),'5ec27c5274a512ccdf2dfb183f65bd15321c87883e3e4e633e6502f726429353','exact pre-#951 asset ledger');
+  assert.equal(blob(current),'dcd99bd13cf06653847b5ca8eb76748c229f17a4');
+ }
  if(hash(current)==='5ec27c5274a512ccdf2dfb183f65bd15321c87883e3e4e633e6502f726429353'&&
     blob(current)==='dcd99bd13cf06653847b5ca8eb76748c229f17a4'){
   current=withoutArchiveRecords(current,'    "native-event-illustrations": {\n','    "deck-browser-host-evidence": {\n');
@@ -740,8 +1029,33 @@ function beforeDeckBrowserAssetLedger(source){
  assert.equal(blob(prior),id);
  return source.includes('\r\n')?prior.replaceAll('\n','\r\n'):prior;
 }
+// Historical checks still use the exact media script from before runtime previews
+// joined the hosted bundle. The live bundle path has its own transport tests.
+function beforeRuntimePreviewBundle(source){
+ if(typeof source!=='string'||source.includes('\r\r\n'))return source;
+ const current=normalize(source);
+ if(hash(current)!=='e608fc9d33f97f5446c64e5897f852c3fd5bad6a50900aec41bd4f719989b9f7'
+   ||blob(current)!=='537d4fd28b1cbb730f7d5f95afbdd35b79f7243e')return source;
+ const prior=current
+  .replace(',prepareRuntimePreviews,runtimePreviewPaths,runtimePreviewObjects','')
+  .replace(' const runtimePreviews=prepareRuntimePreviews({root,needed:true,env});\n','')
+  .replace(` const pathsByOid=new Map(mediaFiles.map(row=>[row.sha256,row.path]));
+ for(const [index,path] of runtimePreviewPaths.entries()){
+  const [oid]=runtimePreviewObjects[index];
+  pathsByOid.set(oid,path);
+ }
+ for(const [oid,path] of pathsByOid)copyFileSync(mediaPath(root,{path}),resolve(directory,oid));
+ return {...result,runtimePreviews};`,` const pathsByOid=new Map(mediaFiles.map(row=>[row.sha256,row]));
+ for(const [oid,row] of pathsByOid)copyFileSync(mediaPath(root,row),resolve(directory,oid));
+ return result;`);
+ const [sha,id]=replayStorageSources['scripts/ci-media-lfs.mjs'];
+ assert.equal(hash(prior),sha,'immutable runtime preview bundle predecessor');
+ assert.equal(blob(prior),id);
+ return source.includes('\r\n')?prior.replaceAll('\n','\r\n'):prior;
+}
 function beforeReplayArchiveStorage(path,source){
  if(!Object.hasOwn(replayStorageSources,path)||typeof source!=='string'||source.includes('\r\r\n'))return source;
+ if(path==='scripts/ci-media-lfs.mjs')source=beforeRuntimePreviewBundle(source);
  const current=normalize(source);
  const [sha,id]=replayStorageSources[path];
  if(hash(current)!==sha||blob(current)!==id)return source;
@@ -769,10 +1083,27 @@ function beforeReplayArchiveStorage(path,source){
  assert.equal(blob(prior),priorId,path);
  return source.includes('\r\n')?prior.replaceAll('\n','\r\n'):prior;
 }
+// #951 renamed the Reptomancer handler in the live static gate. Only the
+// exact complete gate can recover the existing #934 historical source.
+function beforeReleaseScriptStaticGate(path,source){
+ if(path!=='scripts/check-lua-static.mjs'||typeof source!=='string'||source.includes('\r\r\n'))return source;
+ const current=normalize(source);
+ if(hash(current)!=='71be0618a4f6909a684bacf738674fa8250e6624832f2333394dc8ce295337a0'||
+  blob(current)!=='c82d0af862f5652ed624dd28a446927ebdd23904')return source;
+ const handler="'giantHeadSlow','timeEater','reptomancerDismissal'";
+ assert.equal(current.split(handler).length,2,'one reviewed Reptomancer handler name');
+ const prior=current.replace(handler,"'giantHeadSlow','timeEater','reptomancerSuicide'");
+ assert.equal(hash(prior),'1af54cf42e38fd561ceff37827d12e7293061ed863172b6fa59bc824b71b2dfe','exact static gate predecessor');
+ assert.equal(blob(prior),'1ed655df7fb2d57f5098c48508b8ce1606c192a5',path);
+ return source.includes('\r\n')?prior.replaceAll('\n','\r\n'):prior;
+}
 export function beforeReviewedBuildInput(path,source,read){
  source=beforeForkPush(path,source);
- const reviewed=(owner,raw)=>owner.startsWith('src/')||owner==='config/architecture.json'?raw:
-  beforeCurrentReplayFixes(owner,beforeUiEntranceWitness(owner,beforeCurrentReplayCopier(owner,beforeForkPush(owner,raw))));
+ const reviewed=(owner,raw)=>{
+  if(owner.startsWith('src/')||owner==='config/architecture.json')return raw;
+  const input=beforeActorAlphaBuildInput(owner,raw);
+  return beforeCurrentReplayFixes(owner,beforeUiEntranceWitness(owner,beforeCurrentReplayCopier(owner,beforeForkPush(owner,input))));
+ };
  const live=owner=>reviewed(owner,read(owner,'utf8'));
  const production=authenticateDevelopBackflow(path,reviewed(path,source),live);
  const deck=beforeDeckPagesSuiteSource(path,production);
@@ -787,17 +1118,109 @@ function beforeIntegrationSuccessor(path,source){
  assert.equal(hash(prior.source),prior.sha256,'immutable integration predecessor: '+path);
  return source.includes('\r\n')?prior.source.replaceAll('\n','\r\n'):prior.source;
 }
+// The current gate uses these two replay modules to verify the composed hand and scene owners.
+const responsiveReplayHelpers=Object.freeze({
+ 'tests/helpers/chapter-battle-scene-source.mjs':['1270c293d79c04ac4a5b15483dd4cc8f9c4279362e2f5c551f6e98c20c9ad293','5306929645881d562b4d4322c5b3fa2ecb91edbd'],
+ 'tests/helpers/rebased-release-source.mjs':['9c06103ee6926bb5def608470430784145880f69d4c3aee3fb35787c1309d509','0016df7289d6b274b533496c48a6fd75a1f66e42'],
+});
+function responsiveReplayCurrentRead(read){
+ return (path,...args)=>{
+  const raw=read(path,...args);
+  if(Object.hasOwn(responsiveReplayHelpers,path)){
+   const source=Buffer.isBuffer(raw)?raw.toString('utf8'):raw;
+   assert(exactCheckoutSource(source,responsiveReplayHelpers[path]),'fresh responsive replay helper: '+path);
+  }
+  return raw;
+ };
+}
+export function currentReviewedSelectionRead(read){
+ return (path,encoding)=>{
+  const source=read(path,encoding);
+  if(path!==reviewedSelectionFixture&&path!==officialLegibilityFixture&&path!==officialAssetsFixture)return source;
+  const raw=Buffer.isBuffer(source)?source.toString('utf8'):source;
+  if(path===reviewedSelectionFixture){
+   assert.notEqual(beforeReviewedOfficialAssetReplay(path,raw),raw,'fresh current reviewed Selection replay fixture: '+path);
+   assert.notEqual(beforeCalibrationReplayOwner(path,raw),raw,'fresh current reviewed Selection replay fixture: '+path);
+  }else if(path===officialAssetsFixture){
+   assert.notEqual(beforeOfficialAssetsFocusFixture(path,raw),raw,'fresh current official card focus fixture: '+path);
+  }else{
+   assert.notEqual(beforeVisualLegibility(path,raw),raw,'fresh current official legibility fixture: '+path);
+  }
+  return source;
+ };
+}
+// Keep the original calibration fixture available to its sealed source views.
+const cursesReceiptFixture={
+ "path": "tests/ci-complete-calibration.test.mjs",
+ "afterSha256": "27c89e80fa88fddb6c7f0c2efaf270d7292e1279307d4e2cec521cfb4ce3b93a",
+ "beforeSha256": "116e479ab202d2012dc4910de98ace5a8f5f5ab544ad6116abe35ec08aeb03fc",
+ "hunks": [
+  {
+   "at": 8,
+   "before": "import {cursesPlanningFloors,cursesGateProof,preCursesGateSource} from './helpers/curses-ci-planning.mjs';",
+   "after": "import {cursesPlanningFloors,cursesGateProof,preCursesGateSource} from './helpers/curses-ci-planning.mjs';\nimport {historicalCursesReceiptReader} from './helpers/curses-historical-custody.mjs';"
+  },
+  {
+   "at": 1469,
+   "before": "  assert.deepEqual(receipt.inputHashes,receipt.afterInputHashes);",
+   "after": "  assert.deepEqual(receipt.inputHashes,receipt.afterInputHashes);\n  const readReceiptInput=historicalCursesReceiptReader(file,bytes,rawBootstrapReadFileSync);"
+  },
+  {
+   "at": 1472,
+   "before": "   assert.equal(replayHash(path,sha,()=>{const raw=diskReadFileSync(path);return path.endsWith('.gz')?raw:beforeCharacterPreparationSource(path,receiptToolingSource(path,raw.toString('utf8'),'curses')).replaceAll('\\r\\n','\\n');}),sha,path);",
+   "after": "   assert.equal(hash(readReceiptInput(path,sha)),sha,path);"
+  }
+ ]
+};
+const cursesReceiptSources=Object.freeze({
+ [cursesReceiptFixture.path]:["27c89e80fa88fddb6c7f0c2efaf270d7292e1279307d4e2cec521cfb4ce3b93a", "a69967b62ef5a2df1a36d3589901d75b4fe75634"],
+ 'tests/helpers/curses-historical-custody.mjs':["a068636ba187c353f69d8ec19d432cb052ea99f455a58feb2f6973bd63e60aaa", "2ac231d4d269e8138cd1c0e6bf3fe77db576f4f0"],
+});
+function beforeCursesReceiptFixture(path,source){
+ if(path!==cursesReceiptFixture.path||!exactCheckoutSource(source,cursesReceiptSources[path]))return source;
+ const prior=restoreExactFixtureHunks(cursesReceiptFixture,path,source);
+ assert.equal(blob(prior),'5a8992502b7c5d1ebee37dd6d8eb26c439968695','exact Curses receipt fixture predecessor');
+ return source.includes('\r\n')?prior.replaceAll('\n','\r\n'):prior;
+}
+function cursesReceiptCurrentRead(read){
+ return (path,...args)=>{
+  const raw=read(path,...args);
+  if(Object.hasOwn(cursesReceiptSources,path)){
+   const source=Buffer.isBuffer(raw)?raw.toString('utf8'):raw;
+   assert(exactCheckoutSource(source,cursesReceiptSources[path]),'fresh current Curses receipt source: '+path);
+  }
+  return raw;
+ };
+}
 export function assertIntegrationSuccessorsCurrent(read=readFileSync){
- const rawRead=read;
- const liveRead=(path,encoding)=>beforeForkPush(path,rawRead(path,encoding));
+ const replayRead=cursesReceiptCurrentRead(responsiveReplayCurrentRead(currentReviewedSelectionRead(read)));
+ for(const path of Object.keys(cursesReceiptSources))replayRead(path,'utf8');
+ for(const path of Object.keys(responsiveReplayHelpers))replayRead(path,'utf8');
+ const rawRead=actorAlphaCurrentRead(chapterSceneCurrentRead(replayRead,refinedByrdPoolCopyClosure));
+ rawRead(officialLegibilityFixture,'utf8');
+ rawRead(reviewedSelectionFixture,'utf8');
+ rawRead(officialAssetsFixture,'utf8');
+ const liveRead=(path,encoding)=>{
+  const alpha=Object.hasOwn(actorAlphaBuildInputs,path);
+  const raw=rawRead(path,alpha?'utf8':encoding);
+  const input=alpha?beforeActorAlphaBuildInput(path,raw):raw;
+  return beforeForkPush(path,beforeCalibrationReplayOwner(path,beforeOfficialAssetsFocusFixture(path,beforeCursesReceiptFixture(path,input))));
+ };
+ assertReleaseCandidateToolsCurrent(rawRead);
+ assertAudioDeckBrowserCurrent(rawRead);
+ assertRefinedReleasePackingCurrent(rawRead);
+ assertInputRetirementLuaCurrent(rawRead);
+ assertCurrentReleaseLuaFixtureSources(rawRead);
+ assertIntegratedLuaFixturesCurrent(rawRead);
  assertNativeFixturesCurrent(liveRead);
  assertNativeFlowFixturesCurrent(liveRead);
  read=(path,encoding)=>{
   const raw=liveRead(path,encoding);
   // Raw production owners reach their own fresh admission guard unchanged.
   // Only CI and helper receipts need the pure historical source projections.
-  return path.startsWith('src/')||path==='config/architecture.json'?raw:
-   beforeCalibrationReplay(path,beforeCurrentReplayFixes(path,beforeUiEntranceWitness(path,beforeCurrentReplayCopier(path,raw))));
+  if(path.startsWith('src/')||path==='config/architecture.json')return raw;
+  const historical=beforeBattlePeriphery(path,beforeChapterBattleScene(path,raw));
+  return beforeCalibrationReplay(path,beforeCurrentReplayFixes(path,beforeUiEntranceWitness(path,beforeCurrentReplayCopier(path,historical))));
  };
  const readCurrent=(path,encoding)=>{
   const live=read(path,encoding);
@@ -843,14 +1266,50 @@ export function assertIntegrationSuccessorsCurrent(read=readFileSync){
   const source=beforeV2UiAdmission(path,beforeCoopCiSource(path,beforeStsUiCloseoutSource(path,current)));
   assert(typeof source==='string'&&!source.includes('\r\r\n')&&hash(normalize(source))===sha,'fresh complete integration source: '+path);
  }
+ for(const path of Object.keys(responsiveReplayHelpers))rawRead(path,'utf8');
+ return rawRead;
 }
-export function beforePreflightSource(path,source,view='prior'){
- source=beforeForkPush(path,source);
+// The live planner reads its measured Linux map directly. Historical CI views
+// restore each exact predecessor in reverse observation order.
+const v220HostedTimingEpochs = [
+ ['71c31f96f9578bf8812a802597cd48db5fbbd0aea05999b15ded2f738b41163b','c38fc2ce439ca855b0ea05b795b8e6463b17b001',
+  '6756697bac41f5e9081c49a95618f909628aba4ce31e300ae7e0006d16a5eeef','e7e9d43b598b8d91f70fe6b00843874b7702e1cb'],
+ ['6756697bac41f5e9081c49a95618f909628aba4ce31e300ae7e0006d16a5eeef','e7e9d43b598b8d91f70fe6b00843874b7702e1cb',
+  '8f5644822f365b925cba048ee71a6a1e62a4b1e635074fd05397c792a5d8b961','6b6db60d5e502286e2d0ff670b953c4af1d7d913'],
+];
+function beforeV220HostedTiming(path,source){
+ if(path!=='scripts/ci-test-timings.json'||typeof source!=='string'||source.includes('\r\r\n'))return source;
+ const raw=normalize(source);
+ let current=raw;
+ for(const [sourceSha,sourceBlob,priorSha,priorBlob] of v220HostedTimingEpochs){
+  if(hash(current)!==sourceSha||blob(current)!==sourceBlob)continue;
+  const value=JSON.parse(current),update=value.jsCalibrationUpdates.pop();
+  for(const file of Object.keys(update.weightsMs))delete value.js.linux[file];
+  const prior=JSON.stringify(value,null,2)+'\n';
+  assert.equal(hash(prior),priorSha,'exact Hosted timing table predecessor');
+  assert.equal(blob(prior),priorBlob,path);
+  current=prior;
+ }
+ if(current===raw)return source;
+ return source.includes('\r\n')?current.replaceAll('\n','\r\n'):current;
+}
+export function beforePreflightSource(path,source,view='prior',read=readFileSync){
+ source=beforeCursesReceiptFixture(path,source);
+ source=beforeV220HostedTiming(path,source);
+ const before=beforeBattlePeriphery(path,beforeChapterBattleScene(path,source));
+ if(before!==source){
+  const liveRead=read;
+  const readRaw=(owner,encoding='utf8')=>liveRead(owner,encoding);
+  const chapter=chapterBattleSceneReader(path,source,readRaw);
+  ({source,read}=battlePeripheryPredecessor(path,chapter.source,chapter.read));
+ }
+ source=beforeForkPush(path,beforeCalibrationReplayOwner(path,beforeActorAlphaBuildInput(path,source)));
  if(path==='.github/workflows/quality.yml')source=beforePosixDeadlineWorkflow(beforeWindowsDeadlineWorkflow(source));
  source=beforeUiEntranceWitness(path,beforeCurrentReplayCopier(path,source));
  source=beforeCurrentReplayFixes(path,source);
- source=beforeNativeFlowFixture(path,source);
+ source=beforeNativeFlowFixture(path,beforeOfficialAssetsFocusFixture(path,source));
  source=beforeOfficialBackgroundFixture(path,source);
+ source=beforeReleaseScriptStaticGate(path,source);
  if(path===replayAssetLedger)source=beforeDeckBrowserAssetLedger(source);
  source=beforeReplayArchiveStorage(path,source);
  source=beforeCalibrationReplay(path,source);
@@ -863,7 +1322,7 @@ export function beforePreflightSource(path,source,view='prior'){
  source=beforeNativeFixtureReplay(path,source);
  source=beforeNativeButtonRepairCopier(path,beforeNativeButtonRepair(path,source));
  source=beforeStsUiCloseoutSource(path,source);
- source=beforeCharacterPreparationCiSource(path,beforeV2UiAdmission(path,beforeCoopCiSource(path,source)));
+ source=beforeCharacterPreparationCiSource(path,beforeV2UiAdmission(path,beforeCoopCiSource(path,source,read)));
  source=beforeIntegrationSuccessor(path,source);
  // Only the exact flag-registry successor enters the earlier Release witness.
  if(view==='release-bootstrap'&&path==='scripts/ui-profile.mjs'&&typeof source==='string'&&!source.includes('\r\r\n')
@@ -895,6 +1354,6 @@ export function readHistoricalPreflightInput(path,encoding,read=readFileSync){
 export function preflightPriorRead(read=readFileSync,view='prior'){return(path,encoding)=>{
  const raw=readHistoricalPreflightInput(path,encoding,read);
  if(typeof raw!=='string'&&!Buffer.isBuffer(raw))return raw;
- const text=typeof raw==='string'?raw:raw.toString('utf8'),prior=beforePreflightSource(path,text,view);
+ const text=typeof raw==='string'?raw:raw.toString('utf8'),prior=beforePreflightSource(path,text,view,read);
  return typeof raw==='string'?prior:prior===text?raw:Buffer.from(prior);
 };}

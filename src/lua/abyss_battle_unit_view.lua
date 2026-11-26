@@ -4,6 +4,93 @@ local Theme = require("abyss_theme")
 local number = require("abyss_numbers").integer
 local M = {}
 local C, L, S = Theme.color, Theme.layout, Theme.space
+local shadowSlots = {'plate','border'}
+
+local function paintShadow(owner,x,sx,alpha)
+    alpha=math.floor(alpha*owner.opacity+.5)
+    for i,center in ipairs(owner.centers) do
+        local px=math.floor((x+center*sx)*2+.5)/2
+        if owner.x[i]~=px then
+            owner.controls[i]:SetAnchoredPosition(px,owner.contactY)
+            owner.x[i]=px
+        end
+        if owner.alpha~=alpha then owner.tint(owner.controls[i],{r=19,g=15,b=21,a=alpha}) end
+    end
+    owner.alpha=alpha
+end
+
+-- The shadow remains on the floor when the existing hit or escape pose lifts
+-- the portrait. Scale of resting and lunging art pivots at the visible feet.
+local function poseGroundShadow(owner,x,y,sx,sy,alpha,motion)
+    if not owner then return y end
+    local resting=motion=='idle'
+    if not resting or not owner.atRest then
+        paintShadow(owner,resting and 0 or x,resting and 1 or sx,alpha)
+        owner.atRest=resting
+    end
+    if resting or motion=='action' then return y+owner.y*(1-sy) end
+    return y
+end
+
+local function footprintShape(foot,feet,scale,spread)
+    local center,width=foot[1]*scale,foot[2]*scale
+    if not spread then
+        return center,width+math.min(8,width*.3),math.min(11,(foot[3] or 7)*scale)
+    end
+    if #feet==1 then
+        -- Give wide bodies with one weight-bearing sole a continuous floor contact.
+        return center*.78,math.max(width*1.38,52*scale),math.min(17,9*scale)
+    end
+    -- Two pads shade toward the weight between the feet. Keep the sole line above them.
+    local span=math.abs(feet[1][1]-feet[2][1])*scale
+    local middle=(feet[1][1]+feet[2][1])*scale/2
+    return middle+(center-middle)*.88,math.max(width*1.5,span*.83),math.min(14,8*scale)
+end
+
+local function configureShadow(box,owner,feet,scale,y,picture,tint,offsetY,spread)
+    local contactY=y+(offsetY or 0)-1
+    if owner and owner.feet==feet and owner.scale==scale and owner.y==y and owner.contactY==contactY then return owner end
+    owner={feet=feet,scale=scale,y=y,contactY=contactY,x={},tint=tint,controls={},atRest=true,
+        centers={},opacity=spread and (#feet==1 and 147 or 130) or 125}
+    for i,name in ipairs(shadowSlots) do
+        local control=box:GetChild(name)
+        local foot=feet[i]
+        if foot then
+            -- Native discSoft has an opaque face. The existing glow really feathers into the floor.
+            picture(control,spread and Theme.image.glow or Theme.image.discSoft)
+            local center,width,height=footprintShape(foot,feet,scale,spread)
+            owner.centers[i]=center
+            control:SetSizeDelta(width,height)
+            owner.controls[i]=control
+        end
+        control:SetVisible(foot~=nil)
+    end
+    paintShadow(owner,0,1,1)
+    return owner
+end
+
+local function prepareUnitGround(owners,box,portrait,selected,source,picture,tint)
+    if source and source.footprints then
+        owners.enemies[box]=configureShadow(box,owners.enemies[box],source.footprints,
+            portrait/L.enemyRow.groundContact.artSize,source.groundY,picture,tint,nil,not source.compactTarget)
+        return
+    end
+    local hero=box.name=='hero' and L.player.groundShadow
+    if hero then
+        -- Native GetChild returns a fresh proxy for the same authored hero.
+        -- The battle view owns this fixed slot for its entire lifetime.
+        owners.hero=configureShadow(box,owners.hero,hero.footprints,1,hero.y,picture,tint,hero.offsetY)
+        return
+    end
+    owners.enemies[box]=nil
+    for _,name in ipairs(shadowSlots) do
+        local delta=name=='border' and S.border*2 or 0
+        local control=box:GetChild(name)
+        control:SetSizeDelta(portrait+delta,portrait+delta)
+        control:SetVisible(false)
+    end
+    tint(box:GetChild('border'),selected and C.goldBright or C.line)
+end
 
 function M.geometry(portrait,player)
     local g=L.battleUnit
@@ -21,6 +108,9 @@ end
 -- Native text rectangles must stay 40 high but are transparent. Only visible
 -- glyph height and the actual status touch surfaces contribute to clearance.
 function M.noticeLift(actor,portrait,baseY,player)
+    -- The grounded profile positions notices above the battle and puts
+    -- status rows left of the portrait, outside the hand lane.
+    if player and L.player.groundedStatusLane then return 0 end
     local entries,si=Combat.statusView(actor),L.statusIcon
     local g=M.geometry(portrait,player)
     local lower=math.min(-portrait/2,g.nameY-Theme.font.label/2,g.healthY-Theme.font.small/2)
@@ -37,21 +127,20 @@ end
 local function portraitVisible(box, icon)
     return not (box.name=="hero" and type(icon)=='table' and icon.status=="placeholder")
 end
-local function targetCornerPosition(corner,axis,x,y,portrait)
+local function targetCornerPosition(corner,axis,x,y,portrait,source)
     -- Each bar extends inward from the portrait corner to form an L.
     local insetX=axis=='H' and corner.sizeDeltaX/2 or 0
     local insetY=axis=='V' and corner.sizeDeltaY/2 or 0
+    if source and source.compactTarget then
+        return source.hitX-source.x+x*(source.hitWidth/2-insetX),source.hitY-source.y+y*(source.hitHeight/2-insetY)
+    end
     return x*(portrait/2-insetX),y*(portrait/2-insetY)
 end
 
 function M.new(picture, tint, ink, statusKind)
-    local function portraitParts(box, actor, portrait, icon, width, selected, targetWidth)
-        for _, name in ipairs({"plate", "border", "portrait"}) do
-            local delta = name == "border" and S.border * 2 or 0
-            box:GetChild(name):SetSizeDelta(portrait + delta, portrait + delta)
-        end
-        box:GetChild("plate"):SetVisible(false)
-        box:GetChild("border"):SetVisible(false)
+    local owners={enemies=setmetatable({}, {__mode='k'})}
+    local function portraitParts(box, actor, portrait, icon, width, selected, targetWidth, source)
+        box:GetChild('portrait'):SetSizeDelta(portrait,portrait)
         box:GetChild("hit"):SetSizeDelta(math.min(portrait,targetWidth or portrait),portrait)
         box:GetChild("impact"):SetSizeDelta(portrait, portrait)
         box:GetChild("shield"):SetSizeDelta(portrait, portrait)
@@ -62,12 +151,11 @@ function M.new(picture, tint, ink, statusKind)
         -- STS shows the player as the character art plus powers/stance UI; never a glyph on the body.
         -- The 105292 placeholder read as a stray stance arrow, so hide it (real art comes from battlePose).
         box:GetChild("portrait"):SetVisible(portraitVisible(box,icon))
-        tint(box:GetChild("border"), selected and C.goldBright or C.line)
         for _, x in ipairs({-1,1}) do for _, y in ipairs({-1,1}) do
             for _, axis in ipairs({'H','V'}) do
                 local corner=box:GetChild('target'..axis..x..'_'..y)
                 corner:SetVisible(selected == true)
-                corner:SetAnchoredPosition(targetCornerPosition(corner,axis,x,y,portrait))
+                corner:SetAnchoredPosition(targetCornerPosition(corner,axis,x,y,portrait,source))
             end
         end end
         box:GetChild("name").text = actor.name or "旅行者"
@@ -176,8 +264,10 @@ function M.new(picture, tint, ink, statusKind)
         local perRow = si.perRow
         local slots = perRow * si.rows
         local layout = {entries = entries, pitch = pitch, perRow = perRow, slots = slots, shown = math.min(#entries, slots)}
-        local firstY=M.geometry(portrait,box.name=='hero').firstStatusY
-        row:SetAnchoredPosition(0,firstY-(si.rows-1)*pitch/2)
+        local player=box.name=='hero'
+        local firstY=M.geometry(portrait,player).firstStatusY
+        local lane=player and L.player.groundedStatusLane
+        row:SetAnchoredPosition(lane and lane[1] or 0,firstY+(lane and lane[2] or 0)-(si.rows-1)*pitch/2)
         local lines=math.ceil(layout.shown/perRow)
         local target=row:GetChild("hit")
         target:SetVisible(lines>0)
@@ -188,18 +278,25 @@ function M.new(picture, tint, ink, statusKind)
         end
     end
 
-    return function(box, actor, portrait, icon, width, selected, targetWidth, source)
-        portraitParts(box, actor, portrait, icon, width, selected, targetWidth)
+    local function renderUnit(box, actor, portrait, icon, width, selected, targetWidth, source)
+        prepareUnitGround(owners,box,portrait,selected,source,picture,tint)
+        portraitParts(box, actor, portrait, icon, width, selected, targetWidth, source)
         -- Widen the Block chip for native digits rather than shrinking its text.
         local blocked = actor.block > 0
         local chip = math.max(L.blockBadge.size, #number(actor.block) * Theme.font.body + L.blockBadge.padding * 2)
         local geometry=M.geometry(portrait,box.name=='hero')
-        local barWidth,barX,y=source and source.hitWidth or geometry.healthWidth,source and source.healthX or 0,source and source.healthY or geometry.healthY
+        local barWidth,barX,y=source and (source.healthWidth or source.hitWidth) or geometry.healthWidth,source and source.healthX or 0,source and source.healthY or geometry.healthY
         healthParts(box, actor, barWidth, barX, y, blocked, source)
         blockParts(box, actor, barWidth, barX, y, blocked, chip, source)
         if not source then statuses(box, actor, portrait, width)end
         if source then box:GetChild("name"):SetVisible(false)end
     end
+    local function poseUnit(id,box,x,y,sx,sy,alpha,motion)
+        local owner=id=='player' and owners.hero or owners.enemies[box]
+        return poseGroundShadow(owner,x,y,sx,sy,alpha,motion)
+    end
+    local function retireUnit(box) owners.enemies[box]=nil end
+    return renderUnit,poseUnit,retireUnit
 end
 
 return M
