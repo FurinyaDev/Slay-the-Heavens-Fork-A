@@ -6,6 +6,7 @@ import {luaString} from '../scripts/build-lua-data.mjs';
 import {createHash} from 'node:crypto';
 import {runLua} from '../scripts/test-lua.mjs';
 import {beforeSnapshotKeyTypes} from './helpers/snapshot-key-types-inverse.mjs';
+import {readHistoricalBaselineSource} from './helpers/historical-baseline-inputs.mjs';
 const read=path=>readFileSync(path,'utf8').replaceAll('\r\n','\n');
 const sha=value=>createHash('sha256').update(value).digest('hex');
 const bytes=read('tests/fixtures/snapshot-traversal-20261028.json');
@@ -20,7 +21,12 @@ test('snapshot changes only the exact complete graph traversal, preserving all r
  assert.equal(original(read(proof.path)),legacy);
  assert.throws(()=>original(read(proof.path).replace('pending[top]=nil','pending[top]=false')));
  assert.notEqual(sha(original(read(proof.path).replace('owners[owner]=nil','owners[owner]=target'))),proof.sha256);
- assert.equal(sha(read('tests/lua/silent_natural_build.lua')),'979708a7554d9d6467c34646e089f70dccdaee648f09893366ac5b7eccecf3e5','entire original same-instance double natural replay remains unchanged');
+ const replayPath='tests/lua/silent_natural_build.lua';
+ const originalReplay=readHistoricalBaselineSource(replayPath);
+ assert.equal(sha(originalReplay),'979708a7554d9d6467c34646e089f70dccdaee648f09893366ac5b7eccecf3e5','exact original same-instance double natural replay');
+ const encounter="'cultist_solo'";
+ assert.equal(originalReplay.split(encounter).length,2,'original replay has one renamed encounter');
+ assert.equal(read(replayPath),originalReplay.replace(encounter,"'raven_adept_solo'"),'entire same-instance double natural replay changes only the approved encounter name');
 });
 test('old and new snapshots both restore full cyclic aliased table-key graphs, deep chains and single-use owners',()=>{
  const result=runLua('tests/lua/snapshot_graph_equivalence.lua');assert.equal(result.status,0,result.stdout+result.stderr);
