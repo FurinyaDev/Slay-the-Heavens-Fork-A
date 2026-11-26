@@ -12,7 +12,6 @@ import {beforeReviewedBuildInput} from './fork-preflight-source.mjs';
 import {reviewedSelectionRead} from './reviewed-selection-current-source.mjs';
 import {stsStylePriorRuntime} from './sts-style-prior-runtime.mjs';
 import {beforeDeckPagesSuiteSource,readRetiredController,retiredControllerPath} from './input-retirement-source.mjs';
-import {beforeCharacterSelectionSource} from './sts1-menu-ci-source.mjs';
 import {readBeforeMasterBackflowSource} from './master-backflow-source.mjs';
 import {readReviewedOfficialAssetInput,reviewedOfficialAssetInputPaths} from './reviewed-official-asset-inputs.mjs';
 const hash=s=>createHash('sha256').update(s).digest('hex'),norm=s=>s.replaceAll('\r\n','\n');
@@ -23,27 +22,19 @@ const reviewedContracts=Object.freeze({
  'tests/sts-card-reference.test.mjs':13,
  [archivedOfficialAssets]:6,
 });
-const releaseOwners=readFileSync(new URL('../fixtures/release-selection-replay-successors.json',import.meta.url));
-assert.equal(hash(releaseOwners),'6e98d1458c606172c0d7f9f9010189995b0db25573a5ebc0d35103c252b4938f','exact Release selection successor view');
-const {head,files:successors}=JSON.parse(releaseOwners);
-assert.equal(head,'dd7b9cdc1e86094965dbf50f89b92aebbe2c8381');
-function historicalSelectionOwner(path,source,row,read){
- source=beforeCharacterSelectionSource(path,source);
- if(!Object.hasOwn(successors,path))return beforeCurrentProductionSource(path,source,read);
- const successor=successors[path];
- assert.equal(hash(norm(source)),successor.currentSha,'fresh Release selection owner: '+path);
- assert.equal(row.sha256,successor.predecessorSha,'frozen predecessor identity: '+path);
- return row.source;
-}
 const readLiveOwner=path=>readFileSync(path,'utf8');
 export function readReviewedSelectionSource(path,read=readLiveOwner){
  assert(Object.hasOwn(sourceEpoch.proof.current,path),'registered historical selection owner: '+path);
  const row=sourceEpoch.proof.current[path];
  if(row===null)return null;
- const live=read(path);
+ const readOwner=reviewedSelectionRead(read);
+ const retired=path===retiredControllerPath;
+ const live=retired?readRetiredController(readOwner).source:read(path);
  assert(typeof live==='string'&&!live.includes('\r\r\n')&&
-  (read===readLiveOwner||norm(live)===norm(readLiveOwner(path))),'fresh current production owner: '+path);
- const source=historicalSelectionOwner(path,live,row,read);
+  (read===readLiveOwner||(!retired&&norm(live)===norm(readLiveOwner(path)))),
+  'fresh current production owner: '+path);
+ const source=retired?beforeCharacterPreparationSource(path,live,readOwner)
+  :beforeCurrentProductionSource(path,readOwner(path),readOwner);
  assert.equal(hash(norm(source)),row.sha256,'fresh current production owner: '+path);
  return source;
 }

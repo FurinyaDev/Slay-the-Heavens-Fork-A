@@ -134,7 +134,15 @@ export const beforeReleaseControlsGuideRemoval=(path,source,read)=>controlsGuide
 export const releaseRightClickSourcePaths=Object.freeze(Object.keys(rightClick.files));
 export const releaseUiRestoreSourcePaths=Object.freeze([...new Set([...Object.keys(files),...Object.keys(fieldCancel.files)])]);
 export const beforeReleaseRightClick=(path,source)=>rightClick.project(path,fieldCancel.project(path,source));
-export const beforeReleaseUiRestore=(path,source)=>project(path,beforeReleaseRightClick(path,beforeReleaseControlsGuideRemoval(path,beforeReleaseSharedRelicUi(path,beforeReleaseForgeGridUi(path,beforeRefinedReleaseProduction(path,beforeRecordingUi(path,beforeReleaseShopEntry(path,beforeLateReleaseUiSource(path,source)))))))));
+export function beforeReleaseUiRestore(path,source,read){
+ const shop=beforeReleaseShopEntry(path,beforeLateReleaseUiSource(path,source));
+ const recording=beforeRecordingUi(path,shop,read);
+ const refined=beforeRefinedReleaseProduction(path,recording);
+ const forge=beforeReleaseForgeGridUi(path,refined);
+ const relics=beforeReleaseSharedRelicUi(path,forge);
+ const controls=beforeReleaseControlsGuideRemoval(path,relics,read);
+ return project(path,beforeReleaseRightClick(path,controls));
+}
 const authorizationPaths=[...new Set([...releaseUiRestoreSourcePaths,...releaseRightClickSourcePaths,...releaseControlsGuideRemovalSourcePaths,...releaseSharedRelicSourcePaths,...releaseForgeSourcePaths])];
 
 export function authorizeReleaseUiRestore(samples,read){
@@ -158,8 +166,8 @@ export function authorizeReleaseUiRestore(samples,read){
   assert(matches(read(path),expected),'recording UI linked owner changed: '+path);
  }
  const rawRead=read;
- samples=samples.map(([path,input])=>[path,beforeRecordingUi(path,input)]);
- read=path=>beforeRecordingUi(path,rawRead(path));
+ samples=samples.map(([path,input])=>[path,beforeRecordingUi(path,input,rawRead)]);
+ read=path=>beforeRecordingUi(path,rawRead(path),rawRead);
  authorizeRefinedReleaseProduction(samples,read);
  // A combined replay that contains current menu code must use the same release
  // version for every sampled menu owner. Older all-historical views still replay.
@@ -188,7 +196,7 @@ export function authorizeReleaseUiRestore(samples,read){
 }
 
 export function beforeAuthenticatedReleaseUiRestore(path,source,read){
- const prior=beforeReleaseUiRestore(path,source);
+ const prior=beforeReleaseUiRestore(path,source,read);
  if(prior!==source)authorizeReleaseUiRestore([[path,source]],read);
  return prior;
 }
