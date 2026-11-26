@@ -8,7 +8,7 @@ TASK-81。快速反馈、完整受影响回归、集成验收分层报告；性�
 
 develop 按 `config/architecture.json` 分类，核心模块仍保守 Full。`release/*` 日常修复（含核心 Lua）默认使用已证明完整的受影响 Fast；未知范围、数据/配置/依赖/工作流与 CI 准入基础设施仍保守 Full，显式 `ci:full` 仍有效。Release 合入后的 push 不再触发 Quality，PR 的双平台回归、治理、presentation 和 inventory 必须通过才可 Auto-merge；Release 不使用 Merge Queue。develop/master push、develop 队列组合及手动 Quality 仍 Full，现有矩阵、断言和失败阻断保留。
 
-Release 完成集成后才冻结准确 HEAD，由人显式执行 `node scripts/release-ci.mjs freeze <本轮批准的发布分支> <40位HEAD>` 请求一次现有 hosted Full；该命令不等待、不发布。完成后执行同入口 `verify <本轮批准的发布分支> <同一HEAD>`，核对最新手动运行、实际完整分片和最新执行结果，并再次读取分支与 attempt；Fast、local-special、失败、取消、漏片或 SHA 变化均不能放行。Release→master PR 的现有 impact 作业强制执行此校验，缺证据直接失败。代码变化须重新冻结验收，不自动批量重跑 Full。
+Release 完成集成后才冻结准确 HEAD，由人显式执行 `node scripts/release-ci.mjs freeze <本轮批准的发布分支> <40位HEAD>` 请求一次现有 hosted Full；该命令不等待、不发布。完成后执行同入口 `verify <本轮批准的发布分支> <同一HEAD>`，核对最新手动运行、实际完整分片和最新执行结果，并再次读取分支与 attempt；Fast、local-special、失败、取消、漏片或 SHA 变化均不能放行。Release→master PR 的现有 impact 作业强制执行此校验，缺证据直接失败。代码变化须重新冻结验收，不自动批量重跑 Full。提测、打回和重新冻结按[候选版本流程](#候选提测与打回重测)执行。
 
 草稿 PR 的正式 Quality 延后到 Ready；Fork 预检沿现有 Quick feedback 手动运行，不再为 Draft 或 Ready PR 重复触发 Quick。转回 Draft 会通过原 concurrency 取消过时 Quality，不额外建立调度器。草稿跳过不构成准入证据：Ready、精确 HEAD/BASE/attempt、双平台成功及独审仍须满足。Merge Queue、push、发布和手动验证不受草稿条件影响。
 
@@ -27,3 +27,42 @@ fast/advisory 对未知输入只提供可独立映射部分的反馈，并明确
 验收口径：按固定工作流版本采集自然PR运行，分别报告Fast/Full样本数、SHA、attempt、结论、创建到最后Required Check完成的耗时，以及各job排队/执行时间。P50/P90用nearest-rank；失败和取消单列，不从样本中静默删除，不用重跑历史SHA刷样本。Fast至少20个真实PR样本且覆盖源码、测试和纯文档后判断P50≤300秒、P90≤600秒；未达样本量只报告观测值，不宣布总体达标。M7本轮只验真实安全Fast入队和Full组合/合后阻断链路，不把Full总耗时≤1800秒作为收口目标，也不为此追加调优；Full 作业与所有子进程预算、完整回归和门禁保持。
 
 美术输入分两组：原六张审阅 PNG 仍仅由审阅测试/许可审计准备，预算 5983528 字节；运行时只准备固定三张卡牌预览和一张背景预览，独立上限 181870 字节。JS 测试会通过辅助模块/子进程开启美术，因此 Full 分片与 Fast 对非空 JS 集合保守准备这四项；纯文字、空集合、仅 Lua 和默认关闭美术的 presentation 构建不新增下载。两组共用本地 LFS 对象缓存，重叠三张预览不重复传输；读取前核对索引指针，读取后核对 PNG、长度及 SHA。这里的字节数是逻辑输入上限，不是实际计费读数。
+
+## 候选提测与打回重测
+
+工程版本 `1.2.0` 的首轮提测用 `v1.2.0-rc.1`，再次提测依次用 `v1.2.0-rc.2`、`v1.2.0-rc.3`。`rc.N` 从 1 起按整数递增，无前导零。候选记录或 Tag 注释可附 SemVer 构建元数据，例如 `v1.2.0-rc.2+build.42`。`+build.42` 不参与优先级比较，Git ref 统一为 `v1.2.0-rc.2`，每轮只有一个序号和一个候选。`package.json`、lockfile、Release Please manifest 及玩家文案使用计划中的稳定版号。
+
+1. **开发与版本协调者冻结提测。** 常规发布从已通过准入的 `develop` 切出 `release/v1.2.0`。紧急线上修复从 `master` 切出下一个 PATCH 的 `hotfix/vX.Y.Z`，沿用同一提测规则和现有 Hotfix 门禁。版本协调者记录主仓发布分支的完整 40 位 HEAD SHA，执行 `node scripts/release-ci.mjs freeze "$branch" "$source"`。Full 通过后，用 **GIL candidate** 在 `develop` 调度，传入发布分支 `source_ref` 和同一 `source_sha`。按[发布操作单](PUBLISHING.md)选用当版批准的归档通道，并为同一有声 GIL 验证正式性能。向测试交付前，读回分支 HEAD、工作流和构建回执，核对实际 `.gil` 的 SHA-256 与批准的发布配置。
+2. **版本协调者登记并打注释 Tag。** 在已有版本规划或验收任务登记 Tag、分支、源码 SHA、Full run/attempt、候选构建归档和回执、GIL SHA-256、buildId、配置标识及摘要（如美术、UI、启用范围），附修复 PR、上一轮 RC 和证据入口。Tag 注释保存源码、GIL、配置及候选记录的定位信息。只向主仓 `origin` 推该 Tag。内部 RC 的成果与状态登记在原任务，GitHub Release 用于正式版本归档。需要长期追溯的候选在 Actions 工件过期前保存获准留存的副本和回执。
+3. **测试签收同一候选，记录通过或打回。** 独立测试验收人读回 Tag 指向的提交，下载已登记的有声 GIL，校验实际文件摘要（`sha256sum <文件>` 或 PowerShell `Get-FileHash <文件> -Algorithm SHA256`）、buildId 和配置。使用这个候选完成缺陷复测、受影响回归及正式所需的 Simulator、PC、实体手机、官方导入与启动、容量/负载等验收。把结果、设备/客户端、日志和报告链接记在该 RC 名下。打回时保留复现步骤、预期与实际、严重性和阻塞项，保留原 Tag、工件与证据。已打回的 RC 不得晋级。尚未判定失败的候选仅因测试中断而补测时，沿用原 RC 和同一工件，核对新证据仍满足当前门禁。
+4. **开发修复后重新提测。** 只把阻断发布的必要修复经受保护 PR 合入同一 `release/v1.2.0`（紧急修复沿用该 Hotfix 分支），先按受影响验证规则做 Fast 等必要检查。新增功能继续在 `develop` 集成。合入后读取新 HEAD，重新冻结并验证本轮产物，按下一序号创建注释 Tag。即使源码 SHA 相同，替换 GIL（包括同提交重打包导致摘要改变）、构建身份或发布配置也要开新 RC，并用新工件重验，不能沿用上轮的通过结论。
+5. **通过后晋级并回流。** 版本协调者核对已通过的 RC、当前冻结 HEAD 和正式发布门禁，确认最终 GIL、配置与 SHA-256 都与通过记录相同。用同仓 `release/*` 或 `hotfix/*` → `master` 发布 PR 走现有检查。正式版本显示为 `v1.2.0`，唯一正式 Tag 为 `engine-v1.2.0`。创建后核对它与获准 RC 解引用到同一个构建提交。用该 Tag 归档一条 GitHub Release，并按[版本提案与平台确认](PUBLISHING.md#版本提案候选与平台确认)复核附件。正式元数据只接受 `engine-vX.Y.Z`，新正式版本不加 `vX.Y.Z` 兼容别名。以后若需别名，先统一发布及校验约定，仍只保留一条正式 Release。Owner 使用这份已验收的 GIL 人工发布千星奇域并回填真实平台回执。发布分支合入 `master` 后，按[分支收口规则](BRANCH_LIFECYCLE.md#自动化范围与执行)把修复和生产历史回流 `develop`，核对线上修复确实继承并保留回流证据。
+
+### 注释 Tag 的创建与读回
+
+先查询主仓 `git ls-remote --tags --refs origin 'refs/tags/v1.2.0-rc.*'`，结合版本记录取最大已占用序号加一。将已核对的发布分支、冻结 SHA、候选 Tag 填入以下示例，用 `candidate-note.txt` 保存本轮注释。`origin` 须指向 `FurinyaWorks/Slay-the-Heavens`。
+
+```sh
+set -eu
+branch=release/v1.2.0
+source='<构建回执中的完整冻结源码 SHA>'
+tag=v1.2.0-rc.1
+ref="refs/tags/$tag"
+
+git fetch --no-tags origin "refs/heads/$branch"
+test "$(git rev-parse 'FETCH_HEAD^{commit}')" = "$source"
+remote_tag=$(git ls-remote --refs origin "$ref")
+if [ -z "$remote_tag" ]; then
+  git tag -a "$tag" "$source" -F candidate-note.txt
+  git push --no-follow-tags origin "$ref:$ref"
+fi
+git fetch --no-tags origin "$ref"
+test "$(git cat-file -t FETCH_HEAD)" = tag
+test "$(git cat-file -p FETCH_HEAD | sed -n '2p')" = 'type commit'
+test "$(git rev-parse 'FETCH_HEAD^{commit}')" = "$source"
+git cat-file -p FETCH_HEAD
+```
+
+读回注释并核对 GIL、配置及候选记录。重复执行时，已有 Tag 只有在提交和整套候选身份一致时才复用。若此前仅创建了本地 Tag，先逐项核对本地对象再推送这个 ref。遇到并发拒绝，重新查询远端和候选记录。另一候选已占用该序号时保留其记录。标签写错或类型不符时，在原记录标记该 RC 无效。为本轮候选重新核对身份后，使用下一可用序号。所有已推送的 RC、正式 Tag 和历史 Tag 均保留原对象，禁止强推、移动、删除或重打。
+
+正式 Tag 使用相同的 `git tag -a` 和单 ref 推送，`source` 取已获准 RC 的构建提交，注释引用该 RC 及验收记录。例如以 `v1.2.0-rc.3` 晋级时，运行 `git ls-remote --tags origin 'refs/tags/v1.2.0-rc.3^{}' 'refs/tags/engine-v1.2.0^{}'`，两条解引用 SHA 必须都等于回执的 `source`。正式 Tag 已存在时同样复核注释及 GitHub Release 的产物摘要与记录，匹配才复用。指向或身份不符时停止晋级，由 Owner 对账。
