@@ -783,7 +783,7 @@ function beforeCalibrationReplayOwner(path,source){
  if(!calibrationReplayPredecessor){
   calibrationReplayPredecessor=releaseUiRestoreArchive(
    readFileSync(new URL('./calibration-v220-replay-owners.json.gz',import.meta.url)),
-   '63bc6c21f9563ae6a912ceb4d8244601f853e2a20dee91f02ed947d46f1c4c05','8b4172d59779ad9fa21b4ba91ef750ab22fcdaf1');
+   '180009ee25a276c4c1ed3a9f1b7d07a9323582e72296ffc066f898e890355ae3','8b4172d59779ad9fa21b4ba91ef750ab22fcdaf1');
   assert.deepEqual(Object.keys(calibrationReplayPredecessor.files),calibrationReplayPaths,'ordered v2.2 calibration replay owners');
  }
  return calibrationReplayPredecessor.project(path,source);
@@ -952,14 +952,22 @@ function beforeIntegrationSuccessor(path,source){
  assert.equal(hash(prior.source),prior.sha256,'immutable integration predecessor: '+path);
  return source.includes('\r\n')?prior.source.replaceAll('\n','\r\n'):prior.source;
 }
+export function currentReviewedSelectionRead(read){
+ return (path,encoding)=>{
+  const source=read(path,encoding);
+  if(path===reviewedSelectionFixture){
+   const text=!encoding&&Buffer.isBuffer(source)?source.toString('utf8'):source;
+   assert.notEqual(beforeCalibrationReplayOwner(path,text),text,'fresh current reviewed Selection replay fixture: '+path);
+  }
+  return source;
+ };
+}
 export function assertIntegrationSuccessorsCurrent(read=readFileSync){
- const rawRead=read;
+ const rawRead=currentReviewedSelectionRead(read);
  const legibilitySource=rawRead(officialLegibilityFixture,'utf8');
  assert.notEqual(beforeCalibrationReplayOwner(officialLegibilityFixture,legibilitySource),legibilitySource,
   'fresh current official legibility fixture: '+officialLegibilityFixture);
- const selectionSource=rawRead(reviewedSelectionFixture,'utf8');
- assert.notEqual(beforeCalibrationReplayOwner(reviewedSelectionFixture,selectionSource),selectionSource,
-  'fresh current reviewed Selection replay fixture: '+reviewedSelectionFixture);
+ rawRead(reviewedSelectionFixture,'utf8');
  const alphaBuildPredecessors=Object.fromEntries(Object.keys(actorAlphaBuildInputs).map(path=>
   [path,checkedActorAlphaBuildPredecessor(path,rawRead(path,'utf8'))]));
  const liveRead=(path,encoding)=>{
