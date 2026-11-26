@@ -676,7 +676,8 @@ export function beforeReleaseAdditionalInventory(paths,kind,read=readFileSync){
   assert.equal(count,1,'single added Release test: '+path);
   const live=read(path,'utf8');
   if(kind==='lua'&&exactCurrentReleaseLuaFixture(path,live))continue;
-  const source=beforeDevelopBackflow(path,live);
+  const predecessor=path==='tests/gil-candidate.test.mjs'?beforeKnownMasterBackflowSource(path,live):live;
+  const source=beforeDevelopBackflow(path,predecessor);
   assert(typeof source==='string'&&!source.includes('\r\r\n')&&hash(normalize(source))===sha,'fresh added inventory source: '+path);
  }
  return paths.filter(path=>!Object.hasOwn(newerTests[kind],path));
