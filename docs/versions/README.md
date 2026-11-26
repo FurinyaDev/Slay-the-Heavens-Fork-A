@@ -1,6 +1,6 @@
 # 《杀戮原塔2》版本一览
 
-这里是**源码版本索引**，与 Backlog Milestone 分开管理。工程历史与玩家文案分开维护；供官方更新日志人工填写的玩家文案只有一份：[CHANGELOG.md](../../CHANGELOG.md)。
+这里是**源码版本索引**，与 Backlog Milestone 分开管理。正式版本按 [版本治理](GOVERNANCE.md) 对账、冻结和结项。工程历史与玩家文案分开维护；供官方更新日志人工填写的文案见 [CHANGELOG.md](../../CHANGELOG.md)。
 
 > **2026-11-03 核验更新：** `v1.0.0` 的不可移动注释 Tag 已于 2026-11-01 建立（指向 master 发布提交 `e970eb2`）；Owner 确认正式作品已部署、旧大赛已投稿。平台实际版号、作品 GUID、发布时间和报名详情仍缺可核实回执。下列 10/31、10/28 的未打 Tag 叙述属于历史观察，不覆盖本条。**后续排期提案（新增日期与活动条件待核实）：** [M9 → M7-A → M7-B → M8，三赛事 / Release / Sprint](../plans/2026-11-03-q4-three-campaign-milestone-release-sprint.md)。
 

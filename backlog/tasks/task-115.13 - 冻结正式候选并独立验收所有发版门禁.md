@@ -5,23 +5,23 @@ status: To Do
 assignee:
   - '@Furinya'
 created_date: '2026-11-25 21:02'
+updated_date: '2026-11-26 03:45'
 labels:
   - v2.2.0
+  - release-gate
 milestone: m-8
 dependencies:
-  - TASK-115.1
-  - TASK-115.2
-  - TASK-115.3
   - TASK-115.4
   - TASK-115.5
   - TASK-115.6
   - TASK-115.7
+  - TASK-115.7.2
   - TASK-115.7.3
+  - TASK-115.7.4
   - TASK-115.7.5
   - TASK-115.8
   - TASK-115.9
   - TASK-115.10
-  - TASK-115.11
 documentation:
   - docs/versions/V2.2.0-RELEASE.md
 parent_task_id: TASK-115
@@ -47,3 +47,9 @@ ordinal: 225000
 - [ ] #1 全部必要项通过，审查记录来自独立实现者之外的评审，证据绑定精确同源候选
 - [ ] #2 PC、实体手机、官方容量/负载、实际导入启动通过；交接含准确候选和最小操作单
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+2026-11-26 工程依赖以成果验收。须复核 Full 结果及事故防回退，使用归档审计等效的获批本地或 Hosted 正式有声候选；Hosted CD、完整 CI 建设任务和通用工程任务独立推进。
+<!-- SECTION:NOTES:END -->

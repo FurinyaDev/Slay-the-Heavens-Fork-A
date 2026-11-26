@@ -1,21 +1,23 @@
 ---
 id: TASK-115.1
 title: 交付正式生产有声 GIL 的 Hosted CD
-status: In Progress
+status: Blocked
 assignee:
   - '@Furinya'
 created_date: '2026-11-25 20:59'
-updated_date: '2026-11-25 21:19'
+updated_date: '2026-11-26 03:52'
 labels:
-  - v2.2.0
+  - engineering
 milestone: m-8
 dependencies: []
 references:
   - 'https://github.com/FurinyaWorks/Slay-the-Heavens/pull/917'
   - 'https://github.com/FurinyaWorks/Slay-the-Heavens/pull/963'
   - 'https://github.com/FurinyaWorks/Slay-the-Heavens/pull/975'
+  - 'https://github.com/FurinyaWorks/Slay-the-Heavens/pull/990'
 documentation:
   - docs/versions/V2.2.0-RELEASE.md
+  - docs/GIL-CANDIDATE.md
 parent_task_id: TASK-115
 priority: high
 type: task
@@ -51,4 +53,6 @@ ordinal: 208000
 
 <!-- SECTION:NOTES:BEGIN -->
 已派发 CD 独立实现。正式 Hosted 运行仍缺匹配的获授权生产底图及分发权限；最初 develop 的 Quality 未通过。两项待开解，不影响前置审计开发。
+
+#990 接续 #917，已在 develop 4b118e04e2c04532f2dc0073e4974a9eb8cf0547 注册 GIL candidate；独立评审 6065925588，合同 12/12，Fork A 精确 Quick 45713780694 通过。主仓环境列表为空。等待受保护的 gil-candidate 环境、实际生产底图及绑定该源码的处理和分发授权，以及同一源码 Quality、Licenses 完成，随后运行 Hosted 构建、下载校验和交付；AC 保持未勾。
 <!-- SECTION:NOTES:END -->

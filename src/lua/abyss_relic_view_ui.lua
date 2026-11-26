@@ -194,8 +194,13 @@ function M.new(root,bar,clickEvent,platform,describe,onClose,onSlot)
     end
     local function renderPageControls(run,single,layout)
         local many=self:pages()>1
-        child('previous'):SetVisible(single and self.selectedIndex>1 or not single and many)
-        child('next'):SetVisible(single and self.selectedIndex<#run.relics or not single and many)
+        if single then
+            child('previous'):SetVisible(self.selectedIndex>1)
+            child('next'):SetVisible(self.selectedIndex<#run.relics)
+        else
+            child('previous'):SetVisible(many)
+            child('next'):SetVisible(many)
+        end
         for _,name in ipairs({'previous','next'})do
             local frame=layout[name]
             child(name):SetAnchoredPosition(frame[1],frame[2])
@@ -261,8 +266,10 @@ function M.new(root,bar,clickEvent,platform,describe,onClose,onSlot)
         if index then M.paint(icon,relics[index],style.icon,platform,run)else Art.hide(icon)end
         paintCounter(slot,run,index and relics[index] or nil,official,width)
     end
-    local function renderBar(run)
-        local relics=run and run.relics or {}
+    local function hoveredRelicChanged(relics)
+        return self.hoverIndex and relics[barCells[self.hoverIndex]]~=self.hoverId
+    end
+    local function renderBarCells(run,relics)
         local pages=official and counterPages(run,relics)
         barPages=pages and #pages or math.max(1,math.ceil(#relics/capacity))
         self.barPage=math.max(1,math.min(self.barPage,barPages))
@@ -274,21 +281,29 @@ function M.new(root,bar,clickEvent,platform,describe,onClose,onSlot)
             paintBarCell(i,cells[i],relics,run,cell and cell.width or 40)
         end
         barCells=cells
-        if self.hoverIndex and relics[barCells[self.hoverIndex]]~=self.hoverId then self:resetBarHover()end
+        if hoveredRelicChanged(relics) then self:resetBarHover()end
+    end
+    local function barArrowPositions()
         local right=style.origin[1]+style.step*capacity
         local gap=official and not platform.mobileRunHud and 4 or 0
         -- Official paging reserves two cells after the fixed slot pool so
         -- showing the previous arrow never pushes the first relic inward.
         local left=official and right+gap or style.origin[1]-style.step
         if official then right=left+style.step+gap end
-        for _,name in ipairs({'previous','next'})do
-            local control=bar:GetChild(name)
-            if control then
-                control:SetAnchoredPosition(name=='previous' and left or right,style.origin[2])
-                control:GetChild('hit'):SetSizeDelta(hitSize,platform.mobileRunHud and hitSize or 44)
-                control:SetVisible(barPages>1 and (name=='previous' and self.barPage>1 or name=='next' and self.barPage<barPages))
-            end
-        end
+        return left,right
+    end
+    local function renderBarArrow(name,x,active)
+        local control=bar:GetChild(name)
+        if not control then return end
+        control:SetAnchoredPosition(x,style.origin[2])
+        control:GetChild('hit'):SetSizeDelta(hitSize,platform.mobileRunHud and hitSize or 44)
+        control:SetVisible(barPages>1 and active)
+    end
+    local function renderBar(run)
+        renderBarCells(run,run and run.relics or {})
+        local left,right=barArrowPositions()
+        renderBarArrow('previous',left,self.barPage>1)
+        renderBarArrow('next',right,self.barPage<barPages)
     end
     function self.turnBar(_,step)
         if not self.barInteractive or step~=1 and step~=-1 then return false end
@@ -296,14 +311,18 @@ function M.new(root,bar,clickEvent,platform,describe,onClose,onSlot)
         if target<1 or target>barPages then return false end
         self:resetBarHover();self.barPage=target;renderBar(self.barRun);return true
     end
-    function self.refreshBar(_,run,visible,inputBlocked,deferHiddenPaint)
-        if self.barRun~=run then self.barPage=1 end
-        self.barInteractive=not not (visible and run and not inputBlocked and not self.visible)
-        if not self.barInteractive or self.barRun~=run or self.hoverIndex and run.relics[barCells[self.hoverIndex]]~=self.hoverId then self:resetBarHover()end
-        self.barRun=run
+    local function refreshSelectedRelic(run)
         if self.visible and self.selectedIndex and run==self.run and #run.relics>0 then
             self.selectedIndex=math.min(self.selectedIndex,#run.relics);self:render()
         end
+    end
+    function self.refreshBar(_,run,visible,inputBlocked,deferHiddenPaint)
+        local changedRun=self.barRun~=run
+        if changedRun then self.barPage=1 end
+        self.barInteractive=not not (visible and run and not inputBlocked and not self.visible)
+        if not self.barInteractive or changedRun or hoveredRelicChanged(run.relics) then self:resetBarHover()end
+        self.barRun=run
+        refreshSelectedRelic(run)
         bar:SetVisible(visible and run~=nil)
         if deferHiddenPaint and not visible then return end
         bar:GetChild('tray'):SetVisible(false)
@@ -332,50 +351,54 @@ function M.new(root,bar,clickEvent,platform,describe,onClose,onSlot)
             return action()
         end)
     end
-    for _,name in ipairs({'previous','next'})do
-        local control=bar:GetChild(name)
-        if control then bindBar(control,function()return name end,function()return self:turnBar(name=='previous' and -1 or 1)end)end
-    end
-    root.disableCursorEventPassthrough=true
-    child('contentBlocker'):AddCursorEventListener(clickEvent,function()return self.visible end)
-    local actions={blocker=function()
-        if self.selectedIndex then onClose() end
-        return true
-    end,close=onClose,previous=function()return self:turn(-1)end,next=function()return self:turn(1)end}
-    for name,action in pairs(actions)do
-        local control=child(name)
-        local outside=name=='blocker'
-        local hit=outside and control or control:GetChild('hit')
-        local cursor=platform.cursorEvents or {}
-        local held,released,observed
-        local function valid(token)
-            return self.visible and control.visible and (not platform.hudAlive or platform.hudAlive())
-                and not Pointer.blocked(platform)
-                and (not token or token.generation==self.detailGeneration and same(token.context,context()))
+    local function bindBarArrows()
+        for _,name in ipairs({'previous','next'})do
+            local control=bar:GetChild(name)
+            if control then bindBar(control,function()return name end,function()return self:turnBar(name=='previous' and -1 or 1)end)end
         end
-        local function touch(event)return event and event.touchId end
-        if cursor.CursorDown and cursor.CursorUp then
-            hit:AddCursorEventListener(cursor.CursorDown,function(event)
-                if held and valid(held) and held.touch~=touch(event) then return end
-                observed=true;held,released=nil,nil
-                if valid()then held={generation=self.detailGeneration,context=context(),touch=touch(event)}end
-            end)
-            hit:AddCursorEventListener(cursor.CursorUp,function(event)
-                if held and held.touch==touch(event) then
-                    released=valid(held) and not Pointer.dragged(event,8) and held or nil
-                    held=nil
-                end
+    end
+    local function bindDetailControls()
+        root.disableCursorEventPassthrough=true
+        child('contentBlocker'):AddCursorEventListener(clickEvent,function()return self.visible end)
+        local actions={blocker=function()
+            if self.selectedIndex then onClose() end
+            return true
+        end,close=onClose,previous=function()return self:turn(-1)end,next=function()return self:turn(1)end}
+        for name,action in pairs(actions)do
+            local control=child(name)
+            local outside=name=='blocker'
+            local hit=outside and control or control:GetChild('hit')
+            local cursor=platform.cursorEvents or {}
+            local held,released,observed
+            local function valid(token)
+                return self.visible and control.visible and (not platform.hudAlive or platform.hudAlive())
+                    and not Pointer.blocked(platform)
+                    and (not token or token.generation==self.detailGeneration and same(token.context,context()))
+            end
+            local function touch(event)return event and event.touchId end
+            if cursor.CursorDown and cursor.CursorUp then
+                hit:AddCursorEventListener(cursor.CursorDown,function(event)
+                    if held and valid(held) and held.touch~=touch(event) then return end
+                    observed=true;held,released=nil,nil
+                    if valid()then held={generation=self.detailGeneration,context=context(),touch=touch(event)}end
+                end)
+                hit:AddCursorEventListener(cursor.CursorUp,function(event)
+                    if held and held.touch==touch(event) then
+                        released=valid(held) and not Pointer.dragged(event,8) and held or nil
+                        held=nil
+                    end
+                end)
+            end
+            hit:AddCursorEventListener(clickEvent,function(event)
+                local token=released
+                if token and token.touch~=touch(event) then return outside end
+                released=nil
+                if Pointer.dragged(event,8) or not valid(token) or observed and not token then return outside end
+                return action()
             end)
         end
-        hit:AddCursorEventListener(clickEvent,function(event)
-            local token=released
-            if token and token.touch~=touch(event) then return outside end
-            released=nil
-            if Pointer.dragged(event,8) or not valid(token) or observed and not token then return outside end
-            return action()
-        end)
     end
-    for i=1,boundCount do
+    local function bindBarSlot(i)
         local hit=bar:GetChild('slot'..i):GetChild('hit')
         local cursor=platform.cursorEvents
         if official and cursor and cursor.CursorEnter and cursor.CursorExit then
@@ -406,6 +429,9 @@ function M.new(root,bar,clickEvent,platform,describe,onClose,onSlot)
             local index=barCells[i];return index and self.barRun and self.barRun.relics[index]
         end,function()return onSlot(barCells[i])end)
     end
+    bindBarArrows()
+    bindDetailControls()
+    for i=1,boundCount do bindBarSlot(i) end
     return self
 end
 return M
