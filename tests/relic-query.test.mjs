@@ -3,7 +3,23 @@ import assert from 'node:assert/strict';
 import {existsSync,readFileSync} from 'node:fs';
 import luaparse from 'luaparse';
 import {checkArchitecture} from '../scripts/check-architecture.mjs';
-import {frozenRelicQuerySources,runRelicQueryFixture} from './helpers/relic-query-baseline.mjs';
+import {frozenRelicQuerySources,reviewedRelicQueryAliases,runRelicQueryFixture} from './helpers/relic-query-baseline.mjs';
+
+const currentAliasName=new Map(reviewedRelicQueryAliases.map(([,oldName,currentName])=>[oldName,currentName]));
+function currentTrace(fixture,trace){
+ if(fixture==='rewards'){
+  const card=/\bcalculated_gamble\b/g;
+  const records=trace.split('\n').filter(line=>/^RELIC_QUERY_(POOL|RESULT) /.test(line));
+  assert.equal(records.flatMap(line=>line.match(card)??[]).length,8,'all approved reward identity successors are exercised');
+  return trace.split('\n').map(line=>/^RELIC_QUERY_(POOL|RESULT) /.test(line)?line.replace(card,'calculated_exchange'):line).join('\n');
+ }
+ for(const [family,oldName,currentName,oldId,currentId] of reviewedRelicQueryAliases){
+  const before=`RELIC_QUERY_ALIAS ${family} "${oldName}" "${oldId}" "${oldId}"`;
+  assert.equal(trace.split(before).length,2,'one exact frozen alias trace: '+oldName);
+  trace=trace.replace(before,`RELIC_QUERY_ALIAS ${family} "${currentName}" "${currentId}" "${currentId}"`);
+ }
+ return trace;
+}
 
 test('relic query oracle pins six complete LF sources at reviewed revision 391306af',()=>{
  const proof=frozenRelicQuerySources();assert.equal(Object.keys(proof.files).length,6);
@@ -15,8 +31,9 @@ test('relic query oracle pins six complete LF sources at reviewed revision 39130
  });
  const fixture=parse(readFileSync('tests/lua/relic_query_contract.lua','utf8'));
  const input=fixture.body.find(node=>node.type==='LocalStatement'&&node.variables[0].name==='aliasInputs').init[0];
- assert.deepEqual(input.fields.map(group=>group.value.fields.map(field=>field.value.value)),expected,
-  'all 139 original alias input keys, with namespace and source order; no copied output mapping');
+ assert.deepEqual(input.fields.map(group=>group.value.fields.map(field=>field.value.value)),
+  expected.map(group=>group.map(key=>currentAliasName.get(key)??key)),
+  'all 139 original alias input slots, preserving namespace and order through the reviewed names');
 });
 
 for(const [fixture,marker]of [['contract','RELIC_QUERY_CONTRACT_PASS 139 aliases'],['rewards','RELIC_QUERY_REWARDS_PASS 48 cases']]){
@@ -27,7 +44,7 @@ for(const [fixture,marker]of [['contract','RELIC_QUERY_CONTRACT_PASS 139 aliases
   assert(old.stdout.includes(marker),'pinned baseline completed all assertions');
   const current=runRelicQueryFixture(path);
   assert.equal(current.status,0,'current behavior must execute: '+current.stdout+current.stderr);
-  assert.equal(current.stdout,old.stdout,'complete query/return/RNG trajectory differs from pinned source');
+  assert.equal(current.stdout,currentTrace(fixture,old.stdout),'complete query/return/RNG trajectory differs from pinned source');
  });
 }
 
