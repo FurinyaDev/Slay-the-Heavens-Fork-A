@@ -1,7 +1,7 @@
 import {beforeMapRoomReplayCohort} from './develop-replay-merge-source.mjs';
 import {beforeMapNodeVisualsLineEndings} from './input-retirement-sts-binding.mjs';
 import {readCloseoutLuaVocabularyReceipt} from './closeout-lua-vocabulary-source.mjs';
-import {readCloseoutCurrentBackflowReceipt} from './closeout-current-backflow-source.mjs';
+import {beforeCloseoutJoustCiFixture,readCloseoutCurrentBackflowReceipt} from './closeout-current-backflow-source.mjs';
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import {readFileSync} from 'node:fs';
@@ -75,6 +75,7 @@ function beforeReleaseLuaNameBudgetTest(path,source){
 }
 
 export function beforeCalibrationReplay(path,source){
+ source=beforeCloseoutJoustCiFixture(path,source);
  source=beforeReleaseLuaNameBudgetTest(path,source);
  source=beforeCurrentHistoricalStsSource(path,source);
  source=beforeMapNodeVisualsLineEndings(path,source);

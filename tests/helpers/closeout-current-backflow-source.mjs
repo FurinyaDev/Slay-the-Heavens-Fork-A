@@ -26,6 +26,19 @@ function readExactOwner(path,binding,read){
  return source;
 }
 
+// The immutable pr612 tooling view reads the exact predecessor of the
+// current test fixture. Live Joust still executes the current test bytes.
+export function beforeCloseoutJoustCiFixture(path,source){
+ if(path!=='tests/joust-event.test.mjs')return source;
+ const row=files[path];
+ if(!exactSourceMatches(source,{sha256:row.afterSha256,gitBlob:row.afterBlob}))return source;
+ const lf=source.replaceAll('\r\n','\n');
+ if(source!==lf&&source!==lf.replaceAll('\n','\r\n'))return source;
+ const prior=restoreExactFixtureHunks({...row,path},path,source);
+ assert(exactSourceMatches(prior,{sha256:row.beforeSha256,gitBlob:row.beforeBlob}),'exact pr612 Joust fixture predecessor');
+ return source===lf?prior:prior.replaceAll('\n','\r\n');
+}
+
 // These are reads of the original frozen Closeout hashes. Verify the live
 // Joust projection's linked production cohort before reconstructing old bytes.
 export function readCloseoutCurrentBackflowReceipt(path,digest,read){
