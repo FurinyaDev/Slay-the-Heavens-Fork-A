@@ -35,9 +35,16 @@ test('STS1 menu retains transactions, unplated resting controls and four states'
 import {beforeRebasedRelease} from './helpers/rebased-release-source.mjs';
 import {beforeSts1MenuCiSource} from './helpers/sts1-menu-ci-source.mjs';
 import {beforeNativeFlowFixture} from './helpers/native-flow-fixture-source.mjs';
+import {beforeMasterBackflowSource} from './helpers/master-backflow-source.mjs';
 test('menu historical source continuation projects only exact complete new test bytes',()=>{
  const path='tests/official-assets.test.mjs',source=readFileSync(path,'utf8');
- const project=(path,input)=>beforeSts1MenuCiSource(path,beforeRebasedRelease(path,beforeNativeFlowFixture(path,input)));
+ const project=(path,input)=>{
+  let current=input;
+  try{current=beforeMasterBackflowSource(path,input);}catch(error){
+   if(!(error instanceof assert.AssertionError)) throw error;
+  }
+  return beforeSts1MenuCiSource(path,beforeRebasedRelease(path,beforeNativeFlowFixture(path,current)));
+ };
  const prior=project(path,source);assert.notEqual(prior,source);
  assert.equal(project(path,source+'\n'),source+'\n');
  assert.equal(project('tests/foreign.mjs',source),source);

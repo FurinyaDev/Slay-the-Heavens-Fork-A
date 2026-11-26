@@ -539,7 +539,10 @@ test('ordinary fade keeps the original input barrier and retires the cinematic a
  assert(child(child(child(layout,'prologuePanel'),'scene'),'seal'),'legacy fixture still retains its reference');
  applyOfficialNoncombatLayout(layout,theme);
  assert.equal(child(layout,'prologuePanel'),undefined);
- assert.deepEqual(children(cover).map(node=>node.name),['veil','blocker','message','cancel']);
+ assert.deepEqual(children(cover).map(node=>node.name),['veil','blocker','subtitle','message','cancel']);
+ const subtitle=child(cover,'subtitle');
+ assert.equal(subtitle.visible,false,'the production boss subtitle starts hidden on ordinary fades');
+ assert.equal(subtitle.raycastTarget,false,'the subtitle never replaces the original input barrier');
  assert.equal(child(cover,'veil').colour,'#000000');
  assert.equal(child(cover,'message').visible,false);
  assert.strictEqual(child(cover,'blocker'),blocker);
