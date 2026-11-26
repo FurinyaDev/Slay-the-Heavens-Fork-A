@@ -891,13 +891,39 @@ const refinedByrdPoolCopyClosure={
   }
  ]
 };
+// The current node notice replay advances only the reward helper in the copier.
+const nodeNoticeCopyClosure={
+ "path": "tests/helpers/copy-integration-source-closure.mjs",
+ "beforeSha256": "94a17264d5283f4e57edec8dd99d116e3b7ffd94543f1bc96e587cd8131d8157",
+ "afterSha256": "886466231e43d1fe88f8b88fece9b9a00c0d65234c20f0167f308e5fe83a93b4",
+ "beforeBlob": "3418cf344390eb729c5b5f012d76512a190750c2",
+ "afterBlob": "840b01f870189bcacfa3a562e05426db41caa010",
+ "hunks": [
+  {
+   "at": 372,
+   "before": " 'tests/helpers/reward-current-source.mjs':'3ef0c1268abbd8758655d4898b3d62edba8c877eab76fff2ad7e5406e4613dfd',",
+   "after": " 'tests/helpers/reward-current-source.mjs':'e496035fc44420c3c0e47816d382c4cb5ded18b37ca6af9c2ee79f52fd4790bc',"
+  },
+  {
+   "at": 381,
+   "before": "  const source=join(sourceRoot,path),content=integrationClosureBytes(path,readFileSync(source));assert.equal(hash(content),sha,'fresh helper copy identity: '+path);",
+   "after": "  const source=join(sourceRoot,path),raw=readFileSync(source),content=integrationClosureBytes(path,raw);\n  if(path==='tests/helpers/reward-current-source.mjs'&&!raw.equals(content))\n   assert(raw.equals(Buffer.from(content.toString('utf8').replaceAll('\\n','\\r\\n'))),'fresh helper copy identity: '+path);\n  assert.equal(hash(content),sha,'fresh helper copy identity: '+path);"
+  }
+ ]
+};
 function beforeBattleSceneCopyClosure(path,source){
  if(path!==battleSceneCopyClosure.path||typeof source!=='string')return source;
  const lf=normalize(source);
  if(source!==lf&&source!==lf.replaceAll('\n','\r\n'))return source;
+ const notice=nodeNoticeCopyClosure;
+ let byrdSource=lf;
+ if(exactCheckoutSource(lf,[notice.afterSha256,notice.afterBlob])){
+  byrdSource=restoreExactFixtureHunks(notice,path,lf);
+  assert.equal(blob(byrdSource),notice.beforeBlob,'exact node notice copier predecessor blob');
+ }
  const byrd=refinedByrdPoolCopyClosure;
- const contactSource=exactCheckoutSource(lf,[byrd.afterSha256,byrd.afterBlob])
-  ?restoreExactFixtureHunks(byrd,path,lf):lf;
+ const contactSource=exactCheckoutSource(byrdSource,[byrd.afterSha256,byrd.afterBlob])
+  ?restoreExactFixtureHunks(byrd,path,byrdSource):byrdSource;
  const contact=groundedContactCopyClosure;
  const joined=exactCheckoutSource(contactSource,[contact.afterSha256,contact.afterBlob])
   ?restoreExactFixtureHunks(contact,path,contactSource):contactSource;
@@ -1258,7 +1284,7 @@ export function assertIntegrationSuccessorsCurrent(read=readFileSync){
  const chapterRead=chapterSceneCurrentRead((path,encoding)=>{
   const raw=replayRead(path,encoding);
   return beforeRelicCloseoutIntegratedFixture(path,raw);
- },refinedByrdPoolCopyClosure);
+ },nodeNoticeCopyClosure);
  const rawRead=actorAlphaCurrentRead((path,...args)=>(path===integratedFixture?replayRead:chapterRead)(path,...args));
  rawRead(officialLegibilityFixture,'utf8');
  rawRead(reviewedSelectionFixture,'utf8');
