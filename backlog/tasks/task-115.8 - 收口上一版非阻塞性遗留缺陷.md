@@ -5,10 +5,14 @@ status: To Do
 assignee:
   - '@Furinya'
 created_date: '2026-11-25 21:02'
+updated_date: '2026-11-26 03:53'
 labels:
   - v2.2.0
+  - release-scope
 milestone: m-8
 dependencies: []
+references:
+  - 'https://github.com/FurinyaWorks/Slay-the-Heavens/pull/969'
 documentation:
   - docs/versions/V2.2.0-RELEASE.md
 parent_task_id: TASK-115
@@ -33,3 +37,9 @@ ordinal: 220000
 <!-- AC:BEGIN -->
 - [ ] #1 遗留项明确现状和处置，纳入本版的修复通过定向测试与独审
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+两幕接地试制复验看到飞行状态图标为问号。独立诊断在原生桌面和触屏控件复现，飞行层数 3→2→1 与落地移除正常。已核对的羽翼图标用于无实体状态，独立飞行图形待批准。
+<!-- SECTION:NOTES:END -->
