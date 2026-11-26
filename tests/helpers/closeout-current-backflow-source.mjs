@@ -7,8 +7,8 @@ import {exactSourceMatches} from './source-fingerprint.mjs';
 
 const bytes=readFileSync(new URL('../fixtures/closeout-current-backflow-source.json.gz',import.meta.url));
 assert.equal(createHash('sha256').update(bytes).digest('hex'),
- '09822c2630c11d7aaa635826ddbd85818e352742555cbf1fc4735cd06edc2c74','exact current closeout backflow packet');
-const {schemaVersion,base,head,files,owners,continuation,sessionRoute,anchorRefactor,actorDetail}=JSON.parse(gunzipSync(bytes));
+ 'adb985acdcf564f35dce3d5dfe70a580aa8586a4fdbfa3e5f820bc0e02c38931','exact current closeout backflow packet');
+const {schemaVersion,base,head,files,owners,continuation,sessionRoute,anchorRefactor,actorDetail,tooling}=JSON.parse(gunzipSync(bytes));
 assert.equal(schemaVersion,1);
 assert.equal(base,'903bf2a31e91f10fb24763ab4cea23d586d0bb83');
 assert.equal(head,'7228aaa83b0995e1dc6e36955cfd6e773c199f07');
@@ -23,6 +23,8 @@ assert.deepEqual(anchorRefactor.before,owners[battleDetailView]);
 assert.equal(actorDetail.commit,'cb85a291a83de761e6462d0b98e54c8fc85dc5b8');
 assert.equal(files['tests/official-battle-relic-icons.test.mjs'].successor.commit,
  'dfcc35416f127693b2f0323b8168b0e29590af7d');
+assert.equal(tooling.commit,'e65d9b98fbec69442047650254238cd9244df805');
+assert.equal(tooling.successor.commit,'73ae746609eef41c192d04e836dc474f0aa9b303');
 
 function readExactOwner(path,binding,read){
  if(binding===null){
@@ -34,6 +36,22 @@ function readExactOwner(path,binding,read){
  const lf=source.replaceAll('\r\n','\n');
  assert(source===lf||source===lf.replaceAll('\n','\r\n'),'mixed closeout source line endings: '+path);
  return source;
+}
+
+function readCloseoutFixture(path,row,read){
+ const fixture=read(path,'utf8');
+ const successorFixture=row.successor;
+ const predecessorBinding={sha256:row.afterSha256,gitBlob:row.afterBlob};
+ const updated=successorFixture!==undefined&&exactSourceMatches(fixture,successorFixture);
+ const source=readExactOwner(path,updated?successorFixture:predecessorBinding,read);
+ assert.equal(source,fixture,'closeout owner changed during the receipt read: '+path);
+ const previous=updated?restoreExactFixtureHunks({
+  path,beforeSha256:row.afterSha256,afterSha256:successorFixture.sha256,hunks:successorFixture.hunks,
+ },path,source):source;
+ assert(exactSourceMatches(previous,predecessorBinding),'exact closeout fixture predecessor: '+path);
+ const prior=restoreExactFixtureHunks({...row,path},path,previous);
+ assert(exactSourceMatches(prior,{sha256:row.beforeSha256,gitBlob:row.beforeBlob}),'exact current closeout predecessor: '+path);
+ return {source,prior};
 }
 
 // The immutable pr612 tooling view reads the exact predecessor of the
@@ -52,14 +70,11 @@ export function beforeCloseoutJoustCiFixture(path,source){
 // These are reads of the original frozen Closeout hashes. Verify the live
 // Joust projection's linked production cohort before reconstructing old bytes.
 export function readCloseoutCurrentBackflowReceipt(path,digest,read){
+ // This receipt follows the history and catalogue tooling changes only.
+ if(path===tooling.path&&digest===tooling.beforeSha256)return readCloseoutFixture(path,tooling,read).prior;
  if(!Object.hasOwn(files,path)||files[path].beforeSha256!==digest)return;
  const row=files[path];
- const fixture=read(path,'utf8');
- const successorFixture=row.successor;
- const predecessorBinding={sha256:row.afterSha256,gitBlob:row.afterBlob};
- const updated=successorFixture!==undefined&&exactSourceMatches(fixture,successorFixture);
- const source=readExactOwner(path,updated?successorFixture:predecessorBinding,read);
- assert.equal(source,fixture,'closeout owner changed during the receipt read: '+path);
+ const {source,prior}=readCloseoutFixture(path,row,read);
  // The Guardian subtitle advances five linked sources as one reviewed unit.
  // Its follow-up navigation and route owners advance together. Fresh owner
  // reads select one complete revision and reject mixed revisions.
@@ -81,11 +96,5 @@ export function readCloseoutCurrentBackflowReceipt(path,digest,read){
   if(owner===sessionNavigation&&guardian)assert.equal(live,navigation,'closeout owner changed during the receipt read: '+owner);
   if(owner===battleDetailView&&session)assert.equal(live,detail,'closeout owner changed during the receipt read: '+owner);
  }
- const previous=updated?restoreExactFixtureHunks({
-  path,beforeSha256:row.afterSha256,afterSha256:successorFixture.sha256,hunks:successorFixture.hunks,
- },path,source):source;
- assert(exactSourceMatches(previous,predecessorBinding),'exact closeout fixture predecessor: '+path);
- const prior=restoreExactFixtureHunks({...row,path},path,previous);
- assert(exactSourceMatches(prior,{sha256:row.beforeSha256,gitBlob:row.beforeBlob}),'exact current closeout predecessor: '+path);
  return prior;
 }
