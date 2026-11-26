@@ -7,8 +7,8 @@ test("damage between repeated Vulnerable applications observes the consumed copi
     local h, _, p, tap = setup({{op="applyStatus", status="vulnerable", value=1},
         {op="damage", value=10}, {op="applyStatus", status="vulnerable", value=1}, {op="damage", value=10}})
     Combat.addStatus(h.run.combat.player, "artifact", 1)
-    local compact, detail = refresh(h, p, tap)
-    eq(compact, "10")
+    eq(refresh(h, p, tap), "10")
+    local detail = F.orderedDetails(h, p)
     assert(detail:find("10 点伤害", 1, true)); assert(detail:find("15 点伤害", 1, true))
     local copy, hits = resolve(h.run.combat), {}
     for _, event in ipairs(copy.events) do if event.kind == "damage" then hits[#hits+1] = event.detail.amount end end
@@ -39,9 +39,11 @@ test("signed power type depends on incoming amount including zero, not current t
         local h, _, p, tap = setup(effects, row.tail.op == "block" and "defend" or "attack")
         Combat.addStatus(h.run.combat.enemies[1], row.status, 5)
         Combat.addStatus(h.run.combat.enemies[1], "artifact", 1)
-        local compact, detail=refresh(h, p, tap)
+        local compact = refresh(h, p, tap)
         eq(compact, row.tail.op=="block" and "" or row.want)
-        if row.tail.op=="block" then assert(detail:find("获得 "..row.want.." 点格挡",1,true)) end
+        if row.tail.op == "block" then
+            assert(F.orderedDetails(h, p):find("获得 " .. row.want .. " 点格挡", 1, true))
+        end
     end
 end)
 
@@ -60,8 +62,8 @@ test("without Artifact ordered status modifiers still reach later damage and blo
         {op="gainStatus", status="weak", value=1}, {op="damage", value=10},
         {op="gainStatus", status="dexterity", value=3}, {op="gainStatus", status="frail", value=1},
         {op="block", value=10}})
-    local compact, detail = refresh(h, p, tap)
-    eq(compact, "6"); assert(detail:find("获得 9 点格挡", 1, true))
+    eq(refresh(h, p, tap), "6")
+    assert(F.orderedDetails(h, p):find("获得 9 点格挡", 1, true))
     eq(resolve(h.run.combat).enemies[1].block, 9)
 end)
 
