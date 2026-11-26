@@ -40,7 +40,6 @@ const updatedSources = new Map([
   ['tests/defect-utility-planning.test.mjs', ['d7b64a1189fce508eab45275d33dbbf442a46f085d0c2c3fe10c6c2caccab6ab', 'ba92ddb97178c4ccf977c5148db23d69f06b4485']],
   ['tests/enemy-status-hand-clearance.test.mjs', ['1bedfb69d287476ba4bef9e5bb040fa6f2e0c977427fa91ee70aa05dfebfd232', 'e162e4a75211b80296b7e6111bc00dfdb0ecb25a']],
   ['tests/game-ui.test.mjs', ['24e4ac5ceaa35a28372b53ab1e7baf4f0442383b96b0218f7457f94f37e49fec', '69aa3d7748b13116293ae97a31347cca31b6d643']],
-  ['tests/helpers/copy-integration-source-closure.mjs', ['ee3455b2791e1d4b8a18a2497482ea2ddc40bb025ea9568980cc053e0f8b71ca', 'cfe0865e4b16f4f84e98764c9d2fff94c5f0dd57']],
   ['tests/helpers/fork-preflight-source.mjs', ['a76f1bc4ba7bea5dbf719d5ec97a2f9e9163148d8af853f39a2e56c12558e815', 'cac5d6c40be57b918011aa296cb3e99c332e09ae']],
   ['tests/helpers/isolated-current-source.mjs', ['b839ff3ffa5985995b5720350e5554816f87d0365069b76bc5c447d495f9e5e6', '6cfa35ef0d27fef1acaae4f5db501ec52fbef3b1']],
   ['tests/helpers/release-map-deck-source.mjs', ['e503e507a96756920292a4a03659803404748250142e987f88aee7ebe654d970', '0a09e0eb4477e2b898ec309a86b108af3329ce2f']],
