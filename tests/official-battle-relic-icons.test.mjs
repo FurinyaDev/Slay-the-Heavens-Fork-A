@@ -30,7 +30,10 @@ test('official relic material is shared across run phases while the legacy profi
   const selectionInfo=official?child(child(child(child(stage,'characterPanel'),'details'),'infoMotion'),'info1'):null;
   const selectionArt=official?child(selectionInfo,'v25RelicIcon').children:[];
   const detail=theme.layout.relicView.detail;
-  const single=child(child(stage,'relicPanel'),'single');
+  const generatedPanel=child(stage,'relicPanel');
+ const single=child(generatedPanel,'single');
+ assert.deepEqual(child(generatedPanel,'frame').size,theme.layout.relicView.panel.slice(2,4));
+ assert.deepEqual(child(generatedPanel,'close').position,theme.layout.relicView.close.slice(0,2));
   assert.deepEqual(child(single,'icon').position,detail.icon.slice(0,2));
   if(official)assert.deepEqual(child(single,'iconArt').position,child(single,'icon').position,
    'native art and fallback share the same detail anchor');
@@ -98,9 +101,13 @@ if official then
  assert(h.relicUI:turn(-1))
  checkCrystal(single,detail.icon[3])
  assert(h:closeDeck())
+ -- The approved Run HUD strip opens the first owned detail without an index.
  assert(h:openRelics())
- assert(panel:GetChild('frame').sizeDeltaX==Theme.layout.relicView.panel[3],'collection restores its wide frame')
- assert(panel:GetChild('close').x==Theme.layout.relicView.close[1])
+ assert(h.relicUI.selectedIndex==1 and h.relicUI.selected.id=='burning_blood')
+ assert(panel:GetChild('single').visible and not panel:GetChild('row1').visible)
+ local frame,close=panel:GetChild('frame'),panel:GetChild('close')
+ assert(frame.sizeDeltaX==detail.size[1] and frame.sizeDeltaY==detail.size[2],'reopening keeps the single-detail frame')
+ assert(close.x==detail.close[1] and close.y==detail.close[2],'reopening keeps the detail close anchor')
  assert(h:closeDeck())
  local battleHost,root=F.fixture();assert(F.start(battleHost))
  local run=battleHost.run
@@ -165,23 +172,29 @@ if official then
  local icon,art=single:GetChild('icon'),single:GetChild('iconArt')
  assert(rewardBar:GetChild('slot1'):GetChild('hit').click())
  assert(single:GetChild('name').text=='岩脉残晶')
- checkCrystal(single,96)
+ local detailLayout=Theme.layout.relicView.detail
+ checkCrystal(single,detailLayout.icon[3])
  assert(art.x==icon.x and art.y==icon.y,'crystal must share the in-panel atlas anchor')
- assert(math.abs(art.x)+48<detail:GetChild('frame').sizeDeltaX/2
-  and math.abs(art.y)+48<detail:GetChild('frame').sizeDeltaY/2,'crystal fits inside the detail panel')
+ -- The Host leaves x/y unset when using the generated anchors checked above.
+ local x,y=art.x or detailLayout.icon[1],art.y or detailLayout.icon[2]
+ local half=detailLayout.icon[3]/2
+ assert(math.abs(x)+half<detail:GetChild('frame').sizeDeltaX/2
+  and math.abs(y)+half<detail:GetChild('frame').sizeDeltaY/2,'crystal fits inside the detail panel')
  assert(not detail:GetChild('previous').visible)
  assert(detail:GetChild('next'):GetChild('hit').click())
  assert(single:GetChild('name').text=='红头骨' and icon.visible and not art.visible)
  assert(icon.x==art.x and icon.y==art.y)
  assert(detail:GetChild('previous'):GetChild('hit').click())
- checkCrystal(single,96)
+ checkCrystal(single,detailLayout.icon[3])
  assert(art.x==icon.x and art.y==icon.y,'returning to page one retains the anchor')
  assert(detail:GetChild('close'):GetChild('hit').click())
  assert(not detail.visible and battle:GetChild('rewardStage').visible and not run.rewards.cardResolved)
 else
  assert(h:openRelics(1))
- assert(not h.relicUI.selectedIndex)
- assert(panel:GetChild('row1'):GetChild('slot'):GetChild('icon').imageId==baseIcon('burning_blood'),'legacy list restore')
+ assert(h.relicUI.selectedIndex==1 and h.relicUI.selected.id=='burning_blood','legacy profile retains owned relic identity')
+ local single=panel:GetChild('single')
+ assert(single.visible and not panel:GetChild('row1').visible,'the owned detail replaces the retired collection entry')
+ assert(single:GetChild('icon').visible and single:GetChild('icon').imageId==baseIcon('burning_blood'),'legacy detail retains its atlas icon')
 end
 print('BATTLE_RELIC_ICONS_SCOPE_PASS')`);
   const result=runLua(script);assert.equal(result.status,0,result.stdout+result.stderr);assert.match(result.stdout,/BATTLE_RELIC_ICONS_SCOPE_PASS/);
