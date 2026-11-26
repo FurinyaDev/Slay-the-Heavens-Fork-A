@@ -5,7 +5,7 @@ import { gunzipSync } from 'node:zlib';
 import { exactSourceMatches } from './source-fingerprint.mjs';
 
 const archive = readFileSync(new URL('../fixtures/master-backflow-predecessors.json.gz', import.meta.url));
-assert.equal(createHash('sha256').update(archive).digest('hex'), 'e609e5103296ee19feb1a17bba32330da46a131cfdadac04e1448e24384fab2e');
+assert.equal(createHash('sha256').update(archive).digest('hex'), '96702125f99d014789411f3bf8f449b17818e4a4c3299069822424481ad80911');
 const { develop, master, ledgerPredecessor, files } = JSON.parse(gunzipSync(archive));
 assert.equal(develop, 'e483c6a191dc8dd7622e0cb137e7b8581b171af8');
 assert.equal(master, 'd96c9f0d7958148ec1bb027f14a3214da81d06b4');
