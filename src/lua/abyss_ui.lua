@@ -112,14 +112,16 @@ local function deckPending(intent)
     end
     return deck.pending or deck.calibrating or deck.pendingGrid,painted
 end
+local function portraitReady(intent)
+    -- Selection retains static fallbacks while its decorative portrait loads.
+    if not portraits or intent.page=='characterPanel' then return true end
+    return portraits:readyForPage(intent.mode,intent.characterOpen,intent.character,intent.page)
+end
 local function presentationReady(intent)
     local prepared,why,progress=preparedArtOwners(intent.page)
     if not prepared then return false,why,'component:'..tostring(progress) end
-    -- Selection retains static fallbacks while its decorative portrait loads.
-    if portraits and intent.page~='characterPanel' then
-        local ready,reason,cursor=portraits:readyForPage(intent.mode,intent.characterOpen,intent.character,intent.page)
-        if not ready then return false,reason,'portrait:'..tostring(cursor) end
-    end
+    local portraitsReady,portraitReason,portraitCursor=portraitReady(intent)
+    if not portraitsReady then return false,portraitReason,'portrait:'..tostring(portraitCursor) end
     local pendingDeck,painted=deckPending(intent)
     if intent.page=='deckPanel' and view and view.deckUI.prepareError then
         return false,view.deckUI.prepareError
@@ -334,12 +336,14 @@ local function prepareRunDeck(gate)
         deck:prepareBrowser()
     end
 end
-local function prewarmSelection(gate,dt,frameStarted)
-    if not portraits or not portraits.warmSelection then return end
-    local eligible=frameStarted and gate and not gate:covered() and view.mode=='menu' and not view.run
-        and not view.characterOpen and not view.disabled and not view.starting
+local function titleAllowsSelectionWarmup()
+    return view.mode=='menu' and not view.run and not view.characterOpen and not view.disabled and not view.starting
         and not view.exitOpen and not view.settlementRequested and not view.settlementBusy
         and not view.sessionPaused and not view.easterEggOpen and not view.deckUI.visible
+end
+local function prewarmSelection(gate,dt,frameStarted)
+    if not portraits or not portraits.warmSelection then return end
+    local eligible=frameStarted and gate and not gate:covered() and titleAllowsSelectionWarmup()
     portraits:warmSelection(eligible==true,dt,frameStarted)
 end
 function OnUpdate(dt)

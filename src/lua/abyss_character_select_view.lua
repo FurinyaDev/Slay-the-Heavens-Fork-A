@@ -52,6 +52,12 @@ local function largeSlot(character,element)
     if character=='traveler' then return slots.large.traveler[element or 'ironclad'], slots.bust.traveler[element or 'ironclad'] end
     return slots.large[character], slots.bust[character]
 end
+local function showTravelerPortrait(portraits,key,native)
+    for _,element in ipairs(Select.elements)do
+        local name='traveler_'..element
+        visible(portraits:GetChild(name),key==name and (element~='ironclad' or not native))
+    end
+end
 local function paintPortraits(details,state,platform,originalSts)
     local large=largeSlot(state.character,state.element)
     local portraits=details:GetChild('portraits')
@@ -60,10 +66,7 @@ local function paintPortraits(details,state,platform,originalSts)
     if originalSts then visible(portraits,false)end
     for _,id in ipairs(Select.characters)do
         if id=='traveler' then
-            for _,element in ipairs(Select.elements)do
-                local portrait=portraits:GetChild('traveler_'..element)
-                if portrait then visible(portrait,key=='traveler_'..element and (element~='ironclad' or not native))end
-            end
+            showTravelerPortrait(portraits,key,native)
         else visible(portraits:GetChild(id),id==key) end
     end
     local portrait=portraits:GetChild(key)
@@ -103,14 +106,17 @@ local function paintThemesAndElements(panel,state,platform,elementsOpen)
         if allowed and elements.visible then paintBust(box,Theme.icon.heroSlots.bust.traveler[id],platform)end
     end
 end
+local function paintRelics(details,relicList)
+    local relics,texts={},{}
+    for _,r in ipairs(relicList)do relics[#relics+1]=r.name;if r.text and r.text~='' then texts[#texts+1]=r.text end end
+    text(details:GetChild('relic'),#relics>0 and table.concat(relics,'、') or '无')
+    text(details:GetChild('relicText'),table.concat(texts,' '))
+end
 local function paintInfo(details,info,nativeV25)
     text(details:GetChild('name'),info.name)
     text(details:GetChild('stats'),(nativeV25 and '生命：' or '生命  ')..number(info.maxHp)..(nativeV25 and '/' or ' / ')..number(info.maxHp))
     text(details:GetChild('gold'),(nativeV25 and '金币：' or '金币  ')..number(info.gold))
-    local relics,texts={},{}
-    for _,r in ipairs(info.relics)do relics[#relics+1]=r.name;if r.text and r.text~='' then texts[#texts+1]=r.text end end
-    text(details:GetChild('relic'),#relics>0 and table.concat(relics,'、') or '无')
-    text(details:GetChild('relicText'),table.concat(texts,' '))
+    paintRelics(details,info.relics)
     if not nativeV25 and details:GetChild('deckSummary') then renderStarterDeck(details,info) end
     for _,name in ipairs({'v25Story','v25RelicIcon'})do
         local detail=details:GetChild(name)

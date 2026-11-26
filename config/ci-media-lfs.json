@@ -7669,5 +7669,561 @@
         "sourceCommit": "6492e8dccbcf847a0eba7ad3995da50257032e08"
       }
     ]
+  },
+  "productionBackflowExtension": {
+    "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4",
+    "maxPayloadBytes": 11402323,
+    "files": [
+      {
+        "path": "docs/evidence/mobile-run-hud/reward-picker-after.png",
+        "sha256": "454a3ea145adfb8b5680d6781d40d1d099d783232be14f27a0f44ef6402a4c40",
+        "bytes": 222518,
+        "category": "mobile-run-hud-geometry-evidence",
+        "oldBinaryGitBlobs": [
+          "a5a3797fb4c4959f610d0dd6d8b60b86c9395d18"
+        ],
+        "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+      },
+      {
+        "path": "docs/evidence/mobile-run-hud/reward-picker-before.png",
+        "sha256": "897011662160e354640321595d846df1b721d4e55542aa6bd1084ffb9b05b248",
+        "bytes": 236536,
+        "category": "mobile-run-hud-geometry-evidence",
+        "oldBinaryGitBlobs": [
+          "2dceb4425d508acb94a451b640ca9595936d7d53"
+        ],
+        "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+      },
+      {
+        "path": "docs/evidence/release-enemy-tooltips/comparison.png",
+        "sha256": "751d8c1937e35cec82192c820b6a4178d6cb32a93bb3533f3af1c98a1e8a106f",
+        "bytes": 132259,
+        "category": "release-enemy-tooltip-evidence",
+        "oldBinaryGitBlobs": [
+          "4184871498a7f0cd7c9304dc52447921df512a93"
+        ],
+        "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+      },
+      {
+        "path": "docs/evidence/release-layout-20261124/screens/after/iphone-combat.png",
+        "sha256": "8c6303687e0ebda630404a6018fed12437c04477f607cb289ec8170c30b74c41",
+        "bytes": 110625,
+        "category": "official-assets-offline-diagnostic",
+        "oldBinaryGitBlobs": [
+          "398ded9d2f0a552da5becd7128724803ff7e2795"
+        ],
+        "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+      },
+      {
+        "path": "docs/evidence/release-layout-20261124/screens/after/iphone-map-relic-detail.png",
+        "sha256": "c9698dc152a6dd61665036bfbd131d04f58edaf296bdb8066b697038caad9136",
+        "bytes": 75159,
+        "category": "official-assets-offline-diagnostic",
+        "oldBinaryGitBlobs": [
+          "45d3fc7b02ab242f7c8eed09d6479bda74af99f9"
+        ],
+        "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+      },
+      {
+        "path": "docs/evidence/release-layout-20261124/screens/after/iphone-neow-2.png",
+        "sha256": "80a1d4dc8480c91b12972300d3da3c876a2b7a5cbafe85702310ebf73288d504",
+        "bytes": 70601,
+        "category": "official-assets-offline-diagnostic",
+        "oldBinaryGitBlobs": [
+          "5365a2e47140bf9b01aacef861178b7f73463be9"
+        ],
+        "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+      },
+      {
+        "path": "docs/evidence/release-layout-20261124/screens/after/iphone-neow-4.png",
+        "sha256": "2caacd71f0dbd7e0dfd63ed63b716757b9d1e3b257e7b03059912db9091cba7f",
+        "bytes": 117160,
+        "category": "official-assets-offline-diagnostic",
+        "oldBinaryGitBlobs": [
+          "487244ec75023cbf9500bf8a717a05fe2ee47452"
+        ],
+        "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+      },
+      {
+        "path": "docs/evidence/release-layout-20261124/screens/after/iphone-reward-list.png",
+        "sha256": "819a3ad589af442042458d40405298a1d93a5f7b50ba2d3c1193878dfb837ea0",
+        "bytes": 73799,
+        "category": "official-assets-offline-diagnostic",
+        "oldBinaryGitBlobs": [
+          "79b16f471b5c4938e1affeafb2a1988b1de66fc0"
+        ],
+        "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+      },
+      {
+        "path": "docs/evidence/release-layout-20261124/screens/after/iphone-reward-pick.png",
+        "sha256": "d623084974792eb5e7862ab92ba310d2698bc1a91ec00f6b8b4357003acd7936",
+        "bytes": 122931,
+        "category": "official-assets-offline-diagnostic",
+        "oldBinaryGitBlobs": [
+          "b4efe2b08ef09324c9ce33975839a0e41a25dcb1"
+        ],
+        "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+      },
+      {
+        "path": "docs/evidence/release-layout-20261124/screens/after/iphone-treasure-rewards.png",
+        "sha256": "9c06f296147d2aa9b710841270c1ca6c1f6a2824a0dbe9068f1351de11f2f028",
+        "bytes": 106222,
+        "category": "official-assets-offline-diagnostic",
+        "oldBinaryGitBlobs": [
+          "f193fe47dca347950787480cc399e6f2a6817db7"
+        ],
+        "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+      },
+      {
+        "path": "docs/evidence/release-layout-20261124/screens/after/pc-combat.png",
+        "sha256": "5f311d328755d6e956ce77af52c5b6af40376a06d071b53451fb8ae047a7ef10",
+        "bytes": 95235,
+        "category": "official-assets-offline-diagnostic",
+        "oldBinaryGitBlobs": [
+          "8495fe9a53edc2f4cda00be3281f724ede8d7b72"
+        ],
+        "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+      },
+      {
+        "path": "docs/evidence/release-layout-20261124/screens/after/pc-neow-4.png",
+        "sha256": "2ba42ac90771f9c2455af94135e57cef628573b669911e2388f4af06d511df1a",
+        "bytes": 101900,
+        "category": "official-assets-offline-diagnostic",
+        "oldBinaryGitBlobs": [
+          "a4eb76cfdd4f46dab4c9a4555d1df4ca3d287817"
+        ],
+        "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+      },
+      {
+        "path": "docs/evidence/release-layout-20261124/screens/after/pc-reward-pick.png",
+        "sha256": "37869554971febf89daf50f5cb66a85c647ffe9f7aa98559cc8ed555bec316e6",
+        "bytes": 111376,
+        "category": "official-assets-offline-diagnostic",
+        "oldBinaryGitBlobs": [
+          "2f61f5fbe2373ea365197b43cf39fa6a08238e2a"
+        ],
+        "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+      },
+      {
+        "path": "docs/evidence/release-layout-20261124/screens/after/pc-treasure-rewards.png",
+        "sha256": "5bd56c157362a5d4e521f1f8f221d5f928471ee4f2a8c4a3a9854abc0f2e37c0",
+        "bytes": 82744,
+        "category": "official-assets-offline-diagnostic",
+        "oldBinaryGitBlobs": [
+          "6da854884a202397be2260c6c9d45514d3ed953f"
+        ],
+        "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+      },
+      {
+        "path": "docs/evidence/release-layout-20261124/screens/before/iphone-combat.png",
+        "sha256": "95a2e435f4fcd6d66a52ea380436eccde814bc6427c9149513b3bc1814b5065f",
+        "bytes": 110126,
+        "category": "official-assets-offline-diagnostic",
+        "oldBinaryGitBlobs": [
+          "8ac956dd9d6f7b5cb32f12a40229f76ad4580d7f"
+        ],
+        "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+      },
+      {
+        "path": "docs/evidence/release-layout-20261124/screens/before/iphone-map-relic-detail.png",
+        "sha256": "258356c2f2f07497ce81c7a5ad686e529ab4e4494f2e5e2cb56ec925eedf5325",
+        "bytes": 75251,
+        "category": "official-assets-offline-diagnostic",
+        "oldBinaryGitBlobs": [
+          "752868c5b34b74cda1b7c52041dc7fbf75b0792e"
+        ],
+        "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+      },
+      {
+        "path": "docs/evidence/release-layout-20261124/screens/before/iphone-neow-2.png",
+        "sha256": "4b9f04a625e0401e5f3c700e63417370e07d3c341c9cacf199954b2f90732503",
+        "bytes": 69422,
+        "category": "official-assets-offline-diagnostic",
+        "oldBinaryGitBlobs": [
+          "e08dc63d1c29925b246e06d7742572a2f7bf2145"
+        ],
+        "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+      },
+      {
+        "path": "docs/evidence/release-layout-20261124/screens/before/iphone-neow-4.png",
+        "sha256": "717e8588c31728194b47c79662b5b1a3e94bbebe91818a61b7babc75caa0a17f",
+        "bytes": 114184,
+        "category": "official-assets-offline-diagnostic",
+        "oldBinaryGitBlobs": [
+          "97c33172ab1fd065b00af287b2ee06dc18e4fc65"
+        ],
+        "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+      },
+      {
+        "path": "docs/evidence/release-layout-20261124/screens/before/iphone-reward-list.png",
+        "sha256": "f55c8939389b5eb90746c9b85fd97f8050e995fa52f1a10a85b66377b9837cb5",
+        "bytes": 70834,
+        "category": "official-assets-offline-diagnostic",
+        "oldBinaryGitBlobs": [
+          "d62d04c27e479c6031bb1ff480a105e6e8ae3a8b"
+        ],
+        "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+      },
+      {
+        "path": "docs/evidence/release-layout-20261124/screens/before/iphone-reward-pick.png",
+        "sha256": "9c62e8999e1d1ac1f8a261c70f26b00209c3d7ba983a939d09f871c23a47b945",
+        "bytes": 122158,
+        "category": "official-assets-offline-diagnostic",
+        "oldBinaryGitBlobs": [
+          "f3f85a3e701f4c082dde66ef3cdf8a0274f69e91"
+        ],
+        "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+      },
+      {
+        "path": "docs/evidence/release-layout-20261124/screens/before/iphone-treasure-rewards.png",
+        "sha256": "a20433fc41ae8a2708bf3df41bd212ca6ef9ac530545985d416eca52ceb47405",
+        "bytes": 93549,
+        "category": "official-assets-offline-diagnostic",
+        "oldBinaryGitBlobs": [
+          "da61e0a332c09e7bd63deb99c27cddc204e561e5"
+        ],
+        "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+      },
+      {
+        "path": "docs/evidence/release-layout-20261124/screens/before/pc-combat.png",
+        "sha256": "eac678fb2d2a738b4c4aadce54fd76066f435639e89dbc560a19282c12c80332",
+        "bytes": 95426,
+        "category": "official-assets-offline-diagnostic",
+        "oldBinaryGitBlobs": [
+          "bb39a353a7cab5a14f09524469c341bf4dc7f67e"
+        ],
+        "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+      },
+      {
+        "path": "docs/evidence/release-layout-20261124/screens/before/pc-neow-4.png",
+        "sha256": "41681b2be7560cd1cc5c0ec1fa54f0ab238082cf869f013aca004482c6818065",
+        "bytes": 101911,
+        "category": "official-assets-offline-diagnostic",
+        "oldBinaryGitBlobs": [
+          "29c9283192a523ceb0f34157485811539c539355"
+        ],
+        "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+      },
+      {
+        "path": "docs/evidence/release-layout-20261124/screens/before/pc-reward-pick.png",
+        "sha256": "44a0da3acee71b623d95785698801442c09a392e6ac078bf75acf5537233d9f2",
+        "bytes": 111031,
+        "category": "official-assets-offline-diagnostic",
+        "oldBinaryGitBlobs": [
+          "6e67d40e90e99f87db3912b9eb3c3d7db9ff04a7"
+        ],
+        "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+      },
+      {
+        "path": "docs/evidence/release-layout-20261124/screens/before/pc-treasure-rewards.png",
+        "sha256": "ad4f514335901b6509a4e93dca846ea2f92b4157263fc669aa769f2069d498b0",
+        "bytes": 82379,
+        "category": "official-assets-offline-diagnostic",
+        "oldBinaryGitBlobs": [
+          "b56fb0bf8a4b5d8a450766cf818a8b875d40f1e3"
+        ],
+        "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+      },
+      {
+        "path": "docs/evidence/release-power-tips/ui-comparison.png",
+        "sha256": "7240a09871e162fe4d32c60d8bf95a92cf7517f4a8d21a416c93e168ef161d72",
+        "bytes": 142097,
+        "category": "platform-evidence",
+        "oldBinaryGitBlobs": [
+          "9d7253619c899dd64787fda895af0c1fc5607c3f"
+        ],
+        "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+      },
+      {
+        "path": "docs/evidence/run-hud-20261124/after/after-pc-detail-return.png",
+        "sha256": "5639cb61c376938a6ba5a43c1136369082a5ab6c1f85b7c0e1d9d715c6e63987",
+        "bytes": 93355,
+        "category": "official-assets-offline-diagnostic",
+        "oldBinaryGitBlobs": [
+          "bcc1130e7ae5a501d2f06ca3ec4e007a65f297e1"
+        ],
+        "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+      },
+      {
+        "path": "docs/evidence/run-hud-20261124/after/after-pc-detail.png",
+        "sha256": "6f3d1d90a2389b6d4b2faa7be5b2c2b67c2076fdc1c08e124c3277da44b7abdc",
+        "bytes": 100967,
+        "category": "official-assets-offline-diagnostic",
+        "oldBinaryGitBlobs": [
+          "27a4f2bc95024b34e98f6a3023b6ae016bf185be"
+        ],
+        "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+      },
+      {
+        "path": "docs/evidence/run-hud-20261124/after/after-pc-event26-page1.png",
+        "sha256": "2e72f75ab4d3d123c883df193a2be5dc1a05d3a3093b3178a9290e115bfca7b8",
+        "bytes": 100886,
+        "category": "official-assets-offline-diagnostic",
+        "oldBinaryGitBlobs": [
+          "f6048b5576485fb7a133ca406a64c2da721526a5"
+        ],
+        "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+      },
+      {
+        "path": "docs/evidence/run-hud-20261124/after/after-pc-event26-page2.png",
+        "sha256": "71bf67192b55c5d1e7088cf286fd356bf248f2f90b8f91353dbc17001b2707e8",
+        "bytes": 94672,
+        "category": "official-assets-offline-diagnostic",
+        "oldBinaryGitBlobs": [
+          "c63208e8ab7220481aeca7b1fd4b2617d9c71818"
+        ],
+        "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+      },
+      {
+        "path": "docs/evidence/run-hud-20261124/after/after-pc-event5.png",
+        "sha256": "3bbc6f54857b1c01976b922862e75c445d9260cdda7d91a7668301c6859cae62",
+        "bytes": 96202,
+        "category": "official-assets-offline-diagnostic",
+        "oldBinaryGitBlobs": [
+          "a8604e263a74b1e81d27b49411f9df2c74bb3913"
+        ],
+        "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+      },
+      {
+        "path": "docs/evidence/run-hud-20261124/after/after-pc-map5.png",
+        "sha256": "22ae659fe84af1d2802c661d4496b9f40aa7723c263c098d2869bea7c4604bea",
+        "bytes": 93577,
+        "category": "official-assets-offline-diagnostic",
+        "oldBinaryGitBlobs": [
+          "8d143f856e57ab06106410aa1a968efa61b59f2e"
+        ],
+        "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+      },
+      {
+        "path": "docs/evidence/run-hud-20261124/after/after-phone-detail-return.png",
+        "sha256": "eaddf678faa5cb3225ffc67a39dfc7e8ba19e0c4332173ad89e5b4a2eb3b9563",
+        "bytes": 105869,
+        "category": "official-assets-offline-diagnostic",
+        "oldBinaryGitBlobs": [
+          "59ab41380ed19806913bb10971649aa80c115a02"
+        ],
+        "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+      },
+      {
+        "path": "docs/evidence/run-hud-20261124/after/after-phone-detail.png",
+        "sha256": "f73aab97c271ab2bad4966d800a2e078ae7b56d142ca1504a4a4cbba54434b54",
+        "bytes": 114209,
+        "category": "official-assets-offline-diagnostic",
+        "oldBinaryGitBlobs": [
+          "c2bf1c2ccbae7b4faf5065171add3cd9f4b659e9"
+        ],
+        "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+      },
+      {
+        "path": "docs/evidence/run-hud-20261124/after/after-phone-event26-page1.png",
+        "sha256": "589ae2aa110914085bff9eda712673fd058c26f2d851a5385e442c18d18a8146",
+        "bytes": 110220,
+        "category": "official-assets-offline-diagnostic",
+        "oldBinaryGitBlobs": [
+          "08b3f2f1eae3e0228d0ff5fc93e958dcbda0be52"
+        ],
+        "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+      },
+      {
+        "path": "docs/evidence/run-hud-20261124/after/after-phone-event26-page2.png",
+        "sha256": "28eb070224cf3aa8ee7329986a6e4b1f90479d670cc60a1644d7aeac428d0db9",
+        "bytes": 106919,
+        "category": "official-assets-offline-diagnostic",
+        "oldBinaryGitBlobs": [
+          "2bd8332acfc9b2ea753bfc76be65fd04f18ddf5a"
+        ],
+        "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+      },
+      {
+        "path": "docs/evidence/run-hud-20261124/after/after-phone-event5.png",
+        "sha256": "749e310868dc8e419f5c4f872c33c9603d94024b6a60137b3234c6462bcd36b8",
+        "bytes": 106606,
+        "category": "official-assets-offline-diagnostic",
+        "oldBinaryGitBlobs": [
+          "7dcd2eaccae9f08673d9e4f628d1559048934797"
+        ],
+        "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+      },
+      {
+        "path": "docs/evidence/run-hud-20261124/after/after-phone-map5.png",
+        "sha256": "987e7173b9bb11aa75cbed5b5d087c7796a3e630ce59dc75f28667e01a766f31",
+        "bytes": 104906,
+        "category": "official-assets-offline-diagnostic",
+        "oldBinaryGitBlobs": [
+          "3a4f98e3704bda13abd7939c1a9a82669ede3f6b"
+        ],
+        "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+      },
+      {
+        "path": "docs/evidence/run-hud-20261124/before/before-pc-event5.png",
+        "sha256": "1440a0db91c145c8c654e9fc91bac9c7ae1a90a3656feb241da5c68ee3f0dd32",
+        "bytes": 96571,
+        "category": "official-assets-offline-diagnostic",
+        "oldBinaryGitBlobs": [
+          "d2b1dfdbc28d407b171d206237d22b0843701be8"
+        ],
+        "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+      },
+      {
+        "path": "docs/evidence/run-hud-20261124/before/before-pc-map5.png",
+        "sha256": "40a79416df57247e5c667cb83316f6154311f62ab1fc9a7473692ad3da042b0a",
+        "bytes": 92486,
+        "category": "official-assets-offline-diagnostic",
+        "oldBinaryGitBlobs": [
+          "781604e7db578d10684c1c1e90c64fa0be783cbc"
+        ],
+        "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+      },
+      {
+        "path": "docs/evidence/run-hud-20261124/before/before-phone-event5.png",
+        "sha256": "d21f365f60a9d8594c36946aa73c6bbe3107842ae8caabab0ab684e650cae12f",
+        "bytes": 94579,
+        "category": "official-assets-offline-diagnostic",
+        "oldBinaryGitBlobs": [
+          "85933b3a0f11d1d57e7367ba0cd63200a877a769"
+        ],
+        "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+      },
+      {
+        "path": "docs/evidence/run-hud-20261124/before/before-phone-map5.png",
+        "sha256": "725ee2cd8ae987a00e3a64fc55b3dcfab7e744b796f616e966623c600388274f",
+        "bytes": 100373,
+        "category": "official-assets-offline-diagnostic",
+        "oldBinaryGitBlobs": [
+          "0d96f1777f4567fda29ccc5b9bb71d6ef1361185"
+        ],
+        "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+      },
+      {
+        "path": "docs/evidence/shop-828/after-click.png",
+        "sha256": "d6639f6cedb18da1b32bcd6cdea34ae0d759ed8d0cf9a28257f02ac48c0abdab",
+        "bytes": 216130,
+        "category": "platform-evidence",
+        "oldBinaryGitBlobs": [
+          "875d822b7e4d7f46966859aff6e7c79e9bd057ae"
+        ],
+        "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+      },
+      {
+        "path": "docs/evidence/shop-828/after-room.png",
+        "sha256": "56b49e42f2071660f023959db2d94e7fd2164ae931b0400dd27aea3ce2376a50",
+        "bytes": 216828,
+        "category": "platform-evidence",
+        "oldBinaryGitBlobs": [
+          "38760af41f0014e34652953e3932c4761a35bf73"
+        ],
+        "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+      },
+      {
+        "path": "docs/evidence/shop-828/after-shelf.png",
+        "sha256": "bd7fd6ff7c93d9450724241bac3031b7bf0b9426527d7aeeabd1115d27e21efd",
+        "bytes": 153586,
+        "category": "platform-evidence",
+        "oldBinaryGitBlobs": [
+          "917210f24db47a0d7c17381b14808c31f841632c"
+        ],
+        "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+      },
+      {
+        "path": "docs/evidence/shop-828/after-transition.png",
+        "sha256": "94c0a78f1b14ad55d52b3576f8fdf494a626a65b219af8266e08e02b730caaf0",
+        "bytes": 161732,
+        "category": "platform-evidence",
+        "oldBinaryGitBlobs": [
+          "e3ee82a2678b53e06ba8da76c6c61ce3855e6dbd"
+        ],
+        "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+      },
+      {
+        "path": "docs/evidence/shop-828/before-shelf.png",
+        "sha256": "27051c76c5364053909723834157beac35ef2a69d9b440e8bf18e8684bbfa06b",
+        "bytes": 130700,
+        "category": "platform-evidence",
+        "oldBinaryGitBlobs": [
+          "05cbe6eaea95343dac1d35d57292d5515011cc72"
+        ],
+        "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+      },
+      {
+        "path": "docs/evidence/v2.1.1-performance-20261125/battle-ui-publication/diagnostics.tar.xz",
+        "sha256": "ce47cada7bcfcba4de8fe953e141b07a338a7dc1309c0181c27971694e4a2453",
+        "bytes": 619432,
+        "category": "project-ci-history-evidence",
+        "oldBinaryGitBlobs": [
+          "1e4b0cc2cabc97573640b03f780a1abf44195555"
+        ],
+        "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+      },
+      {
+        "path": "docs/evidence/v2.1.1-performance-20261125/battle-ui-publication/host-samples.tar.xz",
+        "sha256": "91ae7421c65e0a6a456231d5f9e7adc45610c62344bc93830b5843a359f3dee1",
+        "bytes": 611092,
+        "category": "project-ci-history-evidence",
+        "oldBinaryGitBlobs": [
+          "58542440b9f5c40e1d9ce8682a17450de5afa4ab"
+        ],
+        "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+      },
+      {
+        "path": "docs/evidence/v2.1.1-performance-20261125/capacity/capacity-spans.csv.gz",
+        "sha256": "72c717b8eb0f4c3b79d700caac7dff81a93e0a168e75031a699c30fd9274f60d",
+        "bytes": 1008619,
+        "category": "project-ci-history-evidence",
+        "oldBinaryGitBlobs": [
+          "3e224cfc1105e2570085f7559afc3ed0d72f0545"
+        ],
+        "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+      },
+      {
+        "path": "docs/evidence/v2.1.1-performance-20261125/remediation/deck-remediation-evidence.tar.gz",
+        "sha256": "28fabfbd56f128faf019ff0e5ee0c22212c8cbf2b26a490a09afb687cd41ac1b",
+        "bytes": 795857,
+        "category": "project-ci-history-evidence",
+        "oldBinaryGitBlobs": [
+          "9d00adc592b0b25df44a537518cc9e443a45d0a4"
+        ],
+        "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+      },
+      {
+        "path": "docs/evidence/v2.1.1-performance-20261125/runtime/runtime-evidence.tar.gz",
+        "sha256": "100567ebf6d01daa9cdf6d316b998b05e6b6ec295ae540e6f8bae06e690d4ec5",
+        "bytes": 1372652,
+        "category": "project-ci-history-evidence",
+        "oldBinaryGitBlobs": [
+          "87eafa891b4f85256a365bc8f3464cc4d3f6e8a4"
+        ],
+        "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+      },
+      {
+        "path": "docs/evidence/v2.1.1-performance-20261125/runtime/runtime-stacks.csv.gz",
+        "sha256": "56ced4f26f56d6e4444bca2bf7c5f12b0c4482e5925fc191b50febf5a56f68b8",
+        "bytes": 371123,
+        "category": "project-ci-history-evidence",
+        "oldBinaryGitBlobs": [
+          "40141a5d9278e9adfad39bc5edabeaa44b04989b"
+        ],
+        "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+      },
+      {
+        "path": "docs/evidence/v2.1.1-performance-20261125/runtime/runtime-trace.csv.gz",
+        "sha256": "3bd54d2097d7532f979285c460cf14aa5114684852dc1a3441331bb695a55d9e",
+        "bytes": 195299,
+        "category": "project-ci-history-evidence",
+        "oldBinaryGitBlobs": [
+          "da1c3c3c44cba647f4eec96498da741e85257a85"
+        ],
+        "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+      },
+      {
+        "path": "docs/evidence/v2.1.1-performance-20261125/startup/startup-evidence.tar.gz",
+        "sha256": "b5ac0ed7dccd676891ae619f46290b479a9f8a83654f967475ca2bb5cf2df440",
+        "bytes": 1089443,
+        "category": "project-ci-history-evidence",
+        "oldBinaryGitBlobs": [
+          "bfc360308f81f638efa275a69006653121ca1432"
+        ],
+        "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+      }
+    ]
   }
 }

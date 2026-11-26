@@ -29,13 +29,7 @@ function M.relicText(relic)
     if #effects==1 and e.op=='heal' and relic.trigger=='combat_end' then return '每场战斗结束时，回复 '..e.value..' 点生命。' end
     return ''
 end
-function M.preview(source,presentation,id)
-    local data,profile=source,nil
-    if names[id] and id~='traveler' then
-        data,profile=require('abyss_original_v4_profiles').preview(source,id)
-    elseif elements[id] then
-        if id~='ironclad' then data,profile=require('abyss_run_card_catalog').previewSelected(source,id)end
-    else return nil end
+local function previewDeck(data,presentation,copyDefinitions)
     local cards,defs,counts,order={},{},{},{}
     for _,card in ipairs(data.cards.cards)do defs[card.id]=card end
     for _,card in ipairs(data.cards.starter_deck.cards)do
@@ -49,10 +43,20 @@ function M.preview(source,presentation,id)
     local deck={}
     for _,card in ipairs(order)do
         local shown=display[card]
-        local definition=id=='ironclad' and Copy(defs[card]) or defs[card]
+        local definition=copyDefinitions and Copy(defs[card]) or defs[card]
         deck[#deck+1]={id=card,name=shown.name,count=counts[card],type=definition.type,cost=shown.cost or definition.cost,
             text=shown.text or definition.text,definition=definition,display=shown}
     end
+    return deck
+end
+function M.preview(source,presentation,id)
+    local data,profile=source,nil
+    if names[id] and id~='traveler' then
+        data,profile=require('abyss_original_v4_profiles').preview(source,id)
+    elseif elements[id] then
+        if id~='ironclad' then data,profile=require('abyss_run_card_catalog').previewSelected(source,id)end
+    else return nil end
+    local deck=previewDeck(data,presentation,id=='ironclad')
     local relics={}
     for _,owned in ipairs(data.rules.player.startingRelics)do
         for _,relic in ipairs(data.relics.relics)do if relic.id==owned then
