@@ -1,0 +1,58 @@
+{
+  "mapSha256": "afe80c0783d0d4b6046c1f44cba3ef2b71cb8bb34fbc7404d939d12e0f5ff831",
+  "moduleCount": 375,
+  "modules": {
+    "abyss_battle_card_view": {
+      "sha256": "ea1e553d5c23c1d7132015830f395668c646a93724a9f35a213258a44e5600cf",
+      "bytes": 25367,
+      "hasHandHealthAvoidance": false,
+      "hasNewCardFeedback": false,
+      "hasEntranceMotion": false
+    },
+    "abyss_battle_card_layout": {
+      "sha256": "0b6bb328e9e2beb69fdd2669e3090f987b0a95d1d6be4eed5ebce7fae92551d1",
+      "bytes": 3808,
+      "hasHandHealthAvoidance": false,
+      "hasNewCardFeedback": false,
+      "hasEntranceMotion": false
+    },
+    "abyss_viewport": {
+      "sha256": "9b3be720afde3e12795e3f830ffe89787788da5c859a77d7ee2706f48bb30619",
+      "bytes": 541,
+      "hasHandHealthAvoidance": false,
+      "hasNewCardFeedback": false,
+      "hasEntranceMotion": false
+    },
+    "abyss_battle_card_glow": {
+      "sha256": "569dd2c83f09cba353d8cd7c6e48f4acbee48c519a83d108331687008ea6f2ea",
+      "bytes": 8178,
+      "hasHandHealthAvoidance": false,
+      "hasNewCardFeedback": false,
+      "hasEntranceMotion": false
+    },
+    "abyss_feedback": {
+      "sha256": "b25ce98b05e3a4804038d70b96d0a3af9263c540e6a3ebf25ebc6d6034085459",
+      "bytes": 29872,
+      "hasHandHealthAvoidance": false,
+      "hasNewCardFeedback": false,
+      "hasEntranceMotion": false
+    },
+    "abyss_character_entrance": null,
+    "abyss_entrance_motion": null,
+    "abyss_shop_ui": {
+      "sha256": "94486b9024d0979f9a6dc1ad5acd1e18d9a0cd11613fce62ace5bb2669d20148",
+      "bytes": 11905,
+      "hasHandHealthAvoidance": false,
+      "hasNewCardFeedback": false,
+      "hasEntranceMotion": false
+    },
+    "abyss_character_select_view": {
+      "sha256": "ae811be019ab8d87a7cc3ada4c00044b54c16bac0434f0c1081d4c1e21654617",
+      "bytes": 6743,
+      "hasHandHealthAvoidance": false,
+      "hasNewCardFeedback": false,
+      "hasEntranceMotion": false
+    },
+    "abyss_chapter_battle_scene": null
+  }
+}

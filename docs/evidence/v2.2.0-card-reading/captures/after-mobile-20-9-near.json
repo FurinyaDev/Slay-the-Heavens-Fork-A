@@ -1,0 +1,62 @@
+{
+  "ref": "0b00fcf0b3822d75a3f317a4a09c81f2bc321943",
+  "label": "after",
+  "preset": "mobile-20-9",
+  "lane": "near",
+  "canvasWidth": 1600,
+  "canvasHeight": 720,
+  "layoutSha256": "17c1f08782e3a3cf2450cab5ea4741d91022127d5cf2eeea8642963e8db284f4",
+  "viewportSha256": "d9741c3f60f9fc72d8c87a386947a4a77373f22312ed8fe1da9b30c58b28c939",
+  "layoutModuleSha256": "6a33acc4b5113463f16cc992c439044bf1b1ebd0d8f75b8ee0601cd160cfbafa",
+  "click": {
+    "x": 800,
+    "y": 93
+  },
+  "states": [
+    {
+      "phase": "idle",
+      "x": 0,
+      "y": -290,
+      "scale": 1,
+      "angle": 0,
+      "hitWidth": 183,
+      "hitHeight": 313.1,
+      "healthX": 0,
+      "healthY": -175
+    },
+    {
+      "phase": "selected",
+      "x": 0,
+      "y": -210,
+      "scale": 1.22,
+      "angle": 0,
+      "hitWidth": 150,
+      "hitHeight": 256.639344,
+      "healthX": 0,
+      "healthY": -175
+    },
+    {
+      "phase": "cancelled",
+      "x": 0,
+      "y": -290,
+      "scale": 1,
+      "angle": 0,
+      "hitWidth": 183,
+      "hitHeight": 313.1,
+      "healthX": 0,
+      "healthY": -175
+    }
+  ],
+  "pngSha256": "66db0965fb16b06d6e79bc8756b6f0e6942a2b7905565d57dd8002f8bfa71bd1",
+  "receipt": {
+    "canvasId": "mobile-20-9",
+    "frame": 0,
+    "time": 0,
+    "clockMode": "manual",
+    "width": 1600,
+    "height": 720,
+    "pixelWidth": 1600,
+    "pixelHeight": 720,
+    "assetWarnings": []
+  }
+}
