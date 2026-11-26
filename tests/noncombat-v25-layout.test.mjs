@@ -328,12 +328,12 @@ async function selectionEntranceFixtureRead(read=readFileSync){
  const {beforeChapterBattleScene}=await import('./helpers/chapter-battle-scene-source.mjs');
  const {beforeOfficialCharacterBackflow}=await import('./helpers/current-replay-fix-sources.mjs');
  const {chapterEvidenceCurrentRead}=await import('./helpers/fork-preflight-source.mjs');
- const {beforeKnownMasterBackflowSource}=await import('./helpers/master-backflow-source.mjs');
+ const {beforeKnownMasterBackflowSource,productionReadingBackflowOwns}=await import('./helpers/master-backflow-source.mjs');
  const {checkedSelectionEntranceRead}=await import('./helpers/ui-selection-current-source.mjs');
  const readLive=checkedSelectionEntranceRead(read);
  const readCurrent=chapterEvidenceCurrentRead(path=>{
   const raw=readLive(path,'utf8');
-  if(beforeOfficialCharacterBackflow(path,raw)!==raw)return raw;
+  if(productionReadingBackflowOwns(path)||beforeOfficialCharacterBackflow(path,raw)!==raw)return raw;
   return beforeKnownMasterBackflowSource(path,raw);
  });
  return path=>beforeBattlePeriphery(path,beforeChapterBattleScene(path,readCurrent(path,'utf8')));

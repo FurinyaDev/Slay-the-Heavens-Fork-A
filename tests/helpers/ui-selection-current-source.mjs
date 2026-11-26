@@ -467,7 +467,25 @@ const returnedReadingReplay=Object.freeze({
   }
 ],
 });
+const selectionLayoutPath='tests/noncombat-v25-layout.test.mjs';
+const selectionLayoutCurrent=Object.freeze({
+ current:{"sha256":"84f7d6670686ae06dd6d97290e010882b9c6433104eae365e501b738d39d5cf4","gitBlob":"4a1c82e57689e2bc8b9a7bf25f63bc23f5758b1a"},
+ previous:combinedReceipt(selectionLayoutPath).current,
+ hunks:[
+  {
+    "at": 330,
+    "before": " const {beforeKnownMasterBackflowSource}=await import('./helpers/master-backflow-source.mjs');",
+    "after": " const {beforeKnownMasterBackflowSource,productionReadingBackflowOwns}=await import('./helpers/master-backflow-source.mjs');"
+  },
+  {
+    "at": 335,
+    "before": "  if(beforeOfficialCharacterBackflow(path,raw)!==raw)return raw;",
+    "after": "  if(productionReadingBackflowOwns(path)||beforeOfficialCharacterBackflow(path,raw)!==raw)return raw;"
+  }
+],
+});
 function activeReceipt(path){
+ if(path===selectionLayoutPath)return selectionLayoutCurrent;
  if(path===copierPath)return returnedCardReadingCopier;
  if(path===returnedReadingReplayPath)return returnedReadingReplay;
  return combinedReceipt(path)??receipt(path);
@@ -485,6 +503,7 @@ function beforeReceipt(path,source,binding){
 }
 
 export function beforeSelectionReceiptSource(path,source){
+ if(path===selectionLayoutPath)source=beforeReceipt(path,source,selectionLayoutCurrent);
  if(path===returnedReadingReplayPath)source=beforeReceipt(path,source,returnedReadingReplay);
  if(path===copierPath)source=beforeReceipt(path,source,returnedCardReadingCopier);
  if(path===copierPath)source=beforeReceipt(path,source,deckArchitectureCopier);

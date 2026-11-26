@@ -18,6 +18,7 @@ import {componentUiCiSourceProof} from './component-ui-ci-source-inverse.mjs';
 import {beforeSelectionReceiptSource,selectionCopierReceipt} from './ui-selection-current-source.mjs';
 import {restoreExactFixtureHunks} from './exact-fixture-hunks.mjs';
 import {beforeRunHudDeckLabel} from './run-hud-successors.mjs';
+import {beforeCardReadingScope} from './chapter-battle-scene-source.mjs';
 
 const hash=(bytes,algorithm='sha256')=>createHash(algorithm).update(bytes).digest('hex');
 const blob=source=>hash(`blob ${Buffer.byteLength(source)}\0${source}`,'sha1');
@@ -318,7 +319,8 @@ function readOfficialCalibrationReceipt(path,digest,readCurrent){
  const prior=row.predecessors[digest];
  if(row.currentPath!==path)assert.throws(()=>readCurrent(path,'utf8'),{code:'ENOENT'},'retired official receipt input reappeared: '+path);
  const live=readCurrent(row.currentPath,'utf8');
- const source=row.currentPath==='scripts/deck-ui-layout.mjs'?beforeRunHudDeckLabel(live):live;
+ const source=row.currentPath==='scripts/deck-ui-layout.mjs'?beforeRunHudDeckLabel(live):
+  row.currentPath==='src/lua/abyss_viewport.lua'?beforeCardReadingScope(row.currentPath,live):live;
  assert(matches(source,row.current),'current official receipt input changed: '+row.currentPath);
  const normalized=lf(source);
  assert(source===normalized||source===normalized.replaceAll('\n','\r\n'),'mixed official receipt line endings: '+row.currentPath);

@@ -1,4 +1,4 @@
-import {beforeChapterBattleScene,chapterBattleSceneReader} from './chapter-battle-scene-source.mjs';
+import {beforeCardReadingScope,beforeChapterBattleScene,beforeResponsiveHand,chapterBattleSceneReader} from './chapter-battle-scene-source.mjs';
 import { beforeUiEntrance, entranceInventory, entrancePredecessor, entranceReader, uiEntranceOwns, assertCurrentUiEntrance } from './ui-entrance-source.mjs';
 import {battlePeripheryPredecessor,beforeBattlePeriphery} from './battle-periphery-source.mjs';
 // Exact Develop predecessors for historical replay. Live builds read current sources.
@@ -12,8 +12,9 @@ import {assertRelicDetailCurrent,authenticateRelicDetail,beforeRelicDetail,relic
 import {beforeNativeFlowFixture} from './native-flow-fixture-source.mjs';
 import {authenticateActionButtons,beforeActionButtons,actionButtonsOwns} from './action-buttons-source.mjs';
 import {beforeNodeNoticeSource} from './reward-current-source.mjs';
-import {beforeKnownMasterBackflowSource} from './master-backflow-source.mjs';
+import {beforeKnownMasterBackflowSource,beforeProductionReadingBackflow} from './master-backflow-source.mjs';
 import {beforeReleaseVocabulary,isReleaseVocabularyPredecessor,releaseVocabularyOwns} from './develop-release-vocabulary-source.mjs';
+import {beforeRunHudDeckLabel} from './run-hud-successors.mjs';
 
 const hash=(bytes,algorithm='sha256')=>createHash(algorithm).update(bytes).digest('hex');
 const blob=source=>hash(`blob ${Buffer.byteLength(source)}\0${source}`,'sha1');
@@ -248,7 +249,7 @@ for(const states of Object.values(battleInputHistory))
 assert(isCurrentInputRetirementSource(gesturesPath,battleInputHistory[gesturesPath][0].source),'exact raw gesture input retirement owner');
 function beforeBattleInputHistory(path,source){
  if(!Object.hasOwn(battleInputHistory,path)||!uniformSource(source))return source;
- const masterPrior=beforeKnownMasterBackflowSource(path,source);
+ const masterPrior=beforeCardReadingScope(path,beforeKnownMasterBackflowSource(path,source));
  const states=battleInputHistory[path];
  if(!matches(masterPrior,states.at(-1)))return source;
  const prior=states[0].source;
@@ -269,10 +270,12 @@ const linkedSuccessors={
  'src/lua/abyss_battle_detail_bindings.lua':{sha256:'fc3e819c62455d966db30172055d2c3b4aa721daed943418519252fd38ad1852',
   gitBlob:'951d6e972052ed08a0638140b156ee2ffaea5166'},
 };
+const battleUiPath='src/lua/abyss_battle_ui.lua';
 function beforeLinkedBackflow(path,source){
  if(!Object.hasOwn(linkedBackflow,path)||!uniformSource(source))return source;
  const {before,after}=linkedBackflow[path];
- if(!matches(source,after)&&!matches(source,linkedSuccessors[path]??after))return source;
+ const readingSuccessor=path===battleUiPath&&beforeProductionReadingBackflow(path,source)!==source;
+ if(!readingSuccessor&&!matches(source,after)&&!matches(source,linkedSuccessors[path]??after))return source;
  return source.includes('\r\n')?before.source.replaceAll('\n','\r\n'):before.source;
 }
 const architectureOwnersArchive=readFileSync(new URL('../fixtures/develop-architecture-linked-source.json.gz',import.meta.url));
@@ -311,6 +314,7 @@ for(const [path,{before,after}] of Object.entries(deckPages.files)){
 }
 export const deckPagesAdded=Object.freeze(Object.keys(deckPages.added));
 function deckPagesPrior(path,source){return predecessor(deckPages.files,path,source);}
+const deckLayoutPath='scripts/deck-ui-layout.mjs';
 export function beforeDeckPages(path,source,options){
  source=beforeLinkedBackflow(path,beforeBattleInputHistory(path,beforeMapRoomBattleActions(path,source)));
  return deckPagesPrior(path,beforeInputRetirement(path,beforeCombatEvents(path,beforeActionButtons(path,beforeDevelopUiBackflows(path,source))),options));
@@ -409,7 +413,8 @@ export function beforeCurrentDeckEntranceOwner(path,source){
 function recentBackflowOwnerReader(read,historicalOwners){
  let epoch;
  const readEntrancePrior=entranceReader(path=>{
-  const source=beforeArchitectureOwner(path,read(path));
+  const raw=read(path);
+  const source=beforeArchitectureOwner(path,path===deckLayoutPath?beforeRunHudDeckLabel(raw):raw);
   const vocabulary=releaseVocabularyOwns(path);
   if(!uiEntranceOwns(path)&&!vocabulary&&path!==battleActionsPath&&!Object.hasOwn(battleInputHistory,path)&&!Object.hasOwn(linkedBackflow,path))return source;
   const frozen=historicalOwners?.[path]?.source;
@@ -476,7 +481,10 @@ export function bindDevelopBackflow(read,historicalOwners){
    const chapter=beforeChapterEntranceOwner(path,source);
    if(chapter!==source)source=beforeUiEntrance(path,chapter);
    const current=beforeLinkedBackflow(path,beforeBattleInputHistory(path,beforeMapRoomBattleActions(path,beforeVocabularyOwner(path,source))));
-   return authenticateDevelopBackflowWithReaders(path,current,readOwner,readOwner,options);
+   // The chapter reader authenticates a responsive source against raw owners
+   // before the linked Develop reader enters its older source epoch.
+   const readLive=beforeResponsiveHand(path,current)!==current?read:readOwner;
+   return authenticateDevelopBackflowWithReaders(path,current,readLive,readOwner,options);
   },
  };
 }
@@ -528,6 +536,7 @@ function beforeSessionRelic(path,source,options){
 export function beforeDevelopBackflow(path,source,options){
  source=beforeLibraryReadPrompt(path,source);
  source=beforeBattleInputHistory(path,beforeChapterEntranceOwner(path,beforeArchitectureOwner(path,source)));
+ if(path===battleUiPath)source=beforeLinkedBackflow(path,source);
  source=beforeUiEntrance(path,beforeBattlePeriphery(path,beforeChapterBattleScene(path,source)));
  source=predecessor(roomEntry.files,path,beforeDeckPages(path,source,options));
  source=beforeRelicDetail(path,source);
