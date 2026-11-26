@@ -48,6 +48,12 @@ node docs/evidence/v2.2.0-viewport/periphery.mjs \
 | 20:9 | −745.5 | 728 | 753.33333 | [实际写入](mobile-20-9-flights.json) |
 | 21:9 | −785.5 | 768 | 793.33333 | [实际写入](pc-21-9-flights.json) |
 
-探针运行生产 `abyss_card_flow`，在四档真实 Simulator 控件上读取三种到达位置，与同场的牌堆图标范围校验。16:9 的前后端点、触点与 PNG 摘要相同。[16:9 修改前回执](mobile-16-9-flights-before.json)用同一正式 v3 `game-ui.json` 和旧动画源码作负对照，21:9 抽牌尾段仍停在 −585.5，触发宽屏期望 −785.5 的断言。[21:9 修改前原始错误](pc-21-9-flights-before.log)Fengari 的 `card_flow_feedback.lua` 另覆盖真实 Combat 后的规则与 RNG 保持以及三种宽屏入手起点，`card_flow.lua` 覆盖排队、播放中与回到 16:9 的重定位。实际完整两幕与设备表现仍按同包验收。
+探针运行生产 `abyss_card_flow`，在四档真实 Simulator 控件上读取三种到达位置，与同场的牌堆图标范围校验。16:9 的前后端点、触点与 PNG 摘要相同。[16:9 修改前回执](mobile-16-9-flights-before.json)用同一正式 v3 `game-ui.json` 和旧动画源码作负对照，21:9 抽牌尾段仍停在 −585.5，触发宽屏期望 −785.5 的断言。Fengari 的 `card_flow_feedback.lua` 另覆盖真实 Combat 后的规则与 RNG 保持以及三种宽屏入手起点，`card_flow.lua` 覆盖排队、播放中与回到 16:9 的重定位。实际完整两幕与设备表现仍按同包验收。
+
+### 21:9 负对照回执
+
+BeyondSimulator `0.5.2`、`pc-21-9`（2100×900）。沿用上表固定候选生成的正式 v3 布局，SHA-256 为 `65ad297efe3e4b8cd839c7a2d0362187bedee7428179909a857f8cb4dfcfeea1`。将探针读取的 `abyss_card_flow.lua` 切换到 [边锚前源码](https://github.com/FurinyaDev/Slay-the-Heavens-Fork-A/blob/6bdf065367799e9993faa121425678a0070892c1/src/lua/abyss_card_flow.lua)，按同一飞牌命令重放。脱敏原断言为 `draw flight landed at -585.50000, expected -785.50000`。
+
+完整日志原样保存在 [#988 原始开发提交](https://github.com/FurinyaWorks/Slay-the-Heavens/blob/4f6733cbb5a23f181dcf2b3b0838872d3a63779d/docs/evidence/v2.2.0-viewport/pc-21-9-flights-before.log)，SHA-256 为 `8da664090f301250bba0e73ee140601347e88c3e5438ca20ac5af5a1376fa693`。
 
 复现时在本页 Simulator 命令前设置 `VIEWPORT_VERIFY_FLIGHTS=1`。该模式加载生成目录的正式主题，并提取原有尾段控件。20:9 同样使用记录中的独立尺寸预设。
