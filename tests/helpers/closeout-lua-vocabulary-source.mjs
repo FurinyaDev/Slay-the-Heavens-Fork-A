@@ -19,7 +19,7 @@ const vocabulary=readPacket('closeout-lua-vocabulary-source',
  'a9b4b58832c0822f591b3af44ecbb1395efdceca6bb30fa16034e393fd5b9d03',
  '7348ab8598c8607712d525bd732239f89bb52830','b2f74d99a3d80e60b99165b6380987cda8b4488d');
 const backflow=readPacket('closeout-lua-backflow-source',
- '820ad57a42fa899c4ba7c92f9dcb4ce601c2ffa5699ea2488f189db617278580',
+ 'bad678221d980f80a774b2bfe7de1e988a6a9c1f6d9fcc61c3396059074a3939',
  '903bf2a31e91f10fb24763ab4cea23d586d0bb83','7228aaa83b0995e1dc6e36955cfd6e773c199f07');
 const floorSources=readPacket('closeout-planning-floor-source',
  '64f1e0473854162933cf02650519ad07ce99306905344722baf5eea2b6f5da93',
@@ -28,7 +28,8 @@ const floorSources=readPacket('closeout-planning-floor-source',
 function receiptFor(files,path,digest){
  if(!Object.hasOwn(files,path))return;
  const row=files[path];
- return digest===row.beforeSha256?row:undefined;
+ if(digest===row.beforeSha256)return row;
+ if(row.earlier&&digest===row.earlier.beforeSha256)return row;
 }
 
 function floorReceipt(path,digest){
@@ -59,5 +60,12 @@ export function readCloseoutLuaVocabularyReceipt(path,digest,readCurrent){
  const prior=restoreExactFixtureHunks({...row,path},path,predecessor);
  assert(exactSourceMatches(prior,{sha256:row.beforeSha256,gitBlob:row.beforeBlob}),
   'exact closeout Lua receipt predecessor: '+path);
- return prior;
+ if(digest===row.beforeSha256)return prior;
+ const earlier=row.earlier;
+ assert(exactSourceMatches(prior,{sha256:earlier.afterSha256,gitBlob:earlier.afterBlob}),
+  'exact intermediate closeout Lua receipt: '+path);
+ const original=restoreExactFixtureHunks({...earlier,path},path,prior);
+ assert(exactSourceMatches(original,{sha256:earlier.beforeSha256,gitBlob:earlier.beforeBlob}),
+  'exact pre-Formation Lua receipt predecessor: '+path);
+ return original;
 }
