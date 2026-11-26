@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@Furinya'
 created_date: '2026-11-25 21:00'
-updated_date: '2026-11-26 00:05'
+updated_date: '2026-11-26 00:29'
 labels:
   - v2.2.0
 milestone: m-8
@@ -60,4 +60,6 @@ ordinal: 210000
 现行架构与样式回放 #997 已合入 develop 060b13c612bb3d4ad36044939f11ca3f5b2929c7。独立评审 6066545524 及原定向 6/7 通过，原 Linux 预算仍高 5,366 ms。Fork Quick 45722483438 两次在 Git LFS 素材恢复失败，测试步骤未运行。精确主仓 Quality 45723458426、Licenses 45723458427 排队，验收项继续待验。
 
 060b13c6 的主仓 Quality 与 Licenses 在变更前均未分配 Runner，排队约 21 分钟后由 develop 并发机制取消。#998 后同一工作流入队，精确 8a5f86813e993a9b8cd85dd8016a2943d4a7c629，Quality 45726046674、Licenses 45726046811。
+
+8a5f8681 的主仓 Quality 与 Licenses 排队近 23 分钟，未分配 Runner，随后由 develop 并发机制取消。实际最新源码 454b589793c8d3a171ccbcaee0db1c809136c683 重新入队，Quality 45728830817、Licenses 45728830880。完整 CI 仍待验。
 <!-- SECTION:NOTES:END -->

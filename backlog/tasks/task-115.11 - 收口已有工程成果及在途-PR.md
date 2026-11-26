@@ -5,6 +5,7 @@ status: In Progress
 assignee:
   - '@Furinya'
 created_date: '2026-11-25 21:02'
+updated_date: '2026-11-26 00:29'
 labels:
   - v2.2.0
 milestone: m-8
@@ -14,6 +15,7 @@ references:
   - 'https://github.com/FurinyaWorks/Slay-the-Heavens/pull/967'
   - 'https://github.com/FurinyaWorks/Slay-the-Heavens/pull/966'
   - 'https://github.com/FurinyaWorks/Slay-the-Heavens/pull/968'
+  - 'https://github.com/FurinyaWorks/Slay-the-Heavens/pull/999'
 documentation:
   - docs/versions/V2.2.0-RELEASE.md
 parent_task_id: TASK-115
@@ -38,3 +40,9 @@ ordinal: 223000
 <!-- AC:BEGIN -->
 - [ ] #1 已有工程 PR 有确切接续结果、独审与精确源码验证，Backlog 通过一致性检查
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+#999 接续 #911 的交付治理源码覆盖。原 #911 更宽范围继续留痕。实际 Git 双入口独立评审 6066893403，85 项交付、Hosted 入口夹具、102 项历史回放和 25 项性能合同通过。Fork A 45728156747 Advisory Quick 通过。精确 8a5f8681 基线的结果随后继基线重新核对。
+<!-- SECTION:NOTES:END -->
