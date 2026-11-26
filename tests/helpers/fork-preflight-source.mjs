@@ -1261,7 +1261,12 @@ export function currentReviewedSelectionRead(read){
  if(currentReviewReaders.has(read))return read;
  read=readBeforeMasterBackflowSource(read);
  const current=(path,encoding)=>{
-  const source=read(path,encoding);
+  let source;
+  try{source=read(path,encoding);}
+  catch(cause){
+   if(cause?.code!=='ERR_ASSERTION')throw cause;
+   throw new Error('fresh complete integration source: '+path,{cause});
+  }
   if(path!==reviewedSelectionFixture&&path!==officialLegibilityFixture&&path!==officialAssetsFixture&&path!==luaInventoryTest)return source;
   const raw=Buffer.isBuffer(source)?source.toString('utf8'):source;
   if(path===luaInventoryTest){
@@ -1453,7 +1458,7 @@ export function beforePreflightSource(path,source,view='prior',read=readFileSync
  const before=beforeBattlePeriphery(path,beforeChapterBattleScene(path,source));
  if(before!==source){
   const liveRead=read;
-  const readRaw=(owner,encoding='utf8')=>liveRead(owner,encoding);
+  const readRaw=(owner,encoding='utf8')=>beforeKnownMasterBackflowSource(owner,liveRead(owner,encoding));
   const chapter=chapterBattleSceneReader(path,source,readRaw);
   ({source,read}=battlePeripheryPredecessor(path,chapter.source,chapter.read));
  }
