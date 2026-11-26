@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@Furinya'
 created_date: '2026-11-25 21:00'
-updated_date: '2026-11-26 00:05'
+updated_date: '2026-11-26 00:41'
 labels:
   - v2.2.0
 milestone: m-8
@@ -20,6 +20,7 @@ references:
   - 'https://github.com/FurinyaWorks/Slay-the-Heavens/pull/991'
   - 'https://github.com/FurinyaWorks/Slay-the-Heavens/pull/993'
   - 'https://github.com/FurinyaWorks/Slay-the-Heavens/pull/998'
+  - 'https://github.com/FurinyaWorks/Slay-the-Heavens/pull/1001'
 documentation:
   - docs/versions/V2.2.0-RELEASE.md
 parent_task_id: TASK-115
@@ -60,4 +61,6 @@ ordinal: 211000
 已核对线上 v2.1.1 实际归档 afe80c0783d0d4b6046c1f44cba3ef2b71cb8bb34fbc7404d939d12e0f5ff831，在 1 CPU / 2 GiB / 无 swap 的 cgroup 完成 14 个 Host 阶段。真实包性能接线候选 #998 独立评审 6066612713，37 项定向合约、原 Release Bootstrap 与缺包在 Docker 前失败的负对照通过。Fork Quick 45723780259 两次未完成 Git LFS 恢复。待获取当前候选实际 GIL、正式同包六档配对及设备证据。
 
 #998 已以实际独审树合入 develop 8a5f86813e993a9b8cd85dd8016a2943d4a7c629。正式性能工具接受真实 GIL 中模块及运行时图；当前候选和正式配对仍待实际有声包。
+
+#1001 对正式性能配对的两臂分别读取精确源码音频清单并核验实际 GIL。已用线上 v2.1.1 原包读回七信号，源为 06c2577e，缺信号、额外信号与不匹配来源负例拒绝。候选依实际 454b5897 基线通过独立源码评审 6066999001、25 个合同及 Fork A 45729924380 Advisory Quick。新版实际有声包及配对六档仍待完成。
 <!-- SECTION:NOTES:END -->
