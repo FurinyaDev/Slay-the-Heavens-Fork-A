@@ -2,8 +2,8 @@ import {authorizeRebasedDevelop,beforeRebasedCi} from './helpers/rebased-release
 import {beforeAuthenticatedReleaseGuideSource} from './helpers/release-guide-backflow-source.mjs';
 import {authorizeCardFeedbackOwners,beforeCardFeedbackOwner} from './helpers/card-feedback-owner-source.mjs';
 import {authorizeSts1MapSource,beforeSts1MapSource} from './helpers/sts1-map-source.mjs';
-import {beforePc13RewardCover,beforePc13ThenV2UiHudSource,pc13RewardCoverSourcePaths} from './helpers/pc13-reward-cover-source.mjs';
-import {authorizeReleaseUiRestore,beforeAuthenticatedReleaseUiRestore,beforeReleaseControlsGuideRemoval,beforeReleaseUiRestore,releaseControlsGuideRemovalSourcePaths} from './helpers/release-ui-restore-source.mjs';
+import {beforePc13RewardCover,pc13RewardCoverSourcePaths} from './helpers/pc13-reward-cover-source.mjs';
+import {authorizeReleaseUiRestore,beforeAuthenticatedReleaseUiRestore,beforeReleaseControlsGuideRemoval,releaseControlsGuideRemovalSourcePaths} from './helpers/release-ui-restore-source.mjs';
 import {assertCharacterPreparationSources,beforeCharacterPreparationSource,beforeCurrentProductionSource,characterPreparationOwners} from './helpers/character-preparation-source.mjs';
 import {authenticateInputRetirement,beforeDeckBrowserBackflow,beforePotionBackflow,beforeInputRetirement,beforeInputRetirementReader,assertPointerInputSource,pointerInputPath,retiredControllerPath} from './helpers/input-retirement-source.mjs';
 import {actorFocusAdded,deckPagesAdded,assertActorFocusInventory,assertDevelopBackflowCurrent,assertStasisUpgradeAdded,authenticateDevelopBackflow,stasisUpgradeAddedPaths} from './helpers/develop-release-backflow-source.mjs';
@@ -19,14 +19,29 @@ import {tmpdir} from 'node:os';
 import {beforeTravelerStatusSource,travelerStatusSourcePaths} from './helpers/traveler-status-source.mjs';
 import {beforeReleaseUiCloseoutSource,ownsReleaseUiCloseoutSource,releaseUiCloseoutPriorRead} from './helpers/release-ui-closeout-source.mjs';
 import {readHistoricalReleaseCheckpoint} from './helpers/release-historical-source-checkpoints.mjs';
-import {readReviewedSelectionSource} from './helpers/replay-reviewed-selection.mjs';
+import {beforeCurrentSelectionProductionSource,readReviewedSelectionSource,readSelectionProductionOwners} from './helpers/replay-reviewed-selection.mjs';
+import {reviewedSelectionRead} from './helpers/reviewed-selection-current-source.mjs';
+import {beforeShopPurchaseOwner,shopPurchaseOwner} from './helpers/shop-deck-purchase-source.mjs';
 const sandbox=process.cwd();
 const {sourceEpoch}=await import('./helpers/combined-epoch/source-epoch.mjs');
 const proof=sourceEpoch.proof,raw=p=>proof.current[p]?.source??null;
-const readSelectionFixture=path=>Object.hasOwn(proof.current,path)?readReviewedSelectionSource(path):readFileSync(path,'utf8');
 const digest=source=>createHash('sha256').update(source).digest('hex');
 const shopDeckPaths=['src/lua/abyss_deck_ui.lua','src/lua/abyss_merchant.lua','src/lua/abyss_game_ui_input.lua','src/lua/abyss_node_ui_feedback.lua','src/lua/abyss_potion_discard_ui.lua'];
-const rebasedShopDeckPaths=new Set(['src/lua/abyss_node_ui_feedback.lua','src/lua/abyss_potion_discard_ui.lua']);
+function readShopDeckFixture(path){
+ if(path!==shopPurchaseOwner)return Object.hasOwn(proof.current,path)?readReviewedSelectionSource(path):readFileSync(path,'utf8');
+ const read=(owner,encoding='utf8')=>beforeShopPurchaseOwner(owner,readFileSync(owner,encoding));
+ const reviewed=reviewedSelectionRead(read);
+ const source=beforeCurrentSelectionProductionSource(path,readSelectionProductionOwners(read,reviewed),reviewed);
+ assert.equal(digest(source.replaceAll('\r\n','\n')),proof.current[path].sha256,'exact historical purchase owner');
+ return source;
+}
+function copyShopDeckFixture(copy,directory,crlf=false){
+ copy(directory,{crlf,readSource:readShopDeckFixture});
+ // The existing frozen view still owns the controller. The live pointer
+ // cohort must authenticate before its original bytes can enter the copy.
+ const retired=readShopDeckFixture(retiredControllerPath).replaceAll('\r\n','\n');
+ writeFileSync(join(directory,retiredControllerPath),crlf?retired.replaceAll('\n','\r\n'):retired);
+}
 function replayRebasedInput(path,read){
  const current=read(path),prior=beforeRebasedCi(path,current);
  if(prior!==current)authorizeRebasedDevelop([[path,current]],read);
@@ -135,13 +150,8 @@ test('shop/deck continuation retains the complete closeout predecessor and every
  assert.deepEqual(Object.keys(frozen.current),Object.keys(closeoutPriorEpoch.proof.current));
  assert.equal(proof.currentTreeCommitted,false,'working source hashes do not invent a committed corpus');
  for(const path of Object.keys(frozen.current))if(!shopDeckPaths.includes(path))assert.deepEqual(frozen.current[path],closeoutPriorEpoch.proof.current[path],path);
- const readLive=file=>readFileSync(file,'utf8');
- const readBackflow=file=>authenticateDevelopBackflow(file,readLive(file),readLive);
- const readRestored=file=>rebasedShopDeckPaths.has(file)?replayRebasedInput(file,readBackflow):readBackflow(file);
- const readPredecessor=file=>beforeReleaseUiRestore(file,readRestored(file));
  for(const path of shopDeckPaths){
-  const predecessor=beforeAuthenticatedReleaseUiRestore(path,readRestored(path),readRestored);
-  assert.equal(beforePc13ThenV2UiHudSource(path,predecessor,readPredecessor).replaceAll('\r\n','\n'),raw(path),path);
+  assert.equal(readShopDeckFixture(path).replaceAll('\r\n','\n'),raw(path),path);
   for(const input of [raw(path),raw(path).replaceAll('\n','\r\n')])for(const target of Object.keys(proof.targets)){
    const before=proof.targets[target].files[path];
    const expected=before&&before.sha256!==proof.current[path].sha256?before.source:input;
@@ -161,10 +171,12 @@ test('shop/deck source slices reject unknown drift without I/O and freshly rejec
  for(const other of ['foreign','__proto__','constructor',...shopDeckPaths.slice(1)]){
   let reads=0;assert.equal(sourceSlice(other,source,target,()=>{reads++;throw Error('unexpected');}),source);assert.equal(reads,0);
  }
+ const repeatedOwner='src/lua/abyss_battle_enemy_view.lua';
+ const expectedReads=proof.owners.flatMap(owner=>owner===repeatedOwner?[owner,owner]:[owner]);
  for(const owner of proof.owners){
-  let bad=false,reads=0;
-  const reader=p=>{reads++;return bad&&p===owner?raw(p)+'\n':raw(p);};
-  assert.equal(sourceSlice(path,source,target,reader),before);assert.equal(reads,proof.owners.length);bad=true;
+  let bad=false;const reads=[];
+  const reader=p=>{reads.push(p);return bad&&p===owner?raw(p)+'\n':raw(p);};
+  assert.equal(sourceSlice(path,source,target,reader),before);assert.deepEqual(reads,expectedReads);bad=true;
   assert.throws(()=>sourceSlice(path,source,target,reader),/linked owner identity/,owner);
   for(const missing of [null,undefined,17])assert.throws(()=>sourceSlice(path,source,target,p=>p===owner?missing:raw(p)),/linked owner identity/,owner);
   assert.throws(()=>sourceSlice(path,source,target,p=>{if(p===owner)throw Error('removed');return raw(p);}),/linked owner missing/,owner);
@@ -197,7 +209,7 @@ test('detached shop/deck source slices use fresh local owners and cannot replace
  const {copyCurrentSourceFixture}=await import('./helpers/isolated-current-source.mjs');
  for(const crlf of [false,true]){
   const directory=mkdtempSync(join(tmpdir(),'shop-deck-epoch-'));
-  t.after(()=>rmSync(directory,{recursive:true,force:true}));copyCurrentSourceFixture(directory,{crlf,readSource:readSelectionFixture});
+  t.after(()=>rmSync(directory,{recursive:true,force:true}));copyShopDeckFixture(copyCurrentSourceFixture,directory,crlf);
   const script=`import assert from 'node:assert/strict';
    import {readFileSync,writeFileSync,unlinkSync} from 'node:fs';
    import {sourceSlice,sourceEpoch} from './tests/helpers/closeout-source-epoch.mjs';
@@ -410,7 +422,7 @@ test('round3 present catalog retires all witnesses and rechecks bytes before del
  const {copyCurrentSourceFixture}=await import('./helpers/isolated-current-source.mjs');
  const sourceRoot=mkdtempSync(join(tmpdir(),'retirement-source-'));
  t.after(()=>rmSync(sourceRoot,{recursive:true,force:true}));
- copyCurrentSourceFixture(sourceRoot,{readSource:readSelectionFixture});
+ copyShopDeckFixture(copyCurrentSourceFixture,sourceRoot);
  const paths=['src/lua/abyss_combat_catalog.lua','src/lua/abyss_actor_presence.lua','src/lua/abyss_relic_potion_hooks.lua','src/lua/abyss_colorless_catalog.lua'];
  for(const mutate of [false,true]){
   const root=mkdtempSync(join(tmpdir(),'retirement-present-'));
