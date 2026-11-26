@@ -148,8 +148,24 @@ const nodeNoticeCopier=Object.freeze({
   }
  ]
 });
+const deckArchitectureCopier=Object.freeze({
+ current:{"sha256":"5d46ffcaf5ad5f49654ff8dbc55301c73962227384266dc2f28e43cc641b098e","gitBlob":"d3effc457c8fc1e619d356bfcf0c99a49f65f528"},
+ previous:nodeNoticeCopier.current,
+ hunks:[
+  {
+    "at": 359,
+    "before": " 'tests/helpers/develop-release-backflow-source.mjs':'2834679eef440cf54e64cfb2c144c2fc6dbb5dc7ed048c3767435c250827337f',",
+    "after": " 'tests/helpers/develop-release-backflow-source.mjs':'3f14f8c02058d83c00314be990754099cddf46020b1b0f64aabc93afef26d771',\n 'tests/helpers/develop-release-vocabulary-source.mjs':'6120c2639aeb77972adcab7571c384d2d53f8a28794f99cc389f108a8bf0aeb5',\n 'tests/fixtures/develop-release-vocabulary-source.json.gz':'2b3d606fc142f2c8c5cfaaff386c70f6e1f741f24fbc1879b78399b7c477e914',"
+  },
+  {
+    "at": 386,
+    "before": "  if(path==='tests/helpers/reward-current-source.mjs'&&!raw.equals(content))",
+    "after": "  if((path==='tests/helpers/reward-current-source.mjs'||path==='tests/helpers/develop-release-backflow-source.mjs'||\n      path==='tests/helpers/develop-release-vocabulary-source.mjs')&&!raw.equals(content))"
+  }
+],
+});
 export const selectionCopierReceipt=Object.freeze({path:copierPath,
- afterSha256:nodeNoticeCopier.current.sha256,afterBlob:nodeNoticeCopier.current.gitBlob});
+ afterSha256:deckArchitectureCopier.current.sha256,afterBlob:deckArchitectureCopier.current.gitBlob});
 
 function beforeReceipt(path,source,binding){
  if(!binding||!uniformSelectionSource(source)||!exactSourceMatches(source,binding.current))return source;
@@ -160,13 +176,13 @@ function beforeReceipt(path,source,binding){
 }
 
 export function beforeSelectionReceiptSource(path,source){
- if(path===copierPath)source=beforeReceipt(path,source,nodeNoticeCopier);
+ if(path===copierPath)source=beforeReceipt(path,beforeReceipt(path,source,deckArchitectureCopier),nodeNoticeCopier);
  return beforeReceipt(path,source,receipt(path));
 }
 
 export function checkedSelectionReceiptRead(read){
  const checked=(path,encoding)=>{
-  const raw=read(path,encoding),binding=path===copierPath?nodeNoticeCopier:receipt(path);
+  const raw=read(path,encoding),binding=path===copierPath?deckArchitectureCopier:receipt(path);
   if(binding){
    const source=decodedSelectionSource(raw);
    assert(uniformSelectionSource(source)&&exactSourceMatches(source,binding.current),
