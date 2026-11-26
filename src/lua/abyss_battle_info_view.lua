@@ -4,6 +4,7 @@ local Theme = require("abyss_theme")
 local number = require("abyss_numbers").integer
 local M = {}
 local UnitView=require("abyss_battle_unit_view")
+local EnemyView=require("abyss_battle_enemy_view")
 local C, L, S = Theme.color, Theme.layout, Theme.space
 local I, P = L.statusInfo, L.powerTips
 local wrappedLines = require("abyss_battle_info_content").lines
@@ -82,16 +83,35 @@ local function detailActor(battle, info)
     return info and battle and (info.index == 0 and battle.player or battle.enemies[info.index])
 end
 
-local function powerColumns(rows, width, font, room)
-    local column, used, columns = {}, 0, {}
-    local pitch = math.ceil(font * 1.25)
-    for i = 1, math.min(#rows, P.rows) do
-        local row = rows[i]
-        local count = wrappedLines(row.name, width, font, P.padding * 2)
-        for paragraph in row.body:gmatch("[^\n]+") do
-            count = count + wrappedLines(paragraph, width, font, P.padding * 2)
+local function enemyPowerHeight(row, width, font)
+    local room = math.floor((width - P.padding * 2) * 10 / font)
+    local lines = 0
+    for paragraph in (row.name .. '\n' .. row.body .. '\n'):gmatch('(.-)\n') do
+        lines = lines + 1
+        local used = 0
+        for glyph in paragraph:gmatch('[%z\1-\127\194-\244][\128-\191]*') do
+            local advance = #glyph == 1 and 6 or 10
+            if used + advance > room then lines, used = lines + 1, 0 end
+            used = used + advance
         end
-        local height = math.max(L.nativeText.lineHeight, count * pitch + P.padding * 2)
+    end
+    return lines * L.nativeText.lineHeight + P.padding * 2
+end
+
+local function compactPowerHeight(row, width, font)
+    local count = wrappedLines(row.name, width, font, P.padding * 2)
+    for paragraph in row.body:gmatch("[^\n]+") do
+        count = count + wrappedLines(paragraph, width, font, P.padding * 2)
+    end
+    return math.max(L.nativeText.lineHeight, count * math.ceil(font * 1.25) + P.padding * 2)
+end
+
+local function powerColumns(rows, width, font, room, enemy)
+    local column, used, columns = {}, 0, {}
+    local measure = enemy and enemyPowerHeight or compactPowerHeight
+    for i = 1, enemy and #rows or math.min(#rows, P.rows) do
+        local row = rows[i]
+        local height = measure(row, width, font)
         if used > 0 and used + height > room then
             columns[#columns + 1] = {rows = column, height = used - P.gap}
             column, used = {}, 0
@@ -130,10 +150,48 @@ local function nativePowerBox(layer, index, geometry, entry)
     place(box, "edge", 0, 0, geometry.width, entry.height)
     place(box, "face", 0, 0, geometry.width - 2, entry.height - 2)
     box:SetLocalScale(geometry.scale, geometry.scale, 1)
-    local copy = place(box, "copy", 0, 0, geometry.width - P.padding * 2, entry.height)
+    local copy = place(box, "copy", 0, 0, geometry.width - P.padding * 2, geometry.copyHeight or entry.height)
     copy.fontSize, copy.minimumFontSize = geometry.font, geometry.font
     copy.text = powerTitle .. entry.row.name .. "</color>\n" .. entry.row.body
     box:SetVisible(true)
+end
+
+local function enemyPowerAnchor(actor)
+    local g = EnemyView.geometry(actor)
+    local width = Theme.canvas.base[1]
+    local scale = width / 1920
+    local right = g.hitX + g.hitWidth / 2
+    local edge = right + 20 * scale
+    local safeRight = width / 2 - Theme.canvas.safe.x
+    -- The source chooses a side at TIP_X_THRESHOLD. The native text must also fit the safe edge.
+    if right + width / 2 < 1544 * scale and edge + P.width <= safeRight then return edge, 1, g.hitY end
+    return g.hitX - g.hitWidth / 2 - 60 * scale, -1, g.hitY
+end
+
+local function enemyPowerLayout(rows, actor, info)
+    local edge, direction, actorY = enemyPowerAnchor(actor)
+    local safeRight = Theme.canvas.base[1] / 2 - Theme.canvas.safe.x
+    local top = L.battlePotions.origin[2] - L.battlePotions.size[2] / 2 - S.s
+    local line = L.nativeText.lineHeight
+    local floor = L.battleNotice.bandTop + S.s
+    local step = P.width + P.gap
+    local perPage = math.floor((2 * safeRight + P.gap) / step)
+    local columns = powerColumns(rows, P.width, P.font, top - floor, true)
+    if #columns > perPage then
+        floor = floor + line
+        columns = powerColumns(rows, P.width, P.font, top - floor, true)
+    end
+    info.pages = math.ceil(#columns / perPage)
+    info.page = math.min(info.page or 1, info.pages)
+    local first = (info.page - 1) * perPage + 1
+    local page = {table.unpack(columns, first, math.min(#columns, first + perPage - 1))}
+    local left = math.min(math.max(-safeRight, edge * direction), safeRight - math.min(#columns, perPage) * step + P.gap)
+    local height = 0
+    for _, column in ipairs(page) do height = math.max(height, column.height) end
+    -- STS TipHelper.calculateAdditionalOffset, using our native text line budget.
+    local above = 0.5 - actorY / Theme.canvas.base[2]
+    local natural = actorY + above * height - page[1].rows[1].height / 2
+    return page, left, direction, math.min(top, math.max(natural, floor + height)), floor - line / 2
 end
 
 local function paintCardTips(panel, rows, anchor, beginCompact, finishCompact)
@@ -378,6 +436,8 @@ function M.new(self, child, enemyPosition, describeInfo, paginate, tint, ink, pi
     local function paintPowers(panel, tip, rows, heroTop)
         local layer = panel:GetChild("powerTips")
         beginCompact(panel)
+        panel:GetChild("more"):SetVisible(false)
+        panel:GetChild("page"):SetVisible(false)
         local columns, left, top, floor, width, font, scale = powerLayout(rows)
         local index = 0
         for column, items in ipairs(columns) do
@@ -389,6 +449,36 @@ function M.new(self, child, enemyPosition, describeInfo, paginate, tint, ink, pi
             end
         end
         finishCompact(panel,layer,index,tip.touch==true)
+    end
+
+    local function powerFooter(panel, info, x, y)
+        local line = L.nativeText.lineHeight
+        local label = place(panel, "more", x, y, P.width, line)
+        local page = place(panel, "page", x, y, P.width, line)
+        local multiple = info.pages > 1
+        if multiple then
+            local hint = not info.transient and " · 点按翻页" or self:canPinPowerTips(info.source) and " · 点击固定" or ""
+            label.text = "第 " .. info.page .. "/" .. info.pages .. " 页" .. hint
+        end
+        label:SetVisible(multiple)
+        page:SetVisible(multiple and not info.transient)
+    end
+
+    local function paintEnemyPowers(panel, info, rows, actor)
+        local layer = panel:GetChild("powerTips")
+        beginCompact(panel)
+        local columns, left, direction, y, footerY = enemyPowerLayout(rows, actor, info)
+        local index = 0
+        for column, items in ipairs(columns) do
+            local x = direction * (left + (column - 1) * (P.width + P.gap) + P.width / 2)
+            for _, entry in ipairs(items.rows) do
+                index = index + 1
+                nativePowerBox(layer, index, {x=x, y=y-entry.y-entry.height/2, width=P.width, font=P.font,
+                    copyHeight=entry.height-P.padding*2, scale=1}, entry)
+            end
+        end
+        powerFooter(panel, info, direction * (left + P.width / 2), footerY)
+        finishCompact(panel, layer, index, not info.transient)
     end
 
     local function clearPowers(panel)
@@ -438,7 +528,23 @@ function M.new(self, child, enemyPosition, describeInfo, paginate, tint, ink, pi
         return rows
     end
 
+    local function updateEnemyPowers(panel, battle, info)
+        local actor = detailActor(battle, info)
+        if not actor or info.battle ~= battle or info.actor ~= actor or info.turn ~= battle.turn
+            or not Actors.isPresent(actor) then self.info = nil; return end
+        local rows = describeInfo(battle, info, actor)
+        if rows then paintEnemyPowers(panel, info, rows, actor); return true end
+        if not (info.transient and not info.statusId and not info.offset) then self.info = nil end
+    end
+
     local function updatePowers(panel, battle, info)
+        if info and info.powerTips then
+            self.powerTip = nil
+            if updateEnemyPowers(panel, battle, info) then return true end
+            clearPowers(panel)
+            panel:SetVisible(false)
+            return true
+        end
         local rows = not info and self.powerTip and currentPowerRows(battle, self.powerTip)
         if rows then
             local y = L.player.position[2]

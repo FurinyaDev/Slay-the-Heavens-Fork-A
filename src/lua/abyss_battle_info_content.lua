@@ -81,8 +81,8 @@ local function selectedEntries(entries, info)
     return entries
 end
 
-local function ownedStatusText(self, describe, entry, battle, actor)
-    local text, tag, note = describe.statusDetail(entry, battle.rules, actor, battle)
+local function ownedStatusText(self, describe, entry, battle, actor, enemyPowerTip)
+    local text, tag, note = describe.statusDetail(entry, battle.rules, actor, battle, enemyPowerTip)
     if entry.id=='stasis' and actor.stasisCardId then
         local display=self.presentation[actor.stasisCardId]
         local definition=battle.catalog.cards[actor.stasisCardId]
@@ -101,12 +101,13 @@ function M.new(self, describe)
         if require('abyss_boss_relics').hidesIntents(self.run)then return require('abyss_battle_intent_view').hidden()end
         return describe.intentView(battle,index)
     end
-    local function statusRow(entry, battle, actor)
-        local text, tag, note = ownedStatusText(self, describe, entry, battle, actor)
+    local function statusRow(entry, battle, actor, enemyPowerTip)
+        local text, tag, note = ownedStatusText(self, describe, entry, battle, actor, enemyPowerTip)
         local kind = describe.statusKind(entry)
+        local showsAmount = entry.stack ~= "none" and (entry.id ~= "strength" or enemyPowerTip)
         return { status = entry.id, icon = (Theme.icon.status[entry.id] or Theme.icon.status[entry.id:match('^colorless_bomb_') and 'colorless_bomb' or entry.icon]),
             colour = kind == "buff" and C.buff or C.debuff, tag = tag, text = text, note = note,
-            name = entry.name .. ((entry.id == "strength" or entry.stack == "none") and "" or " " .. number(entry.amount)) }
+            name = entry.name .. (showsAmount and " " .. number(entry.amount) or "") }
     end
 
     local function intentCard(card, battle, info)
@@ -244,21 +245,28 @@ function M.new(self, describe)
         end
     end
 
+    local function sourcePowerTip(battle, info, actor)
+        if info.powerTips and not info.statusId and not info.offset
+            and not require('abyss_boss_relics').hidesIntents(self.run) then
+            return M.intentTip(describe.displayedIntent(battle, actor.id))
+        end
+    end
+
     local function powerRows(entries, battle, info, actor)
-        local rows = {}
+        local rows = {sourcePowerTip(battle, info, actor)}
         for _, entry in ipairs(selectedEntries(entries, info) or {}) do
-            local row = statusRow(entry, battle, actor)
+            local row = statusRow(entry, battle, actor, info.powerTips)
             local body = row.text or ""
             if row.tag and row.tag ~= "" and tonumber(row.tag) == nil then body = body .. "。 " .. row.tag end
             if row.note and row.note ~= "" then body = body .. "。 " .. row.note end
-            rows[#rows + 1] = {name = entry.originalV4 and row.name or entry.name, body = body}
+            rows[#rows + 1] = {name = (info.powerTips or entry.originalV4) and row.name or entry.name, body = body}
         end
         return #rows > 0 and rows or nil
     end
 
     return function(data, presentation, battle, info, actor)
         local entries = Combat.statusView(actor)
-        if info.kind == "powerTips" then return powerRows(entries, battle, info, actor) end
+        if info.powerTips or info.kind == "powerTips" then return powerRows(entries, battle, info, actor) end
         local card = {title = actor.name or "旅行者", tag = "当前状态", accent = C.gold,
             hp = actor.hp, maxHp = actor.maxHp, block = actor.block, sections = {}}
         if info.kind == "intent" then return intentCard(card, battle, info) end

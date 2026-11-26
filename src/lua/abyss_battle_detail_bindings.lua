@@ -119,10 +119,19 @@ function M.install(owner, _ownership, host, dependencies)
         if owner.info and owner.info.source==control then owner.info=nil end
     end
     -- hoverSlot: a reward card also reports pointer enter/exit for its hover pose (one listener per event).
-    local function bindHelp(control,describe,clickable,hoverSlot,guard,cleanups,travel)
+    local function bindHelp(control,describe,clickable,hoverSlot,guard,cleanups,travel,enemyReader)
         local function current()return not guard or guard()end
         if not current() then return end
         local input={}
+        local device=enemyReader and host.platform and host.platform.touchScreen
+        local function keepsEnemyReader()
+            return enemyReader and owner.info and owner.info.powerTips
+        end
+        local function canTapReader()
+            if not enemyReader then return true end
+            if owner.potionAim and owner.potionAim.moving then return false end
+            return not device or device() or owner:canPinPowerTips(control)
+        end
         local function on(kind, callback)
             if not travel then return control:AddCursorEventListener(kind, callback) end
             control:AddCursorEventListener(kind, function(event)
@@ -167,6 +176,12 @@ function M.install(owner, _ownership, host, dependencies)
             on(host.cursor.CursorEnter,function()
                 if not current() then return false end
                 if hoverSlot and not enterCard() then return end
+                if device then
+                    if not device() and not Pointer.blocked(host.platform) and not owner.selected then
+                        return owner:openHelp(describe(),control,true)
+                    end
+                    return
+                end
                 owner:queueHelp(describe(),control,false)
             end)
             if not current() then return end
@@ -184,13 +199,14 @@ function M.install(owner, _ownership, host, dependencies)
         end
         on(host.clickEvent,function(event)
             if not current() or Pointer.blocked(host.platform)then return false end
+            if not canTapReader() then return end
             local touch=event and event.touchId
             if input.consumed and input.consumed.touch==touch then input.consumed=nil;return end
             if input.pointerObserved then
                 local token=input.released;input.released=nil
                 if not ready(token) or token.touch~=touch then return end
             end
-            if dependencies.swallowed(event) then return end
+            if not keepsEnemyReader() and dependencies.swallowed(event) then return end
             local spec=describe()
             if spec then owner:openHelp(spec,control,false) end
         end)
@@ -199,14 +215,18 @@ function M.install(owner, _ownership, host, dependencies)
             on(host.cursor.CursorDown,function(event)
                 if not current() then return false end
                 input.pointerObserved=true;input.held,input.released,input.consumed=nil,nil,nil
-                if dependencies.down(event) then return end
+                if not canTapReader() then return end
+                if not keepsEnemyReader() and dependencies.down(event) then return end
                 local run=owner.run
                 if not run or run.phase~="combat" then return end
                 local spec=describe()
                 if not spec then return end
                 local actor=spec.index==0 and run.combat.player or run.combat.enemies[spec.index]
                 local token={run=run,battle=run.combat,turn=run.combat.turn,touch=event and event.touchId,spec=spec,actor=actor}
-                if ready(token) then input.held=token;owner:queueHelp(describe(),control,true,token.touch) end
+                if ready(token) then
+                    input.held=token
+                    if not enemyReader then owner:queueHelp(describe(),control,true,token.touch) end
+                end
             end)
             if not current() then return end
             on(host.cursor.CursorUp,function(event)
@@ -232,6 +252,7 @@ function M.install(owner, _ownership, host, dependencies)
         local slots = L.statusIcon.perRow * L.statusIcon.rows
         local overflow = position == slots and #entries >= slots
         return {index = index, screenSlot = screenSlot > 0 and screenSlot or nil, position = position,
+            powerTips = screenSlot > 0 or nil,
             statusId = not overflow and entries[position].id or nil, offset = overflow and position or nil}
     end
 
@@ -245,9 +266,9 @@ function M.install(owner, _ownership, host, dependencies)
                     bindHelp(control,function()
                         local entry=entryAt()
                         if not entry or control.visible==false or not Actors.isPresent(entry.actor) then return end
-                        return {kind=name=='intentHit' and 'intent' or nil,index=entry.index,
+                        return {powerTips=true,index=entry.index,
                             screenSlot=screenSlot,controlBox=guard and box or nil}
-                    end,true,nil,guard,cleanups)
+                    end,true,nil,guard,cleanups,nil,true)
                 end
             end
         end
@@ -256,7 +277,7 @@ function M.install(owner, _ownership, host, dependencies)
             local position = slot
             bindHelp(box:GetChild("statusRow"):GetChild("hit" .. slot), function()
                 return statusSpec(screenSlot, position)
-            end, true)
+            end, true,nil,nil,nil,nil,screenSlot>0)
         end
     end
 
@@ -275,11 +296,6 @@ function M.install(owner, _ownership, host, dependencies)
             local function describe() return statusSpec(0, index) end
             bindHelp(control, describe, true, nil, nil, nil, bindTraveler(owner, host, dependencies, control, describe, true))
         end
-        local ground = dependencies.child("statusDismiss")
-        ground:AddCursorEventListener(host.clickEvent, function(event)
-            if not Pointer.blocked(host.platform) and not (event and event.dragging)
-                and owner.powerTip and owner.powerTip.touch then owner:closePowerTip() end
-        end)
     end
 
     local function bindDetailControls()
@@ -296,6 +312,11 @@ function M.install(owner, _ownership, host, dependencies)
                 if screenSlot==0 or entry then owner:showStatus(entry and entry.index or 0) end
             end)
         end
+        dependencies.child("statusDismiss"):AddCursorEventListener(host.clickEvent, function(event)
+            if Pointer.blocked(host.platform) or event and event.dragging then return end
+            if owner:dismissEnemyHelp() then return true end
+            if owner.powerTip and owner.powerTip.touch then owner:closePowerTip() end
+        end)
         local info = dependencies.child("statusInfo")
         info.disableCursorEventPassthrough = true
         local function dismissInfo()
@@ -314,6 +335,7 @@ function M.install(owner, _ownership, host, dependencies)
         end
         info:GetChild("page"):AddCursorEventListener(host.clickEvent,function(event)
             if Pointer.blocked(host.platform)then return false end
+            if owner.info and owner.info.powerTips and event and event.dragging then return end
             local swallow=owner.swallow
             if swallow and swallow.touch==(event and event.touchId) then owner.swallow=nil;return end
             return infoPage()
@@ -392,16 +414,16 @@ function M.install(owner, _ownership, host, dependencies)
             if not entry or entry.id~=actorId or not actor or actor.id~=actorId
                 or not Actors.isPresent(actor) or not validPower(power,powerId) then return end
             if power.status and power.status.overflow then
-                return {index=entry.index,screenSlot=actorSlot,controlBox=actorBox}
+                return {index=entry.index,screenSlot=actorSlot,controlBox=actorBox,powerTips=true,offset=power.status.offset}
             end
             -- Resolve by power identity, never the row position or a feedback snapshot.
             for _,status in ipairs(Combat.statusView(actor))do
                 if status.id==powerId then
-                    return {index=entry.index,screenSlot=actorSlot,controlBox=actorBox,statusId=powerId}
+                    return {index=entry.index,screenSlot=actorSlot,controlBox=actorBox,powerTips=true,statusId=powerId}
                 end
             end
         end
-        bindHelp(powerBox:GetChild("hit"),describe,true,nil,function()return describe()~=nil end,binding.controls)
+        bindHelp(powerBox:GetChild("hit"),describe,true,nil,function()return describe()~=nil end,binding.controls,nil,true)
     end
     local function unbindEnemyPowerControl(powerBox,engineDestroyed)
         local binding=powerBindings[powerBox]

@@ -64,10 +64,9 @@ function M.install(owner, ownership, host, dependencies)
     closeInfo = function(preserveHover)
         if host.potionPopup and host.potionPopup:close() then return true end
         if not owner.info then return false end
-        -- Pointer gestures may continue only after automatic card hover help;
-        -- explicit/held readers and potion popups still consume their close.
+        -- Unpinned hover readers yield to a new gesture. Explicit and held readers consume their close.
         local info=owner.info
-        local automaticCard=info.transient and isCard(info)
+        local passThrough=info.transient and (isCard(info) or info.powerTips)
         owner.info = nil
         local handFocus
         if isCard(info) then
@@ -78,7 +77,18 @@ function M.install(owner, ownership, host, dependencies)
             if owner.help and owner.help.source==info.source then owner.help=nil end
         end
         dependencies.child("statusInfo"):SetVisible(false)
-        return true,automaticCard,handFocus
+        if info.powerTips then dependencies.child("statusDismiss"):SetVisible(false) end
+        return true,passThrough,handFocus
+    end
+    function owner:canPinPowerTips(source)
+        local info = self.info
+        return info and info.powerTips and info.source == source and (info.pages or 1) > 1
+            and not self.selected and not self.potionAim
+    end
+    function owner:dismissEnemyHelp(source)
+        local info = self.info
+        if not info or not info.powerTips or source and (info.source ~= source or not info.transient) then return false end
+        return closeInfo()
     end
     function owner:closePowerTip(source)
         if not self.powerTip or source and source ~= self.powerTip.source then return end
@@ -154,11 +164,32 @@ function M.install(owner, ownership, host, dependencies)
         else owner:renderDetailsOnly(cancelled) end
         return owner.info==info
     end
+    local function repeatsEnemyHelp(info, spec, source, battle, actor)
+        return info and not info.transient and info.powerTips and info.actor == actor
+            and info.battle == battle and info.turn == battle.turn and info.source == source
+            and info.statusId == spec.statusId and info.offset == spec.offset
+    end
+    local function openEnemyHelp(spec, source, transient, battle, actor)
+        if owner.gesture or owner.carry or owner.potionMenu or owner.potionAim and owner.potionAim.moving then return false end
+        local info = owner.info
+        if transient and info and not info.transient then return false end
+        if not transient and repeatsEnemyHelp(info, spec, source, battle, actor) then return closeInfo() end
+        owner.help = nil
+        owner.info = {index=spec.index, id=actor.id, actor=actor, battle=battle, turn=battle.turn,
+            powerTips=true, source=source, statusId=spec.statusId, offset=spec.offset, transient=transient==true}
+        if not transient then
+            dependencies.cancelActionInputs()
+            for _, input in pairs(ownership.enemyInputs) do input.held, input.released = nil, nil end
+        end
+        host.renderInfo(battle)
+        return owner.info~=nil
+    end
     function owner.openHelp(_, spec, source, transient)
         if owner.info and owner.info.press then return false end
         local battle,actor,reward=helpContext(spec)
         if not actor then return false end
         if isCard(spec) then return openCardHelp(spec,source,transient,battle,actor,reward) end
+        if spec.powerTips then return openEnemyHelp(spec,source,transient,battle,actor) end
         local cancelled=dependencies.cancelPotionAim("已取消药水瞄准。")
         owner.info={index=spec.index,id=actor.id,battle=battle,kind=spec.kind,statusId=spec.statusId,
             offset=spec.offset,uid=spec.uid,source=source,transient=transient==true,

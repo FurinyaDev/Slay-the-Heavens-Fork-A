@@ -16,12 +16,13 @@ local function bindEnemyHover(owner,host,control,entryAt)
             or owner.carry or owner.potionAim or owner.potionMenu then return end
         local entry=entryAt()
         if entry and control.visible~=false then
-            return owner:openHelp({index=entry.index},control,true)
+            return owner:openHelp({index=entry.index,powerTips=true},control,true)
         end
     end)
 end
 
 local function closeEnemyHover(owner,dependencies,control)
+    if owner:dismissEnemyHelp(control) then return end
     local info=owner.info
     if info and info.source==control and info.transient then
         dependencies.closeInfo(true)
@@ -78,6 +79,12 @@ function M.install(owner, ownership, host, dependencies)
                     if instance.uid == owner.selected then return instance end
                 end
             end
+            local function inspectEnemy(target, current)
+                local device=host.platform and host.platform.touchScreen
+                if device and not device() and not owner:canPinPowerTips(control) then return false end
+                if Actors.isActive(current) then owner.target = target end
+                return owner:openHelp({index=target,powerTips=true},control,false)
+            end
             local function chooseEnemy()
             local entry=entryAt()
             if not entry then return false end
@@ -97,14 +104,13 @@ function M.install(owner, ownership, host, dependencies)
                     owner.target = target
                     return owner:playSelected(target)
                 end
-                if Actors.isActive(current) then owner.target = target end
-                return owner:showStatus(target)
+                return inspectEnemy(target, current)
             end
             end
             if not entryAt() then return end
             control:AddCursorEventListener(host.clickEvent, function(event)
                 if not entryAt() or Pointer.blocked(host.platform)then return false end
-                if dependencies.swallowed(event) then
+                if not owner:canPinPowerTips(control) and dependencies.swallowed(event) then
                     -- Dismissal consumes this pointer too, but cannot consume a
                     -- newer token owned by a different touch on the same actor.
                     dependencies.discardEnemyPointer(input,event)
@@ -127,7 +133,7 @@ function M.install(owner, ownership, host, dependencies)
                     ownership.enemyPointerObserved = true
                     local token = input.held or input.released
                     if token and dependencies.enemyReady(token) and token.touch ~= (event and event.touchId) then return end
-                    local dismissed = dependencies.down(event)
+                    local dismissed = not owner:canPinPowerTips(control) and dependencies.down(event)
                     input.held, input.released = nil, nil
                     if dismissed then return end
                     local run, battle = owner.run, owner.run and owner.run.combat
