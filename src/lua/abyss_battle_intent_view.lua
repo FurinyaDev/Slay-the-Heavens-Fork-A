@@ -390,6 +390,6 @@ function M.selectedDescriptor(state,index)
  assert(not enum or enum:sub(1,6)~='ATTACK' or base~=-1,'source attack move has no damage metadata')
  return {id=intent.id,intent=enum or 'NONE',baseDamage=base,
   multiplier=times,isMultiDamage=SourceIntents.isMulti(actor,intent),
-  face={value='',kind=intent.kind,badge=enum=='DEFEND_BUFF'and'buff'or nil,rows={}}}
+  face={value='',kind=intent.kind,badge=sourceBadges[enum],rows={}}}
 end
 return M
