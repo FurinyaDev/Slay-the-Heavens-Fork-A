@@ -14,6 +14,8 @@ import {beforeCurrentReplayFixes} from './current-replay-fix-sources.mjs';
 import {beforeUiEntranceWitness} from './ui-entrance-source.mjs';
 import {stsStylePriorRuntime} from './sts-style-prior-runtime.mjs';
 import {stsStyleCiBytes} from './sts-style-ci-binding.mjs';
+import {componentUiCiSourceProof} from './component-ui-ci-source-inverse.mjs';
+import {beforeSelectionReceiptSource,selectionCopierReceipt} from './ui-selection-current-source.mjs';
 import {restoreExactFixtureHunks} from './exact-fixture-hunks.mjs';
 
 const hash=(bytes,algorithm='sha256')=>createHash(algorithm).update(bytes).digest('hex');
@@ -225,6 +227,33 @@ function readLaunchComponentReceipt(readCurrent){
  return prior;
 }
 
+const componentCurrentSources={
+ 'src/lua/abyss_choice_ui.lua':{sha256:'234a556082e12d50f652fe6579be263c59b485436c287907e2472ecb8ce81eed',gitBlob:'22ea49f3c3ea08a34fe0dddcb9dd72e8ec375a32'},
+ 'src/lua/abyss_map_ui.lua':{sha256:'645764d987cb57f2cf57db066eeb3e99de967d248b9efabbd3cf65269e7dd379',gitBlob:'12e42d8d0abe7607b8526d7b89b2e2fc80c92ced'},
+ 'tests/native-candidate-deployment-closure.test.mjs':{sha256:'e284262759586462477b9631c8c5e9a9284a968d8377af0f95433025ccdeb1d2',gitBlob:'1f7255918b5878460dac5324add5e134a498fd20'},
+ 'tests/native-candidate-scripts.test.mjs':{sha256:'3c6d8c14b8674603ca6108d955e231b00654e67dfd0c5773db058960e6717394',gitBlob:'0f82c2b421f91c2a504c7900c877935c58d42a43'},
+ 'tests/native-candidate.test.mjs':{sha256:'ca0f758acf0d3d053b91182eabe1e1fb5b3f5bdaeb3e5bf13ef9b5e47e224238',gitBlob:'07cb62783fe2221d7ed8df4f7634796613e5fbaa'},
+};
+function readComponentSourceReceipt(path,digest,readCurrent){
+ if(!Object.hasOwn(componentCurrentSources,path))return;
+ const receipt=componentUiCiSourceProof.files[path];
+ if(receipt.afterSha256!==digest)return;
+ const source=readCurrent(path,'utf8');
+ assert(matches(source,componentCurrentSources[path]),'current component receipt input changed: '+path);
+ const normalized=lf(source);
+ assert(source===normalized||source===normalized.replaceAll('\n','\r\n'),'mixed component receipt line endings: '+path);
+ return receipt.afterSource;
+}
+
+const goldenIdolCopierDigest='ebbad15ec6009f1f855014435ef6c4ed2716dfcd0d60d56482e4bcf963dd127b';
+function readGoldenIdolCopierReceipt(readCurrent){
+ const source=readCurrent(copierPath,'utf8');
+ const current={sha256:selectionCopierReceipt.afterSha256,gitBlob:selectionCopierReceipt.afterBlob};
+ assert(matches(source,current)&&beforeSelectionReceiptSource(copierPath,source)!==source,
+  'current Golden Idol copier receipt input changed');
+ return packet.receipts[copierPath].before[goldenIdolCopierDigest].source;
+}
+
 // A frozen receipt may read a registered old blob only after checking the
 // corresponding current file. Raw Full discovery and inputs use their normal readers.
 function readOfficialCalibrationReceipt(path,digest,readCurrent){
@@ -248,6 +277,9 @@ export function readCalibrationReceiptInput(path,digest,read,readCurrent=readFil
  if(official!==undefined)return official;
  if(path===relicEquipReceipt.path&&digest===relicEquipReceipt.prior.sha256)return readRelicEquipReceipt(readCurrent);
  if(path===launchComponentPath&&digest===launchComponentPrior.sha256)return readLaunchComponentReceipt(readCurrent);
+ if(path===copierPath&&digest===goldenIdolCopierDigest)return readGoldenIdolCopierReceipt(readCurrent);
+ const component=readComponentSourceReceipt(path,digest,readCurrent);
+ if(component!==undefined)return component;
  const vocabulary=readCloseoutLuaVocabularyReceipt(path,digest,readCurrent);
  if(vocabulary!==undefined)return vocabulary;
  const closeout=readCloseoutCurrentBackflowReceipt(path,digest,readCurrent);
