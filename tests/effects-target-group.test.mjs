@@ -14,23 +14,49 @@ const before=JSON.parse(read('tests/helpers/effects-target-group-before.json'));
 const source=read(file),hash=s=>createHash('sha256').update(s).digest('hex');
 const names=['visitTargetGroup','discoverTargetGroup','targetGroupCount','validTargetGroupMember','targetGroupMembers','validTargetGroupPair','targetGroup'];
 const span=s=>{const ast=luaparse.parse(s,{luaVersion:'5.3',ranges:true});const first=ast.body.find(n=>n.type==='FunctionDeclaration'&&['visitTargetGroup','targetGroup'].includes(n.identifier?.name));const last=ast.body.find(n=>n.type==='FunctionDeclaration'&&n.identifier?.name==='targetGroup');return [first.range[0],last.range[1]];};
+// #951 renamed these exact effect tokens after the audited group/queue extraction.
+const releaseVocabulary = [
+ ['gainEnergyIfDiscard=true,calculatedExchange=true','gainEnergyIfDiscard=true,calculatedGamble=true'],
+ ['coreOps.daggerExpenditure=true','coreOps.daggerSacrifice=true'],
+ ['or effect.op=="calculatedExchange") then return true end','or effect.op=="calculatedGamble") then return true end'],
+ ["if effect.op=='daggerExpenditure'then return true end","if effect.op=='daggerSacrifice'then return true end"],
+];
+function preReleaseVocabulary(current){
+ const restored=releaseVocabulary.reduce((text,[from,to])=>{
+  const pieces=text.split(from);
+  assert.equal(pieces.length,2,'expected one audited effect rename: '+from);
+  return pieces.join(to);
+ },current);
+ assert.equal(createHash('sha1').update(`blob ${Buffer.byteLength(restored)}\0`).update(restored).digest('hex'),
+  'f669759d766698e39088b840b6ac5df7e3b020c2','projected source must match the real pre-#951 blob');
+ return restored;
+}
 test('target-group frozen full Git source authenticates and all unrelated bytes remain identical',()=>{
  assert.equal(before.revision,'7821a7f44b518c09f6b565860e04e4823bc95153');
  assert.equal(before.sha256,'aa1c507c56ee8b1794641f710c4e2e2b603f52f3c29b51096f8860df58c74a71');
  assert.equal(before.gitBlob,'51114ce0adb61aded6c070e9cff72b205c34b4f0');
  assert.equal(before.path,file);assert.equal(hash(before.source),before.sha256);
  assert.equal(createHash('sha1').update(`blob ${Buffer.byteLength(before.source)}\0`).update(before.source).digest('hex'),before.gitBlob);
- const [a,b]=span(before.source),[c,d]=span(source);
- assert.equal(source.slice(0,c),before.source.slice(0,a));
- const queueItems=source.indexOf('-- Queue preparation can split ordinary effects.',d);
- const requiresQueue=source.indexOf('function M.requiresQueue(effects)',queueItems);
+ const historical=preReleaseVocabulary(source);
+ const [a,b]=span(before.source),[c,d]=span(historical);
+ assert.equal(historical.slice(0,c),before.source.slice(0,a));
+ const queueItems=historical.indexOf('-- Queue preparation can split ordinary effects.',d);
+ const requiresQueue=historical.indexOf('function M.requiresQueue(effects)',queueItems);
  assert(queueItems>d && requiresQueue>queueItems);
- const extension=luaparse.parse(source.slice(queueItems,requiresQueue),{luaVersion:'5.3'});
+ const extension=luaparse.parse(historical.slice(queueItems,requiresQueue),{luaVersion:'5.3'});
  assert.deepEqual(extension.body.map(n=>[n.type,n.identifier?.base?.name,n.identifier?.identifier?.name]),
   [['FunctionDeclaration','M','queueItems']]);
- assert.equal(source.slice(d,queueItems)+source.slice(requiresQueue),before.source.slice(b));
- const ast=luaparse.parse(source.slice(c,d),{luaVersion:'5.3'});
+ assert.equal(historical.slice(d,queueItems)+historical.slice(requiresQueue),before.source.slice(b));
+ const [rawStart,rawEnd]=span(source);
+ const ast=luaparse.parse(source.slice(rawStart,rawEnd),{luaVersion:'5.3'});
  assert.deepEqual(ast.body.map(n=>n.identifier.name),names);assert(ast.body.every(n=>n.isLocal));
+});
+test('target-group historical projection rejects missing, duplicated and unrelated current bytes',()=>{
+ for(const [from] of releaseVocabulary){
+  assert.throws(()=>preReleaseVocabulary(source.replace(from,from+' -- different')),/expected one audited effect rename|projected source/);
+ }
+ assert.throws(()=>preReleaseVocabulary(source+'\n'+releaseVocabulary[0][0]),/expected one audited effect rename/);
+ assert.throws(()=>preReleaseVocabulary(source.replace('local Actors','local  Actors')),/projected source/);
 });
 test('target-group complete original/current VM graphs preserve arity aliases dynamic reads errors and real partial writes',t=>{
  const old=observeTargetGroups(before.source),current=observeTargetGroups(source);
