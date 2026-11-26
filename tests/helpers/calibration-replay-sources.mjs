@@ -14,6 +14,7 @@ import {beforeCurrentReplayFixes} from './current-replay-fix-sources.mjs';
 import {beforeUiEntranceWitness} from './ui-entrance-source.mjs';
 import {stsStylePriorRuntime} from './sts-style-prior-runtime.mjs';
 import {stsStyleCiBytes} from './sts-style-ci-binding.mjs';
+import {restoreExactFixtureHunks} from './exact-fixture-hunks.mjs';
 
 const hash=(bytes,algorithm='sha256')=>createHash(algorithm).update(bytes).digest('hex');
 const blob=source=>hash(`blob ${Buffer.byteLength(source)}\0${source}`,'sha1');
@@ -25,6 +26,11 @@ assert.equal(packet.schemaVersion,1);
 assert.equal(packet.base,'469e80240c5b7c60f75ff434bebac62d73c0bd0c');
 const matches=(source,row)=>typeof source==='string'&&!source.includes('\r\r\n')&&
  hash(lf(source))===row.sha256&&blob(lf(source))===row.gitBlob;
+const officialBytes=readFileSync(new URL('./official-calibration-v220-source-receipt.json.gz',import.meta.url));
+assert.equal(hash(officialBytes),'7d7a75a81cde23cd60e55a9eafc5dc635aa0030738332e3f7cc6076b9179328f','exact official calibration continuation');
+const officialReceipt=JSON.parse(gunzipSync(officialBytes));
+assert.equal(officialReceipt.schemaVersion,1);
+assert.equal(officialReceipt.currentCommit,'ad375bbc11b6958c7f24fdf94b9681e1a8b48ff6');
 const retirementBytes=readFileSync(new URL('./input-retirement-calibration-source.json.gz',import.meta.url));
 assert.equal(hash(retirementBytes),'2ad6dd590a69fa7035d63d6fc2568dfff5ab815842192bc6a2eec619e316cfa1','exact calibration input retirement packet');
 const retirement=JSON.parse(gunzipSync(retirementBytes));
@@ -221,7 +227,25 @@ function readLaunchComponentReceipt(readCurrent){
 
 // A frozen receipt may read a registered old blob only after checking the
 // corresponding current file. Raw Full discovery and inputs use their normal readers.
+function readOfficialCalibrationReceipt(path,digest,readCurrent){
+ if(!Object.hasOwn(officialReceipt.files,path))return;
+ const row=officialReceipt.files[path];
+ if(!Object.hasOwn(row.predecessors,digest))return;
+ const prior=row.predecessors[digest];
+ if(row.currentPath!==path)assert.throws(()=>readCurrent(path,'utf8'),{code:'ENOENT'},'retired official receipt input reappeared: '+path);
+ const source=readCurrent(row.currentPath,'utf8');
+ assert(matches(source,row.current),'current official receipt input changed: '+row.currentPath);
+ const normalized=lf(source);
+ assert(source===normalized||source===normalized.replaceAll('\n','\r\n'),'mixed official receipt line endings: '+row.currentPath);
+ const predecessor=prior.rename?normalized.replace(prior.rename.after,prior.rename.before):
+  restoreExactFixtureHunks({path,beforeSha256:digest,afterSha256:row.current.sha256,hunks:prior.hunks},path,normalized);
+ assert.equal(prior.sha256,digest,'requested official receipt identity: '+path);
+ assert(matches(predecessor,prior),'exact official receipt predecessor: '+path);
+ return predecessor;
+}
 export function readCalibrationReceiptInput(path,digest,read,readCurrent=readFileSync){
+ const official=readOfficialCalibrationReceipt(path,digest,readCurrent);
+ if(official!==undefined)return official;
  if(path===relicEquipReceipt.path&&digest===relicEquipReceipt.prior.sha256)return readRelicEquipReceipt(readCurrent);
  if(path===launchComponentPath&&digest===launchComponentPrior.sha256)return readLaunchComponentReceipt(readCurrent);
  const vocabulary=readCloseoutLuaVocabularyReceipt(path,digest,readCurrent);
