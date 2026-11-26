@@ -1,0 +1,372 @@
+{
+  "mode": "after",
+  "simulator": "0.5.2",
+  "saveSha256": "ce4f4657baa70f098b0b837bed5a1dbbbbdce672760667dec849a3c3b39acad4",
+  "canvas": [
+    1600,
+    900
+  ],
+  "luaErrors": [],
+  "logs": [
+    {
+      "source": "client",
+      "level": "info",
+      "text": "ABYSS_BUILD 16f78d2b-befb-420d-b16f-703795ba14be",
+      "time": 0
+    },
+    {
+      "source": "client",
+      "level": "info",
+      "text": "ABYSS_UI init Color=table",
+      "time": 0
+    },
+    {
+      "source": "client",
+      "level": "info",
+      "text": "ABYSS_UI viewport_ready",
+      "time": 0
+    },
+    {
+      "source": "client",
+      "level": "info",
+      "text": "ABYSS_PAGE_REVEAL preparing page=menuPanel epoch=1",
+      "time": 0
+    },
+    {
+      "source": "client",
+      "level": "info",
+      "text": "ABYSS_UI_PAGES mode=menu nodeNativeActive=false choiceNativeActive=false",
+      "time": 0
+    },
+    {
+      "source": "client",
+      "level": "info",
+      "text": "ABYSS_PORTRAIT selection phase=idle owned=0 reason=nil",
+      "time": 0
+    },
+    {
+      "source": "client",
+      "level": "info",
+      "text": "ABYSS_PORTRAIT avatar phase=idle owned=0 reason=nil",
+      "time": 0
+    },
+    {
+      "source": "client",
+      "level": "info",
+      "text": "ABYSS_PORTRAIT battle phase=idle owned=0 reason=nil",
+      "time": 0
+    },
+    {
+      "source": "client",
+      "level": "info",
+      "text": "ABYSS_UI ready",
+      "time": 0
+    },
+    {
+      "source": "client",
+      "level": "info",
+      "text": "ABYSS_PAGE_REVEAL visible page=menuPanel epoch=1",
+      "time": 0.4333333333333333
+    },
+    {
+      "source": "client",
+      "level": "info",
+      "text": "ABYSS_PAGE_REVEAL preparing page=characterPanel epoch=2",
+      "time": 0.9999999999999999
+    },
+    {
+      "source": "client",
+      "level": "info",
+      "text": "ABYSS_PAGE_REVEAL visible page=characterPanel epoch=2",
+      "time": 1.0333333333333332
+    },
+    {
+      "source": "client",
+      "level": "info",
+      "text": "ABYSS_PORTRAIT selection phase=building owned=0 reason=nil",
+      "time": 1.6666666666666685
+    },
+    {
+      "source": "client",
+      "level": "info",
+      "text": "ABYSS_PAGE_REVEAL preparing page=characterPanel epoch=3",
+      "time": 1.6666666666666685
+    },
+    {
+      "source": "client",
+      "level": "info",
+      "text": "ABYSS_PORTRAIT selection phase=revealing owned=1628 reason=nil",
+      "time": 2.5666666666666673
+    },
+    {
+      "source": "client",
+      "level": "info",
+      "text": "ABYSS_PORTRAIT selection phase=ready owned=1628 reason=nil",
+      "time": 2.7666666666666666
+    },
+    {
+      "source": "client",
+      "level": "info",
+      "text": "ABYSS_PAGE_REVEAL visible page=characterPanel epoch=3",
+      "time": 2.7666666666666666
+    },
+    {
+      "source": "client",
+      "level": "info",
+      "text": "ABYSS_RUN seed=23603 source=clock",
+      "time": 3.7999999999999963
+    },
+    {
+      "source": "client",
+      "level": "info",
+      "text": "ABYSS_PAGE_REVEAL preparing page=nodePanel epoch=4",
+      "time": 3.7999999999999963
+    },
+    {
+      "source": "client",
+      "level": "info",
+      "text": "ABYSS_UI_PAGES mode=node nodeNativeActive=true choiceNativeActive=false",
+      "time": 3.7999999999999963
+    },
+    {
+      "source": "client",
+      "level": "info",
+      "text": "ABYSS_PAGE_REVEAL visible page=nodePanel epoch=4",
+      "time": 4.233333333333328
+    },
+    {
+      "source": "client",
+      "level": "info",
+      "text": "ABYSS_PAGE_REVEAL updated page=nodePanel epoch=5",
+      "time": 4.56666666666666
+    },
+    {
+      "source": "client",
+      "level": "info",
+      "text": "ABYSS_PAGE_REVEAL updated page=nodePanel epoch=6",
+      "time": 4.7666666666666595
+    },
+    {
+      "source": "client",
+      "level": "info",
+      "text": "ABYSS_PAGE_REVEAL preparing page=mapPanel epoch=7",
+      "time": 4.966666666666659
+    },
+    {
+      "source": "client",
+      "level": "info",
+      "text": "ABYSS_UI_PAGES mode=map nodeNativeActive=false choiceNativeActive=false",
+      "time": 5.333333333333324
+    },
+    {
+      "source": "client",
+      "level": "info",
+      "text": "ABYSS_PAGE_REVEAL visible page=mapPanel epoch=7",
+      "time": 5.766666666666656
+    }
+  ],
+  "records": [
+    {
+      "action": "tap",
+      "path": "stage/menuPanel/start/hit",
+      "point": {
+        "x": 220,
+        "y": 307.5
+      },
+      "frame": 30,
+      "hitId": 6115,
+      "target": {
+        "left": 90,
+        "bottom": 277.5,
+        "width": 260,
+        "height": 60
+      },
+      "pressed": true
+    },
+    {
+      "action": "tap",
+      "path": "stage/characterPanel/traveler/hit",
+      "point": {
+        "x": 517.5,
+        "y": 166.875
+      },
+      "frame": 50,
+      "hitId": 2040,
+      "target": {
+        "left": 455,
+        "bottom": 104.375,
+        "width": 125,
+        "height": 125
+      },
+      "pressed": true
+    },
+    {
+      "action": "tap",
+      "path": "stage/characterPanel/confirm/hit",
+      "point": {
+        "x": 1487.5,
+        "y": 161.25
+      },
+      "frame": 102,
+      "hitId": 1881,
+      "target": {
+        "left": 1375,
+        "bottom": 123.75,
+        "width": 225,
+        "height": 75
+      },
+      "pressed": true
+    },
+    {
+      "action": "screenshot",
+      "file": "intro.png",
+      "sha256": "6597a613e906c2e0367776cdbc7cfdf372498ed900da688a8478f64de02e70f0",
+      "receipt": {
+        "canvasId": "pc-16-9",
+        "frame": 137,
+        "time": 4.56666666666666,
+        "clockMode": "manual",
+        "width": 1600,
+        "height": 900,
+        "pixelWidth": 1600,
+        "pixelHeight": 900,
+        "assetWarnings": []
+      }
+    },
+    {
+      "action": "drag out",
+      "start": {
+        "x": 517,
+        "y": 105
+      },
+      "end": {
+        "x": 74,
+        "y": 105
+      }
+    },
+    {
+      "action": "tap",
+      "path": "stage/nodePanel/eventView/option1/hit",
+      "point": {
+        "x": 517,
+        "y": 105
+      },
+      "frame": 137,
+      "hitId": 7971,
+      "target": {
+        "left": 150.00000000000006,
+        "bottom": 77.08333333333336,
+        "width": 733.3333333333333,
+        "height": 55
+      },
+      "pressed": true
+    },
+    {
+      "action": "result",
+      "same": false,
+      "intro": [
+        "[ 继续 ]",
+        "高塔之下，一位古老的存在向你伸出援手。"
+      ],
+      "after": [
+        "[ <color=#7FFF00>增加最大生命8</color> ]",
+        "[ <color=#7FFF00>前三场战斗敌人生命为1</color> ]",
+        "选择一份恩赐。"
+      ]
+    },
+    {
+      "action": "screenshot",
+      "file": "blessing.png",
+      "sha256": "9282d7e58acdeb6ddc50fef1eaa3e8560a9d9f0e53ae80243b818404b649f541",
+      "receipt": {
+        "canvasId": "pc-16-9",
+        "frame": 143,
+        "time": 4.7666666666666595,
+        "clockMode": "manual",
+        "width": 1600,
+        "height": 900,
+        "pixelWidth": 1600,
+        "pixelHeight": 900,
+        "assetWarnings": []
+      }
+    },
+    {
+      "action": "tap",
+      "path": "stage/nodePanel/eventView/option1/hit",
+      "point": {
+        "x": 516.6666666666667,
+        "y": 170.41666666666669
+      },
+      "frame": 143,
+      "hitId": 7971,
+      "target": {
+        "left": 150.00000000000006,
+        "bottom": 142.91666666666669,
+        "width": 733.3333333333333,
+        "height": 55
+      },
+      "pressed": true
+    },
+    {
+      "action": "blessing selected",
+      "labels": [
+        "[ 启程 ]",
+        "你已接受恩赐，可以启程。"
+      ]
+    },
+    {
+      "action": "screenshot",
+      "file": "departure.png",
+      "sha256": "747f62c83d81b6f04ba227e2f65101520471349132bc4e56710343fcf210b14a",
+      "receipt": {
+        "canvasId": "pc-16-9",
+        "frame": 149,
+        "time": 4.966666666666659,
+        "clockMode": "manual",
+        "width": 1600,
+        "height": 900,
+        "pixelWidth": 1600,
+        "pixelHeight": 900,
+        "assetWarnings": []
+      }
+    },
+    {
+      "action": "tap",
+      "path": "stage/nodePanel/eventView/option1/hit",
+      "point": {
+        "x": 516.6666666666667,
+        "y": 104.58333333333336
+      },
+      "frame": 149,
+      "hitId": 7971,
+      "target": {
+        "left": 150.00000000000006,
+        "bottom": 77.08333333333336,
+        "width": 733.3333333333333,
+        "height": 55
+      },
+      "pressed": true
+    },
+    {
+      "action": "map reached",
+      "visible": true,
+      "activeInHierarchy": true
+    },
+    {
+      "action": "screenshot",
+      "file": "map.png",
+      "sha256": "6b67b52b160ba627225805d638dbee2670b264e49470a4e083b2af7ae1beb926",
+      "receipt": {
+        "canvasId": "pc-16-9",
+        "frame": 184,
+        "time": 6.133333333333321,
+        "clockMode": "manual",
+        "width": 1600,
+        "height": 900,
+        "pixelWidth": 1600,
+        "pixelHeight": 900,
+        "assetWarnings": []
+      }
+    }
+  ]
+}

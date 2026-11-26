@@ -1,0 +1,29 @@
+✔ Act2 events reuse the unchanged event rows, picker, confirm and back controls (14.135538ms)
+✔ mock-local generated NodeUI plus real Nodes/Run: act2_event_ui.lua (6593.63947ms)
+✔ mock-local generated NodeUI plus real Nodes/Run: act2_event_ui_hooks.lua (16139.027039ms)
+✔ mock-local generated NodeUI plus real Nodes/Run: act2_event_ui_gestures.lua (4246.255504ms)
+✔ mock-local generated NodeUI plus real Nodes/Run: act2_event_ui_exchanges.lua (3390.672342ms)
+Recall UI 1-7: 8286 ms
+Recall UI 8-12: 12357 ms
+Recall UI 13-14: 11768 ms
+✔ generated camp preserves the Recall footer and adds a rest result panel (10.896674ms)
+✔ Recall UI partitions restore the exact Git base body and cover every original group once (0.803104ms)
+✔ Recall frozen-body protection still rejects a deleted scenario or gameplay assertion (1.472165ms)
+✔ real NodeUI pointer ownership and public Recall command preserve complete run/map/RNG parity (32413.470085ms)
+✔ generated treasure retains legacy commands and adds four visible reward rows (9.19994ms)
+✔ generated NodeUI full command parity and interrupted-input isolation: sapphire_treasure_ui.lua (12934.484572ms)
+✔ generated NodeUI full command parity and interrupted-input isolation: sapphire_treasure_ui_slice_2.lua (9026.29212ms)
+✔ generated NodeUI full command parity and interrupted-input isolation: sapphire_treasure_ui_slice_3.lua (7709.934596ms)
+✔ generated NodeUI full command parity and interrupted-input isolation: sapphire_treasure_ui_slice_4.lua (14243.148975ms)
+✔ generated NodeUI full command parity and interrupted-input isolation: sapphire_treasure_ui_slice_5.lua (8235.370643ms)
+✔ generated NodeUI full command parity and interrupted-input isolation: sapphire_treasure_ui_slice_6.lua (8939.863316ms)
+✔ generated NodeUI full command parity and interrupted-input isolation: sapphire_treasure_ui_slice_7.lua (10804.875378ms)
+✔ source reward owner replacements and selected-row metatables refuse atomically; plain and legacy controls remain valid (4461.519522ms)
+ℹ tests 18
+ℹ suites 0
+ℹ pass 18
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 139889.73096

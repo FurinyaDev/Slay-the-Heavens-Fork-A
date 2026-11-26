@@ -1,0 +1,15 @@
+diff --git a/src/simulator-import.mjs b/src/simulator-import.mjs
+index e26d3cc..fdc4b12 100644
+--- a/src/simulator-import.mjs
++++ b/src/simulator-import.mjs
+@@ -88,6 +88,10 @@ export function readSimulatorSave(file){
+     if(kind==='image'){
+       if((node.imageSource??'StaticReference')!=='StaticReference')say('The image "'+node.name+'" takes its picture from '+node.imageSource+', which a save cannot be given here: the script has to set it (control:SetImage).');
+       else if(Number.isInteger(node.imageId)&&node.imageId>=100000)out.image=node.imageId;
++      if(node.imageType!=null){
++        if(!['Basic','Stretch'].includes(node.imageType))throw Error('Unsupported Simulator image type '+node.imageType);
++        out.imageType=node.imageType.toLowerCase();
++      }
+       const tint=node.imageColor??0xffffffff;if((tint>>>0)!==0xffffffff){out.colour=hue(tint);out.opacity=solid(tint);}
+       // The mask and what it does: a fill, a soft edge, the mask turned inside out (in the game these work only under
+       // a mask that is on, so any of them switches it on).

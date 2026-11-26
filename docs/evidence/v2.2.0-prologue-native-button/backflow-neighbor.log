@@ -1,0 +1,21 @@
+✔ Act2 events reuse the unchanged event rows, picker, confirm and back controls (17.838111ms)
+✔ mock-local generated NodeUI plus real Nodes/Run: act2_event_ui.lua (7672.088012ms)
+✔ mock-local generated NodeUI plus real Nodes/Run: act2_event_ui_hooks.lua (13239.499653ms)
+✔ mock-local generated NodeUI plus real Nodes/Run: act2_event_ui_gestures.lua (8256.252256ms)
+✔ mock-local generated NodeUI plus real Nodes/Run: act2_event_ui_exchanges.lua (4672.437544ms)
+Recall UI 1-7: 9033 ms
+Recall UI 8-12: 8518 ms
+Recall UI 13-14: 9924 ms
+✔ generated camp preserves the Recall footer and adds a rest result panel (12.709774ms)
+✔ Recall UI partitions restore the exact Git base body and cover every original group once (1.481178ms)
+✔ Recall frozen-body protection still rejects a deleted scenario or gameplay assertion (1.579707ms)
+✔ real NodeUI pointer ownership and public Recall command preserve complete run/map/RNG parity (27476.719328ms)
+✔ source reward owner replacements and selected-row metatables refuse atomically; plain and legacy controls remain valid (4419.348168ms)
+ℹ tests 10
+ℹ suites 0
+ℹ pass 10
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 66354.285818

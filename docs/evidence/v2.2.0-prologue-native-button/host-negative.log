@@ -1,0 +1,14 @@
+LUA_OPENING_NATIVE_READINESS_PASS
+ABYSS_TRANSITION begin
+ABYSS_RUN seed=42 source=explicit
+ABYSS_TRANSITION ready elapsed=0.35
+ABYSS_TRANSITION complete elapsed=1.15
+ABYSS_TRANSITION end elapsed=1.75
+tests/lua/game_ui_prologue_readiness.lua:60: fresh opening pointer must advance: stale_action
+stack traceback:
+	[JS]: in function 'assert'
+	tests/lua/game_ui_prologue_readiness.lua:60: in local 'continueIntro'
+	tests/lua/game_ui_prologue_readiness.lua:66: in local 'wrappedIntro'
+	tests/lua/game_ui_prologue_readiness.lua:74: in main chunk
+	[JS]: in function 'dofile'
+	(command line):1: in main chunk

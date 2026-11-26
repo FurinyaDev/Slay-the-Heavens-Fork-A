@@ -1,0 +1,23 @@
+LUA_OPENING_NATIVE_READINESS_PASS
+ABYSS_TRANSITION begin
+ABYSS_RUN seed=42 source=explicit
+ABYSS_TRANSITION ready elapsed=0.35
+ABYSS_TRANSITION complete elapsed=1.15
+ABYSS_TRANSITION end elapsed=1.75
+ABYSS_TRANSITION begin
+ABYSS_RUN seed=43 source=explicit
+ABYSS_TRANSITION ready elapsed=0.35
+ABYSS_TRANSITION complete elapsed=1.15
+ABYSS_TRANSITION end elapsed=1.75
+ABYSS_TRANSITION begin
+ABYSS_RUN seed=42 source=explicit
+ABYSS_TRANSITION ready elapsed=0.35
+ABYSS_TRANSITION complete elapsed=1.15
+ABYSS_TRANSITION end elapsed=1.75
+ABYSS_TRANSITION begin
+ABYSS_RUN seed=43 source=explicit
+ABYSS_TRANSITION ready elapsed=0.35
+ABYSS_TRANSITION complete elapsed=1.15
+ABYSS_TRANSITION end elapsed=1.75
+LUA_OPENING_NATIVE_ALIAS_PASS mouse=yes touch=yes drag_out=yes reentry=yes
+Lua fixture tests/lua/game_ui_prologue_readiness.lua: 5659 ms
