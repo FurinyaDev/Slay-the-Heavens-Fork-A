@@ -21,7 +21,7 @@ import {assertReleaseCapacityCohort,beforeReleaseCapacitySource} from './release
 import {beforeM05BackflowInventory} from './m05-shop-ci-source.mjs';
 import {beforeReleaseShopEntry,releaseUiRestoreArchive,shopEntryPriorRead} from './release-ui-restore-source.mjs';
 import {beforeCombatVisualSource,combatVisualPriorRead} from './combat-visual-source.mjs';
-import {beforeSts1MenuCiSource} from './sts1-menu-ci-source.mjs';
+import {beforeOfficialAssetsFocusFixture,beforeSts1MenuCiSource,officialAssetsFixture} from './sts1-menu-ci-source.mjs';
 import {assertRefinedReleasePackingCurrent,assertRefinedReleaseSourcesCurrent,beforeRefinedReleaseCiSource,beforeRefinedReleaseJsInventory,refinedReleaseHistoricalInput} from './refined-release-source.mjs';
 import {beforeV2UiAdmission} from './v2-ui-admission-ci-source.mjs';
 import {beforeV2UiEvidence,beforeV2UiPreTinyHouseSource,beforeFieldConfirmation,beforeRelicCrystal} from './v2-p1-ci-source.mjs';
@@ -972,6 +972,9 @@ export function currentReviewedSelectionRead(read){
   if(path===reviewedSelectionFixture){
    const text=!encoding&&Buffer.isBuffer(source)?source.toString('utf8'):source;
    assert.notEqual(beforeCalibrationReplayOwner(path,text),text,'fresh current reviewed Selection replay fixture: '+path);
+  }else if(path===officialAssetsFixture){
+   const text=!encoding&&Buffer.isBuffer(source)?source.toString('utf8'):source;
+   assert.notEqual(beforeOfficialAssetsFocusFixture(path,text),text,'fresh current official card focus fixture: '+path);
   }
   return source;
  };
@@ -982,11 +985,12 @@ export function assertIntegrationSuccessorsCurrent(read=readFileSync){
  assert.notEqual(beforeCalibrationReplayOwner(officialLegibilityFixture,legibilitySource),legibilitySource,
   'fresh current official legibility fixture: '+officialLegibilityFixture);
  rawRead(reviewedSelectionFixture,'utf8');
+ rawRead(officialAssetsFixture,'utf8');
  const alphaBuildPredecessors=Object.fromEntries(Object.keys(actorAlphaBuildInputs).map(path=>
   [path,checkedActorAlphaBuildPredecessor(path,rawRead(path,'utf8'))]));
  const liveRead=(path,encoding)=>{
   const input=Object.hasOwn(alphaBuildPredecessors,path)?alphaBuildPredecessors[path]:rawRead(path,encoding);
-  return beforeForkPush(path,beforeCalibrationReplayOwner(path,input));
+  return beforeForkPush(path,beforeCalibrationReplayOwner(path,beforeOfficialAssetsFocusFixture(path,input)));
  };
  assertReleaseCandidateToolsCurrent(rawRead);
  assertAudioDeckBrowserCurrent(rawRead);
@@ -1067,7 +1071,7 @@ export function beforePreflightSource(path,source,view='prior'){
  if(path==='.github/workflows/quality.yml')source=beforePosixDeadlineWorkflow(beforeWindowsDeadlineWorkflow(source));
  source=beforeUiEntranceWitness(path,beforeCurrentReplayCopier(path,source));
  source=beforeCurrentReplayFixes(path,source);
- source=beforeNativeFlowFixture(path,source);
+ source=beforeNativeFlowFixture(path,beforeOfficialAssetsFocusFixture(path,source));
  source=beforeOfficialBackgroundFixture(path,source);
  source=beforeReleaseScriptStaticGate(path,source);
  if(path===replayAssetLedger)source=beforeDeckBrowserAssetLedger(source);
