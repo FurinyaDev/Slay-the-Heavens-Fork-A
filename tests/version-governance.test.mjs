@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import test from 'node:test';
-import { auditReleaseFreeze } from '../scripts/check-release-freeze.mjs';
+import { auditFrozenProductReview, auditReleaseFreeze } from '../scripts/check-release-freeze.mjs';
 import { auditVersionGovernance, planPath, readVersionPlan } from '../scripts/version-governance.mjs';
 import { auditRoadmap } from '../scripts/verify-backlog-roadmap.mjs';
 import { verifyReleaseAdmission } from '../scripts/verify-release-admission.mjs';
@@ -223,4 +224,67 @@ test('publication rechecks protected plan, exact native review and frozen refs',
   await assert.rejects(verifyReleaseAcceptance(full, performance, request({ reviewRow: { ...review, state: 'DISMISSED' } })), /independent native/);
   await assert.rejects(verifyReleaseAcceptance(full, performance, request({ changed: true })), /differs from/);
   await assert.rejects(verifyReleaseAcceptance(full, performance, request({ frozen: candidate })), /changed during/);
+});
+
+test('known scope expansion cannot use a Backlog ID or claimed green tests as product approval', async () => {
+  const live = { ...pr, number: 1007, title: 'fix(ui): wider hand',
+    body: 'Backlog: TASK-115.6\nTests: pass\nRelease-Fix: TASK-115.6 | wide viewport | 34/34' };
+  await assert.rejects(auditFrozenProductReview(live, candidate, version, unexpectedRequest, repo, 'TASK-115.6'),
+    /require a version, task, actual behavior, fixed approval source and native review/);
+});
+
+test('native product review admits approved width adaptation and necessary detail fix with exact scope', async () => {
+  const approvalRef = '20b7b4f6128c26b1e221e17cc64a66a59985f917';
+  const taskPath = 'backlog/tasks/task-115.6 - 实现全屏响应式布局与统一触控坐标.md';
+  const taskUrl = `https://github.com/${repo}/blob/${approvalRef}/${encodeURI(taskPath)}`;
+  const user = { login: 'owner', id: 111138384 };
+  const cases = [
+    { number: 984, task: 'TASK-115.6', behavior: 'wide viewport touch coordinate adaptation', url: taskUrl },
+    { number: 981, task: 'TASK-115.10', behavior: 'correct detail writes without altering targeting',
+      url: `https://github.com/${repo}/pull/981#pullrequestreview-81` },
+  ];
+  for (const { number, task, behavior, url } of cases) {
+    const scope = `Product-Scope: ${version} | ${task} | ${behavior} | ${url}`;
+    const live = { ...pr, number, body: `${scope}\nProduct-Review: 71` };
+    const proof = createHash('sha256').update(scope).digest('hex');
+    const review = { id: 71, commit_id: head, state: 'COMMENTED', user,
+      body: `Release product scope verified: ${version} ${base} ${candidate} ${proof}` };
+    const approval = { id: 81, state: 'COMMENTED', user, body: `Product change approved: ${version} ${task} ${behavior}` };
+    const request = ({ decision = approval, ancestor = approvalRef, permission = 'admin' } = {}) => async endpoint => {
+      if (endpoint.endsWith('/reviews/71')) return review;
+      if (endpoint.endsWith('/reviews/81')) return decision;
+      if (endpoint.includes('/compare/')) return comparison(ancestor);
+      if (endpoint.includes('/contents/')) return { type: 'file', path: taskPath };
+      if (endpoint.endsWith('/permission')) return { permission, user };
+      return unexpectedRequest();
+    };
+    assert.deepEqual(await auditFrozenProductReview(live, candidate, version, request(), repo, task), { productReviewId: 71 });
+    await assert.rejects(auditFrozenProductReview(live, candidate, 'v2.3.0', request(), repo, task), /require a version/);
+    await assert.rejects(auditFrozenProductReview(live, base, version, request(), repo, task), /exact behavior/);
+    await assert.rejects(auditFrozenProductReview(live, candidate, version, request({ permission: 'write' }), repo, task), /lacks approval/);
+    if (number === 984) {
+      await assert.rejects(auditFrozenProductReview(live, candidate, version, request({ ancestor: head }), repo, task), /protected release history/);
+    } else {
+      await assert.rejects(auditFrozenProductReview(live, candidate, version,
+        request({ decision: { ...approval, body: approval.body.replace(version, 'v2.3.0') } }), repo, task), /own approved decision/);
+    }
+  }
+});
+
+test('candidate configuration mismatch cannot yield an admission receipt', async () => {
+  const actual = original.replace('TASK-10 -->', 'TASK-115 -->');
+  const pull = { number: 138, merged: true, merge_commit_sha: candidate, base: { ref: 'develop', repo: repository } };
+  const request = async endpoint => {
+    if (endpoint.endsWith('/heads/develop')) return ref('develop', head);
+    if (endpoint.endsWith('/heads/master')) return ref('master', base);
+    if (endpoint.endsWith('/pulls/138')) return pull;
+    if (endpoint.includes('/compare/')) return comparison(candidate);
+    return unexpectedRequest();
+  };
+  const checks = { readLocal: () => ({ checked: head, version, plan: readVersionPlan(actual) }),
+    verifyProduct: async () => ({ head: base }), verifyCi: unexpectedRequest, verifyGraph: unexpectedRequest };
+  await assert.rejects(verifyReleaseAdmission(version, head, request, checks), /did not run on the admission source/);
+  await assert.rejects(verifyReleaseAdmission(version, head, request, { ...checks, verifyProduct: async () => {
+    throw new Error('formal profile rejected');
+  } }), /formal profile rejected/);
 });

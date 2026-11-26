@@ -3,6 +3,7 @@ import {execFileSync} from 'node:child_process';
 import {latestFullRun, formalPublishBranch, pages} from '../release-ci.mjs';
 import {resolvePublishedBaseline} from './published-baseline.mjs';
 import {productionWorkload, workloadIdentity} from './resource-receipt.mjs';
+import {productScopePass} from '../verify-release-product-scope.mjs';
 import {verifyResourceReport} from './verify-release-performance.mjs';
 import {assertFullMatches, gilArtifactExpectation, loadArtifact, readRunArtifact, sha256} from './release-performance-artifacts.mjs';
 
@@ -63,7 +64,10 @@ export async function requireReleasePerformance(fullProof, request, {
   assert.deepEqual(evidence.source, {...target, tree}, 'Formal evidence and frozen source differ');
   const published = await readBaseline(version, request);
   assert.deepEqual(evidence.published, published, 'Formal evidence and published baseline differ');
-  const signals = verifyResourceReport(JSON.parse(files['report.json']), head, tree, published, evidence, workloadSha256);
+  const report = JSON.parse(files['report.json']);
+  const signals = verifyResourceReport(report, head, tree, published, evidence, workloadSha256);
+  const productScope = report.candidate?.runtime?.productScope;
+  if (version === '2.2.0') assert.equal(productScope, productScopePass, 'Formal GIL lacks the product-scope readback probe');
   assert.deepEqual(signals, {}, 'Formal performance regression signals require resolution');
 
   const gil = evidence.gil;
@@ -85,5 +89,5 @@ export async function requireReleasePerformance(fullProof, request, {
     currentFull.status === 'completed' && currentFull.conclusion === 'success', 'Frozen Full changed during performance verification');
   await checkRef();
   return {schemaVersion:1, kind:'release-performance', branch, head, tree, runId:locator.runId, attempt:locator.attempt,
-    artifactId:locator.id, artifactDigest:locator.digest, reportSha256:evidence.reportSha256, gil, published};
+    artifactId:locator.id, artifactDigest:locator.digest, reportSha256:evidence.reportSha256, gil, published, ...(productScope && {productScope})};
 }

@@ -4,17 +4,17 @@ title: 收口已有工程成果及在途 PR
 status: In Progress
 assignee:
   - '@Furinya'
-created_date: '2026-11-25 21:02'
-updated_date: '2026-11-26 04:05'
+created_date: '2026-11-25T21:02:00Z'
+updated_date: '2026-11-26T13:07:15Z'
 labels:
   - engineering
 dependencies: []
 references:
-  - 'https://github.com/FurinyaWorks/Slay-the-Heavens/pull/911'
-  - 'https://github.com/FurinyaWorks/Slay-the-Heavens/pull/967'
-  - 'https://github.com/FurinyaWorks/Slay-the-Heavens/pull/966'
-  - 'https://github.com/FurinyaWorks/Slay-the-Heavens/pull/968'
-  - 'https://github.com/FurinyaWorks/Slay-the-Heavens/pull/999'
+  - https://github.com/FurinyaWorks/Slay-the-Heavens/pull/911
+  - https://github.com/FurinyaWorks/Slay-the-Heavens/pull/967
+  - https://github.com/FurinyaWorks/Slay-the-Heavens/pull/966
+  - https://github.com/FurinyaWorks/Slay-the-Heavens/pull/968
+  - https://github.com/FurinyaWorks/Slay-the-Heavens/pull/999
 documentation:
   - docs/versions/V2.2.0-RELEASE.md
 parent_task_id: TASK-115
@@ -44,6 +44,8 @@ ordinal: 223000
 
 <!-- SECTION:PLAN:BEGIN -->
 独立推进工程成果。扩展既有 Backlog 校验和发布工具，验证 Scope、Release Gate、Engineering、冻结及生产回流。通过正反例、原生 CI 和独立审查。保留既有 #911、#967、#999 的接续记录。
+
+沿用 #1016，对账实际玩家行为、原批准依据与正式启用。以 #1007 血条避让验证负例，以已批准响应式和修复核对正例；在 Release 准入和正式有声 GIL 的既有验证入口复用定向行为回归。
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes

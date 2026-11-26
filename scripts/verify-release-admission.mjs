@@ -8,6 +8,7 @@ import { verifyBacklogRoadmap, verifyMilestoneScope } from './verify-backlog-roa
 import { managedVersion, planPath, readVersionPlan } from './version-governance.mjs';
 import { projectRepositoryMatches } from './repository-identity.mjs';
 import { protectedRef } from './verify-release-acceptance.mjs';
+import { productScopePass, requiresProductScope, verifyReleaseProductScope } from './verify-release-product-scope.mjs';
 
 const repo = 'FurinyaWorks/Slay-the-Heavens';
 const sha = /^[a-f0-9]{40}$/;
@@ -35,6 +36,7 @@ export async function verifyReleaseAdmission(version, head, request, {
     const notes = loadReleaseNotes({ releaseCandidate: true });
     return { checked: notes.build.sourceCommit, version: notes.build.version, plan: readVersionPlan(readFileSync(planPath(version), 'utf8')) };
   },
+  verifyProduct = verifyReleaseProductScope,
   verifyCi = async () => (await import('./verify-release-backflow-closeout.mjs')).verifyBackflowPush(repo, head, request),
   verifyGraph = async master => (await import('./check-release-backflow.mjs')).auditBackflow(`https://github.com/${repo}.git`,
     { expectedMaster: master, expectedDevelop: head }),
@@ -59,10 +61,18 @@ export async function verifyReleaseAdmission(version, head, request, {
     }
     return { number, merge };
   }));
+  let productScope;
+  if (requiresProductScope(plan)) {
+    productScope = await verifyProduct();
+    if (productScope?.head !== head || !sha.test(productScope.tree ?? '') ||
+        productScope.profile !== 'official-assets-first' || productScope.check !== productScopePass) {
+      throw new Error('Product comparison did not run on the admission source and formal configuration');
+    }
+  }
   const ci = await verifyCi();
   const graph = await verifyGraph(master);
   const manualChecks = plan.integrations.filter(row => row[2] === '核对').map(([pulls, requirement]) => ({ pulls, requirement }));
-  return { version, task: plan.main, phase: 'admission-checks-passed', ...graph, pullRequests, manualChecks, ci };
+  return { version, task: plan.main, phase: 'admission-checks-passed', ...graph, pullRequests, manualChecks, ci, ...(productScope && { productScope }) };
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {

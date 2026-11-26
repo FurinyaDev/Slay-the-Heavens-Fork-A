@@ -1,6 +1,7 @@
 import { managedVersion, planPath, readVersionPlan } from './version-governance.mjs';
 import { projectRepositoryMatches } from './repository-identity.mjs';
 import { TRUSTED_REVIEW_COORDINATOR_IDS } from './independent-ai-review.mjs';
+import { productScopePass, requiresProductScope } from './verify-release-product-scope.mjs';
 
 const sha = /^[a-f0-9]{40}$/;
 const digest = /^[a-f0-9]{64}$/;
@@ -69,8 +70,14 @@ export async function verifyReleaseAcceptance(fullProof, performance, request) {
     throw new Error('Protected release acceptance plan unavailable');
   }
   const source = Buffer.from(file.content, 'base64').toString('utf8');
-  if (readVersionPlan(source)?.version !== version) throw new Error('Acceptance must be in the official version plan');
+  const plan = readVersionPlan(source);
+  if (plan?.version !== version) throw new Error('Acceptance must be in the official version plan');
+  const productScope = requiresProductScope(plan);
+  if (productScope && (performance.productScope !== productScopePass || !sha.test(performance.tree ?? '') ||
+      !digest.test(performance.gil.payloadDigest ?? ''))) throw new Error('Exact formal product-scope readback is required');
   const record = acceptanceRecord(source, head, gilSha256);
+  const productDecision = `Release product scope verified: ${version} ${head} ${performance.tree} ${gilSha256} ${performance.gil.payloadDigest}`;
+  let productReviewer;
   const pr = await request(`${api}/pulls/${record.pr}`);
   if (pr?.number !== record.pr || pr.merged !== true || pr.base?.ref !== 'develop' || !projectRepositoryMatches(pr.base.repo, repo) ||
       !sha.test(pr.merge_commit_sha) || !sha.test(pr.head?.sha) || pr.head.sha === head) {
@@ -89,9 +96,13 @@ export async function verifyReleaseAcceptance(fullProof, performance, request) {
       throw new Error(`Missing exact independent native release acceptance review by @${reviewer}`);
     }
     await requireReleaseCoordinator(repo, review.user, request);
+    if (review.body.split(/\r?\n/).includes(productDecision)) productReviewer = review.id;
+  }
+  if (productScope && !Number.isSafeInteger(productReviewer)) {
+    throw new Error('Exact native release product-scope verification is missing');
   }
   if (await protectedRef(repo, 'develop', request) !== develop || await protectedRef(repo, branch, request) !== head) {
     throw new Error('Release or acceptance branch changed during verification');
   }
-  return { source: head, gilSha256, verificationCommit: develop, ...record };
+  return { source: head, gilSha256, verificationCommit: develop, ...record, ...(productScope && { productReviewer }) };
 }

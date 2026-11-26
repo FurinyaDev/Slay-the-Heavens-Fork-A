@@ -1,6 +1,7 @@
 import {act2ProductionPhases, formalAct2SceneSlots, productionPhases} from '../../scripts/runtime-baseline/production-inputs.mjs';
 import {formalImageId, profiles, productionHeapMiB, productionReportKind, resourceImage} from '../../scripts/runtime-baseline/resource-receipt.mjs';
 import {encoderSha256, toolCommit} from '../../scripts/gil-candidate-preflight.mjs';
+import {productScopePass} from '../../scripts/verify-release-product-scope.mjs';
 import {gilModuleInventoryHash, gilRuntimeKind} from '../../scripts/runtime-baseline/gil-inputs.mjs';
 
 export const head = 'a'.repeat(40);
@@ -18,7 +19,7 @@ export function reportFixture() {
   const runtime = (gilSha256, bgmSourceCommit) => ({kind:gilRuntimeKind, gilSha256, readerCommit:toolCommit, encoderSha256, bgmSourceCommit,
     nativeBgmEnabled:true, moduleCount:1, moduleDigestsSha256, templateCount:1,
     fixtureDigests:{abyss_ui_layout:sha256, abyss_ui_templates:sha256, performance_templates:sha256}});
-  const candidateRuntime = runtime(receipt.candidate.sha256, head);
+  const candidateRuntime = {...runtime(receipt.candidate.sha256, head), productScope:productScopePass};
   const baselineRuntime = runtime(published.gilSha256, published.commit);
   let sequence = 0;
   const results = Object.fromEntries(Object.entries(profiles).map(([name, profile]) => {

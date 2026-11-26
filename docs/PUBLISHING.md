@@ -60,11 +60,20 @@ node scripts/verify-release-admission.mjs vX.Y.Z <develop-HEAD>
 
 冻结后单个必要修复 PR 使用 `fix(...)` 标题，在正文写 `Release-Fix: TASK-编号 | 影响和必要性 | 复现与回归证据`。必要测试和证据可随修复交付，纯证据 PR 使用 `docs(release)` 或 `test(release)`。新增产品范围默认进入后续版本。
 
+v2.2.0 的 Release 准入用正式生成配置复验手牌阅读和血条位置独立。正式 GIL 的性能流程从同包读回 Lua，再运行同一用例。冻结后的产品源码或打包配置变化在 `Release-Fix` 或 `Release-Exception` 之外补充两行：
+
+```text
+Product-Scope: v2.2.0 | TASK-编号 | 实际玩家行为 | 固定批准来源链接
+Product-Review: 原生评审ID
+```
+
+批准来源指向冻结基线已有的 Backlog 正文、正式规划、已批准设计，或单独的原生 Owner 决策。显式决策在原生 Review 写 `Product change approved: v2.2.0 TASK-编号 实际玩家行为`，协调者核对 Owner 决定原件。独审双向对照实际差异与批准范围后，在当前 HEAD 的原生 Review 写 `Release product scope verified: v2.2.0 <BASE> <合并树> <Product-Scope整行SHA256>`。线上脚本重读批准来源、合并树、账号权限和评审。配置与运行回执在候选变化时重跑。
+
 经明确批准的例外，在正式规划加入 `<!-- scope-exception: #PR编号 | 决策摘要 -->`，保留相应 Backlog 决策。协调者核对实际独立审查，在准确 HEAD 提交 `Release scope approved: 决策摘要` 原生 Review。将 `Release-Exception: Review编号 | 决策摘要` 填入 PR 正文，再重跑该 HEAD 的 Quality。Quality 重新读取当前 PR 正文，校验实际合成树、原生 Review 与当前协调者权限。
 
 ### 正式上线
 
-使用现有 Full、正式 GIL、六档压力、事故负对照与共享平台负载入口，技术预验入口仍为 `release-ci.mjs verify`。收集同一候选的 Simulator、PC、实体手机、官方平台、美术质量和稳定性原始证据。受保护 `develop` 的正式版本规划通过单独 PR 登记以下实测回执。通过前保留待验状态。
+使用现有 Full、正式 GIL、六档压力、事故负对照与共享平台负载入口，技术预验入口仍为 `release-ci.mjs verify`。v2.2.0 按正式资源报告核对同包行为读回，独审在原生验收 Review 同时写入 `Release product scope verified: v2.2.0 <候选源码SHA> <源码树> <GIL-SHA256> <payloadDigest>`，复核实际启用行为及各自批准依据。收集同一候选的 Simulator、PC、实体手机、官方平台、美术质量和稳定性原始证据。受保护 `develop` 的正式版本规划通过单独 PR 登记以下实测回执。通过前保留待验状态。
 
 ```markdown
 <!-- release-acceptance: 完整候选源码SHA 完整GIL-SHA256 #验收PR编号 -->

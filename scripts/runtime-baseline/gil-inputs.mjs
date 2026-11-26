@@ -8,6 +8,7 @@ import {toLua} from '../build-lua-data.mjs';
 import {encoderSha256, toolCommit} from '../gil-candidate-preflight.mjs';
 import {embeddedScripts} from '../native-script-inventory.mjs';
 import {loadNativeUiEncoder} from '../native-ui-encoder.mjs';
+import {runProductScopeProbe} from '../verify-release-product-scope.mjs';
 
 const sha256 = value => createHash('sha256').update(value).digest('hex');
 export const gilRuntimeKind = 'gil-native-readback';
@@ -104,9 +105,11 @@ export async function prepareGilProductionInputs(directory, mapPath, toolRoot) {
   // The shared reader runs from each measured worktree in turn.
   const bgmSourceCommit = verifyGilBgmSource(process.cwd(), scripts.find(script => script.name === 'abyss_bgm').source, inspection, gilSha256);
   assert.equal(sha256(readFileSync(mapPath)), gilSha256, 'GIL changed during native readback');
+  const version = JSON.parse(readFileSync('package.json', 'utf8')).version;
+  const productScope = version === '2.2.0' ? runProductScopeProbe(directory) : undefined;
   const runtime = {
     kind:gilRuntimeKind, gilSha256, readerCommit:toolCommit, encoderSha256, moduleCount:scripts.length,
-    moduleDigestsSha256:gilModuleInventoryHash(moduleDigests), fixtureDigests, templateCount:ids.size, nativeBgmEnabled:true, bgmSourceCommit,
+    moduleDigestsSha256:gilModuleInventoryHash(moduleDigests), fixtureDigests, templateCount:ids.size, nativeBgmEnabled:true, bgmSourceCommit, ...(productScope && {productScope}),
   };
   writeFileSync(join(directory, 'performance-readback.json'), JSON.stringify(runtime) + '\n', {flag:'wx'});
   return runtime;
