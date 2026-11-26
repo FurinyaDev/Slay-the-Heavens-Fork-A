@@ -1,5 +1,6 @@
 import {beforeKnownMasterBackflowSource} from './master-backflow-source.mjs';
 import {assertCurrentJsInventory,assertCurrentLuaInventory,assertIntegrationSuccessorsCurrent,beforePreflightSource,exactReviewedBuildInput,beforeM05ShopCiSource,assertDevelopBackflowCurrent,authenticateDevelopBackflow,developBackflowOwns,readHistoricalPreflightInput} from './fork-preflight-source.mjs';
+import {beforeCloseoutReviewedDeckBuild} from './closeout-current-backflow-source.mjs';
 import {beforeInputRetirement} from './input-retirement-source.mjs';
 // CI-only complete bootstrap continuation. No gameplay source or production projector.
 import assert from 'node:assert/strict';
@@ -92,7 +93,7 @@ function beforeRunHudDiskInput(path,source,read){
  if(path==='tests/node-ui-layout.test.mjs')source=beforeInputRetirement(path,source);
  if(developBackflowOwns(path))assertDevelopBackflowCurrent(path,source);
  source=authenticateDevelopBackflow(path,source,owner=>read(owner,'utf8'));
- if(path==='scripts/deck-ui-layout.mjs')return exactReviewedBuildInput(path,()=>source);
+ if(path==='scripts/deck-ui-layout.mjs')return exactReviewedBuildInput(path,()=>beforeCloseoutReviewedDeckBuild(path,source));
  assert(!source.includes('\r\r\n'),'fresh Run HUD source: '+path);
  const lf=norm(source),hashBlob=s=>createHash('sha1').update(`blob ${Buffer.byteLength(s)}\0`).update(s).digest('hex');
  assert.equal(hash(lf),'60b7f711eb3b3939bace1e69a6293d30ac563769039d30937cb982e202693c31','fresh Run HUD source: '+path);
