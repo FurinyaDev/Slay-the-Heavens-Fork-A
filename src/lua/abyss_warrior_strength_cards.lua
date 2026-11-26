@@ -89,14 +89,7 @@ function M.withCards(data)
  end
  out.experimentalWarriorStrength=true;return out
 end
-function M.adaptDefinition(state,instance,card,playing)
- assert(type(card)=='table' and card~=state.catalog.cards[instance.cardId],'strength adapter requires detached definition')
- if card.id=='heavy_blade' then
-  local mult=card.strengthMultiplier;local strength=state.player.statuses.strength or 0
-  assert((mult==3 or mult==5) and integer(strength,-999) and strength<=999,'invalid Heavy Blade strength')
-  local out=copy(card);out.effects[1].value=out.effects[1].value+0.0+(mult-1)*strength;return out
- elseif card.id=='perfected_strike' then
-  assert(card.strikeBonus==2 or card.strikeBonus==3,'invalid Perfected Strike bonus')
+local function countStrikeCards(state,instance,card,playing)
   local count,seen=0,{}
   local playingIdentity=playing and (instance.uuid or instance.uid)
   for _,pile in ipairs({state.hand,state.draw,state.discard}) do
@@ -108,6 +101,17 @@ function M.adaptDefinition(state,instance,card,playing)
   end
   -- Autoplay moves the card out of its pile before resolving it.
   if playingIdentity and Strike.matches(card) then count=count+1 end
+  return count
+end
+function M.adaptDefinition(state,instance,card,playing)
+ assert(type(card)=='table' and card~=state.catalog.cards[instance.cardId],'strength adapter requires detached definition')
+ if card.id=='heavy_blade' then
+  local mult=card.strengthMultiplier;local strength=state.player.statuses.strength or 0
+  assert((mult==3 or mult==5) and integer(strength,-999) and strength<=999,'invalid Heavy Blade strength')
+  local out=copy(card);out.effects[1].value=out.effects[1].value+0.0+(mult-1)*strength;return out
+ elseif card.id=='perfected_strike' then
+  assert(card.strikeBonus==2 or card.strikeBonus==3,'invalid Perfected Strike bonus')
+  local count=countStrikeCards(state,instance,card,playing)
   local out=copy(card);out.effects[1].value=out.effects[1].value+0.0+count*card.strikeBonus;return out
  end
  return card

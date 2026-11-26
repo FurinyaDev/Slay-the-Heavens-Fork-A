@@ -704,15 +704,7 @@ function M.new(stage,report,flags,cardTemplates)
         end
         paint();busy=false
     end
-    function self.warmSelection(_,eligible,dt,frameStarted)
-        local admitted=warmAdmission
-        warmAdmission=eligible
-        if not (official and selection and eligible and admitted) or busy or destroyed
-            or type(dt)~='number' or dt<0 or dt>.05 then return end
-        local phase=selection:status().phase
-        if phase~='idle' and phase~='released' and phase~='building' and phase~='revealing' then return end
-        local start=os.clock()
-        if start-frameStarted>=.004 then return end
+    local function advanceWarmSelection(phase,start)
         local token=epoch
         busy=true
         if phase~='idle' and phase~='released' or selection:begin() then
@@ -723,6 +715,17 @@ function M.new(stage,report,flags,cardTemplates)
             -- published until normal selection activation calls begin again.
         end
         busy=false
+    end
+    function self.warmSelection(_,eligible,dt,frameStarted)
+        local admitted=warmAdmission
+        warmAdmission=eligible
+        if not (official and selection and eligible and admitted) or busy or destroyed
+            or type(dt)~='number' or dt<0 or dt>.05 then return end
+        local phase=selection:status().phase
+        if phase~='idle' and phase~='released' and phase~='building' and phase~='revealing' then return end
+        local start=os.clock()
+        if start-frameStarted>=.004 then return end
+        advanceWarmSelection(phase,start)
     end
     function self.battlePose(_,x,y,sx,sy,dt,motionState)
         if busy or destroyed or not battle then return end

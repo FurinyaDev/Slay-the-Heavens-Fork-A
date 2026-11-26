@@ -281,6 +281,10 @@ function M.new(cover,ready,onIntent,frames,motion)
         return motion and intent.page=='characterPanel'
             and (motion.characterLocal or gate.published and gate.published.page=='characterPanel')
     end
+    local function needsDepartureFade(intent,immediateMap)
+        return motion and gate.published and not immediateMap and not gate.localFrame and not gate.localOnly
+            and (gate.published.page~=intent.page or not sameBase(intent,gate.published)) and gate.state=='visible'
+    end
     local function requestTransition(intent)
         local entry=gate.entry
         if entry and (gate.departure or entry.destination and not sameOwner(entry.destination,intent))then gate.entry=nil end
@@ -289,8 +293,7 @@ function M.new(cover,ready,onIntent,frames,motion)
         gate.painting=nil
         gate.localOnly=usesLocalSelection(intent)
         local immediateMap=isMapOverlayChange(gate.published,intent) or onMapReturn and returnsFromRoom(gate.published,intent)
-        local exiting=motion and gate.published and not immediateMap and not gate.localFrame and not gate.localOnly
-            and (gate.published.page~=intent.page or not sameBase(intent,gate.published)) and gate.state=='visible'
+        local exiting=needsDepartureFade(intent,immediateMap)
         gate.epoch=gate.epoch+1;gate.intent=intent;gate.state=exiting and 'fadingOut' or 'preparing';gate.armed=nil;gate.error=nil
         gate.projectionError=nil;gate.retryProjection=nil
         resetWait(gate)
@@ -516,12 +519,14 @@ function M.new(cover,ready,onIntent,frames,motion)
         if ticket~=gate.epoch then return false end
         logVisible(intent,ticket);return enableEntry(intent)
     end
-    local function publishReadyPage(intent,ticket)
+    local function hasConfirmedPublication(intent,ticket)
         -- New base pages confirm on another scheduler turn. A retained base's
         -- local work publishes as soon as this turn's real owners report ready.
         local localReady=(gate.localFrame or gate.localOnly) and not needsSchedulerConfirmation(intent)
-        local confirmed=gate.armed and gate.armed.epoch==ticket and gate.armed.tick<gate.tick
-        if not localReady and not confirmed then
+        return localReady or gate.armed and gate.armed.epoch==ticket and gate.armed.tick<gate.tick
+    end
+    local function publishReadyPage(intent,ticket)
+        if not hasConfirmedPublication(intent,ticket)then
             gate.state='ready';gate.armed={epoch=ticket,tick=gate.tick};return false
         end
         local mapReturn=gate.mapReturnPainted==ticket

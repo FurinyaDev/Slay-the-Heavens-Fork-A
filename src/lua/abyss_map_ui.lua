@@ -268,6 +268,21 @@ end
 M.stsScaleLerpSnap, M.stsOscillate, M.stsRoomFx = scaleLerpSnap, oscillate, newRoomFx
 local function atStart(map) return map.floor == (map.firstFloor or 1) - 1 end
 
+local function deviceLayout(hudTop)
+    local layout=setmetatable({},{__index=MapLayout})
+    if hudTop then
+        local bounds=layout.viewport
+        layout.viewport={left=bounds.left,right=bounds.right,bottom=bounds.bottom,top=math.min(bounds.top,hudTop)}
+    end
+    return layout
+end
+
+local function mapControls(root,embedded)
+    if embedded then return root,nil,root end
+    local stage=child(root,'stage')
+    return stage,child(root,'mapBackdrop'),child(stage,'mapPanel')
+end
+
 -- Standalone root holds mapBackdrop + stage/mapPanel from mapLayout(). With
 -- options.embedded, root is the host's mapPanel and the host alone scales stage.
 -- options may supply color(r,g,b,a) and imageSource; client defaults otherwise.
@@ -278,11 +293,7 @@ function M.new(root, map, onChoose, clickEvent, options)
     assert(type(onChoose) == "function", "map UI requires onChoose callback")
     options = options or {}
     -- Per-host viewport: mobile HUD geometry must not mutate the PC layout.
-    local Layout=setmetatable({},{__index=MapLayout})
-    if options.hudTop then
-        local bounds=Layout.viewport
-        Layout.viewport={left=bounds.left,right=bounds.right,bottom=bounds.bottom,top=math.min(bounds.top,options.hudTop)}
-    end
+    local Layout=deviceLayout(options.hudTop)
     local function scrollLimit(chapter)
         return maxScroll(chapter)+MapLayout.viewport.top-Layout.viewport.top
     end
@@ -300,12 +311,7 @@ function M.new(root, map, onChoose, clickEvent, options)
     -- Requiring a plain Lua function aborts the entire host before input binds.
     assert(colour ~= nil and imageSource ~= nil, "map UI needs client Color and imageSource")
     local embedded = options.embedded == true
-    local stage, backdrop, panel
-    if embedded then stage, panel = root, root
-    else
-        stage, backdrop = child(root, "stage"), child(root, "mapBackdrop")
-        panel = child(stage, "mapPanel")
-    end
+    local stage,backdrop,panel=mapControls(root,embedded)
     -- The title host binds real owners only after Start succeeds.
     local initialChapter = map ~= nil and assert(chapterFor(map), "invalid map chapter context") or nil
     local view = map and mapView(map)
