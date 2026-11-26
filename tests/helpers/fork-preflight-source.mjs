@@ -1,3 +1,4 @@
+import {beforeLocalGilFixture} from './local-gil-fixture-source.mjs';
 import {beforePosixDeadlineWorkflow,beforeWindowsDeadlineWorkflow} from './auto-merge-workflow.mjs';
 import {beforeHotfixPublicationGate} from './release-ci-workflow.mjs';
 import {assertInputRetirementLuaCurrent,beforeInputRetirementTestInventory,readRetiredInputLuaReceipt} from './input-retirement-inventory.mjs';
@@ -761,7 +762,7 @@ export function beforeReleaseAdditionalInventory(paths,kind,read=readFileSync){
   assert.equal(count,1,'single added Release test: '+path);
   const live=read(path,'utf8');
   if(kind==='lua'&&exactCurrentReleaseLuaFixture(path,live))continue;
-  const source=beforeFormalAct2ReleaseTest(path,beforeDevelopBackflow(path,live));
+  const source=beforeLocalGilFixture(path,beforeFormalAct2ReleaseTest(path,beforeDevelopBackflow(path,live)));
   assert(typeof source==='string'&&!source.includes('\r\r\n')&&hash(normalize(source))===sha,'fresh added inventory source: '+path);
  }
  return paths.filter(path=>!Object.hasOwn(newerTests[kind],path));
@@ -1577,6 +1578,7 @@ function beforePrologueRuntimeFixture(path,source){
  return source.includes('\r\n')?prior.replaceAll('\n','\r\n'):prior;
 }
 export function beforePreflightSource(path,source,view='prior',read=readFileSync){
+ source=beforeLocalGilFixture(path,source);
  if(path===replayAssetLedger&&typeof source==='string'){
   const lf=normalize(source);
   if(source!==lf&&source!==lf.replaceAll('\n','\r\n'))return source;
