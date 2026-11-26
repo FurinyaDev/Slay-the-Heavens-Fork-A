@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@Furinya'
 created_date: '2026-11-25 21:00'
-updated_date: '2026-11-26 03:52'
+updated_date: '2026-11-26 05:15'
 labels:
   - engineering
 milestone: m-8
@@ -28,6 +28,10 @@ references:
   - 'https://github.com/FurinyaWorks/Slay-the-Heavens/pull/1004'
   - 'https://github.com/FurinyaWorks/Slay-the-Heavens/pull/1005'
   - 'https://github.com/FurinyaWorks/Slay-the-Heavens/pull/1006'
+  - 'https://github.com/FurinyaWorks/Slay-the-Heavens/pull/1015'
+  - 'https://github.com/FurinyaWorks/Slay-the-Heavens/pull/1017'
+  - 'https://github.com/FurinyaWorks/Slay-the-Heavens/pull/1019'
+  - 'https://github.com/FurinyaWorks/Slay-the-Heavens/pull/1020'
 documentation:
   - docs/versions/V2.2.0-RELEASE.md
 parent_task_id: TASK-115
@@ -102,4 +106,6 @@ Linux 九个已测权重和原历史精确逆投影，两文件本地候选 7879
 Curses 历史 #1004 实际合入 05c9dfe3b41ac4a7c0e325d9fbb1ef8f0db1497f，父 505319e8、树 13da769b。真实 #1003 排程、原 Curses/Bootstrap 定向 4/4、原生独审 6067755916、Fork A 45742134686；现行 Curses 功能 8/8。另一份旧计时收据因现行 Act1 输入失配继续待验。505319e8 对应运行未分配 Runner 后取消。现行 Quality 45742778259、Licenses 45742778273 入队。
 
 #1005 已合入 60ceeea4a9d563de50a55f43d238949a9c05b811，#1006 已合入 20b7b4f6128c26b1e221e17cc64a66a59985f917。合入树分别是 e00deeab 和 378b2bf9，均与独审及实际目标树一致。原官方资产文件在组合候选 13/13 零跳过，原封存 6/6 与 LF/CRLF 及四项复读负例通过。原 60 秒门槛保留。20b7 真实 Quality 45745419782、Licenses 45745419515 待验。
+
+已合入遗物装备原回执、六项视觉来源及其历史回放、Fork 自回执和 StS 原封存反馈。原 13 项合流定向通过。较广 StS、Component UI 和两组 GameUI 回放仍有原失败。f9513b58 的主仓 Quality 与 Licenses 已入队，Full 分片待分配。正式 Full 与 Licenses 须按同一精确源码验收。
 <!-- SECTION:NOTES:END -->
