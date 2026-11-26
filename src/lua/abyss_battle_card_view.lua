@@ -51,11 +51,10 @@ end
 
 local function handTarget(count, index, hot, point)
     local restAngle=-(index-(count-1)/2)*L.hand.arcDegrees
-    local focusY,focusScale=point.focusY,point.focusScale
-    if not focusY then focusY,focusScale=Viewport.handFocus(point.baseY,point[1]) end
-    return {x=point[1],y=point[2],scale=hot and focusScale or 1,
+    -- The hit rectangle still covers the idle anchor when the card is raised.
+    return {x=point[1],y=point[2],scale=hot and Theme.motion.hoverScale or 1,
         angle=hot and 0 or restAngle,restAngle=restAngle,
-        baseY=point.baseY,hitWidth=point.hitWidth,focusY=focusY,focusScale=focusScale,ceiling=hot and point.ceiling}
+        baseY=point.baseY,hitWidth=point.hitWidth}
 end
 
 -- Successful geometry belongs to the last binding of a native handle. No view
@@ -66,12 +65,12 @@ local function handValues(pose, target)
     local r=target.restAngle*math.pi/180
     local c,s=math.abs(math.cos(r)),math.abs(math.sin(r))
     local restH,restW=(h*c+w*s)/2,(w*c+h*s)/2
-    local hotH=h*target.focusScale/2
-    local hotY=target.focusY
+    local hotH=h*Theme.motion.hoverScale/2
+    local hotY=Viewport.handFocus(target.baseY)
     local low=math.min(target.baseY-restH,hotY-hotH)
     local high=math.max(target.baseY+restH,hotY+hotH)
     local dy,a=(low+high)/2-pose.y,pose.angle*math.pi/180
-    local width=math.max(restW*2,w*target.focusScale)
+    local width=math.max(restW*2,w*Theme.motion.hoverScale)
     return {pose.x,pose.y,pose.scale,pose.angle,
         math.sin(a)*dy/pose.scale,math.cos(a)*dy/pose.scale,
         math.min(width,target.hitWidth or width)/pose.scale,(high-low)/pose.scale}
@@ -117,7 +116,6 @@ local function advancePose(entry, dt, fast)
     end
     pose.scale=lerpSnap(pose.scale,target.scale,dt,7.5,0.003)
     pose.angle=lerpSnap(pose.angle,target.angle,dt,12,0.003)
-    if target.ceiling then pose.y=Viewport.limitHandFocus(pose.y,pose.angle,pose.scale,target.ceiling) end
 end
 
 local function pileMembership(battle)
@@ -294,8 +292,7 @@ function M.new(view, controls)
     local handGeometryOwner={}
     local handWidth,handHeight,handTurn,handCount,handTop,openingHand,eventTail
     local recentDrawOrigins={}
-    local function syncHandLayout(current, battle, fighting)
-        if controls.prepareHandFocus then controls.prepareHandFocus(fighting and battle) end
+    local function syncHandViewport(current)
         if current~=handBattle or view.canvasWidth~=handWidth or view.canvasHeight~=handHeight then
             -- Resizing invalidates a captured drag. Its old display coordinates
             -- cannot survive after the capture layer has been removed.
@@ -428,7 +425,7 @@ function M.new(view, controls)
             active = active, reward = reward, rewards = picking and Run.rewardOptions(view.run) or {} }
         local aimUid, aimTarget = currentAim(view,dragTarget)
         local current=fighting and view.run and view.run.combat
-        syncHandLayout(current,battle,fighting)
+        syncHandViewport(current)
         handTurn,handCount=handMetadata(current)
         recentDrawOrigins,eventTail=reshuffledOrigins(fighting and battle,eventTail)
         for _,entry in pairs(handPoses) do entry.visible=false end
