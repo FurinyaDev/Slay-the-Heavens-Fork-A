@@ -237,10 +237,20 @@ function M.install(owner, _ownership, host, dependencies)
 
     local function bindActorHelp(screenSlot, box, entryAt, guard, cleanups)
         if guard and not guard() then return end
-        if screenSlot > 0 then bindHelp(box:GetChild("intentHit"), function()
-            local entry = entryAt()
-            return entry and {kind = "intent", index = entry.index, screenSlot = screenSlot, controlBox = guard and box or nil}
-        end, true, nil, guard, cleanups) end
+        if screenSlot>0 then
+            for _,name in ipairs({'intentHit','hpHit'})do
+                if guard and not guard() then return end
+                local control=box:GetChild(name)
+                if control then
+                    bindHelp(control,function()
+                        local entry=entryAt()
+                        if not entry or control.visible==false or not Actors.isPresent(entry.actor) then return end
+                        return {kind=name=='intentHit' and 'intent' or nil,index=entry.index,
+                            screenSlot=screenSlot,controlBox=guard and box or nil}
+                    end,true,nil,guard,cleanups)
+                end
+            end
+        end
         if guard or screenSlot == 0 and host.platform and host.platform.touchScreen then return end
         for slot = 1, L.statusIcon.perRow * L.statusIcon.rows do
             local position = slot

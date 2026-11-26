@@ -6,6 +6,7 @@ local RunSeed = require("abyss_run_seed")
 local NeowHistory=require('abyss_neow_history')
 local EndingHistory=require('abyss_ending_history')
 local Acts=require('abyss_acts')
+local PendingRelic=require('abyss_relic_pending')
 local M = {}
 local function startBlocked(self)
     return self.exitOpen or self.deckUI.visible or self.settlementRequested or self.settlementBusy
@@ -29,10 +30,11 @@ local function beginNeow(run,map,neowHistory)
     return true
 end
 
-function M.selectionChanged(self,owner)
-    return function()
+function M.selectionChanged(self,owner,refreshSelection)
+    return function(changed)
             owner.exitGeneration=owner.exitGeneration+1;owner.menuGeneration=owner.menuGeneration+1
-            self:refresh()
+            if changed==nil then self:refresh()
+            elseif changed then refreshSelection()end
         end
 end
 
@@ -52,8 +54,8 @@ end
 function M.selectCharacter(self,selectionChanged)
     return function(_,id)
             if not self.characterOpen or self.starting or self.disabled then return false end
-            local ok,reason=self.characterSelection:select(id)
-            if ok then selectionChanged()end
+            local ok,reason,changed=self.characterSelection:select(id)
+            if ok then selectionChanged(changed)end
             return ok,reason
         end
 end
@@ -61,8 +63,8 @@ end
 function M.selectElement(self,selectionChanged)
     return function(_,id)
             if not self.characterOpen or self.starting or self.disabled then return false end
-            local ok,reason=self.characterSelection:selectElement(id)
-            if ok then selectionChanged()end
+            local ok,reason,changed=self.characterSelection:selectElement(id)
+            if ok then selectionChanged(changed)end
             return ok,reason
         end
 end
@@ -181,6 +183,7 @@ function M.advanceAct(self)
             if self.disabled or not self.run or self.run.phase ~= 'act_transition' then return false,'act_transition_unavailable' end
             if self.exitOpen or self.deckUI.visible or self.potionUI.visible or self.battleUI.busy
                 or self.settlementRequested or self.settlementBusy then return false,'ui_busy' end
+            if PendingRelic.owner(self.run) then return false,'relic_choice_pending' end
             local ok, reason = Nodes.advanceAct(self.run, self.map)
             if ok then
                 self.nodeUI.result, self.nodeUI.notice = nil, ''

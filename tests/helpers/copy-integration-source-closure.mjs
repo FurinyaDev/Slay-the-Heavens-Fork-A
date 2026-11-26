@@ -1,3 +1,4 @@
+import {beforeMasterBackflowSource} from './master-backflow-source.mjs';
 // Copies only immutable test helper dependencies; production owners remain explicit fixtures.
 import assert from 'node:assert/strict';
 import {officialUiRepairClosure} from './official-ui-repair-closure.mjs';
@@ -376,10 +377,19 @@ const entranceFiles=Object.freeze({
 const inside=(root,path)=>{const r=relative(root,path);return r!==''&&!isAbsolute(r)&&r!=='..'&&!r.startsWith('../')&&!r.startsWith('..\\');};
 export function copyIntegrationSourceClosure(directory,{sourceRoot=process.cwd()}={}){
  const destination=realpathSync.native(directory);
- assert.notEqual(destination,realpathSync.native(sourceRoot),'isolated helper copy destination');
+ const sourceDirectory=realpathSync.native(sourceRoot);
+ assert.notEqual(destination,sourceDirectory,'isolated helper copy destination');
+ const liveSource=sourceDirectory===realpathSync.native(new URL('../../',import.meta.url));
  for(const [path,sha]of Object.entries(entranceFiles)){
   assert((path.startsWith('tests/helpers/')||path.startsWith('tests/fixtures/'))&&!path.split('/').includes('..'),'fixed helper path');
-  const source=join(sourceRoot,path),content=integrationClosureBytes(path,readFileSync(source));assert.equal(hash(content),sha,'fresh helper copy identity: '+path);
+  const source=join(sourceDirectory,path),raw=readFileSync(source);
+  let prior=raw;
+  if(liveSource){
+   try{prior=beforeMasterBackflowSource(path,raw);}
+   catch(error){assert.fail('fresh helper copy identity: '+path+': '+error.message);}
+  }
+  const content=integrationClosureBytes(path,prior);
+  assert.equal(hash(content),sha,'fresh helper copy identity: '+path);
   const target=join(directory,path);mkdirSync(dirname(target),{recursive:true});
   assert(inside(destination,realpathSync.native(dirname(target))),'helper destination parent escaped');
   if(existsSync(target))assert(inside(destination,realpathSync.native(target))&&realpathSync.native(target)!==realpathSync.native(source),'helper destination aliases source');

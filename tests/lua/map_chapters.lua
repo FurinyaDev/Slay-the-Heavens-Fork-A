@@ -347,6 +347,7 @@ test('invalid context arriving during an animation shuts down all stale navigati
     assert(not box(1).visible and not pcall(box,'next') and not pcall(box,'previous'))
     emit(1,'down',11);emit(1,'up',11);assert(not emit(1,'click',11))
     local scrollOk,scrollReason=ui:scrollBy(100);assert(not scrollOk and scrollReason=='invalid_map_context')
+    assert(not ui:focusCurrent(true))
     assert(ui:update(1));same(map,before);assert(#calls==0)
 end)
 

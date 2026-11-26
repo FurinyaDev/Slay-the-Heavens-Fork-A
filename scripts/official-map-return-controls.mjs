@@ -1,4 +1,4 @@
-import {roundedActionStates} from './native-rounded-button.mjs';
+import {projectRoundedStates,roundedActionStates} from './native-rounded-button.mjs';
 
 const child=(node,name)=>node.children.find(part=>part.name===name);
 export function applyOfficialMapReturnControls(map,rewards,theme){
@@ -15,6 +15,16 @@ export function applyOfficialMapReturnControls(map,rewards,theme){
   Object.assign(label.text,{fontSize,minFontSize:theme.font.minimum,colour:theme.officialAssets.buttonInk,outline:false});
   const legacy=button.children.filter(part=>part!==label&&part!==hit&&part.name!=='v25ReturnFlag');
   for(const part of legacy)part.visible=false;
-  button.children=[...legacy,roundedActionStates(size,theme,'secondary'),label,hit];
+  const variants=roundedActionStates(size,theme,'secondary');
+  if(button===preview){
+   const projection=projectRoundedStates(variants.children,'roundedButton');
+   if(projection){
+    child(projection.face,'roundedButton').name='v25Flag';
+    variants.children=[projection.face];
+    theme.officialAssets.mapReturnPalette=projection.palette;
+    theme.officialAssets.mapReturnScales=projection.scales;
+   }
+  }
+  button.children=[...legacy,variants,label,hit];
  }
 }

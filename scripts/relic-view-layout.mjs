@@ -1,4 +1,5 @@
 import { nativeControls, nativeTheme } from './native-ui-theme.mjs';
+import { compactPopupSurface } from './compact-popup-surface.mjs';
 
 // TASK-4.7 owned-relic art slots. Prototype topBar(): owned relics are 32px
 // gold-rimmed discs in a 36px row; shop relics pair the same disc with name and
@@ -14,14 +15,14 @@ export function relicDisc(theme, name, size, ring, iconSize, position = [0, 0]) 
 }
 
 export function relicTooltip(theme) {
-  const {plate,text}=nativeControls(theme),{color:c,font:f}=theme;
+  const {text}=nativeControls(theme),{color:c,font:f}=theme;
   const line=(name,box,font,colour,valign)=>{
     const node=text(name,box,'',font,colour);
     Object.assign(node.text,{align:'left',valign});
     return {...node,raycastTarget:false};
   };
   return {name:'tooltip',kind:'container',size:[360,156],visible:false,raycastTarget:false,children:[
-    {...plate('face',[0,0,360,156],c.panelSunken),raycastTarget:false},
+    ...compactPopupSurface(theme,[360,156],{face:'face',readOnly:true}),
     line('name',[0,48,324,36],f.label,c.goldBright,'middle'),
     line('effect',[0,-19,324,94],f.small,c.text,'top'),
   ]};
@@ -48,8 +49,7 @@ export function relicViewControls(theme = nativeTheme) {
     ] };
   };
   const b = v.bar;
-  // One sunken capsule groups every owned disc so the strip reads as a single
-  // HUD element; the last disc doubles as a +N overflow chip (no wrap/occlusion).
+  // One capsule groups the pooled slots. The official bar pages horizontally.
   const capsule = (name, [w, h], colour) => { const x = (w - h) / 2; return { name, kind: 'container', size: [w, h], children: [
     { ...plate('left', [-x, 0, h, h], colour), image: theme.image.disc }, plate('middle', [0, 0, w - h, h], colour),
     { ...plate('right', [x, 0, h, h], colour), image: theme.image.disc }] }; };
@@ -70,6 +70,9 @@ export function relicViewControls(theme = nativeTheme) {
     slot.children.push({ name: 'hit', kind: 'cursorArea', size: [b.step, 44] });
     return slot;
   })];
+  bar.push(
+    {...button('previous',[-624,292,32,44],'‹'),visible:false},
+    {...button('next',[610,292,32,44],'›'),visible:false});
   const [rw, rh] = v.row, discX = -rw / 2 + s.m + v.disc / 2;
   const rows = [];
   v.rows.forEach((y, r) => v.columns.forEach((x, col) => {

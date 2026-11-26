@@ -126,14 +126,16 @@ function M.new(controller, ui)
         end
     end
 
-    local function renderCardSlot(view, i, paint)
+    local function renderCardSlot(view, i, paint, staged)
         local offer = view.node.cards[i]
         local box, price = ui.product("card" .. i), ui.product("price" .. i)
         if paint then show(box, offer ~= nil);show(price, offer ~= nil) end
         if not offer then return end
         local availability = offerState(offer)
         local selected = selection:isSelected('shopView/card' .. i) == true
-        if paint or selectedCards[i] ~= selected then
+        if staged then
+            ui.reuseCard(box)
+        elseif paint or selectedCards[i] ~= selected then
             paintCardSlot(box, price, offer, availability, selected)
             selectedCards[i] = selected
         else ui.reuseCard(box) end
@@ -268,7 +270,7 @@ function M.new(controller, ui)
     local shop = ui.child('shopView')
     local goods = shop:GetChild('goods') or shop
     local categories = {'cards', 'relics', 'potions'}
-    local previousRun, previousNode, previousQuote, bound
+    local previousRun, previousNode, previousQuote, bound, warming
     local function quote(hasPurgeCandidates)
         local run = self.run
         local flow = run.nodeFlow
@@ -314,9 +316,10 @@ function M.new(controller, ui)
     local function render(view, node)
         local quoted = quote(#node.purgeCards > 0)
         local paint = not matchesQuote(quoted)
+        if paint then warming=ui.deferHiddenProducts and not self.shopOpen and {nextSlot=1} or nil end
         selection:begin()
         self.pageCount, self.page, self.relicPage = 1, 1, 1
-        for i = 1, SHOP_PAGE do renderCardSlot(view, i, paint) end
+        for i = 1, SHOP_PAGE do renderCardSlot(view,i,paint and not warming,warming and i>=warming.nextSlot) end
         if paint then cardFooter(shop) end
         renderRemoval(node, paint)
         renderRelics(goods, node.relics, paint)
@@ -330,10 +333,29 @@ function M.new(controller, ui)
         return ''
     end
 
-    local function invalidate()
-        previousRun, previousNode, previousQuote, bound = nil, nil, nil, nil
+    local function prepare()
+        if not warming or not bound or not self.visible or self.view~=bound.view then return end
+        local progress,owned=warming,bound
+        local view,flow=owned.view,owned.flow
+        if self.run~=previousRun or self.run.nodeFlow~=flow or not sameOffers('cards',flow.cards) then return end
+        local slot=progress.nextSlot
+        local offer=view.node.cards[slot]
+        local box,price=ui.product('card'..slot),ui.product('price'..slot)
+        show(box,offer~=nil);show(price,offer~=nil)
+        if offer then
+            paintCardSlot(box,price,offer,offerState(offer),false)
+        end
+        if warming==progress and bound==owned then
+            selectedCards[slot]=false
+            progress.nextSlot=slot+1
+            if slot==SHOP_PAGE then warming=nil end
+        end
     end
-    return render, current, invalidate
+
+    local function invalidate()
+        previousRun, previousNode, previousQuote, bound, warming = nil,nil,nil,nil,nil
+    end
+    return render, current, invalidate, prepare, function()return warming==nil end
 end
 
 return M

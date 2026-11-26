@@ -19,12 +19,14 @@ local inferno=View.intentView(hex,1)
 has(inferno.text,'灼伤');has(inferno.text,'3张');has(inferno.text,'弃牌堆');assert(#inferno.rows==2)
 assert(C.endTurn(hex));local sear=View.intentView(hex,1);has(sear.text,'+')
 local pair=battle({'deca','donu'});force(pair.enemies[1],'square')
+pair.enemies[1].statuses.dexterity=99
+pair.enemies[1].statuses.frail=1
 local defend=View.intentView(pair,1)
-has(defend.text,'全体');has(defend.text,'16')
+has(defend.text,'敌方全体存活单位各获得 16 点格挡')
 local circle=View.intentView(pair,2);has(circle.text,'全体');has(circle.text,'3')
+assert(C.endTurn(pair) and pair.enemies[1].block==16 and pair.enemies[2].block==16)
 
--- Real generated battle controls must open the mixed split tooltip and keep
--- both new actors targetable, with no nil single-child metadata assumption.
+-- The generated tooltip shows the source Unknown intent and the active Split Power.
 local H=dofile('tests/lua/support/battle_action_fixture.lua')
 local inspectDetails=dofile('tests/lua/support/status_detail_fixture.lua')
 local host,ui,panel,_,tap,drain=H.setup({'strike','strike'},{'slime_boss'})
@@ -35,8 +37,10 @@ parent.hp=66;host:refresh();tap('card1',29);tap('enemy1',30);drain()
 dofile('tests/lua/support/intent_face_assertion.lua')(monsterControl(panel,'enemy1'),View.intentView(s,1),'分裂')
 tap('enemy1',31)
 local detail=inspectDetails(ui,panel)
-has(detail,s.catalog.enemies.spike_slime_l.name)
-has(detail,s.catalog.enemies.acid_slime_l.name)
+has(detail,'这名敌人的意图不明')
+has(detail,'生命值降至一半或以下时')
+assert(not detail:find(s.catalog.enemies.spike_slime_l.name,1,true))
+assert(not detail:find(s.catalog.enemies.acid_slime_l.name,1,true))
 tap('endTurn',32);drain()
 dofile('tests/lua/support/monster_death_fixture.lua')(host,ui,parent.id)
 assert(#s.enemies==3 and s.enemies[2]==parent and parent.hp==0)

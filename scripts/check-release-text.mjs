@@ -1,7 +1,9 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { relative, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import lua from 'luaparse';
+import { createRequire } from 'node:module';
+
+const require = createRequire(import.meta.url);
 
 // Project policy for Release copy. The platform's filter is undisclosed.
 const rules = [
@@ -63,6 +65,7 @@ export function inspectReleaseText(path, source, { decodeLua = false, client = f
 
   // Lua string escapes are already part of the normal JSON-to-Lua generator.
   // Inspect the literal value as UTF-8 without executing a client script.
+  const lua = require('luaparse');
   const bytes = Buffer.from(source).toString('latin1');
   const parser = lua.parse(bytes, { luaVersion: '5.3', encodingMode: 'pseudo-latin1', wait: true });
   let previousByte = 0, previousIndex = 0;
@@ -130,10 +133,13 @@ export async function checkReleaseText({ root = process.cwd(), generated, adviso
   if (!generated) return;
 
   const { candidateScriptFiles } = await import('./native-candidate-scripts.mjs');
+  const { packNativeScript, nativeScriptStorageProfile } = await import('./native-script-storage.mjs');
   const modules = candidateScriptFiles(resolve(root, 'src/lua'), resolve(root, generated)).map(({ name, sourceFile }) =>
     ({ name, source: readFileSync(sourceFile, 'utf8').replace(/^\uFEFF/, '') }));
   assertClientScriptText(modules, 'generated-inputs', { advisories });
-  console.log(`Release text: ${modules.length} Lua modules checked before candidate write.`);
+  const packed = modules.map(({ name, source }) => ({ name, source: packNativeScript(name, source, nativeScriptStorageProfile) }));
+  assertClientScriptText(packed, 'packed-lua', { advisories });
+  console.log(`Release text: ${packed.length} Lua modules checked before and after production packing.`);
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {

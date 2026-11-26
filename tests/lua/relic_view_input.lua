@@ -1,16 +1,22 @@
 local F=dofile('tests/lua/support/game_ui_fixture.lua')
 local h,root=F.fixture()
 assert(F.start(h))
+local capacity=h.relicUI.barCapacity
 h.run.relics={}
-for i=1,42 do h.run.relics[i]='anchor' end
+for i=1,capacity*2+1 do h.run.relics[i]='anchor' end
 h:refresh()
 local open,close=h.openRelics,h.closeDeck
 local opens,closes=0,0
 h.openRelics=function(self,...)opens=opens+1;return open(self,...)end
 h.closeDeck=function(self,...)closes=closes+1;return close(self,...)end
-local Theme=require('abyss_theme')
-local collectionSlot=Theme.presentationProfile=='official-assets-first' and Theme.officialAssets.battleRelicBar.count or 1
-local bar=root:GetChild('relicBar'):GetChild('slot'..collectionSlot):GetChild('hit')
+local function tap(hit,id)
+    local touch={touchId=id}
+    hit.listeners.down(touch);hit.listeners.up(touch)
+    return hit.click(touch)
+end
+local bar=root:GetChild('relicBar')
+local previous,next=bar:GetChild('previous'):GetChild('hit'),bar:GetChild('next'):GetChild('hit')
+local slot=bar:GetChild('slot1'):GetChild('hit')
 local panel=root:GetChild('relicPanel')
 assert(bar.click())
 assert(opens==1 and h.relicUI.visible and h.relicUI.page==1)
@@ -29,7 +35,7 @@ assert(bar.click() and h.relicUI.visible and opens==2)
 assert(closeHit.click());assert(closes==2 and not h.deckUI.visible and not h.relicUI.visible)
 print('RELIC_POINTER_PASS next previous close bar')
 
--- Combat clicks select the exact owned identity; other pages keep the list.
+-- Combat details also select the exact owned identity.
 do
     local h2,r2=F.fixture()
     assert(F.start(h2))
@@ -72,9 +78,9 @@ do
     local h3,_,_,emit,_,_,_,r3=H.setup()
     local combat=h3.run.combat
     emit('endTurn','down',7)
-    assert(r3:GetChild('relicBar'):GetChild('slot1'):GetChild('hit').click())
+    assert(tap(r3:GetChild('relicBar'):GetChild('slot1'):GetChild('hit'),8))
     assert(h3.relicUI.selectedIndex==1)
-    assert(r3:GetChild('relicPanel'):GetChild('blocker').click())
+    assert(tap(r3:GetChild('relicPanel'):GetChild('blocker'),9))
     emit('endTurn','up',7);emit('endTurn','click',7)
     assert(combat.turn==1 and not h3.deckUI.visible,'outside close must not revive an older battle input')
 end

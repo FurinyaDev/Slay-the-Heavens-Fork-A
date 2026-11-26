@@ -2,7 +2,8 @@ local F=dofile('tests/lua/support/game_ui_fixture.lua')
 local View=require('abyss_monster_intent_particle_view')
 local Powers=require('abyss_monster_power_surfaces')
 
-local case=ABYSS_MUTATION_CASE
+local measure=arg and arg[1]=='measure'
+local case=ABYSS_MUTATION_CASE or (measure and arg[2])
 local geometry={x=0,y=0,intentX=10,intentY=20,sourceScale=1}
 local function instrument(control,name,counts)
  local method=assert(control[name])
@@ -58,16 +59,43 @@ local function particle(source,onCreate)
  return view,box,paint,control,counts
 end
 
+local function stableSelection()
+ local Select=require('abyss_character_select')
+ local CharacterView=require('abyss_character_select_view')
+ local Trace=dofile('tests/lua/support/presentation_trace.lua')
+ local stage=F.Viewport.apply(F.control({children=F.Layout}),1280,720)
+ local panel=assert(stage:GetChild('characterPanel'))
+ local state=Select.new(F.Data,F.Presentation)
+ assert(state:select('traveler') and state:selectElement('ironclad') and state:canConfirm())
+ local platform={imageSource='static',color=function(r,g,b,a)return {r=r,g=g,b=b,a=a} end}
+ local motion=CharacterView.motion(panel,platform)
+ CharacterView.render(panel,state,platform,true,motion)
+ local details=panel:GetChild('details')
+ assert(details.visible and panel:GetChild('confirm').visible)
+
+ local trace=Trace.new(true)
+ trace:attach(panel)
+ for _=1,12 do CharacterView.render(panel,state,platform,true,motion) end
+ assert(details.visible and panel:GetChild('confirm').visible and state:canConfirm())
+ assert(trace.count==0,'unchanged published selection wrote native state')
+end
+
 local function stableParticle()
  local _,_,paint,control,counts=particle('UNKNOWN')
  paint(true)
  local c=control()
  local icon=c.children.icon
  local previous=counts.SetVisible
- for _=1,30 do paint(true)end
+ local repetitions=measure and 300 or 30
+ local started=os.clock()
+ for _=1,repetitions do paint(true)end
+ if measure then
+  print('particle fixed',os.clock()-started,counts.GetChild,counts.SetVisible,counts.SetImage,
+   counts.SetSizeDelta,counts.SetLocalRotation,counts.SetLocalScale,counts.SetAnchoredPosition,counts.SetAsLastSibling)
+ end
  assert(counts.SetImage==1 and counts.SetSizeDelta==1 and counts.SetLocalRotation==1 and counts.SetVisible==previous,
   'UNKNOWN republished stable appearance')
- assert(counts.SetLocalScale==31,'dynamic scale was skipped')
+ assert(counts.SetLocalScale==repetitions+1,'dynamic scale was skipped')
  local rotation=icon.rotation[3]
  c.children.edge:SetVisible(true)
  c:SetVisible(false)
@@ -204,12 +232,16 @@ local function selection()
  assert(host:start());assert(host:closeCharacters());assert(host:start())
  local panel=root:GetChild('battlePanel')
  local render=host.battleUI.render
+ local counts={}
+ if measure then instrument(panel,'GetChild',counts) end
  local renders=0
  host.battleUI.render=function(self,...)
   renders=renders+1
   return render(self,...)
  end
+ local started=os.clock()
  for _=1,5 do assert(host:closeCharacters());assert(host:start())end
+ if measure then print('selection',os.clock()-started,renders,counts.GetChild or 0)end
  assert(renders==0,'selection toggles repainted an already-cleared battle')
  assert(not panel.visible and not host.battleUI.active and not host.run)
 end
@@ -271,6 +303,7 @@ if not case or case=='particle' then
  reentrantPaint()
 end
 if not case or case=='selection' then
+ stableSelection()
  selection()
  rejectedHide()
  reentrantReadback()

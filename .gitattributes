@@ -1467,3 +1467,23 @@ tests/fixtures/sts-fade-ci-source.json text eol=lf
 
 tests/fixtures/sts-ui-closeout-source.json text eol=lf
 tests/fixtures/sts-ui-closeout-ci.json text eol=lf
+
+docs/design/reference-assets/v2.0.0/sts1-main-menu-20261121/background-hd.png filter=lfs -diff merge=lfs -text ci-immutable-media
+docs/design/reference-assets/v2.0.0/sts1-main-menu-20261121/design-hd.png filter=lfs -diff merge=lfs -text ci-immutable-media
+docs/evidence/map-v25-20261110/raw/game.save.json.gz filter=lfs -diff merge=lfs -text ci-immutable-media
+experiments/archive/emergency-20261108/card-upgrade-recovery/original-runtime.patch.gz filter=lfs -diff merge=lfs -text ci-immutable-media
+experiments/menu-red-fit/input/source.png filter=lfs -diff merge=lfs -text ci-immutable-media
+tests/fixtures/integration-ci-epochs.json.gz filter=lfs -diff merge=lfs -text ci-immutable-media
+tests/fixtures/pr323-historical-fixtures.json.gz filter=lfs -diff merge=lfs -text ci-immutable-media
+tests/helpers/closeout-source-epoch.json.gz filter=lfs -diff merge=lfs -text ci-immutable-media
+tests/helpers/component-ui-source-epoch.json.gz filter=lfs -diff merge=lfs -text ci-immutable-media
+tests/helpers/integrated-ci-source.json.gz filter=lfs -diff merge=lfs -text ci-immutable-media
+tests/helpers/sts-style-prior-runtime.json.gz filter=lfs -diff merge=lfs -text ci-immutable-media
+
+# Released runner evidence preserves original indentation and line endings.
+docs/evidence/run-hud-20261124/tests/base-cc15-final.log whitespace=-blank-at-eol,-space-before-tab
+docs/evidence/run-hud-20261124/tests/base-presentation.log whitespace=-blank-at-eol,-space-before-tab
+docs/evidence/run-hud-20261124/tests/base-static-final.log whitespace=-blank-at-eol,-space-before-tab
+docs/evidence/run-hud-20261124/tests/initial-red.log whitespace=-blank-at-eol,-space-before-tab
+docs/evidence/run-hud-20261124/tests/late-modal-red.log whitespace=-blank-at-eol,-space-before-tab
+docs/evidence/run-hud-20261124/tests/presentation-current.log whitespace=-blank-at-eol,-space-before-tab

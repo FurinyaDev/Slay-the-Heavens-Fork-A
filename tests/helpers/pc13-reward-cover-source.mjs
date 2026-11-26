@@ -1,4 +1,3 @@
-import {beforeLoadingRecoverySource} from './loading-recovery-source.mjs';
 import {beforeReleaseGuideSource,beforeAuthenticatedReleaseGuideSource} from './release-guide-backflow-source.mjs';
 // Exact product continuation, not a new historical source epoch.
 import assert from 'node:assert/strict';
@@ -6,6 +5,10 @@ import {createHash} from 'node:crypto';
 import {readFileSync} from 'node:fs';
 import {gunzipSync} from 'node:zlib';
 import {beforeV2UiHudSource} from './v2-ui-hud-source.mjs';
+import {beforeLoadingRecoverySource} from './loading-recovery-source.mjs';
+import {beforeMapRoomSource} from './release-map-deck-source.mjs';
+
+const beforeReleaseRoomRecovery=(path,source)=>beforeMapRoomSource(path,beforeLoadingRecoverySource(path,beforeRewardTransitionSource(path,source)));
 
 const hash=(bytes,algorithm='sha256')=>createHash(algorithm).update(bytes).digest('hex');
 const bytes=readFileSync(new URL('../fixtures/pc13-reward-cover-source.json.gz',import.meta.url));
@@ -36,7 +39,7 @@ export function beforeRewardTransitionSource(path,source){
  return source.includes('\r\n')?row.before.source.replaceAll('\n','\r\n'):row.before.source;
 }
 export function beforePc13RewardCover(path,source){
-  source=beforeLoadingRecoverySource(path,beforeRewardTransitionSource(path,source));
+  source=beforeReleaseRoomRecovery(path,source);
   const row=files[path];if(!Object.hasOwn(files,path)||!matches(source,row.after))return source;
  return source.includes('\r\n')?row.before.source.replaceAll('\n','\r\n'):row.before.source;
 }
@@ -44,13 +47,13 @@ export function authorizePc13RewardCover(samples,read){
  for(const [path,{after}] of Object.entries(transition)){
   if(!matches(samples.find(sample=>sample[0]===path)?.[1],after))continue;
   let live;try{live=read(path);}catch(error){assert.fail('combined linked owner missing: '+path+': '+String(error?.message??error));}
-  assert(matches(live,after),'combined linked owner identity: '+path+' changed during owner validation');
+    assert(matches(live,after),'combined linked owner identity: '+path+' changed during owner validation');
  }
  for(const [path,{after}] of Object.entries(files)){
-    const input=beforeLoadingRecoverySource(path,beforeRewardTransitionSource(path,samples.find(sample=>sample[0]===path)?.[1]));
+    const input=beforeReleaseRoomRecovery(path,samples.find(sample=>sample[0]===path)?.[1]);
   if(!matches(input,after))continue;
   let live;try{live=read(path);}catch(error){assert.fail('combined linked owner missing: '+path+': '+String(error?.message??error));}
-    assert(matches(beforeLoadingRecoverySource(path,beforeRewardTransitionSource(path,live)),after),'combined linked owner identity: '+path+' changed during owner validation');
+    assert(matches(beforeReleaseRoomRecovery(path,live),after),'combined linked owner identity: '+path+' changed during owner validation');
  }
 }
 

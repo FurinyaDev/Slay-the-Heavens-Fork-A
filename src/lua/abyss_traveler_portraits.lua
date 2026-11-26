@@ -407,7 +407,8 @@ local function battleFigure(Asset,official)
     return drawing
 end
 -- cardTemplates: ready-card image/container template indices, used when only the cards flag is on.
-local function requiredPortrait(row,scope,wanted,mode)
+local function requiredPortrait(row,scope,wanted,mode,official)
+    if official and row.name=='selection' then return false end
     return (not scope or scope[row.name]) and (wanted[row.name] or row.name=='result' and (mode=='victory' or mode=='defeat'))
 end
 local function portraitReadiness(row,mode,resultOutcome)
@@ -568,6 +569,7 @@ function M.new(stage,report,flags,cardTemplates)
     if #rows==0 then return nil end
     local timeBudget=portraitTimeBudget(selecting,fighting,carding,landing,Asset,battleDrawing)
     local self,busy,destroyed,painting={},false,false,false
+    local warmAdmission
     local fallbackVisibility=setmetatable({},{__mode='k'})
     local function paintFallback(control,visible,phase)
         local setter=control.SetVisible
@@ -681,7 +683,7 @@ function M.new(stage,report,flags,cardTemplates)
         if busy then return false end
         local wanted=presentationTargets(mode,characterOpen,false,character,false)
         for _,row in ipairs(rows)do
-            if requiredPortrait(row,scope,wanted,mode) then
+            if requiredPortrait(row,scope,wanted,mode,official) then
                 local ready,reason,progress=portraitReadiness(row,mode,resultOutcome)
                 if not ready then return false,reason,progress end
             end
@@ -702,12 +704,33 @@ function M.new(stage,report,flags,cardTemplates)
         end
         paint();busy=false
     end
+    function self.warmSelection(_,eligible,dt,frameStarted)
+        local admitted=warmAdmission
+        warmAdmission=eligible
+        if not (official and selection and eligible and admitted) or busy or destroyed
+            or type(dt)~='number' or dt<0 or dt>.05 then return end
+        local phase=selection:status().phase
+        if phase~='idle' and phase~='released' and phase~='building' and phase~='revealing' then return end
+        local start=os.clock()
+        if start-frameStarted>=.004 then return end
+        local token=epoch
+        busy=true
+        if phase~='idle' and phase~='released' or selection:begin() then
+            for _=1,24 do
+                if epoch~=token or os.clock()-start>=.0015 or not selection:step() then break end
+            end
+            -- The parent is hidden on the title page. No staged portrait is
+            -- published until normal selection activation calls begin again.
+        end
+        busy=false
+    end
     function self.battlePose(_,x,y,sx,sy,dt,motionState)
         if busy or destroyed or not battle then return end
         busy=true;battle:pose(x,y,sx,sy,dt,motionState);paint();busy=false
     end
     function self.release(_)
         if destroyed then return true end
+        warmAdmission=false
         epoch=epoch+1;local old=busy;busy=true;local ok=true
         for _,row in ipairs(rows)do row.active=false;if not row.adapter:release()then ok=false end end
         paint();busy=old;return ok

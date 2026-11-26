@@ -25,6 +25,21 @@ test('the production card browser retains ten independent faces and retires inpu
     assert.ok(control.size[1] >= control.text.fontSize * 1.45 + 4, control.name + ' must fit a native line');
   }
   const theme = JSON.parse(readFileSync(join(generated, 'official-assets-theme.json'), 'utf8'));
+  const heading = find('pileChrome').children.find(c => c.name === 'heading');
+  const [headingWidth, headingHeight] = heading.size;
+  const headingY = heading.position[1];
+  const pileGrid = find('pileGrid');
+  const hudBottom = theme.canvas.base[1] / 2 - theme.officialAssets.battleHud.height;
+  assert.ok(headingY + headingHeight / 2 < hudBottom, 'heading must clear the HUD');
+  assert.ok(headingY - headingHeight / 2 > pileGrid.position[1] + pileGrid.size[1] / 2,
+    'heading must clear the first card row and its input region');
+  for (const [width, height] of [...Object.values(theme.canvas.devices), [2048, 1171]]) {
+    const scale = Math.min(width / theme.canvas.base[0], height / theme.canvas.base[1]);
+    assert.ok((headingWidth / 2 + theme.canvas.safe.x) * scale <= width / 2);
+    assert.ok((headingY + headingHeight / 2 + theme.canvas.safe.y) * scale <= height / 2);
+    assert.ok(3 * heading.text.fontSize * scale <= headingWidth * scale);
+    assert.ok((heading.text.fontSize * 1.45 + 4) * scale <= headingHeight * scale);
+  }
   for (const name of ['previous', 'next']) {
     const button = find(name);
     assert.ok(button.position[1] - button.size[1] / 2 >= -theme.canvas.base[1] / 2 + theme.canvas.safe.y);

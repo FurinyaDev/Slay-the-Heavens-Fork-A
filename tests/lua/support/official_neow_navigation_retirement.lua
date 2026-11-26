@@ -39,7 +39,7 @@ for _,action in ipairs({'abandon','new'})do
    assert(not runMenu:GetChild(name).visible,name..' is hidden')
   end
   assert(not tap(hit(root,'runMenu','abandon'),10) and host.run==oldRun and host.menuOpen)
-  assert(runMenu:GetChild('blocker').listeners.click({touchId=11}))
+  assert(tap(runMenu:GetChild('blocker'),11))
   assert(not host.exitOpen and host.run==oldRun and host:openMenu())
   local back=assert(runMenu.keyListeners and runMenu.keyListeners.backspace,'missing native Backspace receiver')
   assert(runMenu.disableKeyEventPassthrough and back())
