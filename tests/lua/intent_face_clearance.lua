@@ -1,7 +1,6 @@
 local monsterControl=dofile('tests/lua/support/monster_control_fixture.lua')
 local H=dofile('tests/lua/support/battle_action_fixture.lua')
 local C,Theme=H.F.Combat,require('abyss_theme')
-local Source=require('abyss_monster_source_intents')
 local sourceGeometry=dofile('tests/lua/support/source_intent_geometry.lua')
 local host,ui,panel=H.setup({'defend'},{'raven_adept'})
 -- Native text keeps its 40-high transparent compatibility box. Safety covers
@@ -24,6 +23,7 @@ local function check(members)
     local effects={{op='damage',value=9,times=2}}
     if meanings>=2 then effects[#effects+1]={op='block',value=5}end
     if meanings>=3 then effects[#effects+1]={op='gainStatus',status='strength',value=2}end
+    local Source=require('abyss_monster_source_intents')
     local selected
     for _,move in ipairs(enemy.intents)do
      local enum=Source.enum(enemy,move)
@@ -48,15 +48,10 @@ local function check(members)
      local layout=Theme.layout.battlePotions
      assert(not overlap(potion,layout.origin[1]+(slot-1)*layout.step[1],layout.origin[2]+(slot-1)*layout.step[2],hit,hitX,hitY),'intent help covers potion')
     end
-    local enemy=battle.enemies[i]
-    local enum=Source.enum(enemy,enemy.intents[1])
-    local badgeKind=enum and attackBadges[enum] or (not enum and meanings>=2 and 'defend' or nil)
-    for _,name in ipairs({'intentIcon','intentBadge','intentExtra','intent'})do
+    for index,name in ipairs({'intentIcon','intentBadge','intentExtra','intent'})do
      local part=box:GetChild(name)
-     assert(part.visible==(name=='intentIcon' or name=='intent' or name=='intentBadge' and badgeKind~=nil),
-      'world must show exactly the primary, damage, and any distinct pending effect')
+     assert(part.visible==(name=='intentIcon' or name=='intent'),'world uses one source intent image and its attack number')
      if part.visible then
-      if name=='intentBadge'then assert(part.imageId==Theme.icon.intent[badgeKind])end
       local bound=visible(part)
       local x=box.x+part.x-(part.sizeDeltaX-bound.sizeDeltaX)/2
       local y=box.y+part.y
@@ -69,6 +64,7 @@ local function check(members)
       -- Source image is 128 units and its help hitbox is 64: containment is
       -- intentionally replaced by the independent constructor geometry above.
       if name=='intent' then
+       local Source=require('abyss_monster_source_intents')
        local expected=Source.hasDefinition(battle.enemies[i]) and (Source.isMulti(battle.enemies[i],battle.enemies[i].intents[1]) and '9x2' or '9')or '9x2'
        assert(part.text==expected,'source multi-hit metadata lost')
       end
