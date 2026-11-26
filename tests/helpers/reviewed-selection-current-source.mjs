@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {releaseUiRestoreArchive} from './release-ui-restore-source.mjs';
 import {visualSelectionOwnerRead} from './visual-selection-source.mjs';
+import {readBeforeMasterBackflowSource} from './master-backflow-source.mjs';
 
 const replayBase='02dcb2466b2c90308f9a9e42896c2c5af3ed288c';
 const renamedOwners=Object.freeze({
@@ -30,6 +31,7 @@ function reviewedSelectionOwners(){
 // The original replay still walks and checks its whole closure. Bind only
 // known current owners here and reread each one whenever that closure asks.
 export function reviewedSelectionRead(read=readFileSync){
+ read=readBeforeMasterBackflowSource(read);
  const registered=reviewedSelectionOwners();
  const readOwner=visualSelectionOwnerRead(read);
  return (path,encoding='utf8')=>{

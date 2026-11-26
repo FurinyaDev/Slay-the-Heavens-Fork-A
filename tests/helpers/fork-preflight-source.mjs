@@ -721,7 +721,10 @@ export function beforeReleaseAdditionalInventory(paths,kind,read=readFileSync){
  return paths.filter(path=>!Object.hasOwn(newerTests[kind],path));
 }
 export function beforeShopEntryInventory(paths,kind,read=readFileSync){
- if(kind==='lua')paths=beforeChapterPoolFixtureInventory(paths,read);
+ if(kind==='lua'){
+  paths=beforeMasterBackflowInventory(paths,masterBackflowLuaTests,'tests/lua/battle_ui_publication.lua',read);
+  paths=beforeChapterPoolFixtureInventory(paths,read);
+ }
  paths=beforeInputRetirementTestInventory(paths,kind,read);
  if(kind==='js')paths=beforeIntegratedStsInventory(paths,(path,encoding)=>beforeNativeFlowFixture(path,beforeKnownMasterBackflowSource(path,read(path,encoding))));
  else paths=beforeCurrentReleaseLuaNames(paths,read);
