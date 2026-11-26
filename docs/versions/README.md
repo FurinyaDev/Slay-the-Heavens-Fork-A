@@ -29,6 +29,10 @@
 
 ## 后续版本怎样维护
 
+### 后续业务版本候选
+
+- TASK-45 原生成就和 TASK-53 局内存档已按原编号恢复为 Blocked。后续业务版本范围评审确定版本号及正式规划，当前无固定版本或日期。两项实施前共同核对千星奇域实测、账号权限和 [平台接入 ADR](../adr/0004-native-persistence.md)；证据与创作者操作见 [EXP 探针](../../experiments/native-persistence-probe/README.md)。
+
 - **版本规则与映射**：见[双版本号与发布记录](../PUBLISHING.md#双版本号与发布记录)。工程批次按 SemVer，平台版号在真实发布成功后登记在 GitHub Releases。
 - **写哪里**：玩家文案在 [CHANGELOG.md](../../CHANGELOG.md)，内部工程变更在 [ENGINEERING.md](ENGINEERING.md)。Release Please 仅作草稿，技术提交混入时按实际交付范围审阅。
 - **历史 Tag**：按上表固定原 Git 提交；这些追溯 Tag 是源码版本标识，不冒充旧版曾公开发布。不要移动已有 Tag，不建立 `archive/*` Tag。

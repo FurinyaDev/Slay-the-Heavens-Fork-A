@@ -4,8 +4,8 @@ title: 查清离开后丢进度并核实恢复能力
 status: Blocked
 assignee:
   - '@Furinya'
-created_date: '2026-10-24 15:48'
-updated_date: '2026-11-14 06:17'
+created_date: '2026-10-24T15:48:00Z'
+updated_date: '2026-11-26T15:32:42Z'
 labels:
   - post-release
   - platform-capability
@@ -16,9 +16,11 @@ references:
   - docs/TOOLCHAIN.md
   - src/lua/abyss_ui.lua
   - src/lua/abyss_game_ui.lua
-  - 'https://act.mihoyo.com/ys/ugc/tutorial/detail/mhzcw29qjjma'
+  - https://act.mihoyo.com/ys/ugc/tutorial/detail/mhzcw29qjjma
   - docs/backlog-details/MOBILE-QA-20261028.md
   - docs/evidence/backlog-reconcile-20261114.md
+  - docs/adr/0004-native-persistence.md
+  - experiments/native-persistence-probe/README.md
 priority: medium
 type: feature
 ordinal: 91000
@@ -55,4 +57,6 @@ PR #304：手机试玩短暂离开后丢进度，是否同实例、重建或断�
 2026-10-31 PR409明确：额外四Boss已有战斗实现；延期项是真实历史provider及正常跨局解锁，非当期M3 Bug。权限具备且另获授权后核验未见/部分已见/全部已见；不硬设全解锁、不引入存储后端。
 
 2026-11-14按用户队列清理授权归档：持久恢复已由SCOPE排除当前范围；同实例中断恢复继续由TASK-76.1与TASK-38承接，不删运行时状态。
+
+2026-11-26 按 Owner 指令恢复原任务编号与 Backlog 活动记录。接入已批准的恢复设计，后续业务版本候选，具体版本待规划确认。当前 Blocked，先由 EXP 取证原生存档权限、容量、版本兼容、读写与确认语义，以及正常退出、断网、强杀后的恢复。通过后才进入正式实施；本轮无正式实现或验收勾选。
 <!-- SECTION:NOTES:END -->

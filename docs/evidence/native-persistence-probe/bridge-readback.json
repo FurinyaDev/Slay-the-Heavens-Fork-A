@@ -1,0 +1,160 @@
+{
+  "baseline": "aaf8008875896f24acc8fda0d4df47df2564ec1d",
+  "source": "mh47p30a87qo_客户端脚本.gil",
+  "sourceSha": "2bd7a28f8695bc50c6d55c748d4119adc3ae84abc04ca3f7b8cf2be91a372b93",
+  "sourceUnchanged": true,
+  "compiledGraphSha": "8fb69026d6921561ffd2f8abf067bc962bc423e726754adc077fc50e6a5b4dec",
+  "graphSourceSha": "c6dc883174f10ce9c3b878badd415f725fa18841d359616095ea3a8a60aa4aca",
+  "scriptSha": "00f05e6118d1f29725f8445708a55e3afccf94dd367cf8c7d1e9d40c14c56c52",
+  "copySha": "49b30a0a8237a4c1971c06f7a17830b8177bb6e4628cdea0826bc10eb1c59cfe",
+  "graph": {
+    "id": 1073741825,
+    "name": "_GSTS_STH_EXP_Bridge",
+    "nodeCount": 55,
+    "connectionCount": 100,
+    "editorCount": 74,
+    "requestListeners": [
+      {
+        "name": "STH_EXP_BRIDGE_REQUEST",
+        "role": "monitor",
+        "nodeIndex": 1,
+        "nodeId": 1610612738,
+        "signalVersion": null,
+        "resolution": "observed-definition-id-match",
+        "gameplay": "not_run"
+      }
+    ],
+    "replyNode": {
+      "class": 10001,
+      "type": 20000,
+      "kind": 22001,
+      "nodeId": 1610612744
+    },
+    "replyNodeCount": 5
+  },
+  "signatures": {
+    "STH_EXP_BRIDGE_REQUEST": [
+      {
+        "name": "operation",
+        "type": "integer"
+      },
+      {
+        "name": "sequence",
+        "type": "integer"
+      },
+      {
+        "name": "value",
+        "type": "integer"
+      }
+    ],
+    "STH_EXP_BRIDGE_REPLY": [
+      {
+        "name": "sequence",
+        "type": "integer"
+      },
+      {
+        "name": "status",
+        "type": "integer"
+      },
+      {
+        "name": "value",
+        "type": "integer"
+      }
+    ]
+  },
+  "parameterChecks": [
+    {
+      "name": "STH_EXP_BRIDGE_REQUEST",
+      "status": "observed-consistent",
+      "issues": []
+    },
+    {
+      "name": "STH_EXP_BRIDGE_REPLY",
+      "status": "observed-consistent",
+      "issues": []
+    }
+  ],
+  "playerVariables": [
+    {
+      "name": "STH_EXP_BRIDGE_SEQUENCE",
+      "type": "integer"
+    },
+    {
+      "name": "STH_EXP_BRIDGE_VALUE",
+      "type": "integer"
+    },
+    {
+      "name": "STH_EXP_BRIDGE_SEQUENCE",
+      "type": "integer"
+    },
+    {
+      "name": "STH_EXP_BRIDGE_VALUE",
+      "type": "integer"
+    },
+    {
+      "name": "STH_EXP_BRIDGE_SEQUENCE",
+      "type": "integer"
+    },
+    {
+      "name": "STH_EXP_BRIDGE_VALUE",
+      "type": "integer"
+    },
+    {
+      "name": "STH_EXP_BRIDGE_SEQUENCE",
+      "type": "integer"
+    },
+    {
+      "name": "STH_EXP_BRIDGE_VALUE",
+      "type": "integer"
+    },
+    {
+      "name": "STH_EXP_BRIDGE_SEQUENCE",
+      "type": "integer"
+    },
+    {
+      "name": "STH_EXP_BRIDGE_VALUE",
+      "type": "integer"
+    },
+    {
+      "name": "STH_EXP_BRIDGE_SEQUENCE",
+      "type": "integer"
+    },
+    {
+      "name": "STH_EXP_BRIDGE_VALUE",
+      "type": "integer"
+    },
+    {
+      "name": "STH_EXP_BRIDGE_SEQUENCE",
+      "type": "integer"
+    },
+    {
+      "name": "STH_EXP_BRIDGE_VALUE",
+      "type": "integer"
+    },
+    {
+      "name": "STH_EXP_BRIDGE_SEQUENCE",
+      "type": "integer"
+    },
+    {
+      "name": "STH_EXP_BRIDGE_VALUE",
+      "type": "integer"
+    },
+    {
+      "name": "STH_EXP_BRIDGE_SEQUENCE",
+      "type": "integer"
+    },
+    {
+      "name": "STH_EXP_BRIDGE_VALUE",
+      "type": "integer"
+    },
+    {
+      "name": "STH_EXP_BRIDGE_SEQUENCE",
+      "type": "integer"
+    },
+    {
+      "name": "STH_EXP_BRIDGE_VALUE",
+      "type": "integer"
+    }
+  ],
+  "runtime": "not_available"
+}
