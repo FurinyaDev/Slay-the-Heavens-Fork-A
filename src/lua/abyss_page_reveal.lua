@@ -341,7 +341,7 @@ function M.new(cover,ready,onIntent,frames,motion)
         cover:SetAsLastSibling();return self.epoch==ticket
     end
     function gate:begin(intent)
-        local localChange=localFrame(intent,self.intent)~=nil
+        local localChange=localFrame(intent,self.intent)~=nil or isMapOverlayChange(self.published,intent)
         local fast=not self.entry and not needsSchedulerConfirmation(intent) and
             (self.state=='visible' and (canUpdate(intent,self.intent) or localChange)
             or localChange and same(intent,self.published))
@@ -395,6 +395,7 @@ function M.new(cover,ready,onIntent,frames,motion)
         self.painting=nil
         if reason or value~=true then
             if not same(intent,self.intent) and not self:request(intent) then return false end
+            if mapReturn then self.mapReturnPainted=self.epoch end
             if reason then return reject(self,tostring(reason))end
             return false
         end

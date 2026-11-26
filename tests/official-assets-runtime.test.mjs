@@ -758,9 +758,12 @@ for _=1,4 do frame();expectReward(false,true)end
 local card=battle:GetChild('card1')
 local label=card:GetChild('label')
 local text=require('abyss_card_display')
-assert(label.text:find('提升3点伤害。',1,true)
- and select(2,text.fitBody(label.text,{label.sizeDeltaX,label.sizeDeltaY})),
- 'upgraded long reward body overflowed')
+local expected='造成6点伤害。手牌、抽牌堆和弃牌堆中每有一张『剑势』系列牌，基础伤害增加3点。'
+assert(label.text==expected,'upgraded long reward body lost the approved full wording: '..label.text)
+local font,fits=text.fitBody(label.text,{label.sizeDeltaX,label.sizeDeltaY})
+assert(fits and not text.bodyOverflows(label),'upgraded long reward body overflowed')
+assert(label.fontSize==font and label.fontSize>=F.Theme.font.minimum and not label.adaptiveFontSize,
+ 'upgraded long reward body lost its measured font')
 event('card1','down',210);host:update(.36)
 assert(ui.info and ui.info.kind=='rewardCard' and not battle:GetChild('statusInfo').visible)
 event('card1','up',210);event('card1','click',210)
