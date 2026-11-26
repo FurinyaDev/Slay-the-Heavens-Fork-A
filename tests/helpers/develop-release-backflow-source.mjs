@@ -318,7 +318,7 @@ export function beforeDeckPages(path,source,options){
 const deckPagesOwns=path=>Object.hasOwn(deckPages.files,path);
 const productionOwner=path=>path===architecturePath||path.startsWith('src/lua/');
 const recentBackflowOwns=path=>mapRoomBackflowOwns(path)||deckPagesOwns(path)||(productionOwner(path)&&inputRetirementOwns(path));
-export const developBackflowOwns=path=>(productionOwner(path)&&combatEventsOwns(path))||actionButtonsOwns(path)||recentBackflowOwns(path)||priorDevelopBackflowOwns(path);
+export const developBackflowOwns=path=>path===libraryEventPath||(productionOwner(path)&&combatEventsOwns(path))||actionButtonsOwns(path)||recentBackflowOwns(path)||priorDevelopBackflowOwns(path);
 const matchEventRepairPath='src/lua/abyss_match_event_ui.lua';
 const beforeMatchEventRepair=(path,source)=>path===matchEventRepairPath?beforeNativeFlowFixture(path,source):source;
 
@@ -329,6 +329,10 @@ function currentRecentBackflowOwner(path,source){
  return matches(source,roomEntry.files[path].after);
 }
 export function assertDevelopBackflowCurrent(path,source){
+ if(path===libraryEventPath){
+  assert(uniformSource(source)&&matches(source,libraryPromptCurrent),'fresh current production owner: '+path);
+  return;
+ }
  source=beforeLinkedBackflow(path,beforeBattleInputHistory(path,beforeMapRoomBattleActions(path,source)));
  source=beforeUiEntrance(path,beforeBattlePeriphery(path,beforeChapterBattleScene(path,source)));
  source=beforeDevelopUiBackflows(path,source);
