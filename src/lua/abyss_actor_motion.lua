@@ -1,4 +1,5 @@
 -- Presentation samples only. Existing feedback poses still own actions and death.
+local ByrdTrial = require('abyss_byrd_ground_trial')
 local M = {}
 local TAU = math.pi * 2
 
@@ -35,8 +36,8 @@ end
 -- Portrait-only motion preserves the HP/intent/status and input hitbox positions.
 -- Stable actor IDs replace the source's random starting animation track time.
 -- Four scalar returns avoid one transform allocation per actor per frame.
-function M.idle(actor,id,clock,state,config)
-    if state~='idle' then return 0,0,1,1 end
+function M.idle(actor,id,clock,state,config,nativeArtEnabled)
+    if state~='idle' or nativeArtEnabled~=false and ByrdTrial.isGrounded(actor) then return 0,0,1,1 end
     local definition=actor.definitionId or id
     local wave=math.sin(clock/config.period*TAU+phase(id,definition))
     if definition=='raven_adept' then

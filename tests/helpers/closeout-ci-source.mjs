@@ -1,5 +1,6 @@
 import {beforeV2UiHudSource,v2UiHudSourcePaths} from './v2-ui-hud-source.mjs';
 import {beforeV2UiEvidence} from './v2-p1-ci-source.mjs';
+import {exactSourceMatches} from './source-fingerprint.mjs';
 import {authenticateDevelopBackflow,beforePreflightSource,preflightPriorRead} from './fork-preflight-source.mjs';
 // Exact named views for immutable receipts. Current Full uses raw discovery.
 import assert from 'node:assert/strict';
@@ -39,10 +40,32 @@ export function preCloseoutCiSource(path,source,view){
  const prior=before.files[path];
  return prior?packed.records[prior]:source;
 }
+const relicIconsFixture='tests/official-battle-relic-icons.test.mjs';
+const relicIconsCurrent={
+ sha256:'42cdba9fc7ea578ad1067275d26611a643c2b7018b999f94991fbf2557f69646',
+ gitBlob:'f978b5eb65466e738260511962b24aef28d8ae07',
+};
+const relicIconsBeforeNaming={
+ sha256:'7cd900d26bdbe7b63bc735af0fd305b6faf5897a0fa2e60cd44ab8af636ae70a',
+ gitBlob:'4ea1b9f4d5aeef3f3e7844a7b1a9e1bd2808f0d8',
+};
+function beforeRelicIconsNaming(path,source){
+ if(path!==relicIconsFixture)return source;
+ const text=typeof source==='string'?source.replaceAll('\r\n','\n'):source;
+ const crlf=source!==text;
+ assert(exactSourceMatches(source,relicIconsCurrent)&&(!crlf||source===text.replaceAll('\n','\r\n')),
+  'closeout added inventory source: '+path);
+ // #951 changed two encounter IDs in the live fixture. Older inventory
+ // receipts still use the independently authenticated pre-rename fixture.
+ assert.equal(text.split("'raven_adept_solo'").length,3,'exact #951 relic encounter replacements');
+ const prior=text.replaceAll("'raven_adept_solo'","'cultist_solo'");
+ assert(exactSourceMatches(prior,relicIconsBeforeNaming),'exact #951 relic fixture predecessor');
+ return crlf?prior.replaceAll('\n','\r\n'):prior;
+}
 export function closeoutInventory(paths,view,readSource=readFileSync){
  const before=target(view);
  assert.notEqual(before.scope,'workflow-only','workflow-only views cannot project test inventories');
- const readEvidence=(path,encoding)=>beforeV2UiEvidence(path,readSource(path,encoding));
+ const readEvidence=(path,encoding)=>beforeV2UiEvidence(path,beforeRelicIconsNaming(path,readSource(path,encoding)));
  paths=runHudPriorInventory(paths,readEvidence);
  const readPrior=runHudPriorRead(readEvidence);
  const sorted=[...paths].sort();

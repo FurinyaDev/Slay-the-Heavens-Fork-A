@@ -284,7 +284,7 @@ function M.paint(ctx,id, dt, shakes)
     local ink, flash, alpha = base, 0, 1
     local posed = ctx.state.poses[id]
     local motionState=ActorMotion.state(unit,posed,ctx.state.effects[id],ctx.state.dying[id],ctx.state.escaping[id])
-    local x,y,sx,sy=ActorMotion.idle(unit,id,ctx.state.idleClock or 0,motionState,T.actorIdle)
+    local x,y,sx,sy=ActorMotion.idle(unit,id,ctx.state.idleClock or 0,motionState,T.actorIdle,ctx.platform.nativeMonsterArtEnabled)
     if posed then
         posed.age = posed.age + dt
         local px, ps, done = pose(posed.keys, posed.age)
@@ -306,6 +306,7 @@ function M.paint(ctx,id, dt, shakes)
     y,sx,sy,ink,flash,alpha=paintDying(ctx,id,box,dt,y,sx,sy,ink,flash,alpha)
     local escaping=ctx.state.escaping[id]
     if escaping then x,sx=Escape.pose(escaping,x,sx)end
+    y=ctx.poseGroundShadow(id,box,x,y,sx,sy,alpha,motionState)
     local portrait = box:GetChild("portrait")
     portrait:SetAnchoredPosition(x, y)
     portrait:SetLocalScale(sx, sy, 1)

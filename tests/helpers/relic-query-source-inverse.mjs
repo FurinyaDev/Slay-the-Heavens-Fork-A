@@ -3,9 +3,13 @@ export * from './epochs/develop/tests/helpers/relic-query-source-inverse.mjs';
 import { preRelicQuerySource as original } from './epochs/develop/tests/helpers/relic-query-source-inverse.mjs';
 import {sourceEpoch} from './combined-epoch/source-epoch.mjs';
 import {readFileSync} from 'node:fs';
+import {currentRewardReplay} from './reward-current-source.mjs';
 const live=p=>readFileSync(new URL('../../'+p,import.meta.url),'utf8');
 export function preRelicQuerySource(path,source,{readSource=live}={}){
  readSource=readers.get(readSource)??readSource;
+ const replay=currentRewardReplay(path,source,readSource);
+ source=replay.source;
+ readSource=replay.read;
  const projected=sourceEpoch.preCombinedSource(path,source,{target:'develop',readSource});
  return original(path,projected,{readSource:(typeof readSource==='function'?sourceEpoch.combinedReader(readSource,'develop'):readSource)});
 }

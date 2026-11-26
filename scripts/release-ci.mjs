@@ -8,8 +8,19 @@ import {projectRepositoryMatches} from './repository-identity.mjs';
 
 const validSha=value=>/^[a-f0-9]{40}$/.test(value??'');
 export const releaseBranch=value=>/^release\/[\w][\w.-]*$/.test(value??'');
-const frozenBranch=value=>releaseBranch(value)||/^hotfix\/v(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)$/.test(value??'');
-async function pages(request,path,key) {
+export const formalPublishBranch=value=>/^(?:release|hotfix)\/v(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)$/.test(value??'');
+const hotfixBranch=value=>typeof value==='string'&&value.startsWith('hotfix/')&&formalPublishBranch(value);
+const frozenBranch=value=>releaseBranch(value)||hotfixBranch(value);
+
+export function publicationTarget(event,repo,hotfix=false) {
+ const pr=event?.pull_request,head=pr?.head;
+ const matches=hotfix?hotfixBranch(head?.ref)&&projectRepositoryMatches(head.repo,repo)&&projectRepositoryMatches(pr.base?.repo,repo)
+  :releaseBranch(head?.ref)&&head.repo?.full_name===repo;
+ if(pr?.base?.ref!=='master'||!matches||!validSha(head.sha))
+  throw Error(hotfix?'Expected same-repository Hotfix publication PR':'Expected same-repository Release publication PR');
+ return {branch:head.ref,head:head.sha};
+}
+export async function pages(request,path,key) {
  const rows=[];
  for(let page=1;page<=100;page++) {
   const result=await request(`${path}${path.includes('?')?'&':'?'}per_page=100&page=${page}`);
@@ -18,6 +29,10 @@ async function pages(request,path,key) {
   if(result[key].length<100)return rows;
  }
  throw Error('Release CI pagination incomplete');
+}
+export async function latestFullRun(repo,branch,request) {
+ const path=`/repos/${repo}/actions/workflows/quality.yml/runs?event=workflow_dispatch&branch=${encodeURIComponent(branch)}`;
+ return (await pages(request,path,'workflow_runs')).sort((a,b)=>b.id-a.id)[0];
 }
 // Reuse the real hosted Full matrix. Fast, PR merge tests and local diagnostics
 // cannot attest a frozen Release HEAD. Never select an older successful run.
@@ -34,8 +49,7 @@ export async function verifyReleaseFull(repo,branch,head,request,readCheckout=lo
    throw Error('Release HEAD changed; freeze and run Full again');
  };
  await checkRef();
- const latest=async()=> (await pages(request,`${prefix}/actions/workflows/quality.yml/runs?event=workflow_dispatch&branch=${encodeURIComponent(branch)}`,'workflow_runs'))
-  .sort((a,b)=>b.id-a.id)[0];
+ const latest=()=>latestFullRun(repo,branch,request);
  const run=await latest();
  if(!Number.isSafeInteger(run?.id)||run.id<1||run.head_sha!==head||run.head_branch!==branch||
   run.event!=='workflow_dispatch'||run.path!=='.github/workflows/quality.yml'||
@@ -65,7 +79,8 @@ export async function verifyReleaseFull(repo,branch,head,request,readCheckout=lo
   current.conclusion!=='success'||current.head_sha!==head||last?.id!==run.id||last.run_attempt!==run.run_attempt)
   throw Error('Release Full run/attempt changed during verification');
  await checkRef();
- return {schemaVersion:1,kind:'release-full',repo,branch,head,runId:run.id,attempt:run.run_attempt,url:run.html_url};
+ return {schemaVersion:1,kind:'release-full',repo,branch,head,runId:run.id,attempt:run.run_attempt,
+  checkoutArtifactId:proof.checkoutArtifact.id,url:run.html_url};
 }
 
 export async function freezeReleaseFull(repo,branch,head,request,readCheckout=loadCheckout) {
@@ -131,15 +146,19 @@ if(process.argv[1]&&import.meta.url===pathToFileURL(resolve(process.argv[1])).hr
  try {
   let [command,branch,head]=process.argv.slice(2);
   const repo='FurinyaWorks/Slay-the-Heavens';
-  if(command==='verify-pr') {
-   const pr=JSON.parse(readFileSync(process.env.GITHUB_EVENT_PATH,'utf8')).pull_request;
-   if(pr?.base?.ref!=='master'||!releaseBranch(pr.head?.ref)||pr.head?.repo?.full_name!==repo)throw Error('Expected same-repository Release publication PR');
-   command='verify';branch=pr.head.ref;head=pr.head.sha;
+  if(command==='verify-pr'||command==='verify-hotfix-pr') {
+   const event=JSON.parse(readFileSync(process.env.GITHUB_EVENT_PATH,'utf8'));
+   ({branch,head}=publicationTarget(event,repo,command==='verify-hotfix-pr'));
+   command='verify';
   }
   if(!['freeze','verify'].includes(command)||!frozenBranch(branch)||!validSha(head))
    throw Error('Usage: node scripts/release-ci.mjs freeze|verify <release/name|hotfix/vX.Y.Z> <frozen-HEAD>');
   if(command==='freeze') {
    console.log(JSON.stringify(await freezeReleaseFull(repo,branch,head,githubRequest)));
-  } else console.log(JSON.stringify(await verifyReleaseFull(repo,branch,head,githubRequest),null,2));
+  } else {
+   const full=await verifyReleaseFull(repo,branch,head,githubRequest);
+   const performance=await (await import('./runtime-baseline/require-release-performance.mjs')).requireReleasePerformance(full,githubRequest);
+   console.log(JSON.stringify({...full,performance},null,2));
+  }
  } catch(error) {console.error(error.message);process.exitCode=1;}
 }
