@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@Furinya'
 created_date: '2026-11-25 21:00'
-updated_date: '2026-11-26 00:29'
+updated_date: '2026-11-26 00:37'
 labels:
   - v2.2.0
 milestone: m-8
@@ -22,6 +22,7 @@ references:
   - 'https://github.com/FurinyaWorks/Slay-the-Heavens/pull/980'
   - 'https://github.com/FurinyaWorks/Slay-the-Heavens/pull/996'
   - 'https://github.com/FurinyaWorks/Slay-the-Heavens/pull/997'
+  - 'https://github.com/FurinyaWorks/Slay-the-Heavens/pull/1000'
 documentation:
   - docs/versions/V2.2.0-RELEASE.md
 parent_task_id: TASK-115
@@ -62,4 +63,6 @@ ordinal: 210000
 060b13c6 的主仓 Quality 与 Licenses 在变更前均未分配 Runner，排队约 21 分钟后由 develop 并发机制取消。#998 后同一工作流入队，精确 8a5f86813e993a9b8cd85dd8016a2943d4a7c629，Quality 45726046674、Licenses 45726046811。
 
 8a5f8681 的主仓 Quality 与 Licenses 排队近 23 分钟，未分配 Runner，随后由 develop 并发机制取消。实际最新源码 454b589793c8d3a171ccbcaee0db1c809136c683 重新入队，Quality 45728830817、Licenses 45728830880。完整 CI 仍待验。
+
+#1000 接续 #929 的 LF/CRLF 与奖励回放，精确 454b5897 基线、合并树 de55f80e。独立源码评审 6066965023 及 Fork A 45729134666 Advisory Quick 通过。原始 51 个历史来源和现行校验匹配。主仓完整 Full、现行 Linux 预算和 #929 的独立调度范围仍待验。
 <!-- SECTION:NOTES:END -->
