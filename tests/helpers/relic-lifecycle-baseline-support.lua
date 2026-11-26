@@ -100,12 +100,12 @@ local methods={
  shop={'onEquip','chooseMirror','battleStartActions','turnStartActions','onBlockBroken','onShuffle','xBonus','medicalCard','exhaustAfterUse','onUseCard','execute','beginToolbox','chooseToolbox','drawOrderVisible'},
 }
 F.publicMethods={}
-function F.activeMethod(namespace,name)
+local function activeMethod(namespace,name)
  if namespace=='rare' and name=='chooseTacticalExchange' and RELIC_LIFECYCLE_FROZEN then return 'chooseGambling' end
  return name
 end
 for namespace,names in pairs(methods)do
- local result={};for _,name in ipairs(names)do result[#result+1]=name end
+ local result={};for _,name in ipairs(names)do result[#result+1]=activeMethod(namespace,name) end
  result[#result+1]='localId'
  if namespace~='boss'then result[#result+1]='owns'end
  if namespace=='uncommon'then result[#result+1]='rewardCardCount';result[#result+1]='isBottled'
@@ -120,7 +120,7 @@ for _,namespace in ipairs({'hooks','uncommon','rare','boss','shop'})do
  local module=require('abyss_'..(namespace=='hooks'and 'relic_hooks'or namespace..'_relics'))
  F[namespace]=module
  for _,name in ipairs(methods[namespace])do
-  local activeName=F.activeMethod(namespace,name)
+  local activeName=activeMethod(namespace,name)
   local original=assert(module[activeName],namespace..'.'..activeName)
   module[activeName]=function(...)
    local label=namespace..'.'..name;F.coverage[label]=(F.coverage[label]or 0)+1

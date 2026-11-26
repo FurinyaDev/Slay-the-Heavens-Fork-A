@@ -104,13 +104,19 @@ function compareNamedTokens(current,frozen,tokens,context){
 }
 
 export function compareReleasedLifecycleTraces(after,before,group){
- for(const key of ['checkpoints','registeredCases','executedCases','coverage']){
+ for(const key of ['checkpoints','coverage']){
   assert.deepEqual(after.manifest[key],before.manifest[key],`${group}: exact ${key}`);
+ }
+ for(const key of ['registeredCases','executedCases']){
+  const expected=before.manifest[key].map(name=>name==='rare.chooseGambling nil/function restore'
+   ?'rare.chooseTacticalExchange nil/function restore':name);
+  assert.deepEqual(after.manifest[key],expected,`${group}: exact ${key}`);
  }
  const current=after.graph.split('\n'),frozen=before.graph.split('\n');
  assert.equal(current.length,frozen.length,`${group}: every graph checkpoint`);
  for(let i=0;i<frozen.length;i++){
-  compareNamedTokens(current[i],frozen[i],frozen[i].matchAll(/\["string",("(?:[^"\\]|\\.)*")\]/gu),`${group} checkpoint ${i+1}`);
+  const line=frozen[i].replace(/^(\{"label":"ordinary (?:replacement|nil) rare\.)chooseGambling"/u,'$1chooseTacticalExchange"');
+  compareNamedTokens(current[i],line,line.matchAll(/\["string",("(?:[^"\\]|\\.)*")\]/gu),`${group} checkpoint ${i+1}`);
  }
  const afterOutput=after.stdout.split('\n'),beforeOutput=before.stdout.split('\n');
  assert.equal(afterOutput.length,beforeOutput.length,`${group}: every output line`);
