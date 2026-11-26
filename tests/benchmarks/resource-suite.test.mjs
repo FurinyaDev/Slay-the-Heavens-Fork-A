@@ -1,6 +1,36 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { matchesGlob } from 'node:path';
 import test from 'node:test';
 import { compareSamples, lockfileIdentity, matchingResourceCaps, parseResources, profiles, selectResourceReference } from '../../scripts/runtime-baseline/resource-receipt.mjs';
+
+test('pull requests changing battle scene and viewport inputs run Fast performance diagnostics', () => {
+  const workflow = readFileSync(new URL('../../.github/workflows/performance-regression.yml', import.meta.url), 'utf8')
+    .replaceAll('\r\n', '\n');
+  const pullRequest = workflow.match(/^  pull_request:\n((?:    [^\n]*\n)+)/m)?.[1];
+  assert.ok(pullRequest, 'pull_request event');
+  const paths = pullRequest.match(/^    paths:\n((?:      - [^\n]+\n)+)/m)?.[1] ?? '';
+  const patterns = [...paths.matchAll(/^      - '([^']+)'$/gm)].map(([, pattern]) => pattern);
+  const selects = path => patterns.some(pattern => matchesGlob(path, pattern));
+  const sceneAndViewportInputs = [
+    'scripts/build-ui.mjs',
+    'scripts/official-assets-layout.mjs',
+    'scripts/v220-battle-scene-geometry.mjs',
+    'scripts/v220-chapter-battle-scenes.mjs',
+    'scripts/viewport-layout.mjs',
+    'data/presentation/ui_theme.json',
+    'src/lua/abyss_battle_ui.lua',
+    'src/lua/abyss_chapter_battle_scene.lua',
+    'src/lua/abyss_game_ui.lua',
+    'src/lua/abyss_game_ui_view.lua',
+    'src/lua/abyss_viewport.lua',
+  ];
+  assert.deepEqual(sceneAndViewportInputs.filter(path => !selects(path)), []);
+  for (const path of ['docs/design/UI_DESIGN.md', 'experiments/byrd-ground-trial/test.mjs']) {
+    assert.equal(selects(path), false, path);
+  }
+  assert.match(workflow, /RESOURCE_MODE: \$\{\{ github\.event_name == 'pull_request' && 'fast' \|\| inputs\.mode \}\}/);
+});
 
 const receipt = [
   'RESOURCE cpu.max 50000 100000',
