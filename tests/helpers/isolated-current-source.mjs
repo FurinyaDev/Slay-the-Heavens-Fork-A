@@ -5,7 +5,7 @@ import {join,dirname} from 'node:path';
 import {copyIntegrationSourceClosure} from './copy-integration-source-closure.mjs';
 
 export function copyCurrentSourceFixture(directory,{crlf=false,readSource=path=>readFileSync(path,'utf8')}={}){
- copyIntegrationSourceClosure(directory);
+ copyIntegrationSourceClosure(directory,{currentProduction:true});
  const text=source=>crlf?source.replaceAll('\r\n','\n').replaceAll('\n','\r\n'):source;
  // Forethought's deck replay authenticates this linked layout on every read.
  const paths=['config/architecture.json','scripts/deck-ui-layout.mjs',

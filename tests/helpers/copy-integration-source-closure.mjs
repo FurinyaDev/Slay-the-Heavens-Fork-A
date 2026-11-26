@@ -355,13 +355,19 @@ const entranceFiles=Object.freeze({
  'tests/helpers/chapter-battle-scene-source.mjs':'1270c293d79c04ac4a5b15483dd4cc8f9c4279362e2f5c551f6e98c20c9ad293',
  'tests/helpers/release-integration-source.mjs':'74093921a53a94ba842afac199e579a622b60fea5abf2519d416ede77bbfa1a7',
  'tests/fixtures/release-lazy-monster-art-source.json.gz':'211c3588a53b1f97c98d9f9b905349d82b244a2e81a940d4ebe48022381ca92e',
- 'tests/helpers/m7-core-final-source-inverse.mjs':'c9d98969785466649e0e915df0d912f81b774d8b937b4fb63e74eed731635133',
+ 'tests/helpers/m7-core-final-source-inverse.mjs':'5214ed8974838b06158bfb075daeb82e71ca20b9d7aea6225ffde6fef7e5f4f7',
  'tests/helpers/release-ui-restore-source.mjs':'2ec5855476f1b4c8cf762ca1a7ee366028322841b07996a518af96fdd87259b9',
  'tests/helpers/current-replay-fix-sources.mjs':'cceed97f15f0f91ab37ea27d3bf6f5659d213c54dcf11225eaa0fed7adc8ccdf',
  'tests/helpers/character-preparation-source.mjs':'b556363648dd13827dacb603038423caf4a1c2693e618747df58fc29da7be2fd',
- 'tests/helpers/develop-release-backflow-source.mjs':'3f14f8c02058d83c00314be990754099cddf46020b1b0f64aabc93afef26d771',
+ 'tests/helpers/develop-release-backflow-source.mjs':'5120ebd8f1029f2f41265dbffb3a54a3a3911bc62d4928dec8ca1aea6c8ad59f',
  'tests/helpers/develop-release-vocabulary-source.mjs':'6120c2639aeb77972adcab7571c384d2d53f8a28794f99cc389f108a8bf0aeb5',
  'tests/fixtures/develop-release-vocabulary-source.json.gz':'2b3d606fc142f2c8c5cfaaff386c70f6e1f741f24fbc1879b78399b7c477e914',
+ 'tests/fixtures/map-room-battle-actions-source.json.gz':'45918da82006880941ab23f10ccc49b7fe11fc2c7978b4f1508f923216e142ec',
+ 'tests/fixtures/develop-battle-input-source.json.gz':'ee0eeaf23242e8307a2b4f06a27319d89477c5d19d7507eddc54477dc878611e',
+ 'tests/fixtures/develop-linked-backflow-source.json.gz':'adeb361744f91d99b1dc48675d4566b24d3040440e34428b61d2302b47bd0d0b',
+ 'tests/fixtures/develop-architecture-linked-source.json.gz':'b4b7a1401cde7ceb914ae6875dcf4f20045c7db23ca07d631a2ccffe9f636070',
+ 'tests/helpers/master-backflow-source.mjs':'d407ed01df122de1f793c7fbaae1127b8a339b05aebb40e5f10e196cc7fe853a',
+ 'tests/fixtures/master-backflow-predecessors.json.gz':'b16492b78553e53e675537d95d3f9ef24557d792f657ba41f0f280e43fab325f',
  'tests/helpers/native-fixture-replay-source.mjs':'7dbd2ded60c5b155b958a5e6e2ff44537b2b62c15e113642aaf8f6194771832d',
  'tests/helpers/native-flow-fixture-source.mjs':'8ad7157fd4f3973ffba4f17f9eba440731ddf952e859fee53970d6c3879968e3',
  'tests/helpers/ui-entrance-source.mjs':'c64976a04e877f65315ad8553bd8f6380b6e50a5ab5fce60e3b37bbbb98825c1',
@@ -496,22 +502,31 @@ function beforeReviewedCopySource(path,raw){
  return Buffer.from(prior);
 }
 const inside=(root,path)=>{const r=relative(root,path);return r!==''&&!isAbsolute(r)&&r!=='..'&&!r.startsWith('../')&&!r.startsWith('..\\');};
-export function copyIntegrationSourceClosure(directory,{sourceRoot=process.cwd()}={}){
+const currentEntranceHelpers=new Set(['tests/helpers/current-replay-fix-sources.mjs','tests/helpers/ui-entrance-source.mjs']);
+export function copyIntegrationSourceClosure(directory,{sourceRoot=process.cwd(),currentProduction=false}={}){
  const destination=realpathSync.native(directory);
  const sourceDirectory=realpathSync.native(sourceRoot);
  assert.notEqual(destination,sourceDirectory,'isolated helper copy destination');
  const liveSource=sourceDirectory===realpathSync.native(new URL('../../',import.meta.url));
- for(const [path,sha]of Object.entries(entranceFiles)){
+ for(const [path,previousSha]of Object.entries(entranceFiles)){
+  const exactCurrent=currentProduction&&currentEntranceHelpers.has(path);
+  const sha=exactCurrent?reviewedCopySources[path].current.sha256:previousSha;
   assert((path.startsWith('tests/helpers/')||path.startsWith('tests/fixtures/'))&&!path.split('/').includes('..'),'fixed helper path');
   const source=join(sourceDirectory,path),raw=readFileSync(source);
   let prior=raw;
-  if(liveSource){
+  if(exactCurrent){
+   const current=integrationClosureBytes(path,raw);
+   const source=current.toString('utf8');
+   assert(raw.equals(current)||raw.equals(Buffer.from(source.replaceAll('\n','\r\n'))),'uniform current copy owner: '+path);
+   assert(exactSourceMatches(source,reviewedCopySources[path].current),'exact current copy owner: '+path);
+  }else if(liveSource){
    try{prior=beforeReviewedCopySource(path,raw);}
    catch(error){assert.fail('fresh helper copy identity: '+path+': '+error.message);}
   }
   const content=integrationClosureBytes(path,prior);
   if((path==='tests/helpers/reward-current-source.mjs'||path==='tests/helpers/develop-release-backflow-source.mjs'||
-      path==='tests/helpers/develop-release-vocabulary-source.mjs')&&!raw.equals(content))
+      path==='tests/helpers/develop-release-vocabulary-source.mjs'||path==='tests/helpers/master-backflow-source.mjs'||
+      path==='tests/helpers/m7-core-final-source-inverse.mjs')&&!raw.equals(content))
    assert(raw.equals(Buffer.from(content.toString('utf8').replaceAll('\n','\r\n'))),'fresh helper copy identity: '+path);
   assert.equal(hash(content),sha,'fresh helper copy identity: '+path);
   const target=join(directory,path);mkdirSync(dirname(target),{recursive:true});

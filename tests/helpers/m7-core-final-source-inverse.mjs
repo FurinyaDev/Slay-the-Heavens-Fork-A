@@ -11,6 +11,7 @@ import {currentRewardReplay} from './reward-current-source.mjs';
 import assert from 'node:assert/strict';
 import {beforeCombatEvents,isCurrentInputRetirementSource} from './input-retirement-source.mjs';
 import {beforeUiEntrance} from './ui-entrance-source.mjs';
+import {beforeChapterEntranceOwner} from './develop-release-backflow-source.mjs';
 const live=p=>readFileSync(new URL('../../'+p,import.meta.url),'utf8');
 const actorTarget=sourceEpoch.proof.targets.pr618,actorAnchor='config/architecture.json';
 // This real preserved PR contains the exact three-owner Actor after-image.
@@ -26,7 +27,7 @@ function actorReader(raw){
   // source. Authenticate every current raw owner on each read, before exposing
   // any old byte. Never cache permission or use a projected reader downstream.
   const source=raw(actorAnchor);
-  assert(isCurrentInputRetirementSource(actorAnchor,beforeUiEntrance(actorAnchor,source)),'combined linked owner identity: '+actorAnchor);
+  assert(isCurrentInputRetirementSource(actorAnchor,beforeUiEntrance(actorAnchor,beforeChapterEntranceOwner(actorAnchor,source))),'combined linked owner identity: '+actorAnchor);
   assert.equal(sourceEpoch.preCombinedSource(actorAnchor,source,{target:'pr618',readSource:raw}),
    actorTarget.files[actorAnchor].source,'exact current Actor admission target');
   assert(Object.hasOwn(defectActorEpoch.proof.current,path),'known Actor owner');
@@ -39,7 +40,7 @@ export function currentDefectActorReader(raw){
  if(typeof raw!=='function')return raw;
  return path=>{
   const source=raw(actorAnchor);
-  assert(isCurrentInputRetirementSource(actorAnchor,beforeUiEntrance(actorAnchor,source)),'combined linked owner identity: '+actorAnchor);
+  assert(isCurrentInputRetirementSource(actorAnchor,beforeUiEntrance(actorAnchor,beforeChapterEntranceOwner(actorAnchor,source))),'combined linked owner identity: '+actorAnchor);
   assert.equal(sourceEpoch.preCombinedSource(actorAnchor,source,{target:'pr618',readSource:raw}),
    actorTarget.files[actorAnchor].source,'exact current Actor admission target');
   assert(Object.hasOwn(defectActorEpoch.proof.current,path),'known Actor owner');

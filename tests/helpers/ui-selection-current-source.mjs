@@ -394,18 +394,38 @@ const nodeNoticeCopier=Object.freeze({
  ]
 });
 const deckArchitectureCopier=Object.freeze({
- current:{"sha256":"83b872d55ff1625db99ee058aef0305f981414b43adb26b8f409be1f9cdb59a4","gitBlob":"c9719bcf74700c8fccf0540c7e0224dc738a57e8"},
+ current:{"sha256":"728af7e6fe0e40e03a4494f3ab3f1ba38e189b03f91572b6a235f5e4ee25e8b2","gitBlob":"aef20802636f57823a5e5e8bfc3ea8bb5e25e7f6"},
  previous:combinedReceipt(copierPath).current,
  hunks:[
  {
-  "at": 361,
-  "before": " 'tests/helpers/develop-release-backflow-source.mjs':'2834679eef440cf54e64cfb2c144c2fc6dbb5dc7ed048c3767435c250827337f',",
-  "after": " 'tests/helpers/develop-release-backflow-source.mjs':'3f14f8c02058d83c00314be990754099cddf46020b1b0f64aabc93afef26d771',\n 'tests/helpers/develop-release-vocabulary-source.mjs':'6120c2639aeb77972adcab7571c384d2d53f8a28794f99cc389f108a8bf0aeb5',\n 'tests/fixtures/develop-release-vocabulary-source.json.gz':'2b3d606fc142f2c8c5cfaaff386c70f6e1f741f24fbc1879b78399b7c477e914',"
+  "at": 357,
+  "before": " 'tests/helpers/m7-core-final-source-inverse.mjs':'c9d98969785466649e0e915df0d912f81b774d8b937b4fb63e74eed731635133',",
+  "after": " 'tests/helpers/m7-core-final-source-inverse.mjs':'5214ed8974838b06158bfb075daeb82e71ca20b9d7aea6225ffde6fef7e5f4f7',"
  },
  {
-  "at": 512,
+  "at": 361,
+  "before": " 'tests/helpers/develop-release-backflow-source.mjs':'2834679eef440cf54e64cfb2c144c2fc6dbb5dc7ed048c3767435c250827337f',",
+  "after": " 'tests/helpers/develop-release-backflow-source.mjs':'5120ebd8f1029f2f41265dbffb3a54a3a3911bc62d4928dec8ca1aea6c8ad59f',\n 'tests/helpers/develop-release-vocabulary-source.mjs':'6120c2639aeb77972adcab7571c384d2d53f8a28794f99cc389f108a8bf0aeb5',\n 'tests/fixtures/develop-release-vocabulary-source.json.gz':'2b3d606fc142f2c8c5cfaaff386c70f6e1f741f24fbc1879b78399b7c477e914',\n 'tests/fixtures/map-room-battle-actions-source.json.gz':'45918da82006880941ab23f10ccc49b7fe11fc2c7978b4f1508f923216e142ec',\n 'tests/fixtures/develop-battle-input-source.json.gz':'ee0eeaf23242e8307a2b4f06a27319d89477c5d19d7507eddc54477dc878611e',\n 'tests/fixtures/develop-linked-backflow-source.json.gz':'adeb361744f91d99b1dc48675d4566b24d3040440e34428b61d2302b47bd0d0b',\n 'tests/fixtures/develop-architecture-linked-source.json.gz':'b4b7a1401cde7ceb914ae6875dcf4f20045c7db23ca07d631a2ccffe9f636070',\n 'tests/helpers/master-backflow-source.mjs':'d407ed01df122de1f793c7fbaae1127b8a339b05aebb40e5f10e196cc7fe853a',\n 'tests/fixtures/master-backflow-predecessors.json.gz':'b16492b78553e53e675537d95d3f9ef24557d792f657ba41f0f280e43fab325f',"
+ },
+ {
+  "at": 504,
+  "before": "export function copyIntegrationSourceClosure(directory,{sourceRoot=process.cwd()}={}){",
+  "after": "const currentEntranceHelpers=new Set(['tests/helpers/current-replay-fix-sources.mjs','tests/helpers/ui-entrance-source.mjs']);\nexport function copyIntegrationSourceClosure(directory,{sourceRoot=process.cwd(),currentProduction=false}={}){"
+ },
+ {
+  "at": 510,
+  "before": " for(const [path,sha]of Object.entries(entranceFiles)){",
+  "after": " for(const [path,previousSha]of Object.entries(entranceFiles)){\n  const exactCurrent=currentProduction&&currentEntranceHelpers.has(path);\n  const sha=exactCurrent?reviewedCopySources[path].current.sha256:previousSha;"
+ },
+ {
+  "at": 516,
+  "before": "  if(liveSource){\n   try{prior=beforeReviewedCopySource(path,raw);}",
+  "after": "  if(exactCurrent){\n   const current=integrationClosureBytes(path,raw);\n   const source=current.toString('utf8');\n   assert(raw.equals(current)||raw.equals(Buffer.from(source.replaceAll('\\n','\\r\\n'))),'uniform current copy owner: '+path);\n   assert(exactSourceMatches(source,reviewedCopySources[path].current),'exact current copy owner: '+path);\n  }else if(liveSource){\n   try{prior=beforeReviewedCopySource(path,raw);}"
+ },
+ {
+  "at": 526,
   "before": "  if(path==='tests/helpers/reward-current-source.mjs'&&!raw.equals(content))",
-  "after": "  if((path==='tests/helpers/reward-current-source.mjs'||path==='tests/helpers/develop-release-backflow-source.mjs'||\n      path==='tests/helpers/develop-release-vocabulary-source.mjs')&&!raw.equals(content))"
+  "after": "  if((path==='tests/helpers/reward-current-source.mjs'||path==='tests/helpers/develop-release-backflow-source.mjs'||\n      path==='tests/helpers/develop-release-vocabulary-source.mjs'||path==='tests/helpers/master-backflow-source.mjs'||\n      path==='tests/helpers/m7-core-final-source-inverse.mjs')&&!raw.equals(content))"
  }
 ],
 });

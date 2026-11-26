@@ -1,5 +1,5 @@
 import {beforeChapterBattleScene,chapterBattleSceneReader} from './chapter-battle-scene-source.mjs';
-import { beforeUiEntrance, entranceInventory, entrancePredecessor, entranceReader } from './ui-entrance-source.mjs';
+import { beforeUiEntrance, entranceInventory, entrancePredecessor, entranceReader, uiEntranceOwns } from './ui-entrance-source.mjs';
 import {battlePeripheryPredecessor,beforeBattlePeriphery} from './battle-periphery-source.mjs';
 // Exact Develop predecessors for historical replay. Live builds read current sources.
 import assert from 'node:assert/strict';
@@ -12,6 +12,7 @@ import {assertRelicDetailCurrent,authenticateRelicDetail,beforeRelicDetail,relic
 import {beforeNativeFlowFixture} from './native-flow-fixture-source.mjs';
 import {authenticateActionButtons,beforeActionButtons,actionButtonsOwns} from './action-buttons-source.mjs';
 import {beforeNodeNoticeSource} from './reward-current-source.mjs';
+import {beforeKnownMasterBackflowSource} from './master-backflow-source.mjs';
 import {beforeReleaseVocabulary,releaseVocabularyOwns} from './develop-release-vocabulary-source.mjs';
 
 const hash=(bytes,algorithm='sha256')=>createHash(algorithm).update(bytes).digest('hex');
@@ -177,6 +178,99 @@ for(const [path,{before,after}] of Object.entries(roomEntry.files)){
  assert.match(after.sha256,/^[a-f0-9]{64}$/);
  assert.match(after.gitBlob,/^[a-f0-9]{40}$/);
 }
+const battleActionsPath='src/lua/abyss_battle_actions.lua';
+const battleActionsArchive=readFileSync(new URL('../fixtures/map-room-battle-actions-source.json.gz',import.meta.url));
+assert.equal(hash(battleActionsArchive),'45918da82006880941ab23f10ccc49b7fe11fc2c7978b4f1508f923216e142ec','exact production battle actions continuation');
+const battleActionsReplay=JSON.parse(gunzipSync(battleActionsArchive));
+assert.equal(battleActionsReplay.schemaVersion,1);
+assert.equal(battleActionsReplay.path,battleActionsPath);
+const battleActionsTransitions=battleActionsReplay.transitions;
+assert.deepEqual(battleActionsTransitions.map(row=>[row.beforeCommit,row.afterCommit]),[
+ ['b2f74d99a3d80e60b99165b6380987cda8b4488d','77b7e87ac5abc9ef5c4953cfd47b5d77408e55d2'],
+ ['7348ab8598c8607712d525bd732239f89bb52830','b2f74d99a3d80e60b99165b6380987cda8b4488d'],
+ ['559980dd45bc5310c449417a7a48a99a8e6562d2','a111076f1afa0093fbc8e916f5cbd2ee68c7a79b'],
+]);
+for(const [index,{before,after}] of battleActionsTransitions.entries()){
+ assert(matches(before.source,before),'exact Battle Actions predecessor');
+ assert.match(after.sha256,/^[a-f0-9]{64}$/);
+ assert.match(after.gitBlob,/^[a-f0-9]{40}$/);
+ if(index>0)assert(matches(battleActionsTransitions[index-1].before.source,after),'continuous Battle Actions source history');
+}
+const beforeBattleActionsRelease=battleActionsTransitions.at(-1).before.source;
+assert(matches(beforeInputRetirement(battleActionsPath,beforeBattleActionsRelease),roomEntry.files[battleActionsPath].after),
+ 'battle actions history reaches the exact Map Room owner');
+function beforeMapRoomBattleActions(path,source){
+ if(path!==battleActionsPath)return source;
+ const previous=beforeKnownMasterBackflowSource(path,source);
+ if(!matches(previous,battleActionsTransitions[0].after))return source;
+ source=previous;
+ const lf=source.replaceAll('\r\n','\n');
+ if(source===lf)return beforeBattleActionsRelease;
+ return source===lf.replaceAll('\n','\r\n')?beforeBattleActionsRelease.replaceAll('\n','\r\n'):source;
+}
+function uniformSource(source){
+ if(typeof source!=='string')return false;
+ const lf=source.replaceAll('\r\n','\n');
+ return !lf.includes('\r')&&(source===lf||source===lf.replaceAll('\n','\r\n'));
+}
+const battleInputArchive=readFileSync(new URL('../fixtures/develop-battle-input-source.json.gz',import.meta.url));
+assert.equal(hash(battleInputArchive),'ee0eeaf23242e8307a2b4f06a27319d89477c5d19d7507eddc54477dc878611e','exact battle input history');
+const battleInputHistory=JSON.parse(gunzipSync(battleInputArchive));
+const gesturesPath='src/lua/abyss_battle_card_gestures.lua';
+const cardLayoutPath='src/lua/abyss_battle_card_layout.lua';
+const cardViewPath='src/lua/abyss_battle_card_view.lua';
+assert.deepEqual(Object.keys(battleInputHistory),[gesturesPath,cardLayoutPath,cardViewPath]);
+assert.deepEqual(battleInputHistory[gesturesPath].map(row=>row.commit),[
+ '392fae8d8dee2bd57829dda0e8da836f45107398','a111076f1afa0093fbc8e916f5cbd2ee68c7a79b',
+ 'd723d57dcaf5d11447a3fdbd21c5bbee0c6a009b','44d1fd3148e7bbf472adc8110fceb06eeb0f041a',
+ 'e483c6a191dc8dd7622e0cb137e7b8581b171af8',
+]);
+for(const path of [cardLayoutPath,cardViewPath])
+ assert.deepEqual(battleInputHistory[path].map(row=>row.commit),[
+  '8d76bc4d22ecc147fb82d99454e56f2466762f58','d723d57dcaf5d11447a3fdbd21c5bbee0c6a009b',
+  "e483c6a191dc8dd7622e0cb137e7b8581b171af8",
+ ]);
+for(const states of Object.values(battleInputHistory))
+ for(const row of states)assert(matches(row.source,row),'exact published battle input source');
+assert(isCurrentInputRetirementSource(gesturesPath,battleInputHistory[gesturesPath][0].source),'exact raw gesture input retirement owner');
+function beforeBattleInputHistory(path,source){
+ if(!Object.hasOwn(battleInputHistory,path)||!uniformSource(source))return source;
+ const masterPrior=beforeKnownMasterBackflowSource(path,source);
+ const states=battleInputHistory[path];
+ if(!matches(masterPrior,states.at(-1)))return source;
+ const prior=states[0].source;
+ return source.includes('\r\n')?prior.replaceAll('\n','\r\n'):prior;
+}
+const linkedArchive=readFileSync(new URL('../fixtures/develop-linked-backflow-source.json.gz',import.meta.url));
+assert.equal(hash(linkedArchive),'adeb361744f91d99b1dc48675d4566b24d3040440e34428b61d2302b47bd0d0b','exact joined backflow owners');
+const {source:linkedSource,files:linkedBackflow}=JSON.parse(gunzipSync(linkedArchive));
+assert.equal(linkedSource,'7228aaa83b0995e1dc6e36955cfd6e773c199f07');
+assert.equal(Object.keys(linkedBackflow).length,10);
+for(const [path,{before,after}] of Object.entries(linkedBackflow)){
+ assert.equal(after.commit,linkedSource,'exact reviewed joined owner: '+path);
+ assert(matches(before.source,before),'exact joined owner predecessor: '+path);
+}
+function beforeLinkedBackflow(path,source){
+ if(!Object.hasOwn(linkedBackflow,path)||!uniformSource(source))return source;
+ const {before,after}=linkedBackflow[path];
+ if(!matches(source,after))return source;
+ return source.includes('\r\n')?before.source.replaceAll('\n','\r\n'):before.source;
+}
+const combinedOwnerArchive=readFileSync(new URL('../fixtures/develop-architecture-linked-source.json.gz',import.meta.url));
+assert.equal(hash(combinedOwnerArchive),'b4b7a1401cde7ceb914ae6875dcf4f20045c7db23ca07d631a2ccffe9f636070','exact reviewed linked architecture owners');
+const {source:combinedOwnerCommit,files:combinedOwners}=JSON.parse(gunzipSync(combinedOwnerArchive));
+assert.equal(combinedOwnerCommit,linkedSource);
+assert.equal(Object.keys(combinedOwners).length,31);
+for(const [path,{before}] of Object.entries(combinedOwners)){
+ assert.match(before.commit,/^[0-9a-f]{40}$/,'fixed linked owner source');
+ assert(matches(before.source,before),'exact linked architecture predecessor: '+path);
+}
+function beforeCombinedBackflowWitness(path,source,projected){
+ if(!Object.hasOwn(combinedOwners,path)||!uniformSource(source)||!uniformSource(projected))return projected;
+ const row=combinedOwners[path];
+ if(!matches(source,row.admitted)||!matches(projected,row.projected))return projected;
+ return source.includes('\r\n')?row.before.source.replaceAll('\n','\r\n'):row.before.source;
+}
 const deckPagesArchive=readFileSync(new URL('../fixtures/develop-deck-pages-source.json.gz',import.meta.url));
 assert.equal(hash(deckPagesArchive),'d3a6b845870da64358c3ca36307062c02cc39d2e070e21eb875f9e2e42d02036','exact Develop deck-pages predecessor archive');
 const deckPages=JSON.parse(gunzipSync(deckPagesArchive));
@@ -188,7 +282,10 @@ for(const [path,{before,after}] of Object.entries(deckPages.files)){
 }
 export const deckPagesAdded=Object.freeze(Object.keys(deckPages.added));
 function deckPagesPrior(path,source){return predecessor(deckPages.files,path,source);}
-export function beforeDeckPages(path,source,options){return deckPagesPrior(path,beforeInputRetirement(path,beforeCombatEvents(path,beforeActionButtons(path,beforeDevelopUiBackflows(path,source))),options));}
+export function beforeDeckPages(path,source,options){
+ source=beforeLinkedBackflow(path,beforeBattleInputHistory(path,beforeMapRoomBattleActions(path,source)));
+ return deckPagesPrior(path,beforeInputRetirement(path,beforeCombatEvents(path,beforeActionButtons(path,beforeDevelopUiBackflows(path,source))),options));
+}
 const deckPagesOwns=path=>Object.hasOwn(deckPages.files,path);
 const productionOwner=path=>path===architecturePath||path.startsWith('src/lua/');
 const recentBackflowOwns=path=>mapRoomBackflowOwns(path)||deckPagesOwns(path)||(productionOwner(path)&&inputRetirementOwns(path));
@@ -203,6 +300,7 @@ function currentRecentBackflowOwner(path,source){
  return matches(source,roomEntry.files[path].after);
 }
 export function assertDevelopBackflowCurrent(path,source){
+ source=beforeLinkedBackflow(path,beforeBattleInputHistory(path,beforeMapRoomBattleActions(path,source)));
  source=beforeUiEntrance(path,beforeBattlePeriphery(path,beforeChapterBattleScene(path,source)));
  source=beforeDevelopUiBackflows(path,source);
  const priorActions=beforeActionButtons(path,source);
@@ -256,22 +354,42 @@ function mapRoomOwnerError(path){
 }
 const chapterEntranceOwners=new Set([architecturePath,'src/lua/abyss_game_ui.lua','src/lua/abyss_game_ui_view.lua']);
 const nodeNoticeOwner='src/lua/abyss_node_ui.lua';
-function beforeChapterEntranceOwner(path,source){
- return chapterEntranceOwners.has(path)?beforeChapterBattleScene(path,source):source;
+export function beforeChapterEntranceOwner(path,source){
+ if(!chapterEntranceOwners.has(path)||!uniformSource(source))return source;
+ return beforeChapterBattleScene(path,beforeKnownMasterBackflowSource(path,source));
+}
+function beforeVocabularyOwner(path,source){
+ if(!releaseVocabularyOwns(path))return source;
+ return beforeReleaseVocabulary(path,beforeKnownMasterBackflowSource(path,source));
 }
 function recentBackflowOwnerReader(read,historicalOwners){
  let epoch;
  const readEntrancePrior=entranceReader(path=>{
   const source=read(path);
   const vocabulary=releaseVocabularyOwns(path);
-  if(!chapterEntranceOwners.has(path)&&path!==nodeNoticeOwner&&!vocabulary)return source;
+  if(!uiEntranceOwns(path)&&!vocabulary&&path!==battleActionsPath&&!Object.hasOwn(battleInputHistory,path)&&!Object.hasOwn(linkedBackflow,path))return source;
   const frozen=historicalOwners?.[path]?.source;
   if(typeof frozen==='string'&&(source===frozen||source===frozen.replaceAll('\n','\r\n')))return source;
-  if(path===nodeNoticeOwner)return beforeNodeNoticeSource(path,source);
+  if(Object.hasOwn(linkedBackflow,path))return beforeLinkedBackflow(path,source);
+  if(Object.hasOwn(battleInputHistory,path))return beforeBattleInputHistory(path,source);
+  if(path===battleActionsPath){
+   const prior=beforeMapRoomBattleActions(path,source);
+   assert.notEqual(prior,source,mapRoomOwnerError(path));
+   return prior;
+  }
+  if(path===nodeNoticeOwner){
+   const productionPrior=beforeKnownMasterBackflowSource(path,source);
+   return productionPrior!==source?productionPrior:beforeNodeNoticeSource(path,source);
+  }
   if(vocabulary){
-   const prior=beforeReleaseVocabulary(path,source);
+   const prior=beforeVocabularyOwner(path,source);
    assert.notEqual(prior,source,'combined linked owner identity: '+path+' changed during Develop backflow validation');
    return prior;
+  }
+  if(!chapterEntranceOwners.has(path)){
+   // A receipt already admitted by the entrance inverse keeps its live owner.
+   // Other owners use only the exact production backflow predecessor.
+   return beforeUiEntrance(path,source)!==source?source:beforeKnownMasterBackflowSource(path,source);
   }
   // The complete entrance cohort consumes the authenticated post-chapter predecessors.
   const prior=beforeChapterEntranceOwner(path,source);
@@ -282,9 +400,13 @@ function recentBackflowOwnerReader(read,historicalOwners){
  return path=>{
   // A frozen cohort must expose its original Controller identity or absence.
   const controller=path===retiredControllerPath&&(!historicalOwners||epoch==='current')?readRetiredController(read):undefined;
-  const source=controller?controller.source:readEntrancePrior(path);
+  let source=controller?controller.source:readEntrancePrior(path);
   if(!recentBackflowOwns(path))return source;
-  const current=(!controller||controller.restored)&&currentRecentBackflowOwner(path,source);
+  let current=(!controller||controller.restored)&&currentRecentBackflowOwner(path,source);
+  if(!current&&!controller&&uniformSource(source)){
+   const prior=beforeBattlePeriphery(path,beforeChapterBattleScene(path,beforeKnownMasterBackflowSource(path,source)));
+   if(currentRecentBackflowOwner(path,prior)){source=prior;current=true;}
+  }
   const binding=historicalOwners&&Object.hasOwn(historicalOwners,path)?historicalOwners[path]:undefined;
   const exactHistorical=binding===null?source==null:
    binding&&typeof source==='string'&&source.replaceAll('\r\n','\n')===binding.source;
@@ -301,14 +423,16 @@ export function bindDevelopBackflow(read,historicalOwners){
  return {
   readOwner,
   authenticate(path,source,options){
-   const chapter=beforeChapterEntranceOwner(path,source);
+   const admitted=source,chapter=beforeChapterEntranceOwner(path,source);
    if(chapter!==source)source=beforeUiEntrance(path,chapter);
-   return authenticateDevelopBackflowWithReaders(path,beforeReleaseVocabulary(path,source),readOwner,readOwner,options);
+   const current=beforeLinkedBackflow(path,beforeBattleInputHistory(path,beforeMapRoomBattleActions(path,beforeVocabularyOwner(path,source))));
+   const predecessor=authenticateDevelopBackflowWithReaders(path,current,readOwner,readOwner,options);
+   return beforeCombinedBackflowWitness(path,admitted,predecessor);
   },
  };
 }
 function beforePriorDevelopBackflow(path,source){
- source=beforeReleaseVocabulary(path,beforeMatchEventRepair(path,source));
+ source=beforeVocabularyOwner(path,beforeMatchEventRepair(path,source));
  return layers.reduce((prior,layer)=>predecessor(layer,path,prior),source);
 }
 const forethoughtOwners=[deckPath,'scripts/deck-ui-layout.mjs'];
@@ -353,6 +477,7 @@ function beforeSessionRelic(path,source,options){
  return source.includes('\r\n')?before.replaceAll('\n','\r\n'):before;
 }
 export function beforeDevelopBackflow(path,source,options){
+ source=beforeBattleInputHistory(path,beforeChapterEntranceOwner(path,source));
  source=beforeUiEntrance(path,beforeBattlePeriphery(path,beforeChapterBattleScene(path,source)));
  source=predecessor(roomEntry.files,path,beforeDeckPages(path,source,options));
  source=beforeRelicDetail(path,source);
