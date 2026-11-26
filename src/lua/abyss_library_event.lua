@@ -99,7 +99,7 @@ local function read(run,event)
  end
  -- rollRarity never writes the inherited rarity offset.
  event.offers,event.offerEpoch,event.choice=offers,epoch,'read'
- event.stage,event.body='choose_offer','你翻开一本书。请选择一张卡牌加入牌组。'
+ event.stage,event.body='choose_offer','你翻开一本书。请选择一张卡牌加入牌组，不能跳过。'
  -- Source getBook uses global cosmetic MathUtils.random, not a gameplay RNG.
  return true,'choose_offer'
 end
