@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@Furinya'
 created_date: '2026-11-25 21:02'
-updated_date: '2026-11-25 22:56'
+updated_date: '2026-11-26 01:17'
 labels:
   - v2.2.0
 milestone: m-8
@@ -48,4 +48,6 @@ ordinal: 222000
 
 <!-- SECTION:NOTES:BEGIN -->
 #992 接续 #958，合入 develop 114a5c0b739ad8cccbc99e59fe7ba4112014d3cf。独立评审 6066095429，原生事件定向 1/1，Fork Quick 45716478689 通过。正文和长选项的实机字形、整合交互随正式候选验收。
+
+#924 的现行源码候选 846c9eff35175585af3b1a8a24f7f303f8b4ef64 基于实际主仓 454b5897，获独立局部复审。三个产品文件与旧候选 6b52326d 完全一致。选角构建、主菜单启动、暂停重开和失败路径使用原 30/60 秒限制复跑。三处现行回放入口拒绝旧源码及重读时回退，真实历史入口和隔离复制仍按原规则执行。候选留在本地，完整 CI、主仓接续与设备验证待验。
 <!-- SECTION:NOTES:END -->

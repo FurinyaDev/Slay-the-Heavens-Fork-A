@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@Furinya'
 created_date: '2026-11-25 21:02'
-updated_date: '2026-11-26 00:29'
+updated_date: '2026-11-26 01:18'
 labels:
   - v2.2.0
 milestone: m-8
@@ -45,4 +45,6 @@ ordinal: 223000
 
 <!-- SECTION:NOTES:BEGIN -->
 #999 接续 #911 的交付治理源码覆盖。原 #911 更宽范围继续留痕。实际 Git 双入口独立评审 6066893403，85 项交付、Hosted 入口夹具、102 项历史回放和 25 项性能合同通过。Fork A 45728156747 Advisory Quick 通过。精确 8a5f8681 基线的结果随后继基线重新核对。
+
+#999 本地接续候选 cda3fca9bcf168548120c4ea463616d7de3cccb0 建在待合入的 #1000 a87a8d40 上，已独立复审。真实 Git 治理用例通过 8/8，正式构建协议 24/24。各现行入口拒绝旧源码及重新读取时回退，历史 LF/CRLF 和原 #1000 归档适用。待实际基线和 Hosted 验证。
 <!-- SECTION:NOTES:END -->
