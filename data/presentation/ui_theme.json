@@ -575,6 +575,7 @@
   "image": {
     "officialBackdrops": {
       "title": 100001,
+      "selectionFallback": 107271,
       "selection": 107050,
       "act1_1": 107106,
       "act1_2": 107107,

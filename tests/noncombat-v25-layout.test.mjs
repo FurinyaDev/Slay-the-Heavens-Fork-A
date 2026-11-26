@@ -129,6 +129,28 @@ function restorePriorMenuNavigation(panel,focusPaths) {
  return prior;
 }
 
+function restorePriorMenuSurfaces(panel){
+ if(panel.name==='menuPanel'){
+  for(const action of ['start','continueRun','titleQuit']){
+   const label=child(child(panel,action),'label');
+   assert.equal(label.text.outlineOpacity,1,action+' retains the shipped title outline');
+   delete label.text.outlineOpacity;
+  }
+  const backdrop=child(panel,'backdrop'),quit=child(panel,'titleQuit');
+  assert.equal(backdrop.image,100001,'retain the released title material');
+  backdrop.image=107271;
+  assert.deepEqual(quit.position,[-464,-170],'retain the released compact title spacing');
+  quit.position=[-464,-282];
+ }
+ const surfaces=panel.name==='menuPanel'?['floor','victories','time','deck'].map(name=>child(child(panel,'result'),'stat_'+name)):
+  panel.name==='exitPanel'?[panel]:[];
+ for(const host of surfaces){
+  const face=child(host,'face');
+  assert.deepEqual([face.image,face.colour],[100001,'#1C1E27'],host.name+' retains the released flat surface');
+  Object.assign(face,{image:107311,colour:'#FFFFFF'});
+ }
+}
+
 test('official host uses direct inventory actions, read-only relic details and explicit run discard',async t=>{
  const {mkdtempSync,mkdirSync,readFileSync,rmSync}=await import('node:fs');
  const {join,resolve}=await import('node:path');
@@ -155,8 +177,9 @@ test('official host uses direct inventory actions, read-only relic details and e
   const panel=child(stage,name);
   assert(all(panel).every(node=>node.focusable!==true&&node.isolateNavigation!==true),'retire authored navigation: '+name);
   const prior=restorePriorMenuNavigation(panel,focusPaths);
+  restorePriorMenuSurfaces(prior);
   assert.equal(createHash('sha256').update(JSON.stringify(prior)).digest('hex'),sha,
-   'preserve the complete integrated menu layout and remove only its navigation fields: '+name);
+   'preserve the reviewed menu outside the explicit navigation and production surface edits: '+name);
  }
  const script=`package.path=${luaString(directory.replaceAll('\\','/')+'/?.lua;src/lua/?.lua')}
 dofile('tests/lua/support/sts_ui_closeout.lua')`;
@@ -180,22 +203,24 @@ test('generated official character selection follows the approved details revisi
   .map(row=>[row.revision,row.status]),[['release-sts1-20261122','APPROVED']]);
  assert.equal(revisions.find(row=>row.revision==='sts1-open-copy-20261119')?.status,'SUPERSEDED');
  const output=join(directory,'refined-release');
- buildUI(output,undefined,{officialAssets:true,refinedReleaseMonsterArt:true,nativePageLifecycle:true});
+ buildUI(output,undefined,{officialAssets:true,refinedReleaseMonsterArt:true,nativePageLifecycle:true,experimentalCharacters:false});
  const tree=JSON.parse(readFileSync(join(output,'game-ui.json'),'utf8'));
  const selection=child(child(tree,'stage'),'characterPanel');
- const details=child(selection,'details');
- for(const name of ['name','stats','gold','v25Story','relic','relicText']){
-  assert.equal(child(details,name)?.kind,'text',name);
- }
+ const infoLayers=parts(child(child(selection,'details'),'infoMotion'));
+ assert.equal(infoLayers.length,1);
  const retired=new Set(['deckTitle','deckSummary','deckRule','deckOpen','deckView']);
  const found=all(selection).filter(node=>retired.has(node.name)||/初始牌组|查看牌组/.test(node.text?.content??''));
  assert.deepEqual(found.map(node=>node.name),[],'obsolete starter deck controls in the official selection tree');
+ const [details]=infoLayers;
+ for(const name of ['name','stats','gold','v25Story','relic','relicText']){
+  assert.equal(child(details,name)?.kind,'text',name);
+ }
  const story=child(details,'v25Story'),{content,fontSize,minFontSize}=story.text;
  const problems=capacityProblems([{path:'characterPanel/details/v25Story',kind:story.kind,visible:true,
   text:content,size:story.size,font:fontSize,minimum:minFontSize}],nativeTheme.layout.nativeText.lineHeight);
  assert.deepEqual(problems,[],'reserve both native lines for the mobile synopsis');
- assert.equal(content.split('\n').length,2);
- assert.equal(content.replaceAll('\n',''),nativeTheme.v25Character.story.replaceAll('\n',''));
+ assert(story.size[1]>=nativeTheme.layout.nativeText.lineHeight*2,'reserve two lines for longer synopses');
+ assert.equal(content,'使用岩元素护盾与结晶应对敌人。');
  assert.equal(minFontSize,fontSize,'retain the authored text size');
  const stats=child(details,'stats'),relic=child(details,'relic');
  assert(story.position[1]+story.size[1]/2<stats.position[1]-stats.size[1]/2,'story clears health');
@@ -258,8 +283,8 @@ local function scope(label)
 end
 portraits:sync('menu',true,false,'ironclad');scope('building')
 assert(fallback.visible and landscape.visible and not transition.visible,'loading fallback is effectively unshaded')
-for _=1,600 do portraits:tick();if portraits:readyForPage('menu',true,'ironclad','characterPanel')then break end end
 assert(portraits:readyForPage('menu',true,'ironclad','characterPanel'))
+for _=1,600 do portraits:tick();if portraits:status().selection.phase=='ready'then break end end
 motion:show({id='ironclad'},true)
 motion:update(1)
 assert(portraits:status().selection.phase=='ready' and art.visible and art:GetChild('figure').visible and not landscape.visible and not transition.visible and transition.imageColor.a==0)

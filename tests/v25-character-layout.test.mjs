@@ -206,22 +206,21 @@ test('missing approved story and image bindings stay explicitly empty and repeat
  assert.equal(v25CharacterReference.cssSha256,'9a6d137a3297559f638e5323db424506ae394c7942cdf334551936ac0d74d17d');
  assert(v25CharacterReference.unverified.includes('full-resolution-portrait'));
 });
-test('published Traveler selection description matches owner-approved text',()=>{
- const approved='失却星辉、与血亲失散的异乡旅人。她与磐岩共鸣，剑势在鏖战中愈发凌厉';
- assert.equal(nativeTheme.v25Character.story,approved);
+test('the compatibility character screen retains the reviewed Develop story',()=>{
+ const story='岩层深处传来了异常的共鸣。\n旅行者，深入遗迹，阻止深渊的侵蚀。';
+ assert.equal(nativeTheme.v25Character.story,story);
  const layout=build();applyV25CharacterLayout(layout,nativeTheme);
- assert.equal(child(child(panel(layout),'details'),'v25Story').text.content,approved);
+ assert.equal(child(child(panel(layout),'details'),'v25Story').text.content,story);
 });
 
-test('official character selection displays the approved traveler synopsis without changing its dark fallback',()=>{
+test('official character selection keeps the current synopsis and landscapes while title material changes',()=>{
  const theme=officialAssetsTheme(nativeTheme),layout=build();
  applyOfficialNoncombatLayout(layout,theme);
- const selected=panel(layout),approved='失却星辉、与血亲失散的异乡旅人。她与磐岩共鸣，剑势在鏖战中愈发凌厉';
- assert.equal(nativeTheme.v25Character.story,approved);
- assert.equal(child(child(selected,'details'),'v25Story').text.content.replaceAll('\n',''),approved);
+ const selected=panel(layout);
+ assert.equal(child(child(selected,'details'),'v25Story').text.content,'使用岩元素护盾与结晶应对敌人。');
  const fallback=child(selected,'v25Background');
  assert.equal(fallback.visible,true);
  assert.deepEqual(children(fallback),[{
-  name:'fill',kind:'image',position:[0,0],size:[1280,720],image:100001,colour:'#0F1117',raycastTarget:false,
+  name:'landscape',kind:'image',position:[0,0],size:[1280,720],image:107271,colour:'#FFFFFF',
  }]);
 });
