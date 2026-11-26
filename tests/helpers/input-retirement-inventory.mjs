@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import {readFileSync} from 'node:fs';
 import {beforeDeckBrowserBackflow,beforeInputRetirementStsSuite} from './input-retirement-source.mjs';
+import {beforeKnownMasterBackflowSource} from './master-backflow-source.mjs';
 import {inputRetirementStsWitness} from './input-retirement-sts-binding.mjs';
 import {stsStylePriorRuntime} from './sts-style-prior-runtime.mjs';
 
@@ -51,7 +52,8 @@ export function assertInputRetirementLuaCurrent(read=readFileSync){
 function historicalStsSuite(paths,read){
  const readDeckWitness=(path,encoding)=>{
   const source=read(path,encoding);
-  return path===deckPagesTest&&encoding==='utf8'?beforeDeckBrowserBackflow(path,source):source;
+  return path===deckPagesTest&&encoding==='utf8'
+   ?beforeDeckBrowserBackflow(path,beforeKnownMasterBackflowSource(path,source)):source;
  };
  return beforeInputRetirementStsSuite(paths,readDeckWitness,inputRetirementStsWitness);
 }

@@ -99,7 +99,7 @@ function beforeForethoughtSource(path,source,read){
 }
 
 export function beforeMapRoomSource(path,source){
-  const row=roomFiles[path];
+  const row=Object.hasOwn(roomFiles,path)?roomFiles[path]:null;
   if(!row||!current(source,row.after))return source;
   return source.includes('\r\n')?row.before.source.replaceAll('\n','\r\n'):row.before.source;
 }
