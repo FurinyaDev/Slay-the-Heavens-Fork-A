@@ -4,6 +4,7 @@ import {restoreExactFixtureHunks} from './exact-fixture-hunks.mjs';
 import {exactSourceMatches} from './source-fingerprint.mjs';
 import {releaseUiRestoreArchive} from './release-ui-restore-source.mjs';
 import {visualSelectionOwnerRead} from './visual-selection-source.mjs';
+import {beforeSelectionNodeNoticeSource,selectionNodeNoticePath} from './ui-selection-current-source.mjs';
 import {beforeKnownMasterBackflowSource,beforeMasterBackflowSource,readBeforeMasterBackflowSource} from './master-backflow-source.mjs';
 
 const replayBase='02dcb2466b2c90308f9a9e42896c2c5af3ed288c';
@@ -35,14 +36,17 @@ function reviewedSelectionOwners(){
 // The original replay still walks and checks its whole closure. Bind only
 // known current owners here and reread each one whenever that closure asks.
 export function reviewedSelectionRead(read=readFileSync){
- read=readBeforeMasterBackflowSource(read);
+ const readMaster=readBeforeMasterBackflowSource(read);
+ const readCurrent=(path,encoding)=>path===selectionNodeNoticePath
+  ?beforeSelectionNodeNoticeSource(path,read(path,encoding))
+  :readMaster(path,encoding);
  const registered=reviewedSelectionOwners();
- const readOwner=visualSelectionOwnerRead(read);
+ const readOwner=visualSelectionOwnerRead(readCurrent);
  const reviewed=(path,encoding='utf8')=>{
   const row=registered.get(path);
-  if(!row)return read(path,encoding);
+  if(!row)return readMaster(path,encoding);
   const active=Object.hasOwn(renamedOwners,path)?renamedOwners[path]:path;
-  if(active!==path)assert.throws(()=>read(path,'utf8'),{code:'ENOENT'},'legacy Selection owner must stay absent: '+path);
+  if(active!==path)assert.throws(()=>readMaster(path,'utf8'),{code:'ENOENT'},'legacy Selection owner must stay absent: '+path);
   const source=readOwner(active,row);
   return encoding==='utf8'?source:Buffer.from(source);
  };

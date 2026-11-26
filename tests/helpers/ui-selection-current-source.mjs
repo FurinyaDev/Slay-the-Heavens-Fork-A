@@ -282,8 +282,8 @@ const combinedReceipts=Object.freeze({
  },
  "tests/helpers/replay-reviewed-selection.mjs": {
   "current": {
-   "sha256": "ea82d95c422df6b6d0ebc42728f70ede68acbe7d675c49036c701f74345b11c8",
-   "gitBlob": "30817e7a8f15e20f94aca6fc4f42ed00638feec3"
+   "sha256": "eb72b7b7ecd1043e1ccbbe5429e4537f408adc90420e1ce255c6b64391eccd38",
+   "gitBlob": "a3dad348a963fdda2f90c4cc7c301f43fe5aed43"
   },
   "previous": {
    "sha256": "5f81f16e89b98fd6d8e3dfeb5c5df09be9f2c2131a077dcdb25b8cf84cf70ea7",
@@ -291,34 +291,24 @@ const combinedReceipts=Object.freeze({
   },
   "hunks": [
    {
-    "at": 15,
-    "before": "import {beforeDeckPagesSuiteSource,readRetiredController,retiredControllerPath} from './input-retirement-source.mjs';\nimport {readReviewedOfficialAssetInput,reviewedOfficialAssetInputPaths} from './reviewed-official-asset-inputs.mjs';",
-    "after": "import {beforeDeckPagesSuiteSource,readRetiredController,retiredControllerPath} from './input-retirement-source.mjs';\nimport {beforeMasterBackflowSource,readBeforeMasterBackflowSource} from './master-backflow-source.mjs';\nimport {beforeOfficialCharacterBackflow} from './current-replay-fix-sources.mjs';\nimport {readReviewedOfficialAssetInput,reviewedOfficialAssetInputPaths} from './reviewed-official-asset-inputs.mjs';"
+    "at": 11,
+    "before": "import {reviewedSelectionRead} from './reviewed-selection-current-source.mjs';\nimport {uiEntranceOwns} from './ui-entrance-source.mjs';\nimport {checkedSelectionEntranceRead} from './ui-selection-current-source.mjs';\nimport {stsStylePriorRuntime} from './sts-style-prior-runtime.mjs';\nimport {beforeDeckPagesSuiteSource,readRetiredController,retiredControllerPath} from './input-retirement-source.mjs';\nimport {readReviewedOfficialAssetInput,reviewedOfficialAssetInputPaths} from './reviewed-official-asset-inputs.mjs';\nconst hash=s=>createHash('sha256').update(s).digest('hex'),norm=s=>s.replaceAll('\\r\\n','\\n');",
+    "after": "import {reviewedSelectionRead} from './reviewed-selection-current-source.mjs';\nimport {uiEntranceOwns} from './ui-entrance-source.mjs';\nimport {checkedSelectionEntranceRead,selectionNodeNoticePath} from './ui-selection-current-source.mjs';\nimport {stsStylePriorRuntime} from './sts-style-prior-runtime.mjs';\nimport {beforeDeckPagesSuiteSource,readRetiredController,retiredControllerPath} from './input-retirement-source.mjs';\nimport {beforeMasterBackflowSource,readBeforeMasterBackflowSource} from './master-backflow-source.mjs';\nimport {beforeOfficialCharacterBackflow} from './current-replay-fix-sources.mjs';\nimport {readReviewedOfficialAssetInput,reviewedOfficialAssetInputPaths} from './reviewed-official-asset-inputs.mjs';\nconst hash=s=>createHash('sha256').update(s).digest('hex'),norm=s=>s.replaceAll('\\r\\n','\\n');"
    },
    {
-    "at": 26,
-    "before": "});\nexport function replayReviewedSelection(script='tests/sts-character-reference.test.mjs'){",
-    "after": "});\nexport function readSelectionProductionOwners(read,readOwner){\n const readEntrance=chapterEvidenceCurrentRead(checkedSelectionEntranceRead((path,encoding)=>{\n  const raw=read(path,encoding);\n  const source=Buffer.isBuffer(raw)?raw.toString('utf8'):raw;\n  if(beforeOfficialCharacterBackflow(path,source)!==source)return raw;\n  return beforeMasterBackflowSource(path,raw);\n }));\n return (path,encoding='utf8')=>uiEntranceOwns(path)?readEntrance(path,encoding):readOwner(path,encoding);\n}\n// Selection's archived intent owner predates #875. Its original reviewed\n// reader must reauthenticate those exact bytes at the current-only seam.\nexport function beforeCurrentSelectionProductionSource(path,readCurrent,readReviewed){\n const read=path==='src/lua/abyss_battle_intent_view.lua'?readReviewed:readCurrent;\n return beforeCurrentProductionSource(path,read(path),read);\n}\nconst readLiveOwner=path=>readFileSync(path,'utf8');\nexport function readReviewedSelectionSource(path,read=readLiveOwner){\n assert(Object.hasOwn(sourceEpoch.proof.current,path),'registered historical selection owner: '+path);\n const row=sourceEpoch.proof.current[path];\n if(row===null)return null;\n const readOwner=reviewedSelectionRead(read);\n const retired=path===retiredControllerPath;\n const live=retired?readRetiredController(readOwner).source:read(path);\n assert(typeof live==='string'&&!live.includes('\\r\\r\\n')&&\n  (read===readLiveOwner||(!retired&&norm(live)===norm(readLiveOwner(path)))),\n  'fresh current production owner: '+path);\n const readCurrent=readSelectionProductionOwners(read,readOwner);\n const source=retired?beforeCharacterPreparationSource(path,live,readCurrent)\n  :beforeCurrentSelectionProductionSource(path,readCurrent,readOwner);\n assert.equal(hash(norm(source)),row.sha256,'fresh current production owner: '+path);\n return source;\n}\nexport function replayReviewedSelection(script='tests/sts-character-reference.test.mjs'){"
+    "at": 25,
+    "before": " [archivedOfficialAssets]:6,\n});\nexport function replayReviewedSelection(script='tests/sts-character-reference.test.mjs'){\n assert(Object.hasOwn(reviewedContracts,script),'exact reviewed selection contract');\n const expected=reviewedContracts[script],root=process.cwd();\n assertIntegratedCurrent();\n const readOwner=reviewedSelectionRead();\n // Entrance authentication consumes live owners. The archived build still uses Selection's reviewed inputs.\n const readEntrance=chapterEvidenceCurrentRead(checkedSelectionEntranceRead(readFileSync));\n const readProductionOwner=(path,encoding='utf8')=>uiEntranceOwns(path)?readEntrance(path,encoding):readOwner(path,encoding);\n const retiredInput=readRetiredController(readOwner);\n assert(retiredInput.restored,'only the exact pointer successor can restore the retired input owner');\n for(const [path,row]of Object.entries(sourceEpoch.proof.current)){\n  const source=path===retiredControllerPath?beforeCharacterPreparationSource(path,retiredInput.source,readProductionOwner)\n   :beforeCurrentProductionSource(path,readProductionOwner(path),readProductionOwner);\n  assert.equal(hash(norm(source)),row.sha256,'fresh current production owner: '+path);\n }",
+    "after": " [archivedOfficialAssets]:6,\n});\nexport function readSelectionProductionOwners(read,readOwner){\n const readEntrance=chapterEvidenceCurrentRead(checkedSelectionEntranceRead((path,encoding)=>{\n  const raw=read(path,encoding);\n  const source=Buffer.isBuffer(raw)?raw.toString('utf8'):raw;\n  if(path===selectionNodeNoticePath||beforeOfficialCharacterBackflow(path,source)!==source)return raw;\n  return beforeMasterBackflowSource(path,raw);\n }));\n return (path,encoding='utf8')=>uiEntranceOwns(path)?readEntrance(path,encoding):readOwner(path,encoding);\n}\n// Selection's archived intent owner predates #875. Its original reviewed\n// reader must reauthenticate those exact bytes at the current-only seam.\nexport function beforeCurrentSelectionProductionSource(path,readCurrent,readReviewed){\n const read=path==='src/lua/abyss_battle_intent_view.lua'?readReviewed:readCurrent;\n return beforeCurrentProductionSource(path,read(path),read);\n}\nconst readLiveOwner=path=>readFileSync(path,'utf8');\nexport function readReviewedSelectionSource(path,read=readLiveOwner){\n assert(Object.hasOwn(sourceEpoch.proof.current,path),'registered historical selection owner: '+path);\n const row=sourceEpoch.proof.current[path];\n if(row===null)return null;\n const readOwner=reviewedSelectionRead(read);\n const retired=path===retiredControllerPath;\n const live=retired?readRetiredController(readOwner).source:read(path);\n assert(typeof live==='string'&&!live.includes('\\r\\r\\n')&&\n  (read===readLiveOwner||(!retired&&norm(live)===norm(readLiveOwner(path)))),\n  'fresh current production owner: '+path);\n const readCurrent=readSelectionProductionOwners(read,readOwner);\n const source=retired?beforeCharacterPreparationSource(path,live,readCurrent)\n  :beforeCurrentSelectionProductionSource(path,readCurrent,readOwner);\n assert.equal(hash(norm(source)),row.sha256,'fresh current production owner: '+path);\n return source;\n}\nexport function replayReviewedSelection(script='tests/sts-character-reference.test.mjs'){\n assert(Object.hasOwn(reviewedContracts,script),'exact reviewed selection contract');\n const expected=reviewedContracts[script],root=process.cwd();\n assertIntegratedCurrent();\n const readCurrent=readBeforeMasterBackflowSource(readFileSync);\n const readOwner=reviewedSelectionRead();\n const readProductionOwner=readSelectionProductionOwners(readFileSync,readOwner);\n const retiredInput=readRetiredController(readOwner);\n assert(retiredInput.restored,'only the exact pointer successor can restore the retired input owner');\n for(const [path,row]of Object.entries(sourceEpoch.proof.current)){\n  const source=path===retiredControllerPath?beforeCharacterPreparationSource(path,retiredInput.source,readProductionOwner)\n   :beforeCurrentSelectionProductionSource(path,readProductionOwner,readOwner);\n  assert.equal(hash(norm(source)),row.sha256,'fresh current production owner: '+path);\n }"
    },
    {
-    "at": 62,
-    "before": " assertIntegratedCurrent();\n const readOwner=reviewedSelectionRead();\n // Entrance authentication consumes live owners. The archived build still uses Selection's reviewed inputs.\n const readEntrance=chapterEvidenceCurrentRead(checkedSelectionEntranceRead(readFileSync));\n const readProductionOwner=(path,encoding='utf8')=>uiEntranceOwns(path)?readEntrance(path,encoding):readOwner(path,encoding);\n const retiredInput=readRetiredController(readOwner);",
-    "after": " assertIntegratedCurrent();\n const readCurrent=readBeforeMasterBackflowSource(readFileSync);\n const readOwner=reviewedSelectionRead(readCurrent);\n const readProductionOwner=readSelectionProductionOwners(readFileSync,readOwner);\n const retiredInput=readRetiredController(readOwner);"
+    "at": 80,
+    "before": "  for(const path of paths){\n   assert(!isAbsolute(path)&&!path.split('/').includes('..'));const target=join(directory,path);mkdirSync(dirname(target),{recursive:true});\n   const input=useArchivedOfficialInputs?readReviewedOfficialAssetInput(path):undefined;\n   const predecessor=input??exactReviewedBuildInput(path,readProductionOwner,{beforeReviewedInput:beforeReviewedBuildInput});\n   if(predecessor===undefined)copyFileSync(path,target);",
+    "after": "  for(const path of paths){\n   assert(!isAbsolute(path)&&!path.split('/').includes('..'));const target=join(directory,path);mkdirSync(dirname(target),{recursive:true});\n   const input=useArchivedOfficialInputs?readReviewedOfficialAssetInput(path,readCurrent):undefined;\n   const predecessor=input??exactReviewedBuildInput(path,readProductionOwner,{beforeReviewedInput:beforeReviewedBuildInput});\n   if(predecessor===undefined)copyFileSync(path,target);"
    },
    {
-    "at": 69,
-    "before": "  const source=path===retiredControllerPath?beforeCharacterPreparationSource(path,retiredInput.source,readProductionOwner)\n   :beforeCurrentProductionSource(path,readProductionOwner(path),readProductionOwner);\n  assert.equal(hash(norm(source)),row.sha256,'fresh current production owner: '+path);",
-    "after": "  const source=path===retiredControllerPath?beforeCharacterPreparationSource(path,retiredInput.source,readProductionOwner)\n   :beforeCurrentSelectionProductionSource(path,readProductionOwner,readOwner);\n  assert.equal(hash(norm(source)),row.sha256,'fresh current production owner: '+path);"
-   },
-   {
-    "at": 81,
-    "before": "   assert(!isAbsolute(path)&&!path.split('/').includes('..'));const target=join(directory,path);mkdirSync(dirname(target),{recursive:true});\n   const input=useArchivedOfficialInputs?readReviewedOfficialAssetInput(path):undefined;\n   const predecessor=input??exactReviewedBuildInput(path,readProductionOwner,{beforeReviewedInput:beforeReviewedBuildInput});",
-    "after": "   assert(!isAbsolute(path)&&!path.split('/').includes('..'));const target=join(directory,path);mkdirSync(dirname(target),{recursive:true});\n   const input=useArchivedOfficialInputs?readReviewedOfficialAssetInput(path,readCurrent):undefined;\n   const predecessor=input??exactReviewedBuildInput(path,readProductionOwner,{beforeReviewedInput:beforeReviewedBuildInput});"
-   },
-   {
-    "at": 123,
-    "before": "   for(const path of reviewedOfficialAssetInputPaths){\n    const expected=readReviewedOfficialAssetInput(path);\n    assert.equal(norm(readFileSync(join(directory,path),'utf8')),norm(expected),'exact staged official-assets input: '+path);",
-    "after": "   for(const path of reviewedOfficialAssetInputPaths){\n    const expected=readReviewedOfficialAssetInput(path,readCurrent);\n    assert.equal(norm(readFileSync(join(directory,path),'utf8')),norm(expected),'exact staged official-assets input: '+path);"
+    "at": 122,
+    "before": "  if(useArchivedOfficialInputs){\n   for(const path of reviewedOfficialAssetInputPaths){\n    const expected=readReviewedOfficialAssetInput(path);\n    assert.equal(norm(readFileSync(join(directory,path),'utf8')),norm(expected),'exact staged official-assets input: '+path);\n   }",
+    "after": "  if(useArchivedOfficialInputs){\n   for(const path of reviewedOfficialAssetInputPaths){\n    const expected=readReviewedOfficialAssetInput(path,readCurrent);\n    assert.equal(norm(readFileSync(join(directory,path),'utf8')),norm(expected),'exact staged official-assets input: '+path);\n   }"
    }
   ]
  },
@@ -436,13 +426,86 @@ export function checkedSelectionReceiptRead(read){
  return checked;
 }
 
+export const selectionNodeNoticePath='src/lua/abyss_node_ui.lua';
+// Selection's linked notices use the #1023 stage before the older entrance
+// inversion. The general Master replay can still read its original e483 view.
+const combinedNodeNotice=Object.freeze({
+ "current": {
+  "sha256": "cebee495d15a561758bdc28b11e40a01eb9b7b2bb052bf872f72d77de993d12e",
+  "gitBlob": "1fa5e7e6f78663362a8171d21186ffc9eb9575ab"
+ },
+ "previous": {
+  "sha256": "72755f5190b5d98d40e668bcf033cc0ee3f2056e2494a94a7a147e60cd1d1cf1",
+  "gitBlob": "f8b2b473121054b5c2207a608d926a9528476d16"
+ },
+ "hunks": [
+  {
+   "at": 30,
+   "before": "    return layout.event.reference and node and node.type=='event' and not ctx.self.failed\n        and (ctx.self.notice=='' or message==ctx.child('eventView'):GetChild('body').text)\nend\nlocal function snapshotDeck(deck)",
+   "after": "    return layout.event.reference and node and node.type=='event' and not ctx.self.failed\n        and (ctx.self.notice=='' or message==ctx.child('eventView'):GetChild('body').text)\nend\nlocal function positionNotice(control,screen,top)\n    -- The old position was hidden by the taller mobile chrome. Room notes\n    -- now sit in the content area, clear of the role-specific heading or choices.\n    if screen=='treasureView' then\n        control:SetAnchoredPosition(-366,top-36)\n        control:SetSizeDelta(460,64)\n    elseif screen=='eventView' then\n        control:SetAnchoredPosition(-365,-225)\n        control:SetSizeDelta(400,52)\n    elseif screen=='campView' then\n        control:SetAnchoredPosition(0,-305)\n        control:SetSizeDelta(760,52)\n    else\n        control:SetAnchoredPosition(0,top-30)\n        control:SetSizeDelta(760,52)\n    end\nend\nlocal function snapshotDeck(deck)"
+  },
+  {
+   "at": 162,
+   "before": "    end\n\n    function ctx.syncNodeIdentity(node)\n        if ctx.self.renderRun ~= ctx.self.run or ctx.self.renderMap ~= ctx.self.map or ctx.self.nodeId ~= (node and node.id) then",
+   "after": "    end\n\n    function ctx.hostRendersEvent(node)\n        return ctx.options.hostRendersEvents and node and node.type == \"event\"\n    end\n\n    function ctx.hostLeavesForMap()\n        local self,owner=ctx.self,ctx.self.run\n        return ctx.options.hostRendersMap and ctx.onChange and owner and owner.phase=='map'\n            and owner.nodeFlow and owner.nodeFlow.complete and not self:holding()\n            and not require('abyss_relic_pending').owner(owner)\n    end\n\n    function ctx.syncNodeIdentity(node)\n        if ctx.self.renderRun ~= ctx.self.run or ctx.self.renderMap ~= ctx.self.map or ctx.self.nodeId ~= (node and node.id) then"
+  },
+  {
+   "at": 197,
+   "before": "    end\n\n    function ctx.renderNodePage(view,node,result,active)\n        local screen,hint=ctx.nodeScreen(view,node,result,active)\n        local recallSource,treasureSource\n        if screen ~= 'pickerView' or not ctx.enhancedForge(node) then\n            ctx.campUI:hide(active and node.type == 'camp')",
+   "after": "    end\n\n    local function prepareNodePage(screen, node, active, matchBoard)\n        if screen ~= 'pickerView' or not ctx.enhancedForge(node) then\n            ctx.campUI:hide(active and node.type == 'camp')"
+  },
+  {
+   "at": 203,
+   "before": "        for _, name in ipairs({ \"campView\", \"pickerView\", \"eventView\", \"treasureView\" }) do ctx.show(ctx.child(name), name == screen) end\n        -- Reset shared card faces before the ordinary picker/camp renderer writes them.\n        local matchBoard = active and MatchUI.isBoard(node.event)\n        if not matchBoard then ctx.resetMatch() end\n        if matchBoard then hint=ctx.renderMatch(view,node)\n        elseif screen == \"shopView\" then hint = ctx.renderShop(view, node)",
+   "after": "        for _, name in ipairs({ \"campView\", \"pickerView\", \"eventView\", \"treasureView\" }) do ctx.show(ctx.child(name), name == screen) end\n        -- Reset shared card faces before the ordinary picker/camp renderer writes them.\n        if not matchBoard then ctx.resetMatch() end\n    end\n\n    function ctx.renderNodePage(view,node,result,active)\n        local screen,hint=ctx.nodeScreen(view,node,result,active)\n        local recallSource,treasureSource\n        local matchBoard = active and MatchUI.isBoard(node.event)\n        prepareNodePage(screen,node,active,matchBoard)\n        if matchBoard then hint=ctx.renderMatch(view,node)\n        elseif screen == \"shopView\" then hint = ctx.renderShop(view, node)"
+  },
+  {
+   "at": 227,
+   "before": "    end\n\n    function ctx.refreshNodeNotice(node,active,hint,screen)\n        -- The merchant speaks in his own dialogue box; the notice keeps only shop facts.",
+   "after": "    end\n\n    local function setRoomNoticePosition(notice,screen)\n        if ctx.options.mobileRunHud then positionNotice(notice,screen,ctx.options.mobileRunHud.contentTop) end\n    end\n    function ctx.refreshNodeNotice(node,active,hint,screen)\n        -- The merchant speaks in his own dialogue box; the notice keeps only shop facts."
+  },
+  {
+   "at": 235,
+   "before": "        local message=ctx.self.notice ~= \"\" and ctx.self.notice or hint or \"\"\n        local notice=ctx.child(\"notice\")\n        if screen == \"pickerView\" and not ctx.enhancedForge(node) and not MatchUI.isBoard(node.event) then\n            -- Keep prompts and errors in the same coordinate space as the paged cards.",
+   "after": "        local message=ctx.self.notice ~= \"\" and ctx.self.notice or hint or \"\"\n        local notice=ctx.child(\"notice\")\n        setRoomNoticePosition(notice,screen)\n        if screen == \"pickerView\" and not ctx.enhancedForge(node) and not MatchUI.isBoard(node.event) then\n            -- Keep prompts and errors in the same coordinate space as the paged cards."
+  },
+  {
+   "at": 258,
+   "before": "    end\n\n    function ctx.resultFooter()\n        local confirmLabel,confirmOk,confirmFn\n        confirmLabel, confirmOk = \"继续\", true\n        confirmFn = function()\n            ctx.self.result, ctx.self.notice = nil, \"\"\n            ctx.self:render() if ctx.onChange then ctx.onChange(true, \"continue\", ctx.self) end\n            return true, \"continue\"\n        end",
+   "after": "    end\n\n    function ctx.resultFooter(node)\n        local confirmLabel,confirmOk,confirmFn\n        confirmLabel, confirmOk = \"继续\", true\n        confirmFn = function()\n            ctx.self.result, ctx.self.notice = nil, \"\"\n            if not ctx.hostRendersEvent(node) and not ctx.hostLeavesForMap() then ctx.self:render() end\n            if ctx.onChange then ctx.onChange(true, \"continue\", ctx.self) end\n            return true, \"continue\"\n        end"
+  },
+  {
+   "at": 275,
+   "before": "            return EndingUI.footer(ctx.self,confirm,ctx.commit)\n        elseif result then\n            backLabel,confirmLabel,confirmOk,confirmFn,skipRestReward,recallObserve=ctx.resultFooter()\n        elseif node and node.complete then\n            backLabel,confirmLabel,confirmOk,confirmFn,skipRestReward,recallObserve=ctx.completedFooter(view)",
+   "after": "            return EndingUI.footer(ctx.self,confirm,ctx.commit)\n        elseif result then\n            backLabel,confirmLabel,confirmOk,confirmFn,skipRestReward,recallObserve=ctx.resultFooter(node)\n        elseif node and node.complete then\n            backLabel,confirmLabel,confirmOk,confirmFn,skipRestReward,recallObserve=ctx.completedFooter(view)"
+  },
+  {
+   "at": 326,
+   "before": "    end\n\n    function ctx.self:render()\n        if not self.run then ctx.root:SetVisible(false);return false, \"node_unbound\" end",
+   "after": "    end\n\n    local function projectNode(self)\n        local flow=self.run.nodeFlow\n        if ctx.hostRendersEvent(flow) or ctx.options.enhancedRooms and flow and self.run.phase=='node'\n            and (flow.type=='camp' or flow.type=='shop') then\n            return Nodes.roomView(self.run,self.map)\n        end\n        return Nodes.view(self.run,self.map)\n    end\n\n    function ctx.self:render()\n        if not self.run then ctx.root:SetVisible(false);return false, \"node_unbound\" end"
+  },
+  {
+   "at": 341,
+   "before": "        ctx.inspectCards={}\n        if ctx.renderRelicPending()then ctx.campUI:hide();ctx.clearUnusedNativeArt(previousArt);return true end\n        local view = Nodes.view(self.run, self.map)\n        local node = view.node\n        ctx.syncNodeIdentity(node)",
+   "after": "        ctx.inspectCards={}\n        if ctx.renderRelicPending()then ctx.campUI:hide();ctx.clearUnusedNativeArt(previousArt);return true end\n        local view = projectNode(self)\n        local node = view.node\n        ctx.syncNodeIdentity(node)"
+  }
+ ]
+});
+export function beforeSelectionNodeNoticeSource(path,raw){
+ if(path!==selectionNodeNoticePath)return raw;
+ const source=decodedSelectionSource(raw);
+ const prior=beforeReceipt(path,source,combinedNodeNotice);
+ assert(prior!==source,'combined linked owner identity: '+path);
+ return Buffer.isBuffer(raw)?Buffer.from(prior):prior;
+}
+
 export function checkedSelectionEntranceRead(read){
  return (path,encoding)=>{
   const raw=read(path,encoding);
   if(!uiEntranceOwns(path))return raw;
   const source=decodedSelectionSource(raw);
   assert(uniformSelectionSource(source),'uniform current Selection entrance source: '+path);
-  const prior=beforeNodeNoticeSource(path,source);
+  const prior=beforeNodeNoticeSource(path,beforeSelectionNodeNoticeSource(path,source));
   return prior===source?raw:Buffer.isBuffer(raw)?Buffer.from(prior):prior;
  };
 }

@@ -11,7 +11,7 @@ import {exactReviewedBuildInput} from './rebased-release-source.mjs';
 import {beforeReviewedBuildInput,chapterEvidenceCurrentRead} from './fork-preflight-source.mjs';
 import {reviewedSelectionRead} from './reviewed-selection-current-source.mjs';
 import {uiEntranceOwns} from './ui-entrance-source.mjs';
-import {checkedSelectionEntranceRead} from './ui-selection-current-source.mjs';
+import {checkedSelectionEntranceRead,selectionNodeNoticePath} from './ui-selection-current-source.mjs';
 import {stsStylePriorRuntime} from './sts-style-prior-runtime.mjs';
 import {beforeDeckPagesSuiteSource,readRetiredController,retiredControllerPath} from './input-retirement-source.mjs';
 import {beforeMasterBackflowSource,readBeforeMasterBackflowSource} from './master-backflow-source.mjs';
@@ -29,7 +29,7 @@ export function readSelectionProductionOwners(read,readOwner){
  const readEntrance=chapterEvidenceCurrentRead(checkedSelectionEntranceRead((path,encoding)=>{
   const raw=read(path,encoding);
   const source=Buffer.isBuffer(raw)?raw.toString('utf8'):raw;
-  if(beforeOfficialCharacterBackflow(path,source)!==source)return raw;
+  if(path===selectionNodeNoticePath||beforeOfficialCharacterBackflow(path,source)!==source)return raw;
   return beforeMasterBackflowSource(path,raw);
  }));
  return (path,encoding='utf8')=>uiEntranceOwns(path)?readEntrance(path,encoding):readOwner(path,encoding);
@@ -62,7 +62,7 @@ export function replayReviewedSelection(script='tests/sts-character-reference.te
  const expected=reviewedContracts[script],root=process.cwd();
  assertIntegratedCurrent();
  const readCurrent=readBeforeMasterBackflowSource(readFileSync);
- const readOwner=reviewedSelectionRead(readCurrent);
+ const readOwner=reviewedSelectionRead();
  const readProductionOwner=readSelectionProductionOwners(readFileSync,readOwner);
  const retiredInput=readRetiredController(readOwner);
  assert(retiredInput.restored,'only the exact pointer successor can restore the retired input owner');
