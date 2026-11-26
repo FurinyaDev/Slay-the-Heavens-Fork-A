@@ -47,29 +47,42 @@ function beforeSilentPlanningSource(path,source){
  }),'exact Silent planning fixture predecessor');
  return source===lf?prior:prior.replaceAll('\n','\r\n');
 }
-const defectPlanningTest='tests/defect-final-execute.test.mjs';
-const defectPlanningTestCurrent={"sha256":"7492f9c4cc3f68b0c4a0009288a26589f926a988d115003aa2386ee3846db35b","gitBlob":"b1f884149f375b12bd8078bfb6cef5a1b8524458"};
-const defectPlanningTestBefore={"sha256":"353e601af4ec137fb2b0a05e92cbf575b6583d22a09995b73508e22f8d835d5b","gitBlob":"53f6cdf4a47f0d88c102107b3a51c050fb96a87b"};
-const defectPlanningTestHunks=[
- {"at":10,"before":"const before=read('tests/fixtures/defect-final-execute-before.lua');\nconst current=()=>read(path);","after":"const before=read('tests/fixtures/defect-final-execute-before.lua');\n// a111076f (#940) changed the base Equilibrium card body, which is recorded in\n// the complete state graph. Apply just that approved copy to the expected VM.\nconst previousEquilibriumText = \"text='获得13点格挡。本回合保留所有非虚无手牌。',\";\nconst approvedEquilibriumText = \"text='获得13点格挡。本回合保留所有非虚无手牌',\";\nconst expectedSource = before.replace(previousEquilibriumText, approvedEquilibriumText);\nconst current=()=>read(path);"},
- {"at":29,"before":" assert.equal(createHash('sha1').update(`blob ${Buffer.byteLength(before)}\\0`).update(before).digest('hex'),'16821c6065a7819bae767e1f6f511c497eba903a');\n});","after":" assert.equal(createHash('sha1').update(`blob ${Buffer.byteLength(before)}\\0`).update(before).digest('hex'),'16821c6065a7819bae767e1f6f511c497eba903a');\n assert.equal(before.split(previousEquilibriumText).length, 2, 'one frozen Equilibrium card body');\n});"},
- {"at":34,"before":"].map(n=>'tests/lua/'+n+'.lua')])test(`${fixture}: independent VMs compare complete graphs, aliases, returns, RNG, queues and errors`,()=>{\n const a=run(before,fixture),b=run(current(),fixture);\n assert.equal(a.status,0,a.error);assert.equal(b.status,0,b.error);","after":"].map(n=>'tests/lua/'+n+'.lua')])test(`${fixture}: independent VMs compare complete graphs, aliases, returns, RNG, queues and errors`,()=>{\n const a=run(expectedSource,fixture),b=run(current(),fixture);\n assert.equal(a.status,0,a.error);assert.equal(b.status,0,b.error);"},
-];
+const defectPlanningSources=Object.freeze({
+ 'tests/defect-final-execute.test.mjs':{
+  before:{"sha256":"353e601af4ec137fb2b0a05e92cbf575b6583d22a09995b73508e22f8d835d5b","gitBlob":"53f6cdf4a47f0d88c102107b3a51c050fb96a87b"},
+  after:{"sha256":"7492f9c4cc3f68b0c4a0009288a26589f926a988d115003aa2386ee3846db35b","gitBlob":"b1f884149f375b12bd8078bfb6cef5a1b8524458"},
+  hunks:[
+   {"at":10,"before":"const before=read('tests/fixtures/defect-final-execute-before.lua');\nconst current=()=>read(path);","after":"const before=read('tests/fixtures/defect-final-execute-before.lua');\n// a111076f (#940) changed the base Equilibrium card body, which is recorded in\n// the complete state graph. Apply just that approved copy to the expected VM.\nconst previousEquilibriumText = \"text='获得13点格挡。本回合保留所有非虚无手牌。',\";\nconst approvedEquilibriumText = \"text='获得13点格挡。本回合保留所有非虚无手牌',\";\nconst expectedSource = before.replace(previousEquilibriumText, approvedEquilibriumText);\nconst current=()=>read(path);"},
+   {"at":29,"before":" assert.equal(createHash('sha1').update(`blob ${Buffer.byteLength(before)}\\0`).update(before).digest('hex'),'16821c6065a7819bae767e1f6f511c497eba903a');\n});","after":" assert.equal(createHash('sha1').update(`blob ${Buffer.byteLength(before)}\\0`).update(before).digest('hex'),'16821c6065a7819bae767e1f6f511c497eba903a');\n assert.equal(before.split(previousEquilibriumText).length, 2, 'one frozen Equilibrium card body');\n});"},
+   {"at":34,"before":"].map(n=>'tests/lua/'+n+'.lua')])test(`${fixture}: independent VMs compare complete graphs, aliases, returns, RNG, queues and errors`,()=>{\n const a=run(before,fixture),b=run(current(),fixture);\n assert.equal(a.status,0,a.error);assert.equal(b.status,0,b.error);","after":"].map(n=>'tests/lua/'+n+'.lua')])test(`${fixture}: independent VMs compare complete graphs, aliases, returns, RNG, queues and errors`,()=>{\n const a=run(expectedSource,fixture),b=run(current(),fixture);\n assert.equal(a.status,0,a.error);assert.equal(b.status,0,b.error);"},
+  ],
+ },
+ 'tests/helpers/defect-final-execute-vm.mjs':{
+  before:{"sha256":"993cc0bcb860e3266cf943113398d9713f16a9f67399387ca752802bfa9a96e8","gitBlob":"0f81660881bbde895c8d7d3bdca5d5f284be4429"},
+  after:{"sha256":"1c3b71acd84b99cf3a94a710b1e1e4f0e0e4dc651d9c3ccad1e81b2ab4c4936f","gitBlob":"ef5d1c1d8c3a0e3f880bf8c08ce2f9a2b9d7f734"},
+  hunks:[
+   {"at":26,"before":"DEFECT_EXECUTE_UNOBSERVED=original\nM.execute=function(combat,s,e,q)\n local result=table.pack(pcall(original,combat,s,e,q));local observed=result\n if not result[1]and type(result[2])=='string'then observed=table.pack(table.unpack(result,1,result.n));observed[2]=DEFECT_EXECUTE_ERROR(result[2])end\n DEFECT_EXECUTE_GRAPH_WRITE({state=s,effect=e,returned=observed},'execute:'..tostring(e.action),true)\n if not result[1]then error(result[2],0)end","after":"DEFECT_EXECUTE_UNOBSERVED=original\nlocal function observedResult(result)\n if result[1] or type(result[2])~='string'then return result end\n local observed=table.pack(table.unpack(result,1,result.n))\n observed[2]=DEFECT_EXECUTE_ERROR(result[2])\n return observed\nend\nM.execute=function(combat,s,e,q)\n local result=table.pack(pcall(original,combat,s,e,q))\n DEFECT_EXECUTE_GRAPH_WRITE({state=s,effect=e,returned=observedResult(result)},'execute:'..tostring(e.action),true)\n if not result[1]then error(result[2],0)end"},
+   {"at":42,"before":"  local outer=depth==0;depth=depth+1;local returned=table.pack(pcall(fn,s,...));depth=depth-1\n  if outer then DEFECT_EXECUTE_GRAPH_WRITE({state=s,returned=returned},name,true)end\n  if not returned[1]then error(returned[2],0)end","after":"  local outer=depth==0;depth=depth+1;local returned=table.pack(pcall(fn,s,...));depth=depth-1\n  if outer then DEFECT_EXECUTE_GRAPH_WRITE({state=s,returned=observedResult(returned)},name,true)end\n  if not returned[1]then error(returned[2],0)end"},
+  ],
+ },
+});
 
-// Current Equilibrium graph comparisons keep the approved card text. The
-// original planning receipt reads its complete fixture from before #940.
-function beforeDefectPlanningTest(path,source){
- if(path!==defectPlanningTest||!exactSourceMatches(source,defectPlanningTestCurrent))return source;
+// Planning receipts retain the test and VM bytes recorded before the current
+// Equilibrium text and relocated-error graph comparisons were added.
+function beforeDefectPlanningSource(path,source){
+ if(!Object.hasOwn(defectPlanningSources,path))return source;
+ const {before,after,hunks}=defectPlanningSources[path];
+ if(!exactSourceMatches(source,after))return source;
  const lf=normalize(source);
  if(source!==lf&&source!==lf.replaceAll('\n','\r\n'))return source;
- const prior=restoreExactFixtureHunks({path,beforeSha256:defectPlanningTestBefore.sha256,
-  afterSha256:defectPlanningTestCurrent.sha256,hunks:defectPlanningTestHunks},path,lf);
- assert(exactSourceMatches(prior,defectPlanningTestBefore),'exact Defect planning test predecessor');
+ const prior=restoreExactFixtureHunks({path,beforeSha256:before.sha256,
+  afterSha256:after.sha256,hunks},path,lf);
+ assert(exactSourceMatches(prior,before),'exact Defect planning predecessor: '+path);
  return source===lf?prior:prior.replaceAll('\n','\r\n');
 }
 export function preRunHudCiSource(path,source){
  source=beforeSilentPlanningSource(path,source);
- source=beforeDefectPlanningTest(path,source);
+ source=beforeDefectPlanningSource(path,source);
  source=preMenuRedCiSource(path,beforePotionReadabilityEvidence(path,source));
  source=preStsStyleCiSource(path,source);
  source=preNativePreviewCiSource(path,source);
