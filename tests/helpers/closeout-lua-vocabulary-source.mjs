@@ -5,26 +5,44 @@ import {gunzipSync} from 'node:zlib';
 import {restoreExactFixtureHunks} from './exact-fixture-hunks.mjs';
 import {exactSourceMatches} from './source-fingerprint.mjs';
 
-const bytes=readFileSync(new URL('../fixtures/closeout-lua-vocabulary-source.json.gz',import.meta.url));
-assert.equal(createHash('sha256').update(bytes).digest('hex'),
- '09e76062cb37be9e4adc50116ba16dab01e2e35e8e5a75cf13f31fa9969633e7','exact #951 closeout Lua source packet');
-const {schemaVersion,base,head,files}=JSON.parse(gunzipSync(bytes));
-assert.equal(schemaVersion,1);
-assert.equal(base,'7348ab8598c8607712d525bd732239f89bb52830');
-assert.equal(head,'b2f74d99a3d80e60b99165b6380987cda8b4488d');
+function readPacket(name,digest,base,head){
+ const bytes=readFileSync(new URL(`../fixtures/${name}.json.gz`,import.meta.url));
+ assert.equal(createHash('sha256').update(bytes).digest('hex'),digest,'exact closeout Lua source packet: '+name);
+ const packet=JSON.parse(gunzipSync(bytes));
+ assert.equal(packet.schemaVersion,1);
+ assert.equal(packet.base,base);
+ assert.equal(packet.head,head);
+ return packet.files;
+}
 
-// Each entry binds a closeout receipt's original digest to the exact #951
-// successor. Live Lua execution and other receipt epochs retain their readers.
+const vocabulary=readPacket('closeout-lua-vocabulary-source',
+ '09e76062cb37be9e4adc50116ba16dab01e2e35e8e5a75cf13f31fa9969633e7',
+ '7348ab8598c8607712d525bd732239f89bb52830','b2f74d99a3d80e60b99165b6380987cda8b4488d');
+const backflow=readPacket('closeout-lua-backflow-source',
+ 'a27f512a06a5dfc906cff78e8d3e5a12adbda289e4e337a2319259c70f5c74e9',
+ '903bf2a31e91f10fb24763ab4cea23d586d0bb83','7228aaa83b0995e1dc6e36955cfd6e773c199f07');
+
+function receiptFor(files,path,digest){
+ if(!Object.hasOwn(files,path))return;
+ const row=files[path];
+ return digest===row.beforeSha256?row:undefined;
+}
+
+// The backflow packet carries the reviewed live successor for paths that moved
+// beyond #951 and wires the genuine merchant fixture rename to the old receipt.
+// Only an exact receipt digest and live Git identity authorize an older read.
 export function readCloseoutLuaVocabularyReceipt(path,digest,readCurrent){
- const row=Object.hasOwn(files,path)?files[path]:undefined;
- if(!row||digest!==row.beforeSha256)return undefined;
- const source=readCurrent(path,'utf8');
+ const row=receiptFor(backflow,path,digest)??receiptFor(vocabulary,path,digest);
+ if(!row)return;
+ const sourcePath=row.sourcePath??path;
+ if(sourcePath!==path)assert.throws(()=>readCurrent(path,'utf8'),{code:'ENOENT'},'renamed closeout Lua receipt input reappeared: '+path);
+ const source=readCurrent(sourcePath,'utf8');
  assert(exactSourceMatches(source,{sha256:row.afterSha256,gitBlob:row.afterBlob}),
   'current closeout Lua receipt input changed: '+path);
  const lf=source.replaceAll('\r\n','\n');
  assert(source===lf||source===lf.replaceAll('\n','\r\n'),'mixed closeout Lua receipt line endings: '+path);
  const prior=restoreExactFixtureHunks({...row,path},path,lf);
  assert(exactSourceMatches(prior,{sha256:row.beforeSha256,gitBlob:row.beforeBlob}),
-  'exact #951 closeout Lua receipt predecessor: '+path);
+  'exact closeout Lua receipt predecessor: '+path);
  return prior;
 }
