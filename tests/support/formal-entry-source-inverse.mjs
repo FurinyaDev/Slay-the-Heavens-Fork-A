@@ -1,4 +1,5 @@
 import {preCurrentSource} from '../helpers/task77-current-source-layers.mjs';
+import {readCloseoutLuaVocabularyReceipt} from '../helpers/closeout-lua-vocabulary-source.mjs';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
@@ -11,8 +12,12 @@ export const formalEntryInverses = JSON.parse(bytes).files;
 // These exact launch-step changes affect historical source-identity proofs. The live
 // trace separately checks every current write and conserves all 79475 old rows.
 export function preFormalEntrySource(path, source) {
-  const text = preCurrentSource(path,source);
+  let text = preCurrentSource(path,source);
   let binding = formalEntryInverses[path];
+  // The sealed elite fixture still uses the pre-#951 encounter name.
+  // Authenticate the current file before restoring that exact Git input.
+  if(path==='tests/lua/elite_relic_reward_ui.lua' && ![binding.beforeSha256,binding.afterSha256].includes(hash(text)))
+    text=readCloseoutLuaVocabularyReceipt(path,binding.afterSha256,()=>source)??text;
   // Compose the same immutable launch hunks with the two reviewed relic glyphs.
   // Their ten inserted lines precede every launch hunk. Both complete identities
   // bind every glyph byte and position; no field filtering or wildcard inverse.
