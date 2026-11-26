@@ -42,6 +42,7 @@ const updatedSources = new Map([
   ['tests/game-ui.test.mjs', ['24e4ac5ceaa35a28372b53ab1e7baf4f0442383b96b0218f7457f94f37e49fec', '69aa3d7748b13116293ae97a31347cca31b6d643']],
   ['tests/helpers/fork-preflight-source.mjs', ['a76f1bc4ba7bea5dbf719d5ec97a2f9e9163148d8af853f39a2e56c12558e815', 'cac5d6c40be57b918011aa296cb3e99c332e09ae']],
   ['tests/helpers/isolated-current-source.mjs', ['b839ff3ffa5985995b5720350e5554816f87d0365069b76bc5c447d495f9e5e6', '6cfa35ef0d27fef1acaae4f5db501ec52fbef3b1']],
+  ['tests/helpers/pr323-accepted-source-inverse.mjs', ['09a393bb0cac34f4f6ea319905486f36ccb3ce39468c712c195bbbfd512b118b', 'ebaedb48d3128518a3a1654c5990b8dbed8d958c']],
   ['tests/helpers/release-map-deck-source.mjs', ['e503e507a96756920292a4a03659803404748250142e987f88aee7ebe654d970', '0a09e0eb4477e2b898ec309a86b108af3329ce2f']],
   ['tests/integration-source-epoch.test.mjs', ['fd0cb659920b58cb0354c37acba7344028847c06211bb0339cc0deb38bbc2a8b', '8ec5fab8e038c2b0a3e1201a353283a28f02293f']],
   ['tests/lua/dynamic_monster_input_bindings.lua', ['8f79e3591cbcf361879fd664fc72eb9a495cb1004c22ad5a2b6fa3dff813ec21', '95895f0e46424f30b6f207d44b0891a33cece192']],
@@ -50,7 +51,6 @@ const updatedSources = new Map([
   ['tests/official-assets-runtime.test.mjs', ['475d4772d0224ee4690cb5215d2536ac4961efe8a1415a40c3219dcc70fd4cde', '4ab27d84b1640b8ee6c48daaecc3c6aae1b416c8']],
   ['tests/official-battle-relic-icons.test.mjs', ['02ac336167bbf416ca27af8679c8983dad1420820128a5966dd8c796356a6b5e', '01dd97b42135c76c110fae8f2acc6e71b7bd8be4']],
   ['tests/run-max-hp-config-inverse.test.mjs', ['0ab6687bb1f64cbe27b15ec0b7270fc857c820fbd0de4f55605c0d336b37cd9c', '08e5ba78015e099203cbd69bdb93ed5862c7b756']],
-  ['tests/helpers/pr323-accepted-source-inverse.mjs', ['09a393bb0cac34f4f6ea319905486f36ccb3ce39468c712c195bbbfd512b118b', 'ebaedb48d3128518a3a1654c5990b8dbed8d958c']],
 ]);
 
 // The local map return repair follows the already authenticated backflow.
