@@ -5,6 +5,7 @@ status: To Do
 assignee:
   - '@Furinya'
 created_date: '2026-11-25 21:02'
+updated_date: '2026-11-26 00:19'
 labels:
   - v2.2.0
 milestone: m-8
@@ -33,3 +34,9 @@ ordinal: 220000
 <!-- AC:BEGIN -->
 - [ ] #1 遗留项明确现状和处置，纳入本版的修复通过定向测试与独审
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+两幕接地试制复验看到飞行状态图标为问号。独立诊断在原生桌面和触屏控件复现，飞行层数 3→2→1 与落地移除正常。唯一已有可辨认的羽翼图标已用于无实体状态，独立飞行图形待批准；当前阶段不与接地状态机混合。
+<!-- SECTION:NOTES:END -->
