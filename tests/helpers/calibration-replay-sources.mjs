@@ -13,6 +13,7 @@ import {authenticateDevelopBackflow,beforeDeckPages} from './develop-release-bac
 import {beforeCurrentReplayFixes} from './current-replay-fix-sources.mjs';
 import {beforeUiEntranceWitness} from './ui-entrance-source.mjs';
 import {stsStylePriorRuntime} from './sts-style-prior-runtime.mjs';
+import {stsStyleCiBytes} from './sts-style-ci-binding.mjs';
 
 const hash=(bytes,algorithm='sha256')=>createHash(algorithm).update(bytes).digest('hex');
 const blob=source=>hash(`blob ${Buffer.byteLength(source)}\0${source}`,'sha1');
@@ -91,6 +92,26 @@ export function beforeCalibrationReplay(path,source){
 }
 const copierPath='tests/helpers/copy-integration-source-closure.mjs';
 const historicalStsEntry='tests/helpers/historical-sts-style-entry.mjs';
+const isolatedStsEntry={
+ sha256:'a762a913178c6d0fb8e4d8f72042bfe226145528657f90c173900a9cfaf4b619',gitBlob:'8fb1856e9fe072ab1bb0229937b35cfaad0966d5',
+};
+const retirementStsEntry={
+ sha256:'96c580efcf1c7ed4e1be8b1bc3a27d15212c8b485e5a345d5ec450ad364017ae',gitBlob:'ce9126941e02931a16a28e10e20182c41799c7ef',
+};
+function historicalStsEntryAfterInputRetirement(){
+ // The archived StS CI contract still reads the original launcher as data.
+ // Its historical projection never participates in executing the capsule.
+ const {source}=JSON.parse(gunzipSync(stsStyleCiBytes)).helperSources[historicalStsEntry];
+ const path="import {runLua} from '../../scripts/test-lua.mjs';";
+ const prior=source.replace(path,()=>`import {beforeInputRetirement,beforeInputRetirementStsSuite} from './input-retirement-source.mjs';
+import {inputRetirementStsFixtureSource,inputRetirementStsWitness} from './input-retirement-sts-binding.mjs';
+${path}`)
+  .replace("assertStsStyleCiCurrent(discoverJs(),(p,e)=>readFileSync(join(root,p),e));",()=>`const suite=beforeInputRetirementStsSuite(discoverJs(),(p,e)=>inputRetirementStsFixtureSource(p,readFileSync(join(root,p),e)),inputRetirementStsWitness);
+assertStsStyleCiCurrent(suite.paths,suite.read);`)
+  .replace('update(raw(script).replaceAll','update(beforeInputRetirement(script,raw(script)).replaceAll');
+ assert(matches(prior,retirementStsEntry),'exact historical StS runner predecessor');
+ return prior;
+}
 export function beforeCurrentHistoricalStsSource(path,source){
  if(Buffer.isBuffer(source)){
   const text=source.toString('utf8'),prior=beforeCurrentHistoricalStsSource(path,text);
@@ -102,15 +123,17 @@ export function beforeCurrentHistoricalStsSource(path,source){
  source=beforeUiEntranceWitness(path,source);
  if(path===copierPath)return beforeCurrentReplayCopier(path,source);
  if(path!==historicalStsEntry)return beforeCurrentReplayFixes(path,source);
+ if(matches(source,isolatedStsEntry)&&(!source.includes('\r')||lf(source).replaceAll('\n','\r\n')===source)){
+  const prior=historicalStsEntryAfterInputRetirement();
+  return source.includes('\r\n')?prior.replaceAll('\n','\r\n'):prior;
+ }
  if(!matches(source,{
   sha256:'f358b5956f55a33890ea4f4481b75bcd0bfc56048cbc50e4b45a0f9870654c3b',gitBlob:'eb9b2d891344249dfb6644f8800240e3078d38b6',
  }))return source;
  const prior=lf(source)
   .replace("import {beforeCurrentHistoricalStsSource} from './calibration-replay-sources.mjs';\n",'')
   .replace('beforeCurrentHistoricalStsSource(p,readFileSync(join(root,p),e))','readFileSync(join(root,p),e)');
- assert(matches(prior,{
-  sha256:'96c580efcf1c7ed4e1be8b1bc3a27d15212c8b485e5a345d5ec450ad364017ae',gitBlob:'ce9126941e02931a16a28e10e20182c41799c7ef',
- }),'exact historical StS runner predecessor');
+ assert(matches(prior,retirementStsEntry),'exact historical StS runner predecessor');
  return source.includes('\r\n')?prior.replaceAll('\n','\r\n'):prior;
 }
 export function beforeCurrentReplayCopier(path,source){
