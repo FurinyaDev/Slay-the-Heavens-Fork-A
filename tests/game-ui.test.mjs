@@ -88,7 +88,8 @@ test('generated Chinese display and native tree exercise the real game entry and
   const scripts = [
     ['tests/lua/game_ui.lua', /^LUA_GAME_UI_PASS 16$/m],
     ['tests/lua/game_ui_deck.lua', /^LUA_GAME_UI_DECK_PASS 6$/m],
-    ['tests/lua/game_ui_prologue.lua', /^LUA_GAME_UI_PROLOGUE_PASS 13$/m],
+    ['tests/lua/game_ui_prologue.lua',
+      /^ok prologue 14 - transition stays silent on entry, completion and cancellation\r?\nLUA_GAME_UI_PROLOGUE_PASS 14$/m],
   ];
   const output = scripts.map(([script, marker]) => {
     const result = runLua(script);
