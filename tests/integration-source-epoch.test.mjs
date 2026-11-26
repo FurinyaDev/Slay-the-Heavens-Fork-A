@@ -6,7 +6,7 @@ import {beforePc13RewardCover,pc13RewardCoverSourcePaths} from './helpers/pc13-r
 import {authorizeReleaseUiRestore,beforeAuthenticatedReleaseUiRestore,beforeReleaseControlsGuideRemoval,releaseControlsGuideRemovalSourcePaths} from './helpers/release-ui-restore-source.mjs';
 import {assertCharacterPreparationSources,beforeCharacterPreparationSource,beforeCurrentProductionSource,characterPreparationOwners} from './helpers/character-preparation-source.mjs';
 import {authenticateInputRetirement,beforeDeckBrowserBackflow,beforePotionBackflow,beforeInputRetirement,beforeInputRetirementReader,assertPointerInputSource,pointerInputPath,retiredControllerPath} from './helpers/input-retirement-source.mjs';
-import {actorFocusAdded,deckPagesAdded,assertActorFocusInventory,assertDevelopBackflowCurrent,assertStasisUpgradeAdded,authenticateDevelopBackflow,stasisUpgradeAddedPaths} from './helpers/develop-release-backflow-source.mjs';
+import {actorFocusAdded,deckPagesAdded,assertActorFocusInventory,assertDevelopBackflowCurrent,assertStasisUpgradeAdded,authenticateDevelopBackflow,beforeDevelopBackflow,stasisUpgradeAddedPaths} from './helpers/develop-release-backflow-source.mjs';
 import test from 'node:test';
 import {addedEntranceModules,beforeUiEntrance,entranceInventory,entrancePredecessor} from './helpers/ui-entrance-source.mjs';
 import assert from 'node:assert/strict';
@@ -22,6 +22,7 @@ import {readHistoricalReleaseCheckpoint} from './helpers/release-historical-sour
 import {beforeCurrentSelectionProductionSource,readReviewedSelectionSource,readSelectionProductionOwners} from './helpers/replay-reviewed-selection.mjs';
 import {reviewedSelectionRead} from './helpers/reviewed-selection-current-source.mjs';
 import {beforeShopPurchaseOwner,shopPurchaseOwner} from './helpers/shop-deck-purchase-source.mjs';
+import {readBeforeMasterBackflowSource} from './helpers/master-backflow-source.mjs';
 const sandbox=process.cwd();
 const {sourceEpoch}=await import('./helpers/combined-epoch/source-epoch.mjs');
 const proof=sourceEpoch.proof,raw=p=>proof.current[p]?.source??null;
@@ -49,8 +50,10 @@ function replayRebasedInput(path,read){
 }
 
 test('input retirement preserves exact older bytes and rejects tampered successor witnesses',()=>{
- const read=path=>readFileSync(path,'utf8');
+ const live=path=>readFileSync(path,'utf8');
+ const read=readBeforeMasterBackflowSource(live);
  const path='src/lua/abyss_map_ui.lua',source=read(path);
+ assert.notEqual(source,live(path),'map owner must cross the exact production backflow');
  const prior=beforeInputRetirement(path,source);
  assert.notEqual(prior,source);
  assert.equal(authenticateInputRetirement(path,source,read),prior);
@@ -65,9 +68,9 @@ test('input retirement preserves exact older bytes and rejects tampered successo
  assert.match(retired,/function M\.new/);
  assert.throws(()=>beforeInputRetirementReader(owner=>owner===pointerInputPath?read(owner)+'\n':read(owner))(retiredControllerPath),/ENOENT/);
  assert.throws(()=>assertPointerInputSource(read(pointerInputPath)+'\n'),/fresh pointer input module/);
- const config='config/architecture.json',configSource=read(config);
+ const config='config/architecture.json',configSource=raw(config);
  assert.throws(()=>sourceEpoch.preCombinedSource(config,configSource,{
-  target:'develop',readSource:p=>p===retiredControllerPath?retired:read(p),
+  target:'develop',readSource:p=>p===retiredControllerPath?retired:raw(p),
  }),/combined linked owner identity: src\/lua\/abyss_controller.lua/);
 });
 
@@ -331,17 +334,21 @@ test('combined replay rejects a menu owner from before the controls guide remova
  }
 });
 test('current PC13 facade rejects every exact immediate predecessor before older views or reads',()=>{
- const live=path=>readFileSync(path,'utf8');
- const read=beforeInputRetirementReader(live);
+ const disk=path=>readFileSync(path,'utf8');
+ const live=readSelectionProductionOwners(disk,reviewedSelectionRead(disk));
+ const read=beforeInputRetirementReader(readBeforeMasterBackflowSource(disk));
+ const readMapPrior=owner=>beforeSts1MapSource(owner,beforeRebasedCi(owner,read(owner)));
+ const readPc13Prior=owner=>pc13RewardCoverSourcePaths.includes(owner)
+  ?beforePc13RewardCover(owner,beforeAuthenticatedReleaseGuideSource(owner,readMapPrior(owner),readMapPrior))
+  :raw(owner);
  assert.equal(pc13RewardCoverSourcePaths.length,5);
  for(const path of pc13RewardCoverSourcePaths){
   const successor=read(path),rebased=beforeRebasedCi(path,successor),mapPrior=beforeSts1MapSource(path,rebased);
-  const readMapPrior=owner=>beforeSts1MapSource(owner,beforeRebasedCi(owner,read(owner)));
   const pc13=beforeAuthenticatedReleaseGuideSource(path,mapPrior,readMapPrior);
   const predecessor=beforePc13RewardCover(path,pc13);
   assert.notEqual(predecessor,pc13,path);
   assert.equal(beforeCurrentProductionSource(path,live(path),live).replaceAll('\r\n','\n'),raw(path),path);
-  assert.equal(beforeCharacterPreparationSource(path,predecessor,read).replaceAll('\r\n','\n'),raw(path),'historical predecessor remains supported: '+path);
+  assert.equal(beforeCharacterPreparationSource(path,predecessor,readPc13Prior).replaceAll('\r\n','\n'),raw(path),'historical predecessor remains supported: '+path);
   assert.throws(()=>beforeCurrentProductionSource(path,predecessor,read),{message:'fresh current production owner: '+path});
   const forbidden=()=>{throw Error('must not read for an unrecognized current owner');};
   const invalidSources=[predecessor,successor+'\n',null];
@@ -440,11 +447,19 @@ test('round3 retirement rejects live hardlinks and live source roots',async()=>{
 });
 
 test('map and card replay require every same-path sample and live reread to match',()=>{
- const read=path=>readFileSync(path,'utf8');
- const readBackflow=owner=>authenticateDevelopBackflow(owner,read(owner),read);
+ const disk=path=>readFileSync(path,'utf8');
+ const read=readSelectionProductionOwners(disk,reviewedSelectionRead(disk));
+ const readMaster=readBeforeMasterBackflowSource(disk);
+ const mapOwner='src/lua/abyss_game_ui_view.lua';
+ const readBackflow=owner=>{
+  const current=readMaster(owner);
+  const authenticated=authenticateDevelopBackflow(owner,current,readMaster);
+  // The map signature follows the older Develop branch, not the UI continuation.
+  return owner===mapOwner?beforeDevelopBackflow(owner,current):authenticated;
+ };
  const readSigned=owner=>replayRebasedInput(owner,readBackflow);
  for(const [path,prior,authorize]of [
-  ['src/lua/abyss_game_ui_view.lua',beforeSts1MapSource,authorizeSts1MapSource],
+  [mapOwner,beforeSts1MapSource,authorizeSts1MapSource],
   ['src/lua/abyss_battle_card_glow.lua',beforeCardFeedbackOwner,authorizeCardFeedbackOwners],
   ['src/lua/abyss_feedback.lua',beforeCardFeedbackOwner,authorizeCardFeedbackOwners],
  ]){
