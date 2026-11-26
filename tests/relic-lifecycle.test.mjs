@@ -35,6 +35,26 @@ test('the frozen reference binds every group, generated inputs and executable wi
  }
  assert.throws(()=>compareReleasedLifecycleTraces({...current,stdout:'different result\n'},frozen,'changed choice'),/changed choice: exact output/);
 });
+test('the #919 preview graph only admits one new private empty relic list',()=>{
+ const manifest={checkpoints:2,registeredCases:['preview'],executedCases:['preview'],coverage:{'rare.blockPower':1}};
+ function result(current,{entries=[],extra=[],later=current?5:4}={}){
+  const state=[['table',3,[...extra,...(current?[[['string','relics'],['table',4]]]:[])],null]];
+  if(current)state.push(['table',4,entries,null]);
+  const records=[
+   {label:'rare.blockPower:enter',graph:{root:['table',1],definitions:[
+    ['table',1,[[['string','args'],['table',2]]],null],
+    ['table',2,[[['number','1'],['table',3]],[['number','3'],['string','weak']]],null],...state,
+   ]}},
+   {label:'rare.blockPower:return',graph:{root:['table',later],definitions:[['table',later,[],null]]}},
+  ];
+  return {manifest,graph:records.map(row=>JSON.stringify(row)).join('\n')+'\n',stdout:'preview PASS\n'};
+ }
+ const frozen=result(false),group='parasite_09';
+ compareReleasedLifecycleTraces(result(true),frozen,group);
+ assert.throws(()=>compareReleasedLifecycleTraces(result(true,{entries:[[['number','1'],['boolean',true]]]}),frozen,group),/exact copied empty preview relic list/);
+ assert.throws(()=>compareReleasedLifecycleTraces(result(true,{extra:[[['string','alias'],['table',4]]]}),frozen,group),/exactly one observed edge/);
+ assert.throws(()=>compareReleasedLifecycleTraces(result(true,{later:6}),frozen,group),/parasite_09 checkpoint 2/);
+});
 test('relic lifecycle pins all 329 historical handwritten Lua sources with LF SHA256 and Git blob identities',()=>{
  assert.equal(Object.keys(frozen391).length,329);
  for(const name of ['abyss_actor','abyss_combat','abyss_run','abyss_relic_hooks','abyss_writhing_mass'])assert(frozen391[name]);

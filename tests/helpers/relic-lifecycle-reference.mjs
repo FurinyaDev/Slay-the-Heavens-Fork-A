@@ -103,6 +103,54 @@ function compareNamedTokens(current,frozen,tokens,context){
  assert.ok(current.slice(newOffset)===frozen.slice(oldOffset),context+' complete graph or output suffix');
 }
 
+// #919 adds a private copy of the relic list to the enemy intent preview.
+// The parasite witness has exactly one observed preview with an empty list.
+// Validate its added edge and node before aligning the later allocation IDs.
+function beforeEmptyPreviewRelics(lines,frozen){
+ const rows=lines.map(line=>line?JSON.parse(line):null);
+ const table=(graph,value)=>{
+  assert.equal(value?.[0],'table','expected preview graph table');
+  const node=graph.definitions.find(row=>row[0]==='table'&&row[1]===value[1]);
+  assert(node,'expected defined preview graph table');
+  return node;
+ };
+ const value=(node,kind,key)=>node[2].find(entry=>entry[0][0]===kind&&entry[0][1]===key)?.[1];
+ const args=({graph})=>table(graph,value(table(graph,graph.root),'string','args'));
+ const changes=[];
+ for(const [index,row]of rows.entries()){
+  if(row?.label!=='rare.blockPower:enter')continue;
+  const currentArgs=args(row);
+  if(value(currentArgs,'number','3')?.join('\0')!=='string\0weak')continue;
+  const historical=JSON.parse(frozen[index]);
+  assert.equal(historical.label,row.label,'expected original preview checkpoint');
+  const owner=table(row.graph,value(currentArgs,'number','1'));
+  const previous=table(historical.graph,value(args(historical),'number','1'));
+  assert.equal(value(previous,'string','relics'),undefined,'the original preview has no copied relics');
+  const relics=value(owner,'string','relics');
+  const added=table(row.graph,relics);
+  assert.deepEqual(added,['table',relics[1],[],null],'exact copied empty preview relic list');
+  assert.equal(owner[1],previous[1],'same preview owner before the added allocation');
+  changes.push({index,owner,added});
+ }
+ assert.equal(changes.length,1,'one new empty relic list in the read-only preview');
+ const [{index,owner,added}]=changes,removed=added[1];
+ owner[2]=owner[2].filter(entry=>entry[0][0]!=='string'||entry[0][1]!=='relics');
+ rows[index].graph.definitions=rows[index].graph.definitions.filter(node=>node!==added);
+ const references=new Set(['table','function','userdata','thread','nativeControl']);
+ function shift(node){
+  if(!Array.isArray(node))return;
+  if(references.has(node[0])){
+   assert.notEqual(node[1],removed,'private preview relic list has exactly one observed edge');
+   if(node[1]>removed)node[1]--;
+  }
+  for(const value of node)shift(value);
+ }
+ for(const row of rows.slice(index)){
+  if(row){shift(row.graph.root);shift(row.graph.definitions);}
+ }
+ return rows.map(row=>row?JSON.stringify(row):'');
+}
+
 export function compareReleasedLifecycleTraces(after,before,group){
  for(const key of ['checkpoints','coverage']){
   assert.deepEqual(after.manifest[key],before.manifest[key],`${group}: exact ${key}`);
@@ -112,7 +160,8 @@ export function compareReleasedLifecycleTraces(after,before,group){
    ?'rare.chooseTacticalExchange nil/function restore':name);
   assert.deepEqual(after.manifest[key],expected,`${group}: exact ${key}`);
  }
- const current=after.graph.split('\n'),frozen=before.graph.split('\n');
+ const raw=after.graph.split('\n'),frozen=before.graph.split('\n');
+ const current=group==='parasite_09'?beforeEmptyPreviewRelics(raw,frozen):raw;
  assert.equal(current.length,frozen.length,`${group}: every graph checkpoint`);
  for(let i=0;i<frozen.length;i++){
   const line=frozen[i].replace(/^(\{"label":"ordinary (?:replacement|nil) rare\.)chooseGambling"/u,'$1chooseTacticalExchange"');
