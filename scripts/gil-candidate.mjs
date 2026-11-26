@@ -6,11 +6,13 @@ import { pipeline } from 'node:stream/promises';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { api, approvedRequest, artifactName, candidateTarget, digest, encoderSha256, findArtifact,
   GateError, profile, repository, repositoryId, requireGate, sha, toolCommit, verifyFrozenQuality, verifySource } from './gil-candidate-preflight.mjs';
-import { hostedGilReceipt } from './hosted-gil-receipt.mjs';
+import { hostedGilReceipt, importedGilReceipt, verifiedPayloadInputs } from './hosted-gil-receipt.mjs';
+import { downloadLocalGilBundle, localGilRecord, readLocalGilBundle, writeLocalGilBundle } from './local-gil-bundle.mjs';
 
 const uuid = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/;
 const artifactFiles = ['candidate.gil', 'candidate.json', 'manifest.json'];
 const basePath = () => join(process.env.RUNNER_TEMP, 'gil-base.gil');
+const privateBundlePath = () => join(process.env.RUNNER_TEMP, 'gil-private-build.json');
 const hash = data => createHash('sha256').update(data).digest('hex');
 const json = path => JSON.parse(readFileSync(path, 'utf8'));
 const moduleAt = (root, path) => import(pathToFileURL(resolve(root, path)).href);
@@ -30,7 +32,8 @@ async function preflight() {
       .map(url => hash(readFileSync(new URL(url)))),
     ...(target.version && { sourceChecks: checks }),
   };
-  const request = approvedRequest(process.env.GIL_CANDIDATE_APPROVAL, source, policy, target);
+  const request = approvedRequest(process.env.GIL_CANDIDATE_APPROVAL, source, policy, target,
+    process.env.GIL_CANDIDATE_BUILD_ORIGIN || 'hosted');
   const existing = await findArtifact(api, request, process.env.GITHUB_RUN_ID);
   const ciSummary = ['quality', 'licenses'].map(name => `[${name}](https://github.com/${repository}/actions/runs/${checks[name]})`);
   appendFileSync(process.env.GITHUB_STEP_SUMMARY, `Source \`${target.branch}@${source}\` · ${ciSummary.join(' · ')}\n`);
@@ -42,6 +45,10 @@ async function preflight() {
     'build=true', `base_sha256=${request.baseSha256}`, `work_key=${request.configuration.workKey}`,
     `tool_commit=${toolCommit}`, `request_id=${request.id}`, `release_version=${target.version ?? ''}`,
     `artifact_name=${artifactName(request)}`, `quality_run=${checks.quality}`, `licenses_run=${checks.licenses}`,
+    ...(request.localBuild ? [
+      'origin=local', `local_bundle_sha256=${request.localBuild.bundleSha256}`,
+      `local_candidate_sha256=${request.localBuild.candidateSha256}`, `approval_reference=${request.localBuild.approvalReference}`,
+    ] : ['origin=hosted']),
     ...(target.version ? [`quality_attempt=${checks.qualityAttempt}`, `quality_checkout_artifact=${checks.qualityCheckoutArtifact}`] : []),
   ].join('\n') + '\n');
 }
@@ -140,24 +147,85 @@ function diagnose() {
   console.error(`Native build failed. Full receipt present: ${full.includes('candidate.json')}. Last full step: ${lastFull?.[2] ?? 'none'}. BGM graph write attempted: ${audio.includes('write_graphs-result.json')}.`);
 }
 
+function buildPaths(out) {
+  const audioReceiptPath = join(out, 'audio/candidate.json');
+  const audio = json(audioReceiptPath);
+  requireGate(uuid.test(audio.buildId), 'Invalid audio build ID.');
+  const fullRoot = join(out, 'full', audio.buildId);
+  return { fullRoot, audio, audioReceiptPath, fullReceiptPath: join(fullRoot, 'candidate.json'),
+    mapPath: resolve(out, 'audio/candidate.gil') };
+}
+
+function exportLocal(branch, workKey, base, out, destination) {
+  requireGate(destination, 'Use export-local <release branch> <work-key> <base.gil> <native-output> <private-bundle.json>.');
+  const sourceSha = git('.', ['rev-parse', 'HEAD']);
+  const { version } = candidateTarget(branch, sourceSha);
+  requireGate(version && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(workKey) && workKey !== 'alpha-test',
+    'Local GIL requires a frozen version and the actual production work-key.');
+  cleanHead('.', sourceSha, 'Source');
+  toolchain(process.env.MILIASTRA_MCP_ROOT);
+  const { fullRoot, fullReceiptPath, audioReceiptPath, mapPath } = buildPaths(out);
+  const identity = writeLocalGilBundle(destination, { base, intermediate: join(fullRoot, 'candidate.gil'),
+    candidate: mapPath, fullReceipt: fullReceiptPath, audioReceipt: audioReceiptPath },
+  (files, digests) => verifyLocalBuild(files, { sourceSha, workKey, version, ...digests }));
+  console.log(JSON.stringify({ branch, version, sourceSha, workKey, ...identity }, null, 2));
+}
+
+export function verifyLocalBuild({ base, intermediate, candidate, fullReceipt, audioReceipt }, expected) {
+  const full = JSON.parse(fullReceipt), audio = JSON.parse(audioReceipt);
+  const finalGil = localGilRecord(candidate);
+  requireGate(localGilRecord(base).sha256 === expected.baseSha256 && finalGil.sha256 === expected.candidateSha256,
+    'Local base or final GIL differs from the approved SHA-256.');
+  verifyReceipts({ ...expected, full, audio, fullReceipt, fullGil: localGilRecord(intermediate), finalGil });
+  return { full, audio, fullReceipt, audioReceipt, finalGil, candidate };
+}
+
+function downloadLocal() {
+  return downloadLocalGilBundle(process.env.GIL_LOCAL_BUILD_URL, privateBundlePath(), process.env.LOCAL_BUNDLE_SHA256);
+}
+
+async function candidateInputs(out, expected, fileRecord) {
+  const { branch, bundleSha256, baseSha256 } = expected;
+  if (bundleSha256) {
+    const bundle = readLocalGilBundle(privateBundlePath(), bundleSha256);
+    const { full, audio, fullReceipt, audioReceipt, finalGil, candidate } = verifyLocalBuild(bundle, expected);
+    mkdirSync(out);
+    const mapPath = resolve(out, 'candidate.gil');
+    writeFileSync(mapPath, candidate, { flag: 'wx' });
+    const receipt = importedGilReceipt(full, audio, { path: 'candidate.gil', ...finalGil }, branch);
+    const { payloadDigest, sourceInputs } = await moduleAt('.', 'scripts/build-native-candidate.mjs');
+    const { artBuildOptionsFromReceipt } = await moduleAt('.', 'scripts/art-features.mjs');
+    const { loadReleaseNotes, notesSha256 } = await moduleAt('.', 'scripts/release-notes.mjs');
+    const payload = verifiedPayloadInputs('.', receipt, artBuildOptionsFromReceipt(receipt), sourceInputs);
+    const release = loadReleaseNotes({ releaseCandidate: true, workKey: expected.workKey });
+    requireGate(payloadDigest(payload) === receipt.payloadDigest && payloadDigest(full.inputs) === receipt.payloadDigest &&
+      release.build.version === expected.version && notesSha256(release.currentNotice) === receipt.release.notesSha256,
+    'Local GIL inputs or release notes do not match the reviewed source checkout.');
+    return { audio, fullReceipt, audioReceipt, finalGil, mapPath, receipt };
+  }
+  requireGate(hash(readFileSync(basePath())) === baseSha256, 'Approved base GIL changed during the build.');
+  const { fullRoot, audio, fullReceiptPath, audioReceiptPath, mapPath } = buildPaths(out);
+  const fullReceipt = readFileSync(fullReceiptPath);
+  const full = JSON.parse(fullReceipt);
+  const finalGil = fileRecord(mapPath, out);
+  const fullGil = fileRecord(join(fullRoot, basename(full.mapPath)), fullRoot);
+  verifyReceipts({ ...expected, full, audio, fullReceipt, fullGil, finalGil });
+  const candidate = { path: 'candidate.gil', bytes: finalGil.bytes, sha256: finalGil.sha256 };
+  return { audio, fullReceipt, audioReceipt: readFileSync(audioReceiptPath), finalGil, mapPath,
+    receipt: hostedGilReceipt('.', fullRoot, full, audio, candidate, branch) };
+}
+
 async function deliver() {
   const { SOURCE_SHA: sourceSha, BASE_SHA256: baseSha256, WORK_KEY: workKey, REQUEST_ID: requestId,
     MILIASTRA_MCP_ROOT: toolRoot, GIL_BUILD_SECONDS, GIL_RECEIVED_BYTES, SOURCE_REF: branch,
-    RELEASE_VERSION: version } = process.env;
+    RELEASE_VERSION: version, LOCAL_BUNDLE_SHA256: bundleSha256, LOCAL_CANDIDATE_SHA256: candidateSha256,
+    GIL_APPROVAL_REFERENCE: approvalReference } = process.env;
   cleanHead('.', sourceSha, 'Source');
   toolchain(toolRoot);
-  requireGate(hash(readFileSync(basePath())) === baseSha256, 'Approved base GIL changed during the build.');
-  const out = 'build/hosted-gil';
-  const audio = json(join(out, 'audio/candidate.json'));
-  requireGate(uuid.test(audio.buildId), 'Invalid audio build ID.');
-  const fullRoot = join(out, 'full', audio.buildId);
-  const fullReceipt = readFileSync(join(fullRoot, 'candidate.json'));
-  const full = JSON.parse(fullReceipt);
+  const out = bundleSha256 ? 'build/local-gil-intake' : 'build/hosted-gil';
   const { fileRecord } = await moduleAt('.', 'scripts/evidence-files.mjs');
-  const mapPath = resolve(out, 'audio/candidate.gil');
-  const finalGil = fileRecord(mapPath, out);
-  const fullGil = fileRecord(join(fullRoot, basename(full.mapPath)), fullRoot);
-  verifyReceipts({ full, audio, fullReceipt, fullGil, finalGil, sourceSha, baseSha256, workKey, version });
+  const { audio, fullReceipt, audioReceipt, finalGil, mapPath, receipt } = await candidateInputs(out,
+    { branch, sourceSha, baseSha256, workKey, version, bundleSha256, candidateSha256 }, fileRecord);
   const { inspectFile } = await moduleAt(toolRoot, 'src/adapter.mjs');
   const { nativeBgmSignals } = await moduleAt('.', 'scripts/native-bgm-graph.mjs');
   const inspection = inspectFile(mapPath);
@@ -168,11 +236,10 @@ async function deliver() {
   'Final GIL readback has no compiled BGM graph with the expected cue signals.');
   const artifact = 'build/gil-artifact';
   mkdirSync(artifact);
-  const candidate = { path: 'candidate.gil', bytes: finalGil.bytes, sha256: finalGil.sha256 };
+  const candidate = receipt.candidate;
   copyFileSync(mapPath, join(artifact, candidate.path));
   requireGate(fileRecord(join(artifact, candidate.path)).sha256 === candidate.sha256, 'Artifact copy hash mismatch.');
   const receiptPath = join(artifact, 'candidate.json');
-  const receipt = hostedGilReceipt('.', fullRoot, full, audio, candidate, branch);
   writeFileSync(receiptPath, JSON.stringify(receipt, null, 2) + '\n');
   const { auditNativeCandidate } = await moduleAt('.', 'scripts/audit-native-candidate.mjs');
   const audit = await auditNativeCandidate({ source: sourceSha, candidate: join(artifact, candidate.path), receipt: receiptPath,
@@ -194,13 +261,16 @@ async function deliver() {
     payloadDigest: receipt.payloadDigest, candidate, requestId, baseSha256, toolCommit, encoderSha256,
     controllerSha: process.env.GITHUB_SHA,
     sourceChecks,
-    receipts: { nativeSha256: hash(fullReceipt), audioSha256: fileRecord(join(out, 'audio/candidate.json')).sha256 },
+    receipts: { nativeSha256: hash(fullReceipt), audioSha256: hash(audioReceipt) },
+    buildOrigin: bundleSha256 ? 'local' : 'hosted',
+    ...(bundleSha256 && { localBuild: { bundleSha256, candidateSha256, approvalReference } }),
     nativeAudit: 'pass',
     platformVersion: null,
     parameters: { workKey, profile, nativePageLifecycle: true, releaseCandidate: Boolean(version), liveWrite: false },
-    buildSeconds: Number(GIL_BUILD_SECONDS), runnerReceivedBytesBeforeUpload: Number(GIL_RECEIVED_BYTES) }, null, 2) + '\n');
+    ...(!bundleSha256 && { buildSeconds: Number(GIL_BUILD_SECONDS), runnerReceivedBytesBeforeUpload: Number(GIL_RECEIVED_BYTES) }) }, null, 2) + '\n');
   writeFileSync(join(artifact, 'SHA256SUMS'), artifactSums(artifact));
-  appendFileSync(process.env.GITHUB_STEP_SUMMARY, `\nGIL: \`${finalGil.sha256}\` · ${finalGil.bytes} bytes · native build ${GIL_BUILD_SECONDS} s · runner received ${GIL_RECEIVED_BYTES} bytes before upload\n`);
+  const origin = bundleSha256 ? 'approved local build' : `hosted build ${GIL_BUILD_SECONDS} s · runner received ${GIL_RECEIVED_BYTES} bytes before upload`;
+  appendFileSync(process.env.GITHUB_STEP_SUMMARY, `\nGIL: \`${finalGil.sha256}\` · ${finalGil.bytes} bytes · ${origin}\n`);
 }
 
 function artifactSums(directory) {
@@ -223,7 +293,8 @@ function readback() {
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const phase = process.argv[2];
   try {
-    await ({ preflight, base: downloadBase, toolchain, assets, diagnose, deliver, readback })[phase]();
+    await ({ preflight, base: downloadBase, toolchain, assets, diagnose, deliver, readback,
+      'export-local': exportLocal, 'download-local': downloadLocal })[phase](...process.argv.slice(3));
   } catch (error) {
     console.error(error instanceof GateError ? error.message : `GIL candidate ${phase} failed. Raw tool output may contain private input data.`);
     process.exitCode = 1;
