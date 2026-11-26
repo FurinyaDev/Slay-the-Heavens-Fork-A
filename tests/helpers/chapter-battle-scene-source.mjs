@@ -460,6 +460,25 @@ const projections = {
 
 // The current hand layout and enemy floor contacts enter after the composed chapter source.
 const responsiveHandProjections = {
+  "src/lua/abyss_monster_art.lua": {
+    "path": "src/lua/abyss_monster_art.lua",
+    "beforeSha256": "6098fca7fde600181cecf6d669ce59e89dd13d1e0a04663a674dd23fdf0379fd",
+    "afterSha256": "7d5ff55a116dbb08f769cb6e5cc302ae653ade8be6e24f5557a88566f9506ff3",
+    "beforeBlob": "9916886ac852607ce544b74f5fe36509639e9e30",
+    "afterBlob": "9223e45bcd58c37b861c38d2d5421b1a35151010",
+    "hunks": [
+      {
+        "at": 46,
+        "before": " return asset\nend\nlocal function newPool(stage,platform,data,poolIndex,actorBox)\n local overlay=not actorBox and optionalChild(stage,'topBar')",
+        "after": " return asset\nend\nlocal function retainByrdSamplePool(view,asset)\n if not asset or asset.enemyId~='byrd' or view.data.status~='refined-release'then return end\n -- Native child lookups can return fresh proxies. Keep one stable sample\n -- owner for each Byrd variant until retirement or replacement.\n view.samples=assert(optionalChild(view.root,'monsterSamples'),'missing Byrd art pool')\nend\nlocal function newPool(stage,platform,data,poolIndex,actorBox)\n local overlay=not actorBox and optionalChild(stage,'topBar')"
+      },
+      {
+        "at": 89,
+        "before": "   self:clear()\n   self.box,self.actorId=wanted,wantedId\n   -- Native child lookups can return fresh proxies. Use the existing pool as\n   -- one stable owner for each Byrd variant until retirement or replacement.\n   if wantedAsset and wantedAsset.enemyId=='byrd' and self.data.status=='refined-release'then\n    self.samples=assert(optionalChild(self.root,'monsterSamples'),'missing Byrd art pool')\n   end\n  end\n  self.selectedAsset=wantedAsset",
+        "after": "   self:clear()\n   self.box,self.actorId=wanted,wantedId\n   retainByrdSamplePool(self,wantedAsset)\n  end\n  self.selectedAsset=wantedAsset"
+      }
+    ]
+  },
   "src/lua/abyss_battle_unit_view.lua": {
     "path": "src/lua/abyss_battle_unit_view.lua",
     "beforeSha256": "1c5bb2540e6df1a4ca5e6efdc7369eaf5d3d9dad3d80d059f80cd9c44a126384",

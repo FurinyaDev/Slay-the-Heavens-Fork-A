@@ -46,6 +46,12 @@ local function assetFor(data,actor)
  if asset and ByrdTrial.isGrounded(actor,data)then return ByrdTrial.art(asset)end
  return asset
 end
+local function retainByrdSamplePool(view,asset)
+ if not asset or asset.enemyId~='byrd' or view.data.status~='refined-release'then return end
+ -- Native child lookups can return fresh proxies. Keep one stable sample
+ -- owner for each Byrd variant until retirement or replacement.
+ view.samples=assert(optionalChild(view.root,'monsterSamples'),'missing Byrd art pool')
+end
 local function newPool(stage,platform,data,poolIndex,actorBox)
  local overlay=not actorBox and optionalChild(stage,'topBar')
  local view={root=actorBox and optionalChild(actorBox,'monsterArt') or overlay and optionalChild(overlay,poolIndex and poolIndex>1 and 'monsterArt'..poolIndex or 'monsterArt'),platform=platform,data=data,origin=actorBox and {0,0} or data.hostOrigin or {0,0}}
@@ -83,11 +89,7 @@ local function newPool(stage,platform,data,poolIndex,actorBox)
   if wanted~=self.box or wantedId~=self.actorId or wantedAsset~=self.selectedAsset then
    self:clear()
    self.box,self.actorId=wanted,wantedId
-   -- Native child lookups can return fresh proxies. Use the existing pool as
-   -- one stable owner for each Byrd variant until retirement or replacement.
-   if wantedAsset and wantedAsset.enemyId=='byrd' and self.data.status=='refined-release'then
-    self.samples=assert(optionalChild(self.root,'monsterSamples'),'missing Byrd art pool')
-   end
+   retainByrdSamplePool(self,wantedAsset)
   end
   self.selectedAsset=wantedAsset
   if wanted then owners[wanted]=self end

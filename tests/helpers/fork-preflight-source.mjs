@@ -875,13 +875,31 @@ const groundedContactCopyClosure={
   }
  ]
 };
+// Bind the current refined Byrd pool helper without changing the older copier witnesses.
+const refinedByrdPoolCopyClosure={
+ "path": "tests/helpers/copy-integration-source-closure.mjs",
+ "beforeSha256": "5d05c36db6fdbee600cc2f7150f85a2e548701c6a1baefeb5909a6de15d4f391",
+ "afterSha256": "94a17264d5283f4e57edec8dd99d116e3b7ffd94543f1bc96e587cd8131d8157",
+ "beforeBlob": "32d777fb09b1bfbf60f06aab7d91e53b26d71dda",
+ "afterBlob": "3418cf344390eb729c5b5f012d76512a190750c2",
+ "hunks": [
+  {
+   "at": 350,
+   "before": " 'tests/helpers/battle-periphery-source.mjs':'d436c48e4fb14039a53361fdf8464512f6a95226c81ff32ffe4d2930877db210',\n 'tests/helpers/rebased-release-source.mjs':'9c06103ee6926bb5def608470430784145880f69d4c3aee3fb35787c1309d509',\n 'tests/helpers/chapter-battle-scene-source.mjs':'2c281a2dba02dce5fd8c9e40a43dc971c8428d19844125311f5ca58afa7a33af',\n 'tests/helpers/release-integration-source.mjs':'74093921a53a94ba842afac199e579a622b60fea5abf2519d416ede77bbfa1a7',\n 'tests/fixtures/release-lazy-monster-art-source.json.gz':'211c3588a53b1f97c98d9f9b905349d82b244a2e81a940d4ebe48022381ca92e',",
+   "after": " 'tests/helpers/battle-periphery-source.mjs':'d436c48e4fb14039a53361fdf8464512f6a95226c81ff32ffe4d2930877db210',\n 'tests/helpers/rebased-release-source.mjs':'9c06103ee6926bb5def608470430784145880f69d4c3aee3fb35787c1309d509',\n 'tests/helpers/chapter-battle-scene-source.mjs':'1270c293d79c04ac4a5b15483dd4cc8f9c4279362e2f5c551f6e98c20c9ad293',\n 'tests/helpers/release-integration-source.mjs':'74093921a53a94ba842afac199e579a622b60fea5abf2519d416ede77bbfa1a7',\n 'tests/fixtures/release-lazy-monster-art-source.json.gz':'211c3588a53b1f97c98d9f9b905349d82b244a2e81a940d4ebe48022381ca92e',"
+  }
+ ]
+};
 function beforeBattleSceneCopyClosure(path,source){
  if(path!==battleSceneCopyClosure.path||typeof source!=='string')return source;
  const lf=normalize(source);
  if(source!==lf&&source!==lf.replaceAll('\n','\r\n'))return source;
+ const byrd=refinedByrdPoolCopyClosure;
+ const contactSource=exactCheckoutSource(lf,[byrd.afterSha256,byrd.afterBlob])
+  ?restoreExactFixtureHunks(byrd,path,lf):lf;
  const contact=groundedContactCopyClosure;
- const joined=exactCheckoutSource(lf,[contact.afterSha256,contact.afterBlob])
-  ?restoreExactFixtureHunks(contact,path,lf):lf;
+ const joined=exactCheckoutSource(contactSource,[contact.afterSha256,contact.afterBlob])
+  ?restoreExactFixtureHunks(contact,path,contactSource):contactSource;
  const combined=rewardHandCopyClosure;
  if(exactCheckoutSource(joined,[combined.afterSha256,combined.afterBlob])){
   const previous=restoreExactFixtureHunks(combined,path,joined);
@@ -1100,7 +1118,7 @@ function beforeIntegrationSuccessor(path,source){
 }
 // The current gate uses these two replay modules to verify the composed hand and scene owners.
 const responsiveReplayHelpers=Object.freeze({
- 'tests/helpers/chapter-battle-scene-source.mjs':['2c281a2dba02dce5fd8c9e40a43dc971c8428d19844125311f5ca58afa7a33af','5c1e01110b777b45a605e68f8ac44a7540bee5d4'],
+ 'tests/helpers/chapter-battle-scene-source.mjs':['1270c293d79c04ac4a5b15483dd4cc8f9c4279362e2f5c551f6e98c20c9ad293','5306929645881d562b4d4322c5b3fa2ecb91edbd'],
  'tests/helpers/rebased-release-source.mjs':['9c06103ee6926bb5def608470430784145880f69d4c3aee3fb35787c1309d509','0016df7289d6b274b533496c48a6fd75a1f66e42'],
 });
 function responsiveReplayCurrentRead(read){
@@ -1128,7 +1146,7 @@ function currentReviewedSelectionRead(read){
 export function assertIntegrationSuccessorsCurrent(read=readFileSync){
  const replayRead=responsiveReplayCurrentRead(currentReviewedSelectionRead(read));
  for(const path of Object.keys(responsiveReplayHelpers))replayRead(path,'utf8');
- const rawRead=actorAlphaCurrentRead(chapterSceneCurrentRead(replayRead,groundedContactCopyClosure));
+ const rawRead=actorAlphaCurrentRead(chapterSceneCurrentRead(replayRead,refinedByrdPoolCopyClosure));
  rawRead(officialLegibilityFixture,'utf8');
  rawRead(reviewedSelectionFixture,'utf8');
  const liveRead=(path,encoding)=>{
