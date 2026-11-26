@@ -10,6 +10,7 @@ import {beforePotionReadabilityEvidence} from './v2-ui-admission-ci-source.mjs';
 import {beforeCloseoutHistoryTooling,beforeCloseoutRunHudFixture} from './closeout-current-backflow-source.mjs';
 import {preMenuRedCiSource} from './menu-red-ci-source.mjs';
 import {exactSourceMatches} from './source-fingerprint.mjs';
+import {restoreExactFixtureHunks} from './exact-fixture-hunks.mjs';
 const hash=s=>createHash('sha256').update(s).digest('hex');
 const normalize=s=>s.replaceAll('\r\n','\n');
 const toolingBytes=normalize(readFileSync(new URL('../fixtures/pr-history-tooling-continuation.json',import.meta.url),'utf8'));
@@ -46,8 +47,29 @@ function beforeSilentPlanningSource(path,source){
  }),'exact Silent planning fixture predecessor');
  return source===lf?prior:prior.replaceAll('\n','\r\n');
 }
+const defectPlanningTest='tests/defect-final-execute.test.mjs';
+const defectPlanningTestCurrent={"sha256":"7492f9c4cc3f68b0c4a0009288a26589f926a988d115003aa2386ee3846db35b","gitBlob":"b1f884149f375b12bd8078bfb6cef5a1b8524458"};
+const defectPlanningTestBefore={"sha256":"353e601af4ec137fb2b0a05e92cbf575b6583d22a09995b73508e22f8d835d5b","gitBlob":"53f6cdf4a47f0d88c102107b3a51c050fb96a87b"};
+const defectPlanningTestHunks=[
+ {"at":10,"before":"const before=read('tests/fixtures/defect-final-execute-before.lua');\nconst current=()=>read(path);","after":"const before=read('tests/fixtures/defect-final-execute-before.lua');\n// a111076f (#940) changed the base Equilibrium card body, which is recorded in\n// the complete state graph. Apply just that approved copy to the expected VM.\nconst previousEquilibriumText = \"text='获得13点格挡。本回合保留所有非虚无手牌。',\";\nconst approvedEquilibriumText = \"text='获得13点格挡。本回合保留所有非虚无手牌',\";\nconst expectedSource = before.replace(previousEquilibriumText, approvedEquilibriumText);\nconst current=()=>read(path);"},
+ {"at":29,"before":" assert.equal(createHash('sha1').update(`blob ${Buffer.byteLength(before)}\\0`).update(before).digest('hex'),'16821c6065a7819bae767e1f6f511c497eba903a');\n});","after":" assert.equal(createHash('sha1').update(`blob ${Buffer.byteLength(before)}\\0`).update(before).digest('hex'),'16821c6065a7819bae767e1f6f511c497eba903a');\n assert.equal(before.split(previousEquilibriumText).length, 2, 'one frozen Equilibrium card body');\n});"},
+ {"at":34,"before":"].map(n=>'tests/lua/'+n+'.lua')])test(`${fixture}: independent VMs compare complete graphs, aliases, returns, RNG, queues and errors`,()=>{\n const a=run(before,fixture),b=run(current(),fixture);\n assert.equal(a.status,0,a.error);assert.equal(b.status,0,b.error);","after":"].map(n=>'tests/lua/'+n+'.lua')])test(`${fixture}: independent VMs compare complete graphs, aliases, returns, RNG, queues and errors`,()=>{\n const a=run(expectedSource,fixture),b=run(current(),fixture);\n assert.equal(a.status,0,a.error);assert.equal(b.status,0,b.error);"},
+];
+
+// Current Equilibrium graph comparisons keep the approved card text. The
+// original planning receipt reads its complete fixture from before #940.
+function beforeDefectPlanningTest(path,source){
+ if(path!==defectPlanningTest||!exactSourceMatches(source,defectPlanningTestCurrent))return source;
+ const lf=normalize(source);
+ if(source!==lf&&source!==lf.replaceAll('\n','\r\n'))return source;
+ const prior=restoreExactFixtureHunks({path,beforeSha256:defectPlanningTestBefore.sha256,
+  afterSha256:defectPlanningTestCurrent.sha256,hunks:defectPlanningTestHunks},path,lf);
+ assert(exactSourceMatches(prior,defectPlanningTestBefore),'exact Defect planning test predecessor');
+ return source===lf?prior:prior.replaceAll('\n','\r\n');
+}
 export function preRunHudCiSource(path,source){
  source=beforeSilentPlanningSource(path,source);
+ source=beforeDefectPlanningTest(path,source);
  source=preMenuRedCiSource(path,beforePotionReadabilityEvidence(path,source));
  source=preStsStyleCiSource(path,source);
  source=preNativePreviewCiSource(path,source);
