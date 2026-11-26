@@ -1,4 +1,24 @@
 local F=dofile('tests/lua/support/max_hp_relics.lua');local Shop=require('abyss_shop');local H=require('abyss_relic_hooks')
+-- Keep the historical vectors intact and rename only source IDs used by the live queues.
+local releasedNames={['Gambling Chip']='Tactical Badge',SlaversCollar='ArenaCollar'}
+local function releasedSource(id)return releasedNames[id] or id end
+local function renameQueues(queues)
+ for _,queue in pairs(queues)do
+  for i,id in ipairs(queue)do queue[i]=releasedSource(id)end
+ end
+end
+local function releasedCase(original)
+ local case=F.C.copy(original)
+ renameQueues(case.queues)
+ if case.channel=='shop'then
+  renameQueues(case.afterQueues)
+  for _,offer in ipairs(case.offers)do
+   offer.sourceId=releasedSource(offer.sourceId)
+   for _,step in ipairs(offer.trace)do step.id=releasedSource(step.id)end
+  end
+ end
+ return case
+end
 local function expectedHealth(r,case)
  local gain=case.id=='pear'and 10 or case.id=='mango'and 14 or 7
  F.eq(r.maxHp,case.startingMaximum+gain);F.eq(r.hp,case.id=='lees_waffle'and case.startingMaximum+gain or 30+gain)
@@ -11,7 +31,8 @@ local function lateFailure(r,command)
 end
 return function(character)
  local count=0
- for _,case in ipairs(F.vectors.channels)do if case.character==character then
+ for _,original in ipairs(F.vectors.channels)do if original.character==character then
+  local case=releasedCase(original)
   local r=F.new(case);local rng=F.S.snapshot(r.relicPool.rng);local offer,command,frame
   if case.channel=='shop'then
    local public=F.C.copy(r);local stock=Shop.prepare(r,1);F.same(r,public)
