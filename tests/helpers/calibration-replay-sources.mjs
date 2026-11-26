@@ -1,7 +1,7 @@
 import {beforeMapRoomReplayCohort} from './develop-replay-merge-source.mjs';
 import {beforeMapNodeVisualsLineEndings} from './input-retirement-sts-binding.mjs';
 import {readCloseoutLuaVocabularyReceipt} from './closeout-lua-vocabulary-source.mjs';
-import {beforeCloseoutJoustCiFixture,readCloseoutCurrentBackflowReceipt} from './closeout-current-backflow-source.mjs';
+import {beforeCloseoutHistoryTooling,beforeCloseoutJoustCiFixture,readCloseoutCurrentBackflowReceipt} from './closeout-current-backflow-source.mjs';
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import {readFileSync} from 'node:fs';
@@ -83,8 +83,62 @@ function beforeReleaseLuaNameBudgetTest(path,source){
  return source.includes('\r\n')?prior.replaceAll('\n','\r\n'):prior;
 }
 
+function beforeRunHudCalibrationHelper(path,source){
+ if(path!=='tests/helpers/run-hud-ci-source.mjs'||!matches(source,{
+  sha256:'815c65ff6963579c7f48ea9ba390b8a6e16c24fbb0c13924ae8ad4a9da51ac7f',gitBlob:'60f9a0a326ff3120bf56671638579a06f74a7fc7',
+ }))return source;
+ const normalized=lf(source);
+ if(source!==normalized&&source!==normalized.replaceAll('\n','\r\n'))return source;
+ const prior=normalized
+  .replace(/^import \{(?:beforePotionReadabilityEvidence|beforeCloseoutHistoryTooling|exactSourceMatches|restoreExactFixtureHunks)[^\n]*\n/gm,'')
+  .replace(/^function beforeSilentPlanningSource[\s\S]*?(?=^export function preRunHudCiSource)/m,'')
+  .replace(/^ source=(?:beforeSilentPlanningSource|beforeDefectPlanningSource|beforeCloseoutHistoryTooling|beforeCloseoutRunHudFixture)\(path,source\);\n/gm,'')
+  .replace('preMenuRedCiSource(path,beforePotionReadabilityEvidence(path,source))','preMenuRedCiSource(path,source)');
+ assert(matches(prior,{
+  sha256:'084db705f3390910da925c32970a18279b78063f4a03d2331a19a775229c5524',gitBlob:'0543be2be1083af9594dbf48238e96d6a7a4bbf2',
+ }),'exact archived Run HUD integration helper');
+ return source===normalized?prior:prior.replaceAll('\n','\r\n');
+}
+
+const prHistoryCalibrationReceipt={
+ "path": "tests/pr-history.test.mjs",
+ "before": {
+  "sha256": "670d63a96197c8310b7cbfe3c98b1dbf64a7c918b1d22502c0807d9a8801e02e",
+  "gitBlob": "00102c1f0557faf6c6b88e5415cbbdf0883ea9df"
+ },
+ "after": {
+  "sha256": "7a76b431c86f1a4c2cf8c2049dde0a9cf6974e2f4855d75d7ff47f951134e10a",
+  "gitBlob": "7909983f36297b4e573eb0643a07af355d71d202"
+ },
+ "hunks": [
+  {
+   "at": 7,
+   "before": "import { receiptToolingSource } from './helpers/integration-1111-tooling.mjs';\nimport { preRunHudCiSource } from './helpers/run-hud-ci-source.mjs';",
+   "after": "import { receiptToolingSource } from './helpers/integration-1111-tooling.mjs';\nimport { beforeCloseoutHistoryTooling } from './helpers/closeout-current-backflow-source.mjs';\nimport { preRunHudCiSource } from './helpers/run-hud-ci-source.mjs';"
+  },
+  {
+   "at": 13,
+   "before": "  const source = readFileSync(row.path, 'utf8').replaceAll('\\r\\n', '\\n');\n  assert.equal(source, row.after.source);\n  for (const input of [source, source.replaceAll('\\n', '\\r\\n')])\n    assert.equal(preRunHudCiSource(row.path, input), row.before.source);\n  for (const input of [source + '\\n', source.slice(1), source.slice(0, -1), source.replaceAll('\\n', '\\r\\r\\n'), null, {}, 17])\n    assert.equal(preRunHudCiSource(row.path, input), input);\n  for (const path of ['__proto__', 'constructor', 'foreign/' + row.path, row.path + '/extra'])\n    assert.equal(preRunHudCiSource(path, source), source);\n});",
+   "after": "  const source = readFileSync(row.path, 'utf8').replaceAll('\\r\\n', '\\n');\n  assert.equal(beforeCloseoutHistoryTooling(row.path, source), row.after.source);\n  for (const fixture of [row.after.source, source]) {\n    for (const input of [fixture, fixture.replaceAll('\\n', '\\r\\n')])\n      assert.equal(preRunHudCiSource(row.path, input), row.before.source);\n    for (const input of [fixture + '\\n', fixture.slice(1), fixture.slice(0, -1), fixture.replaceAll('\\n', '\\r\\r\\n'), null, {}, 17])\n      assert.equal(preRunHudCiSource(row.path, input), input);\n    for (const path of ['__proto__', 'constructor', 'foreign/' + row.path, row.path + '/extra'])\n      assert.equal(preRunHudCiSource(path, fixture), fixture);\n  }\n  const mixed = source.replace('\\n', '\\r\\n');\n  assert.equal(preRunHudCiSource(row.path, mixed), mixed);\n});"
+  }
+ ]
+};
+function beforePrHistoryCalibrationFixture(path,source){
+ const receipt=prHistoryCalibrationReceipt;
+ if(path!==receipt.path||!matches(source,receipt.after))return source;
+ const normalized=lf(source);
+ if(source!==normalized&&source!==normalized.replaceAll('\n','\r\n'))return source;
+ const prior=restoreExactFixtureHunks({path,beforeSha256:receipt.before.sha256,
+  afterSha256:receipt.after.sha256,hunks:receipt.hunks},path,normalized);
+ assert(matches(prior,receipt.before),'exact archived PR history calibration fixture');
+ return source===normalized?prior:prior.replaceAll('\n','\r\n');
+}
+
 export function beforeCalibrationReplay(path,source){
+ source=beforePrHistoryCalibrationFixture(path,source);
  source=beforeCloseoutJoustCiFixture(path,source);
+ source=beforeCloseoutHistoryTooling(path,source);
+ source=beforeRunHudCalibrationHelper(path,source);
  source=beforeReleaseLuaNameBudgetTest(path,source);
  source=beforeCurrentHistoricalStsSource(path,source);
  source=beforeMapNodeVisualsLineEndings(path,source);
