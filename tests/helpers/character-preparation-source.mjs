@@ -1,5 +1,5 @@
 import {beforeRefinedReleaseProduction,refinedReleaseProductionPaths} from './refined-release-source.mjs';
-import {beforeReleaseControlsGuideRemoval,beforeReleaseForgeGridUi,beforeReleaseRightClick,beforeReleaseSharedRelicUi,beforeReleaseUiRestore,releaseControlsGuideRemovalSourcePaths,releaseForgeSourcePaths,releaseRightClickSourcePaths,releaseSharedRelicSourcePaths,releaseUiRestoreSourcePaths} from './release-ui-restore-source.mjs';
+import {beforeReleaseCompoundIntent,beforeReleaseControlsGuideRemoval,beforeReleaseForgeGridUi,beforeReleaseRightClick,beforeReleaseSharedRelicUi,beforeReleaseUiRestore,releaseControlsGuideRemovalSourcePaths,releaseForgeSourcePaths,releaseRightClickSourcePaths,releaseSharedRelicSourcePaths,releaseUiRestoreSourcePaths} from './release-ui-restore-source.mjs';
 import { assertCurrentUiEntrance, entrancePredecessor } from './ui-entrance-source.mjs';
 import {battlePeripheryPredecessor} from './battle-periphery-source.mjs';
 import {assertCurrentDevelopUiSource,readRetiredController,retiredControllerPath} from './input-retirement-source.mjs';
@@ -146,6 +146,8 @@ const currentContinuationOwners = new Set([
 ]);
 
 export function beforeCurrentProductionSource(path, source, read = readRaw) {
+  const compound=beforeReleaseCompoundIntent(path,source,read,{requireCurrent:true});
+  if(compound!==source)return beforeCharacterPreparationSource(path,compound,owner=>beforeReleaseCompoundIntent(owner,read(owner)));
   ({source,read}=chapterBattleSceneReader(path,source,read));
   ({source,read}=battlePeripheryPredecessor(path,source,read));
   assertCurrentUiEntrance(path,source);

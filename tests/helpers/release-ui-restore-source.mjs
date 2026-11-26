@@ -134,8 +134,24 @@ export const beforeReleaseControlsGuideRemoval=(path,source,read)=>controlsGuide
 export const releaseRightClickSourcePaths=Object.freeze(Object.keys(rightClick.files));
 export const releaseUiRestoreSourcePaths=Object.freeze([...new Set([...Object.keys(files),...Object.keys(fieldCancel.files)])]);
 export const beforeReleaseRightClick=(path,source)=>rightClick.project(path,fieldCancel.project(path,source));
+const compoundIntentPaths=['src/lua/abyss_battle_intent_view.lua','src/lua/abyss_battle_render_actors.lua'];
+let compoundIntent;
+export function beforeReleaseCompoundIntent(path,source,read,{requireCurrent=false}={}){
+ if(!compoundIntentPaths.includes(path))return source;
+ compoundIntent??=releaseUiRestoreArchive(readFileSync(new URL('../fixtures/release-compound-intent-source.json.gz',import.meta.url)),
+  '4d1d0ca90bc98c95fef49584283807598edd42f995d230357d28fa41efa14111','5acff84e14816711fd9f7a86e1b994069b2c8af6');
+ const prior=compoundIntent.project(path,source);
+ if(source===prior){
+  if(requireCurrent)assert(!matches(source,compoundIntent.files[path].before),'fresh current production owner: '+path);
+  return source;
+ }
+ if(read)for(const owner of compoundIntentPaths)
+  assert(matches(read(owner),compoundIntent.files[owner].after),'combined linked owner identity: '+owner+' during compound intent validation');
+ return prior;
+}
 export function beforeReleaseUiRestore(path,source,read){
- const shop=beforeReleaseShopEntry(path,beforeLateReleaseUiSource(path,source));
+ const compound=beforeReleaseCompoundIntent(path,source,read);
+ const shop=beforeReleaseShopEntry(path,beforeLateReleaseUiSource(path,compound));
  const recording=beforeRecordingUi(path,shop,read);
  const refined=beforeRefinedReleaseProduction(path,recording);
  const forge=beforeReleaseForgeGridUi(path,refined);
@@ -146,9 +162,9 @@ export function beforeReleaseUiRestore(path,source,read){
 const authorizationPaths=[...new Set([...releaseUiRestoreSourcePaths,...releaseRightClickSourcePaths,...releaseControlsGuideRemovalSourcePaths,...releaseSharedRelicSourcePaths,...releaseForgeSourcePaths])];
 
 export function authorizeReleaseUiRestore(samples,read){
- samples=samples.map(([path,source])=>[path,beforeLateReleaseUiSource(path,source)]);
  const readLive=read;
- read=path=>beforeLateReleaseUiSource(path,readLive(path));
+ samples=samples.map(([path,source])=>[path,beforeLateReleaseUiSource(path,beforeReleaseCompoundIntent(path,source,readLive))]);
+ read=path=>beforeLateReleaseUiSource(path,beforeReleaseCompoundIntent(path,readLive(path)));
  for(const [path,input] of samples){
   const expected=shopEntry.files[path]?.after;
   if(matches(input,expected))assert(matches(read(path),expected),'shop entry linked owner changed: '+path);
