@@ -5,9 +5,10 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'nod
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
-import { verifyDownloadedArtifact, verifyLocalBuild, verifyReceipts } from '../scripts/gil-candidate.mjs';
+import { verifyDownloadedArtifact, verifyLocalBuild, verifyLocalProductionPreset, verifyReceipts } from '../scripts/gil-candidate.mjs';
 import { downloadLocalGilBundle, localGilRecord, readLocalGilBundle, writeLocalGilBundle } from '../scripts/local-gil-bundle.mjs';
 import { importedGilReceipt } from '../scripts/hosted-gil-receipt.mjs';
+import { nativeAudioBuildArgs } from '../scripts/build-native-audio-game.mjs';
 import { encoderSha256 } from '../scripts/gil-candidate-preflight.mjs';
 
 const sourceSha = '1'.repeat(40);
@@ -175,4 +176,17 @@ test('verify local base, intermediate, audio receipt and candidate before storin
   writeFileSync(file('malformed.json'), malformed);
   assert.throws(() => readLocalGilBundle(file('malformed.json'), localGilRecord(malformed).sha256), /Malformed/);
   assert.throws(() => writeLocalGilBundle(bundlePath, paths, files => verifyLocalBuild(files, expected)), /EEXIST/);
+});
+
+test('local intake accepts the frozen default preset and rejects other valid native build recipes', () => {
+  const defaultOptions = nativeAudioBuildArgs([]).options;
+  const check = ({ workKey, releaseCandidate, nativePageLifecycle = false, ...options }) =>
+    verifyLocalProductionPreset(defaultOptions, { ...options, toolchainIdentity: { sourceSha256: encoderSha256 } }, nativePageLifecycle);
+  assert.doesNotThrow(() => check(defaultOptions));
+  for (const args of [['--art-version=legacy'], ['--official-assets'], ['--native-card-art-count=0']]) {
+    const alternative = nativeAudioBuildArgs(args).options;
+    assert.throws(() => check(alternative), /default production preset/);
+  }
+  assert.throws(() => check({ ...defaultOptions, lightweight2d: true }), /default production preset/);
+  assert.throws(() => check({ ...defaultOptions, nativePageLifecycle: false }), /default production preset/);
 });
