@@ -65,14 +65,12 @@ function M.status(run,id)
     if v>=0 then return '计数 '..integer(v) end
     return nil
 end
--- Pure bar plan: true = show relic i, '+N' = overflow chip, false = hidden.
+-- Each visible cell identifies one relic on the selected page.
 function M.barCells(total,count,page)
     local cells={}
     for i=1,count do
-        if page then
-            local index=(page-1)*count+i;cells[i]=index<=total and index or false
-        elseif total>count and i==count then cells[i]='+'..(total-count+1)
-        else cells[i]=i<=total end
+        local index=((page or 1)-1)*count+i
+        cells[i]=index<=total and index or false
     end
     return cells
 end

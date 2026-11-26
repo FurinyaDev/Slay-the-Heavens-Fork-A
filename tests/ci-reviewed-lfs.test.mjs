@@ -236,6 +236,7 @@ test('state evidence storage extension freezes all aliases and leaves the origin
  assert.equal(new Set(extension.files.map(row=>row.sha256)).size,58);
  assert.equal(extension.files.filter(row=>row.path.includes('/inspection-')).length,18);
  const original={...manifest};delete original.evidenceExtension;delete original.archiveExtension;delete original.helperExtension;delete original.replayArchiveExtension;delete original.checkoutExtension;
+ delete original.productionBackflowExtension;
  assert.equal(createHash('sha256').update(JSON.stringify(original,null,2)+'\n').digest('hex'),'732a8b8b64611a2a3f714bf41a7c2bc1f458b1a6f9dfb86f5d37d0dc0c3a715a','all original manifest records, categories, OIDs and budget are byte-preserved');
  const ids=new Set(extension.files.flatMap(row=>row.oldBinaryGitBlobs));assert.equal(ids.size,58);
  const ledger=JSON.parse(readFileSync('docs/legal/assets.json','utf8'));

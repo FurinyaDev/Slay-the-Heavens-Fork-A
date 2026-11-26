@@ -10,11 +10,11 @@ local M = {}
 local Pointer = require('abyss_pointer_input')
 local Browser = require('abyss_deck_browser')
 local NativeArt = require('abyss_card_art_runtime')
-local typeNames = { attack = "攻击", skill = "技能", power = "能力", status = "状态", curse = "诅咒" }
 local pileNames = {draw="抽牌堆",discard="弃牌堆",exhaust="消耗堆"}
 local rarityOrder = {basic=1,special=2,common=3,uncommon=4,rare=5,curse=6}
 local noPlayPreview = {}
-local PageReveal = require('abyss_page_reveal')
+local NativeGrid = require('abyss_deck_grid')
+local typeNames = NativeGrid.typeNames
 -- ClientUIGridScrollerControl: current item size/spacing, top/bottom padding,
 -- fixed columns and viewport determine visible rows, including clipped edges.
 -- Only those logical indices must be painted; virtual offscreen items may not exist.
@@ -153,7 +153,7 @@ end
 function M.new(root, presentation, clickEvent, platform, onClose)
     local self = { root = root, visible = false, generation = 0, openSession=0,contentRevision=0,bindings={} }
     local onChanged=platform.deckChanged
-    local browserFit=(platform.deckBrowser or Theme.presentationProfile=='official-assets-first') and CardDisplay.newTextFitter()
+    local browserFit=NativeGrid.textFitter(platform)
     function self.setPresentation(_, value)
         assert(not self.visible and type(value)=="table", "cannot replace visible deck presentation")
         presentation=value
@@ -174,30 +174,8 @@ function M.new(root, presentation, clickEvent, platform, onClose)
     local titleControl=root:GetChild('title')
     local returnRevision=0
     local indexBases=setmetatable({},{__mode='k'})
-    self.browserWarmupPending=official and not platform.deckBrowser and pileGrid and pileGrid.RefreshItems~=nil
-    function self.prepareBrowser()
-        if not self.browserWarmupPending or self.visible then return end
-        self.browserWarmupPending=false
-        if indexBases[pileGrid]~=nil then return end
-        local generation=self.generation
-        local submitting,accepted=true,false
-        local early={}
-        local function remember(control,index)
-            if self.generation~=generation or self.visible or indexBases[pileGrid]~=nil
-                or not control or control.alive==false or (index~=0 and index~=1) then return end
-            pcall(control.SetVisible,control,false)
-            if self.generation==generation and not self.visible then indexBases[pileGrid]=index end
-        end
-        -- Some native hosts defer work on hidden grids. A click always owns
-        -- its refresh and can supersede this optional one-item probe.
-        local ok,result=pcall(pileGrid.RefreshItems,pileGrid,1,function(control,index)
-            if submitting then early.control,early.index=control,index
-            elseif accepted then remember(control,index)end
-        end)
-        submitting,accepted=false,ok and result~=false
-        if accepted then remember(early.control,early.index)end
-        early.control,early.index=nil,nil
-    end
+    self.browserWarmupPending=NativeGrid.canPrepare(official,platform,pileGrid)
+    function self.prepareBrowser() NativeGrid.prepare(self,pileGrid,indexBases) end
     local function gridColumns() return self.browserShell and 5 or Theme.layout.deckView.columns end
     local function browserHeading(kind)
         return self.previewInfo and '初始牌组' or pileNames[kind] or '卡组'
@@ -266,17 +244,7 @@ function M.new(root, presentation, clickEvent, platform, onClose)
         if active then description.text=browseDescriptions[self.pileKind or 'deck'] end
         rarityTip:SetVisible(active==true and self.pileKind=='draw' and not frozenEye(self.run))
         root:GetChild('title'):SetVisible(not sorting and not self.browserShell and not self.cardDetail)
-        if self.browserShell then
-            local pileChrome=root:GetChild('pileChrome')
-            local heading=pileChrome:GetChild('heading')
-            local caption=active and pileNames[self.pileKind]
-            if caption and heading.text~=caption then heading.text=caption end
-            heading:SetVisible(not not caption or self.detailPages~=nil)
-            for _,name in ipairs({'drawBadge','discardBadge'})do
-                local badge=pileChrome:GetChild(name)
-                if badge and badge.visible then badge:SetVisible(false)end
-            end
-        end
+        NativeGrid.paintPileHeading(root,self,active,pileNames)
         local heading=root:GetChild('browseTitle')
         local legacySort=sorting and not self.browserShell
         heading:SetVisible(legacySort==true)
@@ -426,20 +394,6 @@ function M.new(root, presentation, clickEvent, platform, onClose)
             or Combat.cardPreview(battle,instance,nil,definition)
         return CardDisplay.combatText(display,definition,instance,preview,battle)
     end
-    local function paintCardText(face,instance,display,definition,text,bodyUnchanged,focus)
-        local fit=self.browserShell and browserFit or nil
-        CardDisplay.writeTitle(face:GetChild("name"),display.name,instance.upgraded,
-            definition.repeatable and (instance.upgrades or 1) or nil,face:GetChild("type"),typeNames[definition.type] or definition.type,fit)
-        local label=face:GetChild('label')
-        local fits,accepted=true,true
-        if not bodyUnchanged then
-            local write=focus and CardDisplay.writeFocusedBody or CardDisplay.writeBody
-            fits,accepted=write(label,text,face,fit)
-        end
-        if Theme.cardSkin.text.body then label.fontColor=colour(Theme.cardSkin.text.body)end
-        face:GetChild("cost").text = definition.cost == -2 and "" or definition.costMode == "all_energy" and "X" or tostring(definition.cost)
-        return fits,accepted
-    end
     local function paintDeckPalette(face,definition)
         face:GetChild("name").fontColor=colour(Theme.cardSkin.text.title)
         tint(face:GetChild("border"), Theme.color.rarity[definition.rarity] or Theme.color.line)
@@ -447,52 +401,7 @@ function M.new(root, presentation, clickEvent, platform, onClose)
         tint(face:GetChild("nameRule"), Theme.color.rarity[definition.rarity] or Theme.color.line)
         tint(face:GetChild("artPlate"), Theme.color.cardType[definition.type] or Theme.color.panelRaised)
     end
-    local function paintCardSkin(face,definition,look)
-        paintDeckPalette(face,definition)
-        CardSkin.apply(face,definition,platform,look)
-    end
-    local function appearanceOf(face,instance,display,definition,base,text)
-        return {face,definition.id,definition.type,definition.rarity or false,definition.color or false,
-            definition.originalV4 and definition.originalV4.role or false,display.name,not not instance.upgraded,
-            definition.repeatable and (instance.upgrades or 1) or false,definition.cost,definition.costMode or false,
-            base or false,not not self.pileView,text}
-    end
-    local function sameAppearance(previous,current)
-        if not previous or not current then return false end
-        for index,value in ipairs(current)do if previous[index]~=value then return false end end
-        return true
-    end
-    local function paintFace(control,face,instance,display,definition,base,selected,text,binding,appearance)
-        local previous=binding and binding.appearance
-        local matches=sameAppearance(previous,appearance)
-        local art=face:GetChild('art')
-        local syncArt=not matches or display.nativeArt or binding.nativeArt or art.visible~=true
-        if syncArt then PageReveal.registerSource(platform,'deckPanel') end
-        local accepted,artPending=true,display.nativeArt~=nil
-        if not matches then
-            if binding then binding.appearance=nil end
-            local bodyUnchanged=previous and previous[1]==face and binding.bodyText==text
-            local _,textAccepted=paintCardText(face,instance,display,definition,text,bodyUnchanged)
-            accepted=CardDisplay.writeArt(art,definition,picture,face)~=false and textAccepted~=false
-        end
-        if display.nativeArt then
-            CardDisplay.writeNativeArt(face,definition,display.nativeArt,platform,art,instance.uid)
-        elseif syncArt then
-            local _,clean=CardDisplay.clearNativeArt(face,art)
-            artPending=not clean
-        end
-        if matches then return accepted,artPending end
-        paintCardSkin(face,definition,{cost=definition.cost,baseCost=base,selected=selected,
-            surfaceScope=self.pileView and 'battle' or 'deck',templateKind=self.browserShell and 'attack' or nil,
-            templateMaterials=self.browserShell})
-        if self.browserShell then
-            for _,name in ipairs({'nativePlayableRim','glow','costHalo'})do
-                accepted=face:GetChild(name):SetVisible(false)~=false and accepted
-            end
-        end
-        control:GetChild("uid").text=selected and '已选择' or ''
-        return accepted,artPending
-    end
+    local paintGridCard=NativeGrid.painter(self,platform,picture,paintDeckPalette)
     local function fill(control, instance, catalog)
         local generation=self.generation
         local battle=(self.choiceToken or self.pileKind) and self.battle
@@ -501,21 +410,13 @@ function M.new(root, presentation, clickEvent, platform, onClose)
         local face = control:GetChild("face")
         local binding = self.bindings[control]
         local text=cardBody(display,definition,instance,battle)
-        local printed=catalog.cards[instance.cardId]
-        local base=instance.upgraded and printed.upgrade and printed.upgrade.cost or printed.cost
-        local selected=false
-        for _,uid in ipairs(self.choiceSelected or {}) do if uid==instance.uid then selected=true end end
-        local appearance=self.browserShell and CardSkin.referenceGeometry(face)
-            and appearanceOf(face,instance,display,definition,base,text)
-        local accepted,artPending=paintFace(control,face,instance,display,definition,base,selected,text,binding,appearance)
-        if self.generation~=generation or control.alive==false then return false end
-        local hit=control:GetChild('hit')
-        if hit.visible~=true and hit:SetVisible(true)==false then return false end
-        if self.generation~=generation then return false end
+        local base,selected,appearance=NativeGrid.cardLook(self,face,instance,display,definition,catalog,text)
+        local accepted,artPending=paintGridCard(control,face,instance,display,definition,base,selected,text,binding,appearance,browserFit)
+        local hit=NativeGrid.showHit(self,generation,control)
+        if not hit then return false end
         bindCard(control,hit,instance,accepted and text or nil,fill)
         local painted=self.bindings[control]
-        if control.visible~=true and control:SetVisible(true)==false then return false end
-        if self.generation~=generation then return false end
+        if not NativeGrid.publish(self,generation,control) then return false end
         painted.appearance,painted.nativeArt=accepted and appearance or nil,artPending
         return true
     end
@@ -583,6 +484,15 @@ function M.new(root, presentation, clickEvent, platform, onClose)
         end
         return true
     end
+    local function invalidateDetailGrid()
+        if self.paged then
+            pool:cancel();self.pendingGrid=false
+        elseif self.browserShell and (self.pending or self.pendingGrid or self.calibrating) then
+            self.generation=self.generation+1
+            self.pending,self.pendingGrid,self.calibrating,self.gridReady=false,false,false,nil
+            self.detailGridInvalidated=true
+        end
+    end
     function self.showCardDetails(_,instance)
         if not self.visible or self.choiceToken or inDetail() then return false end
         local state=self.battle or {catalog=self.catalog}
@@ -595,13 +505,7 @@ function M.new(root, presentation, clickEvent, platform, onClose)
         if not paintCardDetail(context,context.current) then return false end
         self.cardDetail=context
         returnRevision=returnRevision+1
-        if self.paged then
-            pool:cancel();self.pendingGrid=false
-        elseif self.browserShell and (self.pending or self.pendingGrid or self.calibrating) then
-            self.generation=self.generation+1
-            self.pending,self.pendingGrid,self.calibrating,self.gridReady=false,false,false,nil
-            self.detailGridInvalidated=true
-        end
+        invalidateDetailGrid()
         details:SetAnchoredPosition(360,30);details:SetSizeDelta(noteWidth,noteHeight)
         detailHit:SetAnchoredPosition(360,30);detailHit:SetSizeDelta(noteWidth,noteHeight)
         for _,name in ipairs({'previous','next','pageHint'})do root:GetChild(name):SetVisible(false)end
