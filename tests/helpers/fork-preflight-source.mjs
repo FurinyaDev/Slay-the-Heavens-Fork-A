@@ -1209,11 +1209,15 @@ function beforeDevelopEpochReplayRuntime(path,source){
 const replayAssetLedger='docs/legal/assets.json';
 const referenceAssetLedger=['6e618cdf519fbe4c252dcc1a33b42eac4e737e89641ad215d93fcf50fecab8c3','69d938af08e70e12466cb44b5375b669993fab33'];
 const preReferenceAssetLedger=['3c4b140e7d432bb1de89289e516723dafa14daecd414b1ffe94b4f39d267f5c2','94e5b7f8a05e190d59e603b7b0760fc968d2a600'];
+const peripheryAssetLedger=['bd6482cadc9de9ee77f402709c28949d693eaaf2b0283332ea548a5b8259fb88','a1ca830829f045b31941c750ac6cbf0191765c05'];
 function currentAssetLedgerRead(read){
  return (path,...args)=>{
   const raw=read(path,...args);
-  if(path===replayAssetLedger)assert(exactCheckoutSource(Buffer.isBuffer(raw)?raw.toString('utf8'):raw,referenceAssetLedger),
-   'fresh complete integration source: '+path);
+  if(path===replayAssetLedger){
+   const source=Buffer.isBuffer(raw)?raw.toString('utf8'):raw;
+   assert(exactCheckoutSource(source,peripheryAssetLedger)||exactCheckoutSource(source,referenceAssetLedger),
+    'fresh complete integration source: '+path);
+  }
   return raw;
  };
 }
@@ -1233,8 +1237,14 @@ function beforeDeckBrowserAssetLedger(source){
  if(typeof source!=='string'||source.includes('\r\r\n'))return source;
  let current=normalize(source);
  if(source!==current&&source!==current.replaceAll('\n','\r\n'))return source;
+ // #988 registers five reviewed battle control captures.
+ if(exactCheckoutSource(source,peripheryAssetLedger)){
+  current=withoutArchiveRecords(current,'    "docs/evidence/v2.2.0-viewport/mobile-16-9-periphery.png": {\n',
+   '    "data/presentation/event-native-controls.json": {\n');
+  assert(exactSourceBinding(current,referenceAssetLedger),'exact pre-#988 asset ledger');
+ }
  // #1017 registers six reviewed design and simulator evidence files.
- if(exactCheckoutSource(source,referenceAssetLedger)){
+ if(exactSourceBinding(current,referenceAssetLedger)){
   current=withoutArchiveRecords(current,'    "docs/design/reference-assets/v2.2.0/battle-scene/act1-geometry.svg": {\n',
    '    "data/presentation/event-native-controls.json": {\n');
   assert(exactSourceBinding(current,preReferenceAssetLedger),'exact pre-#1017 asset ledger');
