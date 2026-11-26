@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@Furinya'
 created_date: '2026-11-25 21:00'
-updated_date: '2026-11-25 23:54'
+updated_date: '2026-11-26 00:05'
 labels:
   - v2.2.0
 milestone: m-8
@@ -58,4 +58,6 @@ ordinal: 211000
 #993 合入 develop 5e318736e0de5c0a34fb17f2961a5a66cd577a70，独立评审 6066158756、32 项定向和 Fork Quick 45717471692 通过。Hotfix 使用同一冻结 Full、正式 GIL 和既有性能门槛。该 PR 验收源码接线，线上实测及设备门禁仍待完成。
 
 已核对线上 v2.1.1 实际归档 afe80c0783d0d4b6046c1f44cba3ef2b71cb8bb34fbc7404d939d12e0f5ff831，在 1 CPU / 2 GiB / 无 swap 的 cgroup 完成 14 个 Host 阶段。真实包性能接线候选 #998 独立评审 6066612713，37 项定向合约、原 Release Bootstrap 与缺包在 Docker 前失败的负对照通过。Fork Quick 45723780259 两次未完成 Git LFS 恢复。待获取当前候选实际 GIL、正式同包六档配对及设备证据。
+
+#998 已以实际独审树合入 develop 8a5f86813e993a9b8cd85dd8016a2943d4a7c629。正式性能工具接受真实 GIL 中模块及运行时图；当前候选和正式配对仍待实际有声包。
 <!-- SECTION:NOTES:END -->

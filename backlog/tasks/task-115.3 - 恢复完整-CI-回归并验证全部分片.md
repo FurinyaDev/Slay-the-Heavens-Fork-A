@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@Furinya'
 created_date: '2026-11-25 21:00'
-updated_date: '2026-11-25 23:52'
+updated_date: '2026-11-26 00:05'
 labels:
   - v2.2.0
 milestone: m-8
@@ -58,4 +58,6 @@ ordinal: 210000
 #996 来源与夹具修复已合入 develop ecce2251ef9dcb9542488ac92ba31de5a62d438a。原 Release Bootstrap 定向通过，899 个 JS、1,426 个 Lua，独立评审 6066337165 和精确 Fork Quick 通过。Linux 原计划为 1,205,366 ms，高于 1,200,000 ms；现行架构旧回执仍待修复。主仓 Full 45720732047 排队。验收项保持未勾。
 
 现行架构与样式回放 #997 已合入 develop 060b13c612bb3d4ad36044939f11ca3f5b2929c7。独立评审 6066545524 及原定向 6/7 通过，原 Linux 预算仍高 5,366 ms。Fork Quick 45722483438 两次在 Git LFS 素材恢复失败，测试步骤未运行。精确主仓 Quality 45723458426、Licenses 45723458427 排队，验收项继续待验。
+
+060b13c6 的主仓 Quality 与 Licenses 在变更前均未分配 Runner，排队约 21 分钟后由 develop 并发机制取消。#998 后同一工作流入队，精确 8a5f86813e993a9b8cd85dd8016a2943d4a7c629，Quality 45726046674、Licenses 45726046811。
 <!-- SECTION:NOTES:END -->
