@@ -1,11 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { dirname, join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { sha256 } from '../../scripts/evidence-files.mjs';
+import { loadUiReferences, parseIndex } from '../../scripts/check-ui-references.mjs';
 import { indexPath, tablePath, renderTable } from '../../scripts/render-ui-reference-table.mjs';
 
 const guidance = fileURLToPath(new URL('../../scripts/check-ui-references.mjs', import.meta.url));
@@ -122,4 +123,44 @@ test('required guidance rejects UI design regressions and passes restored or unr
   const accepted = pull(declared);
   assert.equal(accepted.status,0,accepted.stderr);
   console.log('GREEN same PR merge bound to the approved revision');
+});
+
+test('v2.2.0 selection registers the approved composition and retires the two prior views', () => {
+  const rows = loadUiReferences().filter(row =>
+    row.targetVersion === 'v2.2.0' && row.codePath === 'scripts/character-selection-composition.mjs');
+  const views = [['details', 'sts1-open-copy-20261119'], ['characterPanel', 'develop']];
+  assert.equal(rows.length, views.length * 2);
+  for (const [state, priorRevision] of views) {
+    const current = rows.find(row => row.state === state && row.status === 'APPROVED');
+    const prior = rows.find(row => row.state === state && row.revision === priorRevision);
+    assert.equal(current?.revision, 'release-sts1-20261122');
+    assert.deepEqual(current.supersedes, [priorRevision]);
+    assert.equal(current.backlogTask, 'TASK-115.10');
+    assert.equal(prior?.status, 'SUPERSEDED');
+    assert.throws(() => parseIndex({references: rows.filter(row => row !== prior)}), /Invalid supersedes link/);
+    assert.throws(() => parseIndex({references: [...rows, {...current, revision: 'unreviewed-copy'}]}),
+      /Multiple APPROVED UI references/);
+  }
+});
+
+test('both production selection owners retain their exact pre-entrance replay and reject stale sources', async () => {
+  const {beforeMasterBackflowSource} = await import('./master-backflow-source.mjs');
+  const {assertCurrentUiEntrance, beforeUiEntrance} = await import('./ui-entrance-source.mjs');
+  const owners = [
+    ['src/lua/abyss_character_select_view.lua', 'b2e12bb1285b1ff8986968771e8a7932b9068a24a01ec1fea9ea6ee6dc216631'],
+    ['src/lua/abyss_game_ui_input.lua', '6b30cd677f8a9f3a8e9eb33fc2ca417862d914e3d7b30761a99cfe89cd72759e'],
+  ];
+  for (const [path, expected] of owners) {
+    const current = readFileSync(path, 'utf8').replaceAll('\r\n', '\n');
+    const predecessor = beforeMasterBackflowSource(path, current);
+    assert.notEqual(predecessor, current, path);
+    assert.doesNotThrow(() => assertCurrentUiEntrance(path, predecessor));
+    assert.equal(sha256(beforeUiEntrance(path, predecessor)), expected, path);
+    const windows = text => text.replaceAll('\n', '\r\n');
+    assert.equal(beforeMasterBackflowSource(path, windows(current)), windows(predecessor), path);
+    for (const stale of [predecessor, current.slice(0, -1) + '!', windows(current).replace('\r\n', '\r\r\n')]) {
+      assert.throws(() => beforeMasterBackflowSource(path, stale), /fresh master backflow source/);
+    }
+    assert.equal(beforeMasterBackflowSource('foreign/' + path, current), current);
+  }
 });
