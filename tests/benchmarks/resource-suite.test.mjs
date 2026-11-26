@@ -12,21 +12,45 @@ test('pull requests changing battle scene and viewport inputs run Fast performan
   const paths = pullRequest.match(/^    paths:\n((?:      - [^\n]+\n)+)/m)?.[1] ?? '';
   const patterns = [...paths.matchAll(/^      - '([^']+)'$/gm)].map(([, pattern]) => pattern);
   const selects = path => patterns.some(pattern => matchesGlob(path, pattern));
-  const sceneAndViewportInputs = [
+  const existingInputs = [
+    '.github/workflows/performance-regression.yml',
+    'scripts/runtime-baseline/worker.mjs',
     'scripts/build-ui.mjs',
+    'scripts/monster-art.mjs',
+    'src/lua/abyss_map_ui.lua',
+    'src/lua/abyss_ui.lua',
+    'src/lua/abyss_battle_ui.lua',
+    'src/lua/abyss_deck_ui.lua',
+    'src/lua/abyss_page_reveal.lua',
+    'tests/benchmarks/resource-suite.test.mjs',
+    'tests/release-performance.test.mjs',
+  ];
+  const battlePresentationInputs = [
+    'data/presentation/native-monster-art.json',
+    'data/presentation/ui_theme.json',
+    'data/release/refined-monster-art.json',
+    'scripts/build-native-candidate.mjs',
+    'scripts/native-candidate-scripts.mjs',
     'scripts/official-assets-layout.mjs',
+    'scripts/refined-release-monsters.mjs',
     'scripts/v220-battle-scene-geometry.mjs',
     'scripts/v220-chapter-battle-scenes.mjs',
     'scripts/viewport-layout.mjs',
-    'data/presentation/ui_theme.json',
-    'src/lua/abyss_battle_ui.lua',
+    'src/lua/abyss_actor_motion.lua',
+    'src/lua/abyss_byrd_ground_trial.lua',
+    'src/lua/abyss_card_flow.lua',
     'src/lua/abyss_chapter_battle_scene.lua',
+    'src/lua/abyss_feedback.lua',
+    'src/lua/abyss_feedback_actor_painter.lua',
     'src/lua/abyss_game_ui.lua',
     'src/lua/abyss_game_ui_view.lua',
+    'src/lua/abyss_monster_art.lua',
+    'src/lua/abyss_node_ui_input.lua',
     'src/lua/abyss_viewport.lua',
   ];
-  assert.deepEqual(sceneAndViewportInputs.filter(path => !selects(path)), []);
-  for (const path of ['docs/design/UI_DESIGN.md', 'experiments/byrd-ground-trial/test.mjs']) {
+  assert.deepEqual([...existingInputs, ...battlePresentationInputs].filter(path => !selects(path)), []);
+  for (const path of ['docs/design/UI_DESIGN.md', 'experiments/byrd-ground-trial/test.mjs',
+    'art/unrelated.png', 'src/lua/abyss_curses.lua']) {
     assert.equal(selects(path), false, path);
   }
   assert.match(workflow, /RESOURCE_MODE: \$\{\{ github\.event_name == 'pull_request' && 'fast' \|\| inputs\.mode \}\}/);
