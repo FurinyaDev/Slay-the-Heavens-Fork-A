@@ -46,8 +46,10 @@ function matchesEntrance(path,source,expected){
 }
 function currentEntranceSource(path,source,expected){
  if(matchesEntrance(path,source,expected))return source;
- const prior=beforeChapterBattleScene(path,beforeKnownMasterBackflowSource(path,source));
- if(prior!==source&&matchesEntrance(path,prior,expected))return prior;
+ const masterPrior=beforeKnownMasterBackflowSource(path,source);
+ if(masterPrior===source)return;
+ const prior=beforeChapterBattleScene(path,masterPrior);
+ if(matchesEntrance(path,prior,expected))return prior;
 }
 const currentMatches=(path,source,expected)=>currentEntranceSource(path,source,expected)!==undefined;
 const predecessors=new Map();

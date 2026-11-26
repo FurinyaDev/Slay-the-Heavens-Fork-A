@@ -463,8 +463,8 @@ const reviewedCopySources=Object.freeze({
  },
  "tests/helpers/ui-entrance-source.mjs": {
   "current": {
-   "sha256": "47074fa0193ace25307ad13f497818f16c52af8ff6d70316703c7248cdd46b22",
-   "gitBlob": "9f61b73f111f25daf38b9a3bf3f66ea50d58c6a9"
+   "sha256": "50851099aed8dca2d5e6da5a715df63ab939f51729b56edab0ca81bec6dee5c0",
+   "gitBlob": "343f6486ebb70ab190d8c28026c6049ff4d48d25"
   },
   "previous": {
    "sha256": "c64976a04e877f65315ad8553bd8f6380b6e50a5ab5fce60e3b37bbbb98825c1",
@@ -485,7 +485,7 @@ const reviewedCopySources=Object.freeze({
    },
    {
     "at": 36,
-    "remove": 18,
+    "remove": 20,
     "previous": [
      "const currentInput=(path,source)=>replaySources.includes(path)",
      " ?beforeCurrentReplayFixes(path,source):beforeApprovedUiEntrance(path,source);",
@@ -500,7 +500,7 @@ const reviewedCopySources=Object.freeze({
     ]
    },
    {
-    "at": 68,
+    "at": 70,
     "remove": 7,
     "previous": [
      "",

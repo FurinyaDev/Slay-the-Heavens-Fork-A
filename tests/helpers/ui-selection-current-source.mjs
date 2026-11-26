@@ -394,7 +394,7 @@ const nodeNoticeCopier=Object.freeze({
  ]
 });
 const deckArchitectureCopier=Object.freeze({
- current:{"sha256":"c1464fc351c528560b05e58a8ba8f1591d4d148d80deab8298529f48e4062f49","gitBlob":"e5205a7748e7672641eae4a9aac66c481a25d80a"},
+ current:{"sha256":"a2cf59570ca79e5fd3126bbfb23f8e4b76689c4fe69aab48a482ba32e367eeb3","gitBlob":"4c14d8ff4a2153980410a90b81538e92619c7d3a"},
  previous:combinedReceipt(copierPath).current,
  hunks:[
  {
@@ -410,12 +410,12 @@ const deckArchitectureCopier=Object.freeze({
  {
   "at": 463,
   "before": " \"tests/helpers/ui-entrance-source.mjs\": {\n  \"current\": {\n   \"sha256\": \"db68a4fbfb77de2972cea9a750e6df941fb492e74e95e666ee24ca1aca0c3834\",\n   \"gitBlob\": \"66a8db632e59f0e84f19a8f9d97e7eedbd2ef880\"\n  },\n  \"previous\": {",
-  "after": " \"tests/helpers/ui-entrance-source.mjs\": {\n  \"current\": {\n   \"sha256\": \"47074fa0193ace25307ad13f497818f16c52af8ff6d70316703c7248cdd46b22\",\n   \"gitBlob\": \"9f61b73f111f25daf38b9a3bf3f66ea50d58c6a9\"\n  },\n  \"previous\": {"
+  "after": " \"tests/helpers/ui-entrance-source.mjs\": {\n  \"current\": {\n   \"sha256\": \"50851099aed8dca2d5e6da5a715df63ab939f51729b56edab0ca81bec6dee5c0\",\n   \"gitBlob\": \"343f6486ebb70ab190d8c28026c6049ff4d48d25\"\n  },\n  \"previous\": {"
  },
  {
   "at": 472,
   "before": "  \"edits\": [\n   {\n    \"at\": 8,\n    \"remove\": 1,\n    \"previous\": [\n     \"import {beforeCurrentReplayFixes,beforeOfficialCharacterBackflow} from './current-replay-fix-sources.mjs';\"\n    ]\n   },\n   {\n    \"at\": 37,\n    \"remove\": 3,\n    \"previous\": [\n     \" if(!matchesApprovedUiEntranceOwner(path,source))return false;\"\n    ]\n   }",
-  "after": "  \"edits\": [\n   {\n    \"at\": 6,\n    \"remove\": 8,\n    \"previous\": [\n     \"import {exactSourceMatches as matches,sourceConfigLayoutMatches} from './source-fingerprint.mjs';\",\n     \"import {restoreExactFixtureHunks} from './exact-fixture-hunks.mjs';\",\n     \"import {beforeCurrentReplayFixes,beforeOfficialCharacterBackflow} from './current-replay-fix-sources.mjs';\",\n     \"import {beforeApprovedUiEntrance,matchesApprovedUiEntranceOwner} from './ui-entrance-approved-sources.mjs';\",\n     \"\",\n     \"const archive=readFileSync(new URL('../fixtures/ui-entrance-source.json.gz',import.meta.url));\"\n    ]\n   },\n   {\n    \"at\": 36,\n    \"remove\": 18,\n    \"previous\": [\n     \"const currentInput=(path,source)=>replaySources.includes(path)\",\n     \" ?beforeCurrentReplayFixes(path,source):beforeApprovedUiEntrance(path,source);\",\n     \"function currentMatches(path,source,expected){\",\n     \" if(!matchesApprovedUiEntranceOwner(path,source))return false;\",\n     \" const normalized=currentInput(path,source);\",\n     \" if(requiredCurrentOwners.includes(path)&&normalized===source)return false;\",\n     \" return matches(normalized,expected);\",\n     \"}\",\n     \"const predecessors=new Map();\",\n     \"\"\n    ]\n   },\n   {\n    \"at\": 68,\n    \"remove\": 7,\n    \"previous\": [\n     \"\",\n     \"export function beforeUiEntrance(path,source){\",\n     \" return project(path,source,binding(path));\",\n     \"}\",\n     \"\"\n    ]\n   }"
+  "after": "  \"edits\": [\n   {\n    \"at\": 6,\n    \"remove\": 8,\n    \"previous\": [\n     \"import {exactSourceMatches as matches,sourceConfigLayoutMatches} from './source-fingerprint.mjs';\",\n     \"import {restoreExactFixtureHunks} from './exact-fixture-hunks.mjs';\",\n     \"import {beforeCurrentReplayFixes,beforeOfficialCharacterBackflow} from './current-replay-fix-sources.mjs';\",\n     \"import {beforeApprovedUiEntrance,matchesApprovedUiEntranceOwner} from './ui-entrance-approved-sources.mjs';\",\n     \"\",\n     \"const archive=readFileSync(new URL('../fixtures/ui-entrance-source.json.gz',import.meta.url));\"\n    ]\n   },\n   {\n    \"at\": 36,\n    \"remove\": 20,\n    \"previous\": [\n     \"const currentInput=(path,source)=>replaySources.includes(path)\",\n     \" ?beforeCurrentReplayFixes(path,source):beforeApprovedUiEntrance(path,source);\",\n     \"function currentMatches(path,source,expected){\",\n     \" if(!matchesApprovedUiEntranceOwner(path,source))return false;\",\n     \" const normalized=currentInput(path,source);\",\n     \" if(requiredCurrentOwners.includes(path)&&normalized===source)return false;\",\n     \" return matches(normalized,expected);\",\n     \"}\",\n     \"const predecessors=new Map();\",\n     \"\"\n    ]\n   },\n   {\n    \"at\": 70,\n    \"remove\": 7,\n    \"previous\": [\n     \"\",\n     \"export function beforeUiEntrance(path,source){\",\n     \" return project(path,source,binding(path));\",\n     \"}\",\n     \"\"\n    ]\n   }"
  },
  {
   "at": 527,
