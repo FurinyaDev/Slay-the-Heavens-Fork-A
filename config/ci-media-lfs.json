@@ -7556,7 +7556,7 @@
   },
   "checkoutExtension": {
     "sourceCommit": "6492e8dccbcf847a0eba7ad3995da50257032e08",
-    "maxPayloadBytes": 24909600,
+    "maxPayloadBytes": 26443831,
     "files": [
       {
         "path": "docs/design/reference-assets/v2.0.0/sts1-main-menu-20261121/background-hd.png",
@@ -7575,6 +7575,36 @@
         "category": "sts1-menu-session-reference",
         "oldBinaryGitBlobs": [
           "b016172f96762c604064a727d377d5f3c86b8e6d"
+        ],
+        "sourceCommit": "6492e8dccbcf847a0eba7ad3995da50257032e08"
+      },
+      {
+        "path": "docs/evidence/m7-defect-utility-baseline-engineering-20261108.json.gz",
+        "sha256": "e61634a0b317b58fd2e93b781388bfceda541a524562ab2c1b7132b8b77b7e36",
+        "bytes": 401827,
+        "category": "project-ci-history-evidence",
+        "oldBinaryGitBlobs": [
+          "fecf2a626d007b290bb8213e1c4bddd6f49ac030"
+        ],
+        "sourceCommit": "6492e8dccbcf847a0eba7ad3995da50257032e08"
+      },
+      {
+        "path": "docs/evidence/m7-defect-utility-current-engineering-20261108.json.gz",
+        "sha256": "4f61cccf5978587667e319b9be3139800f037faab96ca2a27f9c2d8a43f1d03f",
+        "bytes": 402088,
+        "category": "project-ci-history-evidence",
+        "oldBinaryGitBlobs": [
+          "d226fe811d2de810524ccee7a5f3e4eea0b987b2"
+        ],
+        "sourceCommit": "6492e8dccbcf847a0eba7ad3995da50257032e08"
+      },
+      {
+        "path": "docs/evidence/m7-reward-query-shop-graph-20261107.jsonl.gz",
+        "sha256": "b15a1994356684d4e052edb71618265716c2976921daaf7756fef81cc9c9cd09",
+        "bytes": 730316,
+        "category": "project-ci-history-evidence",
+        "oldBinaryGitBlobs": [
+          "8875d07f002cad7ed6cf4ba1b8929d7b66376012"
         ],
         "sourceCommit": "6492e8dccbcf847a0eba7ad3995da50257032e08"
       },

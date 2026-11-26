@@ -10924,6 +10924,30 @@
       "storage": "ci-media-lfs-v1",
       "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
     },
+    "docs/evidence/m7-defect-utility-baseline-engineering-20261108.json.gz": {
+      "sha256": "e61634a0b317b58fd2e93b781388bfceda541a524562ab2c1b7132b8b77b7e36",
+      "bytes": 401827,
+      "category": "project-ci-history-evidence",
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "6492e8dccbcf847a0eba7ad3995da50257032e08"
+    },
+    "docs/evidence/m7-defect-utility-current-engineering-20261108.json.gz": {
+      "sha256": "4f61cccf5978587667e319b9be3139800f037faab96ca2a27f9c2d8a43f1d03f",
+      "bytes": 402088,
+      "category": "project-ci-history-evidence",
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "6492e8dccbcf847a0eba7ad3995da50257032e08"
+    },
+    "docs/evidence/m7-reward-query-shop-graph-20261107.jsonl.gz": {
+      "sha256": "b15a1994356684d4e052edb71618265716c2976921daaf7756fef81cc9c9cd09",
+      "bytes": 730316,
+      "category": "project-ci-history-evidence",
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "6492e8dccbcf847a0eba7ad3995da50257032e08"
+    },
     "experiments/archive/emergency-20261108/card-upgrade-recovery/original-runtime.patch.gz": {
       "sha256": "06d046e3a52506490c826c7dfcbedd5d86b75f749e2a7570c8957a9623a0b56e",
       "bytes": 1166600,

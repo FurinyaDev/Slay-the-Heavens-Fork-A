@@ -265,7 +265,7 @@ test('existing media pointers retain their exact original ledger identities and 
  const overlap=new Set(replayArchiveFiles.map(row=>row.path));
  const shared=checkoutFiles.filter(row=>overlap.has(row.path));
  assert.equal(shared.length,6);assert.equal(shared.reduce((sum,row)=>sum+row.bytes,0),18767343);
- assert.deepEqual(validateMediaPointers(pointers),{files:885,objects:834,bytes:204741985});
+ assert.deepEqual(validateMediaPointers(pointers),{files:888,objects:837,bytes:206276216});
  assert.equal(maxMediaPayloadBytes,117369505);assert.equal(maxEvidencePayloadBytes,37495268);assert.equal(lfs.maxReviewedPngBytes,5983528);
  for(const row of mediaFiles){const entry=ledger.files[row.path];assert.equal(entry.sha256,row.sha256);assert.equal(entry.bytes,row.bytes);assert.equal(entry.category,row.category);assert.equal(entry.storage,'ci-media-lfs-v1');}
  const first=mediaFiles[0],wrong=new Map(pointers);wrong.set(first.path,Buffer.from(mediaPointer(first).toString().replace(first.sha256,'0'.repeat(64))));
@@ -276,7 +276,7 @@ test('existing media pointers retain their exact original ledger identities and 
 });
 
 test('complete existing media are freshly authenticated on a cache hit without a transfer token',()=>{
- assert.deepEqual(prepareMediaAssets({env:{...process.env,CI_LFS_TOKEN:''}}),{status:'cached',files:886,objects:835,bytes:206289673});
+ assert.deepEqual(prepareMediaAssets({env:{...process.env,CI_LFS_TOKEN:''}}),{status:'cached',files:888,objects:837,bytes:206276216});
 });
 
 test('three existing CI archives retain complete bytes and original Git blob identities under exact storage',()=>{
@@ -326,9 +326,9 @@ test('the seven replay archives retain their protected Git blob and compressed b
 });
 
 test('checkout storage preserves the reviewed binary fixtures, paths, and original comparison identities',()=>{
- assert.equal(checkoutFiles.length,10);
- assert.equal(maxCheckoutPayloadBytes,24909600);
- assert.equal(new Set(checkoutFiles.map(row=>row.sha256)).size,10);
+ assert.equal(checkoutFiles.length,13);
+ assert.equal(maxCheckoutPayloadBytes,26443831);
+ assert.equal(new Set(checkoutFiles.map(row=>row.sha256)).size,13);
  const retiredSave='docs/evidence/map-v25-20261110/raw/game.save.json.gz';
  assert(!mediaFiles.some(row=>row.path===retiredSave));
  assert(!existsSync(retiredSave),'raw save stays in historical commits only');

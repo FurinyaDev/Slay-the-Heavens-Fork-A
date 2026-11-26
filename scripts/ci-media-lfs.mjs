@@ -8,14 +8,14 @@ import {spawnSync} from 'node:child_process';
 import {lfsArguments,lfsEnvironment,prepareRuntimePreviews,runtimePreviewPaths,runtimePreviewObjects} from './ci-reviewed-lfs.mjs';
 const hash=bytes=>createHash('sha256').update(bytes).digest('hex');
 const bytes=readFileSync(new URL('../config/ci-media-lfs.json',import.meta.url));
-assert.equal(hash(bytes),'f7e0299e0d8b5be14a94f7bbfdc6f90153b07485a7b4575e0f54f2c93956d88f','exact media and evidence manifest');
+assert.equal(hash(bytes),'2c8470c78d11cddfa0a33c234f624175636fa5f42fa2a9a558eb92425507ce00','exact media and evidence manifest');
 const manifest=JSON.parse(bytes);
 assert.equal(manifest.schemaVersion,1);
 const {productionBackflowExtension,checkoutExtension,replayArchiveExtension,...sharedManifest}=manifest;
 assert.equal(hash(JSON.stringify({...sharedManifest,replayArchiveExtension},null,2)+'\n'),
  '80e6bae0a63426858864d5d13d50b86e7fa2369a4b89715b2f0d264b8068092e','complete develop replay contract');
 assert.equal(hash(JSON.stringify({...sharedManifest,checkoutExtension},null,2)+'\n'),
- 'ab2054f4a228b9c948ecd0a5a906aaf8e389a0d9f7d77923984b318bb71001b4','exact checkout contract after TASK-116 review');
+ '0508e496bbe91cd11f9a81e7b1ff8064c6b8e935fd63d81ffaff718e60c9dcf8','exact checkout contract after TASK-116 review');
 assert.equal(hash(JSON.stringify(sharedManifest,null,2)+'\n'),
  'a744f84701e638657569cf3211443adbace935c28435b2742ebc28b2a666e89d','complete pre-checkout media contract');
 const original={...sharedManifest};delete original.evidenceExtension;delete original.archiveExtension;delete original.helperExtension;
@@ -45,7 +45,7 @@ export const maxEvidencePayloadBytes=37495268;
 export const maxArchivePayloadBytes=6584075;
 export const maxHelperArchivePayloadBytes=5435595;
 export const maxReplayArchivePayloadBytes=20312962;
-export const maxCheckoutPayloadBytes=24909600;
+export const maxCheckoutPayloadBytes=26443831;
 export const maxProductionBackflowPayloadBytes=11402323;
 const sharedReplayPayloadBytes=18767343;
 assert.equal(manifest.maxPayloadBytes,maxMediaPayloadBytes);
@@ -71,7 +71,7 @@ assert.deepEqual(replayArchiveFiles.map(row=>row.path),[
 ]);
 assert.equal(checkoutExtension.sourceCommit,'6492e8dccbcf847a0eba7ad3995da50257032e08');
 assert.equal(checkoutExtension.maxPayloadBytes,maxCheckoutPayloadBytes);
-assert.equal(checkoutFiles.length,10);
+assert.equal(checkoutFiles.length,13);
 assert(checkoutFiles.every(row=>/^(?:(?:docs|experiments)\/.+\.(?:gz|png)|tests\/(?:fixtures|helpers)\/.+\.json\.gz)$/.test(row.path)
  &&row.sourceCommit===checkoutExtension.sourceCommit),'exact published checkout paths and provenance');
 assert.equal(productionBackflowExtension.sourceCommit,'d96c9f0d7958148ec1bb027f14a3214da81d06b4');

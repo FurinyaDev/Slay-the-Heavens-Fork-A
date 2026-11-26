@@ -22,12 +22,12 @@ for (const [path, { before, after }] of Object.entries(files)) {
 // #964 and #988 precede the backflow on develop. Bind the merged shop and
 // ledger sources and the TASK-116 checkout cleanup alongside the frozen proof.
 const updatedSources = new Map([
-  ['.gitattributes', ['0aba7195a1eef9b162ca4b6e34e305d999265b8a06442bfcfbe5daedb46340bb', 'c8c30698af877c6ca9775cd06db51f59b7835af8']],
-  ['config/ci-media-lfs.json', ['f7e0299e0d8b5be14a94f7bbfdc6f90153b07485a7b4575e0f54f2c93956d88f', '754f9d4ff2af525e7f42981001ebb10ad043417d']],
-  ['docs/legal/assets.json', ['4c75c58ba79f5cfb92e9cc9a076aba16e961a00f2140bdc70918a40fe100bc03', '459c11dcfaa1d2c9e564db8df36002aea78c8ed2']],
-  ['scripts/ci-media-lfs.mjs', ['c6910f11876c2c542064acbd0a4a6a0cd34aa1fc5d65fd251f98eff90b6087e9', 'f6d203eeefd950d3a052548799ce3d11b49b91a9']],
+  ['.gitattributes', ['889f8fcde1d9cd6ec11ca79cec21677612e94b11cb1bfccd53a64fd5a71c06a6', 'dafbf156e289707fd0a9a612badf45794e6d67ba']],
+  ['config/ci-media-lfs.json', ['2c8470c78d11cddfa0a33c234f624175636fa5f42fa2a9a558eb92425507ce00', '8e97088d1172eaa434a9f032166ca09325900983']],
+  ['docs/legal/assets.json', ['2fd4b435b871db820568656d28d6afb7e755bc08bcc1afd870a53d8dbba57737', '8d2d572f49b288faa19abb5fb516f7f6b00f140f']],
+  ['scripts/ci-media-lfs.mjs', ['e0e71dca9c631734d1cf52f9eae7684428095d949eb4b956d592899652ef0d63', '3803eaa2637dc1e8370bf98dba77e82cd52c71d9']],
   ['src/lua/abyss_shop_ui.lua', ['caa2a9e292c671e8caccda3c04905bad9f930b53bb5c52d14491452845b7cb1c', 'e7956c45a252b2595fb5af636b56e3a12d4a4581']],
-  ['tests/ci-reviewed-lfs.test.mjs', ['279dd9ee1076cb17e4de084e8b2298848e8db02276b212241fa5cf18740fbff8', '1e18ae84225ae15bac2a84dd2efbd7a05a9990ea']],
+  ['tests/ci-reviewed-lfs.test.mjs', ['2a9a520742fc514b7edfad5ae8b636caf5834cfd8e7c8cd49b971ea054a9c119', '0d61e4d967a2a9946cd2adb9d32762064215a73c']],
   ['tests/helpers/fork-preflight-source.mjs', ['50ac27e419d0ed510ccbb077128c98726ee176045c5699bd29fade30d4e7762d', '1a61e0b04c06f7b5e927ce6d83d6632e253b2db7']],
 ]);
 

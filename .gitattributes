@@ -1470,6 +1470,9 @@ tests/fixtures/sts-ui-closeout-ci.json text eol=lf
 
 docs/design/reference-assets/v2.0.0/sts1-main-menu-20261121/background-hd.png filter=lfs -diff merge=lfs -text ci-immutable-media
 docs/design/reference-assets/v2.0.0/sts1-main-menu-20261121/design-hd.png filter=lfs -diff merge=lfs -text ci-immutable-media
+docs/evidence/m7-defect-utility-baseline-engineering-20261108.json.gz filter=lfs -diff merge=lfs -text ci-immutable-media
+docs/evidence/m7-defect-utility-current-engineering-20261108.json.gz filter=lfs -diff merge=lfs -text ci-immutable-media
+docs/evidence/m7-reward-query-shop-graph-20261107.jsonl.gz filter=lfs -diff merge=lfs -text ci-immutable-media
 experiments/archive/emergency-20261108/card-upgrade-recovery/original-runtime.patch.gz filter=lfs -diff merge=lfs -text ci-immutable-media
 experiments/menu-red-fit/input/source.png filter=lfs -diff merge=lfs -text ci-immutable-media
 tests/fixtures/integration-ci-epochs.json.gz filter=lfs -diff merge=lfs -text ci-immutable-media
