@@ -697,7 +697,154 @@ export function beforeChapterPoolFixtureInventory(paths, read, required = false)
   return paths.filter(path => path !== chapterPoolFixture);
 }
 
+// The retired behavior remains available only to fixed, historical test views.
+const cardReadingScopeProjections = {
+  "src/lua/abyss_battle_card_layout.lua": {
+    "path": "src/lua/abyss_battle_card_layout.lua",
+    "beforeSha256": "e4cb0e92c35a637f8fe978837650848acb177e7b03ca55944bfa56bfd8535fc0",
+    "afterSha256": "6a33acc4b5113463f16cc992c439044bf1b1ebd0d8f75b8ee0601cd160cfbafa",
+    "beforeBlob": "90506c2db973983eb2ad0e583b37faa2a3554afb",
+    "afterBlob": "334d9960f7e04f861b7b1d508b6d40af810f225b",
+    "hunks": [
+      {
+        "at": 2,
+        "before": "local Theme = require(\"abyss_theme\")\nlocal Viewport = require('abyss_viewport')\nlocal Actors = require('abyss_actor')\nlocal EnemyView = require('abyss_battle_enemy_view')\nlocal M = {}\nlocal L = Theme.layout",
+        "after": "local Theme = require(\"abyss_theme\")\nlocal Viewport = require('abyss_viewport')\nlocal M = {}\nlocal L = Theme.layout"
+      },
+      {
+        "at": 7,
+        "before": "function M.install(owner, _ownership, host, _dependencies)\n    local R = L.rewardPick\n    local health\n    local function prepareHandFocus(battle)\n        health = nil\n        if not battle or (owner.handWidthExtra or 0) <= 0 or Theme.presentationProfile ~= 'official-assets-first' then return end\n        health = {}\n        local platform = host and host.platform\n        for _, enemy in ipairs(battle.enemies) do\n            if Actors.isActive(enemy) then\n                local g = EnemyView.geometry(enemy, platform and platform.nativeMonsterArtEnabled)\n                local x = g.x + g.healthX\n                local halfWidth = (g.healthWidth or g.hitWidth) / 2 + Theme.space.border\n                -- Protect both the visible bar border and the native 1.2em health text.\n                local bottom = math.min(g.healthY - g.healthHeight / 2 - Theme.space.border,\n                    g.healthTextY - Theme.font.body * .6)\n                health[#health + 1] = {left = x - halfWidth, right = x + halfWidth,\n                    bottom = g.y + bottom - Theme.space.xs}\n            end\n        end\n    end\n    local function placeHandHit(box, w, h, restAngle, point, scale)\n        local r = restAngle * math.pi / 180\n        local c,s = math.abs(math.cos(r)),math.abs(math.sin(r))\n        local restH,restW = (h*c+w*s)/2,(w*c+h*s)/2\n        local hotH = h * point.focusScale / 2\n        local low = math.min(point.baseY-restH,point.focusY-hotH)\n        local high = math.max(point.baseY+restH,point.focusY+hotH)\n        local dy,a = (low+high)/2-point[2],box.localRotationZ*math.pi/180\n        local hit = box:GetChild('hit')\n        -- Inverse the card transform: one world-space hit rectangle covers both poses.\n        hit:SetAnchoredPosition(math.sin(a)*dy/scale,math.cos(a)*dy/scale)\n        local width=math.max(restW*2,w*point.focusScale)\n        -- Adjacent hand centres own disjoint horizontal lanes. Keeping a full\n        -- hover-width receiver here lets a later sibling steal the initial press.",
+        "after": "function M.install(owner, _ownership, host, _dependencies)\n    local R = L.rewardPick\n    local function placeHandHit(box, w, h, restAngle, point, scale)\n        local r = restAngle * math.pi / 180\n        local c,s = math.abs(math.cos(r)),math.abs(math.sin(r))\n        local restH,restW = (h*c+w*s)/2,(w*c+h*s)/2\n        local hotH = h * Theme.motion.hoverScale / 2\n        local hotY = Viewport.handFocus(point.baseY)\n        local low = math.min(point.baseY-restH,hotY-hotH)\n        local high = math.max(point.baseY+restH,hotY+hotH)\n        local dy,a = (low+high)/2-point[2],box.localRotationZ*math.pi/180\n        local hit = box:GetChild('hit')\n        -- Inverse the card transform: one world-space hit rectangle covers both poses.\n        hit:SetAnchoredPosition(math.sin(a)*dy/scale,math.cos(a)*dy/scale)\n        local width=math.max(restW*2,w*Theme.motion.hoverScale)\n        -- Adjacent hand centres own disjoint horizontal lanes. Keeping a full\n        -- hover-width receiver here lets a later sibling steal the initial press."
+      },
+      {
+        "at": 29,
+        "before": "        local w, h = L.card.size[1], L.card.size[2]\n        local x, baseY, angle, spacing = Viewport.handSlot(count, index, owner.handWidthExtra)\n        local focusY,focusScale,ceiling = Viewport.handFocus(baseY, x, health)\n        local y = selected and focusY or baseY\n        local laneWidth=count>1 and spacing or nil\n        local point={x, y, baseY=baseY,hitWidth=laneWidth,focusY=focusY,focusScale=focusScale,ceiling=ceiling}\n        if measureOnly then return point end\n        box:SetAnchoredPosition(x, y)\n        local scale = selected and focusScale or 1\n        box:SetLocalScale(scale, scale, 1)\n        box.localRotationZ = selected and 0 or angle",
+        "after": "        local w, h = L.card.size[1], L.card.size[2]\n        local x, baseY, angle, spacing = Viewport.handSlot(count, index, owner.handWidthExtra)\n        local y = selected and Viewport.handFocus(baseY) or baseY\n        local laneWidth=count>1 and spacing or nil\n        local point={x, y, baseY=baseY,hitWidth=laneWidth}\n        if measureOnly then return point end\n        box:SetAnchoredPosition(x, y)\n        local scale = selected and Theme.motion.hoverScale or 1\n        box:SetLocalScale(scale, scale, 1)\n        box.localRotationZ = selected and 0 or angle"
+      },
+      {
+        "at": 81,
+        "before": "    end\n    return {\n        prepareHandFocus=prepareHandFocus, placeCard=placeCard, rewardTarget=rewardTarget, placeReward=placeReward, canHover=canHover\n    }\nend",
+        "after": "    end\n    return {\n        placeCard=placeCard, rewardTarget=rewardTarget, placeReward=placeReward, canHover=canHover\n    }\nend"
+      }
+    ]
+  },
+  "src/lua/abyss_battle_card_view.lua": {
+    "path": "src/lua/abyss_battle_card_view.lua",
+    "beforeSha256": "e35d0e09a2df39a4fa4298499c053f3eae7eefa6df4c5da0e084bf0664ca0a5c",
+    "afterSha256": "2a061b3bb338b5fab6e17a7bd322690e39a4c9251f643e25d937fac208fb7c71",
+    "beforeBlob": "023ea90a7e1e6917e7369d60b556692431926c43",
+    "afterBlob": "cbde32e89d278e327c5327dcb7a1d448e2b1fe7c",
+    "hunks": [
+      {
+        "at": 51,
+        "before": "local function handTarget(count, index, hot, point)\n    local restAngle=-(index-(count-1)/2)*L.hand.arcDegrees\n    local focusY,focusScale=point.focusY,point.focusScale\n    if not focusY then focusY,focusScale=Viewport.handFocus(point.baseY,point[1]) end\n    return {x=point[1],y=point[2],scale=hot and focusScale or 1,\n        angle=hot and 0 or restAngle,restAngle=restAngle,\n        baseY=point.baseY,hitWidth=point.hitWidth,focusY=focusY,focusScale=focusScale,ceiling=hot and point.ceiling}\nend\n",
+        "after": "local function handTarget(count, index, hot, point)\n    local restAngle=-(index-(count-1)/2)*L.hand.arcDegrees\n    -- The hit rectangle still covers the idle anchor when the card is raised.\n    return {x=point[1],y=point[2],scale=hot and Theme.motion.hoverScale or 1,\n        angle=hot and 0 or restAngle,restAngle=restAngle,\n        baseY=point.baseY,hitWidth=point.hitWidth}\nend\n"
+      },
+      {
+        "at": 65,
+        "before": "    local c,s=math.abs(math.cos(r)),math.abs(math.sin(r))\n    local restH,restW=(h*c+w*s)/2,(w*c+h*s)/2\n    local hotH=h*target.focusScale/2\n    local hotY=target.focusY\n    local low=math.min(target.baseY-restH,hotY-hotH)\n    local high=math.max(target.baseY+restH,hotY+hotH)\n    local dy,a=(low+high)/2-pose.y,pose.angle*math.pi/180\n    local width=math.max(restW*2,w*target.focusScale)\n    return {pose.x,pose.y,pose.scale,pose.angle,\n        math.sin(a)*dy/pose.scale,math.cos(a)*dy/pose.scale,",
+        "after": "    local c,s=math.abs(math.cos(r)),math.abs(math.sin(r))\n    local restH,restW=(h*c+w*s)/2,(w*c+h*s)/2\n    local hotH=h*Theme.motion.hoverScale/2\n    local hotY=Viewport.handFocus(target.baseY)\n    local low=math.min(target.baseY-restH,hotY-hotH)\n    local high=math.max(target.baseY+restH,hotY+hotH)\n    local dy,a=(low+high)/2-pose.y,pose.angle*math.pi/180\n    local width=math.max(restW*2,w*Theme.motion.hoverScale)\n    return {pose.x,pose.y,pose.scale,pose.angle,\n        math.sin(a)*dy/pose.scale,math.cos(a)*dy/pose.scale,"
+      },
+      {
+        "at": 116,
+        "before": "    pose.scale=lerpSnap(pose.scale,target.scale,dt,7.5,0.003)\n    pose.angle=lerpSnap(pose.angle,target.angle,dt,12,0.003)\n    if target.ceiling then pose.y=Viewport.limitHandFocus(pose.y,pose.angle,pose.scale,target.ceiling) end\nend\n",
+        "after": "    pose.scale=lerpSnap(pose.scale,target.scale,dt,7.5,0.003)\n    pose.angle=lerpSnap(pose.angle,target.angle,dt,12,0.003)\nend\n"
+      },
+      {
+        "at": 292,
+        "before": "    local handWidth,handHeight,handTurn,handCount,handTop,openingHand,eventTail\n    local recentDrawOrigins={}\n    local function syncHandLayout(current, battle, fighting)\n        if controls.prepareHandFocus then controls.prepareHandFocus(fighting and battle) end\n        if current~=handBattle or view.canvasWidth~=handWidth or view.canvasHeight~=handHeight then\n            -- Resizing invalidates a captured drag. Its old display coordinates",
+        "after": "    local handWidth,handHeight,handTurn,handCount,handTop,openingHand,eventTail\n    local recentDrawOrigins={}\n    local function syncHandViewport(current)\n        if current~=handBattle or view.canvasWidth~=handWidth or view.canvasHeight~=handHeight then\n            -- Resizing invalidates a captured drag. Its old display coordinates"
+      },
+      {
+        "at": 425,
+        "before": "        local aimUid, aimTarget = currentAim(view,dragTarget)\n        local current=fighting and view.run and view.run.combat\n        syncHandLayout(current,battle,fighting)\n        handTurn,handCount=handMetadata(current)\n        recentDrawOrigins,eventTail=reshuffledOrigins(fighting and battle,eventTail)",
+        "after": "        local aimUid, aimTarget = currentAim(view,dragTarget)\n        local current=fighting and view.run and view.run.combat\n        syncHandViewport(current)\n        handTurn,handCount=handMetadata(current)\n        recentDrawOrigins,eventTail=reshuffledOrigins(fighting and battle,eventTail)"
+      }
+    ]
+  },
+  "src/lua/abyss_battle_ui.lua": {
+    "path": "src/lua/abyss_battle_ui.lua",
+    "beforeSha256": "ae18353f3758e220f424127d821a65c7b3f94e3129c4d61a88d07a8415d260e6",
+    "afterSha256": "f11e1b2a3ffe9accac309987070f4df68060f801a756c90f3bbf615de57bb182",
+    "beforeBlob": "0e4f2a8ce53846cc66484ef55b95a377c305463d",
+    "afterBlob": "3d25656b7664ec7f42c86fdf1ca7a89a0b769fd2",
+    "hunks": [
+      {
+        "at": 132,
+        "before": "        picture=services.picture, tint=services.tint, ink=services.ink, child=services.child, enemyPosition=services.enemyPosition, renderEnemies=services.renderEnemies,\n        describeInfo=services.describeInfo, show=services.show, placeCard=services.placeCard, placeReward=services.placeReward, dragTarget=services.dragTarget,\n        prepareHandFocus=services.prepareHandFocus,\n        dragPose=services.dragPose, notice=services.notice, refresh=services.refresh, bind=services.bind, cancelPotionAim=services.cancelPotionAim,\n        rewardScreen=services.rewardScreen, bindPotionControls=services.bindPotionControls, bindCardControls=services.bindCardControls, bindEnemyControl=services.bindEnemyControl, unbindEnemyControl=services.unbindEnemyControl,",
+        "after": "        picture=services.picture, tint=services.tint, ink=services.ink, child=services.child, enemyPosition=services.enemyPosition, renderEnemies=services.renderEnemies,\n        describeInfo=services.describeInfo, show=services.show, placeCard=services.placeCard, placeReward=services.placeReward, dragTarget=services.dragTarget,\n        dragPose=services.dragPose, notice=services.notice, refresh=services.refresh, bind=services.bind, cancelPotionAim=services.cancelPotionAim,\n        rewardScreen=services.rewardScreen, bindPotionControls=services.bindPotionControls, bindCardControls=services.bindCardControls, bindEnemyControl=services.bindEnemyControl, unbindEnemyControl=services.unbindEnemyControl,"
+      },
+      {
+        "at": 207,
+        "before": "    host.cardView = CardView.new(self, {\n        child = services.child, show = services.show, ink = services.ink, tint = services.tint, picture = services.picture, platform = host.platform,\n        placeCard = services.placeCard, placeReward = services.placeReward, prepareHandFocus=services.prepareHandFocus,\n        dragTarget = services.dragTarget, dragPose = services.dragPose, enemyPosition = services.enemyPosition,\n        renderAimActors = services.renderEnemies,",
+        "after": "    host.cardView = CardView.new(self, {\n        child = services.child, show = services.show, ink = services.ink, tint = services.tint, picture = services.picture, platform = host.platform,\n        placeCard = services.placeCard, placeReward = services.placeReward,\n        dragTarget = services.dragTarget, dragPose = services.dragPose, enemyPosition = services.enemyPosition,\n        renderAimActors = services.renderEnemies,"
+      }
+    ]
+  },
+  "src/lua/abyss_viewport.lua": {
+    "path": "src/lua/abyss_viewport.lua",
+    "beforeSha256": "b98dd4805adff9df17b22bf568d42d25a7bb360644a84f4ccc5afc75287977df",
+    "afterSha256": "d9741c3f60f9fc72d8c87a386947a4a77373f22312ed8fe1da9b30c58b28c939",
+    "beforeBlob": "41cb4484415609d3ebd016f140619a1f457c7b1c",
+    "afterBlob": "4744e8a51084a0950f381a1213a8316762a26195",
+    "hunks": [
+      {
+        "at": 32,
+        "before": "local cardWidth, cardHeight = table.unpack(Theme.layout.card.size)\nlocal hand = Theme.layout.hand\nlocal card = Theme.layout.card\nlocal disc = card.costDisc\nlocal ring = math.max(disc + card.trim.costRing, Theme.layout.nativeText.lineHeight) / 2\nlocal cardLeft = math.max(cardWidth / 2, cardWidth / 2 - disc / 2 + card.trim.costOverhang + ring)\nlocal cardTop = math.max(cardHeight / 2, cardHeight / 2 - disc / 2 + card.trim.costOverhang + ring,\n    card.title.position[2] + math.max(card.nameBand, Theme.layout.nativeText.lineHeight) / 2) + Theme.space.border\n\nfunction M.handSpacing(count, extraWidth)",
+        "after": "local cardWidth, cardHeight = table.unpack(Theme.layout.card.size)\nlocal hand = Theme.layout.hand\n\nfunction M.handSpacing(count, extraWidth)"
+      },
+      {
+        "at": 50,
+        "before": "end\n\nfunction M.limitHandFocus(y, angle, scale, ceiling)\n    if not ceiling then return y end\n    local radians = math.abs(angle) * math.pi / 180\n    local top = cardTop * math.cos(radians) + cardLeft * math.sin(radians)\n    return math.min(y, ceiling - top * scale)\nend\n\nfunction M.handFocus(baseY, x, health)\n    local scale = Theme.motion.hoverScale\n    local y = math.max(baseY + Theme.motion.hoverLift, -baseHeight / 2 + Theme.canvas.safe.y + cardHeight * scale / 2)\n    if not health then return y, scale end\n    local ceiling\n    for _, bar in ipairs(health) do\n        if x + cardWidth * scale / 2 > bar.left and x - cardLeft * scale < bar.right then\n            ceiling = math.min(ceiling or bar.bottom, bar.bottom)\n        end\n    end\n    if ceiling and y + cardTop * scale > ceiling then\n        -- Keep the whole reading face on screen under the nearby enemy health.\n        local height = ceiling + baseHeight / 2 - Theme.canvas.safe.y\n        if height > 0 then\n            scale = math.min(scale, height / (cardTop + cardHeight / 2))\n            return M.limitHandFocus(y, 0, scale, ceiling), scale, ceiling\n        end\n    end\n    return y, scale\nend\n",
+        "after": "end\n\nfunction M.handFocus(baseY)\n    local floor = -baseHeight / 2 + Theme.canvas.safe.y + cardHeight * Theme.motion.hoverScale / 2\n    return math.max(baseY + Theme.motion.hoverLift, floor)\nend\n"
+      }
+    ]
+  },
+  "tests/lua/selected_hand_safe_area.lua": {
+    "path": "tests/lua/selected_hand_safe_area.lua",
+    "beforeSha256": "18461d210814d615391c24330cb9f698eb7e096fa05aafccf74f2854a940f8ca",
+    "afterSha256": "caddb090bd8d3b39e50878fbae74a438d6cb4a5dfcdf271aedab1c49af19b0bd",
+    "beforeBlob": "2302ee11367bf666d23cf817512d15c3c842042b",
+    "afterBlob": "56937c059bcdf3958205c44f3076258400d8bb01",
+    "hunks": [
+      {
+        "at": 43,
+        "before": "print('ok selected hand safety '..cases..' actual Lua placements')\n\nlocal Viewport=require('abyss_viewport')\nlocal x,baseY,angle=Viewport.handSlot(10,9,400)\nlocal ceiling=-152\nlocal health={{left=x-40,right=x+40,bottom=ceiling}}\nlocal y,scale,protectedY=Viewport.handFocus(baseY,x,health)\nlocal halfHeight=Theme.layout.card.size[2]*scale/2\nlocal floor=-Theme.canvas.base[2]/2+Theme.canvas.safe.y\nassert(protectedY==ceiling and scale<=Theme.motion.hoverScale)\nassert(y+halfHeight<ceiling and y-halfHeight>=floor-1e-8,'focused card exceeded health or safe bounds')\nassert(Viewport.limitHandFocus(y+15,angle,scale,ceiling)<y,'rotated focus tween crossed the health lane')\nlocal originalY,originalScale=Viewport.handFocus(baseY,-x)\nlocal clearY,clearScale=Viewport.handFocus(baseY,-x,health)\nassert(originalY==clearY and originalScale==clearScale,'a clear card slot changed its focus')\nlocal lowBar=-180\nlocal lowY,lowScale=Viewport.handFocus(baseY,x,{{left=x-40,right=x+40,bottom=lowBar}})\nlocal lowHalf=Theme.layout.card.size[2]*lowScale/2\nassert(lowY+lowHalf<lowBar and lowY-lowHalf>=floor-1e-8,'a low health bar pushed the settled card below the safe area')\nprint('ok wide selected hand preserves nearby health and the screen bottom')\n\ndo\n    local profile=Theme.presentationProfile\n    Theme.presentationProfile='official-assets-first'\n    local EnemyView=require('abyss_battle_enemy_view')\n    local measure=EnemyView.geometry\n    local observed=false\n    EnemyView.geometry=function(_,nativeArt)\n        assert(nativeArt==false,'hand focus ignored the enemy renderer fallback mode')\n        observed=true\n        return {x=x,y=0,healthX=0,healthY=-130,healthTextY=-130,healthHeight=12,hitWidth=80}\n    end\n    local wide=require('abyss_battle_card_layout').install({handWidthExtra=400},nil,{platform={nativeMonsterArtEnabled=false}})\n    wide.prepareHandFocus({enemies={{hp=1}}})\n    local focus=wide.placeCard(box(),10,9,true)\n    EnemyView.geometry=measure\n    Theme.presentationProfile=profile\n    assert(observed and focus.ceiling,'fallback health bounds did not reach wide focus')\n    print('ok wide selected hand shares enemy fallback art geometry')\nend\n",
+        "after": "print('ok selected hand safety '..cases..' actual Lua placements')\n\ndo\n    local H=dofile('tests/lua/support/battle_gesture_fixture.lua')\n    local EnemyView=require('abyss_battle_enemy_view')\n    local measure=EnemyView.geometry\n    local barX,barY=460,-145\n    EnemyView.geometry=function(enemy,nativeArt)\n        local geometry=measure(enemy,nativeArt)\n        geometry.healthX=barX-geometry.x\n        geometry.healthY=barY-geometry.y\n        geometry.healthTextY=geometry.healthY\n        return geometry\n    end\n    local host,ui,panel,event,tap,_,_,stage=H.setup({'strike'},nil,{touchScreen=function()return false end})\n    local _,_,frame=H.F.Viewport.apply(stage.parent,1680,720)\n    host:resize(1680,720,frame)\n    host:update(10)\n    local card=panel:GetChild('card1')\n    local hit=card:GetChild('hit')\n    local enemy=H.F.actorControl(panel,'enemy1')\n    local hp=enemy:GetChild('hp')\n    local battle=host.run.combat\n    local idleY=card.y\n    local expectedY=math.max(idleY+Theme.motion.hoverLift,\n        -Theme.canvas.base[2]/2+Theme.canvas.safe.y+Theme.layout.card.size[2]*original/2)\n    local function pose()\n        return table.concat({card.x,card.y,card.localScaleX,card.localRotationZ,hit.x,hit.y,hit.sizeDeltaX,hit.sizeDeltaY},',')\n    end\n    assert(ui.handWidthExtra>0 and math.abs(enemy.x+hp.x-barX)<1e-8,'wide fixture did not draw the clear health label')\n    tap('card1',7)\n    host:update(10)\n    assert(ui.selected==battle.hand[1].uid,'tap did not select the card')\n    assert(math.abs(card.y-expectedY)<1e-8 and math.abs(card.localScaleX-original)<1e-8 and card.localRotationZ==0)\n    local clear=pose()\n    for _,y in ipairs({-145,-180}) do\n        barX,barY=card.x,y\n        host:refresh()\n        host:update(1/60)\n        assert(math.abs(enemy.x+hp.x-barX)<1e-8 and math.abs(enemy.y+hp.y-y)<1e-8,\n            'fixture did not move the rendered health label into the reading lane')\n        assert(pose()==clear,'enemy health changed the selected hand pose or hit area')\n        host:update(10)\n        assert(pose()==clear,'enemy health changed the settled hand pose or hit area')\n    end\n    tap('card1',7)\n    event('card1','exit',7)\n    host:update(10)\n    assert(not ui.selected and card.y==idleY and card.localScaleX==1 and #battle.hand==1 and battle.energy==3,\n        'same-card cancel did not restore the idle pose without playing the card')\n    EnemyView.geometry=measure\n    host:disable()\n    print('ok wide selected hand ignores enemy health geometry')\nend\n"
+      }
+    ]
+  }
+};
+
+function uniformReadingSource(source) {
+  return typeof source==='string' && (source===source.replaceAll('\r\n','\n') || !source.replaceAll('\r\n','').includes('\n'));
+}
+
+function readingScopeIdentity(path,source) {
+  if (!Object.hasOwn(cardReadingScopeProjections,path) || !uniformReadingSource(source)) return;
+  const row=cardReadingScopeProjections[path];
+  if (matches(source,{sha256:row.afterSha256,gitBlob:row.afterBlob})) return 'current';
+  if (matches(source,{sha256:row.beforeSha256,gitBlob:row.beforeBlob})) return 'historical';
+}
+
+export function assertCurrentCardReadingScope(path,source) {
+  if (Object.hasOwn(cardReadingScopeProjections,path)) {
+    assert(readingScopeIdentity(path,source)==='current','fresh complete integration source: ' + path);
+  }
+  return source;
+}
+
+export function beforeCardReadingScope(path,source) {
+  if (readingScopeIdentity(path,source)!=='current') return source;
+  const row=cardReadingScopeProjections[path];
+  const lf=source.replaceAll('\r\n','\n');
+  const prior=restoreExactFixtureHunks(row,path,lf);
+  assert(matches(prior,{sha256:row.beforeSha256,gitBlob:row.beforeBlob}),'exact card reading predecessor: '+path);
+  return source!==lf?prior.replaceAll('\n','\r\n'):prior;
+}
+
 export function beforeResponsiveHand(path, source) {
+  source=beforeCardReadingScope(path,source);
   if (!Object.hasOwn(responsiveHandProjections, path)) return source;
   const row = responsiveHandProjections[path];
   if (!matches(source, {sha256: row.afterSha256, gitBlob: row.afterBlob})) return source;
@@ -726,7 +873,7 @@ const chapterCurrentOwners = [
 ];
 export function chapterSceneCurrentRead(read, copier) {
   const bindings = new Map([...chapterCurrentOwners.map(path => [path, projections[path]]),
-    ...Object.entries(responsiveHandProjections)]);
+    ...Object.entries(responsiveHandProjections), ...Object.entries(cardReadingScopeProjections)]);
   if (copier) bindings.set(copier.path,copier);
   function current(path, ...args) {
     const raw = read(path, ...args);
@@ -734,6 +881,7 @@ export function chapterSceneCurrentRead(read, copier) {
     if (binding) {
       const source = Buffer.isBuffer(raw) ? raw.toString('utf8') : raw;
       const {afterSha256:sha256, afterBlob:gitBlob} = binding;
+      assertCurrentCardReadingScope(path,source);
       assert(matches(source,{sha256,gitBlob}), 'fresh complete integration source: ' + path);
     }
     return raw;
@@ -745,23 +893,35 @@ export function chapterSceneCurrentRead(read, copier) {
 export function chapterBattleSceneReader(path, source, read) {
   const handSource = beforeResponsiveHand(path, source);
   const hand = handSource !== source ? responsiveHandProjections[path] : undefined;
+  const layoutPath='src/lua/abyss_battle_card_layout.lua';
+  const readingScope = readingScopeIdentity(path,source) ?? (hand && readingScopeIdentity(layoutPath,read(layoutPath,'utf8')));
+  if (hand) assert(readingScope,'combined linked owner identity: ' + layoutPath + ' changed during card reading validation');
   const before = beforeChapterBattleScene(path, source);
   const row = Object.hasOwn(projections, path) ? projections[path] : undefined;
   const candidate = row && {sha256: row.afterSha256, gitBlob: row.afterBlob};
   const predecessor = row && {sha256: row.beforeSha256, gitBlob: row.beforeBlob};
   const expected = hand ? {sha256: hand.afterSha256, gitBlob: hand.afterBlob}
     : before !== handSource ? candidate : matches(handSource, predecessor) ? predecessor : undefined;
+  const assertReadingScope = (owner,live) => {
+    assert(readingScopeIdentity(owner,live)===readingScope,
+      'combined linked owner identity: ' + owner + ' changed during card reading validation');
+  };
   function readOwner(owner, ...args) {
     const live = read(owner, ...args);
     const linkedHand = hand && Object.hasOwn(responsiveHandProjections, owner) && responsiveHandProjections[owner];
-    if (linkedHand) assert(matches(live, {sha256: linkedHand.afterSha256, gitBlob: linkedHand.afterBlob}),
+    const linkedScope = Object.hasOwn(cardReadingScopeProjections,owner);
+    if (readingScope && linkedScope) assertReadingScope(owner,live);
+    if (linkedHand && !linkedScope) assert(matches(live, {sha256: linkedHand.afterSha256, gitBlob: linkedHand.afterBlob}),
       'combined linked owner identity: ' + owner + ' changed during responsive hand validation');
     const prior = beforeChapterBattleScene(owner, live);
-    if (owner === path && (expected || prior !== live)) {
+    if (owner === path && !readingScope && (expected || prior !== live)) {
       assert(matches(live, expected),
         'combined linked owner identity: ' + path + ' changed during chapter scene validation');
     }
     return prior;
+  }
+  if (readingScope==='historical') {
+    for (const owner of Object.keys(cardReadingScopeProjections)) assertReadingScope(owner,read(owner,'utf8'));
   }
   if (expected) readOwner(path);
   return {source: before, read: readOwner};
