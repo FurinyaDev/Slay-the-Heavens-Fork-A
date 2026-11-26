@@ -1,4 +1,6 @@
 import {authorizeRebasedDevelop,beforeRebasedCi} from './helpers/rebased-release-source.mjs';
+import {beforeBattlePeriphery} from './helpers/battle-periphery-source.mjs';
+import {beforeChapterBattleScene} from './helpers/chapter-battle-scene-source.mjs';
 import {beforeAuthenticatedReleaseGuideSource} from './helpers/release-guide-backflow-source.mjs';
 import {authorizeCardFeedbackOwners,beforeCardFeedbackOwner} from './helpers/card-feedback-owner-source.mjs';
 import {authorizeSts1MapSource,beforeSts1MapSource} from './helpers/sts1-map-source.mjs';
@@ -20,7 +22,7 @@ import {beforeTravelerStatusSource,travelerStatusSourcePaths} from './helpers/tr
 import {beforeReleaseUiCloseoutSource,ownsReleaseUiCloseoutSource,releaseUiCloseoutPriorRead} from './helpers/release-ui-closeout-source.mjs';
 import {readHistoricalReleaseCheckpoint} from './helpers/release-historical-source-checkpoints.mjs';
 import {beforeCurrentSelectionProductionSource,readReviewedSelectionSource,readSelectionProductionOwners} from './helpers/replay-reviewed-selection.mjs';
-import {reviewedSelectionRead} from './helpers/reviewed-selection-current-source.mjs';
+import {reviewedSelectionRead,reviewedStsStyleInventory} from './helpers/reviewed-selection-current-source.mjs';
 import {beforeShopPurchaseOwner,shopPurchaseOwner} from './helpers/shop-deck-purchase-source.mjs';
 import {readBeforeMasterBackflowSource} from './helpers/master-backflow-source.mjs';
 const sandbox=process.cwd();
@@ -47,6 +49,16 @@ function replayRebasedInput(path,read){
  const current=read(path),prior=beforeRebasedCi(path,current);
  if(prior!==current)authorizeRebasedDevelop([[path,current]],read);
  return prior;
+}
+
+function integrationProductionReaders(read=readFileSync){
+ const readOwner=reviewedSelectionRead(read);
+ const readSelection=readSelectionProductionOwners(read,readOwner);
+ const current=path=>beforeShopPurchaseOwner(path,readSelection(path));
+ // The earlier entrance receipt checks its original linked owners after the
+ // audited chapter and periphery projections have authenticated their inputs.
+ const entrance=path=>beforeBattlePeriphery(path,beforeChapterBattleScene(path,current(path)));
+ return {current,entrance,readOwner};
 }
 
 test('input retirement preserves exact older bytes and rejects tampered successor witnesses',()=>{
@@ -254,43 +266,49 @@ test('compound intent owners replay the exact Release predecessor and reject a p
  }
 });
 test('combined epoch authenticates the complete current production tree',()=>{
- const files=['config/architecture.json',...readdirSync('src/lua').filter(p=>p.endsWith('.lua')).map(p=>'src/lua/'+p)].sort();
+ const live=['config/architecture.json',...readdirSync('src/lua').filter(p=>p.endsWith('.lua')).map(p=>'src/lua/'+p)].sort();
+ const files=reviewedStsStyleInventory(live);
  const recorded=Object.keys(proof.current).filter(path=>path!==retiredControllerPath&&proof.current[path]!==null).sort();
- const readDisk=path=>readFileSync(path,'utf8');
- assert.deepEqual(entranceInventory(files,readDisk),[...recorded,...stasisUpgradeAddedPaths,...actorFocusAdded,...deckPagesAdded,pointerInputPath].sort());
- assert.throws(()=>readDisk(retiredControllerPath),{code:'ENOENT'});
- const retired=beforeInputRetirementReader(readDisk)(retiredControllerPath);
- assert.equal(beforeCharacterPreparationSource(retiredControllerPath,retired,readDisk),raw(retiredControllerPath));
- assertPointerInputSource(readDisk(pointerInputPath));
+ const {current:read,entrance,readOwner}=integrationProductionReaders();
+ assert.deepEqual(entranceInventory(files,entrance),[...recorded,...stasisUpgradeAddedPaths,...actorFocusAdded,...deckPagesAdded,pointerInputPath].sort());
+ assert.throws(()=>readFileSync(retiredControllerPath,'utf8'),{code:'ENOENT'});
+ const retired=beforeInputRetirementReader(entrance)(retiredControllerPath);
+ assert.equal(beforeCharacterPreparationSource(retiredControllerPath,retired,entrance),raw(retiredControllerPath));
+ assertPointerInputSource(read(pointerInputPath));
  for(const path of stasisUpgradeAddedPaths)assertStasisUpgradeAdded(path,readFileSync(path,'utf8'));
  for(const path of actorFocusAdded)assertDevelopBackflowCurrent(path,readFileSync(path,'utf8'));
- assertCharacterPreparationSources();
- for(const path of recorded)assert.equal(beforeCharacterPreparationSource(path,readFileSync(path,'utf8')).replaceAll('\r\n','\n'),raw(path),path);
- const [owner]=characterPreparationOwners, read=path=>readFileSync(path,'utf8'), current=read(owner);
- assert.equal(beforeCharacterPreparationSource(owner,current,read),raw(owner));
+ assertCharacterPreparationSources(entrance);
+ for(const path of recorded)assert.equal(beforeCharacterPreparationSource(path,entrance(path),entrance).replaceAll('\r\n','\n'),raw(path),path);
+ const [owner]=characterPreparationOwners,current=entrance(owner);
+ assert.equal(beforeCharacterPreparationSource(owner,current,entrance),raw(owner));
  assert.equal(beforeCharacterPreparationSource(owner,current+'\n',()=>{throw Error('foreign must not authorize reads');}),current+'\n');
  for(const missing of characterPreparationOwners)
-  assert.throws(()=>beforeCharacterPreparationSource(owner,current,path=>path===missing?null:read(path)),/fresh character preparation source/);
+  assert.throws(()=>beforeCharacterPreparationSource(owner,current,path=>path===missing?null:entrance(path)),/fresh character preparation source/);
  for(const path of recorded){
-  const latest=read(path),previous=raw(path);
-  assert.equal(beforeCurrentProductionSource(path,latest,read).replaceAll('\r\n','\n'),previous,path);
+  const intent=path==='src/lua/abyss_battle_intent_view.lua';
+  const readCurrent=intent?readOwner:entrance;
+  const latest=readCurrent(path),previous=raw(path);
+  assert.equal(beforeCurrentSelectionProductionSource(path,read,readOwner).replaceAll('\r\n','\n'),previous,path);
   const beforePotion=beforePotionBackflow(path,latest);
   const beforeBrowser=beforeDeckBrowserBackflow(path,beforePotion);
   for(const checkpoint of new Set([beforePotion,beforeBrowser])){
    if(checkpoint===latest)continue;
-   assert.throws(()=>beforeCurrentProductionSource(path,checkpoint,read),{message:'fresh current production owner: '+path});
-   assert.throws(()=>beforeCurrentProductionSource(path,latest,owner=>owner===path?checkpoint:read(owner)),
+   assert.throws(()=>beforeCurrentProductionSource(path,checkpoint,readCurrent),{message:'fresh current production owner: '+path});
+   assert.throws(()=>beforeCurrentProductionSource(path,latest,owner=>owner===path?checkpoint:readCurrent(owner)),
     {message:'combined linked owner identity: '+path+' during deck/potion backflow validation'});
   }
   if(latest.replaceAll('\r\n','\n')===previous)continue;
   for(const invalid of [previous,latest+'\n',null]){
-   assert.throws(()=>beforeCurrentProductionSource(path,invalid,read),/fresh (?:current production owner|combat visual source|energy reference source)/);
-   assert.throws(()=>beforeCurrentProductionSource(path,latest,owner=>owner===path?invalid:read(owner)),/fresh .*source|(?:combined|map deck) linked owner identity/);
+   assert.throws(()=>beforeCurrentProductionSource(path,invalid,readCurrent),error=>
+    error.message.includes(path)&&/fresh (?:current production owner|combat visual source|energy reference source)/.test(error.message),path);
+   const changed=intent?reviewedSelectionRead((owner,encoding)=>owner===path?invalid:readFileSync(owner,encoding))
+    :owner=>owner===path?invalid:readCurrent(owner);
+   assert.throws(()=>beforeCurrentProductionSource(path,latest,changed),/fresh .*source|(?:combined|map deck) linked owner identity/,path);
   }
  }
 });
 test('entrance replay freshly checks the complete changed cohort and preserves foreign inputs',()=>{
- const config='config/architecture.json',read=path=>readFileSync(path,'utf8');
+ const config='config/architecture.json',{entrance:read}=integrationProductionReaders();
  const source=read(config),prior=beforeUiEntrance(config,source);
  const live=[config,...readdirSync('src/lua').filter(name=>name.endsWith('.lua')).map(name=>'src/lua/'+name)];
  const changed=live.filter(path=>beforeUiEntrance(path,read(path))!==read(path));
@@ -305,6 +323,10 @@ test('entrance replay freshly checks the complete changed cohort and preserves f
  assert.equal(project(read),prior);
  for(const changedPath of changed){
   const current=read(changedPath);
+  const liveSource=readFileSync(changedPath,'utf8');
+  const altered=(path,encoding)=>path===changedPath?liveSource+'\n':readFileSync(path,encoding);
+  assert.throws(()=>project(integrationProductionReaders(altered).entrance),error=>
+   error.message.includes(changedPath)&&/owner (?:identity|missing)|production source|master backflow source/.test(error.message));
   for(const invalid of [beforeUiEntrance(changedPath,current),current+'\n',null]){
    assert.throws(()=>project(path=>path===changedPath?invalid:read(path)),error=>
     /linked owner identity/.test(error.message)&&error.message.includes(changedPath));
@@ -319,15 +341,14 @@ test('entrance replay freshly checks the complete changed cohort and preserves f
  assert.equal(project(read),prior);
 });
 test('combined replay rejects a menu owner from before the controls guide removal',()=>{
- const read=path=>readFileSync(path,'utf8');
+ const {entrance:read}=integrationProductionReaders();
+ const controls=readHistoricalReleaseCheckpoint('controls').read;
  const path='config/architecture.json',source=read(path),target='develop';
  assert.equal(sourceEpoch.preCombinedSource(path,source,{target,readSource:read}),proof.targets[target].files[path].source);
  for(const owner of releaseControlsGuideRemovalSourcePaths){
-  const readBackflow=path=>authenticateDevelopBackflow(path,read(path),read);
-  const backflow=readBackflow(owner);
-  const current=[backflow,replayRebasedInput(owner,readBackflow)].find(input=>beforeReleaseControlsGuideRemoval(owner,input)!==input);
-  assert.ok(current,owner+' exact controls-guide successor');
+  const current=controls(owner);
   const prior=beforeReleaseControlsGuideRemoval(owner,current);
+  assert.notEqual(prior,current,owner+' exact controls-guide successor');
   assert.notEqual(prior,read(owner),owner);
   assert.throws(()=>sourceEpoch.preCombinedSource(path,source,{target,readSource:path=>path===owner?prior:read(path)}),
    new RegExp('(?:combined|map deck) linked owner identity: '+owner.replaceAll('.','\\.')));
