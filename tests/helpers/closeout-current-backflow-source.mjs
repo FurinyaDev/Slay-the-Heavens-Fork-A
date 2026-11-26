@@ -7,8 +7,8 @@ import {exactSourceMatches} from './source-fingerprint.mjs';
 
 const bytes=readFileSync(new URL('../fixtures/closeout-current-backflow-source.json.gz',import.meta.url));
 assert.equal(createHash('sha256').update(bytes).digest('hex'),
- 'a8e5baab2699f9b2cf7d27b20c1f2b6ac5fda135963e18a3d133eacd7d88e1af','exact current closeout backflow packet');
-const {schemaVersion,base,head,files,owners,continuation,sessionRoute,anchorRefactor,actorDetail,tooling,pageReveal,independentFiles,preMasterRelicIcons,reviewedDeckBuild,runHudBuildInputs}=JSON.parse(gunzipSync(bytes));
+ '41efa054e461b445024797ec8cef4dc66c5275e4cff02e5b6bf0bb50dbcd8bf4','exact current closeout backflow packet');
+const {schemaVersion,base,head,files,owners,continuation,sessionRoute,anchorRefactor,actorDetail,tooling,pageReveal,independentFiles,preMasterRelicIcons,reviewedDeckBuild,runHudBuildInputs,toolingCatalogue}=JSON.parse(gunzipSync(bytes));
 assert.equal(schemaVersion,1);
 assert.equal(base,'903bf2a31e91f10fb24763ab4cea23d586d0bb83');
 assert.equal(head,'7228aaa83b0995e1dc6e36955cfd6e773c199f07');
@@ -29,6 +29,8 @@ assert.equal(files[relicIconsFixture].successor.commit,
  'dfcc35416f127693b2f0323b8168b0e29590af7d');
 assert.equal(tooling.commit,'e65d9b98fbec69442047650254238cd9244df805');
 assert.equal(tooling.successor.commit,'73ae746609eef41c192d04e836dc474f0aa9b303');
+assert.equal(toolingCatalogue.commit,'4fc24afde58c1def7bd5f61e5271abbbf7d82767');
+const catalogueToolingBinding={sha256:toolingCatalogue.afterSha256,gitBlob:toolingCatalogue.afterBlob};
 
 assert.equal(reviewedDeckBuild.reviewed,'637898cbdb81feb3feeda2123536fd1338518d5d');
 assert.equal(reviewedDeckBuild.commit,'8d361c49834d3dd6d36cce8410df08d6441b0782');
@@ -54,7 +56,10 @@ function restoreFixtureSuccessor(path,row,source){
 }
 
 export function beforeCloseoutHistoryTooling(path,source){
- if(path!==tooling.path||!exactSourceMatches(source,tooling.successor))return source;
+ if(path!==tooling.path)return source;
+ const candidate=beforeExactFixture(path,toolingCatalogue,source);
+ if(!exactSourceMatches(candidate,tooling.successor))return source;
+ source=candidate;
  const lf=source.replaceAll('\r\n','\n');
  if(source!==lf&&source!==lf.replaceAll('\n','\r\n'))return source;
  const prior=restoreFixtureSuccessor(path,tooling,source);
@@ -98,10 +103,13 @@ function readCloseoutFixture(path,row,read){
  const fixture=read(path,'utf8');
  const successorFixture=row.successor;
  const predecessorBinding={sha256:row.afterSha256,gitBlob:row.afterBlob};
- const updated=successorFixture!==undefined&&exactSourceMatches(fixture,successorFixture);
- const source=readExactOwner(path,updated?successorFixture:predecessorBinding,read);
+ const catalogue=path===tooling.path&&exactSourceMatches(fixture,catalogueToolingBinding);
+ const candidate=catalogue?beforeExactFixture(path,toolingCatalogue,fixture):fixture;
+ const updated=successorFixture!==undefined&&exactSourceMatches(candidate,successorFixture);
+ const binding=catalogue?catalogueToolingBinding:updated?successorFixture:predecessorBinding;
+ const source=readExactOwner(path,binding,read);
  assert.equal(source,fixture,'closeout owner changed during the receipt read: '+path);
- const previous=updated?restoreFixtureSuccessor(path,row,source):source;
+ const previous=updated?restoreFixtureSuccessor(path,row,candidate):candidate;
  const prior=restoreFixturePredecessor(path,row,previous);
  return {source,prior};
 }
