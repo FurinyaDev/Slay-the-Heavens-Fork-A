@@ -87,7 +87,12 @@ function M.routeAllowsMenu(self)
 end
 function M.canOpenMenu(self)
     if not M.routeAllowsMenu(self) then return false end
-    if self.deckUI.visible or self.potionUI.visible or self.choiceUI and self.choiceUI.visible then return false end
+    if self.deckUI.visible or self.potionUI.visible then return false end
+    if self.choiceUI and self.choiceUI.visible then
+        -- Settings may suspend a live card choice. Potion choices keep exclusive input.
+        local context=self.choiceUI.context
+        if not context or context.run~=self.run or context.kind=='potion' then return false end
+    end
     if self.prologue and self.prologue:covering() then return false end
     return not (self.disabled or self.easterEggOpen or self.exitOpen and not self.routeOpen
         or self.menuOpen or self.settlementRequested or self.settlementBusy)
