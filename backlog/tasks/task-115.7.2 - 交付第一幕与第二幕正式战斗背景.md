@@ -1,10 +1,11 @@
 ---
 id: TASK-115.7.2
 title: 交付第一幕与第二幕正式战斗背景
-status: To Do
+status: In Progress
 assignee:
   - '@Furinya'
 created_date: '2026-11-25 21:02'
+updated_date: '2026-11-25 22:09'
 labels:
   - v2.2.0
 milestone: m-8
@@ -34,3 +35,11 @@ ordinal: 216000
 <!-- AC:BEGIN -->
 - [ ] #1 两幕产物、批准设计和 Simulator 实渲对照可追溯，裁切/转场覆盖稳定
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. 用两幕原版测量参数对齐场景轮廓、战斗面与宽屏裁切。
+2. 在正式 Simulator 核对背景切换、图元池复用和前后实渲。
+3. 与 TASK-115.7.3 对同一候选验收。
+<!-- SECTION:PLAN:END -->
