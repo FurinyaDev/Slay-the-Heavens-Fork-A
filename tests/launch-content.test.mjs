@@ -37,7 +37,12 @@ test('every production event mapping is listed, including explicit transformatio
 test('launch inventory names every formal source binding rather than the legacy explicit-ID pool', () => {
   const manifest = fresh();
   const vectors = JSON.parse(readFileSync('tests/fixtures/sts1-encounter-runtime-vectors.json', 'utf8'));
-  const sourceNames = [...new Set(vectors.cases.map(row => row.source))].sort();
+  const reviewedNames = new Map([
+    ['Blue Slaver', 'Blue Guard'],
+    ['Cultist', 'Raven Adept'],
+    ['Red Slaver', 'Red Guard'],
+  ]);
+  const sourceNames = [...new Set(vectors.cases.map(row => reviewedNames.get(row.source) ?? row.source))].sort();
   assert.deepEqual(manifest.encounters.map(row => row.sourceName).sort(), sourceNames);
   for (const id of ['large_slime', 'lots_of_slimes', 'exordium_thugs'])
     assert.ok(manifest.encounters.some(row => row.runtimeId === id), `formal runtime binding missing: ${id}`);
