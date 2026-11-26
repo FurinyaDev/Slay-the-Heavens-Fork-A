@@ -2,6 +2,7 @@ local Combat=require('abyss_combat')
 local Data=require('abyss_data')
 local Target=require('abyss_battle_target_bindings')
 local Detail=require('abyss_battle_detail_bindings')
+local BattleDetails=require('abyss_battle_details')
 local Native=dofile('tests/lua/support/native_ui_contract.lua')
 local Theme=require('abyss_theme')
 -- Throw after native registration: exercise callbacks installed before a failed bind.
@@ -19,6 +20,7 @@ local function control(name,parent)
  local c={name=name,parent=parent,children={},listeners={},visible=true,alive=true,raycastTarget=true}
  function c:GetChild(n)return assert(self.children[n],self.name..' missing '..n)end
  function c:GetChildren()local a={};for _,v in pairs(self.children)do a[#a+1]=v end;return a end
+ function c:SetVisible(value)self.visible=value end
  function c:AddCursorEventListener(e,f)Native.listener(e,f);assert(not self.listeners[e],self.name..' duplicate '..e);self.listeners[e]=f;registered(self,e,f) end
  if parent then parent.children[name]=c end
  return c
@@ -30,11 +32,14 @@ local function unit(name)
 end
 local battle=Combat.new(Data,{deck={'strike','defend'},enemies={'acid_slime_m','acid_slime_m','acid_slime_m','acid_slime_m','acid_slime_m','acid_slime_m','acid_slime_m'},seed=42})
 local owner={run={phase='combat',combat=battle},active=true,busy=false,dragEnabled=true,selectionEpoch=0}
+local detailPorts={}
+BattleDetails.install(owner,{enemyInputs={}},{},detailPorts)
 local calls={status=0,help=0,down=0,swallowed=0,drag=0,render=0,potion=0,card=0,queue=0,close=0}
 function owner:showStatus(index)calls.status=calls.status+1;calls.index=index end
 function owner:openHelp(spec,source,transient)
- calls.help=calls.help+1;calls.spec=spec
+ calls.help=calls.help+1;calls.spec=spec;calls.index=spec.index
  self.info={source=source,transient=transient,powerTips=spec.powerTips,index=spec.index}
+ return true
 end
 function owner:renderDetailsOnly()calls.render=calls.render+1 end
 function owner:dismissActorDetails(source)if self.info and self.info.source==source then self.info=nil end end
@@ -56,6 +61,7 @@ for i=1,10 do static['card'..i]=unit('card'..i)end
 for i=1,Theme.layout.battlePotions.count do static['potion'..i]=control('potion'..i);static['potionHelp'..i]=control('potionHelp'..i)end
 local deps={}
 function deps.child(name)return assert(static[name],'dynamic init must not request '..name)end
+detailPorts.child=deps.child
 function deps.enemyAt(slot)return surfaces:entry(slot)end
 function deps.sameEnemySlot(slot,actor)local e=surfaces:entry(slot);return e and e.actor==actor and e.id==actor.id end
 function deps.swallowed()calls.swallowed=calls.swallowed+1;return false end
@@ -113,15 +119,15 @@ surfaces.entries[3].actor=shadow;owner.busy=true;owner.busy=false;surfaces.entri
 click(boxes[3]:GetChild('hit'),33);assert(calls.index==3,'snapshot replacement must not permanently disable a surface')
 -- Manager entry/core insertion index changes; stable actor surface must target current core index.
 table.insert(battle.enemies,1,table.remove(battle.enemies,7))
-local staleCount=calls.status
+local staleCount=calls.help
 click(boxes[7]:GetChild('hit'),70)
-assert(calls.status==staleCount,'stale list index must not retarget a different core actor')
+assert(calls.help==staleCount,'stale list index must not retarget a different core actor')
 for slot,e in pairs(surfaces.entries)do for i,a in ipairs(battle.enemies)do if a.id==e.id then e.index=i;e.actor=a end end end
 click(boxes[7]:GetChild('hit'),71);assert(calls.index==1,'target current original list index, not slot')
 local intent=boxes[7]:GetChild('intentHit');click(intent,73)
-assert(calls.spec.kind=='intent' and calls.spec.index==1 and calls.spec.controlBox==boxes[7])
+assert(calls.spec.powerTips==true and calls.spec.index==1 and calls.spec.controlBox==boxes[7] and owner.info.source==intent)
 local hp=boxes[7]:GetChild('hpHit');click(hp,731)
-assert(calls.spec.kind==nil and calls.spec.index==1 and calls.spec.controlBox==boxes[7] and owner.info.source==hp)
+assert(calls.spec.powerTips==true and calls.spec.index==1 and calls.spec.controlBox==boxes[7] and owner.info.source==hp)
 -- Retirement must preserve unrelated control callbacks and detail state.
 local kept=static.hero:GetChild('hit')
 local cardHit=static.card1:GetChild('hit')
