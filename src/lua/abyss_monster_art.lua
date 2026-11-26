@@ -1,5 +1,6 @@
 -- Each drawable actor owns its source-art surface independently.
 local CardDisplay=require('abyss_card_display')
+local ByrdTrial=require('abyss_byrd_ground_trial')
 local M={}
 local bindings=setmetatable({},{__mode='k'})
 -- Failed writes still have an owner, but never a paintable pose binding.
@@ -24,26 +25,45 @@ end
 function M.pose(box,x,y,sx,sy,colour,alpha)
  local state=bindings[box]
  if not state then return end
+ local previous=state.poseState
+ if state.asset.grounded and previous and previous[1]==x and previous[2]==y
+  and previous[3]==sx and previous[4]==sy and previous[6]==alpha then
+  previous[5]=colour
+  tint(state,colour,alpha)
+  return
+ end
  state.poseState={x,y,sx,sy,colour,alpha}
  state.root:SetAnchoredPosition(state.x+x-state.origin[1],state.y+y-state.origin[2])
  state.root:SetLocalScale(sx,sy,1)
  state.root:SetVisible(alpha>0)
  tint(state,colour,alpha)
 end
-local function assetFor(data,definitionId)
+local function assetFor(data,actor)
+ local definitionId=actor.definitionId
  local identity=data.bindings and data.bindings[definitionId]
  local legacy=data.asset
- return data.assets and data.assets[identity] or (legacy and definitionId==legacy.enemyId and legacy)
+ local asset=data.assets and data.assets[identity] or (legacy and definitionId==legacy.enemyId and legacy)
+ if asset and ByrdTrial.isGrounded(actor,data)then return ByrdTrial.art(asset)end
+ return asset
+end
+local function retainByrdSamplePool(view,asset)
+ if not asset or asset.enemyId~='byrd' or view.data.status~='refined-release'then return end
+ -- Native child lookups can return fresh proxies. Keep one stable sample
+ -- owner for each Byrd variant until retirement or replacement.
+ view.samples=assert(optionalChild(view.root,'monsterSamples'),'missing Byrd art pool')
 end
 local function newPool(stage,platform,data,poolIndex,actorBox)
  local overlay=not actorBox and optionalChild(stage,'topBar')
  local view={root=actorBox and optionalChild(actorBox,'monsterArt') or overlay and optionalChild(overlay,poolIndex and poolIndex>1 and 'monsterArt'..poolIndex or 'monsterArt'),platform=platform,data=data,origin=actorBox and {0,0} or data.hostOrigin or {0,0}}
- view.host={GetChild=function(_,name)return view.root and view.root:GetChild(name=='artSamples' and 'monsterSamples' or name)end}
+ view.host={GetChild=function(_,name)
+  if name=='artSamples' and view.samples then return view.samples end
+  return view.root and view.root:GetChild(name=='artSamples' and 'monsterSamples' or name)
+ end}
  function view:onEngineDestroy()
   self.engineDestroyed=true
   if self.box then bindings[self.box]=nil;owners[self.box]=nil end
   self.box,self.asset,self.tone,self.actorId,self.selectedAsset,self.poseState=nil,nil,nil,nil,nil,nil
-  self.root=nil
+  self.root,self.samples,self.sampleScale=nil,nil,nil
  end
  function view:clear()
   if self.engineDestroyed then return end
@@ -55,17 +75,22 @@ local function newPool(stage,platform,data,poolIndex,actorBox)
   CardDisplay.clearNativeArt(self.host)
   self.root:SetVisible(false)
   self.box,self.asset,self.tone,self.actorId,self.selectedAsset,self.poseState=nil,nil,nil,nil,nil,nil
+  self.samples,self.sampleScale=nil,nil
  end
  function view:select(rows)
   assert(not self.engineDestroyed,'monster art engine destroyed')
   local wanted,wantedId,wantedAsset
   if self.root and self.data.enabled and self.platform.nativeMonsterArtEnabled~=false then
    for slot,entry in ipairs(rows)do
-    local asset=assetFor(self.data,entry.actor.definitionId)
+    local asset=assetFor(self.data,entry.actor)
     if asset and (not poolIndex or slot==poolIndex)then wanted,wantedId,wantedAsset=actorBox or stage:GetChild('enemy'..slot),entry.id,asset;break end
    end
   end
-  if wanted~=self.box or wantedId~=self.actorId or wantedAsset~=self.selectedAsset then self:clear();self.box,self.actorId=wanted,wantedId end
+  if wanted~=self.box or wantedId~=self.actorId or wantedAsset~=self.selectedAsset then
+   self:clear()
+   self.box,self.actorId=wanted,wantedId
+   retainByrdSamplePool(self,wantedAsset)
+  end
   self.selectedAsset=wantedAsset
   if wanted then owners[wanted]=self end
  end
@@ -77,9 +102,9 @@ local function newPool(stage,platform,data,poolIndex,actorBox)
   local ok=CardDisplay.writeNativeArt(self.host,{id=self.asset.enemyId},self.asset,self.platform,fallback)
   if not ok then bindings[box]=nil;self.root:SetVisible(false);return false end
   self.x,self.y=actorBox and 0 or x,actorBox and 0 or y
-  local pool=self.root:GetChild('monsterSamples')
+  local pool=self.samples or self.root:GetChild('monsterSamples')
   local scale=portrait/math.max(self.data.canvas[1],self.data.canvas[2])
-  pool:SetLocalScale(scale,scale,1)
+  if not self.samples or self.sampleScale~=scale then pool:SetLocalScale(scale,scale,1);self.sampleScale=scale end
   bindings[box]=self
   local pose=self.poseState
   if pose then M.pose(box,pose[1],pose[2],pose[3],pose[4],pose[5],pose[6])

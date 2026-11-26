@@ -5,6 +5,7 @@ local CardGlow=require('abyss_battle_card_glow')
 local Combat = require("abyss_combat")
 local Run = require("abyss_run")
 local Theme = require("abyss_theme")
+local Viewport = require("abyss_viewport")
 local CardSkin = require('abyss_card_skin')
 local CardDisplay = require("abyss_card_display")
 local number = require("abyss_numbers").integer
@@ -50,11 +51,11 @@ end
 
 local function handTarget(count, index, hot, point)
     local restAngle=-(index-(count-1)/2)*L.hand.arcDegrees
-    -- The safe-area clamp can lift the selected pose farther than hoverLift.
-    -- Keep the real idle anchor so hover cannot shift its world hit rectangle.
-    return {x=point[1],y=point[2],scale=hot and Theme.motion.hoverScale or 1,
+    local focusY,focusScale=point.focusY,point.focusScale
+    if not focusY then focusY,focusScale=Viewport.handFocus(point.baseY,point[1]) end
+    return {x=point[1],y=point[2],scale=hot and focusScale or 1,
         angle=hot and 0 or restAngle,restAngle=restAngle,
-        baseY=point.baseY,hitWidth=point.hitWidth}
+        baseY=point.baseY,hitWidth=point.hitWidth,focusY=focusY,focusScale=focusScale,ceiling=hot and point.ceiling}
 end
 
 -- Successful geometry belongs to the last binding of a native handle. No view
@@ -65,12 +66,12 @@ local function handValues(pose, target)
     local r=target.restAngle*math.pi/180
     local c,s=math.abs(math.cos(r)),math.abs(math.sin(r))
     local restH,restW=(h*c+w*s)/2,(w*c+h*s)/2
-    local hotH=h*Theme.motion.hoverScale/2
-    local hotY=math.max(target.baseY+Theme.motion.hoverLift,-Theme.canvas.base[2]/2+Theme.canvas.safe.y+hotH)
+    local hotH=h*target.focusScale/2
+    local hotY=target.focusY
     local low=math.min(target.baseY-restH,hotY-hotH)
     local high=math.max(target.baseY+restH,hotY+hotH)
     local dy,a=(low+high)/2-pose.y,pose.angle*math.pi/180
-    local width=math.max(restW*2,w*Theme.motion.hoverScale)
+    local width=math.max(restW*2,w*target.focusScale)
     return {pose.x,pose.y,pose.scale,pose.angle,
         math.sin(a)*dy/pose.scale,math.cos(a)*dy/pose.scale,
         math.min(width,target.hitWidth or width)/pose.scale,(high-low)/pose.scale}
@@ -116,6 +117,7 @@ local function advancePose(entry, dt, fast)
     end
     pose.scale=lerpSnap(pose.scale,target.scale,dt,7.5,0.003)
     pose.angle=lerpSnap(pose.angle,target.angle,dt,12,0.003)
+    if target.ceiling then pose.y=Viewport.limitHandFocus(pose.y,pose.angle,pose.scale,target.ceiling) end
 end
 
 local function pileMembership(battle)
@@ -283,6 +285,7 @@ function M.new(view, controls)
     local child, show = controls.child, controls.show
     local ink, tint, picture = controls.ink, controls.tint, controls.picture
     local placeCard, placeReward = controls.placeCard, controls.placeReward
+    local pileLayout = controls.pileLayout or Viewport.pileLayout(view.root)
     local dragTarget, dragPose, enemyPosition = controls.dragTarget, controls.dragPose, controls.enemyPosition
     local handBattle,handPoses,previousPiles=nil,{},{}
     -- Ten physical hand slots own their native animation handles until explicit
@@ -291,7 +294,8 @@ function M.new(view, controls)
     local handGeometryOwner={}
     local handWidth,handHeight,handTurn,handCount,handTop,openingHand,eventTail
     local recentDrawOrigins={}
-    local function syncHandViewport(current)
+    local function syncHandLayout(current, battle, fighting)
+        if controls.prepareHandFocus then controls.prepareHandFocus(fighting and battle) end
         if current~=handBattle or view.canvasWidth~=handWidth or view.canvasHeight~=handHeight then
             -- Resizing invalidates a captured drag. Its old display coordinates
             -- cannot survive after the capture layer has been removed.
@@ -314,9 +318,8 @@ function M.new(view, controls)
                 -- at .12 against the source's ordinary .75 hand scale.
                 local pile=previousPiles[instance.uid]
                 if pile=='discard'and recentDrawOrigins[instance.uid]then pile='draw'end
-                local start=pile=='discard'and L.discardPile.position
-                    or pile=='exhaust'and{L.topBar.exhaustIcon[1],L.topBar.y}or L.drawPile.position
-                entry.current={x=start[1],y=start[2],scale=0.12/0.75,angle=0}
+                local x,y=pileLayout.point(pile or 'draw',pileLayout.extraWidth())
+                entry.current={x=x,y=y,scale=0.12/0.75,angle=0}
             end
             handPoses[instance.uid]=entry
         end
@@ -425,7 +428,7 @@ function M.new(view, controls)
             active = active, reward = reward, rewards = picking and Run.rewardOptions(view.run) or {} }
         local aimUid, aimTarget = currentAim(view,dragTarget)
         local current=fighting and view.run and view.run.combat
-        syncHandViewport(current)
+        syncHandLayout(current,battle,fighting)
         handTurn,handCount=handMetadata(current)
         recentDrawOrigins,eventTail=reshuffledOrigins(fighting and battle,eventTail)
         for _,entry in pairs(handPoses) do entry.visible=false end

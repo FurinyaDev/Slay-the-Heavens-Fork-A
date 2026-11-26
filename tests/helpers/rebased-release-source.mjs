@@ -4,6 +4,8 @@ import {createHash} from 'node:crypto';
 import {readFileSync} from 'node:fs';
 import {gunzipSync} from 'node:zlib';
 import {exactSourceMatches as matches} from './source-fingerprint.mjs';
+import {battlePeripheryPredecessor,beforeBattlePeriphery} from './battle-periphery-source.mjs';
+import {beforeChapterBattleScene,beforeResponsiveHand,chapterBattleSceneReader} from './chapter-battle-scene-source.mjs';
 import {authenticateInputRetirement,beforeInputRetirement} from './input-retirement-source.mjs';
 const hash=(s,algorithm='sha256')=>createHash(algorithm).update(s).digest('hex');
 const archive=readFileSync(new URL('./rebased-release-source.json.gz',import.meta.url));
@@ -45,7 +47,7 @@ const nativeButtonRepair=Object.freeze({
   ],
  },
 });
-export function beforeNativeButtonRepair(path,source){
+function nativeButtonPredecessor(path,source){
  source=beforeInputRetirement(path,source);
  const row=Object.hasOwn(nativeButtonRepair,path)?nativeButtonRepair[path]:null;
  if(!row||typeof source!=='string'||source.includes('\r\r\n'))return source;
@@ -59,6 +61,9 @@ export function beforeNativeButtonRepair(path,source){
  assert.equal(hash(prior),row.before,'exact native button repair predecessor: '+path);
  return source.includes('\r\n')?prior.replaceAll('\n','\r\n'):prior;
 }
+export function beforeNativeButtonRepair(path,source){
+ return nativeButtonPredecessor(path,beforeBattlePeriphery(path,beforeChapterBattleScene(path,source)));
+}
 function historical(rows,path,source){
  const row=Object.hasOwn(rows,path)?rows[path]:null;
  if(!row||!matches(beforeNativeButtonRepair(path,source),row.after))return source;
@@ -66,10 +71,12 @@ function historical(rows,path,source){
 }
 export function exactReviewedBuildInput(path,read,{beforeReviewedInput}={}){
  if(!Object.hasOwn(reviewedBuild.files,path))return undefined;
- const source=read(path,'utf8');
+ const rawRead=(owner,encoding='utf8')=>read(owner,encoding);
+ const chapter=chapterBattleSceneReader(path,rawRead(path),rawRead);
+ const {source,read:historicalRead}=battlePeripheryPredecessor(path,chapter.source,chapter.read);
  const {after,before}=reviewedBuild.files[path];
  let current=beforeNativeButtonRepair(path,source);
- if(!matches(current,after)&&beforeReviewedInput)current=beforeNativeButtonRepair(path,beforeReviewedInput(path,source,read));
+ if(!matches(current,after)&&beforeReviewedInput)current=beforeNativeButtonRepair(path,beforeReviewedInput(path,source,historicalRead));
  assert(matches(current,after),'fresh reviewed build input: '+path);
  return before.source;
 }
@@ -81,15 +88,24 @@ export function authorizeRebasedRelease(samples,read,sources=production){
  const seen=new Set();
  for(const [path,source] of samples){
   if(!Object.hasOwn(sources,path)||seen.has(path))continue;
-  const {after}=sources[path],current=beforeNativeButtonRepair(path,source);
+  const chapter=beforeChapterBattleScene(path,source);
+  const periphery=beforeBattlePeriphery(path,chapter);
+  const {after}=sources[path],current=nativeButtonPredecessor(path,periphery);
   if(!matches(current,after))continue;
   seen.add(path);
-  authenticateInputRetirement(path,source,read);
-  const retiredInput=beforeInputRetirement(path,source)!==source,repaired=current!==source;
+  authenticateInputRetirement(path,periphery,owner=>beforeBattlePeriphery(owner,beforeChapterBattleScene(owner,read(owner))));
+  const handProjected=beforeResponsiveHand(path,source)!==source;
+  const chapterProjected=chapter!==source,peripheryProjected=periphery!==chapter;
+  const retiredInput=beforeInputRetirement(path,periphery)!==periphery,repaired=current!==periphery;
   const sameRevision=bytes=>{
-   const before=beforeNativeButtonRepair(path,bytes);
-   return (beforeInputRetirement(path,bytes)!==bytes)===retiredInput
-    &&(before!==bytes)===repaired&&matches(before,after);
+   const chapterBefore=beforeChapterBattleScene(path,bytes);
+   const peripheryBefore=beforeBattlePeriphery(path,chapterBefore);
+   const before=nativeButtonPredecessor(path,peripheryBefore);
+   return (beforeResponsiveHand(path,bytes)!==bytes)===handProjected
+    &&(chapterBefore!==bytes)===chapterProjected
+    &&(peripheryBefore!==chapterBefore)===peripheryProjected
+    &&(beforeInputRetirement(path,peripheryBefore)!==peripheryBefore)===retiredInput
+    &&(before!==peripheryBefore)===repaired&&matches(before,after);
   };
   assert(samples.every(([owner,bytes])=>owner!==path||sameRevision(bytes)),'combined linked owner identity: '+path+' mixed live and predecessor sources');
   let live;
