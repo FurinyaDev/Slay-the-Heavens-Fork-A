@@ -7,8 +7,8 @@ import {exactSourceMatches} from './source-fingerprint.mjs';
 
 const bytes=readFileSync(new URL('../fixtures/closeout-current-backflow-source.json.gz',import.meta.url));
 assert.equal(createHash('sha256').update(bytes).digest('hex'),
- '6b71f16a0477d605b60054ede74f64dae8bfcab5ab2aed364aace5b9025e4651','exact current closeout backflow packet');
-const {schemaVersion,base,head,files,owners,continuation,sessionRoute}=JSON.parse(gunzipSync(bytes));
+ '56607531977412c0b23f436c866be331a58aa7496412bf3339b2d5e17c82bcec','exact current closeout backflow packet');
+const {schemaVersion,base,head,files,owners,continuation,sessionRoute,anchorRefactor}=JSON.parse(gunzipSync(bytes));
 assert.equal(schemaVersion,1);
 assert.equal(base,'903bf2a31e91f10fb24763ab4cea23d586d0bb83');
 assert.equal(head,'7228aaa83b0995e1dc6e36955cfd6e773c199f07');
@@ -17,6 +17,9 @@ const sessionNavigation='src/lua/abyss_game_ui_navigation.lua';
 const routePreviewView='src/lua/abyss_game_ui_view.lua';
 assert.equal(sessionRoute[sessionNavigation].commit,'d6714eaa617005b3780938a10a9f7a36f22f6565');
 assert.equal(sessionRoute[routePreviewView].commit,'4d5928646e0356c893f80e0883160db77f7edad7');
+const battleDetailView='src/lua/abyss_battle_info_view.lua';
+assert.equal(anchorRefactor.commit,'c7ea71bd084f27a8c5ace07ee8747e40f7e2ad35');
+assert.deepEqual(anchorRefactor.before,owners[battleDetailView]);
 
 function readExactOwner(path,binding,read){
  if(binding===null){
@@ -57,13 +60,16 @@ export function readCloseoutCurrentBackflowReceipt(path,digest,read){
  const marker=read(markerPath,'utf8');
  const guardian=exactSourceMatches(marker,markerBinding);
  const navigation=guardian?read(sessionNavigation,'utf8'):null;
- const current=exactSourceMatches(navigation,sessionRoute[sessionNavigation])?
-  {...successor,...sessionRoute}:guardian?successor:{};
+ const session=exactSourceMatches(navigation,sessionRoute[sessionNavigation]);
+ const detail=session?read(battleDetailView,'utf8'):null;
+ const current=session?{...successor,...sessionRoute}:guardian?successor:{};
+ if(exactSourceMatches(detail,anchorRefactor.after))current[battleDetailView]=anchorRefactor.after;
  for(const [owner,binding] of Object.entries(owners)){
   const live=readExactOwner(owner,current[owner]??binding,read);
   if(owner===path)assert.equal(live,source,'closeout owner changed during the receipt read: '+path);
   if(owner===markerPath)assert.equal(live,marker,'closeout owner changed during the receipt read: '+owner);
   if(owner===sessionNavigation&&guardian)assert.equal(live,navigation,'closeout owner changed during the receipt read: '+owner);
+  if(owner===battleDetailView&&session)assert.equal(live,detail,'closeout owner changed during the receipt read: '+owner);
  }
  const prior=restoreExactFixtureHunks({...row,path},path,source);
  assert(exactSourceMatches(prior,{sha256:row.beforeSha256,gitBlob:row.beforeBlob}),'exact current closeout predecessor: '+path);
