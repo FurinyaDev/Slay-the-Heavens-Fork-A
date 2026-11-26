@@ -30,6 +30,21 @@ function beforeOfficialReceiptCards(path,source){
  if(!exactSourceMatches(prior,reviewedCardsBefore))throw Error('Invalid exact official cards receipt predecessor');
  return source===sourceLf?prior:prior.replaceAll('\n','\r\n');
 }
+
+const officialRelicQueuesPath='data/catalogs/sts1-class-relic-queues.json';
+const releasedRelicQueues={sha256:'60bfe3ac6381f8a3fbb6040ff99aaa1892d8de5fa4db309a99e376eb8bf7cb99',
+ gitBlob:'8458614e8b3c5e336c9d96f2079b0b0016546a54'};
+const priorRelicQueues={sha256:'a1dabc16c2e68668666fe18abd2936a554e9f9ab633c3d1d96ff7c10b50f05bf',
+ gitBlob:'ec97a3feb97ec66982c00b06f4445cc8b6db9424'};
+function beforeOfficialReceiptRelicQueues(source){
+ if(!exactSourceMatches(source,releasedRelicQueues))return source;
+ const lf=source.replaceAll('\r\n','\n');
+ if(source!==lf&&source!==lf.replaceAll('\n','\r\n'))return source;
+ // #951 renamed these existing queue entries and eligibility keys in place.
+ const prior=source.replaceAll('"Tactical Badge"','"Gambling Chip"').replaceAll('"ArenaCollar"','"SlaversCollar"');
+ if(!exactSourceMatches(prior,priorRelicQueues))throw Error('Invalid exact official relic queues receipt predecessor');
+ return prior;
+}
 export function preIntegrationCalibrationSource(path,source){
  if(path==='tests/ci-complete-calibration.test.mjs')source=preCloseoutCiSource(path,source,'pr620');
  if(path!=='tests/ci-complete-calibration.test.mjs'||typeof source!=='string'||source.includes('\r\r\n'))return source;
@@ -42,6 +57,7 @@ export function preIntegrationCalibrationSource(path,source){
 // current CI execute the new tools; foreign/partial source remains visible.
 export function receiptToolingSource(path,source,view){
  if(view==='official'&&path===officialCardsPath)return beforeOfficialReceiptCards(path,source);
+ if(view==='official'&&path===officialRelicQueuesPath)return beforeOfficialReceiptRelicQueues(source);
  if(view==='official'&&path===historyProof.path&&typeof source==='string'&&!source.includes('\r\r\n')){
   const lf=source.replaceAll('\r\n','\n');
   if(lf===historyProof.after.source&&hash(lf)===historyProof.after.sha256)return historyProof.before.source;
