@@ -56,7 +56,13 @@ const jsInventorySuccessors=Object.freeze({
   gitBlob:'7dcb8cedafdd5ca8b9a58f57662c2c5940422bd2',
  },
 });
+const relicCloseoutOwner='tests/helpers/closeout-ci-source.mjs';
 const integratedEvidenceSuccessors=Object.freeze({
+ // #1010 changes the live relic inventory reader; the sealed integration view remains byte-exact.
+ [relicCloseoutOwner]:{
+  sha256:'34c1a1ae32357055166de58dc68676d9adb9a99a88c7ac97ab3b1f649ef3cbff',
+  gitBlob:'ce89dff7d6ee40d504cb4ab7d0fc5cbf7310229d',
+ },
  'CHANGELOG.md':{
   sha256:'8df706839da1f445aae118f5483af85c68a910e6b279c5207534e604d651513b',gitBlob:'41409da7947a7b3b688810473e94a64b72367081',
  },
@@ -123,10 +129,16 @@ export function assertIntegratedLuaFixturesCurrent(read){
  for(const [path,binding] of Object.entries(luaFixtureSuccessors))
   assert(exactSourceMatches(read(path,'utf8'),binding),'fresh current integrated Lua fixture source: '+path);
 }
+function matchesIntegratedEvidence(path,source,binding){
+ if(!exactSourceMatches(source,binding))return false;
+ if(path!==relicCloseoutOwner)return true;
+ const lf=norm(source);
+ return source===lf||source===lf.replaceAll('\n','\r\n');
+}
 function beforeIntegrationEvidence(path,source){
  const binding=Object.hasOwn(integratedEvidenceSuccessors,path)?integratedEvidenceSuccessors[path]
   :Object.hasOwn(luaFixtureSuccessors,path)?luaFixtureSuccessors[path]:undefined;
- if(!binding||!exactSourceMatches(source,binding))return source;
+ if(!binding||!matchesIntegratedEvidence(path,source,binding))return source;
  const prior=integratedCiProof.files[path].current.source;
  return source.includes('\r\n')?prior.replaceAll('\n','\r\n'):prior;
 }
@@ -171,7 +183,7 @@ export function assertIntegratedCurrent(read=readFileSync){
    assert.notEqual(chapter.source,source,'fresh complete integration source: '+path);
    source=beforeBattlePeriphery(path,chapter.source,chapter.read);
   }
-  if(binding)assert(exactSourceMatches(source,binding),'fresh complete integration source: '+path);
+  if(binding)assert(matchesIntegratedEvidence(path,source,binding),'fresh complete integration source: '+path);
   const prior=releaseBootstrapCiCheckedSource(path,beforeIntegrationEvidence(path,source),row.current);
   assert.equal(hash(norm(prior)),row.current.sha256,'fresh complete integration source: '+path);
  }
