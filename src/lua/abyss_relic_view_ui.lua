@@ -227,8 +227,8 @@ function M.new(root,bar,clickEvent,platform,describe,onClose,onSlot)
         self:resetBarHover()
         self.detailGeneration=self.detailGeneration+1
         self.visible,self.run=true,run
-        self.selectedIndex=(official or run.phase=='combat') and type(index)=='number' and run.relics[index] and index or nil
-        self.page=index and math.floor((index-1)/perPage())+1 or 1
+        self.selectedIndex=index or 1
+        self.page=1
         root:SetVisible(true);root:SetAsLastSibling()
         self:render();return true
     end
@@ -389,9 +389,11 @@ function M.new(root,bar,clickEvent,platform,describe,onClose,onSlot)
             end
             hit:AddCursorEventListener(clickEvent,function(event)
                 local token=released
-                if token and token.touch~=touch(event) then return outside end
+                if token and token.touch~=touch(event) then return outside and self.visible end
                 released=nil
-                if Pointer.dragged(event,8) or not valid(token) or observed and not token then return outside end
+                if Pointer.dragged(event,8) or not valid(token) or observed and not token then
+                    return outside and self.visible
+                end
                 return action()
             end)
         end

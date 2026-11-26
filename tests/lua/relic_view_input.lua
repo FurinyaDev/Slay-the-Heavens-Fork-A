@@ -1,5 +1,6 @@
 local F=dofile('tests/lua/support/game_ui_fixture.lua')
-local h,root=F.fixture()
+local cursor={CursorDown='down',CursorUp='up',CursorEndDrag='endDrag'}
+local h,root=F.fixture(nil,nil,nil,cursor)
 assert(F.start(h))
 local capacity=h.relicUI.barCapacity
 h.run.relics={}
@@ -18,21 +19,30 @@ local bar=root:GetChild('relicBar')
 local previous,next=bar:GetChild('previous'):GetChild('hit'),bar:GetChild('next'):GetChild('hit')
 local slot=bar:GetChild('slot1'):GetChild('hit')
 local panel=root:GetChild('relicPanel')
-assert(bar.click())
-assert(opens==1 and h.relicUI.visible and h.relicUI.page==1)
-for _,case in ipairs({{'next',2,3},{'previous',2,1}})do
-    local hit=panel:GetChild(case[1]):GetChild('hit')
-    assert(hit.click() and h.relicUI.page==case[2])
-    assert(hit.click() and h.relicUI.page==case[3])
-end
+assert(not tap(previous,1) and h.relicUI.barPage==1,'owned strip must stop at its first page')
+assert(tap(next,2) and h.relicUI.barPage==2)
+local staleSlot={touchId=3}
+slot.listeners.down(staleSlot)
+assert(tap(next,4) and h.relicUI.barPage==3)
+slot.listeners.up(staleSlot)
+assert(not slot.click(staleSlot) and opens==0,'old slot touch selected an item on another page')
+assert(not tap(next,5) and h.relicUI.barPage==3,'owned strip must stop at its last page')
+assert(tap(previous,6) and h.relicUI.barPage==2)
+assert(tap(slot,7) and opens==1 and h.relicUI.selectedIndex==capacity+1)
+assert(panel:GetChild('single').visible and not panel:GetChild('row1').visible)
+assert(tap(panel:GetChild('next'):GetChild('hit'),8) and h.relicUI.selectedIndex==capacity+2)
+assert(tap(panel:GetChild('previous'):GetChild('hit'),9) and h.relicUI.selectedIndex==capacity+1)
 local closeHit=panel:GetChild('close'):GetChild('hit')
-assert(closeHit.click())
+local staleClose={touchId=10}
+closeHit.listeners.down(staleClose);closeHit.listeners.up(staleClose)
+assert(tap(panel:GetChild('blocker'),11))
 assert(closes==1 and not h.relicUI.visible and not h.deckUI.visible and h.mode=='map')
+assert(h.relicUI.barPage==2,'closing detail changed the strip page')
 assert(h:openDeck())
-assert(not closeHit.click() and closes==1 and h.deckUI.visible,'stale relic close cannot reach the deck')
+assert(not closeHit.click(staleClose) and closes==1 and h.deckUI.visible,'stale relic close cannot reach the deck')
 assert(close(h))
-assert(bar.click() and h.relicUI.visible and opens==2)
-assert(closeHit.click());assert(closes==2 and not h.deckUI.visible and not h.relicUI.visible)
+assert(tap(slot,12) and h.relicUI.selectedIndex==capacity+1 and opens==2)
+assert(tap(closeHit,13));assert(closes==2 and not h.deckUI.visible and not h.relicUI.visible)
 print('RELIC_POINTER_PASS next previous close bar')
 
 -- Combat details also select the exact owned identity.
