@@ -55,3 +55,5 @@ node --test --test-name-pattern='published Traveler selection|approved traveler 
 ## 检出体积与旧证据
 
 相同 `--depth=2 --filter=blob:none`、关闭 LFS smudge 的浅检出中，develop `468b58ed` 的 Git pack 为 132,479,662 字节，最初组合 `ca2e8240` 为 142,008,320 字节。Fork B Full 45751139687 的 18 个 Windows 分片在保留的 128 MiB 检出门禁停止。现有不可变媒体清单接续 55 份生产资料。原路径、压缩字节、生产 Git blob、SHA-256、权限分类及固定来源继续可查。通过 `node scripts/ci-media-lfs.mjs` 恢复并核对全部媒体。该批新增归档内容的去重载荷为 11,402,323 字节。
+
+迁移后从 Fork B 冷检出 `752ada5a445cedd44ec3aa2b5a5cc317b3ce52b6`，以 `eafffb28afeb10d5256e5ee7b82b5ee0a6674fd6` 运行同一比较源预取（实取 233 个对象、4,200,104 字节）。原检出门禁录得 132,582,556 字节，空白检查验证 886 个路径。迁移正反例额外核对旧 Git 对象仍未取回、未知归档不能跳过比较以及精确指针字节。
