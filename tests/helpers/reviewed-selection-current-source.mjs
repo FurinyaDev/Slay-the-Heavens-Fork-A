@@ -67,6 +67,27 @@ const deckBrowser={
  ]
 };
 const addedStsOwners=Object.freeze({
+ // Modules introduced by the complete #1008 master return.
+ "src/lua/abyss_choice_grid.lua": {
+  "sha256": "8c90dc8baa1bfa74fae4466c737a0978099f907e5274a8ca8ce45a4ebf6162ac",
+  "gitBlob": "f775830e232700ccab6d3a1f8029c2028c1e492d"
+ },
+ "src/lua/abyss_deck_grid.lua": {
+  "sha256": "0827aa8e919b43694b00dbcfb3bf51af0ceedca2bed11431e501e4caa4eec5b2",
+  "gitBlob": "c83d6e88e71b28abb4c35812945632fba76c87ae"
+ },
+ "src/lua/abyss_mobile_run_hud.lua": {
+  "sha256": "ab970cbea41403ff62fc8d5c795eb4d00d7b193e3908db47910701700000182a",
+  "gitBlob": "c1861de7aeaf14c46abefa27eb8737d52332fb7c"
+ },
+ "src/lua/abyss_rounded_button.lua": {
+  "sha256": "17abb2c505d990cda010e64593888729684da1da911990c24599fb0cd0488b69",
+  "gitBlob": "007dce52b4328cee2f2224126056ee9b575ac5b6"
+ },
+ "src/lua/abyss_strike.lua": {
+  "sha256": "a18e03ba705bd5f2c1bf23e474344a4256f63cc51b0918d3aba519dcffe64e5d",
+  "gitBlob": "6a9d410fb08e3116385ee044b3dbb5fa4f2eb86b"
+ },
  "src/lua/abyss_byrd_ground_trial.lua": {
   "sha256": "b0e63cd3ba2984fff11d3ec88cd6d91b4a26f5b6f83c678f165fc513de5e0991",
   "gitBlob": "1f48f0d968bd223d0c687ad838bdb300fce70ae4"
