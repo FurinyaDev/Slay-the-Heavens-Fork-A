@@ -123,12 +123,14 @@ export function reviewedStsStyleRead(read=readFileSync){
  const reviewed=path=>{
   if(path!==deckBrowser.path)return selection(path);
   const current=read(path,'utf8');
-  assert(exactSourceMatches(current,{sha256:deckBrowser.afterSha256,gitBlob:deckBrowser.afterBlob}),
+  const lf=typeof current==='string'&&current.replaceAll('\r\n','\n');
+  assert(lf&&!lf.includes('\r')&&(current===lf||current===lf.replaceAll('\n','\r\n'))
+   &&exactSourceMatches(lf,{sha256:deckBrowser.afterSha256,gitBlob:deckBrowser.afterBlob}),
    'fresh StS deck browser source: '+path);
-  const prior=restoreExactFixtureHunks(deckBrowser,path,current);
+  const prior=restoreExactFixtureHunks(deckBrowser,path,lf);
   assert(exactSourceMatches(prior,{sha256:deckBrowser.beforeSha256,gitBlob:deckBrowser.beforeBlob}),
    'exact StS deck browser predecessor: '+path);
-  return prior;
+  return current===lf?prior:prior.replaceAll('\n','\r\n');
  };
  reviewedReaders.add(reviewed);
  return reviewed;
