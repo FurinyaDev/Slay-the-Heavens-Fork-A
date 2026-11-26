@@ -132,7 +132,6 @@ function M.new(root, data, presentation, clickEvent, platform, options)
     services = {
         picture=services.picture, tint=services.tint, ink=services.ink, child=services.child, enemyPosition=services.enemyPosition, renderEnemies=services.renderEnemies,
         describeInfo=services.describeInfo, show=services.show, placeCard=services.placeCard, placeReward=services.placeReward, dragTarget=services.dragTarget,
-        prepareHandFocus=services.prepareHandFocus,
         dragPose=services.dragPose, notice=services.notice, refresh=services.refresh, bind=services.bind, cancelPotionAim=services.cancelPotionAim,
         rewardScreen=services.rewardScreen, bindPotionControls=services.bindPotionControls, bindCardControls=services.bindCardControls, bindEnemyControl=services.bindEnemyControl, unbindEnemyControl=services.unbindEnemyControl,
         bindEnemyPowerControl=services.bindEnemyPowerControl, unbindEnemyPowerControl=services.unbindEnemyPowerControl,
@@ -209,7 +208,7 @@ function M.new(root, data, presentation, clickEvent, platform, options)
     -- under the pointer and neighbours never overlap (step > hover width).
     host.cardView = CardView.new(self, {
         child = services.child, show = services.show, ink = services.ink, tint = services.tint, picture = services.picture, platform = host.platform,
-        placeCard = services.placeCard, placeReward = services.placeReward, prepareHandFocus=services.prepareHandFocus,
+        placeCard = services.placeCard, placeReward = services.placeReward,
         dragTarget = services.dragTarget, dragPose = services.dragPose, enemyPosition = services.enemyPosition,
         renderAimActors = services.renderEnemies,
         potionTarget = services.potionDragTarget,

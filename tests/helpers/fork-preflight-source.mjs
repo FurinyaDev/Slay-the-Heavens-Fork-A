@@ -1,4 +1,4 @@
-import {beforeKnownMasterBackflowSource,beforeMasterBackflowSource} from './master-backflow-source.mjs';
+import {beforeKnownMasterBackflowSource,beforeMasterBackflowSource,productionReadingBackflowOwns} from './master-backflow-source.mjs';
 import {beforePosixDeadlineWorkflow,beforeWindowsDeadlineWorkflow} from './auto-merge-workflow.mjs';
 import {beforeHotfixPublicationGate} from './release-ci-workflow.mjs';
 import {assertInputRetirementLuaCurrent,beforeInputRetirementTestInventory,readRetiredInputLuaReceipt} from './input-retirement-inventory.mjs';
@@ -1490,7 +1490,7 @@ function beforeIntegrationSuccessor(path,source){
 const responsiveReplayHelpers=Object.freeze({
  [integratedFixture]:sessionMenuIntegratedIdentity,
  [relicCloseoutInventoryFixture.path]:relicCloseoutInventoryIdentity,
- 'tests/helpers/chapter-battle-scene-source.mjs':['1270c293d79c04ac4a5b15483dd4cc8f9c4279362e2f5c551f6e98c20c9ad293','5306929645881d562b4d4322c5b3fa2ecb91edbd'],
+ 'tests/helpers/chapter-battle-scene-source.mjs':['7888616f2fbc3f59b3545eb5441069380b453b91c80a7a3d4513e59193fa5696','28b2c25290691844c986dba49fb982eb326b8ba3'],
  'tests/helpers/rebased-release-source.mjs':['b1e42ded7f05f580fb25ab0417ccd8db45832f5e9e50db83a38d6aaa2767dc20','4b22a3e61459334c6d85b247ea188976313d549e'],
 });
 function responsiveReplayCurrentRead(read){
@@ -1524,7 +1524,7 @@ export function currentReviewedSelectionRead(read){
   try{
    const live=read(path,encoding);
    const text=Buffer.isBuffer(live)?live.toString('utf8'):live;
-   const selection=beforeSelectionReceiptSource(path,text)!==text||beforeOfficialCharacterBackflow(path,text)!==text;
+   const selection=productionReadingBackflowOwns(path)||beforeSelectionReceiptSource(path,text)!==text||beforeOfficialCharacterBackflow(path,text)!==text;
    source=selection?live:beforeMasterBackflowSource(path,live);
   }
   catch(cause){

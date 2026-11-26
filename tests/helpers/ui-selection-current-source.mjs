@@ -424,7 +424,54 @@ const deckArchitectureCopier=Object.freeze({
  }
 ],
 });
-const activeReceipt=path=>path===copierPath?deckArchitectureCopier:combinedReceipt(path)??receipt(path);
+const returnedCardReadingCopier=Object.freeze({
+ current:{"sha256":"90b212e531f76421c9c65f879676c71c3050c74236bfc218b76cc875a1d26d58","gitBlob":"b31315368e89669113b60bbec20aeded6f814da7"},
+ previous:deckArchitectureCopier.current,
+ hunks:[
+  {
+    "at": 353,
+    "before": " 'tests/helpers/rebased-release-source.mjs':'b1e42ded7f05f580fb25ab0417ccd8db45832f5e9e50db83a38d6aaa2767dc20',\n 'tests/helpers/chapter-battle-scene-source.mjs':'1270c293d79c04ac4a5b15483dd4cc8f9c4279362e2f5c551f6e98c20c9ad293',\n 'tests/helpers/release-integration-source.mjs':'74093921a53a94ba842afac199e579a622b60fea5abf2519d416ede77bbfa1a7',",
+    "after": " 'tests/helpers/rebased-release-source.mjs':'b1e42ded7f05f580fb25ab0417ccd8db45832f5e9e50db83a38d6aaa2767dc20',\n 'tests/helpers/chapter-battle-scene-source.mjs':'7888616f2fbc3f59b3545eb5441069380b453b91c80a7a3d4513e59193fa5696',\n 'tests/helpers/release-integration-source.mjs':'74093921a53a94ba842afac199e579a622b60fea5abf2519d416ede77bbfa1a7',"
+  },
+  {
+    "at": 367,
+    "before": " 'tests/fixtures/develop-architecture-linked-source.json.gz':'4e8500c1232bc5bcd5c19d08dbed21cea262be94a30f3a2e8195eeb04ebde859',\n 'tests/helpers/master-backflow-source.mjs':'ed257bdd35954a315e853478eb9d92584793a47af207e7e7da5fde96bd920219',\n 'tests/fixtures/master-backflow-predecessors.json.gz':'b16492b78553e53e675537d95d3f9ef24557d792f657ba41f0f280e43fab325f',",
+    "after": " 'tests/fixtures/develop-architecture-linked-source.json.gz':'4e8500c1232bc5bcd5c19d08dbed21cea262be94a30f3a2e8195eeb04ebde859',\n 'tests/helpers/master-backflow-source.mjs':'374935c2c76b47b65319202a3f3d60eb9884149f4224cd9c1dc432a81f523a7c',\n 'tests/fixtures/master-backflow-predecessors.json.gz':'b16492b78553e53e675537d95d3f9ef24557d792f657ba41f0f280e43fab325f',"
+  }
+],
+});
+const returnedReadingReplayPath='tests/helpers/replay-reviewed-selection.mjs';
+const returnedReadingReplay=Object.freeze({
+ current:{"sha256":"5cd7ad3d5a728418bb89cb8dbf0d4fea7fa199fb005b399b71772e63e0ec2851","gitBlob":"2128fceb1bff074e04d02f911264194e2415037f"},
+ previous:combinedReceipt(returnedReadingReplayPath).current,
+ hunks:[
+  {
+    "at": 15,
+    "before": "import {beforeDeckPagesSuiteSource,readRetiredController,retiredControllerPath} from './input-retirement-source.mjs';\nimport {beforeMasterBackflowSource,readBeforeMasterBackflowSource} from './master-backflow-source.mjs';\nimport {beforeOfficialCharacterBackflow} from './current-replay-fix-sources.mjs';",
+    "after": "import {beforeDeckPagesSuiteSource,readRetiredController,retiredControllerPath} from './input-retirement-source.mjs';\nimport {beforeMasterBackflowSource,readBeforeMasterBackflowSource,productionReadingBackflowOwns} from './master-backflow-source.mjs';\nimport {beforeOfficialCharacterBackflow} from './current-replay-fix-sources.mjs';"
+  },
+  {
+    "at": 26,
+    "before": "});\nexport function readSelectionProductionOwners(read,readOwner){",
+    "after": "});\nconst readingOwner=path=>productionReadingBackflowOwns(path)||path==='src/lua/abyss_battle_card_layout.lua'||path==='src/lua/abyss_viewport.lua';\nexport function readSelectionProductionOwners(read,readOwner){"
+  },
+  {
+    "at": 31,
+    "before": "  const source=Buffer.isBuffer(raw)?raw.toString('utf8'):raw;\n  if(path===selectionNodeNoticePath||beforeOfficialCharacterBackflow(path,source)!==source)return raw;\n  return beforeMasterBackflowSource(path,raw);\n }));\n return (path,encoding='utf8')=>uiEntranceOwns(path)?readEntrance(path,encoding):readOwner(path,encoding);\n}",
+    "after": "  const source=Buffer.isBuffer(raw)?raw.toString('utf8'):raw;\n  if(productionReadingBackflowOwns(path)||path===selectionNodeNoticePath||beforeOfficialCharacterBackflow(path,source)!==source)return raw;\n  return beforeMasterBackflowSource(path,raw);\n }));\n return (path,encoding='utf8')=>readingOwner(path)||uiEntranceOwns(path)?readEntrance(path,encoding):readOwner(path,encoding);\n}"
+  },
+  {
+    "at": 39,
+    "before": "export function beforeCurrentSelectionProductionSource(path,readCurrent,readReviewed){\n const read=path==='src/lua/abyss_battle_intent_view.lua'?readReviewed:readCurrent;\n return beforeCurrentProductionSource(path,read(path),read);",
+    "after": "export function beforeCurrentSelectionProductionSource(path,readCurrent,readReviewed){\n const read=readingOwner(path)||path==='src/lua/abyss_battle_intent_view.lua'?readReviewed:readCurrent;\n return beforeCurrentProductionSource(path,read(path),read);"
+  }
+],
+});
+function activeReceipt(path){
+ if(path===copierPath)return returnedCardReadingCopier;
+ if(path===returnedReadingReplayPath)return returnedReadingReplay;
+ return combinedReceipt(path)??receipt(path);
+}
 const currentCopier=activeReceipt(copierPath).current;
 export const selectionCopierReceipt=Object.freeze({path:copierPath,
  afterSha256:currentCopier.sha256,afterBlob:currentCopier.gitBlob});
@@ -438,6 +485,8 @@ function beforeReceipt(path,source,binding){
 }
 
 export function beforeSelectionReceiptSource(path,source){
+ if(path===returnedReadingReplayPath)source=beforeReceipt(path,source,returnedReadingReplay);
+ if(path===copierPath)source=beforeReceipt(path,source,returnedCardReadingCopier);
  if(path===copierPath)source=beforeReceipt(path,source,deckArchitectureCopier);
  source=beforeReceipt(path,source,combinedReceipt(path));
  if(path===copierPath)source=beforeReceipt(path,source,nodeNoticeCopier);

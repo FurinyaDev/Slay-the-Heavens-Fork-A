@@ -118,16 +118,44 @@ const productionForethoughtSources=Object.freeze({
     gitBlob:'9a7f5a8d21fa581fa82d9bfa2c164f81eade02cd',
   }},
 });
+const productionMapDeckSources=Object.freeze({
+  'src/lua/abyss_card_skin.lua':{after:{
+    sha256:'6ed79b9a09a85782f448f0a20db9c38002ff6d83cd405f80e987e56753fbbf1a',
+    gitBlob:'8f9592caff303a00226228b5c6b8a368ac94d5de',
+  }},
+  'src/lua/abyss_deck_ui.lua':productionForethoughtSources['src/lua/abyss_deck_ui.lua'],
+  'src/lua/abyss_game_ui_view.lua':{after:{
+    sha256:'b64cc28d1242af7fd219d1ccce46c9a043f42e3f602772e775896f3ea28fdf84',
+    gitBlob:'d865b4d6b0d4e8b6043b9e84f6a595b2d7f78bc6',
+  }},
+  'src/lua/abyss_map_ui.lua':{after:{
+    sha256:'645764d987cb57f2cf57db066eeb3e99de967d248b9efabbd3cf65269e7dd379',
+    gitBlob:'12e42d8d0abe7607b8526d7b89b2e2fc80c92ced',
+  }},
+});
+const restoredUpgradeLabel={sha256:'fb8ca6270444a5eaed5fff5ce797b469b01ff53e882a40c13c85374890921b06',
+  gitBlob:'22359b12e6164a4fde5ae9302eef823b5df257dd'};
 function uniformCurrent(source,binding){
   if(!current(source,binding))return false;
   const lf=normalize(source);
   return source===lf||source===lf.replaceAll('\n','\r\n');
 }
 
+function assertProductionMapDeckOwners(path,source,read){
+  const owner=productionMapDeckSources[path];
+  if(!owner||!uniformCurrent(source,owner.after))return;
+  for(const [name,{after}] of Object.entries(productionMapDeckSources)){
+    let live;
+    try{live=read(name,'utf8');}catch{assert.fail('map deck linked owner missing: '+name);}
+    assert(uniformCurrent(live,after),'map deck linked owner identity: '+name);
+  }
+}
+
 function beforeProductionForethought(path,source,read){
   const row=Object.hasOwn(productionForethoughtSources,path)&&productionForethoughtSources[path];
-  if(!row||!uniformCurrent(source,row.after))return source;
-  assertForethoughtOwners(productionForethoughtSources,read,uniformCurrent);
+  if(!row||(!uniformCurrent(source,row.after)&&!(path===deckLayout&&uniformCurrent(source,restoredUpgradeLabel))))return source;
+  assertForethoughtOwners(productionForethoughtSources,read,(live,binding)=>uniformCurrent(live,binding)
+    ||(binding===productionForethoughtSources[deckLayout].after&&uniformCurrent(live,restoredUpgradeLabel)));
   let prior=files[path]?.before.source;
   if(path===deckLayout){
     const forethought=forethoughtSources[path];
@@ -148,6 +176,7 @@ export function beforeMapRoomSource(path,source){
 }
 
 export function beforeMapDeckSource(path,source,read){
+  assertProductionMapDeckOwners(path,source,read);
   const forethoughtPrior=beforeProductionForethought(path,source,read);
   if(forethoughtPrior!==source)return forethoughtPrior;
   const readBackflow=read;

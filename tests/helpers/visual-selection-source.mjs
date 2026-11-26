@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {beforeChapterBattleScene} from './chapter-battle-scene-source.mjs';
+import {assertCurrentCardReadingScope,beforeCardReadingScope,beforeChapterBattleScene} from './chapter-battle-scene-source.mjs';
 import {restoreExactFixtureHunks} from './exact-fixture-hunks.mjs';
 import {currentRewardReplay} from './reward-current-source.mjs';
 import {exactSourceMatches} from './source-fingerprint.mjs';
@@ -74,10 +74,10 @@ export function beforeVisualLegibility(path,source){
 export function visualSelectionOwnerRead(read){
  let rewardRead;
  const readReward=(path,encoding='utf8')=>{
-  const raw=read(path,encoding);
+  const raw=assertCurrentCardReadingScope(path,read(path,encoding));
   if(path===architecture)
    assert.notEqual(beforeChapterBattleScene(path,raw),raw,'fresh reviewed Selection production owner: '+path);
-  return raw;
+  return beforeCardReadingScope(path,raw);
  };
  return (path,row)=>{
   if(rewardOwners.has(path)){
@@ -91,10 +91,10 @@ export function visualSelectionOwnerRead(read){
    assert(exactSourceMatches(prior,row.before),'exact visual reward predecessor: '+path);
    return row.before.source;
   }
-  const raw=read(path,'utf8');
+  const raw=assertCurrentCardReadingScope(path,read(path,'utf8'));
   let source=raw;
   if(path===actorMotion||path===viewport.path){
-   source=path===actorMotion?beforeChapterBattleScene(path,raw):beforeVisualFixture(viewport,path,raw);
+   source=path===actorMotion?beforeChapterBattleScene(path,raw):beforeVisualFixture(viewport,path,beforeCardReadingScope(path,raw));
    assert.notEqual(source,raw,'fresh reviewed Selection production owner: '+path);
   }
   assert(exactSourceMatches(source,row.after),'fresh reviewed Selection production owner: '+path);

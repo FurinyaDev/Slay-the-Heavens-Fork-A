@@ -5,7 +5,8 @@ import {exactSourceMatches} from './source-fingerprint.mjs';
 import {releaseUiRestoreArchive} from './release-ui-restore-source.mjs';
 import {visualSelectionOwnerRead} from './visual-selection-source.mjs';
 import {beforeSelectionNodeNoticeSource,selectionNodeNoticePath} from './ui-selection-current-source.mjs';
-import {beforeKnownMasterBackflowSource,beforeMasterBackflowSource,readBeforeMasterBackflowSource} from './master-backflow-source.mjs';
+import {beforeKnownMasterBackflowSource,beforeMasterBackflowSource,readBeforeMasterBackflowSource,productionReadingBackflowOwns} from './master-backflow-source.mjs';
+import {beforeShopPurchaseOwner,shopPurchaseOwner} from './shop-deck-purchase-source.mjs';
 
 const replayBase='02dcb2466b2c90308f9a9e42896c2c5af3ed288c';
 const renamedOwners=Object.freeze({
@@ -15,6 +16,31 @@ const renamedOwners=Object.freeze({
 });
 const reviewedReaders=new WeakSet();
 export const isReviewedSelectionRead=read=>reviewedReaders.has(read);
+const runCostsPath='scripts/ci-run-costs.mjs';
+const runCostsCurrent={sha256:'852e3332f842b29f22815d17a52718e4bbed5f7efec1106ae9c29c037668baf3',
+ gitBlob:'31a9d3efa82a378a36f32591954587d171b1d3c5'};
+const runCostsBeforeTriage={sha256:'8a16aa06d3a3c03e757c396c691924e223fc0a561c590b2eff20d5a07d030948',
+ gitBlob:'25b30da208dc7129aababade24a40f07f91d5e83'};
+
+function beforeRunCostTriage(source){
+ const lf=source.replaceAll('\r\n','\n');
+ if((source!==lf&&source!==lf.replaceAll('\n','\r\n'))||!exactSourceMatches(lf,runCostsCurrent))return source;
+ const start=lf.indexOf('\n\nconst testSteps=');
+ const stop=lf.indexOf('\nconst ms =',start);
+ assert(start>=0&&stop>start,'exact #1031 triage helpers');
+ const signature='export function runCost(run,response,{inventoryRun,inventoryJobs}={}) {';
+ const prior=(lf.slice(0,start)+lf.slice(stop))
+  .replace('function validateJobs(run,response) {',signature)
+  .replace("    if(!Number.isSafeInteger(job.id)||job.id<=0)throw Error('Invalid job identity');\n",'')
+  .replace('}\n'+signature+'\n  validateJobs(run,response);\n','')
+  .replace(/    if\(process\.argv\[2\]==='--triage'\)[\s\S]+?(?=  }catch\(error\))/,
+   "    if(process.argv[2]?.startsWith('--')){governanceCli();process.exit(0);}\n"+
+   "    if(process.argv.length!==4)throw Error('Usage: ci-run-costs.mjs <raw-directory> <output.json>');\n"+
+   "    writeFileSync(process.argv[3],JSON.stringify(analyzeDirectory(process.argv[2]),null,2)+'\\n');\n");
+ assert(exactSourceMatches(prior,runCostsBeforeTriage),'exact #1031 run-cost predecessor');
+ return source===lf?prior:prior.replaceAll('\n','\r\n');
+}
+
 let owners;
 function reviewedSelectionOwners(){
  if(owners)return owners;
@@ -37,12 +63,19 @@ function reviewedSelectionOwners(){
 // known current owners here and reread each one whenever that closure asks.
 export function reviewedSelectionRead(read=readFileSync){
  const readMaster=readBeforeMasterBackflowSource(read);
- const readCurrent=(path,encoding)=>path===selectionNodeNoticePath
-  ?beforeSelectionNodeNoticeSource(path,read(path,encoding))
-  :readMaster(path,encoding);
+ const readCurrent=(path,encoding)=>{
+  if(path===selectionNodeNoticePath)return beforeSelectionNodeNoticeSource(path,read(path,encoding));
+  if(productionReadingBackflowOwns(path))return read(path,encoding);
+  return readMaster(path,encoding);
+ };
  const registered=reviewedSelectionOwners();
  const readOwner=visualSelectionOwnerRead(readCurrent);
  const reviewed=(path,encoding='utf8')=>{
+  if(path===shopPurchaseOwner||path===runCostsPath){
+   const live=read(path,'utf8');
+   const source=path===shopPurchaseOwner?beforeShopPurchaseOwner(path,live):beforeRunCostTriage(live);
+   return encoding==='utf8'?source:Buffer.from(source);
+  }
   const row=registered.get(path);
   if(!row)return readMaster(path,encoding);
   const active=Object.hasOwn(renamedOwners,path)?renamedOwners[path]:path;

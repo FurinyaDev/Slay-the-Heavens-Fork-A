@@ -14,7 +14,7 @@ import {uiEntranceOwns} from './ui-entrance-source.mjs';
 import {checkedSelectionEntranceRead,selectionNodeNoticePath} from './ui-selection-current-source.mjs';
 import {stsStylePriorRuntime} from './sts-style-prior-runtime.mjs';
 import {beforeDeckPagesSuiteSource,readRetiredController,retiredControllerPath} from './input-retirement-source.mjs';
-import {beforeMasterBackflowSource,readBeforeMasterBackflowSource} from './master-backflow-source.mjs';
+import {beforeMasterBackflowSource,readBeforeMasterBackflowSource,productionReadingBackflowOwns} from './master-backflow-source.mjs';
 import {beforeOfficialCharacterBackflow} from './current-replay-fix-sources.mjs';
 import {readReviewedOfficialAssetInput,reviewedOfficialAssetInputPaths} from './reviewed-official-asset-inputs.mjs';
 const hash=s=>createHash('sha256').update(s).digest('hex'),norm=s=>s.replaceAll('\r\n','\n');
@@ -25,19 +25,20 @@ const reviewedContracts=Object.freeze({
  'tests/sts-card-reference.test.mjs':13,
  [archivedOfficialAssets]:6,
 });
+const readingOwner=path=>productionReadingBackflowOwns(path)||path==='src/lua/abyss_battle_card_layout.lua'||path==='src/lua/abyss_viewport.lua';
 export function readSelectionProductionOwners(read,readOwner){
  const readEntrance=chapterEvidenceCurrentRead(checkedSelectionEntranceRead((path,encoding)=>{
   const raw=read(path,encoding);
   const source=Buffer.isBuffer(raw)?raw.toString('utf8'):raw;
-  if(path===selectionNodeNoticePath||beforeOfficialCharacterBackflow(path,source)!==source)return raw;
+  if(productionReadingBackflowOwns(path)||path===selectionNodeNoticePath||beforeOfficialCharacterBackflow(path,source)!==source)return raw;
   return beforeMasterBackflowSource(path,raw);
  }));
- return (path,encoding='utf8')=>uiEntranceOwns(path)?readEntrance(path,encoding):readOwner(path,encoding);
+ return (path,encoding='utf8')=>readingOwner(path)||uiEntranceOwns(path)?readEntrance(path,encoding):readOwner(path,encoding);
 }
 // Selection's archived intent owner predates #875. Its original reviewed
 // reader must reauthenticate those exact bytes at the current-only seam.
 export function beforeCurrentSelectionProductionSource(path,readCurrent,readReviewed){
- const read=path==='src/lua/abyss_battle_intent_view.lua'?readReviewed:readCurrent;
+ const read=readingOwner(path)||path==='src/lua/abyss_battle_intent_view.lua'?readReviewed:readCurrent;
  return beforeCurrentProductionSource(path,read(path),read);
 }
 const readLiveOwner=path=>readFileSync(path,'utf8');
