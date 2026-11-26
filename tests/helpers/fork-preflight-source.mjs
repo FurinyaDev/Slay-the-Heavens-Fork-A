@@ -4,6 +4,7 @@ import {beforeHotfixPublicationGate} from './release-ci-workflow.mjs';
 import {assertInputRetirementLuaCurrent,beforeInputRetirementTestInventory,readRetiredInputLuaReceipt} from './input-retirement-inventory.mjs';
 import {assertReleaseCandidateToolsCurrent,beforeDeckPagesSuiteSource} from './input-retirement-source.mjs';
 import {beforeChapterBattleScene,beforeChapterPoolFixtureInventory,chapterBattleSceneReader,chapterSceneCurrentRead} from './chapter-battle-scene-source.mjs';
+import {prePosix16ReceiptSource} from './posix15-shape-source-inverse.mjs';
 import {restoreExactFixtureHunks} from './exact-fixture-hunks.mjs';
 import {beforeVisualLegibility} from './visual-selection-source.mjs';
 export {beforeInputRetirementTestInventory} from './input-retirement-inventory.mjs';
@@ -110,6 +111,7 @@ const forkPushPacket=JSON.parse(gunzipSync(forkPushBytes));
 assert.equal(forkPushPacket.baseCommit,'73c21489efaab409d4c0c46bee517d410d3427fc');
 for(const row of Object.values(forkPushPacket.files))assert.equal(hash(row.before),row.beforeSha256);
 export function beforeForkPush(path,source){
+ source=prePosix16ReceiptSource(path,source);
  if(path==='.github/workflows/quality.yml'&&typeof source==='string')source=beforeHotfixPublicationGate(source);
  const row=Object.hasOwn(forkPushPacket.files,path)?forkPushPacket.files[path]:undefined;
  if(!row||typeof source!=='string'||source.includes('\r\r\n'))return source;
@@ -1576,6 +1578,7 @@ const cursesReceiptSources=Object.freeze({
  'tests/helpers/curses-historical-custody.mjs':["a068636ba187c353f69d8ec19d432cb052ea99f455a58feb2f6973bd63e60aaa", "2ac231d4d269e8138cd1c0e6bf3fe77db576f4f0"],
 });
 function beforeCursesReceiptFixture(path,source){
+ source=prePosix16ReceiptSource(path,source);
  if(path!==cursesReceiptFixture.path||!exactCheckoutSource(source,cursesReceiptSources[path]))return source;
  const prior=restoreExactFixtureHunks(cursesReceiptFixture,path,source);
  assert.equal(blob(prior),'5a8992502b7c5d1ebee37dd6d8eb26c439968695','exact Curses receipt fixture predecessor');
@@ -1586,7 +1589,7 @@ function cursesReceiptCurrentRead(read){
   const raw=read(path,...args);
   if(Object.hasOwn(cursesReceiptSources,path)){
    const source=Buffer.isBuffer(raw)?raw.toString('utf8'):raw;
-   assert(exactCheckoutSource(source,cursesReceiptSources[path]),'fresh current Curses receipt source: '+path);
+   assert(exactCheckoutSource(prePosix16ReceiptSource(path,source),cursesReceiptSources[path]),'fresh current Curses receipt source: '+path);
   }
   return raw;
  };

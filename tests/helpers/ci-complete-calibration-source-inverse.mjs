@@ -6,7 +6,7 @@ import {preGoldenIdolCurrentCiSource} from './golden-idol-current-ci-source-inve
 import {preOfficialAssetsFlowCiSource} from './official-assets-flow-ci-source-inverse.mjs';
 import {preOfficialAssetsCiSource} from './official-assets-ci-source-inverse.mjs';
 import {preEncounterFormationCiSource} from './encounter-formation-ci-source-inverse.mjs';
-import {prePosix15ShapeSource} from './posix15-shape-source-inverse.mjs';
+import {prePosix15ShapeSource,prePosix16ReceiptSource} from './posix15-shape-source-inverse.mjs';
 import {preDefectFinalCiSource} from './defect-final-ci-source-inverse.mjs';
 import {preSilentFinalCiSource} from './silent-final-ci-source-inverse.mjs';
 import {preRelicEquipCiSource} from './relic-equip-ci-source-inverse.mjs';
@@ -49,6 +49,7 @@ export function prePosix14ShapeSource(path,source){
 // It adds no live owner, fixture dependency or permission-bearing cache.
 export function preCurrentCiPlacementSource(path,source){
  if(path==='config/architecture.json'||path.startsWith('src/lua/'))return source;
+ if(path==='scripts/ci-quality-shape.mjs')source=prePosix16ReceiptSource(path,source);
  source=prePosix15ShapeSource(path,source);
  source=originalPlanningSource(path,source);
  source=preDefectUtilityPlanningSource(path,preDefectIntegrationPlanningSource(path,source));

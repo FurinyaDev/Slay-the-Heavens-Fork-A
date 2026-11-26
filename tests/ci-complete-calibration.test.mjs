@@ -21,7 +21,7 @@ import {preEncounterFormationCiSource,encounterFormationPlanningFloors,encounter
 import {preComponentUiCiSource,preComponentUiCiFoundationSource,componentUiCiSourceProof,ciSourceAtEpoch} from './helpers/component-ui-ci-source-inverse.mjs';
 import {componentAliasCiSourceProof,createComponentAliasCiProjector,preComponentAliasCiSource} from './helpers/component-alias-ci-source-inverse.mjs';
 import {foundationFixCiSourceProof,preFoundationFixCiSource} from './helpers/foundation-fix-ci-source-inverse.mjs';
-import {prePosix15ShapeSource,posix15ShapeProof} from './helpers/posix15-shape-source-inverse.mjs';
+import {prePosix15ShapeSource,posix15ShapeProof,prePosix16ReceiptSource} from './helpers/posix15-shape-source-inverse.mjs';
 import {preDefectFinalCiSource,defectFinalPlanningFloors} from './helpers/defect-final-ci-source-inverse.mjs';
 import {preSilentFinalCiSource,silentFinalPlanningKey,silentFinalPlanningFloor,silentFinalSourcePlanningKey,silentFinalSourcePlanningFloor} from './helpers/silent-final-ci-source-inverse.mjs';
 import {preRelicEquipCiSource,relicEquipPlanningKey,relicEquipPlanningFloor} from './helpers/relic-equip-ci-source-inverse.mjs';
@@ -122,6 +122,10 @@ const currentTimings=actualCurrentTimings;
 const frozenShapeSource=prePosix14ShapeSource('scripts/ci-quality-shape.mjs',read('scripts/ci-quality-shape.mjs'));
 const {qualityShardMatrices:frozenQualityShardMatrices,qualityShardJobs:frozenQualityShardJobs}=await import('data:text/javascript,'+encodeURIComponent(frozenShapeSource));
 const frozenFullQualityJobs=['check','presentation','engineering-posix',...frozenQualityShardJobs,'impact','fast'];
+const full38Path='scripts/ci-quality-shape.mjs';
+const full38Shape=prePosix16ReceiptSource(full38Path,rawBootstrapReadFileSync(full38Path,'utf8'));
+const {qualityShardMatrices:full38Matrices,qualityShardJobs:full38ShardJobs}=await import('data:text/javascript,'+encodeURIComponent(full38Shape));
+const full38Jobs=['check','presentation','engineering-posix',...full38ShardJobs,'impact','fast'];
 const path='scripts/ci-test-timings.json',binding=proof.files[path],before=JSON.parse(binding.beforeSource),after=JSON.parse(binding.afterSource),e=proof.evidence;
 // The three original contracts own the frozen 16/12 calibration, including its
 // unmeasured files. Current placement is checked separately below.
@@ -455,8 +459,8 @@ test('frozen Windows17 POSIX13 Full35 receipt covers its exact 741 JS and 1401 L
 test('current Full38 retains full coverage and reports performance targets under unchanged execution guards',t=>{
  const workflow=rawBootstrapReadFileSync('.github/workflows/quality.yml','utf8').replaceAll('\r\n','\n');assert.match(workflow,/timeout-minutes: \$\{\{ inputs.runner_pool == 'local-special' && 75 \|\| 180 \}\}/);assert.match(workflow,/runs-on: ubuntu-24.04\n    timeout-minutes: 90/);
  const js=discoverJs(),lua=currentLua();
- assert.deepEqual(currentQualityShardMatrices,{windows:Array.from({length:18},(_,i)=>i+1),posix:Array.from({length:15},(_,i)=>i+1)});
- assert.equal(currentQualityShardJobs.length,33);assert.equal(currentFullQualityJobs.length,38);assert.equal(new Set(currentFullQualityJobs).size,38);
+ assert.deepEqual(full38Matrices,{windows:Array.from({length:18},(_,i)=>i+1),posix:Array.from({length:15},(_,i)=>i+1)});
+ assert.equal(full38ShardJobs.length,33);assert.equal(full38Jobs.length,38);assert.equal(new Set(full38Jobs).size,38);
  assert.deepEqual(js.filter(file=>postPlacementJs.includes(file)).sort(),postPlacementJs);
  assert.deepEqual(lua.filter(file=>postPlacementLua.includes(file)),postPlacementLua);
  assert.equal(js.length,placement.inventory.js+postPlacementJs.length);
@@ -1707,8 +1711,8 @@ test('current Golden Idol836 Full38 inventory adds only two files under unchange
   assert.equal(liveTimings.js[platform][file],undefined);
   assert.equal(actualJsPlanningWeights([file],platform)[file],Math.max(liveTimings.unknownJsMs,liveTimings.jsPlanning.localLowerBounds[file]?.durationMs??0));
  }
- assert.deepEqual(currentQualityShardMatrices,{windows:Array.from({length:18},(_,i)=>i+1),posix:Array.from({length:15},(_,i)=>i+1)});
- assert.equal(currentFullQualityJobs.length,38);
+ assert.deepEqual(full38Matrices,{windows:Array.from({length:18},(_,i)=>i+1),posix:Array.from({length:15},(_,i)=>i+1)});
+ assert.equal(full38Jobs.length,38);
  for(const [platform,count,budget]of [['win32',18,1800000],['linux',15,1200000]]){
   const bins=Array.from({length:count},(_,i)=>actualJsShard(js,`${i+1}/${count}`,platform));
   assert.deepEqual(bins.flatMap(bin=>bin.files).sort(),[...js].sort());assert.equal(new Set(bins.flatMap(bin=>bin.files)).size,836);
@@ -1877,8 +1881,8 @@ test('complete current Defect Actor Full38 inventory fits original Windows18 POS
 
  const js=liveDiscoverJs(),lua=currentLua();
  assert.equal(js.length,835);assert.equal(lua.length,1415);
- assert.deepEqual(currentQualityShardMatrices,{windows:Array.from({length:18},(_,i)=>i+1),posix:Array.from({length:15},(_,i)=>i+1)});
- assert.equal(currentFullQualityJobs.length,38);
+ assert.deepEqual(full38Matrices,{windows:Array.from({length:18},(_,i)=>i+1),posix:Array.from({length:15},(_,i)=>i+1)});
+ assert.equal(full38Jobs.length,38);
  for(const [platform,count,budget]of [['win32',18,1800000],['linux',15,1200000]]){
   const loads=liveJsShard(js,`1/${count}`,platform).loads;
   const jsBins=Array.from({length:count},(_,i)=>liveJsShard(js,`${i+1}/${count}`,platform).files);
@@ -2033,7 +2037,8 @@ test('menu current complete JS and Lua workload retains Full budgets and every a
   assert.throws(()=>menuRedPriorLua(lua,(p,e)=>rawBootstrapReadFileSync(p,e)+(p===path?'\n':'')),/added menu Lua source/);
  }
  for(const paths of [lua.slice(1),[...lua,lua[0]],[...lua,'tests/lua/foreign.lua']])assert.throws(()=>menuRedPriorLua(paths),/Lua discovery/);
- for(const [platform,count,budget]of [['win32',18,1800000],['linux',15,1200000]]){
+ const platforms=[['win32',currentQualityShardMatrices.windows.length,1800000],['linux',currentQualityShardMatrices.posix.length,1200000]];
+ for(const [platform,count,budget]of platforms){
   const bins=Array.from({length:count},(_,i)=>rawCurrentJsShard(js,`${i+1}/${count}`,platform));
   assert.deepEqual(bins.flatMap(b=>b.files).sort(),js);assert.equal(new Set(bins.flatMap(b=>b.files)).size,js.length);
   const loads=bins[0].loads,combined=platform==='win32'?windowsFullLoads(lua,loads):loads;
@@ -2060,8 +2065,11 @@ test('Release bootstrap raw Full retains complete discovery costs and physical g
  const job=name=>physical.match(new RegExp(`^  ${name}:\\n[\\s\\S]*?(?=^  [\\w-]+:|(?![\\s\\S]))`,'m'))[0];
  assert.match(job('rules'),/timeout-minutes: \$\{\{ inputs.runner_pool == 'local-special' && 75 \|\| 180 \}\}/);
  assert.match(job('engineering-posix-shards'),/runs-on: ubuntu-24.04\n    timeout-minutes: 90/);
- assert.deepEqual(currentQualityShardMatrices,{windows:Array.from({length:18},(_,i)=>i+1),posix:Array.from({length:15},(_,i)=>i+1)});
- for(const [platform,count,target,guard]of [['win32',18,1800000,10800000],['linux',15,1200000,5400000]]){
+ assert.deepEqual(currentQualityShardMatrices,{windows:Array.from({length:18},(_,i)=>i+1),posix:Array.from({length:16},(_,i)=>i+1)});
+ assert.equal(currentQualityShardJobs.length,34);
+ assert.equal(currentFullQualityJobs.length,39);
+ assert.equal(new Set(currentFullQualityJobs).size,39);
+ for(const [platform,count,target,guard]of [['win32',18,1800000,10800000],['linux',16,1200000,5400000]]){
   const bins=Array.from({length:count},(_,i)=>rawCurrentJsShard(js,`${i+1}/${count}`,platform));
   assert.deepEqual(bins.flatMap(bin=>bin.files).sort(),js);assert.equal(new Set(bins.flatMap(bin=>bin.files)).size,js.length);
   const loads=bins[0].loads,combined=platform==='win32'?windowsFullLoads(lua,loads):loads;
