@@ -33,15 +33,15 @@ Windows Job 使用 Node 24.18.0、锁定的 MCP 提交和 v3 生产预设。冻�
 
 ## 本地正式构建
 
-1. 在独立、干净的工作树检出已经冻结的 `release/vX.Y.Z` 或 `hotfix/vX.Y.Z` 源码 SHA。使用同一获授权的底图副本、已核验的审核素材、Node 24.18.0、Python 3.12.10 和清单指定的 MCP 提交。项目和 MCP 均按各自锁文件执行 `npm ci --ignore-scripts`，在 MCP 目录运行 `npm run build:core`。设置 `MILIASTRA_MCP_ROOT` 为该 MCP 检出路径，`MILIASTRA_PYTHON` 为对应 Python，`MILIASTRA_ALLOW_LIVE_WRITE=0`，`MILIASTRA_SAVE_ROOTS=[]`。
-2. 从冻结工作树使用正式 v3 生产预设构建。构建结束后由当前受保护 `develop` 的控制脚本打包底图、中间 GIL、最终 GIL 和两份构建原始回执。保留输出的冻结源码、作品键及三项 SHA-256。
+1. 在独立、干净的工作树检出已经冻结的 `release/vX.Y.Z` 或 `hotfix/vX.Y.Z` 源码 SHA。使用同一获授权的底图副本、已核验的审核素材、Node 24.18.0、Python 3.12.10 和 [构建工具固定的 MCP 提交](../scripts/gil-candidate-preflight.mjs)。项目和 MCP 均按各自锁文件执行 `npm ci --ignore-scripts`，在 MCP 目录运行 `npm run build:core`。设置 `MILIASTRA_MCP_ROOT` 为该 MCP 检出路径，`MILIASTRA_PYTHON` 为对应 Python，`MILIASTRA_ALLOW_LIVE_WRITE=0`，`MILIASTRA_SAVE_ROOTS=[]`。
+2. 从冻结工作树使用正式 v3 生产预设构建。构建结束后由当前受保护 `develop` 的控制脚本打包底图、中间 GIL、最终 GIL 和两份构建原始回执。保留输出的冻结源码、作品键、构建命令、运行时版本及三项 SHA-256。
 
    ```sh
    npm run build:native -- <base.gil> build/local-gil --release-candidate --work-key=<作品键>
    node <develop检出>/scripts/gil-candidate.mjs export-local <冻结分支> <作品键> <base.gil> build/local-gil <私有传输包.json>
    ```
 
-3. 独立评审以实际构建命令、清洁源码、授权底图、两份回执和最终产物为依据复核。维护者确认许可后在 `gil-candidate` Environment 的 `GIL_CANDIDATE_APPROVAL` 填冻结记录，并将 `localBundleSha256`、`localCandidateSha256` 分别设为输出的 `bundleSha256`、`candidateSha256`。在 `reference` 关联批准记录。将私有传输包保留在授权存储，Environment Secret `GIL_LOCAL_BUILD_URL` 填 Runner 可访问的直连 HTTPS。公开发布制品只有经审计的最终 GIL、可移植回执、清单及校验和。
+3. 独立评审依据构建现场记录复核实际构建命令、Node 和 Python 版本、清洁源码、授权底图、两份回执及最终产物。维护者确认许可后在 `gil-candidate` Environment 的 `GIL_CANDIDATE_APPROVAL` 填冻结记录，并将 `localBundleSha256`、`localCandidateSha256` 分别设为输出的 `bundleSha256`、`candidateSha256`。在 `reference` 关联批准记录。将私有传输包保留在授权存储，Environment Secret `GIL_LOCAL_BUILD_URL` 填 Runner 可访问的直连 HTTPS。公开发布制品只有经审计的最终 GIL、可移植回执、清单及校验和。
 4. 从受保护 `develop` 运行 **GIL candidate**，选择 `build_origin=local` 与对应冻结源码。工作流重新校验 Full、Licenses、传输包、底图、两阶段回执、发布说明和最终 GIL，再用相同的正式来源审计、归档和 SHA-256 下载读回。清单记载本地来源及审批引用。用所得 Artifact ID 执行 [正式性能及平台流程](PUBLISHING.md)。每个受限档测量从实际归档 GIL 读取的 Lua、UI 和模板。
 
 保留 `candidate.json` 和 `candidate.gil` 在同一解压目录。使用精确源码、已水合的审核素材和清单指定的 MCP 提交，从项目根目录执行 `npm run verify:platform-load -- <解压目录>/candidate.json <official-load.json>`。将 `MILIASTRA_MCP_ROOT` 指向本机 MCP 检出。原生复审可运行 `node scripts/audit-native-candidate.mjs --source <SHA> --candidate <解压目录>/candidate.gil --receipt <解压目录>/candidate.json --output <新证据目录> --bgm`。

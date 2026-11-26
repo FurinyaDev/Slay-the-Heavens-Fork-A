@@ -6,6 +6,7 @@ export const repositoryId = 1429751262;
 export const toolCommit = '70470757d6fcb319c5afec13b178c87f2d8d54b3';
 export const encoderSha256 = 'eed054eea9285d1945ec826299e1e9546e36475d708007b2df1952ebca52f805';
 export const profile = 'official-assets-battle-v3';
+export const nativeBuildVersions = Object.freeze({ node: '24.18.0', python: '3.12.10' });
 export const sha = /^[a-f0-9]{40}$/;
 export const digest = /^[a-f0-9]{64}$/;
 const hash = data => createHash('sha256').update(data).digest('hex');
@@ -95,7 +96,7 @@ export function approvedRequest(raw, sourceSha, policy, { branch = 'develop', ve
   'Local GIL intake requires frozen source and an approval binding the private bundle and final GIL SHA-256.');
   const localBuild = local ? { bundleSha256: localBundleSha256, candidateSha256: localCandidateSha256,
     approvalReference: approval.reference } : undefined;
-  const configuration = { profile, nativePageLifecycle: true, releaseCandidate: Boolean(version), workKey, node: '24.18.0', python: '3.12.10' };
+  const configuration = { profile, nativePageLifecycle: true, releaseCandidate: Boolean(version), workKey, ...nativeBuildVersions };
   const identity = { sourceSha, baseSha256, toolCommit, encoderSha256, branch, version, configuration, policy, ...(localBuild && { localBuild }) };
   return { ...identity, id: hash(JSON.stringify(identity)) };
 }

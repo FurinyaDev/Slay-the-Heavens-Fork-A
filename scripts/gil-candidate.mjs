@@ -1,11 +1,12 @@
 import { createHash } from 'node:crypto';
+import { isDeepStrictEqual } from 'node:util';
 import { execFileSync } from 'node:child_process';
 import { createWriteStream, readFileSync, writeFileSync, appendFileSync, mkdirSync, copyFileSync, renameSync, rmSync, readdirSync, existsSync } from 'node:fs';
 import { basename, join, relative, resolve } from 'node:path';
 import { pipeline } from 'node:stream/promises';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { api, approvedRequest, artifactName, candidateTarget, digest, encoderSha256, findArtifact,
-  GateError, profile, repository, repositoryId, requireGate, sha, toolCommit, verifyFrozenQuality, verifySource } from './gil-candidate-preflight.mjs';
+  GateError, nativeBuildVersions, profile, repository, repositoryId, requireGate, sha, toolCommit, verifyFrozenQuality, verifySource } from './gil-candidate-preflight.mjs';
 import { hostedGilReceipt, importedGilReceipt, verifiedPayloadInputs } from './hosted-gil-receipt.mjs';
 import { downloadLocalGilBundle, localGilRecord, readLocalGilBundle, writeLocalGilBundle } from './local-gil-bundle.mjs';
 
@@ -156,6 +157,18 @@ function buildPaths(out) {
     mapPath: resolve(out, 'audio/candidate.gil') };
 }
 
+function localBuildRecipe(workKey) {
+  return { ...nativeBuildVersions,
+    command: `npm run build:native -- <approved-base.gil> build/local-gil --release-candidate --work-key=${workKey}` };
+}
+
+export function verifyLocalProductionPreset(defaults, receiptOptions, nativePageLifecycle) {
+  const { workKey, releaseCandidate, ...expected } = defaults;
+  const { toolchainIdentity, ...actual } = receiptOptions;
+  requireGate(isDeepStrictEqual({ ...actual, nativePageLifecycle }, expected),
+    'Local GIL build options differ from the frozen default production preset.');
+}
+
 function exportLocal(branch, workKey, base, out, destination) {
   requireGate(destination, 'Use export-local <release branch> <work-key> <base.gil> <native-output> <private-bundle.json>.');
   const sourceSha = git('.', ['rev-parse', 'HEAD']);
@@ -164,11 +177,17 @@ function exportLocal(branch, workKey, base, out, destination) {
     'Local GIL requires a frozen version and the actual production work-key.');
   cleanHead('.', sourceSha, 'Source');
   toolchain(process.env.MILIASTRA_MCP_ROOT);
+  const recipe = localBuildRecipe(workKey);
+  const python = execFileSync(process.env.MILIASTRA_PYTHON || 'python', ['--version'], {
+    encoding: 'utf8', timeout: 10000,
+  }).trim();
+  requireGate(process.versions.node === recipe.node && python === 'Python ' + recipe.python,
+    'Use the pinned Node and Python versions in the local GIL build recipe.');
   const { fullRoot, fullReceiptPath, audioReceiptPath, mapPath } = buildPaths(out);
   const identity = writeLocalGilBundle(destination, { base, intermediate: join(fullRoot, 'candidate.gil'),
     candidate: mapPath, fullReceipt: fullReceiptPath, audioReceipt: audioReceiptPath },
   (files, digests) => verifyLocalBuild(files, { sourceSha, workKey, version, ...digests }));
-  console.log(JSON.stringify({ branch, version, sourceSha, workKey, ...identity }, null, 2));
+  console.log(JSON.stringify({ branch, version, sourceSha, workKey, ...identity, recipe }, null, 2));
 }
 
 export function verifyLocalBuild({ base, intermediate, candidate, fullReceipt, audioReceipt }, expected) {
@@ -195,6 +214,12 @@ async function candidateInputs(out, expected, fileRecord) {
     const receipt = importedGilReceipt(full, audio, { path: 'candidate.gil', ...finalGil }, branch);
     const { payloadDigest, sourceInputs } = await moduleAt('.', 'scripts/build-native-candidate.mjs');
     const { artBuildOptionsFromReceipt } = await moduleAt('.', 'scripts/art-features.mjs');
+    const { nativeAudioBuildArgs } = await moduleAt('.', 'scripts/build-native-audio-game.mjs');
+    const { uiProfileFromReceipt } = await moduleAt('.', 'scripts/ui-profile.mjs');
+    const { options } = nativeAudioBuildArgs([]);
+    for (const raw of [full, audio]) {
+      verifyLocalProductionPreset(options, artBuildOptionsFromReceipt(raw), uiProfileFromReceipt(raw));
+    }
     const { loadReleaseNotes, notesSha256 } = await moduleAt('.', 'scripts/release-notes.mjs');
     const payload = verifiedPayloadInputs('.', receipt, artBuildOptionsFromReceipt(receipt), sourceInputs);
     const release = loadReleaseNotes({ releaseCandidate: true, workKey: expected.workKey });
@@ -263,7 +288,7 @@ async function deliver() {
     sourceChecks,
     receipts: { nativeSha256: hash(fullReceipt), audioSha256: hash(audioReceipt) },
     buildOrigin: bundleSha256 ? 'local' : 'hosted',
-    ...(bundleSha256 && { localBuild: { bundleSha256, candidateSha256, approvalReference } }),
+    ...(bundleSha256 && { localBuild: { bundleSha256, candidateSha256, approvalReference, recipe: localBuildRecipe(workKey) } }),
     nativeAudit: 'pass',
     platformVersion: null,
     parameters: { workKey, profile, nativePageLifecycle: true, releaseCandidate: Boolean(version), liveWrite: false },
