@@ -656,7 +656,7 @@ function assertCurrentReleaseLuaFixtureSources(read){
   assert(exactCurrentReleaseLuaFixture(path,read(path,'utf8')),'fresh current Release Lua fixture source: '+path);
 }
 // #940 and #962 added three cases, and #951 renamed the Act 2 event case.
-function beforeCurrentReleaseLuaNames(paths,read,{required=false}={}){
+export function beforeCurrentReleaseLuaNames(paths,read,{required=false}={}){
  const currentPaths=Object.keys(additionalReleaseLuaFixtures);
  if(!required&&!currentPaths.some(path=>paths.includes(path)))return paths;
  const names=new Set(paths);
