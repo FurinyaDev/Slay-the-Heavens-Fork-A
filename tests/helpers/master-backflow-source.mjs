@@ -34,6 +34,11 @@ export function beforeMasterBackflowSource(path, source) {
   return buffered ? Buffer.from(predecessor) : predecessor;
 }
 
+export function beforeKnownMasterBackflowSource(path, source) {
+  if (!Object.hasOwn(files, path) || !exactSourceMatches(source, files[path].after)) return source;
+  return beforeMasterBackflowSource(path, source);
+}
+
 const replayReaders = new WeakSet();
 export function readBeforeMasterBackflowSource(read) {
   if (replayReaders.has(read)) return read;

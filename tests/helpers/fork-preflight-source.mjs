@@ -1,4 +1,4 @@
-import {readBeforeMasterBackflowSource} from './master-backflow-source.mjs';
+import {beforeKnownMasterBackflowSource,readBeforeMasterBackflowSource} from './master-backflow-source.mjs';
 import {beforePosixDeadlineWorkflow,beforeWindowsDeadlineWorkflow} from './auto-merge-workflow.mjs';
 import {beforeHotfixPublicationGate} from './release-ci-workflow.mjs';
 import {assertInputRetirementLuaCurrent,beforeInputRetirementTestInventory,readRetiredInputLuaReceipt} from './input-retirement-inventory.mjs';
@@ -1367,6 +1367,9 @@ export function beforePreflightSource(path,source,view='prior',read=readFileSync
   const lf=normalize(source);
   if(source!==lf&&source!==lf.replaceAll('\n','\r\n'))return source;
  }
+ // Keep the live linked production owners for their own current-source guard.
+ if(typeof path==='string'&&!path.startsWith('src/')&&path!=='config/architecture.json')
+  source=beforeKnownMasterBackflowSource(path,source);
  source=beforeCursesReceiptFixture(path,source);
  const integratedPrior=beforeRelicCloseoutIntegratedFixture(path,source);
  if(integratedPrior!==source){
