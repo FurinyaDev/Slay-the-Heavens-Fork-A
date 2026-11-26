@@ -213,6 +213,19 @@ function uniformSource(source){
  const lf=source.replaceAll('\r\n','\n');
  return !lf.includes('\r')&&(source===lf||source===lf.replaceAll('\n','\r\n'));
 }
+const libraryEventPath='src/lua/abyss_library_event.lua';
+const libraryPromptCurrent={
+ sha256:'80d89b7d2a6687a0b1b172c1b83ea87e0cce48fb9974e49c82033c53f7488e07',gitBlob:'2fc96fad0d269fd25ad149d9c37ae0032499d6e4',
+};
+const libraryPromptBefore={
+ sha256:'10d0f6970d478ca4adb58cd287dfe5d17e8d779138bfea72ce413f3b5aa79c4b',gitBlob:'1096b5dc00ab4dd6d6f000c67c52c0696db7d79b',
+};
+function beforeLibraryReadPrompt(path,source){
+ if(path!==libraryEventPath||!uniformSource(source)||!matches(source,libraryPromptCurrent))return source;
+ const prior=source.replace('请选择一张卡牌加入牌组，不能跳过。','请选择一张卡牌加入牌组。');
+ assert(matches(prior,libraryPromptBefore),'exact frozen Library read prompt predecessor');
+ return prior;
+}
 const battleInputArchive=readFileSync(new URL('../fixtures/develop-battle-input-source.json.gz',import.meta.url));
 assert.equal(hash(battleInputArchive),'ee0eeaf23242e8307a2b4f06a27319d89477c5d19d7507eddc54477dc878611e','exact battle input history');
 const battleInputHistory=JSON.parse(gunzipSync(battleInputArchive));
@@ -509,6 +522,7 @@ function beforeSessionRelic(path,source,options){
  return source.includes('\r\n')?before.replaceAll('\n','\r\n'):before;
 }
 export function beforeDevelopBackflow(path,source,options){
+ source=beforeLibraryReadPrompt(path,source);
  source=beforeBattleInputHistory(path,beforeChapterEntranceOwner(path,beforeArchitectureOwner(path,source)));
  source=beforeUiEntrance(path,beforeBattlePeriphery(path,beforeChapterBattleScene(path,source)));
  source=predecessor(roomEntry.files,path,beforeDeckPages(path,source,options));
@@ -529,6 +543,12 @@ function readBackflowOwner(read,path){
  catch(error){assert.fail('combined linked owner missing: '+path+': '+String(error?.message??error));}
 }
 function authenticateDevelopBackflowWithReaders(path,source,readLive,readLinked,options){
+ const libraryPrior=beforeLibraryReadPrompt(path,source);
+ if(libraryPrior!==source){
+  const live=readBackflowOwner(readLive,path);
+  assert(uniformSource(live)&&matches(live,libraryPromptCurrent),'combined linked owner identity: '+path+' changed during Library read prompt validation');
+  return libraryPrior;
+ }
  ({source,read:readLive}=chapterBattleSceneReader(path,source,readLive));
  ({source,read:readLive}=battlePeripheryPredecessor(path,source,readLive));
  const readLinkedPeriphery=readLinked;
