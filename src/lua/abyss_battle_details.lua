@@ -66,7 +66,8 @@ function M.install(owner, ownership, host, dependencies)
         if not owner.info then return false end
         local info=owner.info
         local actorDetail=not info.kind and not info.powerTips
-        local passThrough=actorDetail or info.transient and (isCard(info) or info.powerTips)
+        -- Only transient previews yield the closing gesture to controls underneath.
+        local passThrough=info.transient and (isCard(info) or info.powerTips)
         owner.info = nil
         local handFocus
         if isCard(info) then

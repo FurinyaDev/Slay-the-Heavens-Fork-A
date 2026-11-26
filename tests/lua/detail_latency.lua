@@ -114,6 +114,24 @@ local function same(a,b)
  return true
 end
 assert(same(before,host.run),'detail browsing changed run/RNG')
+-- The next physical touch may select a card; the dismissed gesture alone is consumed.
+local function tapCard(touch)
+ hit.listeners.down({touchId=touch})
+ if hit.listeners.up then hit.listeners.up({touchId=touch}) end
+ hit.listeners.click({touchId=touch})
+end
+assert(ui:showStatus(0))
+local dismiss=panel:GetChild('statusDismiss')
+assert(dismiss.visible,'actor reader must publish its outside-dismiss surface')
+dismiss.click({touchId=72})
+assert(not ui.info and not dismiss.visible and not ui.selected,'outside dismiss must close only the reader')
+assert(ui:showStatus(0))
+tapCard(73)
+assert(not ui.info and not ui.selected and #host.run.combat.hand==beforeHand)
+tapCard(74)
+assert(ui.selected==host.run.combat.hand[1].uid and #host.run.combat.hand==beforeHand,
+ 'a deliberate second touch did not select the card')
+assert(ui:cancelAim() and not ui.selected)
 local battle=host.run.combat
 measure('defend-commit',{},function()
  ui:playSlot(hand.defend)
