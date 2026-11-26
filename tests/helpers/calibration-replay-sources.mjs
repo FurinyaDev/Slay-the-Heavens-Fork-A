@@ -56,7 +56,24 @@ function beforeRunHudPotionFixture(path,source){
  return source.includes('\r\n')?prior.replaceAll('\n','\r\n'):prior;
 }
 
+// The live budget test authenticates the #951 fixture rename before using the
+// historical names. Frozen calibration receipts retain the previous test bytes.
+function beforeReleaseLuaNameBudgetTest(path,source){
+ if(path!=='tests/ci-windows-shape-expansion.test.mjs'||!matches(source,{
+  sha256:'6601b5d58613272f5c2967ed444228e5d78fe1e570ae43bd8f0a67956bff9a41',
+  gitBlob:'d0277ba31e28aa3849c7b54cbd3632f650c81a5c',
+ }))return source;
+ const prior=lf(source)
+  .replace('import {beforeCurrentReleaseLuaNames,beforeInputRetirementTestInventory,',
+   'import {beforeInputRetirementTestInventory,')
+  .replace("beforeCurrentReleaseLuaNames(beforeInputRetirementTestInventory(lua,'lua',readFileSync,{required:true}),readFileSync)",
+   "beforeInputRetirementTestInventory(lua,'lua',readFileSync,{required:true})");
+ assert(matches(prior,retirement.continuations[path].after),'exact pre-rename budget fixture');
+ return source.includes('\r\n')?prior.replaceAll('\n','\r\n'):prior;
+}
+
 export function beforeCalibrationReplay(path,source){
+ source=beforeReleaseLuaNameBudgetTest(path,source);
  source=beforeCurrentHistoricalStsSource(path,source);
  source=beforeMapNodeVisualsLineEndings(path,source);
  source=beforeRunHudPotionFixture(path,source);
