@@ -82,9 +82,7 @@ root.children = [
 ];
 root.scriptMappingIds = [1073760001];
 const viewport = fs.readFileSync('src/lua/abyss_viewport.lua', 'utf8');
-const theme = verifyFlights
-  ? fs.readFileSync(join(dirname(layoutFile), 'abyss_theme.lua'), 'utf8')
-  : `return {canvas={base={${baseWidth},${baseHeight}},mobileBleedX=${nativeTheme.canvas.mobileBleedX}}}`;
+const theme = fs.readFileSync(join(dirname(layoutFile), 'abyss_theme.lua'), 'utf8');
 const flight = verifyFlights ? `
 local Flow=(function()
 ${fs.readFileSync('src/lua/abyss_card_flow.lua', 'utf8')}
