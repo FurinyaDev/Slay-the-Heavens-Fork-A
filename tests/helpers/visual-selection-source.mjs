@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {beforeChapterBattleScene} from './chapter-battle-scene-source.mjs';
+import {beforeCardReadingScope,beforeChapterBattleScene} from './chapter-battle-scene-source.mjs';
 import {restoreExactFixtureHunks} from './exact-fixture-hunks.mjs';
 import {currentRewardReplay} from './reward-current-source.mjs';
 import {exactSourceMatches} from './source-fingerprint.mjs';
@@ -94,7 +94,7 @@ export function visualSelectionOwnerRead(read){
   const raw=read(path,'utf8');
   let source=raw;
   if(path===actorMotion||path===viewport.path){
-   source=path===actorMotion?beforeChapterBattleScene(path,raw):beforeVisualFixture(viewport,path,raw);
+   source=path===actorMotion?beforeChapterBattleScene(path,raw):beforeVisualFixture(viewport,path,beforeCardReadingScope(path,raw));
    assert.notEqual(source,raw,'fresh reviewed Selection production owner: '+path);
   }
   assert(exactSourceMatches(source,row.after),'fresh reviewed Selection production owner: '+path);
