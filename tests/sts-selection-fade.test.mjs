@@ -88,14 +88,20 @@ print('REENTRY_PASS')`;
 test('historical source replay rejects foreign bytes and a changed linked fade owner',async()=>{
  const {readFileSync}=await import('node:fs');
  const {beforeStsSelectionFade,beforeAuthenticatedStsSelectionFade}=await import('./helpers/sts-selection-fade-source.mjs');
+ const {beforeV220SelectionFadeSource}=await import('./helpers/sts-selection-fade-v220-source.mjs');
  const {files}=JSON.parse(readFileSync('tests/fixtures/sts-selection-fade-source.json','utf8'));
  const path='src/lua/abyss_page_reveal.lua',source=readFileSync(path,'utf8');
  const lf=source.replaceAll('\r\n','\n'),crlf=text=>text.replaceAll('\n','\r\n');
- assert.equal(beforeStsSelectionFade(path,lf),files[path].before);
- assert.equal(beforeStsSelectionFade(path,crlf(lf)),crlf(files[path].before));
+ const prior=beforeV220SelectionFadeSource(path,lf);
+ const read=owner=>beforeV220SelectionFadeSource(owner,readFileSync(owner,'utf8'));
+ assert.equal(beforeStsSelectionFade(path,prior),files[path].before);
+ assert.equal(beforeStsSelectionFade(path,beforeV220SelectionFadeSource(path,crlf(lf))),crlf(files[path].before));
+ assert.equal(beforeAuthenticatedStsSelectionFade(path,prior,read),files[path].before);
  const foreign=source+'\n-- foreign drift';assert.equal(beforeStsSelectionFade(path,foreign),foreign);
+ assert.throws(()=>beforeV220SelectionFadeSource(path,foreign),/fresh master backflow source/);
  const owner='src/lua/abyss_game_ui_run.lua';
- assert.throws(()=>beforeAuthenticatedStsSelectionFade(path,source,linked=>readFileSync(linked,'utf8')+(linked===owner?'\n-- drift':'')),error=>
+ assert.throws(()=>beforeV220SelectionFadeSource(owner,readFileSync(owner,'utf8')+'\n-- drift'),/fresh master backflow source/);
+ assert.throws(()=>beforeAuthenticatedStsSelectionFade(path,prior,linked=>read(linked)+(linked===owner?'\n-- drift':'')),error=>
   error.message.includes(owner)&&/(?:fresh linked STS fade source|combined linked owner identity)/.test(error.message));
 });
 
@@ -120,9 +126,11 @@ test('STS discovery custody removes only the complete authenticated added test',
  const {readFileSync}=await import('node:fs');
  const {stsCurrentJsDiscovery}=await import('./helpers/sts-selection-fade-source.mjs');
  const {beforeNativeFlowFixture}=await import('./helpers/native-flow-fixture-source.mjs');
+ const {readBeforeMasterBackflowSource}=await import('./helpers/master-backflow-source.mjs');
  const {inventory}=JSON.parse(readFileSync('tests/fixtures/sts-selection-fade-source.json','utf8'));
  const raw=[...inventory.before,inventory.addition];
- const read=p=>beforeNativeFlowFixture(p,readFileSync(p,'utf8'),{requireCurrent:true});
+ const readMasterPredecessor=readBeforeMasterBackflowSource(readFileSync);
+ const read=p=>beforeNativeFlowFixture(p,readMasterPredecessor(p,'utf8'),{requireCurrent:true});
  assert.deepEqual(stsCurrentJsDiscovery(raw,read),inventory.before);
  for(const invalid of [inventory.before,[...raw,inventory.addition],raw.slice(1),[...raw,'foreign']])
   assert.throws(()=>stsCurrentJsDiscovery(invalid),/complete STS raw/);
