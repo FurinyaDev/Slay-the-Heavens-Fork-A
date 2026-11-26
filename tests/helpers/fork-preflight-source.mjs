@@ -118,6 +118,11 @@ export function beforeForkPush(path,source){
 // Receipt readers retain the actual Q1 current-source predecessor before their existing replay layers.
 for(const row of Object.values(forkPushPacket.receiptSuccessors??{}))assert.equal(hash(row.before),row.beforeSha256);
 export function beforeForkReceiptSource(path,source){
+ if(path===cursesReceiptFixture.path){
+  const prior=beforeCursesReceiptFixture(path,source);
+  assert.notEqual(prior,source,'current receipt input changed: '+path);
+  return beforeForkPush(path,prior);
+ }
  const row=forkPushPacket.receiptSuccessors?.[path];
  if(row&&typeof source==='string'&&!source.includes('\r\r\n')&&hash(normalize(source))===row.afterSha256)
   return source.includes('\r\n')?row.before.replaceAll('\n','\r\n'):row.before;
