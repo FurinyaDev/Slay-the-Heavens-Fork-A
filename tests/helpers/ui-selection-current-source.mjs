@@ -393,7 +393,23 @@ const nodeNoticeCopier=Object.freeze({
   }
  ]
 });
-const activeReceipt=path=>combinedReceipt(path)??(path===copierPath?nodeNoticeCopier:receipt(path));
+const deckArchitectureCopier=Object.freeze({
+ current:{"sha256":"83b872d55ff1625db99ee058aef0305f981414b43adb26b8f409be1f9cdb59a4","gitBlob":"c9719bcf74700c8fccf0540c7e0224dc738a57e8"},
+ previous:combinedReceipt(copierPath).current,
+ hunks:[
+ {
+  "at": 361,
+  "before": " 'tests/helpers/develop-release-backflow-source.mjs':'2834679eef440cf54e64cfb2c144c2fc6dbb5dc7ed048c3767435c250827337f',",
+  "after": " 'tests/helpers/develop-release-backflow-source.mjs':'3f14f8c02058d83c00314be990754099cddf46020b1b0f64aabc93afef26d771',\n 'tests/helpers/develop-release-vocabulary-source.mjs':'6120c2639aeb77972adcab7571c384d2d53f8a28794f99cc389f108a8bf0aeb5',\n 'tests/fixtures/develop-release-vocabulary-source.json.gz':'2b3d606fc142f2c8c5cfaaff386c70f6e1f741f24fbc1879b78399b7c477e914',"
+ },
+ {
+  "at": 512,
+  "before": "  if(path==='tests/helpers/reward-current-source.mjs'&&!raw.equals(content))",
+  "after": "  if((path==='tests/helpers/reward-current-source.mjs'||path==='tests/helpers/develop-release-backflow-source.mjs'||\n      path==='tests/helpers/develop-release-vocabulary-source.mjs')&&!raw.equals(content))"
+ }
+],
+});
+const activeReceipt=path=>path===copierPath?deckArchitectureCopier:combinedReceipt(path)??receipt(path);
 const currentCopier=activeReceipt(copierPath).current;
 export const selectionCopierReceipt=Object.freeze({path:copierPath,
  afterSha256:currentCopier.sha256,afterBlob:currentCopier.gitBlob});
@@ -407,6 +423,7 @@ function beforeReceipt(path,source,binding){
 }
 
 export function beforeSelectionReceiptSource(path,source){
+ if(path===copierPath)source=beforeReceipt(path,source,deckArchitectureCopier);
  source=beforeReceipt(path,source,combinedReceipt(path));
  if(path===copierPath)source=beforeReceipt(path,source,nodeNoticeCopier);
  return beforeReceipt(path,source,receipt(path));
