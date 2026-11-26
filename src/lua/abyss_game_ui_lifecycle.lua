@@ -79,11 +79,10 @@ local function updateSelection(self,platform,dt)
     end
     motion:update(dt)
 end
-function M.update(self,platform,openingCovered,updateBossEntrance,bgm)
+function M.update(self,platform,openingCovered,bgm)
     local function advancePages(dt)
             PageReveal.registerSource(platform,'battlePanel')
             self.battleUI:update(dt)
-            updateBossEntrance(dt)
             if self.battleUI.busy and self.battleUI.feedback.deaths.player then bgm:update("defeat") end
             local updated=updatePrepared(self,platform,dt)
             return updated

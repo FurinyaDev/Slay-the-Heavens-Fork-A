@@ -1,5 +1,6 @@
 -- Session navigation keeps the live Run in memory; it is never a save file.
 local NeowHistory=require('abyss_neow_history')
+local Narrative=require('abyss_narrative')
 local Theme=require('abyss_theme')
 local Nodes=require('abyss_nodes')
 local M={}
@@ -41,6 +42,9 @@ function M.requestNodeEntry(self,platform,changed)
             local ok,reason=Nodes.enter(request.run,request.map,request.nodeId)
             if ok then request.committedGeneration=request.run.roomGeneration end
             trace('core_enter_end',request,reason)
+            if ok and node.type=='boss' and request.run.encounterId=='boss_guardian' then
+                return ok,reason,Narrative.flow.bossEntrance.full
+            end
             return ok,reason
         end
         local function cancel(reason)
