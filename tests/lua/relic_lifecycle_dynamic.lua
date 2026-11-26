@@ -5,13 +5,14 @@ local s=F.C.new(F.D,{seed=42,deck={'strike','defend'},enemies={'raven_adept'}});
 local root=F.root(s)
 for _,namespace in ipairs({'hooks','uncommon','rare','boss','shop'})do
  local module=F[namespace]
- for _,key in ipairs(F.publicMethods[namespace])do F.case(namespace..'.'..key..' nil/function restore',function()
+ for _,name in ipairs(F.publicMethods[namespace])do F.case(namespace..'.'..name..' nil/function restore',function()
+  local key=F.activeMethod(namespace,name)
   local original=assert(module[key]);F.eq(type(original),'function','public function exists');root.functionSnapshot=original
   local replacement=function(value)return value end;root.replacement=replacement
   module[key]=replacement;F.eq(rawequal(module[key],replacement),true,'ordinary replacement function identity')
   F.eq(module[key](root),root,'ordinary replacement receives real caller argument')
-  F.snapshot('ordinary replacement '..namespace..'.'..key,root)
-  module[key]=nil;F.eq(module[key],nil,'ordinary nil method read');F.snapshot('ordinary nil '..namespace..'.'..key,root)
+  F.snapshot('ordinary replacement '..namespace..'.'..name,root)
+  module[key]=nil;F.eq(module[key],nil,'ordinary nil method read');F.snapshot('ordinary nil '..namespace..'.'..name,root)
   module[key]=original;F.eq(rawequal(module[key],root.functionSnapshot),true,'same function after nil restore')
  end)end
 end

@@ -69,6 +69,59 @@ export function verifyFrozenLifecycle(result,generated){
  assert.deepEqual(manifest.generatedBindings,generated,'identical generated source input hashes');
 }
 
+// #951 changes these identities but retains the lifecycle operations. #940
+// drops the trailing period from the fully formatted block description.
+const releasedNames=new Map([
+ ['噬咬','迅袭'],['激素','元素增幅'],['daggerSacrifice','daggerExpenditure'],
+ ['gamblingActivated','tacticalBadgeActivated'],['rareGamblingChip','rareTacticalBadge'],
+ ['gambling_chip','tactical_badge'],['Gambling Chip','Tactical Badge'],
+ ['calculated_gamble','calculated_exchange'],['Calculated Gamble','Calculated Exchange'],
+ ['calculatedGamble','calculatedExchange'],['Cultist','Raven Adept'],
+ ['Blue Slaver','Blue Guard'],['Red Slaver','Red Guard'],
+ ['MutagenicStrength','AugmentationCore'],['mutagenic_strength','augmentation_core'],
+ ['CultistMask','RavenMask'],['cultist_mask','raven_mask'],
+ ['获得13点格挡。本回合保留所有非虚无手牌。','获得13点格挡。本回合保留所有非虚无手牌'],
+]);
+
+function compareNamedTokens(current,frozen,tokens,context){
+ if(current===frozen)return;
+ let oldOffset=0,newOffset=0;
+ for(const token of tokens){
+  const [base,literal]=token,replacement=releasedNames.get(JSON.parse(literal));
+  if(replacement===undefined)continue;
+  const prefix=frozen.slice(oldOffset,token.index);
+  assert.ok(current.startsWith(prefix,newOffset),context+' graph or output before '+literal);
+  newOffset+=prefix.length;
+  const approved=base.replace(literal,()=>JSON.stringify(replacement));
+  if(current.startsWith(base,newOffset))newOffset+=base.length;
+  else{
+   assert.ok(current.startsWith(approved,newOffset),context+' exact released spelling of '+literal);
+   newOffset+=approved.length;
+  }
+  oldOffset=token.index+base.length;
+ }
+ assert.ok(current.slice(newOffset)===frozen.slice(oldOffset),context+' complete graph or output suffix');
+}
+
+export function compareReleasedLifecycleTraces(after,before,group){
+ for(const key of ['checkpoints','registeredCases','executedCases','coverage']){
+  assert.deepEqual(after.manifest[key],before.manifest[key],`${group}: exact ${key}`);
+ }
+ const current=after.graph.split('\n'),frozen=before.graph.split('\n');
+ assert.equal(current.length,frozen.length,`${group}: every graph checkpoint`);
+ for(let i=0;i<frozen.length;i++){
+  compareNamedTokens(current[i],frozen[i],frozen[i].matchAll(/\["string",("(?:[^"\\]|\\.)*")\]/gu),`${group} checkpoint ${i+1}`);
+ }
+ const afterOutput=after.stdout.split('\n'),beforeOutput=before.stdout.split('\n');
+ assert.equal(afterOutput.length,beforeOutput.length,`${group}: every output line`);
+ for(let i=0;i<beforeOutput.length;i++){
+  const line=beforeOutput[i];
+  if(line.startsWith('RELIC_QUERY_ALIAS ')){
+   compareNamedTokens(afterOutput[i],line,line.matchAll(/("(?:[^"\\]|\\.)*")/gu),`${group} output ${i+1}`);
+  }else assert.equal(afterOutput[i],line,`${group}: exact output ${i+1}`);
+ }
+}
+
 // Reproduce the reference from full frozen VMs in a built checkout. CI uses
 // the real replay whenever an input changes or RELIC_LIFECYCLE_REPLAY=1 is set.
 if(process.argv[1]&&import.meta.url===pathToFileURL(resolve(process.argv[1])).href){
