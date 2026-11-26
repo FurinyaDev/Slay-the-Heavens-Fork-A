@@ -19,7 +19,7 @@ const vocabulary=readPacket('closeout-lua-vocabulary-source',
  '09e76062cb37be9e4adc50116ba16dab01e2e35e8e5a75cf13f31fa9969633e7',
  '7348ab8598c8607712d525bd732239f89bb52830','b2f74d99a3d80e60b99165b6380987cda8b4488d');
 const backflow=readPacket('closeout-lua-backflow-source',
- 'a27f512a06a5dfc906cff78e8d3e5a12adbda289e4e337a2319259c70f5c74e9',
+ 'fa68ecd91ff928598642c04a6a761a3a23d6120980a0fe6cd208a34b4cd198f7',
  '903bf2a31e91f10fb24763ab4cea23d586d0bb83','7228aaa83b0995e1dc6e36955cfd6e773c199f07');
 
 function receiptFor(files,path,digest){
@@ -37,11 +37,16 @@ export function readCloseoutLuaVocabularyReceipt(path,digest,readCurrent){
  const sourcePath=row.sourcePath??path;
  if(sourcePath!==path)assert.throws(()=>readCurrent(path,'utf8'),{code:'ENOENT'},'renamed closeout Lua receipt input reappeared: '+path);
  const source=readCurrent(sourcePath,'utf8');
- assert(exactSourceMatches(source,{sha256:row.afterSha256,gitBlob:row.afterBlob}),
-  'current closeout Lua receipt input changed: '+path);
+ const continuation=row.continuation;
+ const continued=continuation&&exactSourceMatches(source,continuation);
+ const current={sha256:row.afterSha256,gitBlob:row.afterBlob};
+ assert(continued||exactSourceMatches(source,current),'current closeout Lua receipt input changed: '+path);
  const lf=source.replaceAll('\r\n','\n');
  assert(source===lf||source===lf.replaceAll('\n','\r\n'),'mixed closeout Lua receipt line endings: '+path);
- const prior=restoreExactFixtureHunks({...row,path},path,lf);
+ const predecessor=continued?restoreExactFixtureHunks({path,beforeSha256:current.sha256,
+  afterSha256:continuation.sha256,hunks:continuation.hunks},path,lf):lf;
+ assert(exactSourceMatches(predecessor,current),'exact closeout Lua continuation predecessor: '+path);
+ const prior=restoreExactFixtureHunks({...row,path},path,predecessor);
  assert(exactSourceMatches(prior,{sha256:row.beforeSha256,gitBlob:row.beforeBlob}),
   'exact closeout Lua receipt predecessor: '+path);
  return prior;
