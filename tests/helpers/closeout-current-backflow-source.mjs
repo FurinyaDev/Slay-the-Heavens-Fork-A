@@ -7,7 +7,7 @@ import {exactSourceMatches} from './source-fingerprint.mjs';
 
 const bytes=readFileSync(new URL('../fixtures/closeout-current-backflow-source.json.gz',import.meta.url));
 assert.equal(createHash('sha256').update(bytes).digest('hex'),
- '56607531977412c0b23f436c866be331a58aa7496412bf3339b2d5e17c82bcec','exact current closeout backflow packet');
+ 'a89d6cd4f44248218bb4451822f5728420e541274286ef93b8febf5db7de1eb8','exact current closeout backflow packet');
 const {schemaVersion,base,head,files,owners,continuation,sessionRoute,anchorRefactor}=JSON.parse(gunzipSync(bytes));
 assert.equal(schemaVersion,1);
 assert.equal(base,'903bf2a31e91f10fb24763ab4cea23d586d0bb83');
@@ -20,6 +20,8 @@ assert.equal(sessionRoute[routePreviewView].commit,'4d5928646e0356c893f80e088316
 const battleDetailView='src/lua/abyss_battle_info_view.lua';
 assert.equal(anchorRefactor.commit,'c7ea71bd084f27a8c5ace07ee8747e40f7e2ad35');
 assert.deepEqual(anchorRefactor.before,owners[battleDetailView]);
+assert.equal(files['tests/official-battle-relic-icons.test.mjs'].successor.commit,
+ 'dfcc35416f127693b2f0323b8168b0e29590af7d');
 
 function readExactOwner(path,binding,read){
  if(binding===null){
@@ -51,7 +53,12 @@ export function beforeCloseoutJoustCiFixture(path,source){
 export function readCloseoutCurrentBackflowReceipt(path,digest,read){
  if(!Object.hasOwn(files,path)||files[path].beforeSha256!==digest)return;
  const row=files[path];
- const source=readExactOwner(path,{sha256:row.afterSha256,gitBlob:row.afterBlob},read);
+ const fixture=read(path,'utf8');
+ const successorFixture=row.successor;
+ const predecessorBinding={sha256:row.afterSha256,gitBlob:row.afterBlob};
+ const updated=successorFixture!==undefined&&exactSourceMatches(fixture,successorFixture);
+ const source=readExactOwner(path,updated?successorFixture:predecessorBinding,read);
+ assert.equal(source,fixture,'closeout owner changed during the receipt read: '+path);
  // The Guardian subtitle advances five linked sources as one reviewed unit.
  // Its follow-up navigation and route owners advance together. Fresh owner
  // reads select one complete revision and reject mixed revisions.
@@ -71,7 +78,11 @@ export function readCloseoutCurrentBackflowReceipt(path,digest,read){
   if(owner===sessionNavigation&&guardian)assert.equal(live,navigation,'closeout owner changed during the receipt read: '+owner);
   if(owner===battleDetailView&&session)assert.equal(live,detail,'closeout owner changed during the receipt read: '+owner);
  }
- const prior=restoreExactFixtureHunks({...row,path},path,source);
+ const previous=updated?restoreExactFixtureHunks({
+  path,beforeSha256:row.afterSha256,afterSha256:successorFixture.sha256,hunks:successorFixture.hunks,
+ },path,source):source;
+ assert(exactSourceMatches(previous,predecessorBinding),'exact closeout fixture predecessor: '+path);
+ const prior=restoreExactFixtureHunks({...row,path},path,previous);
  assert(exactSourceMatches(prior,{sha256:row.beforeSha256,gitBlob:row.beforeBlob}),'exact current closeout predecessor: '+path);
  return prior;
 }
