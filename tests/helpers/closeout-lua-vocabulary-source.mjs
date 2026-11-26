@@ -21,6 +21,9 @@ const vocabulary=readPacket('closeout-lua-vocabulary-source',
 const backflow=readPacket('closeout-lua-backflow-source',
  '820ad57a42fa899c4ba7c92f9dcb4ce601c2ffa5699ea2488f189db617278580',
  '903bf2a31e91f10fb24763ab4cea23d586d0bb83','7228aaa83b0995e1dc6e36955cfd6e773c199f07');
+const floorProduction=readPacket('closeout-floor-production-source',
+ 'cb1af20bf4e68ae8eb49ee52407fd06a02490baa9eb27ba8efc17f107aecb7c4',
+ '1eb288472d7b33b7450eec97a624ca2ffa526f39','863c0983b4d8cad1c7a77391f860ba038e3cb6d4');
 
 function receiptFor(files,path,digest){
  if(!Object.hasOwn(files,path))return;
@@ -28,11 +31,18 @@ function receiptFor(files,path,digest){
  return digest===row.beforeSha256?row:undefined;
 }
 
+function floorReceipt(path,digest){
+ if(!Object.hasOwn(floorProduction,path))return;
+ const rows=floorProduction[path];
+ return Object.hasOwn(rows,digest)?rows[digest]:undefined;
+}
+
 // The backflow packet carries the reviewed live successor for paths that moved
 // beyond #951 and wires the genuine merchant fixture rename to the old receipt.
+// Formation and Golden Idol costs retain their own exact production inputs.
 // Only an exact receipt digest and live Git identity authorize an older read.
 export function readCloseoutLuaVocabularyReceipt(path,digest,readCurrent){
- const row=receiptFor(backflow,path,digest)??receiptFor(vocabulary,path,digest);
+ const row=receiptFor(backflow,path,digest)??receiptFor(vocabulary,path,digest)??floorReceipt(path,digest);
  if(!row)return;
  const sourcePath=row.sourcePath??path;
  if(sourcePath!==path)assert.throws(()=>readCurrent(path,'utf8'),{code:'ENOENT'},'renamed closeout Lua receipt input reappeared: '+path);
