@@ -275,6 +275,31 @@
       "category": "platform-evidence",
       "evidence": "Offline BeyondSimulator 0.5.2 render of the project's 2100×900 solid-rectangle viewport probe, from 6bdf065367799e9993faa121425678a0070892c1 and integrated in #984. The probe uses the native solid-fill image 100001. See the neighboring probe.mjs, README.md and pc-21-9.result.json."
     },
+    "docs/evidence/v2.2.0-viewport/mobile-16-9-periphery.png": {
+      "sha256": "aef738e94cc553ca57269ad33a69f3149cbf0ae53708bc1c6ee3d116487a25fa",
+      "category": "platform-evidence",
+      "evidence": "mobile-16-9 BeyondSimulator 0.5.2 render of project-authored battle controls with platform texture references. See docs/evidence/v2.2.0-viewport/mobile-16-9-periphery.json and PERIPHERY.md in the same directory. The historical A/B comparison identifies source 4f6733cbb5a23f181dcf2b3b0838872d3a63779d."
+    },
+    "docs/evidence/v2.2.0-viewport/mobile-19.5-9-periphery.png": {
+      "sha256": "543ca8b9ccecb4a91ee662428d6c92536f4044515b01d48a5807b96e5fe28813",
+      "category": "platform-evidence",
+      "evidence": "mobile-19.5-9 BeyondSimulator 0.5.2 render of project-authored battle controls with platform texture references. See docs/evidence/v2.2.0-viewport/mobile-19.5-9-periphery.json and PERIPHERY.md in the same directory. The historical A/B comparison identifies source 4f6733cbb5a23f181dcf2b3b0838872d3a63779d."
+    },
+    "docs/evidence/v2.2.0-viewport/mobile-20-9-periphery.png": {
+      "sha256": "939cb834df468c2539c9fc0997c95dcca9cf8c0d6c29c6b59fcaaba5adab12f3",
+      "category": "platform-evidence",
+      "evidence": "mobile-20-9 BeyondSimulator 0.5.2 render of project-authored battle controls with platform texture references. See docs/evidence/v2.2.0-viewport/mobile-20-9-periphery.json and PERIPHERY.md in the same directory. The historical A/B comparison identifies source 4f6733cbb5a23f181dcf2b3b0838872d3a63779d."
+    },
+    "docs/evidence/v2.2.0-viewport/pc-21-9-periphery-before.png": {
+      "sha256": "771b660ae682aba468c0184edd1b2287ef1707e27ee734c9b611c0cc96ca4098",
+      "category": "platform-evidence",
+      "evidence": "pc-21-9 BeyondSimulator 0.5.2 render of project-authored battle controls with platform texture references. See docs/evidence/v2.2.0-viewport/pc-21-9-periphery-before.json and PERIPHERY.md in the same directory. The historical A/B comparison identifies source 6bdf065367799e9993faa121425678a0070892c1."
+    },
+    "docs/evidence/v2.2.0-viewport/pc-21-9-periphery.png": {
+      "sha256": "b2da3b330b89120f49456d569ee02e084d47de5bc4d0a1324c79d6d092920485",
+      "category": "platform-evidence",
+      "evidence": "pc-21-9 BeyondSimulator 0.5.2 render of project-authored battle controls with platform texture references. See docs/evidence/v2.2.0-viewport/pc-21-9-periphery.json and PERIPHERY.md in the same directory. The historical A/B comparison identifies source 4f6733cbb5a23f181dcf2b3b0838872d3a63779d."
+    },
     "data/presentation/event-native-controls.json": {
       "sha256": "eac9cfc53f1203d635ba1ed77acee1bfd6d12073be53fcb7b4d0af56262bb1b5",
       "category": "native-event-illustrations"

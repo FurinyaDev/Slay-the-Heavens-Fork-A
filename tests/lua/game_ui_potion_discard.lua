@@ -8,8 +8,9 @@ local function test(name,fn)local ok,why=pcall(fn);if ok then count=count+1;prin
 else failures[#failures+1]=name..': '..tostring(why);print('not ok - '..failures[#failures])end end
 local function equal(a,b)assert(a==b,tostring(a)..' ~= '..tostring(b))end
 local function hit(root,panel,name)return assert(root:GetChild(panel):GetChild(name)):GetChild('hit')end
-local function setup(cursor)
-    local h,r=F.fixture(nil,nil,nil,cursor);assert(testStart(h))
+local function setup(cursor,touch)
+    local pointer=touch~=nil and {touchScreen=function()return touch end} or nil
+    local h,r=F.fixture(nil,nil,nil,cursor,nil,nil,pointer);assert(testStart(h))
     for _,id in ipairs({'fire_potion','block_potion','regen_potion'})do assert(Run.obtainPotion(h.run,id))end
     h.battleUI.run=h.run;h.nodeUI.run=h.run
     h:refresh();return h,r
@@ -82,32 +83,61 @@ test('full reward can discard an old bottle then claim the offered bottle in its
     equal(h.run.phase,'reward');counter(r,3)
 end)
 
-test('shop counter allows replacing a full belt without bypassing purchase price or stock',function()
-    local h,r=setup()
+local function shop(touch)
+    local h,r=setup(nil,touch)
     local path=dofile('tests/lua/support/map_routes.lua').to(h.map,function(node)return node.type=='shop'end)
     for i=1,#path-1 do assert(Map.choose(h.map,path[i]))end
     assert(F.Nodes.enter(h.run,h.map,path[#path]))
     h.run.gold=1000;h:refresh()
     assert(F.click(r,'nodePanel','merchant/talk'));advanceShop(h)
-    local offer
-    for _,p in ipairs(h.run.nodeFlow.potions)do if not p.unavailable then offer=p;break end end
-    assert(offer);local gold=h.run.gold
-    local tile=r:GetChild('nodePanel'):GetChild('shopView'):GetChild('goods'):GetChild('potion'..offer.slot)
-    equal(tile:GetChild('hit').click(),false);equal(h.run.gold,gold);counter(r,3)
-    equal(h.run.potions[2],'block_potion');assert(not offer.sold)
+    local shelf=r:GetChild('nodePanel'):GetChild('shopView')
+    local goods=shelf:GetChild('goods')
+    assert(h.nodeUI.shopOpen and not h.nodeUI.shopBusy and shelf.visible and goods.visible)
+    for slot,offer in ipairs(h.run.nodeFlow.potions)do
+        if not offer.unavailable then return h,r,offer,goods:GetChild('potion'..slot):GetChild('hit') end
+    end
+    error('shop must stock an available potion')
+end
+
+local function discardSecond(r)
     open(r)
     assert(click(r,'potionPanel','slot2'));assert(click(r,'potionPanel','discard'));assert(click(r,'potionPanel','cancel'))
     counter(r,2)
-    -- A product click previews; neither preview nor cancelling replaces the bottle.
-    assert(tile:GetChild('hit').click());equal(h.run.potions[2],nil);equal(h.run.gold,gold);assert(not offer.sold)
+end
+
+test('desktop shop rejects a full belt and buys the same bottle with one fresh click after discard',function()
+    local h,r,offer,tile=shop(false);local gold=h.run.gold
+    local ok,reason=tile.click()
+    equal(ok,false);equal(reason,'potion_slots_full');equal(h.run.gold,gold);counter(r,3)
+    equal(h.run.potions[2],'block_potion');assert(not offer.sold)
+    discardSecond(r)
+    assert(tile.click());equal(h.run.potions[2],offer.id);equal(h.run.gold,gold-offer.price)
+    assert(h.run.nodeFlow.potions[offer.slot].sold);counter(r,3)
+    assert(not r:GetChild('nodePanel'):GetChild('confirm').visible)
+    equal(tile.click(),false);equal(h.run.gold,gold-offer.price)
+    equal(h.run.potions[1],'fire_potion');equal(h.run.potions[3],'regen_potion')
+end)
+
+test('touch shop confirmation rechecks capacity and cancel or stale input cannot charge',function()
+    local h,r,offer,tile=shop(true);local gold=h.run.gold
+    assert(tile.click());equal(h.run.gold,gold);counter(r,3)
+    assert(h.nodeUI.actions.confirm.enabled)
+    local ok,reason=click(r,'nodePanel','confirm')
+    equal(ok,false);equal(reason,'potion_slots_full');equal(h.run.gold,gold);assert(not offer.sold)
+    assert(not r:GetChild('nodePanel'):GetChild('confirm').visible)
+    discardSecond(r)
+    assert(tile.click());equal(h.run.potions[2],nil);equal(h.run.gold,gold)
+    local beforeRetap=h.nodeUI.actions.confirm.handler
+    assert(tile.click());assert(r:GetChild('nodePanel'):GetChild('confirm').visible)
+    equal(beforeRetap(),false);equal(h.run.gold,gold)
     local cancelled=h.nodeUI.actions.confirm.handler
-    assert(click(r,'nodePanel','back'));equal(cancelled(),false)
+    assert(r:GetChild('nodePanel'):GetChild('shopDismiss').click());equal(cancelled(),false)
+    assert(not r:GetChild('nodePanel'):GetChild('confirm').visible)
     equal(h.run.potions[2],nil);equal(h.run.gold,gold);assert(not offer.sold);counter(r,2)
-    assert(tile:GetChild('hit').click());local committed=h.nodeUI.actions.confirm.handler
+    assert(tile.click());local committed=h.nodeUI.actions.confirm.handler
     assert(click(r,'nodePanel','confirm'));equal(h.run.potions[2],offer.id);equal(h.run.gold,gold-offer.price)
     assert(h.run.nodeFlow.potions[offer.slot].sold);counter(r,3)
-    equal(committed(),false);equal(tile:GetChild('hit').click(),false)
-    equal(h.run.gold,gold-offer.price);equal(h.run.potions[1],'fire_potion');equal(h.run.potions[3],'regen_potion');counter(r,3)
+    equal(committed(),false);equal(tile.click(),false);equal(h.run.gold,gold-offer.price)
 end)
 
 test('stale selected-slot confirmation refuses a replacement bottle and a new run with the same slot',function()

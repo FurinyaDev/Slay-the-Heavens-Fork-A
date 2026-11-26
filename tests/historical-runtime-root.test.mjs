@@ -87,3 +87,28 @@ test('the original #372 battle input epoch retains complete fixtures and refuses
  assert.ok(path);delete missing.files[path];delete missing.completeGitBlobs[path];
  assert.throws(()=>verifyOriginalBattleUiInputs(missing),/immutable original #372/);
 });
+
+
+test('a replay can stage its own inputs with only package dependencies mounted',()=>{
+ const directory=mkdtempSync(join(tmpdir(),'abyss-historical-dependencies-test-'));
+ try{
+  writeHistoricalRuntimeSnapshot(directory,{'tests/lua/example.lua':'return true\n'},{dependenciesOnly:true});
+  assert.equal(readFileSync(join(directory,'tests/lua/example.lua'),'utf8'),'return true\n');
+  assert(lstatSync(join(directory,'node_modules')).isSymbolicLink());
+  for(const path of ['art','tests/fixtures','tests/helpers'])assert.equal(existsSync(join(directory,path)),false,path);
+ }finally{rmSync(directory,{recursive:true,force:true});}
+});
+
+test('current StS Lua fixture copies reproduce the complete historical test bodies',async()=>{
+ const {beforeInputRetirement}=await import('./helpers/input-retirement-source.mjs');
+ const {historicalStsStyleFixtures}=await import('./helpers/historical-sts-style-runner.mjs');
+ const {stsStylePriorRuntime}=await import('./helpers/sts-style-prior-runtime.mjs');
+ const identity=(path,source)=>createHash('sha256').update(beforeInputRetirement(path,source).replaceAll('\r\n','\n')).digest('hex');
+ for(const path of historicalStsStyleFixtures){
+  const raw=readFileSync(new URL('../'+path,import.meta.url),'utf8').replaceAll('\r\n','\n');
+  const {sha256}=stsStylePriorRuntime.files[path];
+  assert.equal(identity(path,raw),sha256,'full original Lua contract is unchanged: '+path);
+  assert.equal(identity(path,raw.replaceAll('\n','\r\n')),sha256,'historical Lua fixtures on Windows: '+path);
+  assert.notEqual(identity(path,raw+'\n-- changed original fixture\n'),sha256,'reject changed fixture bytes: '+path);
+ }
+});

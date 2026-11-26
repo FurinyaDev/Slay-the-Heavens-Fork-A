@@ -1,0 +1,74 @@
+{
+  "layoutSha256": "65ad297efe3e4b8cd839c7a2d0362187bedee7428179909a857f8cb4dfcfeea1",
+  "preset": "mobile-19.5-9",
+  "scale": 1,
+  "points": [
+    {
+      "name": "drawIcon",
+      "x": 54.5,
+      "y": 48.5
+    },
+    {
+      "name": "discardIcon",
+      "x": 1505.5,
+      "y": 48.5
+    },
+    {
+      "name": "endTurn",
+      "x": 1374.5,
+      "y": 140
+    }
+  ],
+  "hits": [
+    {
+      "source": "client",
+      "level": "info",
+      "text": "V220_BATTLE_EDGE drawIcon 54.50000 48.50000 -725.50000 -311.50000",
+      "time": 0
+    },
+    {
+      "source": "client",
+      "level": "info",
+      "text": "V220_BATTLE_EDGE discardIcon 1505.50000 48.50000 725.50000 -311.50000",
+      "time": 0
+    },
+    {
+      "source": "client",
+      "level": "info",
+      "text": "V220_BATTLE_EDGE endTurn 1374.50000 140.00000 594.50000 -220.00000",
+      "time": 0
+    }
+  ],
+  "flights": [
+    {
+      "source": "client",
+      "level": "info",
+      "text": "V220_PILE_FLIGHT draw -725.50000 -311.50000 -725.50000 -311.50000",
+      "time": 0
+    },
+    {
+      "source": "client",
+      "level": "info",
+      "text": "V220_PILE_FLIGHT discard 708.00000 -300.00000 725.50000 -311.50000",
+      "time": 0
+    },
+    {
+      "source": "client",
+      "level": "info",
+      "text": "V220_PILE_FLIGHT exhaust 733.33333 -237.33333 733.33333 -237.33333",
+      "time": 0
+    }
+  ],
+  "receipt": {
+    "canvasId": "mobile-19.5-9",
+    "frame": 0,
+    "time": 0,
+    "clockMode": "manual",
+    "width": 1560,
+    "height": 720,
+    "pixelWidth": 1560,
+    "pixelHeight": 720,
+    "assetWarnings": []
+  },
+  "pngSha256": "543ca8b9ccecb4a91ee662428d6c92536f4044515b01d48a5807b96e5fe28813"
+}

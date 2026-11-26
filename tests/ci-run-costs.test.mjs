@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {runCost,summarizeCosts} from '../scripts/ci-run-costs.mjs';
+import {runCost,summarizeCosts,triageRun} from '../scripts/ci-run-costs.mjs';
 const run={id:1,run_attempt:1,head_sha:'a'.repeat(40),pull_requests:[{number:42}],event:'pull_request',status:'completed',conclusion:'success',created_at:'2026-11-03T00:00:00Z',updated_at:'2026-11-03T00:10:00Z'};
 const job=(id,name,extra={})=>({id,name,run_id:1,run_attempt:1,head_sha:run.head_sha,runner_id:id,runner_name:'GitHub Actions',status:'completed',conclusion:'success',created_at:'2026-11-03T00:00:00Z',started_at:'2026-11-03T00:01:00Z',completed_at:'2026-11-03T00:02:00Z',steps:[{name:'Set up job',conclusion:'success'}],...extra});
 const jobs=()=>[job(1,'check'),job(2,'engineering-posix'),job(3,'presentation'),job(4,'fast (ubuntu-24.04)'),job(5,'fast (windows-2025)')];
@@ -45,6 +45,77 @@ test('insufficient natural samples remain insufficient; nearest rank is reported
   const cancelled={...r,id:2,conclusion:'cancelled',fastPrEligible:false};assert.equal(summarizeCosts([cancelled]).cancelledCompletedExecutionRunnerMinutes,5);
   const synthetic=Array.from({length:20},(_,i)=>({...r,id:i+1,sha:i.toString(16).padStart(40,'0'),requiredWallSeconds:(i+1)*10}));
   const ranked=summarizeCosts(synthetic);assert.equal(ranked.fastSampleSufficient,true);assert.equal(ranked.fastP50Seconds,100);assert.equal(ranked.fastP90Seconds,180);
+});
+
+test('offline triage retains unexecuted jobs and separates setup, aggregation and test evidence',()=>{
+  const failed=(id,name,...steps)=>job(id,name,{conclusion:'failure',steps:[{name:'Set up job',conclusion:'success'},
+    ...steps.map(name=>({name,conclusion:'failure'}))]});
+  const list=[failed(1,'engineering-posix (1/15)','Materialize reviewed PNGs for this shard'),
+    failed(2,'check','Require every regression shard'),
+    failed(3,'rules (2/18)','JavaScript regression shard'),
+    failed(4,'rules (3/18)','JavaScript regression shard'),
+    failed(5,'rules (4/18)','Check hosted checkout Git pack payload'),
+    job(6,'fast',{runner_id:0,conclusion:'skipped',steps:[]}),job(7,'presentation'),
+    job(8,'rules (5/18)',{runner_id:0,conclusion:'cancelled',steps:[]})];
+  const stamp='2026-11-03T00:01:00.1234567Z ';
+  const logs={1:'Runtime preview LFS materialization failed (exit 2); no verified PNG result',3:[
+    '✖ common case omitted from the detailed failure section (5ms)',
+    '✖ failing tests:',
+    'test at tests\\existing.test.mjs:35:2',
+    '✖ points to frozen source (10.25ms)',
+    '  AssertionError [ERR_ASSERTION]: combined linked owner identity: config/architecture.json during entrance validation',
+    '',
+    'test at tests/existing.test.mjs:35:2',
+    '✖ a separate unknown failure (21ms)',
+    '  AssertionError [ERR_ASSERTION]: expected 10, got 9',
+    '',
+    'test at tests/fixed-replay.test.mjs:22:1',
+    '✖ runtime fixture timed out (31000ms)',
+    '  Error: Historical StS replay failed within the original total deadline: spawnSync /usr/bin/node ETIMEDOUT',
+    '',
+    'test at tests/native-ui-preview.test.mjs:9:1',
+    '✖ missing generated dependency (123.35ms)',
+    '  Error: Missing Lua module abyss_monster_art_data; run npm run build:data first.',
+    '',
+    'test at tests/native-ui-preview.test.mjs:10:1',
+    '✖ production fixture initialization (100ms)',
+    '  experiments/native-ui-preview/battle/semantic.lua:26: unknown_encounter',
+    '',
+    'test at tests/game-ui.test.mjs:10:1',
+    '✖ generic timeout still needs diagnosis (60000ms)',
+    '  Error: ETIMEDOUT',
+  ].map(line=>stamp+line).join('\r\n')};
+  const r=triageRun({...run,conclusion:'failure'},response(list),{readJobLog:id=>logs[id]??null});
+  assert.deepEqual(r.countByKind,{infrastructure:1,aggregation:1,'test-failure':1,'test-step-without-case-evidence':1,unclassified:1,unevaluated:2});
+  assert.equal(r.successfulJobs,1);
+  assert.equal(r.runWallSeconds,600);
+  assert.equal(r.failures[2].cases.length,6);
+  assert.deepEqual(r.failures[2].cases[0],{path:'tests/existing.test.mjs',line:35,column:2,name:'points to frozen source',durationMs:10.25,
+    signal:'historical-source-identity',subject:'config/architecture.json'});
+  assert.deepEqual(r.failures[2].cases.map(c=>c.signal),['historical-source-identity','unclassified','fixture-timeout','fixture-input','fixture-input','unclassified']);
+  assert.equal(r.failures[2].executionSeconds,60);
+  assert.equal(r.failures[5].executionSeconds,null);
+  assert.equal(r.failures[6].executed,false);
+  assert.equal(r.failures[3].logAvailable,false);
+  assert.deepEqual(r.caseGroups[0],{signal:'historical-source-identity',subject:'config/architecture.json',count:1,jobIds:[3]});
+});
+
+test('offline triage refuses incomplete or mixed-attempt inputs before reading any logs',()=>{
+  const readJobLog=()=>assert.fail('mixed identities must not read logs');
+  assert.throws(()=>triageRun(run,{total_count:2,jobs:[job(1,'check')]},{readJobLog}),/Incomplete/);
+  assert.throws(()=>triageRun(run,response([job(1,'check',{run_attempt:2})]),{readJobLog}),/identity/);
+  assert.throws(()=>triageRun(run,response([job('../1','check')]),{readJobLog}),/Invalid job identity/);
+  assert.throws(()=>triageRun({...run,head_sha:null},response([]),{readJobLog}),/Invalid run identity/);
+});
+
+test('offline triage recognizes and deduplicates a standalone Lua failure with reported timing',()=>{
+  const steps=[{name:'Set up job',conclusion:'success'},{name:'Lua regression shard',conclusion:'failure'}];
+  const log=['Lua runner failed (tests/lua/deck_browse_filters.lua, 90000 ms): spawnSync /usr/bin/node ETIMEDOUT',
+    'Lua fixture tests/lua/deck_browse_filters.lua: 90012 ms',
+    'Lua worker failed (tests/lua/deck_browse_filters.lua, exit 1)'].join('\n');
+  const {failures}=triageRun(run,response([job(1,'rules (1/18)',{conclusion:'failure',steps})]),{readJobLog:()=>log});
+  assert.deepEqual(failures[0].cases,[{path:'tests/lua/deck_browse_filters.lua',line:null,column:null,
+    name:'tests/lua/deck_browse_filters.lua',durationMs:90012,signal:'fixture-timeout',subject:'ETIMEDOUT'}]);
 });
 
 import {describe} from 'node:test';
