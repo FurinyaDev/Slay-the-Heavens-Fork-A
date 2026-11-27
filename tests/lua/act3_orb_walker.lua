@@ -199,6 +199,7 @@ end)
 test('real Host renders laser damage Burn destinations and the Growth status',function()
  local H=dofile('tests/lua/support/battle_action_fixture.lua')
  local inspectDetails=dofile('tests/lua/support/status_detail_fixture.lua')
+ local readPowers=dofile('tests/lua/support/power_tip_fixture.lua')
  local F=H.F
  local root=F.Viewport.apply(F.control({children=F.Layout}),1280,720)
  local host=F.GameUI.new(root,Data,F.Presentation,'click',{seed=4,campaign=true,prologue=false,
@@ -214,16 +215,21 @@ test('real Host renders laser damage Burn destinations and the Growth status',fu
  eq(box:GetChild('intent').text,'10')
  dofile('tests/lua/support/intent_face_assertion.lua')(box,require('abyss_battle_intent_view').intentView(r.combat,1))
  tap('enemy1',91)
+ assert(ui.info.powerTips and ui.info.index==1 and ui.info.id==e.id)
+ local compact,rows=readPowers(panel)
+ assert(#rows==2 and rows[1]:find('对你施加负面效果并攻击造成 10 点伤害',1,true),compact)
+ assert(rows[2]:find('成长 3',1,true) and not compact:find(r.combat.catalog.cards.burn.name,1,true)
+  and not compact:find('抽牌堆',1,true) and not compact:find('弃牌堆',1,true),compact)
+ panel:GetChild('statusDismiss').click({touchId=91})
+ assert(not ui.info and ui:showStatus(1) and not ui.info.powerTips)
  local detail=inspectDetails(ui,panel)
  assert(detail:find(r.combat.catalog.cards.burn.name,1,true)and detail:find('抽牌堆',1,true)and detail:find('弃牌堆',1,true),detail)
  assert(not detail:find('未知',1,true),'known source Burn must not be shown as unknown')
  dofile('tests/lua/support/monster_power_control_fixture.lua')(box,'generic_strength_up'):GetChild('hit').click({touchId=92})
  assert(panel:GetChild('statusInfo').visible and ui.info.id==e.id and ui.info.index==1)
- local names={};for i=1,H.F.Theme.layout.statusInfo.rows do
-  local part=panel:GetChild('statusInfo'):GetChild('name'..i)
-  if part.visible then names[#names+1]=part.text end
- end
- assert(table.concat(names,' '):find('成长 3',1,true),'Growth amount remains readable')
+ local status,statusRows=readPowers(panel)
+ assert(#statusRows==1 and status:find('成长 3',1,true)
+  and not status:find('10 点伤害',1,true),'Growth amount remains readable without the upcoming attack')
 end)
 
 print('ACT3_ORB_WALKER '..passed..' passed; '..failed..' failed')
