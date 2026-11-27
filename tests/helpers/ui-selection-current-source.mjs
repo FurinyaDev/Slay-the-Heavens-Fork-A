@@ -699,10 +699,10 @@ const prologueButtonSources=Object.freeze({
 
 const portraitArchive=readFileSync(new URL('../fixtures/selection-portrait-recovery-source.json.gz',import.meta.url));
 assert.equal(createHash('sha256').update(portraitArchive).digest('hex'),
- '4b59c9ed262c04315d581249a62fa4a9161c26d3a60b06b5165dd1a1cb54fec9','exact Selection portrait recovery archive');
+ 'a24db4522db31669259bec007f6ab458419ea8b20abcd8a45dc37c29f3270e79','exact Selection portrait recovery archive');
 const {base:portraitBase,reviewedSource:portraitReview,files:portraitSources}=JSON.parse(gunzipSync(portraitArchive));
 assert.equal(portraitBase,'da5eabf33899f4b8254a923b0a010f5aa870eb9e');
-assert.equal(portraitReview,'0cf42cd12666ef01252c6819e5c6fe165f9b2b01');
+assert.equal(portraitReview,'fb7e44ca1c7ec880adfab8d05a6924c1bee3ee0e');
 
 function beforeCurrentOwners(path,raw,read,owners,label){
  if(!Object.hasOwn(owners,path))return raw;
