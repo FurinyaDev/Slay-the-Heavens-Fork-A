@@ -9,6 +9,7 @@ export const encoderSha256 = 'eed054eea9285d1945ec826299e1e9546e36475d708007b2df
 export const profile = 'official-assets-battle-v3';
 export const sha = /^[a-f0-9]{40}$/;
 export const digest = /^[a-f0-9]{64}$/;
+export const frozenBuildCustody = 'gil-build-v2';
 const offlineWorkKey = 'offline-candidate';
 const validReleaseWorkKey = value => typeof value === 'string' &&
   /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value) && !['alpha-test', 'offline-performance'].includes(value);
@@ -36,21 +37,14 @@ export function validationTarget(repository, ref, source) {
   return { branch: ref.slice('refs/heads/'.length) };
 }
 
-export function releaseBuildTarget({ repoId, ref, controllerSha, source, branch, event, upstream }) {
+export function releaseBuildTarget({ repoId, ref, controllerSha, source, branch, event, inputs }) {
+  const { source_branch, source_sha } = inputs ?? {};
   const frozen = /^(?:release|hotfix)\//.test(branch ?? '');
-  if (!frozen && event !== 'workflow_run') return;
-  requireGate(repoId === String(repositoryId), 'A formal GIL requires the primary repository.');
-  if (event === 'workflow_run') {
-    requireGate(ref === 'refs/heads/develop' &&
-      upstream?.repository?.id === repositoryId && upstream.head_repository?.id === repositoryId &&
-      upstream.event === 'workflow_dispatch' && upstream.status === 'completed' && upstream.conclusion === 'success' &&
-      ['.github/workflows/quality.yml', '.github/workflows/licenses.yml'].includes(upstream.path) &&
-      upstream.head_branch === branch && upstream.head_sha === source,
-      'Automatic GIL requires a successful primary, manually dispatched release gate.');
-  } else {
-    requireGate(['push', 'workflow_dispatch'].includes(event) && ref === `refs/heads/${branch}` && controllerSha === source,
-      'Release GIL input must match the trusted workflow checkout.');
-  }
+  if (!frozen && !source_branch && !source_sha && ref === `refs/heads/${branch}` && source === controllerSha) return;
+  requireGate(repoId === String(repositoryId) && event === 'workflow_dispatch' &&
+    ref === 'refs/heads/develop' && sha.test(controllerSha),
+  'A formal GIL requires explicit dispatch on primary develop.');
+  requireGate(source_branch === branch && source_sha === source, 'A formal GIL requires explicit source_branch and source_sha inputs.');
   const target = candidateTarget(branch, source);
   requireGate(target.version, 'A formal GIL requires a frozen release or hotfix branch.');
   return target;
@@ -133,18 +127,16 @@ export function buildOnlyRequest(sourceSha, policy, { branch, version }) {
   return { ...identity, id: hash(JSON.stringify(identity)) };
 }
 
-export function releaseBuildRequest(configuredWorkKey, sourceSha, { branch, version }, checks, checkedFiles) {
+export function releaseBuildRequest(configuredWorkKey, sourceSha, { branch, version }, checkedFiles) {
   requireGate(version && candidateTarget(branch, sourceSha).version === version,
     'A release Artifact requires a frozen engineering version.');
   const workKey = (configuredWorkKey ?? '') === '' ? offlineWorkKey : configuredWorkKey;
   requireGate(validReleaseWorkKey(workKey), 'GIL_PRODUCTION_WORK_KEY must be a valid non-Alpha release work key when set.');
-  requireGate(checks && [checks.quality, checks.qualityAttempt, checks.qualityCheckoutArtifact, checks.licenses]
-    .every(value => Number.isSafeInteger(value) && value > 0) &&
-    Array.isArray(checkedFiles) && checkedFiles.length > 0 && checkedFiles.every(value => digest.test(value)),
-    'A release Artifact requires exact Full, checkout, Licenses and build policy identities.');
+  requireGate(Array.isArray(checkedFiles) && checkedFiles.length > 0 && checkedFiles.every(value => digest.test(value)),
+    'A release Artifact requires exact build policy identities.');
   const configuration = { profile, nativePageLifecycle: true, releaseCandidate: true, workKey, node: '24.18.0', python: '3.12.10' };
   const identity = { sourceSha, baseSha256: legacyGilArchive.sha256, toolCommit, encoderSha256, branch, version, configuration,
-    custody: 'gil-build-v1', checks, checkedFiles };
+    custody: frozenBuildCustody, checkedFiles };
   return { ...identity, id: hash(JSON.stringify(identity)) };
 }
 

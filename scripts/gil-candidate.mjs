@@ -5,8 +5,8 @@ import { basename, join, relative, resolve } from 'node:path';
 import { pipeline } from 'node:stream/promises';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { api, artifactName, buildOnlyRequest, candidateTarget, digest, encoderSha256, releaseBuildRequest, releaseBuildTarget,
-  GateError, profile, repository, requireGate, sha, toolCommit, validationTarget, verifySource } from './gil-candidate-preflight.mjs';
-import { assertFullMatches, verifyGilArtifact } from './runtime-baseline/release-performance-artifacts.mjs';
+  frozenBuildCustody, GateError, profile, repository, requireGate, sha, toolCommit, validationTarget, verifyFrozenHead } from './gil-candidate-preflight.mjs';
+import { verifyGilArtifact } from './runtime-baseline/release-performance-artifacts.mjs';
 import { githubRequest } from './release-ci.mjs';
 import { hostedGilReceipt } from './hosted-gil-receipt.mjs';
 import { downloadLegacyGilArchive, legacyGilArchive, resolveLegacyPublishedBaseline, supportsPublishedGilSeed } from './runtime-baseline/published-baseline.mjs';
@@ -18,7 +18,7 @@ const hash = data => createHash('sha256').update(data).digest('hex');
 const json = path => JSON.parse(readFileSync(path, 'utf8'));
 const moduleAt = (root, path) => import(pathToFileURL(resolve(root, path)).href);
 
-export async function findReleaseArtifact(request, checks, nowRun, lookup = api,
+export async function findReleaseArtifact(request, nowRun, lookup = api,
     verify = (id, target) => verifyGilArtifact(githubRequest, id, target)) {
   const name = artifactName(request);
   const { artifacts, total_count: count } = await lookup(`actions/artifacts?name=${encodeURIComponent(name)}&per_page=100`);
@@ -42,16 +42,16 @@ export async function findReleaseArtifact(request, checks, nowRun, lookup = api,
   if (!accepted.length) return;
   const { binding } = await verify(accepted[0],
     { branch: request.branch, head: request.sourceSha, version: request.version.slice(1) });
-  requireGate(binding.custody === request.custody, 'Existing GIL does not use the unified build custody.');
-  assertFullMatches(binding, { runId: checks.quality, attempt: checks.qualityAttempt, checkoutArtifactId: checks.qualityCheckoutArtifact });
+  requireGate(binding.custody === request.custody && binding.requestId === request.id,
+    'Existing GIL does not match the frozen build request.');
   return binding;
 }
 
 async function preflight() {
   const { GITHUB_SHA: controllerSha, GITHUB_REF: ref, GITHUB_REPOSITORY_ID: repoId, GITHUB_EVENT_NAME: event,
     SOURCE_SHA: source, SOURCE_REF: branch } = process.env;
-  const upstream = event === 'workflow_run' ? json(process.env.GITHUB_EVENT_PATH).workflow_run : undefined;
-  const release = releaseBuildTarget({ repoId, ref, controllerSha, source, branch, event, upstream });
+  const inputs = event === 'workflow_dispatch' ? json(process.env.GITHUB_EVENT_PATH).inputs : undefined;
+  const release = releaseBuildTarget({ repoId, ref, controllerSha, source, branch, event, inputs });
   const target = release ?? validationTarget(repoId, ref, source);
   requireGate(release || (source === controllerSha && branch === target.branch), 'Validation source differs from the workflow checkout.');
   const controlRoot = fileURLToPath(new URL('..', import.meta.url));
@@ -65,17 +65,7 @@ async function preflight() {
       return;
     }
   }
-  let checks;
-  if (release) {
-    try {
-      checks = await verifySource(source, api, target);
-    } catch (error) {
-      if (!(error instanceof GateError) || event === 'workflow_dispatch') throw error;
-      appendFileSync(process.env.GITHUB_OUTPUT, 'build=false\n');
-      appendFileSync(process.env.GITHUB_STEP_SUMMARY, `Release GIL gate: ${error.message}\n`);
-      return;
-    }
-  }
+  if (release) await verifyFrozenHead(api, branch, source);
   const policy = {
     controllerSha,
     checkedFiles: [import.meta.url, new URL('./gil-candidate-preflight.mjs', import.meta.url),
@@ -85,23 +75,20 @@ async function preflight() {
       new URL('../.github/workflows/gil-build.yml', import.meta.url)]
       .map(url => hash(readFileSync(new URL(url)))),
   };
-  const request = release ? releaseBuildRequest(process.env.GIL_PRODUCTION_WORK_KEY, source, target, checks, policy.checkedFiles)
+  const request = release ? releaseBuildRequest(process.env.GIL_PRODUCTION_WORK_KEY, source, target, policy.checkedFiles)
     : buildOnlyRequest(source, policy, target);
-  const existing = release && await findReleaseArtifact(request, checks, process.env.GITHUB_RUN_ID);
-  const ciSummary = checks ? ['quality', 'licenses'].map(name => `[${name}](https://github.com/${repository}/actions/runs/${checks[name]})`)
-    : ['Build validation. Frozen source CI evidence is not attached.'];
-  appendFileSync(process.env.GITHUB_STEP_SUMMARY, `Source \`${target.branch}@${source}\` · ${ciSummary.join(' · ')}\n`);
+  const existing = release && await findReleaseArtifact(request, process.env.GITHUB_RUN_ID);
+  appendFileSync(process.env.GITHUB_STEP_SUMMARY, `Source \`${target.branch}@${source}\`\n`);
   if (existing) {
-    appendFileSync(process.env.GITHUB_STEP_SUMMARY,
-      `\n[Download the verified GIL](https://github.com/${repository}/actions/runs/${existing.runId}/artifacts/${existing.id}) (artifact ID ${existing.id})\n` +
-      `GIL SHA-256: \`${existing.gilSha256}\`\n`);
+    await verifyFrozenHead(api, branch, source);
+    const url = `https://github.com/${repository}/actions/runs/${existing.runId}/artifacts/${existing.id}`;
+    summarizeDownload(url, existing.id, request, existing.gilSha256, existing.gilSizeBytes);
     return;
   }
   appendFileSync(process.env.GITHUB_OUTPUT, [
     'build=true', `archive=${Boolean(release)}`, `base_sha256=${request.baseSha256}`, `work_key=${request.configuration.workKey}`,
     `tool_commit=${toolCommit}`, `request_id=${request.id}`, `release_version=${target.version ?? ''}`,
-    `artifact_name=${artifactName(request)}`, ...(checks ? [`quality_run=${checks.quality}`, `licenses_run=${checks.licenses}`,
-      `quality_attempt=${checks.qualityAttempt}`, `quality_checkout_artifact=${checks.qualityCheckoutArtifact}`] : []),
+    `artifact_name=${artifactName(request)}`, `checked_files=${JSON.stringify(policy.checkedFiles)}`,
   ].join('\n') + '\n');
 }
 
@@ -236,7 +223,7 @@ function diagnose() {
 async function deliver() {
   const { SOURCE_SHA: sourceSha, BASE_SHA256: baseSha256, WORK_KEY: workKey, REQUEST_ID: requestId,
     MILIASTRA_MCP_ROOT: toolRoot, GIL_BUILD_SECONDS, GIL_RECEIVED_BYTES, SOURCE_REF: branch,
-    RELEASE_VERSION: version } = process.env;
+    RELEASE_VERSION: version, CHECKED_FILES } = process.env;
   cleanHead('.', sourceSha, 'Source');
   toolchain(toolRoot);
   const baseBytes = readFileSync(basePath());
@@ -277,26 +264,22 @@ async function deliver() {
     output: join(out, 'audit'), bgm: true });
   requireGate(audit.ok && audit.candidate.sha256Before === candidate.sha256 && audit.candidate.sha256After === candidate.sha256,
     'Final GIL failed the independent native scripts, UI, templates or graph audit.');
-  const qualityRun = Number(process.env.QUALITY_RUN);
   const archiveApproved = process.env.GIL_RELEASE_ARTIFACT === 'true';
-  const sourceChecks = archiveApproved ? { qualityRun, licensesRun: Number(process.env.LICENSES_RUN) } : null;
-  if (version) {
-    const expected = { quality: qualityRun, qualityAttempt: Number(process.env.QUALITY_ATTEMPT),
-      qualityCheckoutArtifact: Number(process.env.QUALITY_CHECKOUT_ARTIFACT), licenses: Number(process.env.LICENSES_RUN) };
-    const current = await verifySource(sourceSha, api, candidateTarget(branch, sourceSha));
-    requireGate(Object.keys(expected).every(key => expected[key] === current[key]),
-      'Frozen Quality Full or Licenses changed during the GIL build. Start again with the current successful evidence.');
-    Object.assign(sourceChecks, { qualityAttempt: current.qualityAttempt, qualityCheckoutArtifact: current.qualityCheckoutArtifact });
+  if (archiveApproved) {
+    requireGate(candidateTarget(branch, sourceSha).version === version, 'Frozen build version differs from its target.');
+    await verifyFrozenHead(api, branch, sourceSha);
+    await verifyOfflineSmoke(join(artifact, candidate.path), toolRoot, candidate.sha256);
+    cleanHead('.', sourceSha, 'Source');
+    await verifyFrozenHead(api, branch, sourceSha);
   }
   writeFileSync(join(artifact, 'manifest.json'), JSON.stringify({
     sourceCommit: sourceSha, sourceBranch: branch, version: receipt.release.version, buildId: receipt.buildId,
     payloadDigest: receipt.payloadDigest, candidate, requestId, baseSha256, baseProvenance, toolCommit, encoderSha256,
     controllerSha: process.env.GITHUB_SHA,
-    sourceChecks,
     receipts: { nativeSha256: hash(fullReceipt), audioSha256: fileRecord(join(out, 'audio/candidate.json')).sha256 },
     nativeAudit: 'pass',
     archiveApproved,
-    ...(archiveApproved ? { custody: 'gil-build-v1' } : {}),
+    ...(archiveApproved ? { custody: frozenBuildCustody, checkedFiles: JSON.parse(CHECKED_FILES), offlineSmoke: 'pass' } : {}),
     platformVersion: null,
     parameters: { workKey, profile, nativePageLifecycle: true, releaseCandidate: Boolean(version), liveWrite: false },
     buildSeconds: Number(GIL_BUILD_SECONDS), runnerReceivedBytesBeforeUpload: Number(GIL_RECEIVED_BYTES) }, null, 2) + '\n');
@@ -316,9 +299,39 @@ export function verifyDownloadedArtifact(upload, download) {
   'Downloaded GIL artifact contents or SHA-256 differ from the audited upload.');
 }
 
-function readback() {
-  verifyDownloadedArtifact('source/build/gil-artifact', 'source/build/gil-readback');
-  appendFileSync(process.env.GITHUB_STEP_SUMMARY, 'Downloaded the archived artifact on the runner and verified SHA-256 for the GIL, receipt and manifest.\n');
+async function verifyOfflineSmoke(mapPath, toolRoot, expectedSha256) {
+  const directory = resolve('build/hosted-gil/smoke');
+  mkdirSync(directory);
+  const { gilRuntimeKind, prepareGilProductionInputs } = await moduleAt('.', 'scripts/runtime-baseline/gil-inputs.mjs');
+  const runtime = await prepareGilProductionInputs(directory, mapPath, toolRoot);
+  requireGate(runtime.gilSha256 === expectedSha256, 'Offline Host read a different GIL.');
+  try {
+    const output = execFileSync(process.execPath, ['scripts/runtime-baseline/worker.mjs', directory, gilRuntimeKind], { encoding: 'utf8' });
+    const prefix = 'RUNTIME_BASELINE_JSON ';
+    const lines = output.split(/\r?\n/);
+    const evidence = lines.filter(line => line.startsWith(prefix));
+    requireGate(evidence.length === 1 && lines.includes('PRODUCTION_HOST_PASS seed=42'), 'Missing offline Host pass marker.');
+    const result = JSON.parse(evidence[0].slice(prefix.length));
+    requireGate(result.runtime?.gilSha256 === expectedSha256 && result.rows?.some(row => row.phase === 'cold-start'),
+      'Missing offline Host startup result for the GIL.');
+  } catch {
+    throw new GateError('Final GIL failed offline Host startup and route smoke.');
+  }
+}
+
+function summarizeDownload(url, id, { version, sourceSha }, gilSha256, gilSizeBytes) {
+  appendFileSync(process.env.GITHUB_STEP_SUMMARY,
+    `\n[Download the verified GIL](${url}) (artifact ID ${id})\n` +
+    `${version} · \`${sourceSha}\` · SHA-256 \`${gilSha256}\` · ${gilSizeBytes} GIL bytes\n` +
+    'Native audio graph and static audit, offline Host smoke, and archive readback passed.\n');
+}
+
+async function readback() {
+  const upload = 'source/build/gil-artifact';
+  verifyDownloadedArtifact(upload, 'source/build/gil-readback');
+  const { version, sourceCommit: sourceSha, sourceBranch, candidate } = json(join(upload, 'manifest.json'));
+  await verifyFrozenHead(api, sourceBranch, sourceSha);
+  summarizeDownload(process.env.ARTIFACT_URL, process.env.ARTIFACT_ID, { version, sourceSha }, candidate.sha256, candidate.bytes);
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
