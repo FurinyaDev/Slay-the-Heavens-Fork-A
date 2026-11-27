@@ -609,6 +609,23 @@ const frozenGilFixtures=Object.freeze({
     "after": "  let archiveReads = 0;\n  const full = {runId:10, attempt:2, checkoutArtifactId:90};\n  const bind = (sha = captureSha256, approval = approvalCommit) => finalActorAlphaBinding(\n    {sourceCommit:head, version:target.version, profile:receipt.officialAssetsProfile}, approval, sha, {\n      request, readFull:async () => full, readPerformance:async () => perf,\n      readPublication:async () => ({...full, performance:perf}),\n      readGil:async (get, artifactId, expected) => {"
    }
   ]
+ },
+ "tests/release-metadata.test.mjs": {
+  "current": {
+   "sha256": "b135580afd1f333a3ff6d1456057f3f0679f36773b225550c69c123cda848a59",
+   "gitBlob": "87cd6c5de06878932712cde01aa7b890dd8df8b2"
+  },
+  "previous": {
+   "sha256": "eceb8ab92f616084fdcdac875e69e761cf2c9674a804be9f0295e89213453cb8",
+   "gitBlob": "b53849384adcbafa301a12b4f31336c49b7f1bd5"
+  },
+  "hunks": [
+   {
+    "at": 52,
+    "before": "\ntest('reader accepts marked published records and opt-in historical drafts', () => {",
+    "after": "\ntest('new Release metadata binds the immutable Actions ID without changing historical metadata', () => {\n  const annotated = prepareMetadata(release.tag_name, { commit, version }, '2.0.0', 'game.gil', commit, sha256, 42);\n  assert.equal(annotated.artifact.actions_id, 42);\n  assert.deepEqual(verifyMetadata({ ...release, body: formatMetadata(annotated) }, commit, version), annotated);\n  for (const invalid of [0, 1.5, '42', Number.MAX_SAFE_INTEGER + 1]) {\n    assert.throws(() => prepareMetadata(release.tag_name, { commit, version }, '2.0.0', 'game.gil', commit, sha256,\n      invalid), /immutable GitHub Actions artifact ID/);\n  }\n});\n\ntest('reader accepts marked published records and opt-in historical drafts', () => {"
+   }
+  ]
  }
 });
 const gilCandidateFixture='tests/gil-candidate.test.mjs';
