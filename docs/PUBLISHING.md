@@ -1,8 +1,8 @@
 # 《杀戮原塔2》参赛发布操作单
 
-Release 日常修复按影响选测。集成完成后按 [CI 候选入口](CI-FAST.md#候选提测与打回重测)固定完整 HEAD，并行做适用 Fast 和 GIL build。通过筛查与产物检查即交 Owner 提测，并请求同 SHA 的 Full、启动同包正式性能。正式放行等待必要 CI、性能及适用的平台、画面和设备验收。Release 或 Hotfix → master 的必需 Quality 读取该版本最新不可移动 RC 注释里的 `GIL-Artifact-ID: <数字ID>`，核对同包技术门禁。实际平台上线由 Owner 执行。
+Release 日常修复按影响选测。集成完成后按 [CI 候选入口](CI-FAST.md#候选提测与打回重测)固定完整 HEAD，并行做适用 Fast 和 GIL build。快筛和产物检查通过后，从 `release-ci freeze` 取得同包交接回执，立即交 Owner，并请求同 SHA 的 Full、启动同包正式性能。正式放行等待必要 CI、性能及适用的平台、画面和设备验收。Release 或 Hotfix → master 的必需 Quality 读取该版本最新不可移动 RC 注释里的 `GIL-Artifact-ID: <数字ID>`，核对同包技术门禁。实际平台上线由 Owner 执行。
 
-从 [GIL build](GIL-CANDIDATE.md) 的成功运行摘要取得冻结分支的完整有声 GIL 和下载读回证明。在 **Performance regression** 选同一 `release/v<工程版本>` 或 `hotfix/v<工程版本>` 运行 `formal`，在 `gil_artifact_id` 填工件数字 ID。正式性能可在 RC Tag 登记前以及 Full、Licenses 尚未结束时运行，保留 GIL SHA-256 及同包原始测量。作业根据已确认的平台发布记录独立解析上个正式工程版本、构建源码、源码树与产物摘要。v2.2.0 对应 [v2.1.1 正式构建来源](versions/ENGINEERING.md)。作业下载并校验本次候选和上一版正式 GIL，从两份产物读回并执行实际打包的 Lua，使用实际 UI 与模板索引建立离线 Host 夹具。两边沿用同一玩家路径、六档 Docker 实限及三组正反交错配对。归档 `release-performance-<run>-<attempt>` 的 `report.json`、`evidence.json` 及独立复核。日常受影响 PR 执行轻量 Fast，源码重生成结果用于日常离线诊断。
+由 [GIL build](GIL-CANDIDATE.md) 完成完整有声 GIL 的下载读回。使用同一次构建的 `handoff` 回执进入后续验收。在 **Performance regression** 选同一 `release/v<工程版本>` 或 `hotfix/v<工程版本>` 运行 `formal`，在 `gil_artifact_id` 填工件数字 ID。正式性能可在 RC Tag 登记前以及 Full、Licenses 尚未结束时运行，保留 GIL SHA-256 及同包原始测量。作业根据已确认的平台发布记录独立解析上个正式工程版本、构建源码、源码树与产物摘要。v2.2.0 对应 [v2.1.1 正式构建来源](versions/ENGINEERING.md)。作业下载并校验本次候选和上一版正式 GIL，从两份产物读回并执行实际打包的 Lua，使用实际 UI 与模板索引建立离线 Host 夹具。两边沿用同一玩家路径、六档 Docker 实限及三组正反交错配对。归档 `release-performance-<run>-<attempt>` 的 `report.json`、`evidence.json` 及独立复核。日常受影响 PR 执行轻量 Fast，源码重生成结果用于日常离线诊断。
 
 正式资源配对在同一档位的独立 Docker 执行中追加第二幕压力场景，两次执行各留实际资源限制和执行 ID。使用受控的第一幕终点，实际点击继续和地图节点，以固定种子进入三名祈火徒的合法阵型。两侧验证满手、一次实际横扫中三名敌人的重叠受击效果、两次敌人回合及退出。候选和同包恢复都须实际绘制批准场景的 249 个可见图元，报告另记旧版实际槽数。v2.1.1 使用共享背景，章节槽数为 0。配对结果衡量同一战斗工作负载下整包的成本，保留新增背景引起的信号。连续游玩稳定性仍需单独验收。
 
@@ -26,7 +26,7 @@ v2.2.0 的最终候选还须通过[正式美术入库覆盖检查](art/NATIVE_MO
 npm run verify:actor-alpha -- <capture.json> <mask-locators.json> <new-report.json> --release <捕获批准提交完整SHA>
 ```
 
-正式捕获的 `scope` 使用 `production Lua actor painters from final native GIL readback`，`releaseEvidence` 记录最终 GIL 摘要 `candidateSha256`、`buildId`、`payloadDigest`、`officialAssetsProfile`、`artConfigSha256`、`uiConfigSha256`、`candidateReceiptSha256`、`nativeReadbackSha256` 与 `simulatorSaveSha256`。命令重新核验相同正式性能、冻结 Full、真实托管 GIL 归档及独立批准的捕获。批准原图掩模或捕获记录缺失时，美术发版门禁保持待验。此步骤在最终发布前执行。采用提前提测流程的后续候选可在 Full 运行期间从可信构建摘要取得同一 GIL，准备捕获与人审。最终核对 `release-ci verify` 的 `performance.gil` 与捕获工件一致，并复核全部必要证据。
+正式捕获的 `scope` 使用 `production Lua actor painters from final native GIL readback`，`releaseEvidence` 记录最终 GIL 摘要 `candidateSha256`、`buildId`、`payloadDigest`、`officialAssetsProfile`、`artConfigSha256`、`uiConfigSha256`、`candidateReceiptSha256`、`nativeReadbackSha256` 与 `simulatorSaveSha256`。命令重新核验相同正式性能、冻结 Full、真实托管 GIL 归档及独立批准的捕获。批准原图掩模或捕获记录缺失时，美术发版门禁保持待验。此步骤在最终发布前执行。采用提前提测流程的后续候选可在 Full 运行期间用提测回执中的同一 GIL 准备捕获与人审。最终核对 `release-ci verify` 的 `performance.gil` 与捕获工件一致，并复核全部必要证据。
 
 > 名称更新：2026-10-24，用户确认正式名称《杀戮原塔2》（原名《杀戮深渊》）。其余流程更新：2026-10-22。适用：原神国服 7.1「千星之约·奇域创作大赛」。执行对应 TASK-1、TASK-18、TASK-19、TASK-6、TASK-20、TASK-21。**这是一份人工执行的发布流程，不表示已成功投稿。**
 
