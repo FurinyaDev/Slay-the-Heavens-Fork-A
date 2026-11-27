@@ -1,0 +1,393 @@
+{
+  "source": "32a15219aecd145c59cb1b2fcf477e5556766e5d",
+  "moduleSha256": "63e4983d6d80241f287e153087efd81e7ab287efbb15e195ef80ad90230fb2cb",
+  "nativeAvailableBuilderOriginalData": {
+    "bytes": 64,
+    "gzipBytes": 82
+  },
+  "inventory": [
+    {
+      "roles": [],
+      "cards": 0,
+      "raw": {
+        "bytes": 7001,
+        "gzipBytes": 3292
+      },
+      "native": {
+        "bytes": 6388,
+        "gzipBytes": 3194
+      },
+      "deltaNativeVsAvailableBuilder": 6324,
+      "deltaNativeFromPrevious": null
+    },
+    {
+      "roles": [
+        "RD"
+      ],
+      "cards": 75,
+      "raw": {
+        "bytes": 144094,
+        "gzipBytes": 10937
+      },
+      "native": {
+        "bytes": 48566,
+        "gzipBytes": 9031
+      },
+      "deltaNativeVsAvailableBuilder": 48502,
+      "deltaNativeFromPrevious": 42178
+    },
+    {
+      "roles": [
+        "RD",
+        "HT"
+      ],
+      "cards": 150,
+      "raw": {
+        "bytes": 286453,
+        "gzipBytes": 17468
+      },
+      "native": {
+        "bytes": 91745,
+        "gzipBytes": 13501
+      },
+      "deltaNativeVsAvailableBuilder": 91681,
+      "deltaNativeFromPrevious": 43179
+    },
+    {
+      "roles": [
+        "RD",
+        "HT",
+        "AR"
+      ],
+      "cards": 225,
+      "raw": {
+        "bytes": 428225,
+        "gzipBytes": 24115
+      },
+      "native": {
+        "bytes": 134690,
+        "gzipBytes": 17992
+      },
+      "deltaNativeVsAvailableBuilder": 134626,
+      "deltaNativeFromPrevious": 42945
+    },
+    {
+      "roles": [
+        "RD",
+        "HT",
+        "AR",
+        "FR"
+      ],
+      "cards": 300,
+      "raw": {
+        "bytes": 577904,
+        "gzipBytes": 31843
+      },
+      "native": {
+        "bytes": 180390,
+        "gzipBytes": 22980
+      },
+      "deltaNativeVsAvailableBuilder": 180326,
+      "deltaNativeFromPrevious": 45700
+    }
+  ],
+  "singles": {
+    "HT": {
+      "bytes": 50075,
+      "gzipBytes": 9020,
+      "rarityCounts": {
+        "基础": 6,
+        "普通": 26,
+        "罕见": 25,
+        "稀有": 18
+      }
+    },
+    "AR": {
+      "bytes": 50018,
+      "gzipBytes": 9124,
+      "rarityCounts": {
+        "基础": 6,
+        "普通": 26,
+        "罕见": 25,
+        "稀有": 18
+      }
+    },
+    "FR": {
+      "bytes": 52507,
+      "gzipBytes": 9536,
+      "rarityCounts": {
+        "基础": 6,
+        "普通": 26,
+        "罕见": 25,
+        "稀有": 18
+      }
+    },
+    "RD": {
+      "bytes": 48566,
+      "gzipBytes": 9031,
+      "rarityCounts": {
+        "基础": 6,
+        "普通": 26,
+        "罕见": 25,
+        "稀有": 18
+      }
+    }
+  },
+  "combinedSavingsNativeVsStandalones": 20776,
+  "combinedSavingsGzipVsStandalones": 13731,
+  "gameplayModules": {
+    "abyss_original_v4.lua": {
+      "raw": {
+        "bytes": 25219,
+        "gzipBytes": 6579
+      },
+      "current": {
+        "bytes": 24483,
+        "gzipBytes": 6320
+      }
+    },
+    "abyss_original_v4_display.lua": {
+      "raw": {
+        "bytes": 24812,
+        "gzipBytes": 7906
+      },
+      "current": {
+        "bytes": 22949,
+        "gzipBytes": 7386
+      }
+    },
+    "abyss_original_v4_health.lua": {
+      "raw": {
+        "bytes": 1387,
+        "gzipBytes": 614
+      },
+      "current": {
+        "bytes": 1300,
+        "gzipBytes": 567
+      }
+    },
+    "abyss_original_v4_profiles.lua": {
+      "raw": {
+        "bytes": 4726,
+        "gzipBytes": 1643
+      },
+      "current": {
+        "bytes": 4526,
+        "gzipBytes": 1570
+      }
+    }
+  },
+  "artStatus": {
+    "large": {
+      "hutao": {
+        "slot": "dot-a.select.large.hutao",
+        "id": 105305,
+        "status": "placeholder",
+        "owner": "dot-a",
+        "playable": false
+      },
+      "arlecchino": {
+        "slot": "dot-a.select.large.arlecchino",
+        "id": 105306,
+        "status": "placeholder",
+        "owner": "dot-a",
+        "playable": false
+      },
+      "furina": {
+        "slot": "dot-a.select.large.furina",
+        "id": 105307,
+        "status": "placeholder",
+        "owner": "dot-a",
+        "playable": false
+      },
+      "raiden": {
+        "slot": "dot-a.select.large.raiden",
+        "id": 105308,
+        "status": "placeholder",
+        "owner": "dot-a",
+        "playable": false
+      }
+    },
+    "bust": {
+      "hutao": {
+        "slot": "dot-a.select.bust.hutao",
+        "id": 105312,
+        "status": "placeholder",
+        "owner": "dot-a",
+        "playable": false
+      },
+      "arlecchino": {
+        "slot": "dot-a.select.bust.arlecchino",
+        "id": 105313,
+        "status": "placeholder",
+        "owner": "dot-a",
+        "playable": false
+      },
+      "furina": {
+        "slot": "dot-a.select.bust.furina",
+        "id": 105314,
+        "status": "placeholder",
+        "owner": "dot-a",
+        "playable": false
+      },
+      "raiden": {
+        "slot": "dot-a.select.bust.raiden",
+        "id": 105315,
+        "status": "placeholder",
+        "owner": "dot-a",
+        "playable": false
+      }
+    }
+  },
+  "officialCapacity": "UNVERIFIED",
+  "selectionPool": {
+    "single": {
+      "bytes": 3987360,
+      "gzipBytes": 421519,
+      "controls": 24904,
+      "hidden": 23027
+    },
+    "probe": {
+      "bytes": 4037067,
+      "gzipBytes": 422161,
+      "controls": 25240,
+      "hidden": 23363
+    },
+    "allFacts": {
+      "bytes": 4103343,
+      "gzipBytes": 422838,
+      "controls": 25688,
+      "hidden": 23811
+    },
+    "fourVsOne": {
+      "bytes": 49707,
+      "gzipBytes": 642,
+      "controls": 336,
+      "hidden": 336
+    },
+    "sameTemplateBytes": true,
+    "samePortraitModule": true
+  },
+  "geoPortraitControl": {
+    "variants": {
+      "off": {
+        "raw": {
+          "bytes": 76,
+          "gzipBytes": 88
+        },
+        "native": {
+          "bytes": 44,
+          "gzipBytes": 56
+        },
+        "assets": []
+      },
+      "selection": {
+        "raw": {
+          "bytes": 300618,
+          "gzipBytes": 100684
+        },
+        "native": {
+          "bytes": 258122,
+          "gzipBytes": 98411
+        },
+        "assets": [
+          {
+            "asset": "traveler-geo/portraits/avatar96",
+            "images": 457,
+            "sourceSha256": "c30551e1fed1cd7f18c61b67fe0ad0cd6e52c61bfa6ae937ccd9e4c90e7f72bb",
+            "groups": 8,
+            "pages": 1
+          },
+          {
+            "asset": "lowpolyLumine",
+            "images": 1600,
+            "sourceSha256": "29c47e50581951d1f3cf509eb39b1a73bf8d6ae4934a5b0606a3c76f9857c050",
+            "groups": 27,
+            "pages": 1
+          }
+        ]
+      },
+      "battle": {
+        "raw": {
+          "bytes": 82730,
+          "gzipBytes": 27460
+        },
+        "native": {
+          "bytes": 71077,
+          "gzipBytes": 25882
+        },
+        "assets": [
+          {
+            "asset": "traveler-geo/portraits/lumine-native-v1",
+            "images": 464,
+            "sourceSha256": "bc9118f85b57b2ca70ec027c43a520c3bb2d0f403e4f0f6e167d4297c63a1ff5",
+            "groups": 8,
+            "pages": 1,
+            "jsonSha256": "a0c792109a74f71be0a52d9a59f39828e1d4818ce8d1bba915606b984d89f831",
+            "motion": "shared-actor-root-only",
+            "officialCapacity": "not_measured",
+            "devicePerformance": "not_run"
+          }
+        ]
+      },
+      "both": {
+        "raw": {
+          "bytes": 376918,
+          "gzipBytes": 125666
+        },
+        "native": {
+          "bytes": 325352,
+          "gzipBytes": 122973
+        },
+        "assets": [
+          {
+            "asset": "traveler-geo/portraits/avatar96",
+            "images": 457,
+            "sourceSha256": "c30551e1fed1cd7f18c61b67fe0ad0cd6e52c61bfa6ae937ccd9e4c90e7f72bb",
+            "groups": 8,
+            "pages": 1
+          },
+          {
+            "asset": "lowpolyLumine",
+            "images": 1600,
+            "sourceSha256": "29c47e50581951d1f3cf509eb39b1a73bf8d6ae4934a5b0606a3c76f9857c050",
+            "groups": 27,
+            "pages": 1
+          },
+          {
+            "asset": "traveler-geo/portraits/lumine-native-v1",
+            "images": 464,
+            "sourceSha256": "bc9118f85b57b2ca70ec027c43a520c3bb2d0f403e4f0f6e167d4297c63a1ff5",
+            "groups": 8,
+            "pages": 1,
+            "jsonSha256": "a0c792109a74f71be0a52d9a59f39828e1d4818ce8d1bba915606b984d89f831",
+            "motion": "shared-actor-root-only",
+            "officialCapacity": "not_measured",
+            "devicePerformance": "not_run"
+          }
+        ]
+      }
+    },
+    "selectionAfterBattleBytes": 254275,
+    "battleAfterSelectionBytes": 67230,
+    "nonAdditivityVsSeparate": 3803,
+    "missingNewRoleArt": [
+      "hutao",
+      "arlecchino",
+      "furina",
+      "raiden"
+    ],
+    "measurementScope": "Existing Geo producer only. No custom-role art estimate."
+  },
+  "patchedAdmissionProbe": {
+    "roles": [
+      "ironclad",
+      "raiden",
+      "hutao",
+      "arlecchino"
+    ],
+    "rawBytesDelta": 93,
+    "nativeBytesDelta": 93,
+    "scope": "Select.canConfirm, 10-card deck, distinct starting relic for original V4, normal combat, a committed card, controlled Act 1 boss-chest transition, first Act 2 combat, and controlled two_act_complete ending"
+  }
+}

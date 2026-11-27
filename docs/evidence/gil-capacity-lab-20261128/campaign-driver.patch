@@ -1,0 +1,21 @@
+--- a/scripts/official-assets-campaign.lua
++++ b/scripts/official-assets-campaign.lua
+@@ -65,0 +66,3 @@
++ if run.nodeFlow and run.nodeFlow.roomKind=='boss_treasure' and run.floor==rooms+1 then
++  rooms=rooms+1;checkpoint('room');print('CAMPAIGN_ROOM '..rooms..' floor='..run.floor..' type='..run.nodeFlow.type..' hp='..run.hp)
++ end
+@@ -161 +164,6 @@
+-   if flow.type=='shop' and not h.nodeUI.shopOpen then press('merchant/talk') end
++   if flow.type=='shop' then
++    if not h.nodeUI.shopOpen then press('merchant/talk') end
++    local goods=assert(root:GetChild('nodePanel'):GetChild('shopView'):GetChild('goods'))
++    for _=1,120 do if goods.visible then break end;h:update(1/60) end
++    assert(goods.visible,'shop goods did not become visible after actual frame updates')
++   end
+@@ -169 +177,5 @@
+-   elseif plan.method=='leaveShop'then press('back')
++   elseif plan.method=='leaveShop'then
++    press('back')
++    for _=1,120 do if h.nodeUI.actions.back.enabled then break end;h:update(1/60) end
++    assert(h.nodeUI.actions.back.enabled,'shop exit did not become available after shelf closed')
++    press('back')

@@ -1,0 +1,978 @@
+{
+  "identity": {
+    "kind": "local-audio-candidate",
+    "filename": "candidate.gil",
+    "bytes": 24453843,
+    "sha256": "e650b32e6c8aca555ebfcbfa9e64ab55712b440b2b4f2da929a93baf9a2e36ba",
+    "sourceCommit": "32a15219aecd145c59cb1b2fcf477e5556766e5d",
+    "sourceDirty": false,
+    "buildId": "71588002-db3c-4953-92bf-0d9c6bb22fc3",
+    "payloadDigest": "6dc2f93184b607ebb48b4f964b85b7bf29913857e008fd5bbe87321eda678e99",
+    "receiptSha256": "4fe93eb0cfd2783b3edbc0c8b76d46dcca733419d45891d2dd71b669d5d3308d",
+    "sourceReceiptSha256": "b8b5f68f05069ea64d8055233dec7d16cca571f4a6e3334414c9cf6428e2fce8",
+    "inputBase": {
+      "bytes": 23780838,
+      "sha256": "afe80c0783d0d4b6046c1f44cba3ef2b71cb8bb34fbc7404d939d12e0f5ff831"
+    },
+    "nativeScriptStorage": "competition-lua-v3",
+    "officialAssetsProfile": "official-assets-battle-v3",
+    "uiProfile": {
+      "schemaVersion": 1,
+      "nativePageLifecycle": true,
+      "configSha256": "fcd16aa1d35aeab4102c7bc49c0889a3c46135466e9a3198f6dcac21e5c59c81"
+    }
+  },
+  "gilBytes": 24453843,
+  "bytesByCategory": {
+    "nativeUi": 19060842,
+    "templates": 1085937,
+    "lua": 3451339,
+    "art": 805553,
+    "audio": 14078,
+    "other": 36094
+  },
+  "percentByCategory": {
+    "nativeUi": 77.9462,
+    "templates": 4.44076,
+    "lua": 14.11369,
+    "art": 3.29418,
+    "audio": 0.05757,
+    "other": 0.1476
+  },
+  "checks": {
+    "matchedReceiptBytes": true,
+    "matchedReceiptSha256": true,
+    "embeddedBuildId": true,
+    "verifiedPackedModules": 386,
+    "gaplessNonOverlappingByteRanges": 28735
+  },
+  "publicFixtureComparison": {
+    "sha256": "015e8d77bec8bf9cae6c6997cb6e92be8820404d7587c9b262ca2d394d937a0a",
+    "gilBytes": 23777846,
+    "uiSectionSha256": "13f7c760f42d5e66cdd5aaeacfb491a82901593977c023abd08b6797a19aa172",
+    "samePhysicalUiSection": false,
+    "sameLayoutGroups": false,
+    "sameTemplateGroups": false
+  },
+  "ui": {
+    "section": {
+      "field": 9,
+      "start": 9608,
+      "end": 20159556,
+      "bytes": 20149948,
+      "sha256": "cee36db530c402a712af452972f1093714da2b2dafe55d37d233f6f2fe1e1473"
+    },
+    "layoutControls": 24904,
+    "initiallyHiddenLayoutControls": 23027,
+    "initiallyHiddenLayoutBytes": 17499341,
+    "templateDefinitions": 16,
+    "templateControls": 1392,
+    "embeddedUiRecords": 26318,
+    "attributedUiRecords": 26298,
+    "layoutGroups": [
+      {
+        "group": "canvasBackdrop",
+        "controls": 1,
+        "hiddenBySelfOrAncestor": 0,
+        "images": 1,
+        "wireBytes": 689,
+        "hiddenWireBytes": 0
+      },
+      {
+        "group": "stage",
+        "controls": 1,
+        "hiddenBySelfOrAncestor": 0,
+        "images": 0,
+        "wireBytes": 755,
+        "hiddenWireBytes": 0
+      },
+      {
+        "group": "officialBattleBackdrop",
+        "controls": 10,
+        "hiddenBySelfOrAncestor": 10,
+        "images": 1,
+        "wireBytes": 6726,
+        "hiddenWireBytes": 6726
+      },
+      {
+        "group": "battlePanel",
+        "controls": 6276,
+        "hiddenBySelfOrAncestor": 6276,
+        "images": 4996,
+        "wireBytes": 4801482,
+        "hiddenWireBytes": 4801482
+      },
+      {
+        "group": "mapPanel",
+        "controls": 1979,
+        "hiddenBySelfOrAncestor": 1979,
+        "images": 1429,
+        "wireBytes": 1408905,
+        "hiddenWireBytes": 1408905
+      },
+      {
+        "group": "combatRewards",
+        "controls": 73,
+        "hiddenBySelfOrAncestor": 73,
+        "images": 53,
+        "wireBytes": 55306,
+        "hiddenWireBytes": 55306
+      },
+      {
+        "group": "nodePanel",
+        "controls": 9677,
+        "hiddenBySelfOrAncestor": 9677,
+        "images": 8143,
+        "wireBytes": 7445329,
+        "hiddenWireBytes": 7445329
+      },
+      {
+        "group": "menuPanel",
+        "controls": 2308,
+        "hiddenBySelfOrAncestor": 460,
+        "images": 2079,
+        "wireBytes": 1891516,
+        "hiddenWireBytes": 352696
+      },
+      {
+        "group": "relicEntry",
+        "controls": 51,
+        "hiddenBySelfOrAncestor": 51,
+        "images": 28,
+        "wireBytes": 37441,
+        "hiddenWireBytes": 37441
+      },
+      {
+        "group": "deckEntry",
+        "controls": 115,
+        "hiddenBySelfOrAncestor": 115,
+        "images": 64,
+        "wireBytes": 84984,
+        "hiddenWireBytes": 84984
+      },
+      {
+        "group": "deckPanel",
+        "controls": 914,
+        "hiddenBySelfOrAncestor": 914,
+        "images": 683,
+        "wireBytes": 694497,
+        "hiddenWireBytes": 694497
+      },
+      {
+        "group": "relicBar",
+        "controls": 651,
+        "hiddenBySelfOrAncestor": 651,
+        "images": 499,
+        "wireBytes": 485428,
+        "hiddenWireBytes": 485428
+      },
+      {
+        "group": "relicPanel",
+        "controls": 390,
+        "hiddenBySelfOrAncestor": 390,
+        "images": 284,
+        "wireBytes": 293678,
+        "hiddenWireBytes": 293678
+      },
+      {
+        "group": "potionEntry",
+        "controls": 473,
+        "hiddenBySelfOrAncestor": 473,
+        "images": 308,
+        "wireBytes": 346739,
+        "hiddenWireBytes": 346739
+      },
+      {
+        "group": "potionPanel",
+        "controls": 162,
+        "hiddenBySelfOrAncestor": 162,
+        "images": 114,
+        "wireBytes": 122408,
+        "hiddenWireBytes": 122408
+      },
+      {
+        "group": "characterPanel",
+        "controls": 769,
+        "hiddenBySelfOrAncestor": 769,
+        "images": 554,
+        "wireBytes": 588102,
+        "hiddenWireBytes": 588102
+      },
+      {
+        "group": "choicePanel",
+        "controls": 400,
+        "hiddenBySelfOrAncestor": 400,
+        "images": 284,
+        "wireBytes": 302355,
+        "hiddenWireBytes": 302355
+      },
+      {
+        "group": "exitEntry",
+        "controls": 39,
+        "hiddenBySelfOrAncestor": 12,
+        "images": 24,
+        "wireBytes": 28701,
+        "hiddenWireBytes": 8544
+      },
+      {
+        "group": "exitPanel",
+        "controls": 166,
+        "hiddenBySelfOrAncestor": 166,
+        "images": 116,
+        "wireBytes": 125474,
+        "hiddenWireBytes": 125474
+      },
+      {
+        "group": "runMenu",
+        "controls": 399,
+        "hiddenBySelfOrAncestor": 399,
+        "images": 284,
+        "wireBytes": 301920,
+        "hiddenWireBytes": 301920
+      },
+      {
+        "group": "pageReveal",
+        "controls": 25,
+        "hiddenBySelfOrAncestor": 25,
+        "images": 15,
+        "wireBytes": 18644,
+        "hiddenWireBytes": 18644
+      },
+      {
+        "group": "victoryEasterEgg",
+        "controls": 25,
+        "hiddenBySelfOrAncestor": 25,
+        "images": 15,
+        "wireBytes": 18683,
+        "hiddenWireBytes": 18683
+      }
+    ],
+    "templateGroups": [
+      {
+        "group": "AbyssDeckCard",
+        "controls": 311,
+        "hiddenBySelfOrAncestor": 141,
+        "images": 264,
+        "wireBytes": 243804,
+        "hiddenWireBytes": 106540
+      },
+      {
+        "group": "AbyssSelectionHalfTriangle",
+        "controls": 1,
+        "hiddenBySelfOrAncestor": 1,
+        "images": 1,
+        "wireBytes": 804,
+        "hiddenWireBytes": 804
+      },
+      {
+        "group": "AbyssReadyCardImage",
+        "controls": 1,
+        "hiddenBySelfOrAncestor": 1,
+        "images": 1,
+        "wireBytes": 788,
+        "hiddenWireBytes": 788
+      },
+      {
+        "group": "AbyssReadyCardGroup",
+        "controls": 1,
+        "hiddenBySelfOrAncestor": 1,
+        "images": 0,
+        "wireBytes": 688,
+        "hiddenWireBytes": 688
+      },
+      {
+        "group": "AbyssMonsterActor",
+        "controls": 69,
+        "hiddenBySelfOrAncestor": 69,
+        "images": 54,
+        "wireBytes": 53358,
+        "hiddenWireBytes": 53358
+      },
+      {
+        "group": "AbyssMonsterActor41",
+        "controls": 80,
+        "hiddenBySelfOrAncestor": 80,
+        "images": 63,
+        "wireBytes": 61768,
+        "hiddenWireBytes": 61768
+      },
+      {
+        "group": "AbyssMonsterActor96",
+        "controls": 136,
+        "hiddenBySelfOrAncestor": 136,
+        "images": 118,
+        "wireBytes": 105237,
+        "hiddenWireBytes": 105237
+      },
+      {
+        "group": "AbyssMonsterActor115",
+        "controls": 155,
+        "hiddenBySelfOrAncestor": 155,
+        "images": 137,
+        "wireBytes": 120020,
+        "hiddenWireBytes": 120020
+      },
+      {
+        "group": "AbyssMonsterPower",
+        "controls": 7,
+        "hiddenBySelfOrAncestor": 7,
+        "images": 4,
+        "wireBytes": 5226,
+        "hiddenWireBytes": 5226
+      },
+      {
+        "group": "AbyssBattlePileCard",
+        "controls": 58,
+        "hiddenBySelfOrAncestor": 38,
+        "images": 24,
+        "wireBytes": 43113,
+        "hiddenWireBytes": 28406
+      },
+      {
+        "group": "AbyssForgeCard",
+        "controls": 315,
+        "hiddenBySelfOrAncestor": 147,
+        "images": 269,
+        "wireBytes": 247041,
+        "hiddenWireBytes": 111297
+      },
+      {
+        "group": "AbyssDeckBrowserBack",
+        "controls": 42,
+        "hiddenBySelfOrAncestor": 10,
+        "images": 31,
+        "wireBytes": 33058,
+        "hiddenWireBytes": 7739
+      },
+      {
+        "group": "AbyssDeckBrowserBanner",
+        "controls": 71,
+        "hiddenBySelfOrAncestor": 0,
+        "images": 67,
+        "wireBytes": 57760,
+        "hiddenWireBytes": 0
+      },
+      {
+        "group": "AbyssDeckBrowserFrame0",
+        "controls": 51,
+        "hiddenBySelfOrAncestor": 2,
+        "images": 50,
+        "wireBytes": 41833,
+        "hiddenWireBytes": 1512
+      },
+      {
+        "group": "AbyssDeckBrowserFrame1",
+        "controls": 51,
+        "hiddenBySelfOrAncestor": 50,
+        "images": 50,
+        "wireBytes": 38743,
+        "hiddenWireBytes": 37801
+      },
+      {
+        "group": "AbyssDeckBrowserFrame2",
+        "controls": 43,
+        "hiddenBySelfOrAncestor": 42,
+        "images": 42,
+        "wireBytes": 32696,
+        "hiddenWireBytes": 31794
+      }
+    ],
+    "otherUiRecords": [
+      {
+        "id": 1073741825,
+        "name": "默认布局",
+        "bytes": 220
+      },
+      {
+        "id": 1073741826,
+        "name": "小地图",
+        "bytes": 218
+      },
+      {
+        "id": 1073741827,
+        "name": "技能区",
+        "bytes": 210
+      },
+      {
+        "id": 1073741828,
+        "name": "队伍信息",
+        "bytes": 253
+      },
+      {
+        "id": 1073741829,
+        "name": "角色生命值条",
+        "bytes": 178
+      },
+      {
+        "id": 1073741830,
+        "name": "摇杆",
+        "bytes": 168
+      },
+      {
+        "id": 1073741831,
+        "name": "造物生命值条",
+        "bytes": 129
+      },
+      {
+        "id": 1073741832,
+        "name": "退出按钮",
+        "bytes": 123
+      },
+      {
+        "id": 1073741833,
+        "name": "语音",
+        "bytes": 117
+      },
+      {
+        "id": 1073741834,
+        "name": "选项卡",
+        "bytes": 120
+      },
+      {
+        "id": 1073741835,
+        "name": "聊天按钮",
+        "bytes": 123
+      },
+      {
+        "id": 1073741836,
+        "name": "网络状态",
+        "bytes": 123
+      },
+      {
+        "id": 1073741837,
+        "name": "挣扎按钮",
+        "bytes": 123
+      },
+      {
+        "id": 1073741838,
+        "name": "语音聊天按钮",
+        "bytes": 129
+      },
+      {
+        "id": 1073741839,
+        "name": "语音聊天提示队列",
+        "bytes": 186
+      },
+      {
+        "id": 1073741840,
+        "name": "HierarchyRoot",
+        "bytes": 115
+      },
+      {
+        "id": 1073741841,
+        "name": "HierarchyRoot",
+        "bytes": 115
+      },
+      {
+        "id": 1073741842,
+        "name": "ExclusiveEleGroupHierarchyRoot",
+        "bytes": 133
+      },
+      {
+        "id": 1073741843,
+        "name": "ClientUIRootHierarchyRoot",
+        "bytes": 127
+      },
+      {
+        "id": 1073741844,
+        "name": "ClientUIPrototypeHierarchyRoot",
+        "bytes": 133
+      }
+    ]
+  },
+  "scriptCount": 386,
+  "packedLuaSourceBytes": 4234183,
+  "arts": [
+    {
+      "name": "abyss_monster_art_data",
+      "category": "art",
+      "bytes": 480174,
+      "sha256": "e0c0fc7a8913e0a13aa2572a4c213b7a38f56a6c7b557bd70944e07ba9291043"
+    },
+    {
+      "name": "abyss_traveler_portrait_assets",
+      "category": "art",
+      "bytes": 325379,
+      "sha256": "f959cd390c79085f021bcbc14d36fa79b387bfd35f21d05ce2c5203d4f90f88d"
+    }
+  ],
+  "largestOrdinaryLua": [
+    {
+      "name": "abyss_theme",
+      "category": "lua",
+      "bytes": 502950,
+      "sha256": "955eed82847f5e9d1eb105f0047c672468c0fea6da982a782c7757b5c183c88e"
+    },
+    {
+      "name": "abyss_data",
+      "category": "lua",
+      "bytes": 98453,
+      "sha256": "6b67165532df60089aea8b24636529dfa3ea6a782d09abbfe431d0589c53416b"
+    },
+    {
+      "name": "abyss_combat",
+      "category": "lua",
+      "bytes": 95262,
+      "sha256": "1aa95c704a3ef72fef008ca6426cca665c9f46564ef6ba59b5ea5e0a668b8bf3"
+    },
+    {
+      "name": "abyss_deck_ui",
+      "category": "lua",
+      "bytes": 50710,
+      "sha256": "a44b7dcbae418526c383defd134b82d6d1d7a8a207d988c881d9fb686bc24802"
+    },
+    {
+      "name": "abyss_traveler_portraits",
+      "category": "lua",
+      "bytes": 40963,
+      "sha256": "00432419cc554c46bcd01064e0f2660e5651d8828eed049fcedbd87416fa6e86"
+    },
+    {
+      "name": "abyss_actor",
+      "category": "lua",
+      "bytes": 40564,
+      "sha256": "580ea1d1754ddc8072c6ca77acfb37df2fca6dbb0a00d77f00d3211975f5f779"
+    },
+    {
+      "name": "abyss_map_ui",
+      "category": "lua",
+      "bytes": 36155,
+      "sha256": "e201e7f153f139b774e47d23a43ec6ee2a868fbe57d9dfa15c0df30b35b0d6ec"
+    },
+    {
+      "name": "abyss_game_ui_view",
+      "category": "lua",
+      "bytes": 32580,
+      "sha256": "d53414bc18838564c70ce07b0c58da3396999a71c4ed71d555784d53f5be89a1"
+    },
+    {
+      "name": "abyss_chapter_battle_scene_data",
+      "category": "lua",
+      "bytes": 32425,
+      "sha256": "dd0d4a98d731cb129bc92b588d7096dc45278a96d695385f929d0521b723a75c"
+    },
+    {
+      "name": "abyss_character_presentation_text",
+      "category": "lua",
+      "bytes": 32325,
+      "sha256": "847ed754ad21d00c2688e7eb8cc0cde5bcd0cf8fe9aebad8fed110248a62b819"
+    },
+    {
+      "name": "abyss_feedback",
+      "category": "lua",
+      "bytes": 32323,
+      "sha256": "819e8680eebd49d6e7d9f8292d6363c5f350ccf8968fd1a3f241b2322d8a22e1"
+    },
+    {
+      "name": "abyss_nodes",
+      "category": "lua",
+      "bytes": 30750,
+      "sha256": "c7b436cf89f7a7b14b777ce3e9a477fe6217850414caa557499a4a8d1395b2bd"
+    },
+    {
+      "name": "abyss_page_reveal",
+      "category": "lua",
+      "bytes": 27663,
+      "sha256": "7ecd7d0aeff8ca9f2a75e92193c125d81be66913e6d121fbb019d8e4631631c4"
+    },
+    {
+      "name": "abyss_run",
+      "category": "lua",
+      "bytes": 27304,
+      "sha256": "3dd11fe9a60452daa92f6fa12f72129babf1020754869e3c3f978446744aa754"
+    },
+    {
+      "name": "abyss_card_display",
+      "category": "lua",
+      "bytes": 26262,
+      "sha256": "fe412b4260833276b4fc8df2538d64e3ea21b142547748740303231176ec668c"
+    },
+    {
+      "name": "abyss_battle_card_view",
+      "category": "lua",
+      "bytes": 26232,
+      "sha256": "d3e9c34ad77cce3a5ecf4f9e7559010d7291fead47f6e2e36de278a8b1761bc3"
+    },
+    {
+      "name": "abyss_watcher_final_cards",
+      "category": "lua",
+      "bytes": 25310,
+      "sha256": "40d9accaee11bc7a835c6e9decc18fe0d5c314d08a40ccb06a426c37d046659a"
+    },
+    {
+      "name": "abyss_battle_info_view",
+      "category": "lua",
+      "bytes": 24927,
+      "sha256": "21bceba4eb34c4f2f2ceb7e27ef76cbdd5ed8d2526f8fff1b05ab6038bd7cbca"
+    },
+    {
+      "name": "abyss_relic_family_combat",
+      "category": "lua",
+      "bytes": 24791,
+      "sha256": "478131481e9d32961533bb9cf355153fa82f46f591ccac782137626577cf88ba"
+    },
+    {
+      "name": "abyss_card_actions",
+      "category": "lua",
+      "bytes": 24592,
+      "sha256": "45db5428e3eac6dd597cd70e1550c6ac9948a7b4736763df0f97878f23038905"
+    }
+  ],
+  "audio": {
+    "graph": {
+      "name": "_GSTS_ABYSS_BGM",
+      "bytes": 13193
+    },
+    "lua": {
+      "name": "abyss_bgm",
+      "category": "audio",
+      "bytes": 885,
+      "sha256": "526dd588ee49adcd0767b1cd720dc2f3adf99e7e18cfa01c714d9d4111a8aef0"
+    },
+    "graphNodes": 83,
+    "signals": [
+      "ABYSS_BGM_BATTLE",
+      "ABYSS_BGM_BOSS",
+      "ABYSS_BGM_DEFEAT",
+      "ABYSS_BGM_ELITE",
+      "ABYSS_BGM_MAP",
+      "ABYSS_BGM_STOP",
+      "ABYSS_BGM_VICTORY"
+    ],
+    "enabledMetadataFields": [
+      7,
+      8
+    ]
+  },
+  "graphRows": [
+    {
+      "name": "_GSTS_ABYSS_SETTLEMENT",
+      "bytes": 3008
+    },
+    {
+      "name": "_GSTS_ABYSS_BGM",
+      "bytes": 13193
+    }
+  ],
+  "embeddedLevelSettings": {
+    "loadTier": "low",
+    "aggroMode": "default"
+  },
+  "sections": [
+    {
+      "field": 1,
+      "start": 20,
+      "end": 26,
+      "bytes": 6,
+      "sha256": "58488f288f6637fd68e04fb4c52960825a04e5c481be1f78878998c3b454602c"
+    },
+    {
+      "field": 2,
+      "start": 26,
+      "end": 40,
+      "bytes": 14,
+      "sha256": "78cf04db1d17ec5eb98d6404dbbc9c91c4d3a85a265d9775d6ab45e8845e84bc"
+    },
+    {
+      "field": 3,
+      "start": 40,
+      "end": 42,
+      "bytes": 2,
+      "sha256": "fdbb66f97af044e4b88b0bb0a4789f8f014f98b53f5fe11102bd19f45d53c45b"
+    },
+    {
+      "field": 4,
+      "start": 42,
+      "end": 1236,
+      "bytes": 1194,
+      "sha256": "861fd974d54557f6ad8dd5c6f2857619ca4102669102fc788415d8a6afc70e36"
+    },
+    {
+      "field": 5,
+      "start": 1236,
+      "end": 4418,
+      "bytes": 3182,
+      "sha256": "97053a3d0dd3f0210266b8938f08ddd3b2fb678f651b6033655bdcc124e70e39"
+    },
+    {
+      "field": 6,
+      "start": 4418,
+      "end": 5961,
+      "bytes": 1543,
+      "sha256": "f6569fbb42d477ef9e54c44767f2af9679e2c33b6c471b52ec0725e3ffb4e02c"
+    },
+    {
+      "field": 7,
+      "start": 5961,
+      "end": 9606,
+      "bytes": 3645,
+      "sha256": "3ea7b5a262ff04398e15b0b5497e104029663a098d387faf39183b860a9b48f1"
+    },
+    {
+      "field": 8,
+      "start": 9606,
+      "end": 9608,
+      "bytes": 2,
+      "sha256": "f6c6e57cc3dac1d6a2349701056ff5a3e48134efe4496a8c0f5cb9fc9e6dfc12"
+    },
+    {
+      "field": 9,
+      "start": 9608,
+      "end": 20159556,
+      "bytes": 20149948,
+      "sha256": "cee36db530c402a712af452972f1093714da2b2dafe55d37d233f6f2fe1e1473"
+    },
+    {
+      "field": 10,
+      "start": 20159556,
+      "end": 20186640,
+      "bytes": 27084,
+      "sha256": "612bf20890cc4d730b4c461289cd8b817fbb1ebf89533810b3fce7f9cffa7af4"
+    },
+    {
+      "field": 11,
+      "start": 20186640,
+      "end": 20187018,
+      "bytes": 378,
+      "sha256": "bfb8c4cfc0bb8a2e7120ffa14edc073fa47d488a93ecee363e023ffc2e204115"
+    },
+    {
+      "field": 12,
+      "start": 20187018,
+      "end": 20187020,
+      "bytes": 2,
+      "sha256": "1e57b933b0a78203e21d41cc4b16d731b255b04058d48a4ac2731f0089312129"
+    },
+    {
+      "field": 14,
+      "start": 20187020,
+      "end": 20187100,
+      "bytes": 80,
+      "sha256": "24b861a299427a0f328da70f952672965ddc57aa9bf1fabac12238b331ac7eb8"
+    },
+    {
+      "field": 15,
+      "start": 20187100,
+      "end": 20195439,
+      "bytes": 8339,
+      "sha256": "fb1591a5a0911f658c1673c825b67236f3dae99164e4937901b1d8629abe6bc8"
+    },
+    {
+      "field": 16,
+      "start": 20195439,
+      "end": 20195442,
+      "bytes": 3,
+      "sha256": "61da16039a8028296094706e9afe024b2897efcdbfcd1cfe8d6400a3e2c5971f"
+    },
+    {
+      "field": 17,
+      "start": 20195442,
+      "end": 20195445,
+      "bytes": 3,
+      "sha256": "6d912068289b0e6bcc8956c9775c140df3fb9d20f82d944fb1a5dd93c7cc7d11"
+    },
+    {
+      "field": 18,
+      "start": 20195445,
+      "end": 20195527,
+      "bytes": 82,
+      "sha256": "e00cf6a75d7cd46806ed6b9dab650d44f9d77a9d2464b994421e5b3d8a6c4107"
+    },
+    {
+      "field": 19,
+      "start": 20195527,
+      "end": 20195530,
+      "bytes": 3,
+      "sha256": "5ca9071640bd0a0df16a9465b6cc72fecbf03d4402233dbbc85516fc2e8a033d"
+    },
+    {
+      "field": 20,
+      "start": 20195530,
+      "end": 20195533,
+      "bytes": 3,
+      "sha256": "c71c2e2f3ac57925f268e72de92a849b9cb3be333dc18f21b7589acc194f02bd"
+    },
+    {
+      "field": 21,
+      "start": 20195533,
+      "end": 20195536,
+      "bytes": 3,
+      "sha256": "98e2a3da587fe2abe5c6bbaf1a7189b681849916c0520b1cf80f17ea2009b953"
+    },
+    {
+      "field": 22,
+      "start": 20195536,
+      "end": 20195539,
+      "bytes": 3,
+      "sha256": "c60869e5ad0d35dc0d3dc44c984eceb43fc753718a52e1b29f362489e7cf3d85"
+    },
+    {
+      "field": 23,
+      "start": 20195539,
+      "end": 20195549,
+      "bytes": 10,
+      "sha256": "4844d573af33e47123cb7f821275ac8856f4746c583e8a4abe990ac5f8b3f12a"
+    },
+    {
+      "field": 25,
+      "start": 20195549,
+      "end": 20195684,
+      "bytes": 135,
+      "sha256": "a27019e32f6d42bca7e07342c48a238c7b3d1e6e95782029e21c16c321135108"
+    },
+    {
+      "field": 27,
+      "start": 20195684,
+      "end": 20195687,
+      "bytes": 3,
+      "sha256": "65a2aa37621eaf02423205f32fb673980c973341cb315f7fe3c80db423f35941"
+    },
+    {
+      "field": 29,
+      "start": 20195687,
+      "end": 20195745,
+      "bytes": 58,
+      "sha256": "c65715b6ff3222d58ceec98aa88edc9692832861021c8f13f04ce925e9bed4d7"
+    },
+    {
+      "field": 30,
+      "start": 20195745,
+      "end": 20195748,
+      "bytes": 3,
+      "sha256": "4c7a97420a1b6f175aa7de3d5bd6f370942bd0678a50004d79d50e7d9b639154"
+    },
+    {
+      "field": 31,
+      "start": 20195748,
+      "end": 20195751,
+      "bytes": 3,
+      "sha256": "9666f8a0917c8b0104b5159accc77a60b0bf875ef338fef518b9fa0ac8c6061b"
+    },
+    {
+      "field": 32,
+      "start": 20195751,
+      "end": 20195754,
+      "bytes": 3,
+      "sha256": "95397da2338a6e41e75d2a34be802255e05cb6e7d79088fcd6a0d9f99b344681"
+    },
+    {
+      "field": 33,
+      "start": 20195754,
+      "end": 20195757,
+      "bytes": 3,
+      "sha256": "881752fe1c40fa5dda2b4eb704a991d67b4105cfc200249bd8dc8fa083119fdc"
+    },
+    {
+      "field": 35,
+      "start": 20195757,
+      "end": 20195890,
+      "bytes": 133,
+      "sha256": "e620fd1ce84e51632a08795e006502809c6c3fc0e3003556e2bf41f30834aa61"
+    },
+    {
+      "field": 36,
+      "start": 20195890,
+      "end": 20195955,
+      "bytes": 65,
+      "sha256": "1b7015d2e09c8e6b54bae854c3c73f831530682023f426a6116b41dcb10ed8f1"
+    },
+    {
+      "field": 37,
+      "start": 20195955,
+      "end": 20195958,
+      "bytes": 3,
+      "sha256": "2006a2d29b2cacbe778037a419f91fcf7772c859e95c9bbefbeef69acb8fb82f"
+    },
+    {
+      "field": 38,
+      "start": 20195958,
+      "end": 20195965,
+      "bytes": 7,
+      "sha256": "62e30274fc741326044230a1d9091e795b64d805403d753fe2277a5a19f2208c"
+    },
+    {
+      "field": 39,
+      "start": 20195965,
+      "end": 20195971,
+      "bytes": 6,
+      "sha256": "5f217e11148f181537656e8f321745aa3513a949aefd0cca84ac14b0b23e1365"
+    },
+    {
+      "field": 40,
+      "start": 20195971,
+      "end": 20195978,
+      "bytes": 7,
+      "sha256": "f642a395f495270ef35096dc426688b03bb8fb715101cccd5b200a9a542c4814"
+    },
+    {
+      "field": 41,
+      "start": 20195978,
+      "end": 20195981,
+      "bytes": 3,
+      "sha256": "bb01b2cbb26b634c8efb0a358e05eada5a0040d0002a2ce96a719fc206d552bd"
+    },
+    {
+      "field": 43,
+      "start": 20195981,
+      "end": 20195989,
+      "bytes": 8,
+      "sha256": "c13324a86d5f1680740f152a9dd206bb54f2825ac7d03612bbb88663444ea90e"
+    },
+    {
+      "field": 44,
+      "start": 20195989,
+      "end": 20195992,
+      "bytes": 3,
+      "sha256": "6208719faa218ea2b37526d8647dfcaf1f3859ed18753b0efbd7097ac2c51881"
+    },
+    {
+      "field": 45,
+      "start": 20195992,
+      "end": 20195995,
+      "bytes": 3,
+      "sha256": "acdc7a04fe20ab590325d4cb8d9b0b1f65336dc0eeeecf7339a98fc66f4d6a56"
+    },
+    {
+      "field": 46,
+      "start": 20195995,
+      "end": 20196042,
+      "bytes": 47,
+      "sha256": "74329da0fbdeaa36560afa37dda9cc9db14f8e34224247488c790570c4373254"
+    },
+    {
+      "field": 48,
+      "start": 20196042,
+      "end": 20196045,
+      "bytes": 3,
+      "sha256": "c1446d769d6d013454d8705a7e9fee7a3102f17248e22fa611b6ac49baf00df0"
+    },
+    {
+      "field": 49,
+      "start": 20196045,
+      "end": 20196048,
+      "bytes": 3,
+      "sha256": "bffaab00e1dc88fae43c5fd5f4578f7b65e4181ff9f6b81c01699b68f8c961bc"
+    },
+    {
+      "field": 50,
+      "start": 20196048,
+      "end": 24453825,
+      "bytes": 4257777,
+      "sha256": "79f2c96919cc1b7833a951c6f2f6e191958a957ca147a167cf2747de32a5e4de"
+    },
+    {
+      "field": 52,
+      "start": 24453825,
+      "end": 24453832,
+      "bytes": 7,
+      "sha256": "da3816ffcc9f3081465ed67d795ac4e84695770d7ade5c65c5c161f66f26bddf"
+    },
+    {
+      "field": 53,
+      "start": 24453832,
+      "end": 24453839,
+      "bytes": 7,
+      "sha256": "5a248543dbfb0fa691a08d135f457427944939e12c287ec0465f34333f869a35"
+    }
+  ]
+}

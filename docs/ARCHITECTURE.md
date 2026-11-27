@@ -45,6 +45,31 @@ LivingWall的卡牌复制筛选直接使用Foundation的Copy；已验证边界�
 
 候选的生成模块集合与UI构建的全部输出用途不同；测试用的`abyss_map_controls`、`abyss_ui_layout`和`abyss_ui_templates`不因存在于输出目录就自动进入正式打包集合。[测试选择器](../scripts/test-affected.mjs)另记录这些生成节点的依赖，用于离线选择相关测试。
 
+## GIL 容量组成与构建链路图
+
+```mermaid
+flowchart TD
+    S[手写 Lua、内容 JSON、美术图元及宿主资源 ID] --> D[build:data 生成玩法 Lua，基础数据 213,377 B]
+    S --> U[build:ui 生成布局、模板与表现 Lua]
+    D --> L[脚本清单 → competition-lua-v3，编码输入 4,232,788 B]
+    U --> L
+    U --> N[原生 UI 编码 → 静态布局与共享模板，正式包占 82.31%]
+    H[已发布 v2.1.1 GIL → 固定 SHA-256 的底图副本] --> A[候选装配及收据]
+    L --> A
+    N --> A
+    B[结算图、BGM 服务器图与宿主音频 ID] --> A
+    A --> G[有声 GIL → 正式归档 23,780,838 B，开发复建 24,453,843 B]
+    G --> O[同一候选交官方编辑器 → 当前关卡及服务器容量 UNVERIFIED]
+    O --> V[官方负载、PC 和实体手机验收]
+```
+
+- 数据生成、UI 生成与最终映射各有自己的清单。只计映射进最终 GIL 的记录。正式配置启用选角头像、战斗画像和精绘怪物，卡面美术和菜单背景默认关闭。当前 `competition-lua-v3` 为未开放的原创 V4 数据写入失败即停的入口桩。分支扩大开放范围时应显式更新装配及其依赖。 [正式美术配置](../scripts/official-assets-profile.mjs) · [脚本清单](../scripts/native-candidate-scripts.mjs) · [脚本编码](../scripts/native-script-storage.mjs)
+- `build:native` 先生成完整客户端候选，再装配原生 BGM，读回审计脚本、UI、模板与图。模板定义、静态实例、Lua 中的共享图元和宿主音频引用各有独立成本。当前 One-shot GIL 工作流以发布归档为固定底图并校验允许改写的容器段。 [有声构建](../scripts/build-native-audio-game.mjs) · [正式 GIL 入口](GIL-CANDIDATE.md) · [工作流](../.github/workflows/gil-build.yml)
+- GIL 物理账本使用从零开始的左闭右开字节区间，区间必须连续无重叠且恰好覆盖文件。UI 子树、图元归类、初始隐藏和 Lua 模块大小是其所属记录的下钻指标。构建输入 JSON、Lua 源、gzip、ZIP 工件、网络传输量和离线进程 RSS 各自保留单位和分母。 [既有字节测量与复现](evidence/v2.1.1-performance-20261125/capacity/CAPACITY-REPRODUCE.md)
+- 官方关卡与服务器存档独立读数。当前面板上限分别为 20 MB 和 3 MB，16 MB 是现有内部关卡预警，19 MB 是本次四角色目标。仅以同一最终 GIL 的 `sourceCommit`、`buildId`、`candidateSha256`、`payloadDigest` 和官方编辑器原始回执授予验证结论。面板 MB 保留原单位。 [平台负载口径和验收入口](PLATFORM_LOAD.md)
+
+- 节点页和战斗页占正式归档物理字节 50.82%。保留现有紧凑 Lua、未开放数据入口桩及共享模板。把隐藏或相同控件改成引用前，验证实际宿主 `GetChild`、交互和回收。设备同步矩形稀疏编码暂停采用，当前社区读回只覆盖归一化字段。 [容量账本、优化 A/B 与四角色预算](evidence/gil-capacity-lab-20261128/README.md)
+
 ## 验证入口
 
 测试位于 [tests](../tests/)，Lua用例位于 [tests/lua](../tests/lua/)；[Lua执行器](../scripts/test-lua.mjs)通过Fengari加载`build/lua`和`src/lua`，构建失败或Lua错误必须传播。

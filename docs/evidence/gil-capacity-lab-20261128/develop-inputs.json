@@ -1,0 +1,521 @@
+{
+  "scope": "Rebuilt inputs before candidate-local template IDs, build marker, native container record encoding and BGM packaging",
+  "schemaVersion": 1,
+  "sourceCommit": "32a15219aecd145c59cb1b2fcf477e5556766e5d",
+  "sourceDirty": false,
+  "measurement": "offline-production-inputs-not-official-storage",
+  "luaBytes": 6026827,
+  "layoutJsonBytes": 3987360,
+  "templateJsonBytes": 231957,
+  "controls": 26296,
+  "hiddenControls": 23907,
+  "templates": 16,
+  "artPools": 0,
+  "maxChildren": 60,
+  "monsterActors": {
+    "templateName": "AbyssMonsterActor",
+    "controlsPerActor": 69,
+    "shapesPerActor": 32,
+    "powerTemplateName": "AbyssMonsterPower",
+    "controlsPerPower": 7,
+    "powerAllocation": "per-power-instance",
+    "allocation": "per-drawable-actor-instance",
+    "measurement": "offline-template-count-not-official-load",
+    "officialImport": "not_run",
+    "devices": "not_run",
+    "tiers": {
+      "AbyssMonsterActor41": {
+        "templateName": "AbyssMonsterActor",
+        "controlsPerActor": 80,
+        "shapesPerActor": 41,
+        "powerTemplateName": "AbyssMonsterPower",
+        "controlsPerPower": 7,
+        "powerAllocation": "per-power-instance",
+        "allocation": "per-drawable-actor-instance",
+        "measurement": "offline-template-count-not-official-load",
+        "officialImport": "not_run",
+        "devices": "not_run"
+      },
+      "AbyssMonsterActor96": {
+        "templateName": "AbyssMonsterActor",
+        "controlsPerActor": 136,
+        "shapesPerActor": 96,
+        "powerTemplateName": "AbyssMonsterPower",
+        "controlsPerPower": 7,
+        "powerAllocation": "per-power-instance",
+        "allocation": "per-drawable-actor-instance",
+        "measurement": "offline-template-count-not-official-load",
+        "officialImport": "not_run",
+        "devices": "not_run"
+      },
+      "AbyssMonsterActor115": {
+        "templateName": "AbyssMonsterActor",
+        "controlsPerActor": 155,
+        "shapesPerActor": 115,
+        "powerTemplateName": "AbyssMonsterPower",
+        "controlsPerPower": 7,
+        "powerAllocation": "per-power-instance",
+        "allocation": "per-drawable-actor-instance",
+        "measurement": "offline-template-count-not-official-load",
+        "officialImport": "not_run",
+        "devices": "not_run"
+      }
+    },
+    "runtimeControlsFormula": "sum(selectedTier.controlsPerActor per drawable actor) + controlsPerPower * (displayedPowers + liveIntentParticles) + actorPowerAndIntentPagingContainers",
+    "peakDrawableActors": null,
+    "peakStatus": "unverified-not-a-static-visibility-cap"
+  },
+  "repeatedPrimitiveInstances": 17704,
+  "artFeatures": {
+    "cards": false,
+    "menuBackground": false,
+    "selectionAvatar": true,
+    "battlePortrait": true,
+    "monsters": true
+  },
+  "runtimePortraits": {
+    "renderProfile": "selection-budget-v1",
+    "hiddenBuild": true,
+    "cache": true,
+    "revealGroupsPerFrame": 4,
+    "selectionUses": "lowpolyLumine",
+    "assets": [
+      {
+        "asset": "traveler-geo/portraits/avatar96",
+        "images": 457,
+        "sourceSha256": "c30551e1fed1cd7f18c61b67fe0ad0cd6e52c61bfa6ae937ccd9e4c90e7f72bb",
+        "groups": 8,
+        "pages": 1
+      },
+      {
+        "asset": "lowpolyLumine",
+        "images": 1600,
+        "sourceSha256": "29c47e50581951d1f3cf509eb39b1a73bf8d6ae4934a5b0606a3c76f9857c050",
+        "groups": 27,
+        "pages": 1
+      },
+      {
+        "asset": "traveler-geo/portraits/lumine-native-v1",
+        "images": 464,
+        "sourceSha256": "bc9118f85b57b2ca70ec027c43a520c3bb2d0f403e4f0f6e167d4297c63a1ff5",
+        "groups": 8,
+        "pages": 1,
+        "jsonSha256": "a0c792109a74f71be0a52d9a59f39828e1d4818ce8d1bba915606b984d89f831",
+        "motion": "shared-actor-root-only",
+        "officialCapacity": "not_measured",
+        "devicePerformance": "not_run"
+      }
+    ],
+    "instances": 3,
+    "batchSize": 64,
+    "peakDynamicControls": 2567,
+    "maxDirectDynamicChildren": 60,
+    "officialCapacity": "not_measured",
+    "measurement": "offline-runtime-control-contract-not-official-capacity",
+    "devicePerformance": "not_run"
+  },
+  "runtimeBackgrounds": [],
+  "excludedModules": [
+    "abyss_random"
+  ],
+  "storageProfile": "competition-lua-v3",
+  "modules": 386,
+  "packedLuaBytes": 4232788,
+  "largestPackedModules": [
+    {
+      "name": "abyss_theme",
+      "sourceBytes": 1047859,
+      "packedBytes": 502950,
+      "sourceSha256": "0be9b0170e8f3e6648daba55545907f98470f81c3a8157df89db170564dac302",
+      "packedSha256": "955eed82847f5e9d1eb105f0047c672468c0fea6da982a782c7757b5c183c88e"
+    },
+    {
+      "name": "abyss_monster_art_data",
+      "sourceBytes": 480249,
+      "packedBytes": 480174,
+      "sourceSha256": "e9c3b6778fc370b57b819cdf543bbce169ffd0a22e128aac7a982bf212ad22c8",
+      "packedSha256": "e0c0fc7a8913e0a13aa2572a4c213b7a38f56a6c7b557bd70944e07ba9291043"
+    },
+    {
+      "name": "abyss_traveler_portrait_assets",
+      "sourceBytes": 376918,
+      "packedBytes": 325352,
+      "sourceSha256": "e2fe78a3756912a97ba15c27dc8eb6c57894be748525aabfa3afa8630df8db45",
+      "packedSha256": "66296490a81c0ec34e6deca161b7ffb2940cb69e5fb9c506d1baa4c620ccd996"
+    },
+    {
+      "name": "abyss_data",
+      "sourceBytes": 213377,
+      "packedBytes": 98453,
+      "sourceSha256": "31b663248d49c24aaa4914b99042a8a683cc2667f869c699333ccc52723c3429",
+      "packedSha256": "6b67165532df60089aea8b24636529dfa3ea6a782d09abbfe431d0589c53416b"
+    },
+    {
+      "name": "abyss_combat",
+      "sourceBytes": 113583,
+      "packedBytes": 95262,
+      "sourceSha256": "fdc7dbf7b8425a54b66b58c8b2dcd09cf48b3ae7193ca7d077a4e71f891ee64f",
+      "packedSha256": "1aa95c704a3ef72fef008ca6426cca665c9f46564ef6ba59b5ea5e0a668b8bf3"
+    },
+    {
+      "name": "abyss_deck_ui",
+      "sourceBytes": 60363,
+      "packedBytes": 50710,
+      "sourceSha256": "336fe6d4612a719aec256b0dd1d9ece3799e40fc3b02d748a0a76653ed5a0436",
+      "packedSha256": "a44b7dcbae418526c383defd134b82d6d1d7a8a207d988c881d9fb686bc24802"
+    },
+    {
+      "name": "abyss_traveler_portraits",
+      "sourceBytes": 51510,
+      "packedBytes": 40963,
+      "sourceSha256": "f8b14bc57b393cd65c13dba180f3b3cff5c1a519b0b8d613b2b28a1bf7269793",
+      "packedSha256": "00432419cc554c46bcd01064e0f2660e5651d8828eed049fcedbd87416fa6e86"
+    },
+    {
+      "name": "abyss_actor",
+      "sourceBytes": 51141,
+      "packedBytes": 40564,
+      "sourceSha256": "d496927534027d6954b5b2cff67de2bb14a4a2611e65e75627c77e6e3441efa8",
+      "packedSha256": "580ea1d1754ddc8072c6ca77acfb37df2fca6dbb0a00d77f00d3211975f5f779"
+    },
+    {
+      "name": "abyss_map_ui",
+      "sourceBytes": 48573,
+      "packedBytes": 36155,
+      "sourceSha256": "645764d987cb57f2cf57db066eeb3e99de967d248b9efabbd3cf65269e7dd379",
+      "packedSha256": "e201e7f153f139b774e47d23a43ec6ee2a868fbe57d9dfa15c0df30b35b0d6ec"
+    },
+    {
+      "name": "abyss_game_ui_view",
+      "sourceBytes": 39427,
+      "packedBytes": 32580,
+      "sourceSha256": "b64cc28d1242af7fd219d1ccce46c9a043f42e3f602772e775896f3ea28fdf84",
+      "packedSha256": "d53414bc18838564c70ce07b0c58da3396999a71c4ed71d555784d53f5be89a1"
+    },
+    {
+      "name": "abyss_chapter_battle_scene_data",
+      "sourceBytes": 32427,
+      "packedBytes": 32425,
+      "sourceSha256": "42055261cf404270ecacaeb8ed84cdd6476a7fa41141344dc138bdd5ab5972df",
+      "packedSha256": "dd0d4a98d731cb129bc92b588d7096dc45278a96d695385f929d0521b723a75c"
+    },
+    {
+      "name": "abyss_character_presentation_text",
+      "sourceBytes": 34141,
+      "packedBytes": 32325,
+      "sourceSha256": "8f92b20b0492d186dfb20a88c1794438c5a431ae0f696730924c6dca3080cc15",
+      "packedSha256": "847ed754ad21d00c2688e7eb8cc0cde5bcd0cf8fe9aebad8fed110248a62b819"
+    },
+    {
+      "name": "abyss_feedback",
+      "sourceBytes": 42791,
+      "packedBytes": 32323,
+      "sourceSha256": "2afced1fee0980b92d72f9e271413f6396a8a267741c2f702727f051710973a6",
+      "packedSha256": "819e8680eebd49d6e7d9f8292d6363c5f350ccf8968fd1a3f241b2322d8a22e1"
+    },
+    {
+      "name": "abyss_nodes",
+      "sourceBytes": 35533,
+      "packedBytes": 30750,
+      "sourceSha256": "97e7b46e86fc1bcea8098adfa53e84940494091ccf3401985450b9afd2c67aba",
+      "packedSha256": "c7b436cf89f7a7b14b777ce3e9a477fe6217850414caa557499a4a8d1395b2bd"
+    },
+    {
+      "name": "abyss_page_reveal",
+      "sourceBytes": 31640,
+      "packedBytes": 27663,
+      "sourceSha256": "e78b78ff3db4c173736839b87c9fdc001f5aa5e2f192f297f2ff46b9fce76485",
+      "packedSha256": "7ecd7d0aeff8ca9f2a75e92193c125d81be66913e6d121fbb019d8e4631631c4"
+    },
+    {
+      "name": "abyss_run",
+      "sourceBytes": 33765,
+      "packedBytes": 27304,
+      "sourceSha256": "96755dcea65558ef5f72cd8ae1fd6fb638561b9317504bf4f299eb94da357cfa",
+      "packedSha256": "3dd11fe9a60452daa92f6fa12f72129babf1020754869e3c3f978446744aa754"
+    },
+    {
+      "name": "abyss_card_display",
+      "sourceBytes": 31302,
+      "packedBytes": 26262,
+      "sourceSha256": "53ee72e46bda4cd54e1352a1ef9334ceaeaaab9ef0190c0b9c713cadef4c9fe7",
+      "packedSha256": "fe412b4260833276b4fc8df2538d64e3ea21b142547748740303231176ec668c"
+    },
+    {
+      "name": "abyss_battle_card_view",
+      "sourceBytes": 32506,
+      "packedBytes": 26232,
+      "sourceSha256": "a754a1c70a92ee789fa8c8266ee0ede46f22427b271ab464b85b8ce17d59e158",
+      "packedSha256": "d3e9c34ad77cce3a5ecf4f9e7559010d7291fead47f6e2e36de278a8b1761bc3"
+    },
+    {
+      "name": "abyss_watcher_final_cards",
+      "sourceBytes": 25487,
+      "packedBytes": 25310,
+      "sourceSha256": "ec2ef8388b777de5dccfce1df602ac0981dfd112bbd8b63d2e188d345f0c03cd",
+      "packedSha256": "40d9accaee11bc7a835c6e9decc18fe0d5c314d08a40ccb06a426c37d046659a"
+    },
+    {
+      "name": "abyss_battle_info_view",
+      "sourceBytes": 29371,
+      "packedBytes": 24927,
+      "sourceSha256": "310fb87f002004b8bdbc8fc1b269b8dc1cbb6ecf0cf03256840fbdaed0d756ff",
+      "packedSha256": "21bceba4eb34c4f2f2ceb7e27ef76cbdd5ed8d2526f8fff1b05ab6038bd7cbca"
+    }
+  ],
+  "layoutControls": 24904,
+  "layoutTrees": [
+    {
+      "name": "nodePanel",
+      "controls": 9677,
+      "jsonBytes": 1708824
+    },
+    {
+      "name": "battlePanel",
+      "controls": 6276,
+      "jsonBytes": 1001604
+    },
+    {
+      "name": "menuPanel",
+      "controls": 2308,
+      "jsonBytes": 440422
+    },
+    {
+      "name": "mapPanel",
+      "controls": 1979,
+      "jsonBytes": 239225
+    },
+    {
+      "name": "deckPanel",
+      "controls": 914,
+      "jsonBytes": 128595
+    },
+    {
+      "name": "characterPanel",
+      "controls": 769,
+      "jsonBytes": 109268
+    },
+    {
+      "name": "relicBar",
+      "controls": 651,
+      "jsonBytes": 78829
+    },
+    {
+      "name": "potionEntry",
+      "controls": 473,
+      "jsonBytes": 58877
+    },
+    {
+      "name": "choicePanel",
+      "controls": 400,
+      "jsonBytes": 47668
+    },
+    {
+      "name": "runMenu",
+      "controls": 399,
+      "jsonBytes": 47405
+    },
+    {
+      "name": "relicPanel",
+      "controls": 390,
+      "jsonBytes": 46317
+    },
+    {
+      "name": "potionPanel",
+      "controls": 162,
+      "jsonBytes": 21634
+    },
+    {
+      "name": "exitPanel",
+      "controls": 166,
+      "jsonBytes": 19993
+    },
+    {
+      "name": "deckEntry",
+      "controls": 115,
+      "jsonBytes": 12922
+    },
+    {
+      "name": "combatRewards",
+      "controls": 73,
+      "jsonBytes": 8384
+    },
+    {
+      "name": "relicEntry",
+      "controls": 51,
+      "jsonBytes": 5895
+    },
+    {
+      "name": "exitEntry",
+      "controls": 39,
+      "jsonBytes": 4254
+    },
+    {
+      "name": "pageReveal",
+      "controls": 25,
+      "jsonBytes": 3018
+    },
+    {
+      "name": "victoryEasterEgg",
+      "controls": 25,
+      "jsonBytes": 3004
+    },
+    {
+      "name": "officialBattleBackdrop",
+      "controls": 10,
+      "jsonBytes": 900
+    }
+  ],
+  "templateTrees": [
+    {
+      "name": "AbyssForgeCard",
+      "controls": 315,
+      "jsonBytes": 57130
+    },
+    {
+      "name": "AbyssDeckCard",
+      "controls": 311,
+      "jsonBytes": 56599
+    },
+    {
+      "name": "AbyssMonsterActor115",
+      "controls": 155,
+      "jsonBytes": 20710
+    },
+    {
+      "name": "AbyssMonsterActor96",
+      "controls": 136,
+      "jsonBytes": 18277
+    },
+    {
+      "name": "AbyssDeckBrowserFrame0",
+      "controls": 51,
+      "jsonBytes": 14609
+    },
+    {
+      "name": "AbyssMonsterActor41",
+      "controls": 80,
+      "jsonBytes": 11151
+    },
+    {
+      "name": "AbyssDeckBrowserFrame1",
+      "controls": 51,
+      "jsonBytes": 10800
+    },
+    {
+      "name": "AbyssMonsterActor",
+      "controls": 69,
+      "jsonBytes": 9528
+    },
+    {
+      "name": "AbyssDeckBrowserBanner",
+      "controls": 71,
+      "jsonBytes": 9218
+    },
+    {
+      "name": "AbyssDeckBrowserFrame2",
+      "controls": 43,
+      "jsonBytes": 9129
+    },
+    {
+      "name": "AbyssBattlePileCard",
+      "controls": 58,
+      "jsonBytes": 7163
+    },
+    {
+      "name": "AbyssDeckBrowserBack",
+      "controls": 42,
+      "jsonBytes": 6198
+    },
+    {
+      "name": "AbyssMonsterPower",
+      "controls": 7,
+      "jsonBytes": 1052
+    },
+    {
+      "name": "AbyssSelectionHalfTriangle",
+      "controls": 1,
+      "jsonBytes": 173
+    },
+    {
+      "name": "AbyssReadyCardImage",
+      "controls": 1,
+      "jsonBytes": 108
+    },
+    {
+      "name": "AbyssReadyCardGroup",
+      "controls": 1,
+      "jsonBytes": 95
+    }
+  ],
+  "copies": {
+    "nativePlayableRim": {
+      "instances": 36,
+      "controls": 486,
+      "jsonBytes": 69674,
+      "byPanel": {
+        "battlePanel": 10,
+        "nodePanel": 25,
+        "deckPanel": 1
+      },
+      "distinctRepresentations": 2
+    },
+    "nativeCardBody": {
+      "instances": 36,
+      "controls": 72,
+      "jsonBytes": 6444,
+      "byPanel": {
+        "battlePanel": 10,
+        "nodePanel": 25,
+        "deckPanel": 1
+      },
+      "distinctRepresentations": 1
+    },
+    "stsReferenceBack": {
+      "instances": 36,
+      "controls": 1512,
+      "jsonBytes": 222984,
+      "byPanel": {
+        "battlePanel": 10,
+        "nodePanel": 25,
+        "deckPanel": 1
+      },
+      "distinctRepresentations": 1
+    },
+    "stsReferenceChrome": {
+      "instances": 36,
+      "controls": 7884,
+      "jsonBytes": 1583424,
+      "byPanel": {
+        "battlePanel": 10,
+        "nodePanel": 25,
+        "deckPanel": 1
+      },
+      "distinctRepresentations": 1
+    },
+    "officialRunBar": {
+      "instances": 2,
+      "controls": 40,
+      "jsonBytes": 4430,
+      "byPanel": {
+        "mapPanel": 1,
+        "nodePanel": 1
+      },
+      "distinctRepresentations": 1
+    }
+  },
+  "lowCostArt": {
+    "relic": {
+      "assets": 89,
+      "jsonBytes": 62960
+    },
+    "enemy": {
+      "assets": 42,
+      "jsonBytes": 60725
+    },
+    "event": {
+      "assets": 49,
+      "jsonBytes": 522707
+    }
+  }
+}

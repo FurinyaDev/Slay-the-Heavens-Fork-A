@@ -1,0 +1,76 @@
+{
+  "scope": "Offline diagnostic on generated official-v3 input; no native GIL built or official storage measured",
+  "buildCommit": "32a15219aecd145c59cb1b2fcf477e5556766e5d",
+  "sourceDirty": false,
+  "storageProfile": "competition-lua-v3",
+  "inputs": [
+    {
+      "path": "data/release/launch-content.json",
+      "bytes": 252985,
+      "sha256": "58717b15515a274308eca4b99698424d7cb5ef81a3c993c161523a18943707bb"
+    },
+    {
+      "path": "data/presentation/event-native-controls.json",
+      "bytes": 629246,
+      "sha256": "eac9cfc53f1203d635ba1ed77acee1bfd6d12073be53fcb7b4d0af56262bb1b5"
+    },
+    {
+      "path": "build/capacity-input-replay/official-assets-theme.json",
+      "bytes": 762500,
+      "sha256": "9e0f7bd882d2793d96d6255243b0ba433cc05f8f6a809a0120fc82945fc7c655"
+    },
+    {
+      "path": "build/capacity-input-replay/abyss_theme.lua",
+      "bytes": 1047859,
+      "sha256": "0be9b0170e8f3e6648daba55545907f98470f81c3a8157df89db170564dac302"
+    },
+    {
+      "path": "scripts/build-ui.mjs",
+      "bytes": 21425,
+      "sha256": "fd387ceae0b70600cf3e58d82797b3b392261607e4967370e4cfe00358603d04"
+    },
+    {
+      "path": "scripts/lowcost-art.mjs",
+      "bytes": 5810,
+      "sha256": "8b804664b3eb83d221b8aec6b10623c7175418b55942fa0c7a8904576996da70"
+    },
+    {
+      "path": "scripts/build-ui-theme.mjs",
+      "bytes": 7415,
+      "sha256": "4e43efa390f942f6eda7080131a8a76d54fcaeeced50e35805de8a5d9b968dfb"
+    },
+    {
+      "path": "scripts/native-script-storage.mjs",
+      "bytes": 7569,
+      "sha256": "d4ef97f97f06e91e01986c7515083e33c4583a0a6f6a7ef5f3d51b3e2871a2fa"
+    }
+  ],
+  "eventArt": {
+    "baselineAssets": 49,
+    "remainingAssets": 42,
+    "removed": {
+      "falling": 59,
+      "moai_head": 60,
+      "winding_halls": 60,
+      "sensory_stone": 60,
+      "tomb_red_mask": 60,
+      "mind_bloom": 60,
+      "mysterious_sphere": 60
+    },
+    "removedShapes": 419
+  },
+  "lua": {
+    "module": "abyss_theme",
+    "before": {
+      "bytes": 502950,
+      "sha256": "955eed82847f5e9d1eb105f0047c672468c0fea6da982a782c7757b5c183c88e"
+    },
+    "after": {
+      "bytes": 457371,
+      "sha256": "e240d22799f70c666079c9846b6f290e205a1b2afeecac3be77794c699a157db"
+    },
+    "packedBytesSaved": 45579
+  },
+  "admission": "Native entry sets competition-two-act; official transitions and room entry limit play to Acts 1 and 2, and the seven event constructors require Act 3.",
+  "caveat": "Source review found no direct Act 1/2 or menu use of the seven art definitions. The generic event renderer looks up the current event ID, and full-source Act 3 uses these rows. This experiment does not change or test the full-source route, native visual parity, device loading or official capacity."
+}
