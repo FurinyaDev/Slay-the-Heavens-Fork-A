@@ -263,10 +263,28 @@ Asset.imagePrefabId,Asset.containerPrefabId,Asset.selectionHalfImagePrefabId=41,
 Enum={ImageSource={StaticReference='static'},ImageType={Stretch=23},ImageFillHorizontalType={Right=1}}
 Color={FromRGBA=function(...)return {...}end}
 local methods={}
+local active=setmetatable({},{__mode='k'})
 function methods:SetVisible(value)self.visible=value end
-function methods:SetActive(value)self.active=value end
+function methods:SetActive(value)active[self]=value;F.setEngineActive(self,value)end
 function methods:SetImage(source,id)self.imageId=id end
 for _,name in ipairs({'SetAnchorMin','SetAnchorMax','SetPivot','SetSizeDelta','SetLocalScale','SetLocalRotation','SetAnchoredPosition','SetAsLastSibling','SetFillHorizontal','SetFillUnused'})do methods[name]=function()end end
+local rootMeta=getmetatable(root)
+local readRoot,writeRoot=rootMeta.__index,rootMeta.__newindex
+rootMeta.__index=function(control,key)
+ if key=='active' then return active[control]~=false end
+ return readRoot(control,key)
+end
+rootMeta.__newindex=function(control,key,value)
+ assert(key~='active','native active is read-only')
+ writeRoot(control,key,value)
+end
+local cloneMeta={__index=function(control,key)
+ if key=='active' then return active[control]~=false end
+ return methods[key]
+end,__newindex=function(control,key,value)
+ assert(key~='active','native active is read-only')
+ rawset(control,key,value)
+end}
 local function install(control)
  control.SetActive=methods.SetActive
  for _,c in pairs(control.children)do install(c)end
@@ -276,7 +294,7 @@ local created,destroyed,rejectCreation=0,0,false
 game={InstantiateClientUIControl=function(index,parent)
  assert(index==41 or index==73 or index==99)
  if rejectCreation then return nil end
- created=created+1;return setmetatable({parent=parent,alive=true},{__index=methods})
+ created=created+1;return setmetatable({parent=parent,alive=true},cloneMeta)
 end,DestroyClientUIControl=function()destroyed=destroyed+1 end}
 local portraits=require('abyss_traveler_portraits').new(root,nil,{selectionAvatar=true,battlePortrait=true})
 local covered={}
