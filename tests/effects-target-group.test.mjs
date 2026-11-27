@@ -20,15 +20,20 @@ test('target-group frozen full Git source authenticates and all unrelated bytes 
  assert.equal(before.gitBlob,'51114ce0adb61aded6c070e9cff72b205c34b4f0');
  assert.equal(before.path,file);assert.equal(hash(before.source),before.sha256);
  assert.equal(createHash('sha1').update(`blob ${Buffer.byteLength(before.source)}\0`).update(before.source).digest('hex'),before.gitBlob);
+ // #951 renamed these two production actions after the original comparison.
+ assert.equal(source.match(/\bcalculatedExchange\b/g)?.length,2);
+ assert.equal(source.match(/\bdaggerExpenditure\b/g)?.length,2);
+ const historicalNames=text=>text.replace(/\bcalculatedExchange\b/g,'calculatedGamble')
+  .replace(/\bdaggerExpenditure\b/g,'daggerSacrifice');
  const [a,b]=span(before.source),[c,d]=span(source);
- assert.equal(source.slice(0,c),before.source.slice(0,a));
+ assert.equal(historicalNames(source.slice(0,c)),before.source.slice(0,a));
  const queueItems=source.indexOf('-- Queue preparation can split ordinary effects.',d);
  const requiresQueue=source.indexOf('function M.requiresQueue(effects)',queueItems);
  assert(queueItems>d && requiresQueue>queueItems);
  const extension=luaparse.parse(source.slice(queueItems,requiresQueue),{luaVersion:'5.3'});
  assert.deepEqual(extension.body.map(n=>[n.type,n.identifier?.base?.name,n.identifier?.identifier?.name]),
   [['FunctionDeclaration','M','queueItems']]);
- assert.equal(source.slice(d,queueItems)+source.slice(requiresQueue),before.source.slice(b));
+ assert.equal(historicalNames(source.slice(d,queueItems)+source.slice(requiresQueue)),before.source.slice(b));
  const ast=luaparse.parse(source.slice(c,d),{luaVersion:'5.3'});
  assert.deepEqual(ast.body.map(n=>n.identifier.name),names);assert(ast.body.every(n=>n.isLocal));
 });
