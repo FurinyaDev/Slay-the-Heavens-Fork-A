@@ -4,6 +4,7 @@ import {readFileSync} from 'node:fs';
 import {gunzipSync} from 'node:zlib';
 import {restoreExactFixtureHunks} from './exact-fixture-hunks.mjs';
 import {exactSourceMatches} from './source-fingerprint.mjs';
+import {beforeReleaseClosureFixture} from './release-closure-fixture-source.mjs';
 
 function readPacket(name,digest,base,head){
  const bytes=readFileSync(new URL(`../fixtures/${name}.json.gz`,import.meta.url));
@@ -47,7 +48,7 @@ export function readCloseoutLuaVocabularyReceipt(path,digest,readCurrent){
  if(!row)return;
  const sourcePath=row.sourcePath??path;
  if(sourcePath!==path)assert.throws(()=>readCurrent(path,'utf8'),{code:'ENOENT'},'renamed closeout Lua receipt input reappeared: '+path);
- const source=readCurrent(sourcePath,'utf8');
+ const source=beforeReleaseClosureFixture(sourcePath,readCurrent(sourcePath,'utf8'));
  const continuation=row.continuation;
  const continued=continuation&&exactSourceMatches(source,continuation);
  const current={sha256:row.afterSha256,gitBlob:row.afterBlob};

@@ -3,6 +3,7 @@ import {createHash} from 'node:crypto';
 import {readFileSync} from 'node:fs';
 import {gunzipSync} from 'node:zlib';
 import {beforeUiEntranceWitness} from './ui-entrance-source.mjs';
+import {beforeReleaseClosureFixture} from './release-closure-fixture-source.mjs';
 
 const sha256=source=>createHash('sha256').update(source).digest('hex');
 const blob=source=>createHash('sha1').update(`blob ${Buffer.byteLength(source)}\0`).update(source).digest('hex');
@@ -57,6 +58,7 @@ const releaseFixtures=Object.freeze({
 });
 
 function fixtureMatches(path,source,after,{allowArchived=true}={}){
+ source=beforeReleaseClosureFixture(path,source);
  if(typeof source!=='string'||source.includes('\r\r\n'))return false;
  const normalized=source.replaceAll('\r\n','\n'),archived=normalized===after.source;
  if(allowArchived&&archived)return true;

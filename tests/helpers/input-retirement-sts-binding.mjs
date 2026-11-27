@@ -8,6 +8,7 @@ import {restoreExactFixtureHunks} from './exact-fixture-hunks.mjs';
 import {exactSourceMatches} from './source-fingerprint.mjs';
 import {beforeNativeFlowFixture} from './native-flow-fixture-source.mjs';
 import {beforeCurrentOfficialRuntimeFixture} from './sts-fade-ci-source.mjs';
+import {beforeReleaseClosureFixture} from './release-closure-fixture-source.mjs';
 
 const archive=readFileSync(new URL('./input-retirement-merged-sts-source.json.gz',import.meta.url));
 assert.equal(createHash('sha256').update(archive).digest('hex'),'0c8455ee5877bbb5c4c2fa9e8c2dfb5bfba9cb7e6c388bf1c67f149ac53ca960');
@@ -222,6 +223,7 @@ function beforeEnemyStatusFixture(path,source){
 }
 
 export function beforeStsRuntimeFixtureSuccessor(path,source){
+ source=beforeReleaseClosureFixture(path,source);
  if(path===enemyStatusFixture)return beforeEnemyStatusFixture(path,source);
  const proof=runtimeFixtureSuccessors.find(row=>row.path===path);
  const original=proof?restoreExactFixtureHunks(proof,path,source):source;

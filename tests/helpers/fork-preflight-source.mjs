@@ -1,4 +1,5 @@
 import {beforeKnownMasterBackflowSource,beforeMasterBackflowSource,productionReadingBackflowOwns} from './master-backflow-source.mjs';
+import {beforeReleaseClosureFixture} from './release-closure-fixture-source.mjs';
 import {beforePosixDeadlineWorkflow,beforeWindowsDeadlineWorkflow} from './auto-merge-workflow.mjs';
 import {beforeHotfixPublicationGate} from './release-ci-workflow.mjs';
 import {assertInputRetirementLuaCurrent,beforeInputRetirementTestInventory,readRetiredInputLuaReceipt} from './input-retirement-inventory.mjs';
@@ -732,7 +733,7 @@ function exactSourceBinding(source,binding){
  return hash(normalized)===binding[0]&&gitBlob(normalized)===binding[1];
 }
 function exactCurrentReleaseLuaFixture(path,source){
- return exactSourceBinding(source,currentReleaseLuaFixtures[path]);
+ return exactSourceBinding(beforeReleaseClosureFixture(path,source),currentReleaseLuaFixtures[path]);
 }
 function assertCurrentReleaseLuaFixtureSources(read){
  for(const path of Object.keys(currentReleaseLuaFixtures))

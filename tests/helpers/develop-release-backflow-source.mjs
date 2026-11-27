@@ -536,6 +536,7 @@ function beforeSessionRelic(path,source,options){
 }
 export function beforeDevelopBackflow(path,source,options){
  source=beforeReleaseEntranceOwner(path,source);
+ if(path==='src/lua/abyss_potion_discard_ui.lua')source=beforeKnownMasterBackflowSource(path,source);
  source=beforeLibraryReadPrompt(path,source);
  source=beforeBattleInputHistory(path,beforeChapterEntranceOwner(path,beforeArchitectureOwner(path,source)));
  if(path===battleUiPath)source=beforeLinkedBackflow(path,source);

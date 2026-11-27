@@ -6,6 +6,8 @@ import {assertCurrentCardReadingScope,beforeCardReadingScope} from './chapter-ba
 import {restoreExactFixtureHunks} from './exact-fixture-hunks.mjs';
 import {beforeRunHudDeckLabel,beforeRunHudMapIcon} from './run-hud-successors.mjs';
 import {exactSourceMatches} from './source-fingerprint.mjs';
+import {readReleaseEntrancePredecessor} from './release-entrance-owner-source.mjs';
+import {beforeReleaseClosureFixture} from './release-closure-fixture-source.mjs';
 
 const bytes=readFileSync(new URL('../fixtures/closeout-current-backflow-source.json.gz',import.meta.url));
 assert.equal(createHash('sha256').update(bytes).digest('hex'),
@@ -65,11 +67,12 @@ function readExactOwner(path,binding,read,project){
   assert.throws(()=>read(path,'utf8'),{code:'ENOENT'},'retired closeout owner reappeared: '+path);
   return;
  }
- const source=read(path,'utf8');
+ const raw=read(path,'utf8');
+ const source=beforeReleaseClosureFixture(path,readReleaseEntrancePredecessor(path,raw,read));
  assert(exactSourceMatches(project?project(source):source,binding),'fresh current closeout owner: '+path);
- const lf=source.replaceAll('\r\n','\n');
- assert(source===lf||source===lf.replaceAll('\n','\r\n'),'mixed closeout source line endings: '+path);
- return source;
+ const lf=raw.replaceAll('\r\n','\n');
+ assert(raw===lf||raw===lf.replaceAll('\n','\r\n'),'mixed closeout source line endings: '+path);
+ return raw;
 }
 
 function restoreFixtureSuccessor(path,row,source){
@@ -126,13 +129,14 @@ export function beforeCloseoutRunHudFixture(path,source){
 
 function readCloseoutFixture(path,row,read){
  const fixture=read(path,'utf8');
+ const reviewedFixture=beforeReleaseClosureFixture(path,readReleaseEntrancePredecessor(path,fixture,read));
  const successorFixture=row.successor;
  const predecessorBinding={sha256:row.afterSha256,gitBlob:row.afterBlob};
- const catalogue=path===tooling.path&&exactSourceMatches(fixture,catalogueToolingBinding);
+ const catalogue=path===tooling.path&&exactSourceMatches(reviewedFixture,catalogueToolingBinding);
  // Restore the reviewed predecessor before reading the original receipt.
  const project=path===battleDetailContent?source=>beforeExactFixture(path,splitTooltipFixture,source)
   :path===reviewedDeckBuild.path?beforeRunHudDeckLabel:source=>beforeRunHudMapIcon(path,source);
- const candidate=catalogue?beforeExactFixture(path,toolingCatalogue,fixture):project(fixture);
+ const candidate=catalogue?beforeExactFixture(path,toolingCatalogue,reviewedFixture):project(reviewedFixture);
  const updated=successorFixture!==undefined&&exactSourceMatches(candidate,successorFixture);
  const binding=catalogue?catalogueToolingBinding:updated?successorFixture:predecessorBinding;
  const source=readExactOwner(path,binding,read,project);

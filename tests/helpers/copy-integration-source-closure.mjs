@@ -686,8 +686,8 @@ const reviewedCopySources=Object.freeze({
 const releaseReplayReaders=Object.freeze({
  "tests/helpers/master-backflow-source.mjs": {
   "current": {
-   "sha256": "8e5c7d47e409472f64980185e99b23b86eae2db96d1e066358356c139f7770de",
-   "gitBlob": "49b8c105cb0d017e26e02037ab5918721746b8c0"
+   "sha256": "308c6ef6ac8987b9becc4ead9f3a1efaa2c3c20ea8a697bdf26f6233fa71b8ac",
+   "gitBlob": "c0558789e0465672ef86866b3ac1f4a4708f6412"
   },
   "previous": {
    "sha256": "c03fb1b5bf312b8834aeef53204030ea8544622761278b3ae626cdd1b8d842d5",
@@ -697,17 +697,17 @@ const releaseReplayReaders=Object.freeze({
    {
     "at": 4,
     "before": "import { exactSourceMatches } from './source-fingerprint.mjs';\nimport { restoreExactFixtureHunks } from './exact-fixture-hunks.mjs';\n\nconst archive = readFileSync(new URL('../fixtures/master-backflow-predecessors.json.gz', import.meta.url));",
-    "after": "import { exactSourceMatches } from './source-fingerprint.mjs';\nimport { restoreExactFixtureHunks } from './exact-fixture-hunks.mjs';\nimport { beforeReleaseEntranceOwner } from './release-entrance-owner-source.mjs';\n\nconst archive = readFileSync(new URL('../fixtures/master-backflow-predecessors.json.gz', import.meta.url));"
+    "after": "import { exactSourceMatches } from './source-fingerprint.mjs';\nimport { restoreExactFixtureHunks } from './exact-fixture-hunks.mjs';\nimport { beforeReleaseEntranceOwner } from './release-entrance-owner-source.mjs';\nimport { beforeReleaseClosureFixture } from './release-closure-fixture-source.mjs';\n\nconst archive = readFileSync(new URL('../fixtures/master-backflow-predecessors.json.gz', import.meta.url));"
    },
    {
-    "at": 147,
+    "at": 148,
     "before": "\nexport function beforeMasterBackflowSource(path, source) {\n  if (!Object.hasOwn(files, path)) return source;\n  const { before, after } = files[path];",
-    "after": "\nexport function beforeMasterBackflowSource(path, source) {\n  source = beforeReleaseEntranceOwner(path, source);\n  if (!Object.hasOwn(files, path)) return source;\n  const { before, after } = files[path];"
+    "after": "\nexport function beforeMasterBackflowSource(path, source) {\n  source = beforeReleaseClosureFixture(path, beforeReleaseEntranceOwner(path, source));\n  if (!Object.hasOwn(files, path)) return source;\n  const { before, after } = files[path];"
    },
    {
-    "at": 165,
+    "at": 166,
     "before": "\nexport function beforeKnownMasterBackflowSource(path, source) {\n  const scope = beforeProductionReadingBackflow(path, source);\n  if (scope !== source) return scope;",
-    "after": "\nexport function beforeKnownMasterBackflowSource(path, source) {\n  source = beforeReleaseEntranceOwner(path, source);\n  const scope = beforeProductionReadingBackflow(path, source);\n  if (scope !== source) return scope;"
+    "after": "\nexport function beforeKnownMasterBackflowSource(path, source) {\n  source = beforeReleaseClosureFixture(path, beforeReleaseEntranceOwner(path, source));\n  const scope = beforeProductionReadingBackflow(path, source);\n  if (scope !== source) return scope;"
    }
   ]
  },
@@ -767,8 +767,8 @@ const releaseReplayReaders=Object.freeze({
  },
  "tests/helpers/develop-release-backflow-source.mjs": {
   "current": {
-   "sha256": "b82ba33ba36af9a7991d0dd86bdbac77c0f22fbd8e1a6d1c6ff848692d2071bd",
-   "gitBlob": "2c2beb2e62f10cd0df0df709636df8720cac5a64"
+   "sha256": "53304733269a0314ca3e90832bb17b8dee23cc43e081ddbe5c4266da15d50609",
+   "gitBlob": "fa82903bc4af3eaa14fee5945484733083f11101"
   },
   "previous": {
    "sha256": "7989de2a06f877bf2dc2d0dcb991eef3a0cceda234adcd8724258b2ead1c26c2",
@@ -793,7 +793,78 @@ const releaseReplayReaders=Object.freeze({
    {
     "at": 535,
     "before": "}\nexport function beforeDevelopBackflow(path,source,options){\n source=beforeLibraryReadPrompt(path,source);\n source=beforeBattleInputHistory(path,beforeChapterEntranceOwner(path,beforeArchitectureOwner(path,source)));",
-    "after": "}\nexport function beforeDevelopBackflow(path,source,options){\n source=beforeReleaseEntranceOwner(path,source);\n source=beforeLibraryReadPrompt(path,source);\n source=beforeBattleInputHistory(path,beforeChapterEntranceOwner(path,beforeArchitectureOwner(path,source)));"
+    "after": "}\nexport function beforeDevelopBackflow(path,source,options){\n source=beforeReleaseEntranceOwner(path,source);\n if(path==='src/lua/abyss_potion_discard_ui.lua')source=beforeKnownMasterBackflowSource(path,source);\n source=beforeLibraryReadPrompt(path,source);\n source=beforeBattleInputHistory(path,beforeChapterEntranceOwner(path,beforeArchitectureOwner(path,source)));"
+   }
+  ]
+ },
+ "tests/helpers/native-flow-fixture-source.mjs": {
+  "current": {
+   "sha256": "e525a238de6e83745a6deb6333238c81c7ec922fcb47b3253bb7527134c4e825",
+   "gitBlob": "45e63718e736173ef82ab3a3db3789734fcf60f0"
+  },
+  "previous": {
+   "sha256": "1ea4f6524ec42e6b9f907988f6e716b9560bff6a33a1a35117a050836f1723f1",
+   "gitBlob": "1a3c57078fa15b56609aa8fb4e1a73848e1d472b"
+  },
+  "hunks": [
+   {
+    "at": 4,
+    "before": "import {exactSourceMatches} from './source-fingerprint.mjs';\nimport {beforeUiEntranceWitness} from './ui-entrance-source.mjs';\n\nconst archive=readFileSync(new URL('./native-flow-fixture-source.json.gz',import.meta.url));",
+    "after": "import {exactSourceMatches} from './source-fingerprint.mjs';\nimport {beforeUiEntranceWitness} from './ui-entrance-source.mjs';\nimport {beforeReleaseClosureFixture} from './release-closure-fixture-source.mjs';\n\nconst archive=readFileSync(new URL('./native-flow-fixture-source.json.gz',import.meta.url));"
+   },
+   {
+    "at": 49,
+    "before": "export function beforeNativeFlowFixture(path,source,{requireCurrent=false}={}){\n if(!Object.hasOwn(files,path))return source;\n source=beforeUiEntranceWitness(path,source);\n const {before,after}=files[path];\n const current=exactSourceMatches(source,after)||Object.hasOwn(releaseFixtures,path)&&exactSourceMatches(source,releaseFixtures[path]);",
+    "after": "export function beforeNativeFlowFixture(path,source,{requireCurrent=false}={}){\n if(!Object.hasOwn(files,path))return source;\n source=beforeUiEntranceWitness(path,beforeReleaseClosureFixture(path,source));\n const {before,after}=files[path];\n const current=exactSourceMatches(source,after)||Object.hasOwn(releaseFixtures,path)&&exactSourceMatches(source,releaseFixtures[path]);"
+   },
+   {
+    "at": 59,
+    "before": "export function assertNativeFlowFixturesCurrent(read){\n for(const [path,{after}] of Object.entries(files)){\n  const source=read(path,'utf8');\n  assert(exactSourceMatches(source,releaseFixtures[path]??after),'fresh complete native flow fixture: '+path);\n }",
+    "after": "export function assertNativeFlowFixturesCurrent(read){\n for(const [path,{after}] of Object.entries(files)){\n  const source=beforeReleaseClosureFixture(path,read(path,'utf8'));\n  assert(exactSourceMatches(source,releaseFixtures[path]??after),'fresh complete native flow fixture: '+path);\n }"
+   }
+  ]
+ },
+ "tests/helpers/input-retirement-sts-binding.mjs": {
+  "current": {
+   "sha256": "07c32745001b9cfc3cdaabfb61dae9e91fe399b4d7d4f3ac1bb033f251356103",
+   "gitBlob": "39de96157ea657ae964d5dc73f857152bc6ef8b6"
+  },
+  "previous": {
+   "sha256": "47a212bae11910c09e62b59cf291552e54954d5e710251eb6b263c3289461025",
+   "gitBlob": "9e65f5899089cbe95c937eecd8aa0a72e0f0c7c1"
+  },
+  "hunks": [
+   {
+    "at": 8,
+    "before": "import {beforeNativeFlowFixture} from './native-flow-fixture-source.mjs';\nimport {beforeCurrentOfficialRuntimeFixture} from './sts-fade-ci-source.mjs';\n\nconst archive=readFileSync(new URL('./input-retirement-merged-sts-source.json.gz',import.meta.url));",
+    "after": "import {beforeNativeFlowFixture} from './native-flow-fixture-source.mjs';\nimport {beforeCurrentOfficialRuntimeFixture} from './sts-fade-ci-source.mjs';\nimport {beforeReleaseClosureFixture} from './release-closure-fixture-source.mjs';\n\nconst archive=readFileSync(new URL('./input-retirement-merged-sts-source.json.gz',import.meta.url));"
+   },
+   {
+    "at": 223,
+    "before": "\nexport function beforeStsRuntimeFixtureSuccessor(path,source){\n if(path===enemyStatusFixture)return beforeEnemyStatusFixture(path,source);\n const proof=runtimeFixtureSuccessors.find(row=>row.path===path);",
+    "after": "\nexport function beforeStsRuntimeFixtureSuccessor(path,source){\n source=beforeReleaseClosureFixture(path,source);\n if(path===enemyStatusFixture)return beforeEnemyStatusFixture(path,source);\n const proof=runtimeFixtureSuccessors.find(row=>row.path===path);"
+   }
+  ]
+ },
+ "tests/helpers/native-fixture-replay-source.mjs": {
+  "current": {
+   "sha256": "4e48534c724b53f5b83d2709bc40308a94c3b52f885df26294ce690f581845e4",
+   "gitBlob": "4d34f00777392e492c5a1ea4047adc79cfb81f0e"
+  },
+  "previous": {
+   "sha256": "7dbd2ded60c5b155b958a5e6e2ff44537b2b62c15e113642aaf8f6194771832d",
+   "gitBlob": "f0a8a836812faa3ed49b274f55315b6cf5d70fb0"
+  },
+  "hunks": [
+   {
+    "at": 3,
+    "before": "import {gunzipSync} from 'node:zlib';\nimport {beforeUiEntranceWitness} from './ui-entrance-source.mjs';\n\nconst sha256=source=>createHash('sha256').update(source).digest('hex');",
+    "after": "import {gunzipSync} from 'node:zlib';\nimport {beforeUiEntranceWitness} from './ui-entrance-source.mjs';\nimport {beforeReleaseClosureFixture} from './release-closure-fixture-source.mjs';\n\nconst sha256=source=>createHash('sha256').update(source).digest('hex');"
+   },
+   {
+    "at": 58,
+    "before": "\nfunction fixtureMatches(path,source,after,{allowArchived=true}={}){\n if(typeof source!=='string'||source.includes('\\r\\r\\n'))return false;\n const normalized=source.replaceAll('\\r\\n','\\n'),archived=normalized===after.source;",
+    "after": "\nfunction fixtureMatches(path,source,after,{allowArchived=true}={}){\n source=beforeReleaseClosureFixture(path,source);\n if(typeof source!=='string'||source.includes('\\r\\r\\n'))return false;\n const normalized=source.replaceAll('\\r\\n','\\n'),archived=normalized===after.source;"
    }
   ]
  }
