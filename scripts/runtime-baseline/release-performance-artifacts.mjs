@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {execFileSync} from 'node:child_process';
 import {createHash} from 'node:crypto';
 import {readVerifiedArtifactZip} from '../verified-artifact-zip.mjs';
+import {frozenBuildCustody, releaseBuildRequest} from '../gil-candidate-preflight.mjs';
 import {legacyGilArchive} from './published-baseline.mjs';
 
 const repository = 'FurinyaWorks/Slay-the-Heavens';
@@ -89,6 +90,7 @@ function verifyGilFiles(files, locator, target) {
     /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(manifest.parameters.workKey) &&
     !['alpha-test', 'offline-performance'].includes(manifest.parameters.workKey),
   'Unified GIL is missing approved published-base production custody');
+  const frozen = locator.custody === frozenBuildCustody;
   assert(receipt.receiptSchema === 'github-actions-gil-v1' && receipt.sourceCommit === target.head &&
     receipt.sourceBranch === target.branch && receipt.sourceDirty === false && receipt.liveWriteEnabled === false &&
     receipt.release?.version === version && receipt.release.workKey && receipt.release.workKey === manifest.parameters.workKey &&
@@ -96,14 +98,29 @@ function verifyGilFiles(files, locator, target) {
     /^[a-f0-9-]{36}$/.test(receipt.buildId ?? '') && receipt.buildId === manifest.buildId &&
     digest.test(receipt.payloadDigest ?? '') && receipt.payloadDigest === manifest.payloadDigest &&
     receipt.sha256 === gilSha256 && receipt.bgmGraphReadback?.status === 'pass' && validId(receipt.bgmGraphReadback.id) &&
-    receipt.staticCheck === 'pass' && receipt.moduleReadback === 'pass' &&
-    validId(manifest.sourceChecks?.qualityRun) && validId(manifest.sourceChecks?.qualityAttempt) &&
-    validId(manifest.sourceChecks?.qualityCheckoutArtifact) && validId(manifest.sourceChecks?.licensesRun),
-    'Production GIL receipt is missing approved build, audio or CI identity');
+    receipt.staticCheck === 'pass' && receipt.moduleReadback === 'pass',
+    'Production GIL receipt is missing approved build or audio identity');
+  let evidence;
+  if (frozen) {
+    const {workKey} = manifest.parameters;
+    const expected = releaseBuildRequest(workKey, target.head, {branch:target.branch, version}, manifest.checkedFiles);
+    const sections = manifest.baseProvenance?.rebuiltSections;
+    assert(validId(manifest.candidate.bytes) && manifest.requestId === expected.id &&
+      manifest.toolCommit === expected.toolCommit && manifest.encoderSha256 === expected.encoderSha256 &&
+      receipt.toolchainIdentity?.sourceSha256 === expected.encoderSha256 && manifest.offlineSmoke === 'pass' &&
+      !Object.hasOwn(manifest, 'sourceChecks') && Array.isArray(sections) && sections.every(id => [9, 10, 50].includes(id)),
+      'Frozen GIL has a mismatched build request, base, toolchain or offline smoke result');
+    assert.deepEqual(manifest.baseProvenance, {...legacyGilArchive, rebuiltSections:sections},
+      'Frozen GIL does not record the pinned published base');
+    evidence = {schemaVersion:2, requestId:manifest.requestId, gilSizeBytes:manifest.candidate.bytes};
+  } else {
+    const {qualityRun, qualityAttempt, qualityCheckoutArtifact, licensesRun} = manifest.sourceChecks ?? {};
+    assert([qualityRun, qualityAttempt, qualityCheckoutArtifact, licensesRun].every(validId),
+      'Historical production GIL receipt is missing approved CI identity');
+    evidence = {qualityRun, qualityAttempt, qualityCheckoutArtifact};
+  }
   return {receipt, gilBytes:files['candidate.gil'], binding:{...locator, gilSha256, buildId:receipt.buildId, payloadDigest:receipt.payloadDigest,
-    receiptSha256:sha256(files['candidate.json']), manifestSha256:sha256(files['manifest.json']),
-    qualityRun:manifest.sourceChecks.qualityRun, qualityAttempt:manifest.sourceChecks.qualityAttempt,
-    qualityCheckoutArtifact:manifest.sourceChecks.qualityCheckoutArtifact}};
+    receiptSha256:sha256(files['candidate.json']), manifestSha256:sha256(files['manifest.json']), ...evidence}};
 }
 
 export function gilArtifactExpectation(target) {
@@ -115,6 +132,7 @@ export function gilArtifactExpectation(target) {
       title:'GIL candidate / ' + target.branch + ' / ' + target.head},
     {...unified, branch:target.branch, head:target.head, events:['push', 'workflow_dispatch']},
     {...unified, branch:'develop', events:['workflow_run']},
+    {...unified, branch:'develop', events:['workflow_dispatch'], custody:frozenBuildCustody},
   ];
 }
 

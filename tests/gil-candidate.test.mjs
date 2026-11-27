@@ -22,12 +22,13 @@ const branch = 'hotfix/v2.1.1';
 const version = 'v2.1.1';
 const hotfix = candidateTarget(branch, sourceSha);
 
-test('only the unified workflow builds, audits and publishes a gated release download', () => {
+test('only the unified workflow builds, audits and archives the frozen candidate', () => {
   const path = new URL('../.github/workflows/gil-build.yml', import.meta.url);
   const workflow = readFileSync(path, 'utf8').replaceAll('\r\n', '\n');
   assert.equal(existsSync(new URL('../.github/workflows/gil-candidate.yml', import.meta.url)), false);
-  assert.match(workflow, /workflows: \[Quality, Licenses\]/);
-  assert.match(workflow, /github\.event\.workflow_run\.event == 'workflow_dispatch'/);
+  assert.doesNotMatch(workflow, /workflow_run:|Quality|Licenses|QUALITY_|LICENSES_/);
+  assert.match(workflow, /workflow_dispatch:\n    inputs:\n      source_branch:[\s\S]+      source_sha:/);
+  assert.match(workflow, /^    branches: \['test\/gil-build\/\*\*', 'ci\/full\/gil-build\/\*\*'\]$/m);
   assert.match(workflow, /GIL_PRODUCTION_WORK_KEY: \$\{\{ vars\.GIL_PRODUCTION_WORK_KEY \}\}/);
   assert.match(workflow, /ref: \$\{\{ env\.SOURCE_SHA \}\}/);
   assert.doesNotMatch(workflow, /release:\n|secrets\.|environment:|contents: write|attach-release:/);
@@ -35,17 +36,18 @@ test('only the unified workflow builds, audits and publishes a gated release dow
   const sparse = sourceCheckout.match(/^          sparse-checkout: \|\n((?: {12}\S+\n)+)/m)?.[1];
   assert.deepEqual(sparse?.trim().split('\n').map(path => path.trim()), [
     '.github/workflows', 'scripts', 'src/lua', 'data', 'config', 'tools', 'art/characters/traveler-geo/portraits',
-    'art/lowpoly-select', 'art/performance', 'experiments/lumine-native-fit/fit-hybrid-final',
+    'art/lowpoly-select', 'art/performance', 'experiments/lumine-native-fit/fit-hybrid-final', 'tests/lua/support',
   ]);
   const audit = workflow.slice(workflow.indexOf('- name: Audit the final GIL'), workflow.indexOf('- uses: actions/upload-artifact'));
   for (const [name, expression] of Object.entries({
     WORK_KEY: 'steps.candidate.outputs.work_key', BASE_SHA256: 'steps.candidate.outputs.base_sha256',
     REQUEST_ID: 'steps.candidate.outputs.request_id', RELEASE_VERSION: 'steps.candidate.outputs.release_version',
-    GIL_RELEASE_ARTIFACT: 'steps.candidate.outputs.archive', QUALITY_RUN: 'steps.candidate.outputs.quality_run',
-    QUALITY_ATTEMPT: 'steps.candidate.outputs.quality_attempt', QUALITY_CHECKOUT_ARTIFACT: 'steps.candidate.outputs.quality_checkout_artifact',
-    LICENSES_RUN: 'steps.candidate.outputs.licenses_run',
+    GIL_RELEASE_ARTIFACT: 'steps.candidate.outputs.archive', CHECKED_FILES: 'steps.candidate.outputs.checked_files',
   })) assert(audit.includes(`          ${name}: ${'${{'} ${expression} }}\n`), `audit requires ${name}`);
   assert.match(workflow, /upload-artifact@[a-f0-9]{40}[\s\S]+download-artifact@[a-f0-9]{40}[\s\S]+gil-candidate\.mjs readback/);
+  const producer = readFileSync(new URL('../scripts/gil-candidate.mjs', import.meta.url), 'utf8');
+  assert.doesNotMatch(workflow + producer, /artifact-url|ARTIFACT_URL|Download the verified GIL/);
+  assert.match(producer, /Read-back GIL artifact ID/);
 });
 
 function formalApi({ comparison = { status: 'ahead', merge_base_commit: { sha: sourceSha } },
@@ -186,35 +188,31 @@ test('diagnostic refs only upload a manifest and do not trigger tag rebuilds', (
   assert.match(workflow, /path: source\/build\/gil-artifact\/manifest\.json\n/);
   assert.match(workflow, /outputs\.build == 'true' && steps\.candidate\.outputs\.archive != 'true'/);
   assert.match(workflow, /outputs\.build == 'true' && steps\.candidate\.outputs\.archive == 'true'/);
-  assert.match(workflow, /group: gil-build-.*head_branch.*head_sha/);
+  assert.match(workflow, /group: gil-build-.*inputs\.source_branch.*inputs\.source_sha/);
 });
 
-test('unified build admits exact primary release events and never a PR, foreign run or tag', () => {
-  const release = { repoId: String(repo.id), ref: 'refs/heads/' + branch, controllerSha: sourceSha,
-    source: sourceSha, branch, event: 'workflow_dispatch' };
+test('only explicit primary develop dispatch can deliver an exact frozen source', () => {
+  const release = { repoId: String(repo.id), ref: 'refs/heads/develop', controllerSha: policy.controllerSha,
+    source: sourceSha, branch, event: 'workflow_dispatch', inputs: {source_branch:branch, source_sha:sourceSha} };
   assert.deepEqual(releaseBuildTarget(release), hotfix);
-  assert.deepEqual(releaseBuildTarget({...release, event:'push'}), hotfix);
-  for (const changes of [{event:'release'}, {ref:'refs/tags/engine-v2.1.1'}, {repoId:'3'}, {controllerSha:'3'.repeat(40)}]) {
-    assert.throws(() => releaseBuildTarget({...release, ...changes}), /formal GIL|Release GIL input/);
-  }
-  const upstream = {repository:repo, head_repository:repo, event:'workflow_dispatch', status:'completed', conclusion:'success',
-    path:'.github/workflows/quality.yml', head_branch:branch, head_sha:sourceSha};
-  const automatic = {...release, event:'workflow_run', ref:'refs/heads/develop', controllerSha:policy.controllerSha, upstream};
-  assert.deepEqual(releaseBuildTarget(automatic), hotfix);
-  assert.deepEqual(releaseBuildTarget({...automatic, upstream:{...upstream, path:'.github/workflows/licenses.yml'}}), hotfix);
-  for (const changes of [{event:'pull_request'}, {conclusion:'failure'}, {head_repository:{id:3}}, {head_sha:'3'.repeat(40)},
-    {head_branch:'develop'}, {path:'.github/workflows/arbitrary.yml'}]) {
-    assert.throws(() => releaseBuildTarget({...automatic, upstream:{...upstream, ...changes}}), /successful primary/);
+  for (const changes of [
+    {event:'push'}, {event:'workflow_run'}, {event:'release'}, {ref:'refs/heads/' + branch},
+    {ref:'refs/tags/engine-v2.1.1'}, {repoId:'3'}, {controllerSha:'bad'}, {inputs:{source_branch:branch}},
+    {source:'bad', inputs:{source_branch:branch, source_sha:'bad'}},
+    {branch:'develop', inputs:{source_branch:'develop', source_sha:sourceSha}},
+  ]) assert.throws(() => releaseBuildTarget({...release, ...changes}), /formal GIL|40-character|frozen release/);
+  for (const ref of ['develop', 'master', 'test/gil-build/probe']) {
+    assert.equal(releaseBuildTarget({...release, ref:'refs/heads/' + ref, branch:ref, source:release.controllerSha, inputs:{}}), undefined);
   }
 });
 
-test('equivalent triggers share one artifact request but changed Full, license or build policy gets a new candidate', () => {
-  const checks = {quality:7, qualityAttempt:1, qualityCheckoutArtifact:8, licenses:9};
-  const request = (key=workKey, evidence=checks, files=policy.checkedFiles) => releaseBuildRequest(key, sourceSha, hotfix, evidence, files);
+test('release build identity contains only frozen source, production inputs and build policy', () => {
+  const request = (key=workKey, files=policy.checkedFiles) => releaseBuildRequest(key, sourceSha, hotfix, files);
   assert.equal(request().baseSha256, legacyGilArchive.sha256);
-  assert.equal(request().custody, 'gil-build-v1');
+  assert.equal(request().custody, 'gil-build-v2');
   assert.equal(request().id, request().id);
-  const defaultRequest = releaseBuildRequest(undefined, sourceSha, hotfix, checks, policy.checkedFiles);
+  assert.equal(Object.hasOwn(request(), 'checks'), false);
+  const defaultRequest = releaseBuildRequest(undefined, sourceSha, hotfix, policy.checkedFiles);
   assert.equal(defaultRequest.configuration.workKey, 'offline-candidate');
   assert.equal(defaultRequest.id, request('').id);
   assert.equal(defaultRequest.id, request('offline-candidate').id);
@@ -222,10 +220,9 @@ test('equivalent triggers share one artifact request but changed Full, license o
   for (const key of ['alpha-test', 'offline-performance', 'bad label', 99]) {
     assert.throws(() => request(key), /GIL_PRODUCTION_WORK_KEY/);
   }
-  assert.throws(() => request(workKey, {...checks, licenses:0}), /exact Full/);
-  assert.notEqual(request().id, request(workKey, {...checks, qualityAttempt:2}).id);
-  assert.notEqual(request().id, request(workKey, {...checks, licenses:10}).id);
-  assert.notEqual(request().id, request(workKey, checks, ['3'.repeat(64)]).id);
+  assert.throws(() => request(workKey, []), /build policy identities/);
+  assert.notEqual(request().id, request(workKey, ['3'.repeat(64)]).id);
+  assert.notEqual(request().id, releaseBuildRequest(workKey, '8'.repeat(40), hotfix, policy.checkedFiles).id);
 });
 
 test('unattended build selects the pinned public source and a local metadata key', () => {

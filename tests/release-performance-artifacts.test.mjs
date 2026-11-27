@@ -7,6 +7,7 @@ import {refinedReleaseOfficialAssetsProfile, refinedReleaseOfficialAssetFlags} f
 import {loadArtifact, sha256, verifyGilArtifact} from '../scripts/runtime-baseline/release-performance-artifacts.mjs';
 import {legacyGilArchive} from '../scripts/runtime-baseline/published-baseline.mjs';
 import {findReleaseArtifact} from '../scripts/gil-candidate.mjs';
+import {releaseBuildRequest} from '../scripts/gil-candidate-preflight.mjs';
 
 const id = 1429751262;
 const head = 'a'.repeat(40);
@@ -200,23 +201,71 @@ test('unified GIL rejects release rebuilds, untrusted branch continuation, expir
   await assert.rejects(verifyGilArtifact(skipped.request, 1, target, skipped.load), /verified publication step/);
 });
 
-test('equivalent builds reuse the exact verified artifact; stale, expired and partial requests cannot replace it', async () => {
-  const request = {id:requestId, branch:target.branch, sourceSha:head, version:'v' + target.version, custody:'gil-build-v1'};
-  const checks = {quality:10, qualityAttempt:2, qualityCheckoutArtifact:90, licenses:11};
-  const f = unifiedFixture('workflow_dispatch');
+function frozenFixture(manifestChanges = {}) {
+  const f = unifiedFixture('workflow_run');
+  const manifest = JSON.parse(f.files['manifest.json']);
+  const request = releaseBuildRequest(manifest.parameters.workKey, head, {branch:target.branch, version:manifest.version}, ['f'.repeat(64)]);
+  delete manifest.sourceChecks;
+  Object.assign(f.run, {event:'workflow_dispatch'});
+  Object.assign(f.attempt, f.run);
+  Object.assign(manifest, {requestId:request.id, custody:request.custody, checkedFiles:request.checkedFiles,
+    toolCommit:request.toolCommit, encoderSha256:request.encoderSha256, offlineSmoke:'pass',
+    baseProvenance:{...legacyGilArchive, rebuiltSections:[9, 10, 50]}, ...manifestChanges});
+  const receipt = JSON.parse(f.files['candidate.json']);
+  receipt.toolchainIdentity = {sourceSha256:request.encoderSha256};
+  f.files['candidate.json'] = Buffer.from(JSON.stringify(receipt));
+  f.artifact.name = 'gil-candidate-' + manifest.version + '-' + head + '-' + manifest.requestId;
+  f.files['manifest.json'] = Buffer.from(JSON.stringify(manifest));
+  f.files.SHA256SUMS = Buffer.from(['candidate.gil', 'candidate.json', 'manifest.json']
+    .map(name => sha256(f.files[name]) + '  ' + name + '\n').join(''));
+  return {...f, build:request};
+}
+
+test('frozen hosted build is verified with no Quality or Licenses lookup or binding', async () => {
+  const f = frozenFixture();
+  const request = async path => {
+    assert.doesNotMatch(path, /quality|licenses/i);
+    return f.request(path);
+  };
+  const {binding} = await verifyGilArtifact(request, 1, target, f.load);
+  assert.equal(binding.schemaVersion, 2);
+  assert.equal(binding.custody, 'gil-build-v2');
+  assert.equal(binding.requestId, f.build.id);
+  assert.equal(binding.gilSizeBytes, f.files['candidate.gil'].length);
+  assert.equal(binding.gilSha256, sha256(f.files['candidate.gil']));
+  for (const field of ['qualityRun', 'qualityAttempt', 'qualityCheckoutArtifact', 'licensesRun']) {
+    assert.equal(Object.hasOwn(binding, field), false);
+  }
+});
+
+test('frozen hosted build refuses forged configuration, source, CI association and failed offline smoke', async () => {
+  for (const changes of [
+    {custody:'gil-build-v1'}, {sourceCommit:'f'.repeat(40)}, {baseSha256:'a'.repeat(64)},
+    {encoderSha256:'f'.repeat(64)}, {toolCommit:'e'.repeat(40)}, {requestId:'e'.repeat(64)}, {checkedFiles:['e'.repeat(64)]},
+    {sourceChecks:{qualityRun:1}}, {offlineSmoke:'fail'}, {baseProvenance:{...legacyGilArchive, rebuiltSections:[1]}},
+  ]) {
+    const f = frozenFixture(changes);
+    await assert.rejects(verifyGilArtifact(f.request, 1, target, f.load));
+  }
+  const f = frozenFixture();
+  f.run.event = 'workflow_run';
+  await assert.rejects(verifyGilArtifact(f.request, 1, target, f.load));
+});
+
+test('equivalent builds reuse the exact verified artifact; expired and partial requests cannot replace it', async () => {
+  const f = frozenFixture();
   const lookup = artifacts => async path => path.startsWith('actions/artifacts?name=')
     ? {artifacts, total_count:artifacts.length} : f.run;
   const verify = async (artifactId, actual) => {
     assert.deepEqual(actual, target);
     return verifyGilArtifact(f.request, artifactId, target, f.load);
   };
-  const binding = await findReleaseArtifact(request, checks, '4', lookup([f.artifact]), verify);
+  const binding = await findReleaseArtifact(f.build, '4', lookup([f.artifact]), verify);
   assert.equal(binding.id, f.artifact.id);
   assert.equal(binding.gilSha256, sha256(f.files['candidate.gil']));
-  await assert.rejects(findReleaseArtifact(request, {...checks, qualityAttempt:3}, '4', lookup([f.artifact]), verify), /current frozen Full/);
-  await assert.rejects(findReleaseArtifact(request, checks, '4', lookup([{...f.artifact, expired:true}]), verify), /expired/);
-  await assert.rejects(findReleaseArtifact(request, checks, String(f.run.id), lookup([f.artifact]), verify), /fresh dispatch/);
-  assert.equal(await findReleaseArtifact({...request, id:'0'.repeat(64)}, checks, '4', lookup([f.artifact]), verify), undefined);
+  await assert.rejects(findReleaseArtifact(f.build, '4', lookup([{...f.artifact, expired:true}]), verify), /expired/);
+  await assert.rejects(findReleaseArtifact(f.build, String(f.run.id), lookup([f.artifact]), verify), /fresh dispatch/);
+  assert.equal(await findReleaseArtifact({...f.build, id:'0'.repeat(64)}, '4', lookup([f.artifact]), verify), undefined);
 });
 
 async function alphaFixture() {
@@ -261,10 +310,11 @@ async function alphaFixture() {
     return hosted.request(path);
   };
   let archiveReads = 0;
+  const full = {runId:10, attempt:2, checkoutArtifactId:90};
   const bind = (sha = captureSha256, approval = approvalCommit) => finalActorAlphaBinding(
     {sourceCommit:head, version:target.version, profile:receipt.officialAssetsProfile}, approval, sha, {
-      request, readFull:async () => ({runId:10, attempt:2, checkoutArtifactId:90}),
-      readPerformance:async () => perf,
+      request, readFull:async () => full, readPerformance:async () => perf,
+      readPublication:async () => ({...full, performance:perf}),
       readGil:async (get, artifactId, expected) => {
         archiveReads++;
         return verifyGilArtifact(get, artifactId, expected, hosted.load);

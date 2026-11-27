@@ -1,30 +1,29 @@
 name: GIL build
-run-name: GIL build / ${{ github.event.workflow_run.head_branch || github.ref_name }} / ${{ github.event.workflow_run.head_sha || github.sha }}
+run-name: GIL build / ${{ inputs.source_branch || github.ref_name }} / ${{ inputs.source_sha || github.sha }}
 on:
   push:
-    branches: [develop, master, 'release/**', 'hotfix/**', 'test/gil-build/**', 'ci/full/gil-build/**']
+    branches: ['test/gil-build/**', 'ci/full/gil-build/**']
   workflow_dispatch:
-  workflow_run:
-    workflows: [Quality, Licenses]
-    types: [completed]
-    branches: ['release/**', 'hotfix/**']
+    inputs:
+      source_branch:
+        description: Frozen release/vX.Y.Z or hotfix/vX.Y.Z (with source_sha, on develop)
+        type: string
+      source_sha:
+        description: Exact frozen commit (omit both inputs for a diagnostic build)
+        type: string
 permissions:
   contents: read
   actions: read
 concurrency:
-  group: gil-build-${{ github.event.workflow_run.head_branch || github.ref_name }}-${{ github.event.workflow_run.head_sha || github.sha }}
+  group: gil-build-${{ inputs.source_branch || github.ref_name }}-${{ inputs.source_sha || github.sha }}
   cancel-in-progress: false
 jobs:
   build:
     if: >-
       (github.repository_id == '1429751262' &&
-        ((github.event_name == 'workflow_run' && github.ref == 'refs/heads/develop' &&
-          github.event.workflow_run.head_repository.id == github.event.repository.id &&
-          github.event.workflow_run.event == 'workflow_dispatch' && github.event.workflow_run.conclusion == 'success') ||
-         (github.event_name != 'workflow_run' &&
-          (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/master' ||
-           startsWith(github.ref, 'refs/heads/release/') || startsWith(github.ref, 'refs/heads/hotfix/') ||
-           startsWith(github.ref, 'refs/heads/test/gil-build/'))))) ||
+        ((github.event_name == 'workflow_dispatch' &&
+          (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/master')) ||
+         startsWith(github.ref, 'refs/heads/test/gil-build/'))) ||
       (github.repository_id == '1460133275' && startsWith(github.ref, 'refs/heads/ci/full/gil-build/'))
     runs-on: windows-2025
     timeout-minutes: 45
@@ -32,8 +31,8 @@ jobs:
       MILIASTRA_ALLOW_LIVE_WRITE: '0'
       MILIASTRA_SAVE_ROOTS: '[]'
       GIT_LFS_SKIP_SMUDGE: '1'
-      SOURCE_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
-      SOURCE_REF: ${{ github.event.workflow_run.head_branch || github.ref_name }}
+      SOURCE_SHA: ${{ inputs.source_sha || github.sha }}
+      SOURCE_REF: ${{ inputs.source_branch || github.ref_name }}
     steps:
       - name: Start download measurement
         run: |
@@ -50,7 +49,7 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: '24.18.0'
-      - name: Bind the build to its source and release gates
+      - name: Bind the build to its exact source
         id: candidate
         env:
           GH_TOKEN: ${{ github.token }}
@@ -73,6 +72,7 @@ jobs:
             art/lowpoly-select
             art/performance
             experiments/lumine-native-fit/fit-hybrid-final
+            tests/lua/support
       - name: Fetch and verify the published project GIL
         if: steps.candidate.outputs.build == 'true'
         working-directory: source
@@ -149,13 +149,10 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           GIL_RELEASE_ARTIFACT: ${{ steps.candidate.outputs.archive }}
-          QUALITY_RUN: ${{ steps.candidate.outputs.quality_run }}
-          QUALITY_ATTEMPT: ${{ steps.candidate.outputs.quality_attempt }}
-          QUALITY_CHECKOUT_ARTIFACT: ${{ steps.candidate.outputs.quality_checkout_artifact }}
-          LICENSES_RUN: ${{ steps.candidate.outputs.licenses_run }}
           BASE_SHA256: ${{ steps.candidate.outputs.base_sha256 }}
           WORK_KEY: ${{ steps.candidate.outputs.work_key }}
           REQUEST_ID: ${{ steps.candidate.outputs.request_id }}
+          CHECKED_FILES: ${{ steps.candidate.outputs.checked_files }}
           RELEASE_VERSION: ${{ steps.candidate.outputs.release_version }}
         run: |
           $env:MILIASTRA_MCP_ROOT = (Resolve-Path ../miliastra-mcp).Path
@@ -184,9 +181,6 @@ jobs:
       - name: Verify the archived download
         if: steps.upload.outputs.artifact-id != ''
         env:
-          ARTIFACT_URL: ${{ steps.upload.outputs.artifact-url }}
+          GH_TOKEN: ${{ github.token }}
           ARTIFACT_ID: ${{ steps.upload.outputs.artifact-id }}
-        run: |
-          node control/scripts/gil-candidate.mjs readback
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          "[Download the verified GIL]($env:ARTIFACT_URL) (artifact ID $env:ARTIFACT_ID)" >> $env:GITHUB_STEP_SUMMARY
+        run: node control/scripts/gil-candidate.mjs readback
