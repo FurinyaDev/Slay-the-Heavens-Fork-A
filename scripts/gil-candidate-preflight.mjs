@@ -10,6 +10,18 @@ export const profile = 'official-assets-battle-v3';
 export const sha = /^[a-f0-9]{40}$/;
 export const digest = /^[a-f0-9]{64}$/;
 export const frozenBuildCustody = 'gil-build-v2';
+export const legacyBuildCustody = 'gil-build-v1';
+export const legacyReleaseBranch = 'release/v2.2.0';
+// Exact checkedFiles vector shared by the original develop controller (32a15219)
+// and the active v2.2.0 release workflow, in their original request order.
+const legacyBuildPolicy = Object.freeze([
+  '03808ddb78683f4749a496350339f5c2622891475e543867766c470f24a5b3e7',
+  '18480ebbad596343e5342c75935d24e165610406220f2e5264e54ad397434a26',
+  'd02481b885efb0aa4e86951dab8c86fdc28864c4e463bae9b6dc6d0fcb86f7f2',
+  '842f2def14a7d793ee0b714201f096679d1dc5a8ae31c8d5e72bf735979d9588',
+  '2ea667ebedb6202c899f0a86ed4a8794a2101f013157a046658038f4a8f6bfd1',
+  'e430edffb90f3798e8583c70bffd40370870811fa4ef084fca59106fcaa07b58',
+]);
 const offlineWorkKey = 'offline-candidate';
 const validReleaseWorkKey = value => typeof value === 'string' &&
   /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value) && !['alpha-test', 'offline-performance'].includes(value);
@@ -37,13 +49,22 @@ export function validationTarget(repository, ref, source) {
   return { branch: ref.slice('refs/heads/'.length) };
 }
 
-export function releaseBuildTarget({ repoId, ref, controllerSha, source, branch, event, inputs }) {
+export function releaseBuildTarget({ repoId, ref, controllerSha, source, branch, event, inputs, upstream }) {
+  const primaryDevelop = repoId === String(repositoryId) && ref === 'refs/heads/develop' && sha.test(controllerSha);
+  if (event === 'workflow_run') {
+    requireGate(primaryDevelop && branch === legacyReleaseBranch &&
+      upstream?.repository?.id === repositoryId && upstream.head_repository?.id === repositoryId &&
+      upstream.event === 'workflow_dispatch' && upstream.status === 'completed' && upstream.conclusion === 'success' &&
+      ['.github/workflows/quality.yml', '.github/workflows/licenses.yml'].includes(upstream.path) &&
+      upstream.head_branch === branch && upstream.head_sha === source,
+    'Automatic GIL requires a trusted legacy v2.2.0 release gate dispatch.');
+    return { ...candidateTarget(branch, source), legacy: true };
+  }
   const { source_branch, source_sha } = inputs ?? {};
   const frozen = /^(?:release|hotfix)\//.test(branch ?? '');
   if (!frozen && !source_branch && !source_sha && ref === `refs/heads/${branch}` && source === controllerSha) return;
-  requireGate(repoId === String(repositoryId) && event === 'workflow_dispatch' &&
-    ref === 'refs/heads/develop' && sha.test(controllerSha),
-  'A formal GIL requires explicit dispatch on primary develop.');
+  requireGate(primaryDevelop && event === 'workflow_dispatch', 'A formal GIL requires explicit dispatch on primary develop.');
+  requireGate(branch !== legacyReleaseBranch, 'The existing v2.2.0 release uses its original GIL entry points.');
   requireGate(source_branch === branch && source_sha === source, 'A formal GIL requires explicit source_branch and source_sha inputs.');
   const target = candidateTarget(branch, source);
   requireGate(target.version, 'A formal GIL requires a frozen release or hotfix branch.');
@@ -127,16 +148,28 @@ export function buildOnlyRequest(sourceSha, policy, { branch, version }) {
   return { ...identity, id: hash(JSON.stringify(identity)) };
 }
 
-export function releaseBuildRequest(configuredWorkKey, sourceSha, { branch, version }, checkedFiles) {
+function releaseBuildIdentity(configuredWorkKey, sourceSha, { branch, version }) {
   requireGate(version && candidateTarget(branch, sourceSha).version === version,
     'A release Artifact requires a frozen engineering version.');
   const workKey = (configuredWorkKey ?? '') === '' ? offlineWorkKey : configuredWorkKey;
   requireGate(validReleaseWorkKey(workKey), 'GIL_PRODUCTION_WORK_KEY must be a valid non-Alpha release work key when set.');
+  const configuration = { profile, nativePageLifecycle: true, releaseCandidate: true, workKey, node: '24.18.0', python: '3.12.10' };
+  return { sourceSha, baseSha256: legacyGilArchive.sha256, toolCommit, encoderSha256, branch, version, configuration };
+}
+
+export function releaseBuildRequest(configuredWorkKey, sourceSha, target, checkedFiles) {
   requireGate(Array.isArray(checkedFiles) && checkedFiles.length > 0 && checkedFiles.every(value => digest.test(value)),
     'A release Artifact requires exact build policy identities.');
-  const configuration = { profile, nativePageLifecycle: true, releaseCandidate: true, workKey, node: '24.18.0', python: '3.12.10' };
-  const identity = { sourceSha, baseSha256: legacyGilArchive.sha256, toolCommit, encoderSha256, branch, version, configuration,
-    custody: frozenBuildCustody, checkedFiles };
+  const identity = { ...releaseBuildIdentity(configuredWorkKey, sourceSha, target), custody: frozenBuildCustody, checkedFiles };
+  return { ...identity, id: hash(JSON.stringify(identity)) };
+}
+
+export function legacyReleaseBuildRequest(configuredWorkKey, sourceSha, target, checks) {
+  requireGate(target.branch === legacyReleaseBranch, 'Legacy GIL requests require the existing v2.2.0 release.');
+  requireGate(checks && [checks.quality, checks.qualityAttempt, checks.qualityCheckoutArtifact, checks.licenses]
+    .every(value => Number.isSafeInteger(value) && value > 0), 'A legacy GIL build requires exact Full, checkout and Licenses identities.');
+  const identity = { ...releaseBuildIdentity(configuredWorkKey, sourceSha, target),
+    custody: legacyBuildCustody, checks, checkedFiles: legacyBuildPolicy };
   return { ...identity, id: hash(JSON.stringify(identity)) };
 }
 

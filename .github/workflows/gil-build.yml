@@ -1,5 +1,5 @@
 name: GIL build
-run-name: GIL build / ${{ inputs.source_branch || github.ref_name }} / ${{ inputs.source_sha || github.sha }}
+run-name: GIL build / ${{ inputs.source_branch || github.event.workflow_run.head_branch || github.ref_name }} / ${{ inputs.source_sha || github.event.workflow_run.head_sha || github.sha }}
 on:
   push:
     branches: ['test/gil-build/**', 'ci/full/gil-build/**']
@@ -11,17 +11,25 @@ on:
       source_sha:
         description: Exact frozen commit (omit both inputs for a diagnostic build)
         type: string
+  workflow_run:
+    workflows: [Quality, Licenses]
+    types: [completed]
+    branches: ['release/v2.2.0']
 permissions:
   contents: read
   actions: read
 concurrency:
-  group: gil-build-${{ inputs.source_branch || github.ref_name }}-${{ inputs.source_sha || github.sha }}
+  group: gil-build-${{ inputs.source_branch || github.event.workflow_run.head_branch || github.ref_name }}-${{ inputs.source_sha || github.event.workflow_run.head_sha || github.sha }}
   cancel-in-progress: false
 jobs:
   build:
     if: >-
       (github.repository_id == '1429751262' &&
-        ((github.event_name == 'workflow_dispatch' &&
+        ((github.event_name == 'workflow_run' && github.ref == 'refs/heads/develop' &&
+          github.event.workflow_run.head_branch == 'release/v2.2.0' &&
+          github.event.workflow_run.head_repository.id == github.event.repository.id &&
+          github.event.workflow_run.event == 'workflow_dispatch' && github.event.workflow_run.conclusion == 'success') ||
+         (github.event_name == 'workflow_dispatch' &&
           (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/master')) ||
          startsWith(github.ref, 'refs/heads/test/gil-build/'))) ||
       (github.repository_id == '1460133275' && startsWith(github.ref, 'refs/heads/ci/full/gil-build/'))
@@ -31,8 +39,8 @@ jobs:
       MILIASTRA_ALLOW_LIVE_WRITE: '0'
       MILIASTRA_SAVE_ROOTS: '[]'
       GIT_LFS_SKIP_SMUDGE: '1'
-      SOURCE_SHA: ${{ inputs.source_sha || github.sha }}
-      SOURCE_REF: ${{ inputs.source_branch || github.ref_name }}
+      SOURCE_SHA: ${{ inputs.source_sha || github.event.workflow_run.head_sha || github.sha }}
+      SOURCE_REF: ${{ inputs.source_branch || github.event.workflow_run.head_branch || github.ref_name }}
     steps:
       - name: Start download measurement
         run: |
