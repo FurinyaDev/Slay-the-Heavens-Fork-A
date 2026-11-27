@@ -35,6 +35,210 @@ export const selectionRawEntranceReplay=Object.freeze({
 // Current Host checks exercise production. Historical Host and CI replays
 // preserve the exact earlier test sources from the production backflow.
 const fixtures=Object.freeze({
+ "tests/integration-source-epoch.test.mjs": {
+  "current": {
+   "sha256": "c01c05a38b05b9a405f009da808c1af295f48bf3653d70fbeb8346ec1d8feaf2",
+   "gitBlob": "95629736179479ea8c9319150c6beafc95360037"
+  },
+  "previous": {
+   "sha256": "fd0cb659920b58cb0354c37acba7344028847c06211bb0339cc0deb38bbc2a8b",
+   "gitBlob": "8ec5fab8e038c2b0a3e1201a353283a28f02293f"
+  },
+  "hunks": [
+   {
+    "at": 22,
+    "before": "import {readHistoricalReleaseCheckpoint} from './helpers/release-historical-source-checkpoints.mjs';\nimport {beforeCurrentSelectionProductionSource,readReviewedSelectionSource,readSelectionProductionOwners} from './helpers/replay-reviewed-selection.mjs';\nimport {reviewedSelectionRead,reviewedStsStyleInventory} from './helpers/reviewed-selection-current-source.mjs';\nimport {beforeShopPurchaseOwner,shopPurchaseOwner} from './helpers/shop-deck-purchase-source.mjs';\nimport {readBeforeMasterBackflowSource} from './helpers/master-backflow-source.mjs';\nconst sandbox=process.cwd();\nconst {sourceEpoch}=await import('./helpers/combined-epoch/source-epoch.mjs');\nconst proof=sourceEpoch.proof,raw=p=>proof.current[p]?.source??null;",
+    "after": "import {readHistoricalReleaseCheckpoint} from './helpers/release-historical-source-checkpoints.mjs';\nimport {beforeCurrentSelectionProductionSource,readReviewedSelectionSource,readSelectionProductionOwners} from './helpers/replay-reviewed-selection.mjs';\nimport {reviewedSelectionRead,reviewedStsStyleInventory} from './helpers/reviewed-selection-current-source.mjs';\nimport {shopPurchaseOwner} from './helpers/shop-deck-purchase-source.mjs';\nimport {productionReadingBackflowOwns,readBeforeMasterBackflowSource} from './helpers/master-backflow-source.mjs';\nconst sandbox=process.cwd();\nconst {sourceEpoch}=await import('./helpers/combined-epoch/source-epoch.mjs');\nconst proof=sourceEpoch.proof,raw=p=>proof.current[p]?.source??null;"
+   },
+   {
+    "at": 31,
+    "before": "const shopDeckPaths=['src/lua/abyss_deck_ui.lua','src/lua/abyss_merchant.lua','src/lua/abyss_game_ui_input.lua','src/lua/abyss_node_ui_feedback.lua','src/lua/abyss_potion_discard_ui.lua'];\nfunction readShopDeckFixture(path){\n if(path!==shopPurchaseOwner)return Object.hasOwn(proof.current,path)?readReviewedSelectionSource(path):readFileSync(path,'utf8');\n const read=(owner,encoding='utf8')=>beforeShopPurchaseOwner(owner,readFileSync(owner,encoding));\n const reviewed=reviewedSelectionRead(read);\n const source=beforeCurrentSelectionProductionSource(path,readSelectionProductionOwners(read,reviewed),reviewed);\n assert.equal(digest(source.replaceAll('\\r\\n','\\n')),proof.current[path].sha256,'exact historical purchase owner');",
+    "after": "const shopDeckPaths=['src/lua/abyss_deck_ui.lua','src/lua/abyss_merchant.lua','src/lua/abyss_game_ui_input.lua','src/lua/abyss_node_ui_feedback.lua','src/lua/abyss_potion_discard_ui.lua'];\nfunction readShopDeckFixture(path){\n if(path!==shopPurchaseOwner)return Object.hasOwn(proof.current,path)?readReviewedSelectionSource(path):readFileSync(path,'utf8');\n const read=(owner,encoding='utf8')=>readFileSync(owner,encoding);\n const reviewed=reviewedSelectionRead(read);\n const source=beforeCurrentSelectionProductionSource(path,readSelectionProductionOwners(read,reviewed),reviewed);\n assert.equal(digest(source.replaceAll('\\r\\n','\\n')),proof.current[path].sha256,'exact historical purchase owner');"
+   },
+   {
+    "at": 52,
+    "before": "\nfunction integrationProductionReaders(read=readFileSync){\n const readOwner=reviewedSelectionRead(read);\n const readSelection=readSelectionProductionOwners(read,readOwner);\n const current=path=>beforeShopPurchaseOwner(path,readSelection(path));\n // The earlier entrance receipt checks its original linked owners after the\n // audited chapter and periphery projections have authenticated their inputs.\n const entrance=path=>beforeBattlePeriphery(path,beforeChapterBattleScene(path,current(path)));\n return {current,entrance,readOwner};\n}\n",
+    "after": "\nfunction integrationProductionReaders(read=readFileSync){\n const readOwner=reviewedSelectionRead(read);\n const current=readSelectionProductionOwners(read,readOwner);\n // The earlier entrance receipt checks its original linked owners after the\n // audited chapter and periphery projections have authenticated their inputs.\n const entrance=path=>productionReadingBackflowOwns(path)||['src/lua/abyss_battle_card_layout.lua','src/lua/abyss_viewport.lua'].includes(path)\n  ?readOwner(path):beforeBattlePeriphery(path,beforeChapterBattleScene(path,current(path)));\n return {current,entrance,readOwner};\n}\n"
+   },
+   {
+    "at": 317,
+    "before": " const incomplete=live.filter(path=>!addedEntranceModules.includes(path));\n assert.throws(()=>entranceInventory(incomplete,read),/complete entrance module inventory/);\n assert.throws(()=>entranceInventory([...live,addedEntranceModules[0]],read),/complete entrance module inventory/);\n assert.throws(()=>assertActorFocusInventory(incomplete.filter(path=>path!==config),read),/complete entrance module inventory/);\n const project=input=>entrancePredecessor(config,source,input).source;\n assert.equal(project(read),prior);\n for(const changedPath of changed){",
+    "after": " const incomplete=live.filter(path=>!addedEntranceModules.includes(path));\n assert.throws(()=>entranceInventory(incomplete,read),/complete entrance module inventory/);\n assert.throws(()=>entranceInventory([...live,addedEntranceModules[0]],read),/complete entrance module inventory/);\n assert.throws(()=>assertActorFocusInventory(incomplete.filter(path=>path!==config)),/complete entrance module inventory/);\n const project=input=>entrancePredecessor(config,source,input).source;\n assert.equal(project(read),prior);\n for(const changedPath of changed){"
+   },
+   {
+    "at": 355,
+    "before": "});\ntest('current PC13 facade rejects every exact immediate predecessor before older views or reads',()=>{\n const disk=path=>readFileSync(path,'utf8');\n const live=readSelectionProductionOwners(disk,reviewedSelectionRead(disk));\n const read=beforeInputRetirementReader(readBeforeMasterBackflowSource(disk));\n const readMapPrior=owner=>beforeSts1MapSource(owner,beforeRebasedCi(owner,read(owner)));\n const readPc13Prior=owner=>pc13RewardCoverSourcePaths.includes(owner)",
+    "after": "});\ntest('current PC13 facade rejects every exact immediate predecessor before older views or reads',()=>{\n const disk=path=>readFileSync(path,'utf8');\n const reviewed=reviewedSelectionRead(disk);\n const live=readSelectionProductionOwners(disk,reviewed);\n const read=beforeInputRetirementReader(readBeforeMasterBackflowSource(disk));\n const readMapPrior=owner=>beforeSts1MapSource(owner,beforeRebasedCi(owner,read(owner)));\n const readPc13Prior=owner=>pc13RewardCoverSourcePaths.includes(owner)"
+   },
+   {
+    "at": 382,
+    "before": "   /combined linked owner identity/,path);\n }\n const unrelated='src/lua/abyss_battle_ui.lua';\n assert.equal(beforeCurrentProductionSource(unrelated,live(unrelated),live).replaceAll('\\r\\n','\\n'),raw(unrelated));\n});\nconst cases=[\n ['m7-core-final','preM7FinalSource','develop','abyss_original_v4'],",
+    "after": "   /combined linked owner identity/,path);\n }\n const unrelated='src/lua/abyss_battle_ui.lua';\n assert.equal(beforeCurrentSelectionProductionSource(unrelated,live,reviewed).replaceAll('\\r\\n','\\n'),raw(unrelated));\n});\nconst cases=[\n ['m7-core-final','preM7FinalSource','develop','abyss_original_v4'],"
+   }
+  ]
+ },
+ "tests/defect-utility-planning.test.mjs": {
+  "current": {
+   "sha256": "14f647fae87f83b72919ce2e77f70503b6726e656b7283af75092dde5ba55be4",
+   "gitBlob": "e20a63120443b83a177bbd75a2809cdd4ece2b09"
+  },
+  "previous": {
+   "sha256": "d7b64a1189fce508eab45275d33dbbf442a46f085d0c2c3fe10c6c2caccab6ab",
+   "gitBlob": "ba92ddb97178c4ccf977c5148db23d69f06b4485"
+  },
+  "hunks": [
+   {
+    "at": 0,
+    "before": "import {pointerInputPath,readRetiredController,retiredControllerPath} from './helpers/input-retirement-source.mjs';\nimport {currentProductionRereads} from './helpers/current-production-source-reads.mjs';\nimport {preDefectActorSource,defectActorEpoch} from './helpers/defect-actor-source-epoch.mjs';",
+    "after": "import {pointerInputPath,readRetiredController,retiredControllerPath} from './helpers/input-retirement-source.mjs';\nimport {currentProductionRereads,releaseArchitectureReadTrace} from './helpers/current-production-source-reads.mjs';\nimport {preDefectActorSource,defectActorEpoch} from './helpers/defect-actor-source-epoch.mjs';"
+   },
+   {
+    "at": 41,
+    "before": " const admittedReads=[...reads];\n const entranceBytes=readFileSync('tests/fixtures/ui-entrance-source.json.gz');",
+    "after": " const admittedReads=[...reads];\n assert.equal(admittedReads[0],config,'outer Actor reads its input before admission');\n const releaseReads=admittedReads.slice(1);\n assert.equal(releaseReads.length,releaseArchitectureReadTrace.count);\n assert.equal(createHash('sha256').update(JSON.stringify(releaseReads)).digest('hex'),\n  releaseArchitectureReadTrace.sha256,'exact current Actor admission order');\n // These indexed rereads were added to the shared release architecture closure.\n const releaseRereads=new Set([4,5,10,11,17,19,20,21,22,23,31,32,116,222,223,224,368,369,370]);\n const priorReads=admittedReads.filter((_path,position)=>!releaseRereads.has(position));\n const entranceBytes=readFileSync('tests/fixtures/ui-entrance-source.json.gz');"
+   },
+   {
+    "at": 54,
+    "before": " assert.equal(entranceOwners.length,20);\n assert.deepEqual(admittedReads.slice(1,21),entranceOwners,'complete fresh entrance owner admission');\n const additionalProductionReads=new Map([",
+    "after": " assert.equal(entranceOwners.length,20);\n assert.deepEqual(priorReads.slice(1,21),entranceOwners,'complete fresh entrance owner admission');\n const additionalProductionReads=new Map(["
+   },
+   {
+    "at": 63,
+    "before": " ]);\n for(const [position,path] of additionalProductionReads)assert.equal(admittedReads[position],path,'exact production reread');\n const originalReads=admittedReads.filter((_path,position)=>!additionalProductionReads.has(position));\n assert.equal(admittedReads.length,487);\n assert.equal(createHash('sha256').update(JSON.stringify(admittedReads)).digest('hex'),\n  '639281271a32cb71112b038ccd040873109bb6f24ac51f79597445e706ff4abb','complete production Actor admission order');",
+    "after": " ]);\n for(const [position,path] of additionalProductionReads)assert.equal(priorReads[position],path,'exact production reread');\n const originalReads=priorReads.filter((_path,position)=>!additionalProductionReads.has(position));\n assert.equal(priorReads.length,487);\n assert.equal(createHash('sha256').update(JSON.stringify(priorReads)).digest('hex'),\n  '639281271a32cb71112b038ccd040873109bb6f24ac51f79597445e706ff4abb','complete production Actor admission order');"
+   }
+  ]
+ },
+ "tests/competition-roster-config-composition.test.mjs": {
+  "current": {
+   "sha256": "2d56bc47a7ce372633f6b46c91cb42f01b0ef099236ec2f28e30bf1c8da60c06",
+   "gitBlob": "0b526cd747cb341d2d7b6321fc2a8796b34b1ea3"
+  },
+  "previous": {
+   "sha256": "283322cb20de02801a59baef9e44452592c70692eb6a4b71640ac476abeaa4db",
+   "gitBlob": "8c4d42dd8eec34a62b940d321ef8cdcf5f9f6b7b"
+  },
+  "hunks": [
+   {
+    "at": 0,
+    "before": "import {currentProductionRereads} from './helpers/current-production-source-reads.mjs';\nimport {beforeInputRetirementReader,retiredControllerPath} from './helpers/input-retirement-source.mjs';",
+    "after": "import {currentProductionRereads,releaseArchitectureReadTrace} from './helpers/current-production-source-reads.mjs';\nimport {beforeReleaseClosureFixture} from './helpers/release-closure-fixture-source.mjs';\nimport {beforeInputRetirementReader,retiredControllerPath} from './helpers/input-retirement-source.mjs';"
+   },
+   {
+    "at": 34,
+    "before": "  const raw=binding.existing?readInput(path):Buffer.from(binding.source);\n  const source=path.endsWith('.gz')?raw:Buffer.from(raw.toString('utf8').replaceAll('\\r\\n','\\n'));\n  assert.equal(hash(source),binding.sha256,'original complete Roster chain bytes: '+path);",
+    "after": "  const raw=binding.existing?readInput(path):Buffer.from(binding.source);\n  const continued=path==='tests/helpers/approved-ui-inverse.mjs'||path==='tests/support/formal-entry-source-inverse.mjs';\n  const original=binding.existing&&continued?beforeReleaseClosureFixture(path,raw):raw;\n  const source=path.endsWith('.gz')?original:Buffer.from(original.toString('utf8').replaceAll('\\r\\n','\\n'));\n  assert.equal(hash(source),binding.sha256,'original complete Roster chain bytes: '+path);"
+   },
+   {
+    "at": 210,
+    "before": " const admittedReads=[...reads];\n assert.equal(admittedReads.length,480,'complete raw owner admission');\n assert.equal(hash(JSON.stringify(admittedReads)),'ad1c81a8f757224fa6520ca74d2a9b682f24925d2689141bc4b2eb1066d6a7fd','complete raw owner admission in order');\n let position=-1;",
+    "after": " const admittedReads=[...reads];\n assert.equal(admittedReads.length,releaseArchitectureReadTrace.count,'complete release raw owner admission');\n assert.equal(hash(JSON.stringify(admittedReads)),releaseArchitectureReadTrace.sha256,'complete release raw owner admission in order');\n const addedRereads=new Set([3,4,9,10,16,18,19,20,21,22,30,31,90,115,155,156,221,222,223,317,367,368,369,415,479]);\n const originalReads=admittedReads.filter((_owner,position)=>!addedRereads.has(position));\n assert.equal(originalReads.length,480,'complete original raw owner admission');\n assert.equal(hash(JSON.stringify(originalReads)),'ad1c81a8f757224fa6520ca74d2a9b682f24925d2689141bc4b2eb1066d6a7fd',\n  'complete original raw owner admission in order');\n let position=-1;"
+   }
+  ]
+ },
+ "tests/support/formal-entry-source-inverse.mjs": {
+  "current": {
+   "sha256": "951deb2fc8dc598cad29a47601e15782c3468ae5bb7a68dab2ef8c07de084425",
+   "gitBlob": "13093e19470d5b524122f6727e252eeb00ac5ee7"
+  },
+  "previous": {
+   "sha256": "ffab54c9d7b2cf877ef759c8894027ac0e6fd71d8e0d236a166d1bdb5b89ebb1",
+   "gitBlob": "20a2f75ec4365fab7e239dfb241ebe91954cf402"
+  },
+  "hunks": [
+   {
+    "at": 0,
+    "before": "import {preCurrentSource} from '../helpers/task77-current-source-layers.mjs';\nimport assert from 'node:assert/strict';",
+    "after": "import {preCurrentSource} from '../helpers/task77-current-source-layers.mjs';\nimport {readCloseoutLuaVocabularyReceipt} from '../helpers/closeout-lua-vocabulary-source.mjs';\nimport assert from 'node:assert/strict';"
+   },
+   {
+    "at": 13,
+    "before": "export function preFormalEntrySource(path, source) {\n  const text = preCurrentSource(path,source);\n  let binding = formalEntryInverses[path];\n  // Compose the same immutable launch hunks with the two reviewed relic glyphs.",
+    "after": "export function preFormalEntrySource(path, source) {\n  let text = preCurrentSource(path,source);\n  let binding = formalEntryInverses[path];\n  // The sealed elite fixture still uses the pre-#951 encounter name.\n  // Authenticate the current file before restoring that exact Git input.\n  if(path==='tests/lua/elite_relic_reward_ui.lua' && ![binding.beforeSha256,binding.afterSha256].includes(hash(text)))\n    text=readCloseoutLuaVocabularyReceipt(path,binding.afterSha256,()=>source)??text;\n  // Compose the same immutable launch hunks with the two reviewed relic glyphs."
+   }
+  ]
+ },
+ "tests/seven-refactor-source-epoch.test.mjs": {
+  "current": {
+   "sha256": "fec46a900fac83aa67ce2975bb4f93dd3a633f0ed30c5251e7bcc27705386803",
+   "gitBlob": "5c6e73f8335fd05a346e0b615d96bee81e47bfc1"
+  },
+  "previous": {
+   "sha256": "62d1daad52fd3ba42896b65b200b42edfbc90d24d25d87940d7815cfaabe5a1f",
+   "gitBlob": "4c932fa42d6b9b0f4c85167fe3fe5bfd29007d65"
+  },
+  "hunks": [
+   {
+    "at": 427,
+    "before": "  assert.equal(run(source),'{}\\n');assert.equal(reads,2);\n  // Entrance admission parses every input afresh; only the pure layout matcher memoizes.\n  assert.equal(parses,2,'two exact input calls each retain the fresh entrance syntax gate');\n  const layout='{ \"cacheFreshness\" : 1 }\\n';\n  const beforeLayout=parses;\n  assert.equal(run(layout),'{}\\n');assert.equal(parses-beforeLayout,2,'fresh entrance plus first pure layout calculation');assert.equal(reads,3);\n  const beforeWarmLayout=parses;\n  assert.equal(run(layout),'{}\\n');assert.equal(parses-beforeWarmLayout,1,'warm calculation still runs fresh entrance admission');assert.equal(reads,4);\n  actual=source.replace('1','2');assert.throws(()=>run(layout),/linked owner identity/);assert.equal(reads,5);",
+    "after": "  assert.equal(run(source),'{}\\n');assert.equal(reads,2);\n  // Exact bytes need no layout parse. A new layout is syntax-checked before\n  // its pure token comparison is cached, while every admitted call reads owners.\n  assert.equal(parses,0,'exact input uses its verified byte identity');\n  const layout='{ \"cacheFreshness\" : 1 }\\n';\n  const beforeLayout=parses;\n  assert.equal(run(layout),'{}\\n');assert.equal(parses-beforeLayout,1,'first layout calculation verifies syntax');assert.equal(reads,3);\n  const beforeWarmLayout=parses;\n  assert.equal(run(layout),'{}\\n');assert.equal(parses-beforeWarmLayout,0,'warm layout skips only pure syntax and token calculations');assert.equal(reads,4);\n  actual=source.replace('1','2');assert.throws(()=>run(layout),/linked owner identity/);assert.equal(reads,5);"
+   },
+   {
+    "at": 440,
+    "before": "  const foreign=layout.replace('1','2'),beforeForeign=parses;assert.equal(run(foreign),foreign);assert.equal(reads,7);\n  assert.equal(parses-beforeForeign,2,'foreign input runs entrance syntax and its first pure calculation');\n  const beforeWarmForeign=parses;\n  assert.equal(run(foreign),foreign);assert.equal(reads,7);assert.equal(parses-beforeWarmForeign,1,'foreign warm calculation is cached without caching admission');\n }finally{crypto.createHash=originalHash;JSON.parse=originalParse;syncBuiltinESMExports();}",
+    "after": "  const foreign=layout.replace('1','2'),beforeForeign=parses;assert.equal(run(foreign),foreign);assert.equal(reads,7);\n  assert.equal(parses-beforeForeign,1,'foreign layout is parsed before its first token comparison');\n  const beforeWarmForeign=parses;\n  assert.equal(run(foreign),foreign);assert.equal(reads,7);assert.equal(parses-beforeWarmForeign,0,'foreign pure calculation is reused while its result stays rejected');\n }finally{crypto.createHash=originalHash;JSON.parse=originalParse;syncBuiltinESMExports();}"
+   }
+  ]
+ },
+ "tests/defect-integration-source.test.mjs": {
+  "current": {
+   "sha256": "b3c6140cb719ef99ad497e0f59a230dcf8be1591161c54802fd51c30317dc54f",
+   "gitBlob": "0300cebe749e7adc8df63f54cfaf423e188b6160"
+  },
+  "previous": {
+   "sha256": "3a485ca0a3df9699186422945d54198662abe63ff5af89999f9ca373d0830799",
+   "gitBlob": "d05d2bc41ce68fde7767387088b7b5a5d029b0c7"
+  },
+  "hunks": [
+   {
+    "at": 0,
+    "before": "import {currentProductionRereads} from './helpers/current-production-source-reads.mjs';\nimport {preDefectActorSource} from './helpers/defect-actor-source-epoch.mjs';",
+    "after": "import {currentProductionRereads,releaseArchitectureReadTrace} from './helpers/current-production-source-reads.mjs';\nimport {preDefectActorSource} from './helpers/defect-actor-source-epoch.mjs';"
+   },
+   {
+    "at": 135,
+    "before": "});\nfunction assertRawActorClosure(project,expected,priorReads,traceLength,traceHash){\n const physical=owner=>readFileSync(owner,'utf8');",
+    "after": "});\nconst releaseRereads=new Set([3,4,9,10,16,18,19,20,21,22,30,31,90,115,155,156,221,222,223,317,367,368,369,415,479]);\nconst beforeReleaseRereads=reads=>reads.filter((_owner,position)=>!releaseRereads.has(position));\nfunction assertRawActorClosure(project,expected,priorReads,admitReads){\n const physical=owner=>readFileSync(owner,'utf8');"
+   },
+   {
+    "at": 149,
+    "before": " const admittedReads=reads;\n assert.equal(admittedReads.length,traceLength);\n assert.equal(hash(JSON.stringify(admittedReads)),traceHash,'exact current raw owner order');\n let position=-1;",
+    "after": " const admittedReads=reads;\n admitReads(admittedReads);\n let position=-1;"
+   },
+   {
+    "at": 184,
+    "before": " const expected=proof.targets.develop.files[p].source;\n assertRawActorClosure(project,expected,[...proof.owners,...currentProductionRereads],480,\n  'ad1c81a8f757224fa6520ca74d2a9b682f24925d2689141bc4b2eb1066d6a7fd');\n});",
+    "after": " const expected=proof.targets.develop.files[p].source;\n assertRawActorClosure(project,expected,[...proof.owners,...currentProductionRereads],reads=>{\n  assert.equal(reads.length,releaseArchitectureReadTrace.count);\n  assert.equal(hash(JSON.stringify(reads)),releaseArchitectureReadTrace.sha256,'exact current raw owner order');\n  const priorReads=beforeReleaseRereads(reads);\n  assert.equal(priorReads.length,480);\n  assert.equal(hash(JSON.stringify(priorReads)),'ad1c81a8f757224fa6520ca74d2a9b682f24925d2689141bc4b2eb1066d6a7fd',\n   'exact original raw owner order');\n });\n});"
+   },
+   {
+    "at": 247,
+    "before": " const project=readSource=>preM7FinalSource(p,source,{readSource});\n const admittedReads=assertRawActorClosure(project,beforeUtility(),proof.owners,1443,\n  '1e104db373ce2e1fdcb5c806685240db6bfc851f95ca2514b8a011d2d6981ffe');\n // Each of the three Actor reads now authenticates the actual current anchor,\n // adding this exact nested Actor/Stasis closure before the unchanged scan.\n const anchorReads=[",
+    "after": " const project=readSource=>preM7FinalSource(p,source,{readSource});\n const priorClosures=[];\n const admittedReads=assertRawActorClosure(project,beforeUtility(),proof.owners,reads=>{\n  const width=releaseArchitectureReadTrace.count+1;\n  assert.equal(reads.length,width*3);\n  for(let offset=0;offset<reads.length;offset+=width){\n   assert.equal(reads[offset],actorPaths[0],'each Actor admission reads its input before linked owners');\n   const closure=reads.slice(offset+1,offset+width);\n   assert.equal(hash(JSON.stringify(closure)),releaseArchitectureReadTrace.sha256,'exact current Actor raw owner order');\n   priorClosures.push([reads[offset],...beforeReleaseRereads(closure)]);\n  }\n  assert.equal(hash(JSON.stringify(priorClosures.flat())),\n   '1e104db373ce2e1fdcb5c806685240db6bfc851f95ca2514b8a011d2d6981ffe','exact prior Actor raw owner order');\n });\n // Each prior Actor read includes its exact nested Actor/Stasis anchor.\n const anchorReads=["
+   },
+   {
+    "at": 268,
+    "before": " const priorReads=[];\n for(let offset=0;offset<admittedReads.length;offset+=481){\n  const cohort=admittedReads.slice(offset,offset+481);\n  assert.deepEqual(cohort.slice(21,36),anchorReads,'exact current-anchor addition');",
+    "after": " const priorReads=[];\n for(const cohort of priorClosures){\n  assert.equal(cohort.length,481);\n  assert.deepEqual(cohort.slice(21,36),anchorReads,'exact current-anchor addition');"
+   }
+  ]
+ },
+ "tests/relic-equip-source-epoch.test.mjs": {
+  "current": {
+   "sha256": "0f76bc55d3aebef2d72ab39e2e3658e7738612275f3ae243364f5cc1500efc55",
+   "gitBlob": "a4200ca2943ed6ad287284a492ee3c2dc8906007"
+  },
+  "previous": {
+   "sha256": "cc552a1f69f99ff624a232444959405017ae81eb67de2057c2d8ed81e650e4bb",
+   "gitBlob": "5aa4c123a3128320b69b6bb8fead3fba5d410c46"
+  },
+  "hunks": [
+   {
+    "at": 39,
+    "before": " assert.notEqual(raw(mapOwner),currentMapOwner);\n assert.throws(()=>sourceEpoch.preCombinedSource(file,source,{target,readSource:p=>p===mapOwner?currentMapOwner:raw(p)}),\n  /(?:linked owner identity: src\\/lua\\/abyss_traveler_portraits\\.lua.*map-room validation|linked owner missing: src\\/lua\\/abyss_traveler_portraits\\.lua: combined linked owner identity: config\\/architecture\\.json during entrance validation)/);\n for(const owner of proof.owners){",
+    "after": " assert.notEqual(raw(mapOwner),currentMapOwner);\n const selectOwner='src/lua/abyss_character_select_view.lua';\n const portraitDiagnostic='combined linked owner missing: '+mapOwner+': combined linked owner identity: '+selectOwner+\n  ' (fresh Selection portrait owner: '+selectOwner+')';\n assert.throws(()=>sourceEpoch.preCombinedSource(file,source,{target,readSource:p=>p===mapOwner?currentMapOwner:raw(p)}),\n  error=>error.message===portraitDiagnostic||\n   /(?:linked owner identity: src\\/lua\\/abyss_traveler_portraits\\.lua.*map-room validation|linked owner missing: src\\/lua\\/abyss_traveler_portraits\\.lua: combined linked owner identity: config\\/architecture\\.json during entrance validation)/.test(error.message));\n for(const owner of proof.owners){"
+   }
+  ]
+ },
  "tests/helpers/defect-actor-vm.mjs": {
   "current": {
    "sha256": "1ee4632b34f37909c22431a10faeacedf36f67969081dffe051e8f7cfffcc94e",
@@ -552,6 +756,50 @@ const fixtures=Object.freeze({
    }
   ]
  },
+ "tests/lua/game_ui_exit.lua": {
+  "current": {
+   "sha256": "d5a91864a27a4906b424d0f8bf0fd90502976d82725087f3530ef2984ea13ae8",
+   "gitBlob": "894180832718d82ae90827ec89dfcf14e8bb9e6c"
+  },
+  "previous": {
+   "sha256": "a798089f6cd820c80e5d7e306375b4b0a748c8303d0e43fd129cf7109b24874c",
+   "gitBlob": "0e6fbe7d92d3e065979665b18bc5553d2fff49db"
+  },
+  "hunks": [
+   {
+    "at": 104,
+    "before": "    assert(ui.mapUI:choose(available.id))\n    assert(ui:openDeck()); local cards=ui.deckUI.cards\n    local before=Combat.copy(ui.run)\n    assert(open(root) and ui.deckUI.visible)\n    assert(not ui:closeDeck() and not ui.nodeUI:press(\"campView/rest\"))\n    assert(cancel(root) and ui.deckUI.visible and ui.deckUI.cards==cards and same(before,ui.run))\n    assert(ui:closeDeck()); assert(open(root))\n    assert(not ui.nodeUI:press(\"campView/rest\"))\n    assert(cancel(root) and ui.nodeUI:press(\"campView/rest\"))\nend)\n\ntest(\"failed platform requests stay visible and retry submits only once\",function()",
+    "after": "    assert(ui.mapUI:choose(available.id))\n    assert(ui:openDeck()); local cards=ui.deckUI.cards\n    local before=Combat.copy(ui.run)\n    assert(not open(root) and not root:GetChild(\"exitPanel\").visible)\n    assert(ui.deckUI.visible and ui.deckUI.cards==cards and same(before,ui.run))\n    assert(ui:closeDeck()); assert(open(root))\n    assert(not ui:openDeck() and not ui.nodeUI:press(\"campView/rest\"))\n    assert(cancel(root) and same(before,ui.run) and ui.nodeUI:press(\"campView/rest\"))\nend)\n\ntest(\"failed platform requests stay visible and retry submits only once\",function()"
+   }
+  ]
+ },
+ "tests/lua/game_ui_phase_four.lua": {
+  "current": {
+   "sha256": "fe7dfe100d6b9d3df9472e5509ec9a45cb43185255b5f04dc356a011e65eceb6",
+   "gitBlob": "0d2131d6454784d50f13476dbd083a5d8b3cec92"
+  },
+  "previous": {
+   "sha256": "2c9709a9a1a6e4b7004f872f8fa30086770db7355e4e76e2a41f54bdd5f85482",
+   "gitBlob": "fdfa7433eceb65ac73d1b6e1e1622ad13e6bc6d6"
+  },
+  "hunks": [
+   {
+    "at": 179,
+    "before": "local powerCases={",
+    "after": "local readPowerTips=dofile('tests/lua/support/power_tip_fixture.lua')\nlocal powerCases={"
+   },
+   {
+    "at": 219,
+    "before": "  clickControl(powerHit,owner..' power '..id);local info=control(root,'battlePanel/statusInfo')",
+    "after": "  local panel=control(root,'battlePanel');local info=panel:GetChild('statusInfo')\n  clickControl(powerHit,owner..' power '..id)\n  if enemy then\n   local copy=readPowerTips(panel)\n   assert(copy:find(entry.name,1,true) and copy:find(phrase,1,true),id..': '..copy)\n   assert(copy:find(tostring(value),1,true),'missing compact amount '..id);unchanged()\n   click(root,'battlePanel/statusDismiss');eq(info.visible,false);unchanged()\n   assert(ui.battleUI:openHelp({index=1,statusId=id}))\n  end"
+   },
+   {
+    "at": 234,
+    "before": "  click(root,'battlePanel/statusInfo/hit');eq(info.visible,false);unchanged()",
+    "after": "  click(root,'battlePanel/statusDismiss');eq(info.visible,false);unchanged()"
+   }
+  ]
+ },
  "tests/official-background-build.test.mjs": {
   "current": {
    "sha256": "f6d2b6fd7f7edfdabc1c0ef26fb7a9d74b9f47d7aca1cee9e32fd068754cb47b",
@@ -661,6 +909,60 @@ const fixtures=Object.freeze({
   ]
  },
  'tests/helpers/replay-reviewed-selection.mjs':selectionRawEntranceReplay,
+ "tests/encounter-formation-source-epoch.test.mjs": {
+   "current": {
+     "sha256": "b272d2bed86eea32b1db4e0627990b57f2497e940a0094ac65cbd63b29fd5f0d",
+     "gitBlob": "1680aa396a2188621c444bbdfb3891e9a8555eae"
+   },
+   "previous": {
+     "sha256": "1eb67ff503600165775494ca783b843f3355f61db89c1ff15e6fc9c6fe113643",
+     "gitBlob": "755eb1807c0b7a737d719fc6789a91a5d942f757"
+   },
+   "hunks": [
+     {
+       "at": 0,
+       "before": "import {beforeDevelopUiBackflows,readRetiredController,retiredControllerPath} from './helpers/input-retirement-source.mjs';\nimport {beforeCharacterPreparationSource,beforeCurrentProductionSource} from './helpers/character-preparation-source.mjs';\nimport {currentProductionRereads} from './helpers/current-production-source-reads.mjs';\nimport {beforePc13ThenV2UiHudSource} from './helpers/pc13-reward-cover-source.mjs';",
+       "after": "import {retiredControllerPath} from './helpers/input-retirement-source.mjs';\nimport {currentProductionRereads,releaseArchitectureReadTrace} from './helpers/current-production-source-reads.mjs';\nimport {beforePc13ThenV2UiHudSource} from './helpers/pc13-reward-cover-source.mjs';"
+     },
+     {
+       "at": 204,
+       "before": "test('official repair adds exact complete-file identities without rewriting the battle predecessor',()=>{\n const files=officialUiRepairProof.files,pileChrome='scripts/official-battle-pile-chrome.mjs';\n const pileChromeAfter={sha256:'1a7d9023534a02d57af4e6b9749bb0ce2b5fd7a388a616379ff0614175c37683',\n  gitBlob:'e06cdaca1d6c23efd3931270b925866ca480c03f'};\n const fromNativeButtons=(file,encoding)=>{\n  const source=diskReadFileSync(file,encoding);\n  if(file!==pileChrome)return source;\n  assert(exactSourceMatches(beforeDevelopUiBackflows(file,source),pileChromeAfter),'fresh Native Buttons pile-chrome source');\n  return closeoutCiProof.records[closeoutCiProof.current[file]];\n };",
+       "after": "test('official repair adds exact complete-file identities without rewriting the battle predecessor',()=>{\n const files=officialUiRepairProof.files;\n // These committed Release owners have newer HUD, deck, viewport or test code.\n // Authenticate their raw bytes before selecting the sealed repair inputs.\n const releaseRepairOwners={\n  'scripts/official-battle-hud.mjs':{sha256:'af6ffdb50e11d77cf9c2046931f3e455d3bc780fcde9b265fd003d33b1c07a9b',\n   gitBlob:'9956f4ded7b99023522ffc3f59b49b11b1916e85'},\n  'scripts/official-battle-pile-chrome.mjs':{sha256:'7bdc6045f843dfcc049cb9fab2a299a35f6253b08a0e61dcd93bb1cd2eb82d20',\n   gitBlob:'8c9de93f2313806ea5e9ba11ac9eb32df0a6fb50'},\n  'src/lua/abyss_battle_card_view.lua':{sha256:'a754a1c70a92ee789fa8c8266ee0ede46f22427b271ab464b85b8ce17d59e158',\n   gitBlob:'1affa0043815bb45816077e74bd723abb8a4e8ac'},\n  'src/lua/abyss_deck_ui.lua':{sha256:'1bfaa0cff56eea75e2173e90393fb76e23c8ce7a18fb336ffb394e50557df2af',\n   gitBlob:'379cf49278f2cc79c892f6109c96dc2cede98b91'},\n  'tests/runtime-ui-hotpaths.test.mjs':{sha256:'0db4dc2f24c5d58f3c04833576e6f8f050662c5558dc5d503918a8ebdfef0b3c',\n   gitBlob:'6c19ed17128fbebb4d505bcf5567eaac135b9c5a'},\n };\n function authenticateReleaseOwner(file){\n  if(!Object.hasOwn(releaseRepairOwners,file))return false;\n  const raw=rawCurrent(file),lf=raw.replaceAll('\\r\\n','\\n');\n  assert((raw===lf||raw===lf.replaceAll('\\n','\\r\\n'))&&exactSourceMatches(lf,releaseRepairOwners[file]),\n   'fresh Release repair replay owner: '+file);\n  return true;\n }\n const readRepairOwner=(file,encoding)=>{\n  if(!authenticateReleaseOwner(file))return diskReadFileSync(file,encoding);\n  return closeoutCiProof.records[files[file].current.sha256];\n };"
+     },
+     {
+       "at": 233,
+       "before": "  if(!frozen)return null;\n  const live=file===retiredControllerPath?readRetiredController(rawCurrent):null;\n  if(live)assert(live.restored,'exact pointer successor for the retired Controller');\n  const source=live?beforeCharacterPreparationSource(file,live.source,rawCurrent)\n   :beforeCurrentProductionSource(file,rawCurrent(file),rawCurrent);\n  assert.equal(source.replaceAll('\\r\\n','\\n'),frozen.source,'fresh official repair replay owner: '+file);\n  return source;\n };\n const repairRead=closeoutRead('pr629',fromNativeButtons,{readRuntime});\n for(const [file,row]of Object.entries(files)){",
+       "after": "  if(!frozen)return null;\n  authenticateReleaseOwner(file);\n  // The repair predates the current runtime cohort, which is read below in its own case.\n  return frozen.source;\n };\n const repairRead=closeoutRead('pr629',readRepairOwner,{readRuntime});\n for(const [file,row]of Object.entries(files)){"
+     },
+     {
+       "at": 304,
+       "before": " assert.equal(currentSourceEpoch.preCombinedSource(file,input,{target,readSource:record}),expected);\n assert.equal(admittedReads.length,480,'complete live owner read trace');\n assert.equal(createHash('sha256').update(JSON.stringify(admittedReads)).digest('hex'),\n  'ad1c81a8f757224fa6520ca74d2a9b682f24925d2689141bc4b2eb1066d6a7fd','ordered Develop owner read trace');\n let position=-1;",
+       "after": " assert.equal(currentSourceEpoch.preCombinedSource(file,input,{target,readSource:record}),expected);\n const digest=reads=>createHash('sha256').update(JSON.stringify(reads)).digest('hex');\n assert.equal(admittedReads.length,releaseArchitectureReadTrace.count,'complete live owner read trace');\n assert.equal(digest(admittedReads),releaseArchitectureReadTrace.sha256,'ordered Release owner read trace');\n const added=[[3,5],[9,11],[16,17],[18,23],[30,32],[90,91],[115,116],\n  [155,157],[221,224],[317,318],[367,370],[413,414],[479,480]];\n const original=admittedReads.filter((_,index)=>!added.some(([start,end])=>index>=start&&index<end));\n assert.equal(original.length,480);\n assert.equal(digest(original),'ad1c81a8f757224fa6520ca74d2a9b682f24925d2689141bc4b2eb1066d6a7fd','ordered Develop owner read trace');\n let position=-1;"
+     }
+   ]
+ },
+ "tests/silent-final-source-epoch.test.mjs": {
+   "current": {
+     "sha256": "04836e2a405797c90636725642db44ed7b3e197c43b498cdf859fd2941e7b29a",
+     "gitBlob": "507d0fd36cfbea810829c2a2d9dd303da170c0fb"
+   },
+   "previous": {
+     "sha256": "dea883654c05fd3d244dafdd16326853db282b17e63bf7288affb85ebd869314",
+     "gitBlob": "a5c724ddb461951bb3b9e0bb7a8be64d2ed0db16"
+   },
+   "hunks": [
+     {
+       "at": 13,
+       "before": "import {createHash} from 'node:crypto';\n// These original49-owner contracts authenticate the pre-component Silent epoch;",
+       "after": "import {createHash} from 'node:crypto';\nimport {releaseArchitectureReadTrace} from './helpers/current-production-source-reads.mjs';\n// These original49-owner contracts authenticate the pre-component Silent epoch;"
+     },
+     {
+       "at": 121,
+       "before": "   assert.equal(currentEpoch.preCombinedSource(config,input,{target:'actor',readSource:live}),expected);\n   assert.equal(seen.length,480);\n   assert.equal(createHash('sha256').update(JSON.stringify(seen)).digest('hex'),\n    'ad1c81a8f757224fa6520ca74d2a9b682f24925d2689141bc4b2eb1066d6a7fd');\n   for(const owner of proof.owners)assert(seen.includes(owner),'retained Silent owner: '+owner);",
+       "after": "   assert.equal(currentEpoch.preCombinedSource(config,input,{target:'actor',readSource:live}),expected);\n   const digest=reads=>createHash('sha256').update(JSON.stringify(reads)).digest('hex');\n   assert.equal(seen.length,releaseArchitectureReadTrace.count);\n   assert.equal(digest(seen),releaseArchitectureReadTrace.sha256);\n   // Release owner rereads are interleaved with the original 480 observations.\n   const added=[[3,5],[9,11],[16,17],[18,23],[30,32],[90,91],[115,116],\n    [155,157],[221,224],[317,318],[367,370],[413,414],[479,480]];\n   const original=seen.filter((_,index)=>!added.some(([start,end])=>index>=start&&index<end));\n   assert.equal(original.length,480);\n   assert.equal(digest(original),'ad1c81a8f757224fa6520ca74d2a9b682f24925d2689141bc4b2eb1066d6a7fd');\n   for(const owner of proof.owners)assert(seen.includes(owner),'retained Silent owner: '+owner);"
+     }
+   ]
+ },
  "tests/lore-v2.test.mjs": {
   "current": {
    "sha256": "7e5fe50774f35af13df83ac4206bb7f4356f56bc7e745ce891caa0395d70248b",
@@ -1397,6 +1699,41 @@ const fixtures=Object.freeze({
    }
   ]
  },
+ // Preserve the approved pre-Native Controls fixtures for historical UI replay.
+ "tests/lua/spike_slime_l_ui.lua": {
+  "current": {
+   "sha256": "98972176b8ae21b28ee48bfe7f7a15fb2b720f152ceb9bf4847b1a59083f5c05",
+   "gitBlob": "a6de1469b516a29fd444c1e5a200565d0626d42e"
+  },
+  "previous": {
+   "sha256": "a4139355b9c68e2ff06001fbd72012e99559f4d41ce1d74e6f80929ccbe8e0b5",
+   "gitBlob": "0b6cf60a14a27c9de7c488c213b9f9debe5da4d8"
+  },
+  "hunks": [
+   {
+    "at": 0,
+    "before": "-- Actual generated controls: visible Large Spike intent, two cards, and Frail.\npackage.path='src/lua/?.lua;build/lua/?.lua;'..package.path\nlocal H=dofile('tests/lua/support/battle_action_fixture.lua')\nlocal inspectDetails=dofile('tests/lua/support/status_detail_fixture.lua')\nlocal C=H.F.Combat\nlocal host,ui,panel,emit,tap,drain=H.setup({'defend'},{'spike_slime_l'})\nlocal s=host.run.combat;s.enemies[1].intentIndex=1;host:refresh()\nassert(panel:GetChild('enemy1'):GetChild('intent').text=='16')\nlocal before=C.copy(s);tap('enemy1',1);local detail=inspectDetails(ui,panel)\nassert(detail:find('16',1,true) and detail:find('将 2 张「黏滞」放入你的弃牌堆',1,true))\nassert(panel:GetChild('enemy1'):GetChild('intentBadge').visible,'mixed attack must also show its debuff badge')\nassert(s.seed==before.seed and s.player.hp==before.player.hp and s.enemies[1].hp==before.enemies[1].hp,'inspect does not mutate combat')\ntap('endTurn',2);drain();assert(s.player.hp==64)\nlocal found={};for i,c in ipairs(s.hand)do if c.cardId=='slimed' then found[#found+1]={slot=i,uid=c.uid} end end\nassert(#found==2 and found[1].uid~=found[2].uid,'two real distinct generated cards')\nlocal card=panel:GetChild('card'..found[1].slot);assert(card:GetChild('name').text=='黏滞' and card:GetChild('cost').text=='1')\ntap('card'..found[1].slot,3);tap('playArea',4);drain();assert(s.energy==2 and #s.exhaust==1)\ns.enemies[1].intentIndex=2;host:refresh();tap('enemy1',5);local frail=inspectDetails(ui,panel)\nassert(frail:find('使你获得 2 回合脆弱',1,true),'upcoming debuff is not an already applied status')\nprint('LARGE_SPIKE_UI_PASS intent16/detail2/read-only/two-generated-cards/real-exhaust/frail2')",
+    "after": "local monsterControl=dofile('tests/lua/support/monster_control_fixture.lua')\n-- Actual generated controls: visible Large Spike intent, two cards, and Frail.\npackage.path='src/lua/?.lua;build/lua/?.lua;'..package.path\nlocal H=dofile('tests/lua/support/battle_action_fixture.lua')\nlocal inspectDetails=dofile('tests/lua/support/status_detail_fixture.lua')\nlocal C=H.F.Combat\nlocal host,ui,panel,emit,tap,drain=H.setup({'defend'},{'spike_slime_l'})\nlocal s=host.run.combat;s.enemies[1].intentIndex=1\ns=C.copy(s);host.run.combat=s;host:refresh()\nassert(monsterControl(panel,'enemy1'):GetChild('intent').text=='16')\nlocal before=C.copy(s);tap('enemy1',1);local detail=inspectDetails(ui,panel)\nassert(detail:find('这名敌人将要对你施加负面效果并攻击造成 16 点伤害。',1,true))\ndofile('tests/lua/support/intent_face_assertion.lua')(monsterControl(panel,'enemy1'),require('abyss_battle_intent_view').intentView(s,1))\nassert(s.seed==before.seed and s.player.hp==before.player.hp and s.enemies[1].hp==before.enemies[1].hp,'inspect does not mutate combat')\ntap('endTurn',2);drain();assert(s.player.hp==64)\nlocal found={};for i,c in ipairs(s.hand)do if c.cardId=='slimed' then found[#found+1]={slot=i,uid=c.uid} end end\nassert(#found==2 and found[1].uid~=found[2].uid,'two real distinct generated cards')\nlocal card=panel:GetChild('card'..found[1].slot);assert(card:GetChild('name').text=='黏滞' and card:GetChild('cost').text=='1')\ntap('card'..found[1].slot,3);tap('playArea',4);drain();assert(s.energy==2 and #s.exhaust==1)\ns.enemies[1].intentIndex=2;host:refresh();tap('enemy1',5);local frail=inspectDetails(ui,panel)\nassert(frail:find('这名敌人将要对你施加一种负面效果。',1,true),'upcoming debuff is not an already applied status')\nprint('LARGE_SPIKE_UI_PASS intent16/strategy/read-only/two-generated-cards/real-exhaust/debuff-preview')"
+   }
+  ]
+ },
+ "tests/lua/slimed_ui.lua": {
+  "current": {
+   "sha256": "62c3e6a414d6d31e4316630326fc76a5dd779145133cf2a5875fb4e203a3f2ec",
+   "gitBlob": "00dde572f5db8b7335087379e2caf4323e333db0"
+  },
+  "previous": {
+   "sha256": "d991810b91d5ee4ba17e0453b6d9702586670a6f7ad53168ee5667fb103f0952",
+   "gitBlob": "ed1ddc308607d289e50647c56dbf9eadf81303a6"
+  },
+  "hunks": [
+   {
+    "at": 0,
+    "before": "-- Real generated controls, not a model of the new status card UI.\npackage.path='src/lua/?.lua;build/lua/?.lua;'..package.path\nlocal H=dofile('tests/lua/support/battle_action_fixture.lua')\nlocal inspectDetails=dofile('tests/lua/support/status_detail_fixture.lua')\nlocal C=H.F.Combat\nlocal host,ui,panel,emit,tap,drain=H.setup({'defend'},{'spike_slime_m'})\nlocal s=host.run.combat;s.enemies[1].intentIndex=1;host:refresh()\nassert(panel:GetChild('enemy1'):GetChild('intent').text=='8')\ntap('enemy1',1);local detail=inspectDetails(ui,panel)\nassert(detail:find('8',1,true) and detail:find('将 1 张「黏滞」放入你的弃牌堆',1,true))\nassert(panel:GetChild('enemy1'):GetChild('intentBadge').visible,'mixed attack must also show its debuff badge')\ntap('endTurn',2);drain();assert(s.player.hp==72)\nlocal slot,uid;for i,c in ipairs(s.hand)do if c.cardId=='slimed' then slot=i;uid=c.uid end end;assert(slot,'real enemy must generate drawn Slimed')\nlocal box=panel:GetChild('card'..slot)\nassert(box:GetChild('cost').text=='1','visible energy cost')\nassert(box:GetChild('name').text=='黏滞','approved traveler display name')\nassert(box:GetChild('label').text:find('1',1,true),'rendered cost in explanation')\ntap('card'..slot,3);assert(ui.selected==uid);tap('playArea',4);drain()\nassert(s.energy==2 and #s.exhaust==1 and s.exhaust[1].uid==uid,'field-confirmed status play exhausts once')\n-- Repeated stale Up/Click cannot play the moved-out card or charge energy twice.\nemit('card'..slot,'up',4);emit('card'..slot,'click',4);drain();assert(s.energy==2 and #s.exhaust==1)\nprint('SLIMED_GENERATED_UI_PASS intent/detail/generated-draw/cost/field-confirm/exhaust/repeat')",
+    "after": "local monsterControl=dofile('tests/lua/support/monster_control_fixture.lua')\n-- Real generated controls, not a model of the new status card UI.\npackage.path='src/lua/?.lua;build/lua/?.lua;'..package.path\nlocal H=dofile('tests/lua/support/battle_action_fixture.lua')\nlocal inspectDetails=dofile('tests/lua/support/status_detail_fixture.lua')\nlocal C=H.F.Combat\nlocal host,ui,panel,emit,tap,drain=H.setup({'defend'},{'spike_slime_m'})\nlocal s=host.run.combat;s.enemies[1].intentIndex=1\ns=C.copy(s);host.run.combat=s;host:refresh()\nassert(monsterControl(panel,'enemy1'):GetChild('intent').text=='8')\ntap('enemy1',1);local detail=inspectDetails(ui,panel)\nassert(detail:find('这名敌人将要对你施加负面效果并攻击造成 8 点伤害。',1,true))\ndofile('tests/lua/support/intent_face_assertion.lua')(monsterControl(panel,'enemy1'),require('abyss_battle_intent_view').intentView(s,1))\ntap('endTurn',2);drain();assert(s.player.hp==72)\nlocal slot,uid;for i,c in ipairs(s.hand)do if c.cardId=='slimed' then slot=i;uid=c.uid end end;assert(slot,'real enemy must generate drawn Slimed')\nlocal box=panel:GetChild('card'..slot)\nassert(box:GetChild('cost').text=='1','visible energy cost')\nassert(box:GetChild('name').text=='黏滞','approved traveler display name')\nassert(box:GetChild('label').text:find('1',1,true),'rendered cost in explanation')\ntap('card'..slot,3);assert(ui.selected==uid);tap('playArea',4);drain()\nassert(s.energy==2 and #s.exhaust==1 and s.exhaust[1].uid==uid,'field-confirmed status play exhausts once')\n-- Repeated stale Up/Click cannot play the moved-out card or charge energy twice.\nemit('card'..slot,'up',4);emit('card'..slot,'click',4);drain();assert(s.energy==2 and #s.exhaust==1)\nprint('SLIMED_GENERATED_UI_PASS intent/detail/generated-draw/cost/field-confirm/exhaust/repeat')"
+   }
+  ]
+ },
  // Max HP historical archives still execute the original approved-UI helper.
  "tests/helpers/approved-ui-inverse.mjs": {
   "current": {
@@ -1510,6 +1847,17 @@ const unifiedGilFixture={
  ]
 };
 
+// Keep the exact frozen Selection Fade fixture admissible beside its Windows fix.
+const selectionFadeWindowsFixture={
+ path:'tests/sts-selection-fade.test.mjs',
+ current:{sha256:'125fbb29aaa658c84f1858ed81fc30985c656d65aa03a396b5b4b76382f0e9fd',gitBlob:'23ba59d0554eaf924f1c8c003b5d242820bbe928'},
+ hunks:[{
+  at:217,
+  before:" const source=readFileSync(new URL('./fixtures/page-reveal-pr839.lua',import.meta.url),'utf8');",
+  after:" const source=readFileSync(new URL('./fixtures/page-reveal-pr839.lua',import.meta.url),'utf8').replaceAll('\\r\\n','\\n');",
+ }],
+};
+
 // The current legacy browser fixture exercises warm detail reuse and genuine
 // generation retirement. Historical replays still read the exact former case.
 const permanentDeckRuntimeFixture=Object.freeze({
@@ -1550,6 +1898,21 @@ const permanentDeckRuntimeFixture=Object.freeze({
  ]
 });
 
+const approvedSpikeUiAdapter=Object.freeze({
+ "path": "tests/helpers/approved-ui-inverse.mjs",
+ "current": {
+  "sha256": "6c620a9daa387bcde9958b19e39f9fa34d2159466ee714085c1944e86d5a7c20",
+  "gitBlob": "cb5b83798b46879874e42243e4fab43fd4096c73"
+ },
+ "hunks": [
+  {
+   "at": 75,
+   "before": " source=preNemesisControlFixture(path,preBattleLifeSource(path,source));",
+   "after": " source=preNemesisControlFixture(path,preBattleLifeSource(path,source));\n if(path==='tests/lua/spike_slime_l_ui.lua'||path==='tests/lua/slimed_ui.lua')\n  source=beforeReleaseClosureFixture(path,source);"
+  }
+ ]
+});
+
 export function beforeReleaseClosureFixture(path,raw,{reviewedBuild=false}={}){
  // Current integration authenticates the live delivery owner through its own archive.
  if(path==='scripts/verify-delivery.mjs'&&!reviewedBuild)return raw;
@@ -1559,6 +1922,20 @@ export function beforeReleaseClosureFixture(path,raw,{reviewedBuild=false}={}){
  if(typeof source!=='string'||Buffer.isBuffer(raw)&&!Buffer.from(source).equals(raw))return raw;
  const normalized=source.replaceAll('\r\n','\n');
  if(normalized.includes('\r')||source!==normalized&&source!==normalized.replaceAll('\n','\r\n'))return raw;
+ if(path===selectionFadeWindowsFixture.path&&exactSourceMatches(source,selectionFadeWindowsFixture.current)){
+  const {current,hunks}=selectionFadeWindowsFixture;
+  const previous=fixtures[path].current;
+  const predecessor=restoreExactFixtureHunks({path,beforeSha256:previous.sha256,afterSha256:current.sha256,hunks},path,source);
+  assert(exactSourceMatches(predecessor,previous),'exact frozen Selection Fade fixture');
+  source=source===normalized?predecessor:predecessor.replaceAll('\n','\r\n');
+ }
+ if(path===approvedSpikeUiAdapter.path&&exactSourceMatches(source,approvedSpikeUiAdapter.current)){
+  const {current,hunks}=approvedSpikeUiAdapter;
+  const previous=fixtures[path].current;
+  const predecessor=restoreExactFixtureHunks({path,beforeSha256:previous.sha256,afterSha256:current.sha256,hunks},path,source);
+  assert(exactSourceMatches(predecessor,previous),'exact prior approved UI adapter');
+  source=source===normalized?predecessor:predecessor.replaceAll('\n','\r\n');
+ }
  if(path==='tests/official-assets-runtime.test.mjs'&&exactSourceMatches(source,permanentDeckRuntimeFixture.current)){
   const {current,previous,hunks}=permanentDeckRuntimeFixture;
   const predecessor=restoreExactFixtureHunks({path,beforeSha256:previous.sha256,afterSha256:current.sha256,hunks},path,source);
