@@ -867,6 +867,28 @@ const releaseReplayReaders=Object.freeze({
     "after": "\nfunction fixtureMatches(path,source,after,{allowArchived=true}={}){\n source=beforeReleaseClosureFixture(path,source);\n if(typeof source!=='string'||source.includes('\\r\\r\\n'))return false;\n const normalized=source.replaceAll('\\r\\n','\\n'),archived=normalized===after.source;"
    }
   ]
+ },
+ "tests/helpers/colorless-catalog-source-inverse.mjs": {
+  "current": {
+   "sha256": "ca654dba3b490f2d5f857933931992d1b72b346df246165499631cca7f6f717d",
+   "gitBlob": "94c5af24ef7e9e76b53116e97fc55d25d353f482"
+  },
+  "previous": {
+   "sha256": "b624a090c35dbbb0b2a161092ad98628f5d34767f07d7aee9f5415f0c796726c",
+   "gitBlob": "051b1dcb5da240eec4c6b65cfa94b9b3775e8bd6"
+  },
+  "hunks": [
+   {
+    "at": 0,
+    "before": "// Proposal facade: the original epoch module and its oracle are byte-for-byte frozen.\nexport * from './epochs/colorless/tests/helpers/colorless-catalog-source-inverse.mjs';\nimport { preColorlessCatalogSource as original } from './epochs/colorless/tests/helpers/colorless-catalog-source-inverse.mjs';\nimport {authenticateDevelopBackflow,beforeDevelopBackflow} from './develop-release-backflow-source.mjs';\nimport {sourceEpoch} from './combined-epoch/source-epoch.mjs';",
+    "after": "// Proposal facade: the original epoch module and its oracle are byte-for-byte frozen.\nexport * from './epochs/colorless/tests/helpers/colorless-catalog-source-inverse.mjs';\nimport { preColorlessCatalogSource as original,colorlessCatalogSourceProof } from './epochs/colorless/tests/helpers/colorless-catalog-source-inverse.mjs';\nimport {authenticateDevelopBackflow,beforeDevelopBackflow} from './develop-release-backflow-source.mjs';\nimport {sourceEpoch} from './combined-epoch/source-epoch.mjs';"
+   },
+   {
+    "at": 7,
+    "before": "const descriptionPath='src/lua/abyss_colorless_cards.lua';\nexport function preColorlessCatalogSource(path,source,{readSource=live}={}){\n readSource=readers.get(readSource)??readSource;\n const projected=sourceEpoch.preCombinedSource(path,source,{target:'colorless',readSource});",
+    "after": "const descriptionPath='src/lua/abyss_colorless_cards.lua';\nexport function preColorlessCatalogSource(path,source,{readSource=live}={}){\n if(!Object.hasOwn(colorlessCatalogSourceProof.files[path]??{},'beforeSource'))return source;\n readSource=readers.get(readSource)??readSource;\n const projected=sourceEpoch.preCombinedSource(path,source,{target:'colorless',readSource});"
+   }
+  ]
  }
 });
 function beforeReleaseReplayReader(path,raw){

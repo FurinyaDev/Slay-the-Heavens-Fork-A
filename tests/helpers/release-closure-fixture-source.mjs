@@ -5,6 +5,23 @@ import {exactSourceMatches} from './source-fingerprint.mjs';
 // Current Host checks exercise production. Historical Host and CI replays
 // preserve the exact earlier test sources from the production backflow.
 const fixtures=Object.freeze({
+ "tests/colorless-catalog-source.test.mjs": {
+  "current": {
+   "sha256": "da577b404aeca08d7ee98580da6186204589a1c429b71e7b4ef945f874555d17",
+   "gitBlob": "6c1da94453ea96f4513d0a785758e445d0614185"
+  },
+  "previous": {
+   "sha256": "1f2fc5bff24370b718aee29cdd4ef744f1096f7a2088a7691b401c7de86ebe50",
+   "gitBlob": "ad97516e45aa9e76b2f71a0f9882a5535e020849"
+  },
+  "hunks": [
+   {
+    "at": 76,
+    "before": " const directory=mkdtempSync(join(tmpdir(),'colorless-retirement-')),target=join(directory,leaf);\n try{\n  mkdirSync(join(directory,'src/lua'),{recursive:true});writeFileSync(target,read(leaf));\n  const cleanup=retire(directory);assert(existsSync(target));writeFileSync(target,read(leaf)+'\\n');assert.throws(cleanup,/unreviewed/);assert(existsSync(target));\n  writeFileSync(target,read(leaf));retire(directory)();assert(!existsSync(target));assert(existsSync(leaf));\n  try{symlinkSync(join(process.cwd(),leaf),target);}catch(error){if(['EPERM','EACCES','ENOTSUP'].includes(error.code)){t.skip('file symlink unavailable: '+error.code);return;}throw error;}\n  assert.throws(()=>retire(directory),/aliases live source/);assert(existsSync(leaf));",
+    "after": " const directory=mkdtempSync(join(tmpdir(),'colorless-retirement-')),target=join(directory,leaf);\n try{\n  const historicalLeaf=historicalRead(leaf);\n  mkdirSync(join(directory,'src/lua'),{recursive:true});writeFileSync(target,historicalLeaf);\n  const cleanup=retire(directory);assert(existsSync(target));writeFileSync(target,historicalLeaf+'\\n');assert.throws(cleanup,/unreviewed/);assert(existsSync(target));\n  writeFileSync(target,historicalLeaf);retire(directory)();assert(!existsSync(target));assert(existsSync(leaf));\n  try{symlinkSync(join(process.cwd(),leaf),target);}catch(error){if(['EPERM','EACCES','ENOTSUP'].includes(error.code)){t.skip('file symlink unavailable: '+error.code);return;}throw error;}\n  assert.throws(()=>retire(directory),/aliases live source/);assert(existsSync(leaf));"
+   }
+  ]
+ },
  "tests/effects-target-group.test.mjs": {
   "current": {
    "sha256": "87d3e6492f57997a968c226a1c0cee7a1da8e7e5c1c1235b0321832241f463a8",
