@@ -1,5 +1,5 @@
 name: Quick feedback
-run-name: ${{ github.event_name == 'push' && 'Advisory Quick' || 'Preflight' }} / ${{ github.sha }} / ${{ inputs.base_sha || 'upstream-develop' }}
+run-name: ${{ github.event_name == 'push' && 'Advisory Quick' || inputs.mode == 'release' && 'Release quick' || 'Preflight' }} / ${{ github.sha }} / ${{ inputs.base_sha || 'upstream-develop' }}
 on:
   # Routine task pushes run only Fork A Quick (never the main-repo runner).
   push:
@@ -7,6 +7,11 @@ on:
     paths-ignore: ['**/*.md']
   workflow_dispatch:
     inputs:
+      mode:
+        description: Complete affected preflight or frozen Release quick screen
+        type: choice
+        default: affected
+        options: [affected, release]
       base_sha:
         description: 'Exact comparison commit for manual diagnostics'
         required: true
@@ -19,7 +24,7 @@ concurrency:
 jobs:
   related:
     name: ${{ github.event_name == 'push' && 'Advisory Quick feedback' || 'Complete affected preflight' }}
-    if: ${{ github.event_name == 'workflow_dispatch' || (github.event.repository.id == 1460097312 && github.event_name == 'push' && !startsWith(github.ref, 'refs/heads/ci/full/')) }}
+    if: ${{ (github.event_name == 'workflow_dispatch' && inputs.mode != 'release') || (github.event.repository.id == 1460097312 && github.event_name == 'push' && !startsWith(github.ref, 'refs/heads/ci/full/')) }}
     runs-on: ubuntu-24.04
     timeout-minutes: ${{ github.event_name == 'push' && 10 || 30 }}
     steps:
@@ -108,3 +113,50 @@ jobs:
           path: build/ci-checkout.json
           if-no-files-found: error
           retention-days: 7
+  release-screen:
+    name: Release quick screen
+    if: github.event_name == 'workflow_dispatch' && inputs.mode == 'release' && github.repository_id == '1429751262' && (startsWith(github.ref, 'refs/heads/release/') || startsWith(github.ref, 'refs/heads/hotfix/'))
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 2
+          persist-credentials: false
+      - name: Verify release checkout and comparison base
+        env:
+          BASE_SHA: ${{ inputs.base_sha }}
+          GIT_TERMINAL_PROMPT: '0'
+        run: |
+          [[ "$GITHUB_REF" =~ ^refs/heads/(release|hotfix)/v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]
+          [[ "$BASE_SHA" =~ ^[0-9a-f]{40}$ && "$BASE_SHA" != "$GITHUB_SHA" ]]
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          if ! git cat-file -e "${BASE_SHA}^{commit}" 2>/dev/null; then
+            git -c credential.helper= -c http.lowSpeedLimit=1024 -c http.lowSpeedTime=30 fetch --depth=1 --no-auto-maintenance --no-tags origin "$BASE_SHA"
+          fi
+          git diff --check "$BASE_SHA" HEAD
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '24.18.0'
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - run: npm ci --ignore-scripts --prefer-offline --no-audit --no-fund --fetch-retries=0 --fetch-timeout=30000
+      - name: Screen release governance, versions and syntax
+        run: |
+          npm run check:guidance
+          npm run verify:backlog
+          npm run check:syntax
+          node --input-type=module <<'NODE'
+          import assert from 'node:assert/strict';
+          import {loadReleaseNotes} from './scripts/release-notes.mjs';
+          const sourceIdentity = {sourceCommit: process.env.GITHUB_SHA, sourceDirty: false};
+          const {build} = loadReleaseNotes({releaseCandidate: true, sourceIdentity});
+          assert.equal(process.env.GITHUB_REF_NAME.split('/')[1], build.version);
+          NODE
+      - name: Restore exact existing media for offline startup
+        env:
+          CI_LFS_TOKEN: ${{ github.token }}
+        run: node scripts/ci-media-lfs.mjs
+      - name: Smoke test offline startup
+        run: node --test tests/formal-startup-budget.test.mjs

@@ -6,6 +6,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { cpSync, linkSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { join, resolve, dirname } from 'node:path';
+import { spawnSync } from 'node:child_process';
+import { pathToFileURL } from 'node:url';
 import { tmpdir } from 'node:os';
 import { loadReleaseNotes, parseChangelog, notesSha256, releaseSourceFiles, releaseBuildArgs } from '../scripts/release-notes.mjs';
 import { buildUI } from '../scripts/build-ui.mjs';
@@ -185,6 +187,29 @@ test('proposal workflow is manually dispatched, pinned, manifest-driven and cann
     { paths: ['out'], options: { releaseCandidate: true, workKey: 'contest-2026' } });
   assert.throws(() => releaseBuildArgs(['--publish']), /Unknown/);
 });
+test('Release Quick accepts an ordinary version bump and rejects a conflicting source version', t => {
+  const candidate = fixture(t);
+  candidate.setVersion('0.1.1');
+  writeFileSync(join(candidate.root, 'CHANGELOG.md'), changelog());
+  const quick = readFileSync('.github/workflows/quick-feedback.yml', 'utf8').replaceAll('\r\n', '\n').split('  release-screen:\n')[1];
+  assert.match(quick, /inputs\.mode == 'release' && github\.repository_id == '1429751262'/);
+  assert.match(quick, /node --test tests\/formal-startup-budget\.test\.mjs/);
+  assert.doesNotMatch(quick, /test-affected\.mjs/);
+  const program = quick.match(/<<'NODE'\n([^]*?)\n +NODE/)[1]
+    .replace('./scripts/release-notes.mjs', pathToFileURL(resolve('scripts/release-notes.mjs')).href);
+  const run = () => spawnSync(process.execPath, ['--input-type=module', '--eval', program], {
+    cwd: candidate.root, encoding: 'utf8', env: {
+      ...process.env, GITHUB_SHA: sourceIdentity.sourceCommit, GITHUB_REF_NAME: 'release/v0.1.1',
+    },
+  });
+  const accepted = run();
+  assert.equal(accepted.status, 0, accepted.stderr);
+  writeFileSync(join(candidate.root, '.release-please-manifest.json'), '{".":"0.1.2"}');
+  const mismatch = run();
+  assert.notEqual(mismatch.status, 0);
+  assert.match(mismatch.stderr, /manifest versions must match/);
+});
+
 test('native source inventory binds CHANGELOG, version manifest and release config', () => {
   const paths = sourceInputs(process.cwd()).map(row => row.path);
   for (const path of ['CHANGELOG.md', '.release-please-manifest.json', 'release-please-config.json', 'data/release/publications.json']) assert(paths.includes(path));
