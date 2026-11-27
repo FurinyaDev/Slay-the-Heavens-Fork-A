@@ -19,6 +19,9 @@ import {beforeSelectionReceiptSource,selectionCopierReceipt} from './ui-selectio
 import {restoreExactFixtureHunks} from './exact-fixture-hunks.mjs';
 import {beforeRunHudDeckLabel} from './run-hud-successors.mjs';
 import {beforeCardReadingScope} from './chapter-battle-scene-source.mjs';
+import {beforeKnownMasterBackflowSource} from './master-backflow-source.mjs';
+import {readReleaseEntrancePredecessor} from './release-entrance-owner-source.mjs';
+import {beforeReleaseClosureFixture} from './release-closure-fixture-source.mjs';
 
 const hash=(bytes,algorithm='sha256')=>createHash(algorithm).update(bytes).digest('hex');
 const blob=source=>hash(`blob ${Buffer.byteLength(source)}\0${source}`,'sha1');
@@ -192,6 +195,8 @@ export function beforeCurrentHistoricalStsSource(path,source){
   const text=source.toString('utf8'),prior=beforeCurrentHistoricalStsSource(path,text);
   return prior===text?source:Buffer.from(prior);
  }
+ if(path==='tests/integration-source-epoch.test.mjs'||path==='tests/effects-target-group-source-epoch.test.mjs')
+  source=beforeKnownMasterBackflowSource(path,source);
  // New exact integration tests first continue to the entrance witness's reviewed input.
  if(['tests/integration-source-epoch.test.mjs','tests/helpers/combined-epoch/source-epoch-runtime.mjs',
   'tests/session-menu-navigation.test.mjs','tests/tiny-house-pending-ui.cases.mjs'].includes(path))source=beforeCurrentReplayFixes(path,source);
@@ -305,7 +310,7 @@ function readComponentSourceReceipt(path,digest,readCurrent){
  if(!Object.hasOwn(componentCurrentSources,path))return;
  const receipt=componentUiCiSourceProof.files[path];
  if(receipt.afterSha256!==digest)return;
- const source=readCurrent(path,'utf8');
+ const source=beforeReleaseClosureFixture(path,readCurrent(path,'utf8'));
  assert(matches(source,componentCurrentSources[path]),'current component receipt input changed: '+path);
  const normalized=lf(source);
  assert(source===normalized||source===normalized.replaceAll('\n','\r\n'),'mixed component receipt line endings: '+path);
@@ -321,6 +326,39 @@ function readGoldenIdolCopierReceipt(readCurrent){
  return packet.receipts[copierPath].before[goldenIdolCopierDigest].source;
 }
 
+const relicCatalogTest='tests/sts1-relic-pool-catalog.test.mjs';
+const relicCatalogTestPrior={
+ sha256:'d592cf17514bfd0557cf6dac7083e8b833d93c6d72e395b94ab347a6c7aa742f',gitBlob:'d5b5606e24d87cab5227927e2428e8768d7563ff',
+};
+function readRelicCatalogTestReceipt(readCurrent){
+ const current=readCurrent(relicCatalogTest,'utf8');
+ assert(matches(current,{
+  sha256:'8a9760ce1d02808a18ee417a3dfe8b7ac5ca19ee1b295636e617a4572e2e3406',gitBlob:'355e6655d31944c9160acede88bc1b514b3b6fd8',
+ }),'current relic catalog test receipt input changed');
+ const normalized=lf(current);
+ assert(current===normalized||current===normalized.replaceAll('\n','\r\n'),'mixed relic catalog test line endings');
+ const prior=normalized
+  .replace("import {historicalTest} from './helpers/historical-baseline-inputs.mjs';","import {closeoutRead} from './helpers/closeout-ci-source.mjs';")
+  .replace("historicalTest('historical project effects","test('historical project effects")
+  .replace("  const path = 'data/relics.json';\n  const data = JSON.parse(preAcceptedPr323Source(path,read(path))).relics;",
+   "  const data = JSON.parse(preAcceptedPr323Source('data/relics.json',closeoutRead('pr620')('data/relics.json','utf8'))).relics;");
+ assert(matches(prior,relicCatalogTestPrior),'exact historical relic catalog test predecessor');
+ return prior;
+}
+
+const colorlessReceiptPath='tests/helpers/colorless-catalog-source-inverse.mjs';
+function beforeColorlessReceipt(source,expected){
+ if(!matches(source,{
+  sha256:'ca654dba3b490f2d5f857933931992d1b72b346df246165499631cca7f6f717d',gitBlob:'94c5af24ef7e9e76b53116e97fc55d25d353f482',
+ }))return source;
+ const normalized=lf(source);
+ assert(source===normalized||source===normalized.replaceAll('\n','\r\n'),'mixed Colorless receipt line endings');
+ const prior=normalized.replace('as original,colorlessCatalogSourceProof }','as original }')
+  .replace(" if(!Object.hasOwn(colorlessCatalogSourceProof.files[path]??{},'beforeSource'))return source;\n",'');
+ assert(matches(prior,expected),'exact Colorless receipt predecessor');
+ return prior;
+}
+
 // A frozen receipt may read a registered old blob only after checking the
 // corresponding current file. Raw Full discovery and inputs use their normal readers.
 function readOfficialCalibrationReceipt(path,digest,readCurrent){
@@ -330,8 +368,9 @@ function readOfficialCalibrationReceipt(path,digest,readCurrent){
  const prior=row.predecessors[digest];
  if(row.currentPath!==path)assert.throws(()=>readCurrent(path,'utf8'),{code:'ENOENT'},'retired official receipt input reappeared: '+path);
  const live=readCurrent(row.currentPath,'utf8');
- const source=row.currentPath==='scripts/deck-ui-layout.mjs'?beforeRunHudDeckLabel(live):
+ const current=row.currentPath==='scripts/deck-ui-layout.mjs'?beforeRunHudDeckLabel(live):
   row.currentPath==='src/lua/abyss_viewport.lua'?beforeCardReadingScope(row.currentPath,live):live;
+ const source=matches(current,row.current)?current:readReleaseEntrancePredecessor(row.currentPath,current,readCurrent);
  assert(matches(source,row.current),'current official receipt input changed: '+row.currentPath);
  const normalized=lf(source);
  assert(source===normalized||source===normalized.replaceAll('\n','\r\n'),'mixed official receipt line endings: '+row.currentPath);
@@ -347,6 +386,7 @@ export function readCalibrationReceiptInput(path,digest,read,readCurrent=readFil
  if(path===relicEquipReceipt.path&&digest===relicEquipReceipt.prior.sha256)return readRelicEquipReceipt(readCurrent);
  if(path===launchComponentPath&&digest===launchComponentPrior.sha256)return readLaunchComponentReceipt(readCurrent);
  if(path===copierPath&&digest===goldenIdolCopierDigest)return readGoldenIdolCopierReceipt(readCurrent);
+ if(path===relicCatalogTest&&digest===relicCatalogTestPrior.sha256)return readRelicCatalogTestReceipt(readCurrent);
  const component=readComponentSourceReceipt(path,digest,readCurrent);
  if(component!==undefined)return component;
  const vocabulary=readCloseoutLuaVocabularyReceipt(path,digest,readCurrent);
@@ -386,6 +426,7 @@ export function readCalibrationReceiptInput(path,digest,read,readCurrent=readFil
  else{
   const raw=beforeCurrentHistoricalStsSource(path,readCurrent(path,'utf8'));
   let current=raw;
+  if(path===colorlessReceiptPath)current=beforeColorlessReceipt(raw,row.current);
   if(path==='tests/helpers/combined-epoch/source-epoch-runtime.mjs'||path==='tests/helpers/copy-integration-source-closure.mjs'||
      path==='tests/helpers/round3-catalog-source-inverse.mjs'){
    current=beforeMapRoomReplayCohort(path,raw);
