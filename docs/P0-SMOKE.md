@@ -12,9 +12,9 @@
 
 ### 固定候选与验证层次
 
-- 由集成方确定当前冻结源码、工程版本与完整必要 CI。记录正式工件 ID、`buildId`、`payloadDigest`、GIL SHA-256、配置及构建回执。Production 使用独立于旧 Alpha 的作品 GUID，分别记录测试存档 ID 与正式作品身份；不把 Alpha 包改名或复用旧发布凭证。
-- 从 [GIL build](GIL-CANDIDATE.md) 下载已通过正式性能验证的原工件，校验 `candidate.gil`，用同一份完整有声 GIL 导入并试玩。测试时保持 `MILIASTRA_ALLOW_LIVE_WRITE=0`。工具前提见 [TOOLCHAIN](TOOLCHAIN.md)，人工发布使用已验收的同一工件，见[发布操作单](PUBLISHING.md)。
-- 源码/Node/Fengari、Simulator 截图与交互、GIL 构建/读回、官方导入/本轮 ready、PC 与实体手机分别记结果。模拟器画布不等于手机，CI 绿灯不等于官方导入或自然通关；不存在本轮证据的项记“未测”。
+- 集成方固定当前冻结源码和工程版本。Fast、离线启动及资源冒烟、原生和音频审计、下载读回通过后，记录正式工件 ID、`buildId`、`payloadDigest`、GIL SHA-256、配置及构建回执。Production 使用独立于旧 Alpha 的作品 GUID，分别记录测试存档 ID 与正式作品身份；不把 Alpha 包改名或复用旧发布凭证。
+- 从 [GIL build](GIL-CANDIDATE.md) 下载原工件并校验 `candidate.gil`。取得本轮设备窗口后，用同一份完整有声 GIL 导入并试玩。正式 Full、Licenses、正式性能和同包试玩可分别记进度，待各项齐备后按[发布操作单](PUBLISHING.md)决定放行。测试时保持 `MILIASTRA_ALLOW_LIVE_WRITE=0`，工具前提见 [TOOLCHAIN](TOOLCHAIN.md)。
+- 日常 CI 按改动影响运行分层冒烟。候选分别记录源码/Node/Fengari、Simulator 截图与交互、GIL 离线启动及构建读回、官方导入/本轮 ready、PC 与实体手机。源码与离线作业只填对应证据栏，缺少本轮设备证据的项记“未测”。
 - 复用 `npm run verify:ui -- <候选.gil>` 与 `npm run verify:platform-load -- <最终candidate.json> <official-load.json>`。官方关卡≤20MB、服务器≤3MB分别核验，16MB为内部关卡预警；静态/动态负载、高峰战斗、复杂手牌、多敌特效和重复进出均须同候选证据，不能以 GIL 文件大小替代官方读数。
 
 ### 人工路径与回归重点

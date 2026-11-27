@@ -1,12 +1,12 @@
 # 《杀戮原塔2》参赛发布操作单
 
-Release 日常修复走受影响 Fast；集成完成才按 [CI 候选入口](CI-FAST.md)冻结准确 HEAD 并显式请求一次 Full。正式上线前须执行 `node scripts/release-ci.mjs verify release/<版本> <候选source SHA>` 并保存通过结果；当前 Release HEAD、候选来源或最新 Full 任一变化即重新验收。Release→master 的必需 Quality 会自动校验同一门禁。此入口不创建 Tag、不自动上传或发布，平台与设备验收仍适用。
+Release 日常修复按影响选测。集成完成后按 [CI 候选入口](CI-FAST.md#候选提测与打回重测)固定完整 HEAD，并行做适用 Fast 和 GIL build。通过筛查与产物检查即交 Owner 提测，并请求同 SHA 的 Full、启动同包正式性能。正式放行等待必要 CI、性能及适用的平台、画面和设备验收。Release 或 Hotfix → master 的 PR 正文登记唯一一行 `GIL-Artifact-ID: <数字ID>`，由必需 Quality 核对同包技术门禁。实际平台上线由 Owner 执行。
 
-同一 `release/v<工程版本>` 或 `hotfix/v<工程版本>` 的冻结 Full 和 Licenses 通过后，从 [GIL build](GIL-CANDIDATE.md) 的成功运行摘要取得唯一正式有声工件。记录工件链接末尾的数字 ID 和 GIL SHA-256。在 **Performance regression** 选该分支运行 `formal`，将该数字填入 `gil_artifact_id`。作业根据已确认的平台发布记录独立解析上个正式工程版本、构建源码、源码树与产物摘要。v2.2.0 对应 [v2.1.1 正式构建来源](versions/ENGINEERING.md)。作业下载并校验本次候选和上一版正式 GIL，从两份产物读回并执行实际打包的 Lua，使用实际 UI 与模板索引建立离线 Host 夹具。两边沿用同一玩家路径、六档 Docker 实限及三组正反交错配对。归档 `release-performance-<run>-<attempt>` 的 `report.json`、`evidence.json` 及独立复核。日常受影响 PR 执行轻量 Fast，源码重生成结果用于日常离线诊断。
+从 [GIL build](GIL-CANDIDATE.md) 的成功运行摘要取得冻结分支的完整有声 GIL 和下载读回证明。在 **Performance regression** 选同一 `release/v<工程版本>` 或 `hotfix/v<工程版本>` 运行 `formal`，在 `gil_artifact_id` 填工件数字 ID。正式性能可在 Full、Licenses 尚未结束时运行，保留 GIL SHA-256 及同包原始测量。作业根据已确认的平台发布记录独立解析上个正式工程版本、构建源码、源码树与产物摘要。v2.2.0 对应 [v2.1.1 正式构建来源](versions/ENGINEERING.md)。作业下载并校验本次候选和上一版正式 GIL，从两份产物读回并执行实际打包的 Lua，使用实际 UI 与模板索引建立离线 Host 夹具。两边沿用同一玩家路径、六档 Docker 实限及三组正反交错配对。归档 `release-performance-<run>-<attempt>` 的 `report.json`、`evidence.json` 及独立复核。日常受影响 PR 执行轻量 Fast，源码重生成结果用于日常离线诊断。
 
 正式资源配对在同一档位的独立 Docker 执行中追加第二幕压力场景，两次执行各留实际资源限制和执行 ID。使用受控的第一幕终点，实际点击继续和地图节点，以固定种子进入三名祈火徒的合法阵型。两侧验证满手、一次实际横扫中三名敌人的重叠受击效果、两次敌人回合及退出。候选和同包恢复都须实际绘制批准场景的 249 个可见图元，报告另记旧版实际槽数。v2.1.1 使用共享背景，章节槽数为 0。配对结果衡量同一战斗工作负载下整包的成本，保留新增背景引起的信号。连续游玩稳定性仍需单独验收。
 
-正式发布 Quality 入口验证最新成功的 `formal` run、attempt、原始报告和正式 GIL，绑定当前冻结 source SHA、GIL SHA-256 及 Full 的 run、attempt 和 checkout artifact。Full 或 `formal` 新增复跑后，在正式发布 PR 复跑必需的 Quality 检查。实际发布操作人必须在执行官方客户端发布前立即运行 `node scripts/release-ci.mjs verify release/v<工程版本> <候选source SHA>`，保存当时校验结果并使用其中精确 GIL SHA-256。持有本地完整读回审计的独立验证者也可在同一冻结源码工作树执行以下校验。
+正式发布 Quality 入口分别查验当前冻结源码的最新合法 Full run/attempt、checkout 回执和必要 Licenses inventory，并复核可信 GIL、同包 `formal` run/attempt 及原始报告。构建输入和工件不变时，Full 因 Runner 故障只重跑失败 Job，保留有效同包性能和人工结果。Full、Licenses 或 `formal` 重跑后，重新核对正式发布 PR 的必需 Quality 检查。实际发布操作人必须在执行官方客户端发布前立即运行 `node scripts/release-ci.mjs verify release/v<工程版本> <候选source SHA> <GIL-工件ID>`，保存当时校验结果并使用其中精确 GIL SHA-256。持有本地完整读回审计的独立验证者也可在同一冻结源码工作树执行以下校验。
 
 ```sh
 node scripts/runtime-baseline/verify-release-performance.mjs <final.gil> <candidate.json> <audit.json> <report.json>
@@ -14,11 +14,11 @@ node scripts/runtime-baseline/verify-release-performance.mjs <final.gil> <candid
 
 归档生成的 `build/release-performance-evidence.json`、原始测量和对应运行环境。失败、少档、实限不一致、候选身份不符或不可比均阻塞。六档之外的独立诊断需保存极端内存限制下的 OOM 退出和回到支持档后的完整 Host 复跑。`REVIEW_REQUIRED` 保留原信号，待独立评审核对已知开销、设备预算和候选原因。正式线上门禁还要求真实平台冷暖加载、可点击、帧时间及持续游玩等设备证据，按下文同候选负载门禁执行。
 
-正式 Hotfix 发布使用同仓库 `hotfix/v<工程版本>` → `master` PR，并在官方客户端操作前立即执行 `node scripts/release-ci.mjs verify hotfix/v<工程版本> <候选source SHA>`。沿用既有生产 Environment 审批。历史 Hotfix 继续引用各自归档回执。
+正式 Hotfix 发布使用同仓库 `hotfix/v<工程版本>` → `master` PR，并在官方客户端操作前立即执行 `node scripts/release-ci.mjs verify hotfix/v<工程版本> <候选source SHA> <GIL-工件ID>`。沿用既有生产 Environment 审批。历史 Hotfix 继续引用各自归档回执。
 
 正式发布前必须通过[同候选平台负载门禁](PLATFORM_LOAD.md)：对含最终音频/资产的候选执行 `npm run verify:platform-load -- <最终candidate.json> <official-load.json>`，并保留 source SHA、buildId、hash、客户端版本、时间和脱敏原始报告/截图。关卡≤20MB、服务器≤3MB分别核验；关卡>16MB为内部预警。全局/区域静态超标未解决、官方动态四类异常报告缺失、高峰战斗/复杂手牌/敌人特效并发/切换/重复进出未覆盖、官方试玩上传与启动操作或必要手机验收未完成，状态必须BLOCKED/UNVERIFIED，禁止发布。静态/动态推荐指标与平台禁止上传的硬限分别记录，不能提高负载需求档位掩盖问题。CI通过、旧候选基线8.96MB/0.01MB或GIL文件大小均不构成新候选放行证据。发布仍由人完成。
 
-v2.2.0 的最终候选还须通过[正式美术入库覆盖检查](art/NATIVE_MONSTER_PRODUCTION.md#v220-正式美术入库回执)。从 `release-ci verify` 的 `performance.gil` 下载获准访问的最终归档，使用 `node scripts/native-candidate-preview.mjs <最终candidate.json> <新的.artifacts目录>` 绑定 GIL 与 Simulator 存档。独立审查实际读取原生回读，复核以同一 GIL 投影产生的三底实渲、截图摘要、原图掩模及对应正式配置。
+v2.2.0 的最终候选还须通过[正式美术入库覆盖检查](art/NATIVE_MONSTER_PRODUCTION.md#v220-正式美术入库回执)。从可信构建摘要取同一归档即可准备视觉取证，最终核对 `release-ci verify` 的 `performance.gil` 与捕获工件一致。使用 `node scripts/native-candidate-preview.mjs <最终candidate.json> <新的.artifacts目录>` 绑定 GIL 与 Simulator 存档。独立审查实际读取原生回读，复核以同一 GIL 投影产生的三底实渲、截图摘要、原图掩模及对应正式配置。
 
 审稿后按现有受保护分支 PR 流程将脱敏的摘要记录登记到 [发布捕获批准清单](../data/release/actor-alpha-release-captures.json)。批准提交独立于冻结 Release。仅登记 `sourceCommit`、`branch`、`gilArtifactId`、`candidateSha256`、`candidateReceiptSha256`、`artConfigSha256`、`uiConfigSha256`、`nativeReadbackSha256`、`simulatorSaveSha256`、捕获文件 `captureSha256` 和 `approvalReference`，一份冻结源码对应一条捕获。文件登记提交须在实际远端 `develop` 的祖先链中。
 
@@ -26,7 +26,7 @@ v2.2.0 的最终候选还须通过[正式美术入库覆盖检查](art/NATIVE_MO
 npm run verify:actor-alpha -- <capture.json> <mask-locators.json> <new-report.json> --release <捕获批准提交完整SHA>
 ```
 
-正式捕获的 `scope` 使用 `production Lua actor painters from final native GIL readback`，`releaseEvidence` 记录最终 GIL 摘要 `candidateSha256`、`buildId`、`payloadDigest`、`officialAssetsProfile`、`artConfigSha256`、`uiConfigSha256`、`candidateReceiptSha256`、`nativeReadbackSha256` 与 `simulatorSaveSha256`。命令重新核验相同正式性能、冻结 Full、真实托管 GIL 归档及独立批准的捕获。批准原图掩模或捕获记录缺失时，美术发版门禁保持待验。此步骤在最终发布前执行，早期候选构建和 Full 仍可独立运行。
+正式捕获的 `scope` 使用 `production Lua actor painters from final native GIL readback`，`releaseEvidence` 记录最终 GIL 摘要 `candidateSha256`、`buildId`、`payloadDigest`、`officialAssetsProfile`、`artConfigSha256`、`uiConfigSha256`、`candidateReceiptSha256`、`nativeReadbackSha256` 与 `simulatorSaveSha256`。命令重新核验相同正式性能、冻结 Full、真实托管 GIL 归档及独立批准的捕获。批准原图掩模或捕获记录缺失时，美术发版门禁保持待验。此步骤在最终发布前执行，可在 Full 运行期间准备同一 GIL 的捕获与人审。最终视觉验证仍须复核原产物和全部必要证据。
 
 > 名称更新：2026-10-24，用户确认正式名称《杀戮原塔2》（原名《杀戮深渊》）。其余流程更新：2026-10-22。适用：原神国服 7.1「千星之约·奇域创作大赛」。执行对应 TASK-1、TASK-18、TASK-19、TASK-6、TASK-20、TASK-21。**这是一份人工执行的发布流程，不表示已成功投稿。**
 
@@ -50,7 +50,15 @@ npm run verify:actor-alpha -- <capture.json> <mask-locators.json> <new-report.js
 2. 完成冻结、完整 CI、GIL build、同包正式性能及平台和设备验收。将不可移动的注释 Tag `engine-v<工程版本>` 指向实际生成最终 GIL 的源码提交。之后的 master 合并提交即使具有同一源码树，也沿用构建 SHA。旧 `v*` 与归档 Tag 保留，Release Please 提案仍跳过 Tag 和 Release 创建。
 3. 用该工程 Tag 开 GitHub Release 草稿。在主仓 `develop` 运行 **Release proposal (manual only)** 的 `prepare`，输入工程 Tag、上一工程版本、最终附件名称、构建源码 SHA、GIL SHA-256 及正式工件数字 ID `gil_artifact_id`。将 Summary 的完整元数据块放入草稿，复核 `commit`、`artifact.sha256` 及 `artifact.actions_id`。
 4. Owner 使用通过验收的同一份 GIL 人工发布官方平台。保存能核对目标作品 ID、实际平台版本、上线状态、时间和候选身份的成功回执。在草稿原样填写 `platform_version`，将脱敏成功回执的 HTTPS 地址填入 `platform_evidence`。
-5. 在主仓 `develop` 运行 **Release proposal (manual only)** 的 `archive`，输入草稿数字 `release_id`。作业校验同一冻结源码、Full、正式性能及原始工件，再将实际 GIL 字节附到这条草稿并复查摘要。沿用原 Tag 和正式工件。归档成功后用 `verify` 读回同一 Release，核对 Tag、工程版本和 GIL SHA-256，再由 Owner 发布 GitHub Release。
+5. 在主仓 `develop` 运行 **Release proposal (manual only)** 的 `archive`，输入草稿数字 `release_id`。作业校验同一冻结源码、Full、Licenses、正式性能及原始工件，再将实际 GIL 字节附到这条草稿并复查摘要。沿用原 Tag 和正式工件。归档成功后用 `verify` 读回同一 Release，核对 Tag、工程版本和 GIL SHA-256，再由 Owner 发布 GitHub Release。
+
+在现有候选记录按固定五行更新进度，每一项填写实际值或缺证。
+
+- 候选版本 — 分支、RC、完整源码 SHA
+- GIL 产物 — 下载链接、GIL SHA-256、容量和冒烟结论
+- 三线状态 — 白盒、AI 黑盒、Owner 真机
+- 真实阻塞项 — 原因和任务编号
+- 下一步 — 当前关键路径动作
 
 ### Release 与 Hotfix 回流结项
 
