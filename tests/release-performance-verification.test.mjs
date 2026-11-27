@@ -188,7 +188,7 @@ function hostedGateFixture(current = v2Performance()) {
   const pass = name => ({name, status:'completed', conclusion:'success'});
   const quality = hosted(full.runId, 'quality.yml', 4);
   const licenses = hosted(11, 'licenses.yml');
-  const fast = {...hosted(99, 'quick-feedback.yml'), display_title:'Preflight / ' + head + ' / ' + '1'.repeat(40)};
+  const fast = {...hosted(99, 'quick-feedback.yml'), display_title:'Release quick / ' + head + ' / ' + '1'.repeat(40)};
   const jobs = currentFullQualityJobs.map((name, i) => job(name, quality, i + 100, {
     conclusion:name === 'fast' ? 'skipped' : 'success', run_attempt:1,
   }));
@@ -197,8 +197,9 @@ function hostedGateFixture(current = v2Performance()) {
   const inventory = job('inventory', licenses, 500, {steps:[
     pass('Run actions/checkout@11d5960a326750d5838078e36cf38b85af677262'), pass('Run node scripts/check-license.mjs'),
   ]});
-  const fastJob = job('Complete affected preflight', fast, 501, {steps:[
-    pass('Verify exact PR merge and comparison base'), pass('Complete affected JS and Lua preflight'), pass('Record exact tested checkout'),
+  const fastJob = job('Release quick screen', fast, 501, {steps:[
+    pass('Verify release checkout and comparison base'), pass('Screen release governance, versions and syntax'),
+    pass('Smoke test offline startup'),
   ]});
   const tagPrefix = 'v' + branch.split('/v')[1] + '-rc.';
   const tags = new Map();
@@ -218,6 +219,7 @@ function hostedGateFixture(current = v2Performance()) {
     const path = url.slice(('/repos/' + repo).length);
     if (args) {
       posts.push([path, args]);
+      if (control.dispatchError) throw control.dispatchError;
       return null;
     }
     if (!path) return repository;
@@ -361,16 +363,38 @@ test('freeze dispatches only with exact Quick feedback and a readable audited v2
     await assert.rejects(current.freeze(negative), /required before requesting Full|GIL smoke failed|audited immutable v2/);
     assert.equal(current.posts.length, 0);
   }
-  current.control.fast[0].steps[1].conclusion = 'failure';
+  current.fast.display_title = current.fast.display_title.replace('Release quick', 'Preflight');
+  await assert.rejects(current.freeze(), /successful hosted Release Quick/);
+  current.fast.display_title = current.fast.display_title.replace('Preflight', 'Release quick');
+  current.control.fast[0].steps[2].conclusion = 'failure';
   await assert.rejects(current.freeze(), /did not pass/);
   assert.equal(current.posts.length, 0);
-  current.control.fast[0].steps[1].conclusion = 'success';
-  assert.equal((await current.freeze()).state, 'requested');
+  current.control.fast[0].steps[2].conclusion = 'success';
+  const frozen = await current.freeze();
+  assert.equal(frozen.state, 'requested');
+  assert.deepEqual(frozen.handoff, {
+    url:'https://github.com/' + repo + '/actions/runs/20/artifacts/30',
+    artifactId:30, gilSha256:'4'.repeat(64), gilSizeBytes:123, fastRunId:99,
+  });
   assert.deepEqual(current.posts, [['/actions/workflows/quality.yml/dispatches', {ref:branch, inputs:{runner_pool:'hosted'}}]]);
   Object.assign(current.quality, {status:'in_progress', conclusion:null});
   current.control.quality.push(current.quality);
-  assert.equal((await current.freeze({fastRunId:undefined, gilArtifactId:undefined})).state, 'waiting');
+  const readBack = await current.freeze({fastRunId:undefined, gilArtifactId:undefined});
+  assert.equal(readBack.state, 'waiting');
+  assert.equal(readBack.handoff, undefined);
+  assert.deepEqual((await current.freeze()).handoff, frozen.handoff);
   assert.equal(current.posts.length, 1);
+});
+
+test('a Full dispatch failure preserves the successful same-package handoff', async () => {
+  const current = hostedGateFixture();
+  current.control.quality.length = 0;
+  current.control.dispatchError = new Error('Full not available');
+  await assert.rejects(current.freeze(), error => {
+    assert.equal(error.message, 'Full not available');
+    assert.equal(error.handoff.handoff.artifactId, 30);
+    return true;
+  });
 });
 
 test('Hotfix-to-master uses the hosted formal performance and GIL custody check', async () => {

@@ -83,27 +83,27 @@ export async function verifyReleaseLicenses(repo,branch,head,request) {
  requireCurrentRun(await latestLicenseRun(repo,branch,request),proof,'licenses.yml');
  return proof;
 }
-async function requireQuickPreflight(repo,branch,head,request,runId) {
- if(!validId(runId))throw Error('A successful exact Quick feedback preflight run ID is required before requesting Full');
+async function requireReleaseQuickScreen(repo,branch,head,request,runId) {
+ if(!validId(runId))throw Error('A successful exact Release Quick screen run ID is required before requesting Full');
  const path=`/repos/${repo}/actions/runs/${runId}`;
  const run=await request(path);
- const title=new RegExp(`^Preflight / ${head} / ([a-f0-9]{40})$`);
+ const title=new RegExp(`^Release quick / ${head} / ([a-f0-9]{40})$`);
  const base=title.exec(run?.display_title)?.[1];
  const preflight=candidate=>trustedDispatch(candidate,repo,'quick-feedback.yml',branch,head)&&
   candidate.id===runId&&passed(candidate)&&candidate.display_title===run.display_title;
  if(!base||base===head||!preflight(run))
-  throw Error('Exact branch HEAD requires its successful hosted Quick feedback preflight');
+  throw Error('Exact branch HEAD requires its successful hosted Release Quick screen');
  const range=await request(`/repos/${repo}/compare/${base}...${head}?per_page=1`);
  if(range?.base_commit?.sha!==base||range.merge_base_commit?.sha!==base||range.status!=='ahead')
   throw Error('Quick feedback requires a distinct ancestor as its comparison base');
  const jobs=await pages(request,`${path}/attempts/${run.run_attempt}/jobs`,'jobs');
- const active=jobs.filter(job=>job.name==='Complete affected preflight');
+ const active=jobs.filter(job=>job.name==='Release quick screen');
  if(active.length!==1||!validId(active[0].id)||active[0].run_id!==runId||
   active[0].run_attempt!==run.run_attempt||active[0].head_sha!==head||!passed(active[0])||
-  !['Verify exact PR merge and comparison base','Complete affected JS and Lua preflight','Record exact tested checkout'].every(name=>passedStep(active[0],name)))
-  throw Error('Quick feedback preflight did not pass its exact checkout and affected checks');
+  !['Verify release checkout and comparison base','Screen release governance, versions and syntax','Smoke test offline startup'].every(name=>passedStep(active[0],name)))
+  throw Error('Release Quick screen did not pass its exact checkout, governance and offline startup');
  const current=await request(path);
- if(!preflight(current)||current.run_attempt!==run.run_attempt)throw Error('Quick feedback attempt changed before requesting Full');
+ if(!preflight(current)||current.run_attempt!==run.run_attempt)throw Error('Release Quick attempt changed before requesting Full');
 }
 
 export async function latestFullRun(repo,branch,request) {
@@ -214,17 +214,36 @@ export async function freezeReleaseFull(repo,branch,head,request,readCheckout=lo
 export async function freezeReleaseCandidate(repo,branch,head,request,{
  fastRunId,gilArtifactId,readCheckout,readGil,
 }={}) {
- return freezeReleaseFull(repo,branch,head,request,readCheckout,async()=>{
+ let handoff;
+ const verifyHandoff=async()=>{
+  if(handoff)return;
   if(!formalPublishBranch(branch)||!validId(gilArtifactId))
    throw Error('An exact audited GIL artifact ID is required before requesting Full');
   const verifyGil=readGil??(await import('./runtime-baseline/release-performance-artifacts.mjs')).verifyGilArtifact;
   const target={head,branch,version:branch.split('/v')[1]};
   const {binding}=await verifyGil(request,gilArtifactId,target);
-  if(binding.schemaVersion!==2||binding.custody!=='gil-build-v2'||binding.id!==gilArtifactId)
+  const {runId,gilSha256,gilSizeBytes}=binding;
+  if(binding.schemaVersion!==2||binding.custody!=='gil-build-v2'||binding.id!==gilArtifactId||
+   !validId(runId)||!validId(gilSizeBytes)||!/^[a-f0-9]{64}$/.test(gilSha256))
    throw Error('Full dispatch requires an audited immutable v2 GIL artifact');
-  await requireQuickPreflight(repo,branch,head,request,fastRunId);
- });
+  await requireReleaseQuickScreen(repo,branch,head,request,fastRunId);
+  await assertReleaseHead(repo,branch,head,request);
+  handoff={url:`https://github.com/${repo}/actions/runs/${runId}/artifacts/${gilArtifactId}`,
+   artifactId:gilArtifactId,gilSha256,gilSizeBytes,fastRunId};
+ };
+ try {
+  if(validId(fastRunId)||validId(gilArtifactId))await verifyHandoff();
+  const state=await freezeReleaseFull(repo,branch,head,request,readCheckout,verifyHandoff);
+  return handoff?{...state,handoff}:state;
+ } catch(error) {
+  if(handoff) {
+   await assertReleaseHead(repo,branch,head,request);
+   error.handoff={state:'full-dispatch-unconfirmed',branch,head,handoff};
+  }
+  throw error;
+ }
 }
+
 async function readCandidateTag(repo,branch,head,request,required) {
  const prefix=`/repos/${repo}`;
  if(!projectRepositoryMatches(await request(prefix),repo))throw Error('Unexpected RC tag repository identity');
@@ -307,5 +326,9 @@ if(process.argv[1]&&import.meta.url===pathToFileURL(resolve(process.argv[1])).hr
    const proof=await verifyReleasePublication(repo,branch,head,githubRequest,{gilArtifactId,requireExplicitGilArtifactId:!pullRequest});
    console.log(JSON.stringify(proof,null,2));
   }
- } catch(error) {console.error(error.message);process.exitCode=1;}
+ } catch(error) {
+  if(error.handoff)console.log(JSON.stringify(error.handoff));
+  console.error(error.message);
+  process.exitCode=1;
+ }
 }
