@@ -46,8 +46,8 @@ const fixtures=Object.freeze({
  },
  "tests/gil-candidate.test.mjs": {
   "current": {
-   "sha256": "00edf1510dc067e57ee96b58baae7ee7daf8650e942ed4825e5542a00fe1d4e3",
-   "gitBlob": "92bfb5d8de345ddc2af9247ada304f84a68cedcd"
+   "sha256": "d5ec827fa24b3ad3ff33b304723efddc4205599dbc8e8c28141aa3d22d99c1c6",
+   "gitBlob": "0e38620640049ad1f0e0a7a8a4c9a82b1f0a629b"
   },
   "previous": {
    "sha256": "430a5a3396c4318c91e8bcf2c9a0cf74e1b03a52edf817bfd9a5aaafc15a6588",
@@ -55,9 +55,9 @@ const fixtures=Object.freeze({
   },
   "hunks": [
    {
-    "at": 5,
-    "before": "import { join } from 'node:path';\nimport { test } from 'node:test';\nimport { verifyDownloadedArtifact, verifyReceipts } from '../scripts/gil-candidate.mjs';\nimport { api, approvedRequest, candidateTarget, encoderSha256, findArtifact, verifySource } from '../scripts/gil-candidate-preflight.mjs';\nimport { fileRecord } from '../scripts/evidence-files.mjs';\nimport { hostedCandidatePath, verifiedPayloadInputs } from '../scripts/hosted-gil-receipt.mjs';\n\nconst sourceSha = '1'.repeat(40);",
-    "after": "import { join } from 'node:path';\nimport { test } from 'node:test';\nimport { verifyDownloadedArtifact, verifyPublishedRebase, verifyReceipts } from '../scripts/gil-candidate.mjs';\nimport { api, approvedRequest, buildOnlyRequest, candidateTarget, encoderSha256, findArtifact, validationTarget, verifySource } from '../scripts/gil-candidate-preflight.mjs';\nimport { fileRecord } from '../scripts/evidence-files.mjs';\nimport { hostedCandidatePath, verifiedPayloadInputs } from '../scripts/hosted-gil-receipt.mjs';\nimport { downloadLegacyGilArchive, legacyGilArchive, supportsPublishedGilSeed } from '../scripts/runtime-baseline/published-baseline.mjs';\n\nconst sourceSha = '1'.repeat(40);"
+    "at": 1,
+    "before": "import { spawnSync } from 'node:child_process';\nimport { createHash } from 'node:crypto';\nimport { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';\nimport { tmpdir } from 'node:os';\nimport { join } from 'node:path';\nimport { test } from 'node:test';\nimport { verifyDownloadedArtifact, verifyReceipts } from '../scripts/gil-candidate.mjs';\nimport { api, approvedRequest, candidateTarget, encoderSha256, findArtifact, verifySource } from '../scripts/gil-candidate-preflight.mjs';\nimport { fileRecord } from '../scripts/evidence-files.mjs';\nimport { hostedCandidatePath, verifiedPayloadInputs } from '../scripts/hosted-gil-receipt.mjs';\n\nconst sourceSha = '1'.repeat(40);",
+    "after": "import { spawnSync } from 'node:child_process';\nimport { createHash } from 'node:crypto';\nimport { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';\nimport { tmpdir } from 'node:os';\nimport { join } from 'node:path';\nimport { test } from 'node:test';\nimport { verifyDownloadedArtifact, verifyPublishedRebase, verifyReceipts } from '../scripts/gil-candidate.mjs';\nimport { api, approvedRequest, buildOnlyRequest, candidateTarget, encoderSha256, findArtifact, validationTarget, verifySource } from '../scripts/gil-candidate-preflight.mjs';\nimport { fileRecord } from '../scripts/evidence-files.mjs';\nimport { hostedCandidatePath, verifiedPayloadInputs } from '../scripts/hosted-gil-receipt.mjs';\nimport { downloadLegacyGilArchive, legacyGilArchive, supportsPublishedGilSeed } from '../scripts/runtime-baseline/published-baseline.mjs';\n\nconst sourceSha = '1'.repeat(40);"
    },
    {
     "at": 167,
