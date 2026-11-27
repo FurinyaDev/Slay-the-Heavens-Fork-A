@@ -117,8 +117,65 @@ const releaseQuickWorkflow={
  current:['7f8a6bb1f3577baea78e79e9fe371d0b67273397385bd790ec8413a7bc61e168',
   '72606248df9f325af739dd9ae0609794a7006da2'],
 };
+// The live delivery test covers release Quick as well as the two older modes.
+// Historical readers first recover the reviewed pre-release test, then replay
+// the original POSIX and Fork projections against those bytes.
+const releaseDeliveryTest='tests/delivery.test.mjs';
+const releaseDeliveryCurrent=['d658b595604071c3c80f85f8698e4b7126b5ec4140dbf6ec3d34903aeaa98e26',
+ '9966d9cf0f96b267cb7b6f5c5924aa8230b51ea5'];
+const releaseDeliveryPrior=['8581a4d4210be75533edeffe23dc90c2f24ce5083f9e8a0cf2adb73925f5f839',
+ 'fe8fa0c10a81f82467b7d2a3e774f951c3eb2ce9'];
+const releaseDeliveryPriorTest=[
+ "test('automatic Fork A Quick is bounded advisory without a complete certificate while manual preflight stays complete',()=>{",
+ " const workflow=readFileSync(new URL('../.github/workflows/quick-feedback.yml',import.meta.url),'utf8').replaceAll('\\r\\n','\\n');",
+ " const expression=value=>value.replace(/^\\$\\{\\{ /,'').replace(/ \\}\\}$/,'');",
+ " const evaluate=(value,event)=>Function('github','return '+expression(value))({event_name:event});",
+ " const field=name=>workflow.match(new RegExp('^    '+name+': (.+)$','m'))[1];",
+ " assert.match(field('name'),/^\\$\\{\\{ /,'automatic and manual checks must identify their different coverage');",
+ " const steps=workflow.split(/^      - /m).slice(1);",
+ " const enabled=(step,event)=>{const guard=step.match(/^(?:        )?if: (.+)$/m)?.[1];return !guard||evaluate(guard,event);};",
+ " for(const event of ['push','workflow_dispatch']){",
+ "  const selected=steps.filter(step=>enabled(step,event)).join('\\n');",
+ "  assert.equal(evaluate(field('name'),event),event==='push'?'Advisory Quick feedback':'Complete affected preflight');",
+ "  assert.equal(evaluate(field('timeout-minutes'),event),event==='push'?10:30);",
+ "  if(event==='push'){",
+ "   assert.match(selected,/node scripts\\/test-affected\\.mjs --ci-fast --base \"\\$BASE_SHA\"/);",
+ "   assert.doesNotMatch(selected,/--preflight|write-ci-receipt|actions\\/upload-artifact|build\\/ci-checkout\\.json/);",
+ "   assert.match(selected,/90s Lua scheduling estimate/);",
+ "   assert.match(selected,/10-minute automatic job guard/);",
+ "   assert.match(selected,/integration and deferred Lua require formal Quality/);",
+ "   assert.match(selected,/not a complete preflight certificate/);",
+ "  }else{",
+ "   assert.match(selected,/run: node scripts\\/test-affected\\.mjs --preflight --base \"\\$BASE_SHA\"/);",
+ "   assert.match(selected,/run: node scripts\\/write-ci-receipt\\.mjs --preflight/);",
+ "   assert.match(selected,/PREFLIGHT_BASE_SHA: \\$\\{\\{ steps\\.comparison\\.outputs\\.sha \\}\\}/);",
+ "   assert.match(selected,/name: preflight-\\$\\{\\{ github\\.run_id \\}\\}-\\$\\{\\{ github\\.run_attempt \\}\\}/);",
+ "   assert.match(selected,/path: build\\/ci-checkout\\.json/);",
+ "   assert.doesNotMatch(selected,/--ci-fast/);",
+ "  }",
+ " }",
+ " assert.match(workflow,/^run-name: \\$\\{\\{ github\\.event_name == 'push' && 'Advisory Quick' \\|\\| 'Preflight' \\}\\} \\/ /m);",
+ " assert.match(workflow,/^permissions:\\n  contents: read$/m);",
+ " assert.match(workflow,/https:\\/\\/github.com\\/FurinyaWorks\\/Slay-the-Heavens.git refs\\/heads\\/develop/);",
+ " const head='a'.repeat(40),base='b'.repeat(40);",
+ " const run={path:'.github/workflows/quick-feedback.yml',head_sha:head,status:'completed',conclusion:'success',event:'workflow_dispatch',display_title:`Preflight / ${head} / ${base}`};",
+ " assert.equal(validPreflight(run,{head,base}),true,'manual complete contract remains reusable as before');",
+ " for(const display_title of [`Advisory Quick / ${head} / ${base}`,run.display_title])",
+ "  assert.equal(validPreflight({...run,event:'push',display_title},{head,base}),false,'an automatic advisory success cannot be reused as a complete preflight');",
+ "});",
+ "",
+];
+function beforeReleaseDeliveryTest(path,source){
+ if(path!==releaseDeliveryTest||!exactCheckoutSource(source,releaseDeliveryCurrent))return source;
+ const current=normalize(source),start=releaseDeliveryPriorTest[0];
+ const index=current.indexOf(start);
+ assert(index>=0&&index===current.lastIndexOf(start),'exact delivery test suffix');
+ const prior=current.slice(0,index)+releaseDeliveryPriorTest.join('\n');
+ assert(exactCheckoutSource(prior,releaseDeliveryPrior),'exact delivery test predecessor');
+ return source.includes('\r\n')?prior.replaceAll('\n','\r\n'):prior;
+}
 export function beforeForkPush(path,source){
- source=prePosix16ReceiptSource(path,source);
+ source=prePosix16ReceiptSource(path,beforeReleaseDeliveryTest(path,source));
  if(path==='.github/workflows/quality.yml'&&typeof source==='string')source=beforeHotfixPublicationGate(source);
  const row=Object.hasOwn(forkPushPacket.files,path)?forkPushPacket.files[path]:undefined;
  if(!row||typeof source!=='string'||source.includes('\r\r\n'))return source;
