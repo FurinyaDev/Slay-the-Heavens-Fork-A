@@ -1100,10 +1100,19 @@ assert(host.mapUI:choose(shop.id)and host.mode=='node')
 local page,Theme=root:GetChild('nodePanel'),require('abyss_theme')
 local button=assert(page:GetChild('back'))
 local label=assert(button:GetChild('label'))
+local shelf=assert(page:GetChild('shopView'))
+local advanceShop=dofile('tests/lua/support/shop_timeline.lua')
+local function tapControl(box,id)
+ local listeners=box:GetChild('hit').listeners
+ listeners.down({touchId=id});listeners.up({touchId=id});return listeners.click({touchId=id})
+end
+assert(button.visible and label.text=='离开' and not page:GetChild('confirm').visible)
+assert(tapControl(page:GetChild('merchant'):GetChild('talk'),799))
+advanceShop(host.nodeUI)
+assert(shelf.visible and host.nodeUI.shopOpen and not host.nodeUI.shopBusy and label.text=='关闭')
 local function ink(expected)
  assert(label.fontColor.r==expected.r and label.fontColor.g==expected.g and label.fontColor.b==expected.b,'official dark button ink was overwritten by light-button ink')
 end
-assert(button.visible and label.text=='离开' and not page:GetChild('confirm').visible)
 ink(Theme.officialAssets.buttonInk)
 local hit=button:GetChild('hit')
 hit.listeners.enter({touchId=800});ink(Theme.officialAssets.buttonInk)
@@ -1124,11 +1133,13 @@ unchanged(host.run,before,'map preview changed shop stock, selected offer or RNG
 unchanged(host.map,mapBefore,'map preview changed navigation')
 host:refresh();ink(Theme.officialAssets.buttonInk)
 assert(shelf.visible and button.visible,'map preview must return to the same shelf')
-assert(tapControl(button,804) and host.nodeUI.shopBusy,'visible leave control starts the close animation')
-assert(not host.run.nodeFlow.complete,'leave must not commit before the shelf closes')
-assert(not hit.listeners.click({touchId=804}),'duplicate leave click accepted')
-advanceShop(host)
-assert(host.run.nodeFlow.complete and not shelf.visible,'leaving through the visible control must finish the shop')
+assert(tapControl(button,804) and not host.nodeUI.shopOpen and not shelf.visible,
+ 'visible close control starts the shelf close animation')
+assert(not host.run.nodeFlow.complete,'closing the shelf must leave the shop room active')
+assert(not hit.listeners.click({touchId=804}),'duplicate close click accepted')
+advanceShop(host.nodeUI)
+assert(not host.run.nodeFlow.complete and not shelf.visible and label.text=='离开')
+assert(tapControl(button,805) and host.run.nodeFlow.complete,'leaving through the room control must finish the shop')
 `, 'OFFICIAL_SHOP_ROUTE_INK_PASS');
 });
 
