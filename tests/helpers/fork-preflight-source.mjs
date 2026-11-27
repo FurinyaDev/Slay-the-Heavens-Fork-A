@@ -853,7 +853,7 @@ export function assertCurrentJsInventory(paths,preceding,read=readFileSync){
  read=(path,...args)=>{
   const source=readCurrent(path,...args);
   if(path===gilCandidateTest)
-   assert(exactCheckoutSource(source,['00edf1510dc067e57ee96b58baae7ee7daf8650e942ed4825e5542a00fe1d4e3','92bfb5d8de345ddc2af9247ada304f84a68cedcd']),
+   assert(exactCheckoutSource(source,['d5ec827fa24b3ad3ff33b304723efddc4205599dbc8e8c28141aa3d22d99c1c6','0e38620640049ad1f0e0a7a8a4c9a82b1f0a629b']),
     'fresh current GIL test source: '+path);
   if(path===formalAct2ReleaseTest)
    assert(exactCheckoutSource(source,formalAct2ReleaseTestCurrent),'fresh current Release performance test source: '+path);
