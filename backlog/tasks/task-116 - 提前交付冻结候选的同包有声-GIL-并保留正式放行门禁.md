@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@Furinya'
 created_date: '2026-11-27 16:33'
-updated_date: '2026-11-27 16:40'
+updated_date: '2026-11-27 17:02'
 labels:
   - engineering
 dependencies: []
@@ -44,4 +44,6 @@ A2 只读切片检查 ALLOW，fork-a/ci/parallel-release-gates，BASE 32a15219ae
 
 <!-- SECTION:NOTES:BEGIN -->
 协调集成不纳入在途 #1014、#1016 与当前 v2.2.0。主仓 GIL build / Performance regression 已登记，正式构建控制入口位于受保护 develop。正式提测/性能实际 Hosted 证据需合入后的独立授权候选；Fork B 现有构建/质量只核对预检层。基线定向测试在指定 LFS 输入水合后 192 通过、1 失败（#1046 后旧 release-proposal 测试断言，A2 负责按现行守卫修正）。
+
+首次准确组合 0449e12631aa2abe608cbb81391bc4c1d0742273 保存 Fork A。定向 206/206、历史 Full 校准 2/2。实际 Fork advisory 46037831718/1 与本地基线和候选同现 cultist_ui.lua:77 失败。主仓基线 Full 45958087404/1 与本地两树同现 Round3 缺 abyss_blue_slaver_ai.lua，保留 TASK-115.3 原因。独立复核发现当前 v2.2.0 自动构建路径须保留及一项 Quick 工作流旧测试断言，原所有者接续。暂无主仓 PR 或正式端到端候选；保持 In Progress。
 <!-- SECTION:NOTES:END -->

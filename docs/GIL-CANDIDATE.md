@@ -20,4 +20,4 @@
 node scripts/audit-native-candidate.mjs --source <SHA> --candidate <解压目录>/candidate.gil --receipt <解压目录>/candidate.json --output <新证据目录> --bgm
 ```
 
-已冻结的旧发布分支沿用该分支自己的 GIL build 输入、运行要求与工件核验。旧工作流制品、旧平台回执和本地诊断按原身份留存。开发和 Fork 的诊断只上传摘要，保留 14 天。它们可用于复核当时的结论。正式提测从本轮冻结源码和唯一正式工件开始。
+当前 `release/v2.2.0` 保留该发布线既有的 Quality/Licenses 完成后自动触发、分支手动入口与旧工件验证。后续候选按本页显式请求构建，Quality/Licenses 完成或重跑均不会触发新构建。旧工作流制品、旧平台回执和本地诊断按原身份留存。开发和 Fork 的诊断只上传摘要，保留 14 天。它们可用于复核当时的结论。正式提测从本轮冻结源码和唯一正式工件开始。
