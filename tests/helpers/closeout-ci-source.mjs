@@ -2,6 +2,7 @@ import {beforeV2UiHudSource,v2UiHudSourcePaths} from './v2-ui-hud-source.mjs';
 import {beforeV2UiEvidence} from './v2-p1-ci-source.mjs';
 import {exactSourceMatches} from './source-fingerprint.mjs';
 import {authenticateDevelopBackflow,beforePreflightSource,preflightPriorRead} from './fork-preflight-source.mjs';
+import {beforeKnownMasterBackflowSource} from './master-backflow-source.mjs';
 // Exact named views for immutable receipts. Current Full uses raw discovery.
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
@@ -51,6 +52,7 @@ const relicIconsBeforeNaming={
 };
 function beforeRelicIconsNaming(path,source){
  if(path!==relicIconsFixture)return source;
+ source=beforeKnownMasterBackflowSource(path,source);
  const text=typeof source==='string'?source.replaceAll('\r\n','\n'):source;
  const crlf=source!==text;
  assert(exactSourceMatches(source,relicIconsCurrent)&&(!crlf||source===text.replaceAll('\n','\r\n')),

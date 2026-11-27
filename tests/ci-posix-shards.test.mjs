@@ -70,8 +70,8 @@ historicalTest('original required engineering-posix aggregate runs always and re
   }
 });
 
-test('current POSIX matrix consumes fifteen shared shards with serial full regression and the authorized execution guard',()=>{
-  assert.deepEqual(qualityShardMatrices.posix,[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15]);
+test('current POSIX matrix consumes sixteen shared shards with serial full regression and the authorized execution guard',()=>{
+  assert.deepEqual(qualityShardMatrices.posix,[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16]);
   assert.ok(shards.includes('shard: ${{ fromJSON(needs.impact.outputs.posix_shards) }}'));
   assert.match(shards,/^    needs: impact\n    if: \$\{\{ !cancelled\(\) && needs\.impact\.result == 'success' && needs\.impact\.outputs\.mode == 'full' \}\}$/m);
   assert.match(shards,/^    runs-on: ubuntu-24\.04\n    timeout-minutes: 90$/m);
@@ -87,7 +87,10 @@ test('current POSIX matrix consumes fifteen shared shards with serial full regre
   assert.ok(shards.includes('          npm run build:data\n          npm run build:ui\n          node scripts/ci-shards.mjs --shard='));
   assert.ok(shards.includes('      - run: npm run check:engineering\n        if: matrix.shard == 1\n'));
   assert.ok(shards.includes('        if: always() && matrix.shard == 1\n'));
-  assert.match(aggregate,/^    needs: \[impact, engineering-posix-shards, fast\]\n    if: \$\{\{ !cancelled\(\) && \(github\.event_name != 'pull_request' \|\| github\.event\.pull_request\.draft == false\) \}\}$/m);
+  assert.match(aggregate,/^    needs: \[impact, engineering-posix-shards, fast\]$/m);
+  const canonicalPush = "(github.event_name != 'push' || github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/master' || (github.event.repository.id == 1460133275 && startsWith(github.ref, 'refs/heads/ci/full/')))";
+  const readyPullRequest = "(github.event_name != 'pull_request' || github.event.pull_request.draft == false)";
+  assert.ok(aggregate.split('\n').includes(`    if: \${{ !cancelled() && ${canonicalPush} && ${readyPullRequest} }}`));
 });
 
 test('native Node four-shard selection executes every current JS file name exactly once', t => {

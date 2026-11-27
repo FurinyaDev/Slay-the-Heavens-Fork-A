@@ -4,6 +4,7 @@ import {readFileSync} from 'node:fs';
 import {gunzipSync} from 'node:zlib';
 import {exactSourceMatches} from './source-fingerprint.mjs';
 import {beforeUiEntranceWitness} from './ui-entrance-source.mjs';
+import {beforeReleaseClosureFixture} from './release-closure-fixture-source.mjs';
 
 const archive=readFileSync(new URL('./native-flow-fixture-source.json.gz',import.meta.url));
 assert.equal(createHash('sha256').update(archive).digest('hex'),'5709c250f1411a9edbdaa6669bf0d39bfecc824841684b7948eba3297d5aea35','exact native flow fixture archive');
@@ -30,10 +31,10 @@ for(const [path,{before,after}] of Object.entries(files)){
  assert.notEqual(before.gitBlob,after.gitBlob);
 }
 
-// Approved release backflows #912, #940, #942 and #951 supersede these witnesses.
+// Approved release backflows supersede these witnesses, including the health hit target from #897.
 const releaseFixtures=Object.freeze({
  'tests/lua/support/native_monster_only_entry.lua':{
-  sha256:'0c192425a730c27bab65e5ebc18fc340c9b2414e8558485922041e01fbaf00c1',gitBlob:'29e0bb8b789624f2128780c7711d122bb0687368',
+  sha256:'4ced9b0a2594103fc0017a13b4261022ee1dc8d48349f0c4fa5822c2fa6e2df5',gitBlob:'4b0171964fbcd7259581d99563449efb836eea32',
  },
  'tests/official-assets-runtime.test.mjs':{
   sha256:'fd43e53300bdb0f7f178a6887a0e8a5a7c329ad5d0075b7a99a5d343c6f390b7',gitBlob:'b7b75635e0ead0544e430a94f110315b5e81f2ea',
@@ -48,7 +49,7 @@ const releaseFixtures=Object.freeze({
 
 export function beforeNativeFlowFixture(path,source,{requireCurrent=false}={}){
  if(!Object.hasOwn(files,path))return source;
- source=beforeUiEntranceWitness(path,source);
+ source=beforeUiEntranceWitness(path,beforeReleaseClosureFixture(path,source));
  const {before,after}=files[path];
  const current=exactSourceMatches(source,after)||Object.hasOwn(releaseFixtures,path)&&exactSourceMatches(source,releaseFixtures[path]);
  if(requireCurrent)assert(current,'fresh complete native flow fixture: '+path);
@@ -58,7 +59,7 @@ export function beforeNativeFlowFixture(path,source,{requireCurrent=false}={}){
 
 export function assertNativeFlowFixturesCurrent(read){
  for(const [path,{after}] of Object.entries(files)){
-  const source=read(path,'utf8');
+  const source=beforeReleaseClosureFixture(path,read(path,'utf8'));
   assert(exactSourceMatches(source,releaseFixtures[path]??after),'fresh complete native flow fixture: '+path);
  }
 }

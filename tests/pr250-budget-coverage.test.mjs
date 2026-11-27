@@ -7,10 +7,18 @@ const sha=text=>createHash('sha256').update(text).digest('hex');
 const p=JSON.parse(read('tests/fixtures/pr250-budget-coverage.json'));
 const discovered=readdirSync('tests/lua').filter(file=>file.endsWith('.lua')).map(file=>`tests/lua/${file}`).sort();
 
+function beforeProductionEncounterRename(source, expectedCount) {
+ // #951 renamed only these Run.startCombat encounter IDs. Reconstruct the
+ // predecessor for the byte checks while the Lua tests use the current IDs.
+ const calls=/(Run\.startCombat\((?:run|candidate|r),)(['"])raven_adept_solo\2\)/g;
+ assert.equal([...source.matchAll(calls)].length,expectedCount);
+ return source.replace(calls,'$1$2cultist_solo$2)');
+}
+
 test('reward partitions retain the frozen real-victory body and cover all72 original reward targets once',()=>{
  assert.equal(p.base,'a0eedf8c8cdfb3bbab292060b3d3e81103cec9de');assert.equal(p.timeoutMilliseconds,30000);
  assert.deepEqual(p.rewardHelper,{path:'tests/lua/support/warrior75_reward_cases.lua',sha256LF:'7c6e2c485274bfc7bf06abf876116956986fccf0d70526da2ff331c68b14de07'});
- assert.equal(sha(read(p.rewardHelper.path)),p.rewardHelper.sha256LF);
+ assert.equal(sha(beforeProductionEncounterRename(read(p.rewardHelper.path),2)),p.rewardHelper.sha256LF);
  assert.deepEqual(p.rewardCounts,{common:20,uncommon:36,rare:16});
  assert.equal(p.maximumRewardTargetsPerFixture,5);
  const actualFiles=discovered.filter(path=>/^tests\/lua\/card_pool_rewards.*\.lua$/.test(path));
@@ -58,6 +66,7 @@ test('copy and stolen-reward partitions reconstruct every byte of both original 
   let original=read(row.entry);assert.ok(original.startsWith(prefix)&&original.endsWith(footer));
   original=original.slice(prefix.length,-footer.length);
   for(const replacement of replacements){assert.equal(original.split(replacement.after).length,2);original=original.replace(replacement.after,replacement.before);}
+  original=beforeProductionEncounterRename(original,index===0?3:1);
   assert.equal(sha(original),known.sha);const bytes=Buffer.from(original);assert.equal(bytes.length,known.bytes);
   assert.equal(createHash('sha1').update(`blob ${bytes.length}\0`).update(bytes).digest('hex'),known.blob);
   assert.deepEqual(row.slices,[{path:known.entry,first:1,last:known.last},{path:known.tail,first:known.last+1,last:known.total}]);

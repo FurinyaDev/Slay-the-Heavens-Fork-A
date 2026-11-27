@@ -3,6 +3,7 @@
 import assert from 'node:assert/strict';
 import {restoreExactFixtureHunks} from './exact-fixture-hunks.mjs';
 import {exactSourceMatches} from './source-fingerprint.mjs';
+import {beforeProductionReadingBackflow,productionReadingBackflowOwns} from './master-backflow-source.mjs';
 
 const projections = {
   "tests/official-assets-legibility.test.mjs": {
@@ -822,6 +823,7 @@ function uniformReadingSource(source) {
 
 function readingScopeIdentity(path,source) {
   if (!Object.hasOwn(cardReadingScopeProjections,path) || !uniformReadingSource(source)) return;
+  source=beforeProductionReadingBackflow(path,source);
   const row=cardReadingScopeProjections[path];
   if (matches(source,{sha256:row.afterSha256,gitBlob:row.afterBlob})) return 'current';
   if (matches(source,{sha256:row.beforeSha256,gitBlob:row.beforeBlob})) return 'historical';
@@ -829,6 +831,9 @@ function readingScopeIdentity(path,source) {
 
 export function assertCurrentCardReadingScope(path,source) {
   if (Object.hasOwn(cardReadingScopeProjections,path)) {
+    if (productionReadingBackflowOwns(path)) {
+      assert(beforeProductionReadingBackflow(path,source)!==source,'fresh complete integration source: ' + path);
+    }
     assert(readingScopeIdentity(path,source)==='current','fresh complete integration source: ' + path);
   }
   return source;
@@ -836,6 +841,7 @@ export function assertCurrentCardReadingScope(path,source) {
 
 export function beforeCardReadingScope(path,source) {
   if (readingScopeIdentity(path,source)!=='current') return source;
+  source=beforeProductionReadingBackflow(path,source);
   const row=cardReadingScopeProjections[path];
   const lf=source.replaceAll('\r\n','\n');
   const prior=restoreExactFixtureHunks(row,path,lf);
@@ -882,7 +888,7 @@ export function chapterSceneCurrentRead(read, copier) {
       const source = Buffer.isBuffer(raw) ? raw.toString('utf8') : raw;
       const {afterSha256:sha256, afterBlob:gitBlob} = binding;
       assertCurrentCardReadingScope(path,source);
-      assert(matches(source,{sha256,gitBlob}), 'fresh complete integration source: ' + path);
+      assert(matches(beforeProductionReadingBackflow(path,source),{sha256,gitBlob}), 'fresh complete integration source: ' + path);
     }
     return raw;
   }

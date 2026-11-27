@@ -127,6 +127,25 @@ const visualCode = /\b(?:kind\s*:|size\s*:|position\s*:|colou?r\s*:|opacity\s*:|
 const tracksPath = (row, path) => [row.codePath, ...(row.codePaths ?? []), ...(row.retiredCodePaths ?? [])].includes(path);
 const themePath = 'data/presentation/ui_theme.json';
 const themeValue = (json, key) => key.split('.').reduce((object, part) => object?.[part], json);
+const mediaManifestPath = 'config/ci-media-lfs.json';
+
+function documentedArchiveLine(line, reference) {
+  if (line.trim() !== `"path": ${JSON.stringify(reference.path)},` &&
+      line.trim() !== `"sha256": ${JSON.stringify(reference.sha256)},`) return false;
+  const extension = readJson(mediaManifestPath).productionBackflowExtension;
+  const matches = extension?.files?.filter(row => row.path === reference.path) ?? [];
+  if (matches.length !== 1) return false;
+  const [archive] = matches;
+  const legal = readJson('docs/legal/assets.json').files[reference.path];
+  return archive.sha256 === reference.sha256 && archive.sha256 === legal?.sha256 &&
+    archive.sourceCommit === legal.sourceCommit && archive.sourceCommit === extension.sourceCommit &&
+    legal.lfs === true && legal.storage === 'ci-media-lfs-v1' &&
+    Number.isSafeInteger(archive.bytes) && archive.bytes > 0 && archive.bytes === legal.bytes &&
+    /^[a-f0-9]{40}$/.test(archive.sourceCommit) && Array.isArray(archive.oldBinaryGitBlobs) && archive.oldBinaryGitBlobs.length > 0 &&
+    archive.oldBinaryGitBlobs.every(blob => /^[a-f0-9]{40}$/.test(blob)) &&
+    git('show', `HEAD:${reference.path}`) ===
+      `version https://git-lfs.github.com/spec/v1\noid sha256:${archive.sha256}\nsize ${archive.bytes}\n`;
+}
 
 function checkChanges(base, rows, body) {
   const relevant = path => /^(?:scripts|src|data|config|art|docs|\.github)\//.test(path) || /^(?:AGENTS|CLAUDE|README)\.md$/.test(path);
@@ -145,6 +164,7 @@ function checkChanges(base, rows, body) {
   };
   const checkLinks = (line, path) => {
     const row = reusedReference(line, path, inactive);
+    if (row && path === mediaManifestPath && documentedArchiveLine(line, row.reference)) return;
     requireValue(!row, 'New reference to ' + row?.status + ' UI asset in ' + path + ': ' + row?.reference.path);
   };
   for (const line of bodyLines) checkLinks(line, 'PR description');

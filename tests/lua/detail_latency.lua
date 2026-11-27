@@ -92,15 +92,23 @@ measure('status-show-hide',{},function()
  assert(ui:showStatus(0));assert(ui.info.index==0)
  assert(ui:showStatus(0));assert(not ui.info and not panel:GetChild('statusInfo').visible)
 end)
--- Down closes the explicit actor reader and consumes its Click.
+-- An empty-space click dismisses the actor reader without selecting a card.
 local beforeHand=#host.run.combat.hand
 assert(ui:showStatus(0))
-local hit=panel:GetChild('card1'):GetChild('hit')
-hit.listeners.down({touchId=71})
-assert(not ui.info,'new Down must close explicit details')
-if hit.listeners.up then hit.listeners.up({touchId=71}) end
-hit.listeners.click({touchId=71})
-assert(#host.run.combat.hand==beforeHand and not ui.selected,'close click passed through')
+local dismiss=panel:GetChild('statusDismiss')
+assert(dismiss.visible and event('statusDismiss','click',71),'empty-space click must be consumed')
+assert(not ui.info and not dismiss.visible and not ui.gesture and not ui.selected and #host.run.combat.hand==beforeHand,
+ 'empty-space dismissal changed the hand or its input state')
+-- A click directly on an exposed card closes the reader and selects that card without playing it.
+assert(ui:showStatus(0))
+local cardUid=host.run.combat.hand[hand.bash].uid
+event(card(hand.bash),'down',72)
+assert(not ui.info and not dismiss.visible and ui.gesture and ui.gesture.uid==cardUid and not ui.swallow,
+ 'direct card press must dismiss the reader and capture the pressed card')
+event(card(hand.bash),'up',72)
+event(card(hand.bash),'click',72)
+assert(ui.selected==cardUid and #host.run.combat.hand==beforeHand,'direct card click must select without playing')
+assert(ui:cancelAim() and not ui.selected)
 -- Content is re-read, never cached by mutable actor identity.
 host.run.combat.player.hp=17
 assert(ui:showStatus(0))

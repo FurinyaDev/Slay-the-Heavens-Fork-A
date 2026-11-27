@@ -134,13 +134,39 @@ export const beforeReleaseControlsGuideRemoval=(path,source,read)=>controlsGuide
 export const releaseRightClickSourcePaths=Object.freeze(Object.keys(rightClick.files));
 export const releaseUiRestoreSourcePaths=Object.freeze([...new Set([...Object.keys(files),...Object.keys(fieldCancel.files)])]);
 export const beforeReleaseRightClick=(path,source)=>rightClick.project(path,fieldCancel.project(path,source));
-export const beforeReleaseUiRestore=(path,source)=>project(path,beforeReleaseRightClick(path,beforeReleaseControlsGuideRemoval(path,beforeReleaseSharedRelicUi(path,beforeReleaseForgeGridUi(path,beforeRefinedReleaseProduction(path,beforeRecordingUi(path,beforeReleaseShopEntry(path,beforeLateReleaseUiSource(path,source)))))))));
+const compoundIntentPaths=['src/lua/abyss_battle_intent_view.lua','src/lua/abyss_battle_render_actors.lua'];
+let compoundIntent;
+export function beforeReleaseCompoundIntent(path,source,read,{requireCurrent=false,reviewed=false}={}){
+ if(!compoundIntentPaths.includes(path))return source;
+ compoundIntent??=releaseUiRestoreArchive(readFileSync(new URL('../fixtures/release-compound-intent-source.json.gz',import.meta.url)),
+  '4d1d0ca90bc98c95fef49584283807598edd42f995d230357d28fa41efa14111','5acff84e14816711fd9f7a86e1b994069b2c8af6');
+ const prior=compoundIntent.project(path,source);
+ if(source===prior){
+  const predecessor=compoundIntent.files[path].before;
+  if(requireCurrent&&matches(source,predecessor))
+   assert(reviewed&&matches(read(path),predecessor),'fresh current production owner: '+path);
+  return source;
+ }
+ if(read)for(const owner of compoundIntentPaths)
+  assert(matches(read(owner),compoundIntent.files[owner].after),'combined linked owner identity: '+owner+' during compound intent validation');
+ return prior;
+}
+export function beforeReleaseUiRestore(path,source,read){
+ const compound=beforeReleaseCompoundIntent(path,source,read);
+ const shop=beforeReleaseShopEntry(path,beforeLateReleaseUiSource(path,compound));
+ const recording=beforeRecordingUi(path,shop,read);
+ const refined=beforeRefinedReleaseProduction(path,recording);
+ const forge=beforeReleaseForgeGridUi(path,refined);
+ const relics=beforeReleaseSharedRelicUi(path,forge);
+ const controls=beforeReleaseControlsGuideRemoval(path,relics,read);
+ return project(path,beforeReleaseRightClick(path,controls));
+}
 const authorizationPaths=[...new Set([...releaseUiRestoreSourcePaths,...releaseRightClickSourcePaths,...releaseControlsGuideRemovalSourcePaths,...releaseSharedRelicSourcePaths,...releaseForgeSourcePaths])];
 
 export function authorizeReleaseUiRestore(samples,read){
- samples=samples.map(([path,source])=>[path,beforeLateReleaseUiSource(path,source)]);
  const readLive=read;
- read=path=>beforeLateReleaseUiSource(path,readLive(path));
+ samples=samples.map(([path,source])=>[path,beforeLateReleaseUiSource(path,beforeReleaseCompoundIntent(path,source,readLive))]);
+ read=path=>beforeLateReleaseUiSource(path,beforeReleaseCompoundIntent(path,readLive(path)));
  for(const [path,input] of samples){
   const expected=shopEntry.files[path]?.after;
   if(matches(input,expected))assert(matches(read(path),expected),'shop entry linked owner changed: '+path);
@@ -158,8 +184,8 @@ export function authorizeReleaseUiRestore(samples,read){
   assert(matches(read(path),expected),'recording UI linked owner changed: '+path);
  }
  const rawRead=read;
- samples=samples.map(([path,input])=>[path,beforeRecordingUi(path,input)]);
- read=path=>beforeRecordingUi(path,rawRead(path));
+ samples=samples.map(([path,input])=>[path,beforeRecordingUi(path,input,rawRead)]);
+ read=path=>beforeRecordingUi(path,rawRead(path),rawRead);
  authorizeRefinedReleaseProduction(samples,read);
  // A combined replay that contains current menu code must use the same release
  // version for every sampled menu owner. Older all-historical views still replay.
@@ -188,7 +214,7 @@ export function authorizeReleaseUiRestore(samples,read){
 }
 
 export function beforeAuthenticatedReleaseUiRestore(path,source,read){
- const prior=beforeReleaseUiRestore(path,source);
+ const prior=beforeReleaseUiRestore(path,source,read);
  if(prior!==source)authorizeReleaseUiRestore([[path,source]],read);
  return prior;
 }

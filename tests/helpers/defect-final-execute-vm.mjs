@@ -25,10 +25,15 @@ const prelude=`package.path='tests/lua/?.lua;src/lua/?.lua;build/lua/?.lua;'..pa
 package.preload.abyss_defect_final_cards=assert(load(${luaString(source)},'@${path}'))
 local M=require('abyss_defect_final_cards');local original=M.execute
 DEFECT_EXECUTE_UNOBSERVED=original
+local function observedResult(result)
+ if result[1] or type(result[2])~='string'then return result end
+ local observed=table.pack(table.unpack(result,1,result.n))
+ observed[2]=DEFECT_EXECUTE_ERROR(result[2])
+ return observed
+end
 M.execute=function(combat,s,e,q)
- local result=table.pack(pcall(original,combat,s,e,q));local observed=result
- if not result[1]and type(result[2])=='string'then observed=table.pack(table.unpack(result,1,result.n));observed[2]=DEFECT_EXECUTE_ERROR(result[2])end
- DEFECT_EXECUTE_GRAPH_WRITE({state=s,effect=e,returned=observed},'execute:'..tostring(e.action),true)
+ local result=table.pack(pcall(original,combat,s,e,q))
+ DEFECT_EXECUTE_GRAPH_WRITE({state=s,effect=e,returned=observedResult(result)},'execute:'..tostring(e.action),true)
  if not result[1]then error(result[2],0)end
  return table.unpack(result,2,result.n)
 end
@@ -36,7 +41,7 @@ local C=require('abyss_combat');local depth=0
 for _,name in ipairs({'play','chooseHand','endTurn'})do
  local fn=C[name];if fn then C[name]=function(s,...)
   local outer=depth==0;depth=depth+1;local returned=table.pack(pcall(fn,s,...));depth=depth-1
-  if outer then DEFECT_EXECUTE_GRAPH_WRITE({state=s,returned=returned},name,true)end
+  if outer then DEFECT_EXECUTE_GRAPH_WRITE({state=s,returned=observedResult(returned)},name,true)end
   if not returned[1]then error(returned[2],0)end
   return table.unpack(returned,2,returned.n)
  end end

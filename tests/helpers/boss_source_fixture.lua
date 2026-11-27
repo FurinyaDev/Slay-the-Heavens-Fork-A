@@ -16,7 +16,7 @@ function M.stageQueue(run,priority,consumed)
  run.relicPool.queues.boss=out
 end
 function M.supportedChoices(run)
- M.stageQueue(run,{'Black Blood','SlaversCollar','Sozu'})
+ M.stageQueue(run,{'Black Blood','ArenaCollar','Sozu'})
 end
 function M.definition(run,id)
  for _,entry in ipairs(run.data.relics.relics)do if entry.id==id then return entry end end

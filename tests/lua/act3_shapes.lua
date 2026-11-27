@@ -212,6 +212,7 @@ end)
 test('real Host shows Shape actors Dazed destination and changing Explosive countdown',function()
  local H=dofile('tests/lua/support/battle_action_fixture.lua');local F=H.F
  local inspectDetails=dofile('tests/lua/support/status_detail_fixture.lua')
+ local readPowers=dofile('tests/lua/support/power_tip_fixture.lua')
  local root=F.Viewport.apply(F.control({children=F.Layout}),1280,720)
  local host=F.GameUI.new(root,D,F.Presentation,'click',{seed=1,campaign=true,prologue=false,
   imageSource='static',color=function(red,green,blue,alpha)return{r=red,g=green,b=blue,a=alpha}end})
@@ -224,7 +225,15 @@ test('real Host shows Shape actors Dazed destination and changing Explosive coun
   assert(box.visible);eq(box:GetChild('name').text,e.name);eq(box:GetChild('hp').text,string.format('%d/%d',e.hp,e.maxHp))
  end
  assert(not monsterControl(panel,'enemy5'))
- tap('enemy1',71);local text=inspectDetails(ui,panel)
+ tap('enemy1',71)
+ assert(ui.info.powerTips and ui.info.index==1 and ui.info.id==r.combat.enemies[1].id)
+ local compact,rows=readPowers(panel)
+ assert(#rows==1 and compact:find('对你施加一种负面效果',1,true)
+  and not compact:find(r.combat.catalog.cards.dazed.name,1,true)
+  and not compact:find('抽牌堆',1,true),compact)
+ panel:GetChild('statusDismiss').click({touchId=71})
+ assert(not ui.info and ui:showStatus(1) and not ui.info.powerTips)
+ local text=inspectDetails(ui,panel)
  assert(text:find(r.combat.catalog.cards.dazed.name,1,true)and text:find('抽牌堆',1,true)and text:find('2',1,true),text)
  assert(not text:find('未知',1,true),text)
  for turn=0,2 do
@@ -232,15 +241,11 @@ test('real Host shows Shape actors Dazed destination and changing Explosive coun
   local e=r.combat.enemies[3];eq(e.statuses.explosive,3-turn)
   local hit=dofile('tests/lua/support/monster_power_control_fixture.lua')(monsterControl(panel,'enemy3'),'explosive'):GetChild('hit')
   hit.click({touchId=80+turn});eq(ui.info.id,e.id);eq(ui.info.index,3)
-  local info=panel:GetChild('statusInfo');assert(info.visible)
-  local names,details={},{}
-  for i=1,F.Theme.layout.statusInfo.rows do
-   local name=info:GetChild('name'..i);if name.visible then names[#names+1]=name.text end
-   local line=info:GetChild('text'..i);if line.visible then details[#details+1]=line.text end
-  end
-  assert(table.concat(names,' '):find('自爆 '..(3-turn),1,true))
-  assert(table.concat(details,' '):find('30',1,true))
-  info:GetChild('hit').click({touchId=90+turn})
+  local status,statusRows=readPowers(panel)
+  assert(#statusRows==1 and status:find('自爆 '..(3-turn),1,true),status)
+  assert(status:find('30',1,true),status)
+  panel:GetChild('statusDismiss').click({touchId=90+turn})
+  assert(not ui.info)
  end
  eq(intent(r.combat.enemies[3]),'wait')
  eq(monsterControl(panel,'enemy3'):GetChild('intentIcon').imageId,F.Theme.icon.intent.unknown)

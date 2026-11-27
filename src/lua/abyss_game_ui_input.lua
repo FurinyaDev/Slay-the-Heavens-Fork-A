@@ -13,7 +13,7 @@ end
 local routeModes={battleRoute='battle',runRoute='node'}
 
 local function mapReturnCovered(self)
-    return self.characterOpen or self.easterEggOpen
+    return self.menuOpen or self.characterOpen or self.easterEggOpen
         or self.deckUI.visible or self.potionUI.visible
         or self.choiceUI and self.choiceUI.visible
 end
@@ -44,20 +44,11 @@ local function sameMapReturn(self,token)
     return true
 end
 
-function M.dismissFromOutside(platform,self)
-    return function()
-            if Pointer.blocked(platform) then return true end
-            if self.settlementRequested or self.settlementBusy then return true end
-            self:closeExit()
-            return true
-        end
-end
-
-local function bindV25Hover(box,hit,cursor,available)
+local function bindV25Hover(box,hit,cursor,available,color)
     local officialMenu=Theme.presentationProfile=='official-assets-first' and (box:GetChild('v25MenuFace') or box:GetChild('v25Face'))
     if (Theme.presentationProfile~='v25-reference' and not officialMenu) or not cursor.CursorEnter then return end
     if not box:GetChild('v25Face') and not box:GetChild('v25MenuFace')then return end
-    hit:AddCursorEventListener(cursor.CursorEnter,function()V25View.pointer(box,'enter',available())end)
+    hit:AddCursorEventListener(cursor.CursorEnter,function()V25View.pointer(box,'enter',available(),color)end)
 end
 
 local function battleRouteAvailable(self,enabled,mode)
@@ -76,19 +67,25 @@ local function samePotionPointer(run,slot,held)
     return held and held.inventory==run.potions and held.id==run.potions[slot] and held.phase==run.phase
 end
 
+local function otherPointer(token,event)
+    return token and event and token.touch~=event.touchId and token or nil
+end
+
 function M.bindCommand(platform,self,canManagePotions,clickEvent,owner)
     return function(box, kind, action, enabled, potionSlot)
-            local hit = box:GetChild("hit")
+            local hit = kind=='run_dismiss' and box or box:GetChild("hit")
             local held, released, observed
             local menuAction = menuKinds[kind]
             local rewardAction = kind == "combatRewards"
             local characterAction = kind:match("^character_")~=nil
             local resourceAction = kind:match('^resource_')~=nil
-            local mapReturn = kind=='mapReturn'
+            local utilityAction=resourceAction or kind=='open'
+            local mapReturn = kind=='mapReturn' or kind=='mapHudReturn'
             local routeMode = routeModes[kind]
             local mapContext = mapReturn or routeMode
             local cursor = platform.cursorEvents or {}
             local runMenuAction = kind:sub(1, 4) == 'run_'
+            local outsideMenu=kind=='run_dismiss'
             local function eggAvailable()
                 if self.easterEggOpen then return kind=='egg_close' end
                 return kind=='egg_open' and self.easterEgg:refresh()
@@ -121,7 +118,9 @@ function M.bindCommand(platform,self,canManagePotions,clickEvent,owner)
             end
             local function runMenuAvailable()
                 if runMenuAction then
-                    if kind~='run_mainMenu' and Navigation.minimalRunMenu(self) then return false end
+                    if outsideMenu then return self.exitOpen and self.menuOpen==true end
+                    if kind=='run_mainMenu' then return Navigation.canReturnToMainMenu(self) end
+                    if Navigation.minimalRunMenu(self) then return false end
                     return self.exitOpen and self.menuOpen == true and not self.routeOpen and (not enabled or enabled())
                 end
                 if self.menuOpen or self.routeOpen then return false end
@@ -129,7 +128,10 @@ function M.bindCommand(platform,self,canManagePotions,clickEvent,owner)
             end
             local function modalAvailable()
                 if menuAction and self.motion.deathReveal then return false end
-                if kind == 'routeClose' then return self.exitOpen and self.routeOpen == true end
+                if kind=='open' then return Navigation.canOpenMenu(self) end
+                if kind=='routeClose' or kind=='mapHudReturn' then
+                    return self.exitOpen and self.routeOpen==true and not mapReturnCovered(self)
+                end
                 if mapReturn then return M.mapReturnAvailable(self) end
                 return runMenuAvailable()
             end
@@ -158,7 +160,7 @@ function M.bindCommand(platform,self,canManagePotions,clickEvent,owner)
             end
             local function current(token)
                 return token and token.generation == owner.exitGeneration and token.run == self.run
-                    and (not resourceAction or token.deckGeneration==self.deckUI.generation and token.mode==self.mode
+                    and (not utilityAction or token.deckGeneration==self.deckUI.generation and token.mode==self.mode
                         and token.potionGeneration==self.potionUI.generation)
                     and samePotionPointer(self.run,potionSlot,token.potion)
                     and (not menuAction and not characterAction or token.menuGeneration == owner.menuGeneration) and available()
@@ -166,7 +168,10 @@ function M.bindCommand(platform,self,canManagePotions,clickEvent,owner)
                     and (not mapContext or currentMapReturn(token))
             end
             local function touch(event) return event and event.touchId end
-            bindV25Hover(box,hit,cursor,available)
+            if not outsideMenu then bindV25Hover(box,hit,cursor,available,platform.color) end
+            local function paintPointer(event,enabledNow)
+                if not outsideMenu then V25View.pointer(box,event,enabledNow,platform.color) end
+            end
             if cursor.CursorDown and cursor.CursorUp then
                 hit:AddCursorEventListener(cursor.CursorDown, function(event)
                     if held and not current(held) then held = nil end
@@ -178,13 +183,13 @@ function M.bindCommand(platform,self,canManagePotions,clickEvent,owner)
                         pending=self.run and self.run.pendingCombatRewards,rewardGeneration=self.rewardReturnGeneration,
                         potion=potionPointer(self.run,potionSlot),
                         mapReturn=mapContext and mapReturnIdentity(self) or nil} end
-                    V25View.pointer(box,'down',held~=nil)
+                    paintPointer('down',held~=nil)
                 end)
                 hit:AddCursorEventListener(cursor.CursorUp, function(event)
                     if not held or held.touch ~= touch(event) then return end
                     released = current(held) and held or nil
                     held = nil
-                    V25View.pointer(box,'up',available())
+                    paintPointer('up',available())
                 end)
                 for _, event in pairs({cursor.CursorExit, cursor.CursorEndDrag}) do
                     if event then hit:AddCursorEventListener(event, function(pointer)
@@ -192,27 +197,32 @@ function M.bindCommand(platform,self,canManagePotions,clickEvent,owner)
                         if not pointer or pointerOwner and pointerOwner.touch == touch(pointer) then
                             held,released=nil,nil
                         end
-                        if not pointerOwner or not pointer or pointerOwner.touch==touch(pointer)then V25View.pointer(box,'exit',available())end
+                        if not pointerOwner or not pointer or pointerOwner.touch==touch(pointer)then paintPointer('exit',available())end
                     end) end
                 end
             end
             hit:AddCursorEventListener(clickEvent, function(event)
-                if covered() then return false end
+                if outsideMenu and Pointer.dragged(event,Theme.layout.cardDrag.threshold) then
+                    held,released=otherPointer(held,event),otherPointer(released,event)
+                    return true
+                end
+                if covered() then return outsideMenu end
                 if observed or cursor.CursorDown and cursor.CursorUp and touch(event) ~= nil then
                     local token = released
                     if not current(token) then
                         if not held or held.touch == touch(event) then held, released = nil, nil end
-                        return false
+                        return outsideMenu
                     end
-                    if token.touch ~= touch(event) then return false end
+                    if token.touch ~= touch(event) then return outsideMenu end
                     held, released = nil, nil
-                elseif not available() then return false end
+                elseif not available() then return outsideMenu end
+                if outsideMenu then action();return true end
                 return action()
             end)
         end
 end
 
-function M.installUtilities(self,child,clickEvent,platform,inCombat,exitPanel,runMenu)
+function M.installUtilities(self,child,clickEvent,inCombat,exitPanel,runMenu)
     child("deckEntry"):GetChild("open"):GetChild("hit"):AddCursorEventListener(clickEvent, function() return self:openDeck() end)
     child("relicEntry"):GetChild("open"):GetChild("hit"):AddCursorEventListener(clickEvent, function() return self:openRelics() end)
     if not self.potionUI.localPanel then
@@ -226,12 +236,6 @@ function M.installUtilities(self,child,clickEvent,platform,inCombat,exitPanel,ru
     exitPanel.disableCursorEventPassthrough = true
     exitPanel:GetChild("blocker"):AddCursorEventListener(clickEvent, function() return true end)
     runMenu.disableCursorEventPassthrough = true
-    -- 点击菜单外的空白继续游戏，并吞掉点击以避免穿透到战斗或地图。
-    local dismissFromOutside = M.dismissFromOutside(platform,self)
-    runMenu:GetChild('blocker'):AddCursorEventListener(clickEvent, function()
-        if self.exitOpen and self.menuOpen and not self.routeOpen then return dismissFromOutside() end
-        return true
-    end)
     runMenu:GetChild('catch'):AddCursorEventListener(clickEvent, function() return true end)
 end
 
@@ -261,7 +265,7 @@ function M.installMenu(self,child,clickEvent,resourceHint,bindCommand,start,sett
         for i=1,Theme.layout.battlePotions.count do
             local box=entry:GetChild('slot'..i)
             bindCommand(box,'resource_potion',function()return self:openPotions(i)end,
-                function()return box.visible and self.run.phase~='combat' and self.run.potions[i]~=nil end,i)
+                function()return box.visible and (self.run.phase~='combat' or self.routeOpen) and self.run.potions[i]~=nil end,i)
         end
     end
     bindCommand(settlement, "settle", function() return self:settle() end)
@@ -284,13 +288,19 @@ end
 function M.installRunMenu(self,bindCommand,runMenu,canViewRoute,child,owner)
     local bar=Theme.presentationProfile=='official-assets-first' and child('battlePanel'):GetChild('topBar')
     local function openRoute()
-        if not self:openMenu()then return false end
-        self.routeOpen=true;self:refresh();return true
+        owner.exitGeneration=owner.exitGeneration+1
+        self.exitOpen,self.menuOpen,self.routeOpen,self.exitError=true,false,true,nil
+        Navigation.cancelNodeEntry(self)
+        self:refresh()
+        return true
     end
     local shortcut=bar and bar:GetChild('battleRoute')
     if shortcut then bindCommand(shortcut,'battleRoute',openRoute,canViewRoute)end
+    local mapShortcut=Theme.presentationProfile=='official-assets-first' and child('mapPanel'):GetChild('mapRoute')
+    if mapShortcut then bindCommand(mapShortcut,'mapHudReturn',function()return self:closeExit()end)end
     local nodeShortcut=Theme.presentationProfile=='official-assets-first' and child('nodePanel'):GetChild('runRoute')
     if nodeShortcut then bindCommand(nodeShortcut,'runRoute',openRoute,canViewRoute)end
+    bindCommand(runMenu:GetChild('blocker'),'run_dismiss',function()return self:closeExit()end)
     bindCommand(runMenu:GetChild('resume'), 'run_resume', function() return self:closeExit() end)
     bindCommand(runMenu:GetChild('mainMenu'),'run_mainMenu',function()return self:returnToMainMenu()end,
         function()return Navigation.hasRun(self) and not self.sessionPaused end)
@@ -305,12 +315,7 @@ function M.installRunMenu(self,bindCommand,runMenu,canViewRoute,child,owner)
         self:refresh()
         return true
     end)
-    bindCommand(runMenu:GetChild('map'), 'run_map', function()
-        owner.exitGeneration = owner.exitGeneration + 1
-        self.routeOpen = true
-        self:refresh()
-        return true
-    end, canViewRoute)
+    bindCommand(runMenu:GetChild('map'),'run_map',openRoute,canViewRoute)
     local v25=Theme.presentationProfile=='v25-reference'
     bindCommand(child('mapPanel'):GetChild('previewBack'),v25 and 'mapReturn' or 'routeClose',function()
         if v25 and not self.routeOpen then return self:openMenu() end

@@ -1,3 +1,6 @@
+import {beforeMasterBackflowSource} from './master-backflow-source.mjs';
+import {exactSourceMatches} from './source-fingerprint.mjs';
+import {restoreExactFixtureHunks} from './exact-fixture-hunks.mjs';
 // Copies only immutable test helper dependencies; production owners remain explicit fixtures.
 import assert from 'node:assert/strict';
 import {officialUiRepairClosure} from './official-ui-repair-closure.mjs';
@@ -7,22 +10,7 @@ import {extendIntegratedHelperClosure} from './integrated-ci-source.mjs';
 import {readFileSync,writeFileSync,mkdirSync,realpathSync,existsSync} from 'node:fs';
 import {join,dirname,relative,isAbsolute} from 'node:path';
 import {createHash} from 'node:crypto';
-import {exactSourceMatches} from './source-fingerprint.mjs';
 const hash=b=>createHash('sha256').update(b).digest('hex');
-const approvedEntrancePath='tests/helpers/ui-entrance-approved-sources.mjs';
-const approvedEntranceCurrent={sha256:'484c3a3e4f2aeb96fc84bbfc45a890576f6d615311a0c823bc63728bb7055d43',gitBlob:'b3ec751c07b240729b8454f05e19962060b6d3ce'};
-const approvedEntrancePrevious={sha256:'b5c903614eb19f512e365c8c4024e1c40c37f5ab5df790a016dbeecf7b0efdcb',gitBlob:'01d014fa21cf6ff4c88ef8fb99a55ae3d644802f'};
-
-function beforePrologueEntranceHelper(path,text,lf){
- if(path!==approvedEntrancePath||!exactSourceMatches(lf,approvedEntranceCurrent))return lf;
- assert(text===lf||text===lf.replaceAll('\n','\r\n'),'uniform live Prologue entrance helper: '+path);
- const parts=lf.split('\n// #1035 changes the two archived entrance owners');
- assert.equal(parts.length,2,'exact Prologue entrance helper continuation');
- const prior=parts[0].replace("\nimport {exactSourceMatches} from './source-fingerprint.mjs';",'')
-  .replace('\n source=beforeNativePrologueOwner(path,source);','');
- assert(exactSourceMatches(prior,approvedEntrancePrevious),'exact Prologue entrance helper predecessor');
- return prior;
-}
 // Git source identities use LF; binary witnesses (especially gzip) retain
 // their exact bytes. Never decode an arbitrary helper dependency as text.
 export function integrationClosureBytes(path,content){
@@ -30,7 +18,7 @@ export function integrationClosureBytes(path,content){
  if(!/\.(?:mjs|js|json|lua|md|yml|yaml)$/.test(path))return content;
  const text=content.toString('utf8');
  assert(Buffer.from(text).equals(content),'helper source must be valid UTF-8: '+path);
- return Buffer.from(beforePrologueEntranceHelper(path,text,text.replaceAll('\r\n','\n')));
+ return Buffer.from(text.replaceAll('\r\n','\n'));
 }
 const bytes=readFileSync(new URL('./integration-source-closure.json',import.meta.url));
 assert.equal(hash(bytes),'800fcc9efd889f482259d0e1e9f1501f0e9597ac05552622ede00dd3dcdb4a94','complete integration helper closure identity');
@@ -365,14 +353,22 @@ const entranceFiles=Object.freeze({
  'tests/helpers/refined-release-source.mjs':'747f63088f1830dad97f7fa116df16f265c555639c9a01161ba9ba3b3b5ecc5c',
  'tests/helpers/battle-periphery-source.mjs':'d436c48e4fb14039a53361fdf8464512f6a95226c81ff32ffe4d2930877db210',
  'tests/helpers/rebased-release-source.mjs':'b1e42ded7f05f580fb25ab0417ccd8db45832f5e9e50db83a38d6aaa2767dc20',
- 'tests/helpers/chapter-battle-scene-source.mjs':'28dcccf5f5e6f87b622f86e79676a18b0fcf8657f9084642782687e43cac4e87',
+ 'tests/helpers/chapter-battle-scene-source.mjs':'7888616f2fbc3f59b3545eb5441069380b453b91c80a7a3d4513e59193fa5696',
  'tests/helpers/release-integration-source.mjs':'74093921a53a94ba842afac199e579a622b60fea5abf2519d416ede77bbfa1a7',
  'tests/fixtures/release-lazy-monster-art-source.json.gz':'211c3588a53b1f97c98d9f9b905349d82b244a2e81a940d4ebe48022381ca92e',
- 'tests/helpers/m7-core-final-source-inverse.mjs':'c9d98969785466649e0e915df0d912f81b774d8b937b4fb63e74eed731635133',
+ 'tests/helpers/m7-core-final-source-inverse.mjs':'f3c74ae48bc3d0f030caaf30c2a6140e096146316dab115a75ebfba87b1dcfe8',
  'tests/helpers/release-ui-restore-source.mjs':'2ec5855476f1b4c8cf762ca1a7ee366028322841b07996a518af96fdd87259b9',
  'tests/helpers/current-replay-fix-sources.mjs':'cceed97f15f0f91ab37ea27d3bf6f5659d213c54dcf11225eaa0fed7adc8ccdf',
  'tests/helpers/character-preparation-source.mjs':'b556363648dd13827dacb603038423caf4a1c2693e618747df58fc29da7be2fd',
- 'tests/helpers/develop-release-backflow-source.mjs':'2834679eef440cf54e64cfb2c144c2fc6dbb5dc7ed048c3767435c250827337f',
+ 'tests/helpers/develop-release-backflow-source.mjs':'d9b04593b5ed2af93096091a53d0043361d9ae3019cdbc64c766100f5d694e39',
+ 'tests/helpers/develop-release-vocabulary-source.mjs':'a70cfaf283d1c758fffa9a2035bec86e122afa871e4104c11e80ae7660c82727',
+ 'tests/fixtures/develop-release-vocabulary-source.json.gz':'2b3d606fc142f2c8c5cfaaff386c70f6e1f741f24fbc1879b78399b7c477e914',
+ 'tests/fixtures/map-room-battle-actions-source.json.gz':'45918da82006880941ab23f10ccc49b7fe11fc2c7978b4f1508f923216e142ec',
+ 'tests/fixtures/develop-battle-input-source.json.gz':'ee0eeaf23242e8307a2b4f06a27319d89477c5d19d7507eddc54477dc878611e',
+ 'tests/fixtures/develop-linked-backflow-source.json.gz':'7f803c657102e0f9a804ca68117af34f1067d32eabbc3b5fc0c99752b590d522',
+ 'tests/fixtures/develop-architecture-linked-source.json.gz':'4e8500c1232bc5bcd5c19d08dbed21cea262be94a30f3a2e8195eeb04ebde859',
+ 'tests/helpers/master-backflow-source.mjs':'374935c2c76b47b65319202a3f3d60eb9884149f4224cd9c1dc432a81f523a7c',
+ 'tests/fixtures/master-backflow-predecessors.json.gz':'b16492b78553e53e675537d95d3f9ef24557d792f657ba41f0f280e43fab325f',
  'tests/helpers/native-fixture-replay-source.mjs':'7dbd2ded60c5b155b958a5e6e2ff44537b2b62c15e113642aaf8f6194771832d',
  'tests/helpers/native-flow-fixture-source.mjs':'8ad7157fd4f3973ffba4f17f9eba440731ddf952e859fee53970d6c3879968e3',
  'tests/helpers/ui-entrance-source.mjs':'c64976a04e877f65315ad8553bd8f6380b6e50a5ab5fce60e3b37bbbb98825c1',
@@ -386,18 +382,594 @@ const entranceFiles=Object.freeze({
  'tests/helpers/input-retirement-source.mjs':'886cc9b65d51c5e5507691f516439d3475f44a3fdfba5dcf96cfb2dde1c5cf2e',
  'tests/fixtures/event-readability-source.json.gz':'1ccc3098014ebf726a776928f5d0b41c29b6a2a1cff21f096ee42a53b0da9cd5',
  'tests/helpers/reward-query-boundary-source-inverse.mjs':'07d2abf826061305510cebfd60a4c13b2d07e86352d63a5db1868a40c9cc082c',
- 'tests/helpers/relic-query-source-inverse.mjs':'41b4cddcba283db2cbcdc4d9c19fdd8bb14321378bd1151fc76a74b7ec9b1120',
+ 'tests/helpers/relic-query-source-inverse.mjs':'ba7525e0fd153e59f59538114ecace70c6475ab65f578dea2f4fc29fb9e71a20',
  'tests/helpers/reward-current-source.mjs':'3b67c5b2cce6c6ab8c76610da98d3ceb3c96e6ccfb8f0c3b58754ac7ea9ff641',
  'tests/helpers/reward-current-source.json.gz':'a68d10abe6e6f3bd33a69f85326d34dce1250b34b6892543cb5c1314c01f3b9f',
 });
+// The live copier targets the approved #1022 helper closure. Other replay
+// readers continue to use their original Master backflow predecessor.
+const reviewedCopySources=Object.freeze({
+ "tests/helpers/develop-release-backflow-source.mjs": {
+  "current": {
+   "sha256": "7989de2a06f877bf2dc2d0dcb991eef3a0cceda234adcd8724258b2ead1c26c2",
+   "gitBlob": "a0180aa40bdb51b02ebcb7445305265b5e421638"
+  },
+  "previous": {
+   "sha256": "d9b04593b5ed2af93096091a53d0043361d9ae3019cdbc64c766100f5d694e39",
+   "gitBlob": "66f1e5c43ff4247a562ad9091f543f598925e01e"
+  },
+  "edits": [
+   {
+    "at": 0,
+    "remove": 1,
+    "previous": [
+     "import {beforeChapterBattleScene,chapterBattleSceneReader} from './chapter-battle-scene-source.mjs';"
+    ]
+   },
+   {
+    "at": 14,
+    "remove": 1,
+    "previous": [
+     "import {beforeKnownMasterBackflowSource} from './master-backflow-source.mjs';"
+    ]
+   },
+   {
+    "at": 16,
+    "remove": 1,
+    "previous": []
+   },
+   {
+    "at": 251,
+    "remove": 1,
+    "previous": [
+     " const masterPrior=beforeKnownMasterBackflowSource(path,source);"
+    ]
+   },
+   {
+    "at": 272,
+    "remove": 1,
+    "previous": []
+   },
+   {
+    "at": 276,
+    "remove": 2,
+    "previous": [
+     " if(!matches(source,after)&&!matches(source,linkedSuccessors[path]??after))return source;"
+    ]
+   },
+   {
+    "at": 294,
+    "remove": 2,
+    "previous": [
+     " 'src/lua/abyss_battle_info_content.lua':{sha256:'0d96375df2bcdd3e323413c09e27e802e53b450d3053dadbc4eef3d8da715d57',",
+     "  gitBlob:'989f7129614b8c8637bf3e78167e98b33db3e9c4'},"
+    ]
+   },
+   {
+    "at": 316,
+    "remove": 1,
+    "previous": []
+   },
+   {
+    "at": 415,
+    "remove": 2,
+    "previous": [
+     "  const source=beforeArchitectureOwner(path,read(path));"
+    ]
+   },
+   {
+    "at": 483,
+    "remove": 4,
+    "previous": [
+     "   return authenticateDevelopBackflowWithReaders(path,current,readOwner,readOwner,options);"
+    ]
+   },
+   {
+    "at": 538,
+    "remove": 1,
+    "previous": []
+   }
+  ]
+ },
+ "tests/helpers/master-backflow-source.mjs": {
+  "current": {
+   "sha256": "c03fb1b5bf312b8834aeef53204030ea8544622761278b3ae626cdd1b8d842d5",
+   "gitBlob": "28124a00ba0ebe7d58b6b62e41c9061fddf007f5"
+  },
+  "previous": {
+   "sha256": "374935c2c76b47b65319202a3f3d60eb9884149f4224cd9c1dc432a81f523a7c",
+   "gitBlob": "99816ca5321f3664d7df4c834684a88703f0c533"
+  },
+  "edits": [
+   {
+    "at": 30,
+    "remove": 1,
+    "previous": []
+   },
+   {
+    "at": 33,
+    "remove": 1,
+    "previous": [
+     "  ['src/lua/abyss_battle_info_content.lua', ['0d96375df2bcdd3e323413c09e27e802e53b450d3053dadbc4eef3d8da715d57', '989f7129614b8c8637bf3e78167e98b33db3e9c4']],"
+    ]
+   },
+   {
+    "at": 49,
+    "remove": 1,
+    "previous": [
+     "  ['tests/helpers/release-map-deck-source.mjs', ['e825e98356085765d46166f6ee5994181ade9548569d0c28e6ee62f195fef5d7', '67ab3e7f739ccbe9e63f6e54235d1378b72f5983']],"
+    ]
+   },
+   {
+    "at": 57,
+    "remove": 1,
+    "previous": []
+   }
+  ]
+ },
+ "tests/helpers/character-preparation-source.mjs": {
+  "current": {
+   "sha256": "59e4952da8df25d3c6808a03c05475f1799012f2838880be4f7d76c2d68f68b2",
+   "gitBlob": "59cb86a27add71e38a679cefc82a1c2f8b03b5d2"
+  },
+  "previous": {
+   "sha256": "b556363648dd13827dacb603038423caf4a1c2693e618747df58fc29da7be2fd",
+   "gitBlob": "b9262d101ea11eed7836cf1091bc44f94eb94ce3"
+  },
+  "edits": [
+   {
+    "at": 0,
+    "remove": 3,
+    "previous": []
+   },
+   {
+    "at": 24,
+    "remove": 1,
+    "previous": []
+   },
+   {
+    "at": 45,
+    "remove": 1,
+    "previous": [
+     "    const source = read(path);"
+    ]
+   },
+   {
+    "at": 149,
+    "remove": 2,
+    "previous": []
+   },
+   {
+    "at": 189,
+    "remove": 13,
+    "previous": [
+     "  if (pc13RewardCoverSourcePaths.includes(path)) {"
+    ]
+   }
+  ]
+ },
+ "tests/helpers/current-replay-fix-sources.mjs": {
+  "current": {
+   "sha256": "b09df63dd432eaa4796047bd4ba8f64a3d224963eeab15e1bc90f7732c8afae2",
+   "gitBlob": "bb8df89c3ca48e98c48c31ae961d53fd76231fcc"
+  },
+  "previous": {
+   "sha256": "cceed97f15f0f91ab37ea27d3bf6f5659d213c54dcf11225eaa0fed7adc8ccdf",
+   "gitBlob": "ac19a597d6be7427dd05816dc85dd580d6454c3a"
+  },
+  "edits": [
+   {
+    "at": 3,
+    "remove": 1,
+    "previous": []
+   },
+   {
+    "at": 2499,
+    "remove": 216,
+    "previous": []
+   },
+   {
+    "at": 2716,
+    "remove": 1,
+    "previous": []
+   },
+   {
+    "at": 2726,
+    "remove": 1,
+    "previous": []
+   }
+  ]
+ },
+ "tests/helpers/ui-entrance-source.mjs": {
+  "current": {
+   "sha256": "50851099aed8dca2d5e6da5a715df63ab939f51729b56edab0ca81bec6dee5c0",
+   "gitBlob": "343f6486ebb70ab190d8c28026c6049ff4d48d25"
+  },
+  "previous": {
+   "sha256": "c64976a04e877f65315ad8553bd8f6380b6e50a5ab5fce60e3b37bbbb98825c1",
+   "gitBlob": "2da2af0441e00d0893184b7f401a9848b491b9de"
+  },
+  "edits": [
+   {
+    "at": 6,
+    "remove": 8,
+    "previous": [
+     "import {exactSourceMatches as matches,sourceConfigLayoutMatches} from './source-fingerprint.mjs';",
+     "import {restoreExactFixtureHunks} from './exact-fixture-hunks.mjs';",
+     "import {beforeCurrentReplayFixes,beforeOfficialCharacterBackflow} from './current-replay-fix-sources.mjs';",
+     "import {beforeApprovedUiEntrance,matchesApprovedUiEntranceOwner} from './ui-entrance-approved-sources.mjs';",
+     "",
+     "const archive=readFileSync(new URL('../fixtures/ui-entrance-source.json.gz',import.meta.url));"
+    ]
+   },
+   {
+    "at": 36,
+    "remove": 20,
+    "previous": [
+     "const currentInput=(path,source)=>replaySources.includes(path)",
+     " ?beforeCurrentReplayFixes(path,source):beforeApprovedUiEntrance(path,source);",
+     "function currentMatches(path,source,expected){",
+     " if(!matchesApprovedUiEntranceOwner(path,source))return false;",
+     " const normalized=currentInput(path,source);",
+     " if(requiredCurrentOwners.includes(path)&&normalized===source)return false;",
+     " return matches(normalized,expected);",
+     "}",
+     "const predecessors=new Map();",
+     ""
+    ]
+   },
+   {
+    "at": 70,
+    "remove": 7,
+    "previous": [
+     "",
+     "export function beforeUiEntrance(path,source){",
+     " return project(path,source,binding(path));",
+     "}",
+     ""
+    ]
+   }
+  ]
+ },
+ "tests/helpers/input-retirement-sts-binding.mjs": {
+  "current": {
+   "sha256": "47a212bae11910c09e62b59cf291552e54954d5e710251eb6b263c3289461025",
+   "gitBlob": "9e65f5899089cbe95c937eecd8aa0a72e0f0c7c1"
+  },
+  "previous": {
+   "sha256": "f6395a7c5e299738db3caf30f29d7d29724e7ac091af012a585c76b785697219",
+   "gitBlob": "e3d66011ebc645d886944e71543701c3d313258c"
+  },
+  "edits": [
+   {
+    "at": 101,
+    "remove": 126,
+    "previous": [
+     "];",
+     "",
+     "export function beforeStsRuntimeFixtureSuccessor(path,source){",
+     " const proof=runtimeFixtureSuccessors.find(row=>row.path===path);",
+     " const original=proof?restoreExactFixtureHunks(proof,path,source):source;"
+    ]
+   }
+  ]
+ },
+ "tests/helpers/native-flow-fixture-source.mjs": {
+  "current": {
+   "sha256": "1ea4f6524ec42e6b9f907988f6e716b9560bff6a33a1a35117a050836f1723f1",
+   "gitBlob": "1a3c57078fa15b56609aa8fb4e1a73848e1d472b"
+  },
+  "previous": {
+   "sha256": "8ad7157fd4f3973ffba4f17f9eba440731ddf952e859fee53970d6c3879968e3",
+   "gitBlob": "ec07991f5d6b17bca5d5e40eed75f42b0110b7ae"
+  },
+  "edits": [
+   {
+    "at": 30,
+    "remove": 8,
+    "previous": [
+     "}",
+     "",
+     "// Approved release backflows #912, #940, #942 and #951 supersede these witnesses.",
+     "const releaseFixtures=Object.freeze({",
+     " 'tests/lua/support/native_monster_only_entry.lua':{",
+     "  sha256:'0c192425a730c27bab65e5ebc18fc340c9b2414e8558485922041e01fbaf00c1',gitBlob:'29e0bb8b789624f2128780c7711d122bb0687368',",
+     " },",
+     " 'tests/official-assets-runtime.test.mjs':{"
+    ]
+   }
+  ]
+ }
+});
+// Detached historical closures keep the last reviewed copier dependencies.
+// The live release readers add the separately authenticated entrance sources.
+const releaseReplayReaders=Object.freeze({
+ "tests/helpers/master-backflow-source.mjs": {
+  "current": {
+   "sha256": "308c6ef6ac8987b9becc4ead9f3a1efaa2c3c20ea8a697bdf26f6233fa71b8ac",
+   "gitBlob": "c0558789e0465672ef86866b3ac1f4a4708f6412"
+  },
+  "previous": {
+   "sha256": "c03fb1b5bf312b8834aeef53204030ea8544622761278b3ae626cdd1b8d842d5",
+   "gitBlob": "28124a00ba0ebe7d58b6b62e41c9061fddf007f5"
+  },
+  "hunks": [
+   {
+    "at": 4,
+    "before": "import { exactSourceMatches } from './source-fingerprint.mjs';\nimport { restoreExactFixtureHunks } from './exact-fixture-hunks.mjs';\n\nconst archive = readFileSync(new URL('../fixtures/master-backflow-predecessors.json.gz', import.meta.url));",
+    "after": "import { exactSourceMatches } from './source-fingerprint.mjs';\nimport { restoreExactFixtureHunks } from './exact-fixture-hunks.mjs';\nimport { beforeReleaseEntranceOwner } from './release-entrance-owner-source.mjs';\nimport { beforeReleaseClosureFixture } from './release-closure-fixture-source.mjs';\n\nconst archive = readFileSync(new URL('../fixtures/master-backflow-predecessors.json.gz', import.meta.url));"
+   },
+   {
+    "at": 148,
+    "before": "\nexport function beforeMasterBackflowSource(path, source) {\n  if (!Object.hasOwn(files, path)) return source;\n  const { before, after } = files[path];",
+    "after": "\nexport function beforeMasterBackflowSource(path, source) {\n  source = beforeReleaseClosureFixture(path, beforeReleaseEntranceOwner(path, source));\n  if (!Object.hasOwn(files, path)) return source;\n  const { before, after } = files[path];"
+   },
+   {
+    "at": 166,
+    "before": "\nexport function beforeKnownMasterBackflowSource(path, source) {\n  const scope = beforeProductionReadingBackflow(path, source);\n  if (scope !== source) return scope;",
+    "after": "\nexport function beforeKnownMasterBackflowSource(path, source) {\n  source = beforeReleaseClosureFixture(path, beforeReleaseEntranceOwner(path, source));\n  const scope = beforeProductionReadingBackflow(path, source);\n  if (scope !== source) return scope;"
+   }
+  ]
+ },
+ "tests/helpers/ui-entrance-source.mjs": {
+  "current": {
+   "sha256": "c8a0b30c0c7013702719c7e13dedcc3d7753118d9f02d473e94f831f877377b7",
+   "gitBlob": "3c3c094fbe33e3b783d1602256271e0d2c77dbc1"
+  },
+  "previous": {
+   "sha256": "50851099aed8dca2d5e6da5a715df63ab939f51729b56edab0ca81bec6dee5c0",
+   "gitBlob": "343f6486ebb70ab190d8c28026c6049ff4d48d25"
+  },
+  "hunks": [
+   {
+    "at": 10,
+    "before": "import {beforeChapterBattleScene} from './chapter-battle-scene-source.mjs';\nimport {beforeKnownMasterBackflowSource} from './master-backflow-source.mjs';\n\nconst archive=readFileSync(new URL('../fixtures/ui-entrance-source.json.gz',import.meta.url));",
+    "after": "import {beforeChapterBattleScene} from './chapter-battle-scene-source.mjs';\nimport {beforeKnownMasterBackflowSource} from './master-backflow-source.mjs';\nimport {beforeReleaseEntranceOwner,readReleaseEntrancePredecessor} from './release-entrance-owner-source.mjs';\n\nconst archive=readFileSync(new URL('../fixtures/ui-entrance-source.json.gz',import.meta.url));"
+   },
+   {
+    "at": 46,
+    "before": "}\nfunction currentEntranceSource(path,source,expected){\n if(matchesEntrance(path,source,expected))return source;\n const masterPrior=beforeKnownMasterBackflowSource(path,source);",
+    "after": "}\nfunction currentEntranceSource(path,source,expected){\n source=beforeReleaseEntranceOwner(path,source);\n if(matchesEntrance(path,source,expected))return source;\n const masterPrior=beforeKnownMasterBackflowSource(path,source);"
+   },
+   {
+    "at": 86,
+    "before": "  let source;\n  try{source=read(owner);}catch(error){assert.fail('combined linked owner missing: '+owner+': '+error.message);}\n  assert(currentMatches(owner,source,files[owner].after),'combined linked owner identity: '+owner+' during entrance validation');\n }\n}\n\nexport function entranceReader(read,authenticated=false){\n return owner=>{\n  const source=read(owner);\n  const row=binding(owner);",
+    "after": "  let source;\n  try{source=read(owner);}catch(error){assert.fail('combined linked owner missing: '+owner+': '+error.message);}\n  source=readReleaseEntrancePredecessor(owner,source,read);\n  assert(currentMatches(owner,source,files[owner].after),'combined linked owner identity: '+owner+' during entrance validation');\n }\n}\n\nconst underlyingReaders=new WeakMap();\nexport const underlyingEntranceReader=read=>underlyingReaders.get(read)??read;\nexport function entranceReader(read,authenticated=false){\n const reader=owner=>{\n  const source=read(owner);\n  const row=binding(owner);"
+   },
+   {
+    "at": 106,
+    "before": "  return prior;\n };\n}\n",
+    "after": "  return prior;\n };\n underlyingReaders.set(reader,underlyingEntranceReader(read));\n return reader;\n}\n"
+   }
+  ]
+ },
+ "tests/helpers/input-retirement-source.mjs": {
+  "current": {
+   "sha256": "e52b313959cd8834b1769546603f0d1212563d4b1c9d8592f970abf6f3afc4ba",
+   "gitBlob": "7aeedadf169523e27bc697d9db7aa44821847733"
+  },
+  "previous": {
+   "sha256": "45d451b3bd820d17f282d71d38ef974ad97a82d99e37679c22000af66d493296",
+   "gitBlob": "dc889017f62f554d063d3eae71103b82f810583b"
+  },
+  "hunks": [
+   {
+    "at": 8,
+    "before": "import {beforeNativeHostInputRetirement} from './native-host-replay-source.mjs';\nimport {beforeNativeFlowFixture} from './native-flow-fixture-source.mjs';\nimport {beforeCurrentReplayFixes} from './current-replay-fix-sources.mjs';\nimport {exactSourceMatches as matches,sourceConfigLayoutMatches} from './source-fingerprint.mjs';",
+    "after": "import {beforeNativeHostInputRetirement} from './native-host-replay-source.mjs';\nimport {beforeNativeFlowFixture} from './native-flow-fixture-source.mjs';\nimport {beforeKnownMasterBackflowSource} from './master-backflow-source.mjs';\nimport {beforeCurrentReplayFixes} from './current-replay-fix-sources.mjs';\nimport {exactSourceMatches as matches,sourceConfigLayoutMatches} from './source-fingerprint.mjs';"
+   },
+   {
+    "at": 171,
+    "before": "\nexport function beforeDevelopUiBackflows(path,source){\n return beforeDeckBrowserBackflow(path,beforePotionBackflow(path,source));\n}",
+    "after": "\nexport function beforeDevelopUiBackflows(path,source){\n if(path==='src/lua/abyss_choice_ui.lua')source=beforeKnownMasterBackflowSource(path,source);\n return beforeDeckBrowserBackflow(path,beforePotionBackflow(path,source));\n}"
+   }
+  ]
+ },
+ "tests/helpers/develop-release-backflow-source.mjs": {
+  "current": {
+   "sha256": "53304733269a0314ca3e90832bb17b8dee23cc43e081ddbe5c4266da15d50609",
+   "gitBlob": "fa82903bc4af3eaa14fee5945484733083f11101"
+  },
+  "previous": {
+   "sha256": "7989de2a06f877bf2dc2d0dcb991eef3a0cceda234adcd8724258b2ead1c26c2",
+   "gitBlob": "a0180aa40bdb51b02ebcb7445305265b5e421638"
+  },
+  "hunks": [
+   {
+    "at": 0,
+    "before": "import {beforeCardReadingScope,beforeChapterBattleScene,beforeResponsiveHand,chapterBattleSceneReader} from './chapter-battle-scene-source.mjs';\nimport { beforeUiEntrance, entranceInventory, entrancePredecessor, entranceReader, uiEntranceOwns, assertCurrentUiEntrance } from './ui-entrance-source.mjs';\nimport {battlePeripheryPredecessor,beforeBattlePeriphery} from './battle-periphery-source.mjs';\n// Exact Develop predecessors for historical replay. Live builds read current sources.",
+    "after": "import {beforeCardReadingScope,beforeChapterBattleScene,beforeResponsiveHand,chapterBattleSceneReader} from './chapter-battle-scene-source.mjs';\nimport { beforeUiEntrance, entranceInventory, entrancePredecessor, entranceReader, underlyingEntranceReader, uiEntranceOwns, assertCurrentUiEntrance } from './ui-entrance-source.mjs';\nimport {battlePeripheryPredecessor,beforeBattlePeriphery} from './battle-periphery-source.mjs';\n// Exact Develop predecessors for historical replay. Live builds read current sources."
+   },
+   {
+    "at": 15,
+    "before": "import {beforeReleaseVocabulary,isReleaseVocabularyPredecessor,releaseVocabularyOwns} from './develop-release-vocabulary-source.mjs';\nimport {beforeRunHudDeckLabel} from './run-hud-successors.mjs';\n\nconst hash=(bytes,algorithm='sha256')=>createHash(algorithm).update(bytes).digest('hex');",
+    "after": "import {beforeReleaseVocabulary,isReleaseVocabularyPredecessor,releaseVocabularyOwns} from './develop-release-vocabulary-source.mjs';\nimport {beforeRunHudDeckLabel} from './run-hud-successors.mjs';\nimport {beforeReleaseEntranceOwner,readReleaseEntrancePredecessor} from './release-entrance-owner-source.mjs';\n\nconst hash=(bytes,algorithm='sha256')=>createHash(algorithm).update(bytes).digest('hex');"
+   },
+   {
+    "at": 414,
+    "before": " let epoch;\n const readEntrancePrior=entranceReader(path=>{\n  const raw=read(path);\n  const source=beforeArchitectureOwner(path,path===deckLayoutPath?beforeRunHudDeckLabel(raw):raw);\n  const vocabulary=releaseVocabularyOwns(path);",
+    "after": " let epoch;\n const readEntrancePrior=entranceReader(path=>{\n  const raw=readReleaseEntrancePredecessor(path,read(path),underlyingEntranceReader(read));\n  const source=beforeArchitectureOwner(path,path===deckLayoutPath?beforeRunHudDeckLabel(raw):raw);\n  const vocabulary=releaseVocabularyOwns(path);"
+   },
+   {
+    "at": 535,
+    "before": "}\nexport function beforeDevelopBackflow(path,source,options){\n source=beforeLibraryReadPrompt(path,source);\n source=beforeBattleInputHistory(path,beforeChapterEntranceOwner(path,beforeArchitectureOwner(path,source)));",
+    "after": "}\nexport function beforeDevelopBackflow(path,source,options){\n source=beforeReleaseEntranceOwner(path,source);\n if(path==='src/lua/abyss_potion_discard_ui.lua')source=beforeKnownMasterBackflowSource(path,source);\n source=beforeLibraryReadPrompt(path,source);\n source=beforeBattleInputHistory(path,beforeChapterEntranceOwner(path,beforeArchitectureOwner(path,source)));"
+   }
+  ]
+ },
+ "tests/helpers/native-flow-fixture-source.mjs": {
+  "current": {
+   "sha256": "e525a238de6e83745a6deb6333238c81c7ec922fcb47b3253bb7527134c4e825",
+   "gitBlob": "45e63718e736173ef82ab3a3db3789734fcf60f0"
+  },
+  "previous": {
+   "sha256": "1ea4f6524ec42e6b9f907988f6e716b9560bff6a33a1a35117a050836f1723f1",
+   "gitBlob": "1a3c57078fa15b56609aa8fb4e1a73848e1d472b"
+  },
+  "hunks": [
+   {
+    "at": 4,
+    "before": "import {exactSourceMatches} from './source-fingerprint.mjs';\nimport {beforeUiEntranceWitness} from './ui-entrance-source.mjs';\n\nconst archive=readFileSync(new URL('./native-flow-fixture-source.json.gz',import.meta.url));",
+    "after": "import {exactSourceMatches} from './source-fingerprint.mjs';\nimport {beforeUiEntranceWitness} from './ui-entrance-source.mjs';\nimport {beforeReleaseClosureFixture} from './release-closure-fixture-source.mjs';\n\nconst archive=readFileSync(new URL('./native-flow-fixture-source.json.gz',import.meta.url));"
+   },
+   {
+    "at": 49,
+    "before": "export function beforeNativeFlowFixture(path,source,{requireCurrent=false}={}){\n if(!Object.hasOwn(files,path))return source;\n source=beforeUiEntranceWitness(path,source);\n const {before,after}=files[path];\n const current=exactSourceMatches(source,after)||Object.hasOwn(releaseFixtures,path)&&exactSourceMatches(source,releaseFixtures[path]);",
+    "after": "export function beforeNativeFlowFixture(path,source,{requireCurrent=false}={}){\n if(!Object.hasOwn(files,path))return source;\n source=beforeUiEntranceWitness(path,beforeReleaseClosureFixture(path,source));\n const {before,after}=files[path];\n const current=exactSourceMatches(source,after)||Object.hasOwn(releaseFixtures,path)&&exactSourceMatches(source,releaseFixtures[path]);"
+   },
+   {
+    "at": 59,
+    "before": "export function assertNativeFlowFixturesCurrent(read){\n for(const [path,{after}] of Object.entries(files)){\n  const source=read(path,'utf8');\n  assert(exactSourceMatches(source,releaseFixtures[path]??after),'fresh complete native flow fixture: '+path);\n }",
+    "after": "export function assertNativeFlowFixturesCurrent(read){\n for(const [path,{after}] of Object.entries(files)){\n  const source=beforeReleaseClosureFixture(path,read(path,'utf8'));\n  assert(exactSourceMatches(source,releaseFixtures[path]??after),'fresh complete native flow fixture: '+path);\n }"
+   }
+  ]
+ },
+ "tests/helpers/input-retirement-sts-binding.mjs": {
+  "current": {
+   "sha256": "07c32745001b9cfc3cdaabfb61dae9e91fe399b4d7d4f3ac1bb033f251356103",
+   "gitBlob": "39de96157ea657ae964d5dc73f857152bc6ef8b6"
+  },
+  "previous": {
+   "sha256": "47a212bae11910c09e62b59cf291552e54954d5e710251eb6b263c3289461025",
+   "gitBlob": "9e65f5899089cbe95c937eecd8aa0a72e0f0c7c1"
+  },
+  "hunks": [
+   {
+    "at": 8,
+    "before": "import {beforeNativeFlowFixture} from './native-flow-fixture-source.mjs';\nimport {beforeCurrentOfficialRuntimeFixture} from './sts-fade-ci-source.mjs';\n\nconst archive=readFileSync(new URL('./input-retirement-merged-sts-source.json.gz',import.meta.url));",
+    "after": "import {beforeNativeFlowFixture} from './native-flow-fixture-source.mjs';\nimport {beforeCurrentOfficialRuntimeFixture} from './sts-fade-ci-source.mjs';\nimport {beforeReleaseClosureFixture} from './release-closure-fixture-source.mjs';\n\nconst archive=readFileSync(new URL('./input-retirement-merged-sts-source.json.gz',import.meta.url));"
+   },
+   {
+    "at": 223,
+    "before": "\nexport function beforeStsRuntimeFixtureSuccessor(path,source){\n if(path===enemyStatusFixture)return beforeEnemyStatusFixture(path,source);\n const proof=runtimeFixtureSuccessors.find(row=>row.path===path);",
+    "after": "\nexport function beforeStsRuntimeFixtureSuccessor(path,source){\n source=beforeReleaseClosureFixture(path,source);\n if(path===enemyStatusFixture)return beforeEnemyStatusFixture(path,source);\n const proof=runtimeFixtureSuccessors.find(row=>row.path===path);"
+   }
+  ]
+ },
+ "tests/helpers/native-fixture-replay-source.mjs": {
+  "current": {
+   "sha256": "4e48534c724b53f5b83d2709bc40308a94c3b52f885df26294ce690f581845e4",
+   "gitBlob": "4d34f00777392e492c5a1ea4047adc79cfb81f0e"
+  },
+  "previous": {
+   "sha256": "7dbd2ded60c5b155b958a5e6e2ff44537b2b62c15e113642aaf8f6194771832d",
+   "gitBlob": "f0a8a836812faa3ed49b274f55315b6cf5d70fb0"
+  },
+  "hunks": [
+   {
+    "at": 3,
+    "before": "import {gunzipSync} from 'node:zlib';\nimport {beforeUiEntranceWitness} from './ui-entrance-source.mjs';\n\nconst sha256=source=>createHash('sha256').update(source).digest('hex');",
+    "after": "import {gunzipSync} from 'node:zlib';\nimport {beforeUiEntranceWitness} from './ui-entrance-source.mjs';\nimport {beforeReleaseClosureFixture} from './release-closure-fixture-source.mjs';\n\nconst sha256=source=>createHash('sha256').update(source).digest('hex');"
+   },
+   {
+    "at": 58,
+    "before": "\nfunction fixtureMatches(path,source,after,{allowArchived=true}={}){\n if(typeof source!=='string'||source.includes('\\r\\r\\n'))return false;\n const normalized=source.replaceAll('\\r\\n','\\n'),archived=normalized===after.source;",
+    "after": "\nfunction fixtureMatches(path,source,after,{allowArchived=true}={}){\n source=beforeReleaseClosureFixture(path,source);\n if(typeof source!=='string'||source.includes('\\r\\r\\n'))return false;\n const normalized=source.replaceAll('\\r\\n','\\n'),archived=normalized===after.source;"
+   }
+  ]
+ },
+ "tests/helpers/colorless-catalog-source-inverse.mjs": {
+  "current": {
+   "sha256": "ca654dba3b490f2d5f857933931992d1b72b346df246165499631cca7f6f717d",
+   "gitBlob": "94c5af24ef7e9e76b53116e97fc55d25d353f482"
+  },
+  "previous": {
+   "sha256": "b624a090c35dbbb0b2a161092ad98628f5d34767f07d7aee9f5415f0c796726c",
+   "gitBlob": "051b1dcb5da240eec4c6b65cfa94b9b3775e8bd6"
+  },
+  "hunks": [
+   {
+    "at": 0,
+    "before": "// Proposal facade: the original epoch module and its oracle are byte-for-byte frozen.\nexport * from './epochs/colorless/tests/helpers/colorless-catalog-source-inverse.mjs';\nimport { preColorlessCatalogSource as original } from './epochs/colorless/tests/helpers/colorless-catalog-source-inverse.mjs';\nimport {authenticateDevelopBackflow,beforeDevelopBackflow} from './develop-release-backflow-source.mjs';\nimport {sourceEpoch} from './combined-epoch/source-epoch.mjs';",
+    "after": "// Proposal facade: the original epoch module and its oracle are byte-for-byte frozen.\nexport * from './epochs/colorless/tests/helpers/colorless-catalog-source-inverse.mjs';\nimport { preColorlessCatalogSource as original,colorlessCatalogSourceProof } from './epochs/colorless/tests/helpers/colorless-catalog-source-inverse.mjs';\nimport {authenticateDevelopBackflow,beforeDevelopBackflow} from './develop-release-backflow-source.mjs';\nimport {sourceEpoch} from './combined-epoch/source-epoch.mjs';"
+   },
+   {
+    "at": 7,
+    "before": "const descriptionPath='src/lua/abyss_colorless_cards.lua';\nexport function preColorlessCatalogSource(path,source,{readSource=live}={}){\n readSource=readers.get(readSource)??readSource;\n const projected=sourceEpoch.preCombinedSource(path,source,{target:'colorless',readSource});",
+    "after": "const descriptionPath='src/lua/abyss_colorless_cards.lua';\nexport function preColorlessCatalogSource(path,source,{readSource=live}={}){\n if(!Object.hasOwn(colorlessCatalogSourceProof.files[path]??{},'beforeSource'))return source;\n readSource=readers.get(readSource)??readSource;\n const projected=sourceEpoch.preCombinedSource(path,source,{target:'colorless',readSource});"
+   }
+  ]
+ },
+ "tests/helpers/ui-entrance-approved-sources.mjs": {
+  "current": {
+   "sha256": "484c3a3e4f2aeb96fc84bbfc45a890576f6d615311a0c823bc63728bb7055d43",
+   "gitBlob": "b3ec751c07b240729b8454f05e19962060b6d3ce"
+  },
+  "previous": {
+   "sha256": "b5c903614eb19f512e365c8c4024e1c40c37f5ab5df790a016dbeecf7b0efdcb",
+   "gitBlob": "01d014fa21cf6ff4c88ef8fb99a55ae3d644802f"
+  },
+  "hunks": [
+   {
+    "at": 2,
+    "before": "import {readFileSync} from 'node:fs';\nimport {restoreExactFixtureHunks} from './exact-fixture-hunks.mjs';\n\n// Invert only the approved changes on develop since the selection PR's base.",
+    "after": "import {readFileSync} from 'node:fs';\nimport {restoreExactFixtureHunks} from './exact-fixture-hunks.mjs';\nimport {exactSourceMatches} from './source-fingerprint.mjs';\n\n// Invert only the approved changes on develop since the selection PR's base."
+   },
+   {
+    "at": 13,
+    "before": "\nexport function beforeApprovedUiEntrance(path,source){\n const row=bindings.get(path);\n if(!row)return source;",
+    "after": "\nexport function beforeApprovedUiEntrance(path,source){\n source=beforeNativePrologueOwner(path,source);\n const row=bindings.get(path);\n if(!row)return source;"
+   },
+   {
+    "at": 23,
+    "before": " return !bindings.has(path)||beforeApprovedUiEntrance(path,source)!==source;\n}",
+    "after": " return !bindings.has(path)||beforeApprovedUiEntrance(path,source)!==source;\n}\n\n// #1035 changes the two archived entrance owners as a single native-button fix.\nconst nativePrologueOwners=Object.freeze({\n \"src/lua/abyss_node_ui_feedback.lua\": {\n  \"previous\": {\n   \"sha256\": \"b29f9b744bcc148990ee07c43abfef7edc33df38e8e47fab755bec13e8f08ff0\",\n   \"gitBlob\": \"1b2cb6f0b0fd155e0e7b20716f9a9c4d4afcf55e\"\n  },\n  \"current\": {\n   \"sha256\": \"c250e4151120fe75561cb8be053735bd199e377a2d3bcd15bb20c6acb9c46098\",\n   \"gitBlob\": \"e3e57123fb2ff3fc20316bf88db04d5519fdb448\"\n  },\n  \"hunks\": [\n   {\n    \"at\": 87,\n    \"before\": \"\\n-- Installs the feedback responsibility on one node UI instance.\\nfunction M.install(ctx)\\n    ctx.buttonLooks, ctx.buttonHover, ctx.buttonPress = {}, nil, nil\\n\\n    function ctx.paintButton(box)\\n        local look = ctx.buttonLooks[box]\\n        if not look then return end -- a never-shown view can still receive a late native exit\",\n    \"after\": \"\\nlocal function nativeId(box) return box.id end\\n\\n-- Installs the feedback responsibility on one node UI instance.\\nfunction M.install(ctx)\\n    local buttonLooks = {}\\n    ctx.buttonHover, ctx.buttonPress = nil, nil\\n\\n    local function buttonKey(box)\\n        -- The native host can return a fresh Lua wrapper on each GetChild.\\n        local ok,id = pcall(nativeId,box)\\n        if ok and (type(id) == 'string' or (type(id) == 'number' and id == id)) then return id end\\n        return box\\n    end\\n\\n    function ctx.buttonLook(box)\\n        local look = buttonLooks[buttonKey(box)]\\n        if look and look.box == box then return look end\\n    end\\n\\n    function ctx.paintButton(box)\\n        local look = ctx.buttonLook(box)\\n        if not look then return end -- a never-shown view can still receive a late native exit\"\n   },\n   {\n    \"at\": 178,\n    \"before\": \"        for _, input in pairs(ctx.buttonInputs) do input.active, input.released = {}, nil end\\n        for box in pairs(ctx.buttonLooks) do ctx.paintButton(box) end\\n    end\",\n    \"after\": \"        for _, input in pairs(ctx.buttonInputs) do input.active, input.released = {}, nil end\\n        for _, look in pairs(buttonLooks) do ctx.paintButton(look.box) end\\n    end\"\n   },\n   {\n    \"at\": 182,\n    \"before\": \"    function ctx.state(box, enabled, selected, primary)\\n        ctx.buttonLooks[box] = {enabled=enabled == true, selected=selected == true, primary=primary == true}\\n        ctx.paintButton(box)\",\n    \"after\": \"    function ctx.state(box, enabled, selected, primary)\\n        buttonLooks[buttonKey(box)] = {box=box, enabled=enabled == true, selected=selected == true, primary=primary == true}\\n        ctx.paintButton(box)\"\n   }\n  ]\n },\n \"src/lua/abyss_node_ui_input.lua\": {\n  \"previous\": {\n   \"sha256\": \"57595d1bca4fb33eed373d36b51219cb6f5ca42f9dbfce2910e93f73323ae1f5\",\n   \"gitBlob\": \"208140d36c0dd1ce990d25f691f9e63d3c8e28f5\"\n  },\n  \"current\": {\n   \"sha256\": \"c2dd463393b5287f6ecfcb21203d12c1e9de55fbbeff63bd20e27ea3a3111d43\",\n   \"gitBlob\": \"87809b902ae8a3fc6619c4ba15bf2f405e213db0\"\n  },\n  \"hunks\": [\n   {\n    \"at\": 167,\n    \"before\": \"                    local function available()\\n                        local entry, look = visibleAction(), ctx.buttonLooks[box]\\n                        -- Guarded mandatory-picker cards have no framed-button look.\",\n    \"after\": \"                    local function available()\\n                        local entry, look = visibleAction(), ctx.buttonLook(box)\\n                        -- Guarded mandatory-picker cards have no framed-button look.\"\n   }\n  ]\n }\n});\nfunction beforeNativePrologueOwner(path,source){\n if(!Object.hasOwn(nativePrologueOwners,path)||typeof source!=='string')return source;\n const lf=source.replaceAll('\\r\\n','\\n');\n if(lf.includes('\\r')||(source!==lf&&source!==lf.replaceAll('\\n','\\r\\n')))return source;\n const owner=nativePrologueOwners[path];\n if(!exactSourceMatches(lf,owner.current))return source;\n const prior=restoreExactFixtureHunks({path,beforeSha256:owner.previous.sha256,afterSha256:owner.current.sha256,hunks:owner.hunks},path,lf);\n assert(exactSourceMatches(prior,owner.previous),'exact Prologue entrance owner predecessor: '+path);\n return source===lf?prior:prior.replaceAll('\\n','\\r\\n');\n}"
+   }
+  ]
+ }
+});
+function beforeReleaseReplayReader(path,raw){
+ if(!Object.hasOwn(releaseReplayReaders,path))return raw;
+ const {current,previous,hunks}=releaseReplayReaders[path];
+ const text=integrationClosureBytes(path,raw).toString('utf8');
+ if(!exactSourceMatches(text,current))return raw;
+ const crlf=text.replaceAll('\n','\r\n');
+ assert(raw.equals(Buffer.from(text))||raw.equals(Buffer.from(crlf)),'uniform release replay owner: '+path);
+ const prior=restoreExactFixtureHunks({path,beforeSha256:previous.sha256,afterSha256:current.sha256,hunks},path,text);
+ assert(exactSourceMatches(prior,previous),'exact release replay owner predecessor: '+path);
+ return Buffer.from(prior);
+}
+function beforeReviewedCopySource(path,raw){
+ if(!Object.hasOwn(reviewedCopySources,path))return beforeMasterBackflowSource(path,raw);
+ const {current,previous,edits}=reviewedCopySources[path];
+ const source=raw.toString('utf8');
+ const text=integrationClosureBytes(path,raw).toString('utf8');
+ assert(source===text||source===text.replaceAll('\n','\r\n'),'uniform current copy owner: '+path);
+ assert(exactSourceMatches(text,current),'exact current copy owner: '+path);
+ const lines=text.split('\n');
+ for(const {at,remove,previous:replacement} of [...edits].reverse())lines.splice(at,remove,...replacement);
+ const prior=lines.join('\n');
+ assert(exactSourceMatches(prior,previous),'exact reviewed copy predecessor: '+path);
+ return Buffer.from(prior);
+}
 const inside=(root,path)=>{const r=relative(root,path);return r!==''&&!isAbsolute(r)&&r!=='..'&&!r.startsWith('../')&&!r.startsWith('..\\');};
-export function copyIntegrationSourceClosure(directory,{sourceRoot=process.cwd()}={}){
+const currentEntranceHelpers=new Set(['tests/helpers/current-replay-fix-sources.mjs','tests/helpers/ui-entrance-source.mjs']);
+export function copyIntegrationSourceClosure(directory,{sourceRoot=process.cwd(),currentProduction=false}={}){
  const destination=realpathSync.native(directory);
- assert.notEqual(destination,realpathSync.native(sourceRoot),'isolated helper copy destination');
- for(const [path,sha]of Object.entries(entranceFiles)){
+ const sourceDirectory=realpathSync.native(sourceRoot);
+ assert.notEqual(destination,sourceDirectory,'isolated helper copy destination');
+ const liveSource=sourceDirectory===realpathSync.native(new URL('../../',import.meta.url));
+ for(const [path,previousSha]of Object.entries(entranceFiles)){
+  const exactCurrent=currentProduction&&currentEntranceHelpers.has(path);
+  const sha=exactCurrent?reviewedCopySources[path].current.sha256:previousSha;
   assert((path.startsWith('tests/helpers/')||path.startsWith('tests/fixtures/'))&&!path.split('/').includes('..'),'fixed helper path');
-  const source=join(sourceRoot,path),raw=readFileSync(source),content=integrationClosureBytes(path,raw);
-  if(path==='tests/helpers/reward-current-source.mjs'&&!raw.equals(content))
+  const source=join(sourceDirectory,path),bytes=readFileSync(source);
+  const raw=liveSource?beforeReleaseReplayReader(path,bytes):bytes;
+  let prior=raw;
+  if(exactCurrent){
+   const current=integrationClosureBytes(path,raw);
+   const source=current.toString('utf8');
+   assert(raw.equals(current)||raw.equals(Buffer.from(source.replaceAll('\n','\r\n'))),'uniform current copy owner: '+path);
+   assert(exactSourceMatches(source,reviewedCopySources[path].current),'exact current copy owner: '+path);
+  }else if(liveSource){
+   try{prior=beforeReviewedCopySource(path,raw);}
+   catch(error){assert.fail('fresh helper copy identity: '+path+': '+error.message);}
+  }
+  const content=integrationClosureBytes(path,prior);
+  if((path==='tests/helpers/reward-current-source.mjs'||path==='tests/helpers/develop-release-backflow-source.mjs'||
+      path==='tests/helpers/develop-release-vocabulary-source.mjs'||path==='tests/helpers/master-backflow-source.mjs'||
+      path==='tests/helpers/m7-core-final-source-inverse.mjs'||path==='tests/helpers/relic-query-source-inverse.mjs')&&
+     !Object.hasOwn(reviewedCopySources,path)&&!raw.equals(content))
    assert(raw.equals(Buffer.from(content.toString('utf8').replaceAll('\n','\r\n'))),'fresh helper copy identity: '+path);
   assert.equal(hash(content),sha,'fresh helper copy identity: '+path);
   const target=join(directory,path);mkdirSync(dirname(target),{recursive:true});

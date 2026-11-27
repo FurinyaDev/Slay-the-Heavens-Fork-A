@@ -56,7 +56,9 @@ export function preRelicActionPolicySection(section,kind){
   const at={admission:14,victory:505}[kind];
   assert.notEqual(at,undefined,'known policy section');
   const hunk=assertHunk(binding.hunks.find(h=>h.at===at));
-  const after=hunk.after.join('\n')+'\n';
+  const reviewed=hunk.after.join('\n')+'\n';
+  // The current admission slot uses the exact #951 vocabulary successor.
+  const after=kind==='admission'?reviewed.replace("'rareGamblingChip'","'rareTacticalBadge'"):reviewed;
   assert.equal(section.split(after).length-1,1,`exact single approved ${kind} hunk`);
   const index=section.indexOf(after);
   const before=hunk.before.length?hunk.before.join('\n')+'\n':'';

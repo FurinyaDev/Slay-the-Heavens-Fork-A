@@ -3,6 +3,13 @@ local V=dofile('tests/fixtures/library-event-vectors.lua')
 local eq,same,R=H.eq,H.same,H.R
 local Capability=require('abyss_card_capability')
 local function definition(r,id)for _,d in ipairs(r.data.cards.cards)do if d.id==id then return d end end end
+local function checkSourceIdentity(actual,expected,localId)
+ -- The frozen Library oracle keeps the registered name; #949/#951 renamed that same slot.
+ if expected=='Calculated Gamble' then
+  eq(actual,'Calculated Exchange')
+  if localId then eq(localId,'calculated_exchange')end
+ else eq(actual,expected)end
+end
 H.test('all four complete source-ordered reward rarity buckets and actual canonical capabilities',function()
  for character,wanted in pairs(V.pools)do
   local r=H.fixture(character)
@@ -11,7 +18,7 @@ H.test('all four complete source-ordered reward rarity buckets and actual canoni
   for _,rarity in ipairs({'common','uncommon','rare'})do
    local actual=r.data.cards.sourcePools.reward[rarity];eq(#actual,#wanted[rarity]);total=total+#actual
    for i,id in ipairs(actual)do
-    local d=assert(definition(r,id));eq(d.sourceId,wanted[rarity][i]);eq(d.rarity,rarity)
+    local d=assert(definition(r,id));checkSourceIdentity(d.sourceId,wanted[rarity][i],id);eq(d.rarity,rarity)
     eq(r.data.cards.sourcePools.cardSourceMetadata[id].sourceId,d.sourceId)
     assert(Capability.isImplemented(d),'actual source capability '..character..' '..d.sourceId)
     assert(d.type~='status' and d.type~='curse' and d.rarity~='basic' and d.rarity~='special')
@@ -39,10 +46,10 @@ H.test('17 independent offer vectors fix every retry, source identity, reversed 
   for i,attempt in ipairs(case.attempts)do
    eq(calls[2*i-1][1],99);eq(calls[2*i-1][2],attempt.roll)
    eq(calls[2*i][1],#V.pools[case.character][attempt.rarity]-1);eq(calls[2*i][2],attempt.index)
-   if attempt.accepted then previewIndex=previewIndex+1;eq(preview[previewIndex],attempt.sourceId)end
+   if attempt.accepted then previewIndex=previewIndex+1;checkSourceIdentity(preview[previewIndex],attempt.sourceId)end
   end
   for i,card in ipairs(offers)do
-   eq(card.sourceCardId,case.offers[i]);eq(card.uid,nil);eq(card.upgraded,false)
+   checkSourceIdentity(card.sourceCardId,case.offers[i],card.cardId);eq(card.uid,nil);eq(card.upgraded,false)
    assert(not seen[card.sourceCardId]);seen[card.sourceCardId]=true
   end
   same(R.snapshot(r.cardRng),case.final);eq(r.cardRarityOffset,case.offset)

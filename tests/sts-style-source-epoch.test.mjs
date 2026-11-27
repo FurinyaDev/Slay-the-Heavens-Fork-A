@@ -1,14 +1,12 @@
 import {actorFocusAdded,assertActorFocusInventory,deckPagesAdded,stasisUpgradeAddedPaths} from './helpers/develop-release-backflow-source.mjs';
 import {pointerInputPath,readRetiredController,retiredControllerPath} from './helpers/input-retirement-source.mjs';
-import {beforeCharacterPreparationSource,beforeCurrentProductionSource} from './helpers/character-preparation-source.mjs';
-import {reviewedSelectionRead} from './helpers/reviewed-selection-current-source.mjs';
+import {beforeCharacterPreparationSource} from './helpers/character-preparation-source.mjs';
+import {reviewedSelectionRead,reviewedStsStyleInventory,reviewedStsStyleRead} from './helpers/reviewed-selection-current-source.mjs';
 import {entranceInventory,uiEntranceOwns} from './helpers/ui-entrance-source.mjs';
-import {assertCurrentJsInventory,assertCurrentLuaInventory,beforeShopEntryInventory,chapterEvidenceCurrentRead} from './helpers/fork-preflight-source.mjs';
-import {checkedSelectionEntranceRead} from './helpers/ui-selection-current-source.mjs';
+import {assertCurrentJsInventory,assertCurrentLuaInventory,beforeShopEntryInventory} from './helpers/fork-preflight-source.mjs';
+import {beforeCurrentSelectionProductionSource,readSelectionProductionOwners} from './helpers/replay-reviewed-selection.mjs';
 import {beforeChapterBattleScene} from './helpers/chapter-battle-scene-source.mjs';
 import {beforeBattlePeriphery} from './helpers/battle-periphery-source.mjs';
-import {restoreExactFixtureHunks} from './helpers/exact-fixture-hunks.mjs';
-import {exactSourceMatches} from './helpers/source-fingerprint.mjs';
 import test from 'node:test';
 import {integratedRead,integratedCiProof,integratedPriorInventory,assertIntegratedCurrent} from './helpers/integrated-ci-source.mjs';
 import assert from 'node:assert/strict';
@@ -23,43 +21,15 @@ import {readFileSync,readdirSync} from 'node:fs';
 import {discoverJs,jsPlanningWeights,timings} from '../scripts/ci-shards.mjs';
 const hash=source=>createHash('sha256').update(source).digest('hex');
 const bind=source=>({source,sha256:hash(source)}),commit='c'.repeat(40);
+const readProduction=path=>readFileSync(path,'utf8');
 const deckBrowser='src/lua/abyss_deck_browser.lua';
-const deckBrowserCurrent={
- sha256:'da4dad9b9b771649176887fa8accc36b02283736cec9e0362a04fa335c2e6c36',
- gitBlob:'e385c9d626ca1a7858399d15d0c2c95c9cb83a97',
-};
-const deckBrowserBefore={
- sha256:'ca0fe78afb9035b2b4ccfa0e2de86d21cb7789a6e28868033259cf89d4bd9d3e',
- gitBlob:'c7d0f015aaea8ed5e797458c3b8cd06644c14c2b',
-};
-const deckBrowserReceipt={
- path:deckBrowser,beforeSha256:deckBrowserBefore.sha256,afterSha256:deckBrowserCurrent.sha256,
- hunks:[
-  {at:170,before:'local function prepare(pool,job)',after:[
-   'local function showHit(hit)',
-   '    if hit.visible~=true then',
-   "        assert(hit:SetVisible(true)~=false,'deck browser hit visibility rejected')",
-   '    end','end','','local function prepare(pool,job)',
-  ].join('\n')},
-  {at:218,before:"    assert(entry.hit:SetVisible(true)~=false,'deck browser hit visibility rejected')",after:'    showHit(entry.hit)'},
- ],
-};
 
 function styleProductionReaders(read=readFileSync){
- const readOwner=reviewedSelectionRead(read);
- const readEntrance=chapterEvidenceCurrentRead(checkedSelectionEntranceRead(read));
- const current=path=>uiEntranceOwns(path)?readEntrance(path,'utf8'):readOwner(path);
+ const readOwner=reviewedStsStyleRead(read);
+ const current=readSelectionProductionOwners(read,readOwner);
  const legacy=path=>{
   const source=current(path);
-  if(uiEntranceOwns(path))return beforeBattlePeriphery(path,beforeChapterBattleScene(path,source));
-  if(path!==deckBrowser)return source;
-  // The live visibility guard follows the original pointer-input receipt.
-  const lf=typeof source==='string'&&source.replaceAll('\r\n','\n');
-  assert(lf&&!lf.includes('\r')&&(source===lf||source===lf.replaceAll('\n','\r\n'))
-   &&exactSourceMatches(lf,deckBrowserCurrent),'fresh uniform Deck Browser owner: '+path);
-  const prior=restoreExactFixtureHunks(deckBrowserReceipt,path,lf);
-  assert(exactSourceMatches(prior,deckBrowserBefore),'exact Deck Browser pointer predecessor: '+path);
-  return source===lf?prior:prior.replaceAll('\n','\r\n');
+  return uiEntranceOwns(path)?beforeBattlePeriphery(path,beforeChapterBattleScene(path,source)):source;
  };
  return {current,legacy,readOwner};
 }
@@ -166,26 +136,28 @@ test('real style source retains the complete CI-repair and every older target wh
  const retired=readRetiredController(readOwner);
  assert.equal(retired.restored,true,'the live pointer authenticates an absent controller');
  const previous=Object.keys(p.current).filter(path=>path!==retiredControllerPath);
- const aliases=new Map([
-  ['src/lua/abyss_blue_guard_ai.lua','src/lua/abyss_blue_slaver_ai.lua'],
-  ['src/lua/abyss_augmenter_event.lua','src/lua/abyss_drug_dealer_event.lua'],
-  ['src/lua/abyss_red_guard_ai.lua','src/lua/abyss_red_slaver_ai.lua'],
- ]);
- const additions=[
-  'src/lua/abyss_byrd_ground_trial.lua','src/lua/abyss_card_keywords.lua','src/lua/abyss_chapter_battle_scene.lua',
-  'src/lua/abyss_checkpoint_identities.lua','src/lua/abyss_run_hud.lua',
- ];
- const entrance=entranceInventory(actual,read);
- for(const path of [...aliases.keys(),...additions])assert(entrance.includes(path),'live successor: '+path);
- const legacyInventory=paths=>paths.filter(path=>!additions.includes(path)).map(path=>aliases.get(path)??path).sort();
- assert.deepEqual(legacyInventory(entrance),[...previous,...stasisUpgradeAddedPaths,...actorFocusAdded,...deckPagesAdded,pointerInputPath].sort());
- assertActorFocusInventory(legacyInventory(actual.filter(path=>path!==config)),read);
+ const inventory=reviewedStsStyleInventory(actual,readProduction);
+ assert.deepEqual([...previous,...stasisUpgradeAddedPaths,...actorFocusAdded,...deckPagesAdded,pointerInputPath].sort(),entranceInventory(inventory,read));
+ assertActorFocusInventory(inventory.filter(path=>path!=='config/architecture.json'),read);
+ const inventoryError=/missing live (?:renamed )?StS runtime module|unique live StS runtime inventory/;
+ const projectedPaths=actual.filter(path=>!inventory.includes(path));
+ for(const path of projectedPaths){
+  assert.throws(()=>reviewedStsStyleInventory(actual.filter(owner=>owner!==path),readProduction),inventoryError);
+  assert.throws(()=>reviewedStsStyleInventory([...actual,path],readProduction),inventoryError);
+  for(const invalid of [null,readProduction(path)+'\n'])
+   assert.throws(()=>reviewedStsStyleInventory(actual,owner=>owner===path?invalid:readProduction(owner)),
+    /fresh (?:added StS runtime module|reviewed Selection production owner)/);
+ }
+ for(const retired of inventory.filter(path=>!actual.includes(path))){
+  assert.throws(()=>reviewedStsStyleInventory([...actual,retired],readProduction),/legacy StS runtime module must stay absent/);
+  assert.throws(()=>reviewedStsStyleInventory(actual,owner=>owner===retired?'return {}':readProduction(owner)),/legacy Selection owner must stay absent/);
+ }
  for(const [path,row]of Object.entries(before.current))assert.deepEqual(p.targets.stsStylePrior.files[path],row,path+' complete prior');
  for(const [name,target]of Object.entries(before.targets))for(const [path,row]of Object.entries(target.files))assert.deepEqual(p.targets[name].files[path],row,name+'/'+path);
  for(const [path,row]of Object.entries(p.current)){
   const source=path===retiredControllerPath
    ?beforeCharacterPreparationSource(path,retired.source,current)
-   :beforeCurrentProductionSource(path,current(path),current);
+   :beforeCurrentSelectionProductionSource(path,current,readOwner);
   assert.equal(source.replaceAll('\r\n','\n'),row.source,path+' exact historical input');
  }
  const raw=read(config),prior=p.targets.stsStylePrior.files[config].source;
@@ -199,15 +171,10 @@ test('real style source retains the complete CI-repair and every older target wh
   }
  }
  const substitute=(changed,source)=>(path,encoding)=>path===changed?source:readFileSync(path,encoding);
- for(const [active,old] of aliases){
-  const source=readFileSync(active,'utf8');
-  assert.throws(()=>reviewedSelectionRead(substitute(active,source+'\n'))(old),/fresh reviewed Selection production owner/,active);
-  assert.throws(()=>reviewedSelectionRead(substitute(old,source))(old),/legacy Selection owner must stay absent/,old);
- }
  const deck=readFileSync(deckBrowser,'utf8').replaceAll('\r\n','\n');
  for(const foreign of [null,read(deckBrowser),deck.replace('\n','\r\n'),deck+'\n']){
   const {legacy}=styleProductionReaders(substitute(deckBrowser,foreign));
-  assert.throws(()=>legacy(deckBrowser),/fresh uniform Deck Browser owner/);
+  assert.throws(()=>legacy(deckBrowser),/fresh StS deck browser source/);
  }
  const crlf=deck.replaceAll('\n','\r\n');
  assert.equal(styleProductionReaders(substitute(deckBrowser,crlf)).legacy(deckBrowser),read(deckBrowser).replaceAll('\r\n','\n').replaceAll('\n','\r\n'));
@@ -324,12 +291,11 @@ test('feedback real current source and CI preserve all four immutable archives a
   for(const name of Object.keys(stsStyleEpoch.proof.targets))assert.equal(p.targets[name].files[path],null,name+'/'+path);
  }
  const readOwner=reviewedSelectionRead();
- const readEntrance=chapterEvidenceCurrentRead(checkedSelectionEntranceRead(readFileSync));
- const current=path=>uiEntranceOwns(path)?readEntrance(path,'utf8'):readOwner(path);
+ const current=readSelectionProductionOwners(readFileSync,readOwner);
  for(const [path,row]of Object.entries(p.current)){
   const source=path===retiredControllerPath
    ?beforeCharacterPreparationSource(path,readRetiredController(readOwner).source,current)
-   :beforeCurrentProductionSource(path,current(path),current);
+   :beforeCurrentSelectionProductionSource(path,current,readOwner);
   assert.equal(source.replaceAll('\r\n','\n'),row.source,path);
  }
  // The old StS projector sees these owners after the chapter and battle layout stages.

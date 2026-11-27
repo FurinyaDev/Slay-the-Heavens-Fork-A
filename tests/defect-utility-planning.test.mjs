@@ -17,7 +17,7 @@ import {measureSources} from '../scripts/lua-quality-metrics.mjs';
 const file='src/lua/abyss_defect_utility_cards.lua';
 const read=p=>readFileSync(p,'utf8').replaceAll('\r\n','\n');
 const actorRead=currentDefectActorReader(read);
-const actorSource=p=>preDefectActorSource(p,read(p),{readSource:actorRead});
+const actorSource=path=>preDefectActorSource(path,read(path),{readSource:actorRead});
 const before=read('tests/fixtures/defect-utility-planning-before.lua');
 function replay(source,fixture='tests/lua/defect_utility_planning.lua'){
  const dir=mkdtempSync(join(tmpdir(),'defect-utility-'));
@@ -46,10 +46,23 @@ test('the explicit historical reader requires current owners and rejects a stale
  const entranceOwners=Object.keys(JSON.parse(gunzipSync(entranceBytes)).files);
  assert.equal(entranceOwners.length,20);
  assert.deepEqual(admittedReads.slice(1,21),entranceOwners,'complete fresh entrance owner admission');
- assert.equal(admittedReads.length,481);
+ const additionalProductionReads=new Map([
+  [79,'src/lua/abyss_battle_enemy_view.lua'],
+  [143,'src/lua/abyss_feedback.lua'],
+  [144,'src/lua/abyss_feedback_actor_painter.lua'],
+  [302,'src/lua/abyss_feedback.lua'],
+  [397,'src/lua/abyss_feedback.lua'],
+  [461,'src/lua/abyss_feedback.lua'],
+ ]);
+ for(const [position,path] of additionalProductionReads)assert.equal(admittedReads[position],path,'exact production reread');
+ const originalReads=admittedReads.filter((_path,position)=>!additionalProductionReads.has(position));
+ assert.equal(admittedReads.length,487);
  assert.equal(createHash('sha256').update(JSON.stringify(admittedReads)).digest('hex'),
-  '020fb0e5445e67c44775c716f475dee3a856f7f67f1f7d1e46573c614ddc8de2','complete current Actor admission order');
- assert.equal(createHash('sha256').update(JSON.stringify([admittedReads[0],...admittedReads.slice(21)])).digest('hex'),
+  '639281271a32cb71112b038ccd040873109bb6f24ac51f79597445e706ff4abb','complete production Actor admission order');
+ assert.equal(originalReads.length,481);
+ assert.equal(createHash('sha256').update(JSON.stringify(originalReads)).digest('hex'),
+  '020fb0e5445e67c44775c716f475dee3a856f7f67f1f7d1e46573c614ddc8de2','complete original Actor admission order');
+ assert.equal(createHash('sha256').update(JSON.stringify([originalReads[0],...originalReads.slice(21)])).digest('hex'),
   'f6930061a5fe2d5db08649eddf310bf9afe106ed91fb204433124f98352260bb','exact raw Actor admission before historical bytes');
  let preceding=-1;
  for(const owner of [config,...proof.owners,...currentProductionRereads]){

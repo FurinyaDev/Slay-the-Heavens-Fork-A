@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {frozenRelicLifecycleSources,frozenPurgeA27Sources,readFrozenPurgeA27Source,relicLifecycleGroups,runRelicLifecycle,lifecycleHash} from './helpers/relic-lifecycle-baseline.mjs';
-import {lifecycleGeneratedIdentities,relicLifecycleReplayInput,verifyFrozenLifecycle,verifyLifecycleTrace} from './helpers/relic-lifecycle-reference.mjs';
+import {compareReleasedLifecycleTraces,lifecycleGeneratedIdentities,relicLifecycleReplayInput,verifyFrozenLifecycle,verifyLifecycleTrace} from './helpers/relic-lifecycle-reference.mjs';
 import {frozenRelicQuerySources} from './helpers/relic-query-baseline.mjs';
 import {frozenPurgeQuerySources} from './helpers/purge-query-baseline.mjs';
 
@@ -24,6 +24,36 @@ test('the frozen reference binds every group, generated inputs and executable wi
   const read=path=>readFileSync(path,'utf8')+(path===target?'\n':'');
   assert.notEqual(relicLifecycleReplayInput(generated,read),replayInput,'changed replay input requires fresh replay: '+target);
  }
+ const manifest={checkpoints:1,registeredCases:['choice'],executedCases:['choice'],coverage:{'rare.chooseTacticalExchange':1}};
+ const graph=(key,value,reference=1)=>JSON.stringify({label:'choice:return',graph:{root:['table',reference],
+  definitions:[['table',1,[[['string',key],['boolean',value]]],null]]}})+'\n';
+ const frozen={manifest,graph:graph('gamblingActivated',true),stdout:'choice PASS\n'};
+ const current={...frozen,graph:graph('tacticalBadgeActivated',true)};
+ compareReleasedLifecycleTraces(current,frozen,'approved choice identity');
+ for(const changed of [graph('unknownBadgeActivated',true),graph('tacticalBadgeActivated',false),graph('tacticalBadgeActivated',true,2)]){
+  assert.throws(()=>compareReleasedLifecycleTraces({...current,graph:changed},frozen,'changed choice'),/changed choice checkpoint/);
+ }
+ assert.throws(()=>compareReleasedLifecycleTraces({...current,stdout:'different result\n'},frozen,'changed choice'),/changed choice: exact output/);
+});
+test('the #919 preview graph only admits one new private empty relic list',()=>{
+ const manifest={checkpoints:2,registeredCases:['preview'],executedCases:['preview'],coverage:{'rare.blockPower':1}};
+ function result(current,{entries=[],extra=[],later=current?5:4}={}){
+  const state=[['table',3,[...extra,...(current?[[['string','relics'],['table',4]]]:[])],null]];
+  if(current)state.push(['table',4,entries,null]);
+  const records=[
+   {label:'rare.blockPower:enter',graph:{root:['table',1],definitions:[
+    ['table',1,[[['string','args'],['table',2]]],null],
+    ['table',2,[[['number','1'],['table',3]],[['number','3'],['string','weak']]],null],...state,
+   ]}},
+   {label:'rare.blockPower:return',graph:{root:['table',later],definitions:[['table',later,[],null]]}},
+  ];
+  return {manifest,graph:records.map(row=>JSON.stringify(row)).join('\n')+'\n',stdout:'preview PASS\n'};
+ }
+ const frozen=result(false),group='parasite_09';
+ compareReleasedLifecycleTraces(result(true),frozen,group);
+ assert.throws(()=>compareReleasedLifecycleTraces(result(true,{entries:[[['number','1'],['boolean',true]]]}),frozen,group),/exact copied empty preview relic list/);
+ assert.throws(()=>compareReleasedLifecycleTraces(result(true,{extra:[[['string','alias'],['table',4]]]}),frozen,group),/exactly one observed edge/);
+ assert.throws(()=>compareReleasedLifecycleTraces(result(true,{later:6}),frozen,group),/parasite_09 checkpoint 2/);
 });
 test('relic lifecycle pins all 329 historical handwritten Lua sources with LF SHA256 and Git blob identities',()=>{
  assert.equal(Object.keys(frozen391).length,329);
@@ -54,7 +84,9 @@ test('bounded dispatch preserves every original fatal/turn/attack fixture byte a
  for(const [,key,path,sha,body]of entries){
   const original=readFileSync(path,'utf8').replaceAll('\r\n','\n');
   assert.equal(path,contract.fixtures[key].path);assert.equal(sha,contract.fixtures[key].sha256);
-  assert.equal(lifecycleHash(original),sha,'complete fixed original fixture hash');assert.equal(body,original,'all original assertions remain unchanged');
+  assert.equal(lifecycleHash(body),sha,'complete fixed original fixture hash');
+  const released=body.replaceAll("'cultist'","'raven_adept'").replaceAll("'cultist_solo'","'raven_adept_solo'");
+  assert.equal(original,released,'all original assertions remain unchanged through #951 identities');
  }
 });
 for(const group of relicLifecycleGroups)test(`relic lifecycle ${group} current complete graph matches the frozen source`,()=>{
@@ -69,8 +101,8 @@ for(const group of relicLifecycleGroups)test(`relic lifecycle ${group} current c
  const before=runRelicLifecycle(group,{frozen:true}),frozen=verifyLifecycleTrace(before,group);
  verifyFrozenLifecycle(before,generated);
  if(matchingReference&&forceReplay)assert.equal(frozen,expected,'pinned frozen replay signature: '+group);
- assert.equal(actual,frozen,`${group}: lifecycle trace, cases, coverage or output differs; inspect ${before.directory} and ${after.directory}`);
- assert(after.graph===before.graph,`${group}: complete graph differs; inspect ${before.directory} and ${after.directory}`);
+ if(actual===frozen)assert(after.graph===before.graph,`${group}: complete graph differs; inspect ${before.directory} and ${after.directory}`);
+ else compareReleasedLifecycleTraces(after,before,group);
 });
 test('bounded fatal and hook case partitions have complete unions and no duplicate execution',()=>{
  const read=group=>observations.get(group);

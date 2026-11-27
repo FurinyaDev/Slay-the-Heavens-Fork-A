@@ -99,11 +99,11 @@ test('native queue requires the isolated pending publisher to succeed when prese
  }
 });
 
-test('native queue rejects old 13/9, 14/9, 16/9, 16/12, 17/13, 17/14 or 17/15 green jobs, missing rules18 or POSIX15, duplicates and forged totals or source receipts',()=>{
+test('native queue rejects old 13/9, 14/9, 16/9, 16/12, 17/13, 17/14, 17/15 or 18/15 green jobs, missing rules18 or POSIX16, duplicates and forged totals or source receipts',()=>{
  const windows=qualityShardMatrices.windows.length,posix=qualityShardMatrices.posix.length;
  const last=`rules (${windows}/${windows})`,lastPosix=`engineering-posix (${posix}/${posix})`;
  for(const mutate of [
-  ...[[13,9],[14,9],[16,9],[16,12],[17,13],[17,14],[17,15]].map(([windows,posix])=>e=>{
+  ...[[13,9],[14,9],[16,9],[16,12],[17,13],[17,14],[17,15],[18,15]].map(([windows,posix])=>e=>{
    const win=e.jobs.find(j=>j.name.startsWith('rules (')),linux=e.jobs.find(j=>j.name.startsWith('engineering-posix ('));
    assert(win&&linux,'current matrices supply complete legacy-shape samples');
    e.jobs=e.jobs.filter(j=>!j.name.startsWith('rules (')&&!j.name.startsWith('engineering-posix ('));
@@ -322,8 +322,8 @@ test('historical Quality projection rejects partial or changed queue wiring in L
 
 test('all thirty-three actual shard identities are mandatory for current native queue admission',()=>{
  assert.equal(qualityShardMatrices.windows.length,18);
- assert.equal(qualityShardMatrices.posix.length,15);
- assert.equal(qualityShardJobs.length,33);
+ assert.equal(qualityShardMatrices.posix.length,16);
+ assert.equal(qualityShardJobs.length,34);
  for(const name of qualityShardJobs)for(const mutation of ['missing','failure','cancelled','skipped','wrong-sha']){
   const e=fixture(),job=e.jobs.find(job=>job.name===name);assert.ok(job);
   if(mutation==='missing')e.jobs=e.jobs.filter(job=>job.name!==name);

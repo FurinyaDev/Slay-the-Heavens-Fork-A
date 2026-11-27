@@ -186,6 +186,28 @@ test("invalid, locked, backward, disconnected, culled and hidden clicks never mu
     assert(ui:setScroll(10000) and ui.scroll == Layout.bossTreasureMaxScroll)
 end)
 
+test("the host can stage visibility and scroll before one navigation paint", function()
+    local root, map, ui = fixture()
+    local draws, render = 0, ui.render
+    ui.render = function(self)
+        draws = draws + 1
+        return render(self)
+    end
+    ui:setVisible(false)
+    ui:setVisible(true, false, false, true)
+    assert(ui.visible and draws == 0, "show repainted before the host committed navigation")
+    assert(ui:setScroll(120, true) and ui.scroll == 120 and draws == 0)
+    assert(ui:focusCurrent(false, true) and draws == 0)
+    ui:setNavigationEnabled(true)
+    assert(draws == 1, "the host must publish exactly one map projection")
+    local first = Map.available(map)[1]
+    assert(clickNode(root, map, first.id) and map.floor == 1)
+    ui:setVisible(false)
+    local before = draws
+    ui:setVisible(true)
+    assert(draws == before + 1, "standalone visibility must still render immediately")
+end)
+
 test("scroll ends at Boss16 while the legal treasure17 entry stays off-map", function()
     local callbacks = 0
     local root, map, ui

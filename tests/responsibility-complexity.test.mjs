@@ -86,7 +86,7 @@ test('every extracted card action helper is required and bounded with its nested
     'choiceActions.discardToHand','moveChoiceToDraw','choiceActions.upgradeHand',
     'choiceActions.dualWield','M.applyChoice','commitMultipleChoice','toggleChoice',
     'chooseMultiple','containsUid','chooseSingle','M.choose','applyDrainedAction','refreshDrainedHand','M.drain',
-    ...['writhingRoll','writhingParasite','giantHeadSlow','timeEater','reptomancerSuicide',
+    ...['writhingRoll','writhingParasite','giantHeadSlow','timeEater','reptomancerDismissal',
       'enemyAction','staticRetaliation','classPotion','silentFinal','discover','colorless','originalV4',
       'relicUpgradeRandomHand','playTop','darklingAction','heartBeat','spireDeathRemove',
       'awakenedAction','capturedSharpHide','dispose','effectBatch'].map(name=>'actionHandlers.'+name)];
@@ -129,7 +129,7 @@ test('combat play, turn and constructor stages are required, bounded and fully m
     'startExperimentalEnemyGroup','runExperimentalEnemyGroup','finishExperimentalRound','endExperimentalTurn',
     'catalogNeedsTurnCleanup','powersNeedTurnCleanup','cardNeedsTurnCleanup','advancedTurnCleanup',
     'resumeRetainedEndTurn','endTurnNeedsTransaction','endTurnRestore','invokeEndTurnResolver','M.endTurn',
-    'baseCardDefinition','nativeStrikeDefinition','classCardDefinition','damageCardDefinition',
+    'baseCardDefinition','classCardDefinition','damageCardDefinition',
     'costCardDefinition','finishCardDefinition','M.cardDefinition',
     'previewDamage','directAttackPreview','finalAttackPreview','targetedEffectPreview',
     'damageEffectPreview','blockEffectPreview','previews','M.cardPreview'];

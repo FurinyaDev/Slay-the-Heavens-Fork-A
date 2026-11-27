@@ -170,7 +170,8 @@ test('original Run and Nodes config closure rejects relabeled, missing and chang
 
 test('current Run architecture admission uses its declared target and rereads every raw owner on each call',async()=>{
  const {sourceEpoch}=await import('./helpers/combined-epoch/source-epoch.mjs');
- const raw=readFileSync(path,'utf8').replaceAll('\r\n','\n'),owners=sourceEpoch.proof.owners;
+ const readCurrent=file=>readFileSync(file,'utf8').replaceAll('\r\n','\n');
+ const raw=readCurrent(path),owners=sourceEpoch.proof.owners;
  const priorReadOrder=[...owners,...currentProductionRereads];
  // Independent complete Git config at the declared develop target d8a57cae,
  // not a hash obtained from the projector's own return value or current proof.
@@ -179,19 +180,31 @@ test('current Run architecture admission uses its declared target and rereads ev
  const reader=file=>{
   const seen=reads.filter(previous=>previous===file).length;
   reads.push(file);
-  if(file!==changed||seen<mutationOccurrence)return readFileSync(file,'utf8');
+  if(file!==changed||seen<mutationOccurrence)return readCurrent(file);
   if(replacement instanceof Error)throw replacement;
   return replacement;
  };
  const project=source=>sourceEpoch.preCombinedSource(path,source,{target:'develop',readSource:reader});
  const accepted=project(raw);assert.equal(hash(accepted),targetHash);assert.notEqual(accepted,raw);
  assert.notEqual(hash(accepted),expected.combined,'current develop target is not the ancient Run target');
- // The exact trace also includes 14 action-button, 20 combat/event, and 9
- // deck/potion freshness reads, in addition to the prior ordered closure.
+ // Battle periphery adds six raw reads while retaining the entire prior closure.
  const admittedReads=[...reads];
- assert.equal(admittedReads.length,480,'complete fresh raw closure size');
- assert.equal(hash(JSON.stringify(admittedReads)),'ad1c81a8f757224fa6520ca74d2a9b682f24925d2689141bc4b2eb1066d6a7fd',
+ const battlePeripheryReads=new Map([
+  [78,'src/lua/abyss_battle_enemy_view.lua'],
+  [142,'src/lua/abyss_feedback.lua'],
+  [143,'src/lua/abyss_feedback_actor_painter.lua'],
+  [301,'src/lua/abyss_feedback.lua'],
+  [396,'src/lua/abyss_feedback.lua'],
+  [460,'src/lua/abyss_feedback.lua'],
+ ]);
+ for(const [position,owner]of battlePeripheryReads)assert.equal(admittedReads[position],owner,'exact battle periphery read');
+ assert.equal(admittedReads.length,486,'complete fresh raw closure size');
+ assert.equal(hash(JSON.stringify(admittedReads)),'266836ee07bb2c4145aba3c488f17109029f614d38793fe54a295ef6eb3e495b',
   'complete fresh raw closure in admission order on the current Develop sources');
+ const originalReads=admittedReads.filter((_owner,position)=>!battlePeripheryReads.has(position));
+ assert.equal(originalReads.length,480,'the prior owner closure was retained');
+ assert.equal(hash(JSON.stringify(originalReads)),'ad1c81a8f757224fa6520ca74d2a9b682f24925d2689141bc4b2eb1066d6a7fd',
+  'all original owners retain their exact admission order');
  let retainedPosition=-1;
  const retainedReadPositions=priorReadOrder.map(owner=>{
   retainedPosition=admittedReads.indexOf(owner,retainedPosition+1);
@@ -213,7 +226,7 @@ test('current Run architecture admission uses its declared target and rereads ev
  reads=[];assert.throws(()=>project(raw),/combined linked owner identity: src\/lua\/abyss_controller\.lua/,'present archived Controller cannot impersonate a retired file');
  assert.deepEqual(reads,admittedReads.slice(0,admittedReads.indexOf(changed)+1));
  for(const [fault,observe] of [
-  ['changed bytes',owner=>readFileSync(owner,'utf8')+'\n'],
+  ['changed bytes',owner=>readCurrent(owner)+'\n'],
   ['absent source',()=>null],
   ['read error',()=>new Error('missing current Run owner')],
  ]){
@@ -232,13 +245,14 @@ test('current Run architecture admission uses its declared target and rereads ev
   assert.deepEqual(reads,admittedReads,`recovery reads the complete owner closure after ${fault}`);
  }
 
- for(const [index,owner] of currentProductionRereads.entries()){
+ const originalRereads=currentProductionRereads.map((owner,index)=>[retainedReadPositions[owners.length+index],owner]);
+ for(const [ownerPosition,owner] of [...originalRereads,...battlePeripheryReads]){
   const retired=owner===retiredControllerPath;
   changed=retired?pointerInputPath:owner;
-  const position=retainedReadPositions[owners.length+index]+Number(retired);
+  const position=ownerPosition+Number(retired);
   assert.equal(admittedReads[position],changed);
   mutationOccurrence=admittedReads.slice(0,position).filter(file=>file===changed).length;
-  replacement=readFileSync(changed,'utf8')+'\n';
+  replacement=readCurrent(changed)+'\n';
   reads=[];
   assert.throws(()=>project(raw),error=>{
    const expected=(retired?'combined linked owner missing: ':'combined linked owner identity: ')+owner;
@@ -257,8 +271,8 @@ test('current Run architecture admission uses its declared target and rereads ev
  assert.throws(()=>sourceEpoch.preCombinedSource(path,raw,{target:'develop',readSource:null}),/linked owner reader/);
 });
 
-test('legacy Run config bridges reject unsupported current owners rather than claiming an ancient Run target',async()=>{
+test('legacy Run config bridge preserves the unrecognized Release configuration',async()=>{
  const current=await import('./helpers/run-max-hp-config-inverse.mjs');
  const raw=readFileSync(path,'utf8').replaceAll('\r\n','\n');
- assert.throws(()=>current.preRunMaxHpConfig(path,raw),/delivery linked source identity: src\/lua\/abyss_monster_intent_particle_view\.lua/,'current raw owners cannot borrow the original Run closure');
+ assert.equal(current.preRunMaxHpConfig(path,raw),raw);
 });

@@ -47,6 +47,9 @@ end
 local function updatePrepared(self,platform,dt)
     PageReveal.registerSource(platform,'nodePanel');self.nodeUI:update(dt)
     PageReveal.registerSource(platform,'deckPanel');self.deckUI:update(dt)
+    if self.choiceUI and self.choiceUI.visible then
+        PageReveal.registerSource(platform,'choicePanel');self.choiceUI:update()
+    end
     PageReveal.registerSource(platform,'mapPanel');return self.mapUI:update(dt)
 end
 local function advancePreparation(self,platform,dt)
@@ -56,6 +59,7 @@ local function advancePreparation(self,platform,dt)
     PageReveal.registerSource(platform,page)
     if page=='nodePanel' then self.nodeUI:prepare(dt)
     elseif page=='deckPanel' then self.deckUI:update(dt)
+    elseif page=='choicePanel' and self.choiceUI then self.choiceUI:update()
     elseif page=='mapPanel' then self.mapUI:update(dt) end
     return true
 end
@@ -64,14 +68,26 @@ local function updateSuspended(self,dt)
     if self.sessionPaused then self:animate(dt);return true end
     return false
 end
-local function updateSelection(self,dt)
-    if self.selectionMotion and self.characterOpen and not self.deckUI.visible then self.selectionMotion:update(dt) end
+local function selectionCanDraw(self)
+    return self.characterOpen and not self.deckUI.visible and not self.exitOpen
+        and not self.settlementBusy and not self.settlementRequested and not self.sessionPaused
+        and not (self.pageReveal and self.pageReveal:covered())
 end
-function M.update(self,platform,openingCovered,updateBossEntrance,bgm)
+local function updateSelection(self,platform,dt)
+    local motion=self.selectionMotion
+    if not motion or not self.characterOpen or self.deckUI.visible then return end
+    local info=self.characterSelection.info
+    local portraits=platform.portraits
+    if info and info.id=='ironclad' and portraits and portraits.status then
+        local selection=portraits:status().selection
+        motion:syncNative(info.id,selection~=nil and (selection.shown==true or selection.phase=='ready'))
+    end
+    motion:update(dt)
+end
+function M.update(self,platform,openingCovered,bgm)
     local function advancePages(dt)
             PageReveal.registerSource(platform,'battlePanel')
             self.battleUI:update(dt)
-            updateBossEntrance(dt)
             if self.battleUI.busy and self.battleUI.feedback.deaths.player then bgm:update("defeat") end
             local updated=updatePrepared(self,platform,dt)
             return updated
@@ -85,7 +101,7 @@ function M.update(self,platform,openingCovered,updateBossEntrance,bgm)
                 self.easterEgg:tick();return true
             end
             if platform.background then platform.background:tick() end
-            if platform.portraits then platform.portraits:tick(dt) end
+            if platform.portraits then platform.portraits:tick(dt,selectionCanDraw(self)) end
             self:paintArtLoading()
             if self.exitOpen or self.settlementBusy then return true end
             if updateSuspended(self,dt) then return true end
@@ -93,7 +109,7 @@ function M.update(self,platform,openingCovered,updateBossEntrance,bgm)
             -- The terminal rule state can precede the last feedback animation.
             if not countRunTime(self,dt,openingCovered) then return false,"invalid_delta" end
             self:animate(dt)
-            updateSelection(self,dt)
+            updateSelection(self,platform,dt)
             if self.prologue then self.prologue:update(dt) end
             if openingCovered() then return true end
             if advancePreparation(self,platform,dt) then return true end

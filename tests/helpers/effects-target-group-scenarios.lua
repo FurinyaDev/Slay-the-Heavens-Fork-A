@@ -10,7 +10,7 @@ local function check(label,build)
   local state={player={hp=30,statuses={}},enemies={{hp=20,statuses={}}},events={}}
   local combat={outcome=function() trace[#trace+1]='outcome';return nil end}
   if entry=='apply' and (label=='valid' or label=='unmarked-partial') then
-   combat=require('abyss_combat');state=combat.new(require('abyss_data'),{seed=42,deck={'strike'},enemies={'cultist','cultist'}})
+   combat=require('abyss_combat');state=combat.new(require('abyss_data'),{seed=42,deck={'strike'},enemies={'raven_adept','raven_adept'}})
   end
   local f=entry=='private' and GROUP_TARGET or entry=='supported' and GROUP_EFFECTS.supported or function(v)
    -- A malformed group must be rejected before any combat access/effect.

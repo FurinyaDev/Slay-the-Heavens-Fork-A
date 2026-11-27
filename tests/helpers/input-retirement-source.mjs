@@ -8,6 +8,7 @@ import {beforeActionButtons} from './action-buttons-source.mjs';
 import {beforeNativeFixtureInputRetirement} from './native-fixture-replay-source.mjs';
 import {beforeNativeHostInputRetirement} from './native-host-replay-source.mjs';
 import {beforeNativeFlowFixture} from './native-flow-fixture-source.mjs';
+import {beforeKnownMasterBackflowSource} from './master-backflow-source.mjs';
 import {beforeCurrentReplayFixes} from './current-replay-fix-sources.mjs';
 import {exactSourceMatches as matches,sourceConfigLayoutMatches} from './source-fingerprint.mjs';
 import {restoreExactFixtureHunks} from './exact-fixture-hunks.mjs';
@@ -170,10 +171,38 @@ export function assertCurrentDevelopUiSource(path,source,read){
 }
 
 export function beforeDevelopUiBackflows(path,source){
+ if(path==='src/lua/abyss_choice_ui.lua')source=beforeKnownMasterBackflowSource(path,source);
  return beforeDeckBrowserBackflow(path,beforePotionBackflow(path,source));
 }
 
+// #962 optimized group lookup and #984 routed map coordinates through Viewport.
+// Preserve the frozen input-retirement receipt while admitting that exact Develop successor.
+const responsiveMapPath='src/lua/abyss_map_ui.lua';
+const responsiveMapSource=Object.freeze({
+ sha256:'2fc1876ba4cd22fa5d2bce8ee9f4ea0d4da320d43243721f567befeec4f6d7fa',
+ gitBlob:'1c5238ecb29ce98d9bc12021f5ec8473c49e5aa3',
+});
+const responsiveMapReplay=Object.freeze({
+ path:responsiveMapPath,
+ beforeSha256:files[responsiveMapPath].after.sha256,
+ afterSha256:responsiveMapSource.sha256,
+ hunks:[
+  {"at":6,"before":"local Acts = require(\"abyss_acts\")\nlocal Pointer = require('abyss_pointer_input')\nlocal M = {}\n-- MapRoomNode.render sizes: glyph 128*scale, MAP_CIRCLE_5 192*(scale*.95+.2).","after":"local Acts = require(\"abyss_acts\")\nlocal Pointer = require('abyss_pointer_input')\nlocal Viewport = require('abyss_viewport')\nlocal M = {}\n-- MapRoomNode.render sizes: glyph 128*scale, MAP_CIRCLE_5 192*(scale*.95+.2)."},
+  {"at":243,"before":"    end\n    local controlCache = {}\n    local function at(name)\n        if controlCache[name] then return controlCache[name] end\n        local i = 1\n        while true do\n            local group = panel:GetChild(\"mapGroup\" .. i)\n            if not group then break end\n            local found = group:GetChild(name)","after":"    end\n    local controlCache = {}\n    -- Reuse positive group lookups while binding the imported controls.\n    local initialGroups = {}\n    local function at(name)\n        if controlCache[name] then return controlCache[name] end\n        local i = 1\n        while true do\n            local group = initialGroups and initialGroups[i]\n            if not group then\n                group = panel:GetChild(\"mapGroup\" .. i)\n                if initialGroups then initialGroups[i] = group end\n            end\n            if not group then break end\n            local found = group:GetChild(name)"},
+  {"at":492,"before":"        self.canvasWidth, self.canvasHeight = width, height\n        if embedded then self.scale = 1 return true end\n        local scale = math.min(width / Theme.canvas.base[1], height / Theme.canvas.base[2])\n        stage.localScaleX, stage.localScaleY = scale, scale\n        backdrop:SetSizeDelta(width, height)","after":"        self.canvasWidth, self.canvasHeight = width, height\n        if embedded then self.scale = 1 return true end\n        local scale = Viewport.scale(width, height)\n        stage.localScaleX, stage.localScaleY = scale, scale\n        backdrop:SetSizeDelta(width, height)"},
+  {"at":691,"before":"        if not event or type(event.GetUIPos) ~= \"function\" then return end\n        local x, y = event:GetUIPos()\n        if type(y) ~= \"number\" or not finite(y) then return end\n        local width, height = self.canvasWidth or Theme.canvas.base[1], self.canvasHeight or Theme.canvas.base[2]\n        local scale = math.min(width / Theme.canvas.base[1], height / Theme.canvas.base[2])\n        return finite(x) and x / scale or nil, y / scale\n    end\n    local function press(event, slot)","after":"        if not event or type(event.GetUIPos) ~= \"function\" then return end\n        local x, y = event:GetUIPos()\n        local width, height = self.canvasWidth or Theme.canvas.base[1], self.canvasHeight or Theme.canvas.base[2]\n        local sx, sy = Viewport.toStage(x, y, width, height)\n        if sy then return sx, sy end\n    end\n    local function press(event, slot)"},
+  {"at":801,"before":"    self:resize(Theme.canvas.base[1], Theme.canvas.base[2])\n    if map then self:focusCurrent() else root:SetVisible(false) end\n    return self\nend","after":"    self:resize(Theme.canvas.base[1], Theme.canvas.base[2])\n    if map then self:focusCurrent() else root:SetVisible(false) end\n    initialGroups = nil\n    return self\nend"},
+ ],
+});
+function beforeResponsiveMapBackflow(path,source){
+ if(path!==responsiveMapPath||!matches(source,responsiveMapSource))return source;
+ const previous=restoreExactFixtureHunks(responsiveMapReplay,path,source);
+ assert(matches(previous,files[path].after),'exact map input-retirement predecessor');
+ return source.includes('\r\n')?previous.replaceAll('\n','\r\n'):previous;
+}
+
 export function beforeMergedInputRetirement(path,source,options){
+ source=beforeResponsiveMapBackflow(path,source);
  source=beforeCombatEvents(path,beforeActionButtons(path,beforeDevelopUiBackflows(path,source)));
  if(path==='scripts/potion-discard-layout.mjs')source=beforeNativeFlowFixture(path,source);
  return beforeNativeHostInputRetirement(path,beforeNativeFixtureInputRetirement(path,source,options),options);

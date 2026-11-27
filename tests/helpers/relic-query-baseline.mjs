@@ -12,6 +12,12 @@ export const relicQueryArchiveSha256='df89de0002fee32b9300489b95432ce4287c467435
 export const relicQueryJsonSha256='15e29cde1cb94247da6813ca5a5c0dfe83de48646855913423cd2074671b3127';
 const hash=value=>createHash('sha256').update(value).digest('hex');
 const modules=['abyss_relic_hooks','abyss_uncommon_relics','abyss_rare_relics','abyss_boss_relics','abyss_shop_relics','abyss_card_pool'];
+// The three alias inputs and their canonical keys were renamed together in #951.
+export const reviewedRelicQueryAliases = [
+ [1, 'MutagenicStrength', 'AugmentationCore', 'mutagenic_strength', 'augmentation_core'],
+ [1, 'CultistMask', 'RavenMask', 'cultist_mask', 'raven_mask'],
+ [3, 'Gambling Chip', 'Tactical Badge', 'gambling_chip', 'tactical_badge'],
+];
 export function frozenRelicQuerySources(){
  const archive=readFileSync(new URL('./relic-query-baseline-391306af.json.gz',import.meta.url));
  assert.equal(hash(archive),relicQueryArchiveSha256,'complete six-source compressed witness');
@@ -43,7 +49,15 @@ export function runRelicQueryFixture(fixture,{frozen=false}={}){
   source+=relicLifecycleFrozenPrelude();
   source+=`assert(RELIC_LIFECYCLE_FROZEN.revision==${luaString(relicQueryRevision)})\n`;
  }
- source+=`dofile(${luaString(resolve(fixture).replaceAll('\\','/'))})\n`;
+ if(frozen&&name==='relic_query_contract'){
+  let original=readFileSync(fixture,'utf8');
+  for(const [,oldName,currentName] of reviewedRelicQueryAliases){
+   const key=luaString(currentName);
+   assert.equal(original.split(key).length,2,'one exact current alias input: '+currentName);
+   original=original.replace(key,luaString(oldName));
+  }
+  source+=`assert(load(${luaString(original)},${luaString('@'+fixture)}))()\n`;
+ }else source+=`dofile(${luaString(resolve(fixture).replaceAll('\\','/'))})\n`;
  if(frozen)source+='assert(RELIC_LIFECYCLE_FROZEN.audit())\n';
  writeFileSync(driver,source);
  const started=Date.now(),result=runLua(driver);

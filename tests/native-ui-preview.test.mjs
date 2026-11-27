@@ -1,5 +1,5 @@
 import test from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';import path from 'node:path';import os from 'node:os';
-import {runLua} from '../scripts/test-lua.mjs';import {root,repo,themeSource,createSave,verifyAssets,moduleSources} from '../experiments/native-ui-preview/build.mjs';
+import {runLua} from '../scripts/test-lua.mjs';import {root,repo,themeSource,createSave,verifyAssets,moduleSources,compileBattle} from '../experiments/native-ui-preview/build.mjs';
 const read=p=>fs.readFileSync(path.join(root,p),'utf8');
 function lua(parts,marker,{theme=false}={}){const dir=fs.mkdtempSync(path.join(os.tmpdir(),'native-ui-test-'));const file=path.join(dir,'test.lua');const prelude='package.path='+JSON.stringify(path.join(root,'battle/?.lua').replaceAll('\\','/'))+'..";"..package.path\n'+(theme?'package.preload.abyss_theme=function()\n'+themeSource()+'\nend\n':'');fs.writeFileSync(file,prelude+parts.map(read).join('\n'));try{const r=runLua(file,{timeout:30000});assert.equal(r.status,0,r.stdout+r.stderr);assert.equal(r.stderr,'');assert.match(r.stdout,marker);}finally{fs.rmSync(dir,{recursive:true,force:true});}}
 test('menu source recurrence and interrupted navigation',()=>lua(['menu/controller.lua','menu/controller.test.lua'],/MENU_SEMANTIC_PASS assertions=63/));
@@ -18,9 +18,22 @@ test('stale build modules cannot replace production Lua source',t=>{
 });
 test('only declared generated data modules enter the bundle',()=>{
  const sources=moduleSources();
+ const generated=path.join(repo,'build/lua');
  assert(sources.has('abyss_data')&&sources.has('abyss_original_v4_data')&&sources.has('abyss_theme'));
  assert(!sources.has('abyss_ui_templates'));
+ assert(fs.existsSync(path.join(generated,'abyss_ui_layout.lua')));
+ assert(!sources.has('abyss_ui_layout'));
+ assert(compileBattle().modules.includes('abyss_monster_art_data'));
+ assert.equal(sources.get('abyss_monster_art_data'),fs.readFileSync(path.join(generated,'abyss_monster_art_data.lua'),'utf8'));
  assert.equal(sources.get('abyss_run'),fs.readFileSync(path.join(repo,'src/lua/abyss_run.lua'),'utf8'));
+});
+test('a missing battle art dependency requires the generated UI module',t=>{
+ const realReadDir=fs.readdirSync;
+ t.mock.method(fs,'readdirSync',function(dir,...args){
+  const files=realReadDir.call(this,dir,...args);
+  return path.resolve(dir)===path.join(repo,'build/lua')?files.filter(file=>file!=='abyss_monster_art_data.lua'):files;
+ });
+ assert.throws(()=>createSave('battle'),{message:'Missing Lua module abyss_monster_art_data; run npm run build:ui first.'});
 });
 test('battle energy keeps the approved position and continuous dark-red outline',()=>{
  const battle=createSave('battle').assets.server.root.children[0].children.find(n=>n.name==='battle');

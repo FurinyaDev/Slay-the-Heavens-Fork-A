@@ -75,6 +75,8 @@ export function battlePileCardTemplate(layout, template) {
     const control = face.children.find(child => child.name === name);
     if (control) control.visible = false;
   }
+  const rim=face.children.find(child=>child.name==='nativePlayableRim');
+  if(rim)rim.children=[];
   const ordinary=structuredClone(face),old=template.children.find(child=>child.name==='face');
   ordinary.position=[...old.position];
   template.children[template.children.indexOf(old)]=ordinary;
@@ -203,7 +205,7 @@ export function deckControls(theme = nativeTheme) {
         size: l.deckView.viewport.slice(2), visible: false },
       { name: 'cardFocus', kind: 'container', position: [0, 30], size: [...l.card.size], scale: [l.card.reading.focusScale, l.card.reading.focusScale],
         visible: false, children: [{ ...deckCardTemplate(theme).children[0], position: [0, 0] }] },
-      { ...button('upgradePreview', l.deckView.upgradePreview, '升级预览'), visible: false },
+      { ...button('upgradePreview', l.deckView.upgradePreview, '查看升级'), visible: false },
       button('close', closeFrame, '关闭'),
       {...battlePileReturn(button('pileReturn',[-550,-237,180,54],'返回'),theme.officialAssets.buttonInk),visible:false},
       { name: 'deckSort', kind: 'container', position: l.deckView.browser.sort.slice(0, 2),

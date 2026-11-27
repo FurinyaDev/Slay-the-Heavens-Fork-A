@@ -16,8 +16,8 @@ local function verifyBossBadge(host,root)
     assert(ratio>=2 and ratio<=2.5,'boss emblem size outside STS1 target')
     assert(host.mapUI:focusCurrent())
 end
-local function awaitNativePage(host)
-    for _=1,80 do
+local function awaitNativePage(host,maxTicks)
+    for _=1,maxTicks or 80 do
         if not host.starting and not(host.prologue and host.prologue:covering())
             and not(host.pageReveal and host.pageReveal:covered())then assert(not host.disabled);return end
         OnUpdate(0.05)
@@ -123,6 +123,7 @@ local function opening(host,root,bossCount)
 end
 local function selectedGeo(host,root)
     local panel=root:GetChild('characterPanel')
+    awaitNativePage(host)
     assert(host.characterOpen and panel.visible)
     assert(not panel:GetChild('elements').visible,'single-element formal entry must hide redundant selectors')
     if not host.characterSelection.info then
@@ -162,7 +163,9 @@ local function enterBattle(host,floor)
     assert(nextNode and nextNode.floor==floor)
     local accepted,state=host.mapUI:choose(nextNode.id)
     assert(accepted and state=='selection_pending' and host.mode=='map' and host.run.phase=='map')
-    awaitNativePage(host)
+    -- The Act 1 Guardian's narration and two scene fades take about six seconds.
+    local guardianEntry=host.run.act==1 and nextNode.type=='boss'
+    awaitNativePage(host,guardianEntry and 140 or nil)
     assert(host.map.currentNodeId==nextNode.id and host.mode=='battle' and host.run.phase=='combat')
     return nextNode
 end
@@ -285,6 +288,7 @@ assert(host.nodeUI:press('treasureView/chest'));host.nodeUI:update(2)
 awaitNativePage(host)
 assert(not host.run.nodeFlow.reward.sapphireKey)
 for _,item in ipairs(host.run.nodeFlow.reward.items)do assert(item.kind~='sapphire' and not item.linkedSlot)end
+awaitNativePage(host)
 local function noVisibleKeyPromise(control)
     if control.visible==false then return end
     assert(not (control.text and control.text:find('钥匙',1,true)),'competition chest advertised a key')
@@ -305,6 +309,7 @@ for index,item in ipairs(host.run.nodeFlow.reward.items)do
     if item.available then rewardKey='treasureView/rewardItem'..index;break end
 end
 assert(rewardKey,'seed must offer an implemented boss relic')
+awaitNativePage(host)
 local stale=host.nodeUI.actions[rewardKey].handler
 assert(host.nodeUI:press(rewardKey))
 awaitNativePage(host)

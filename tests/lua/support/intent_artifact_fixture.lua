@@ -100,6 +100,15 @@ local function refresh(h, p, tap)
     same(h.run.combat,before)
     return forecast, detail
 end
+local function orderedDetails(h, p)
+    local before = Combat.copy(h.run.combat)
+    local ui = h.battleUI
+    assert(ui:showStatus(1), "ordered enemy details did not open")
+    assert(ui.info and not ui.info.powerTips, "ordered effects use the full detail card")
+    local copy = inspectDetails(ui, p)
+    same(h.run.combat, before)
+    return copy
+end
 local function rejects(h, reason)
     local before = Combat.copy(h.run.combat)
     local ok, why = pcall(function()
@@ -141,6 +150,7 @@ local function finish(label)
     assert(failed == 0, "Intent Artifact failures: " .. failed)
 end
 return {H=H, Combat=Combat, counters=counters, eq=eq, same=same, test=test, setup=setup,
-    refresh=refresh, rejects=rejects, resolve=resolve, drainChecked=drainChecked, finish=finish,
+    refresh=refresh, orderedDetails=orderedDetails, rejects=rejects, resolve=resolve,
+    drainChecked=drainChecked, finish=finish,
     playbackSetup=playbackSetup, playbackData=playbackData,
     forecast=function(battle,index)return IntentView.intentView(battle,index or 1).value end}

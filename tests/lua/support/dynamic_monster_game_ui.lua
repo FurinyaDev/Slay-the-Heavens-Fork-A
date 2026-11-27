@@ -32,11 +32,24 @@ surfaces:each(function(box,slot,entry)
  assert(math.abs(intent.size[1]-64/1.5)<1e-8,'original intent hitbox')
 end)
 assert(count==6,'six actual generated full actor templates must render without truncation')
-for _,enemy in ipairs(state.enemies)do
+local IntentView=require('abyss_battle_intent_view')
+local assertIntentFace=dofile('tests/lua/support/intent_face_assertion.lua')
+local sawSlimedAttack=false
+for index,enemy in ipairs(state.enemies)do
  local control=surfaces:find(enemy.id)
- assert(not control:GetChild('intentBadge').visible and not control:GetChild('intentExtra').visible,'world intent must not use invented horizontal tooltip composites')
+ local face=IntentView.intentView(state,index)
+ assertIntentFace(control,face)
+ local selected=IntentView.selectedDescriptor(state,index)
+ if selected.id=='acid_slime_m_1' then
+  sawSlimedAttack=true
+  assert(face.sourceEnum=='ATTACK_DEBUFF' and selected.face.badge=='debuff' and selected.baseDamage==7,
+      'the native damage-tier face retains the original attack-plus-Slimed intent in its selection')
+  local icons=IntentView.icons(face)
+  assert(#icons==2 and icons[1]=='attack' and icons[2]=='debuff','the intent detail exposes both effects')
+ end
  assert(math.abs(control:GetChild('intentIcon').size[1]-math.min(128/1.5,require('abyss_theme').layout.intent.size))<1e-8,'full-bleed intent glyph size')
 end
+assert(sawSlimedAttack,'the six actors must exercise their attack-plus-Slimed move')
 
 local hoverActor=state.enemies[2];local hoverBox=surfaces:find(hoverActor.id)
 local hoverGeometry=require('abyss_battle_enemy_view').geometry(hoverActor)

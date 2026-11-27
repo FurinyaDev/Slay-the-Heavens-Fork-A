@@ -112,13 +112,16 @@ local function deckPending(intent)
     end
     return deck.pending or deck.calibrating or deck.pendingGrid,painted
 end
+local function portraitReady(intent)
+    -- Selection retains static fallbacks while its decorative portrait loads.
+    if not portraits or intent.page=='characterPanel' then return true end
+    return portraits:readyForPage(intent.mode,intent.characterOpen,intent.character,intent.page)
+end
 local function presentationReady(intent)
     local prepared,why,progress=preparedArtOwners(intent.page)
     if not prepared then return false,why,'component:'..tostring(progress) end
-    if portraits then
-        local ready,reason,cursor=portraits:readyForPage(intent.mode,intent.characterOpen,intent.character,intent.page)
-        if not ready then return false,reason,'portrait:'..tostring(cursor) end
-    end
+    local portraitsReady,portraitReason,portraitCursor=portraitReady(intent)
+    if not portraitsReady then return false,portraitReason,'portrait:'..tostring(portraitCursor) end
     local pendingDeck,painted=deckPending(intent)
     if intent.page=='deckPanel' and view and view.deckUI.prepareError then
         return false,view.deckUI.prepareError
@@ -325,9 +328,28 @@ local function applyRevealStep(gate,reveal,changed,repaint)
     if changed and repaint~=false then refreshPreparedPage(gate,reveal) end
     paintReveal(gate)
 end
+local function prepareRunDeck(gate)
+    local deck=view.deckUI
+    if not deck or not deck.browserWarmupPending or not view.run or not gate or gate:covered() then return end
+    if view.disabled or view.exitOpen or view.sessionPaused or view.starting or view.battleUI.busy then return end
+    if view.mode=='map' or view.mode=='battle' and view.run.phase=='combat' then
+        deck:prepareBrowser()
+    end
+end
+local function titleAllowsSelectionWarmup()
+    return view.mode=='menu' and not view.run and not view.characterOpen and not view.disabled and not view.starting
+        and not view.exitOpen and not view.settlementRequested and not view.settlementBusy
+        and not view.sessionPaused and not view.easterEggOpen and not view.deckUI.visible
+end
+local function prewarmSelection(gate,dt,frameStarted)
+    if not portraits or not portraits.warmSelection then return end
+    local eligible=frameStarted and gate and not gate:covered() and titleAllowsSelectionWarmup()
+    portraits:warmSelection(eligible==true,dt,frameStarted)
+end
 function OnUpdate(dt)
     if not view or view.disabled then return end
     local ok, reason = pcall(function()
+        local frameStarted=portraits and view.mode=='menu' and os.clock()
         local width, height = game.GetUICanvasSize()
         if width ~= canvasWidth or height ~= canvasHeight then
             local _, _, viewport = Viewport.apply(script.object, width, height, mobileCanvas())
@@ -361,6 +383,8 @@ function OnUpdate(dt)
         if gate then
             applyRevealStep(gate,reveal,gate:step(reveal.intent(view),dt))
         end
+        prepareRunDeck(gate)
+        prewarmSelection(gate,dt,frameStarted)
     end)
     if not ok then failed("update", reason) end
 end

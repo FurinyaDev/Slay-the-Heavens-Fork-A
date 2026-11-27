@@ -131,10 +131,12 @@ const paths=(node,prefix='')=>{
  const path=prefix+'/'+node.name;return [[path,node],...children(node).flatMap(c=>paths(c,path))];
 };
 const focusFacePath='/SlayTheAbyss/deckPanel/cardFocus/face';
+const retiredChoiceFaces=new Set(['/SlayTheAbyss/choicePanel/card1/face','/SlayTheAbyss/choicePanel/card2/face']);
 function assertCardHostPaths(layout,cards){
  const original=cards.map(([path])=>path).filter(path=>path!==focusFacePath).sort();
- assert.equal(original.length,38,'retain every original official card host');
- assert.deepEqual(original,originalCardHosts,'retain exact original card host paths');
+ assert.equal(original.length+retiredChoiceFaces.size,38,'account for every original official card host');
+ assert.deepEqual(original,originalCardHosts.filter(path=>!retiredChoiceFaces.has(path)),
+  'retain every original card host outside the shared choice grid');
  const extras=cards.filter(([path])=>path===focusFacePath);
  assert.equal(extras.length,1,'the approved deck detail has exactly one face');
  const detail=child(child(layout,'deckPanel'),'cardFocus');
@@ -166,10 +168,20 @@ test('both official build orders retain exact choice and picker semantics and ev
  for(const themeFirst of [false,true]){
   const theme=officialAssetsTheme(nativeTheme),layout=gameLayout(themeFirst?theme:nativeTheme),template=deckCardTemplate();
   const picker=child(child(layout,'nodePanel'),'pickerView'),choice=child(layout,'choicePanel');
-  const retained=[...['card1','card2','card3'].map(n=>child(picker,n)),...['card1','card2'].map(n=>child(choice,n))];
+  const retained=['card1','card2','card3'].map(n=>child(picker,n));
   const hits=retained.map(n=>child(n,'hit'));
   const result=applyOfficialAssets([layout,template],theme);
-  assert.deepEqual(children(choice).filter(n=>/^card\d+$/.test(n.name)).map(n=>n.name),['card1','card2']);
+  assert.deepEqual(children(choice).filter(n=>/^card\d+$/.test(n.name)),[]);
+  const grid=child(choice,'cards');
+  assert.equal(grid.kind,'grid');
+  assert.equal(grid.grid.columns,5);
+  assert.equal(grid.itemTemplate,template.name);
+  for(const name of ['option1','option2']){
+   const option=child(choice,name);
+   assert.equal(option.visible,false);
+   assert.deepEqual(children(option).map(node=>[node.name,node.kind]),[['hit','presetButton']],
+    'potion controls retain a native button without a second card face');
+  }
   assert.deepEqual(children(picker).filter(n=>/^card\d+$/.test(n.name)).map(n=>n.name),['card1','card2','card3','card4','card5','card6']);
   for(let i=1;i<=3;i++)assert(child(child(picker,'card'+i),'stsReferenceChrome'),'visible picker retains a full card face');
   for(let i=4;i<=6;i++){

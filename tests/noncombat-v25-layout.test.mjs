@@ -93,6 +93,7 @@ test('production background preserves the exact approved experiment rows, includ
  // Independently frozen from lumine-native-v11/rows-1600.json, not this adapter.
  assert.equal(createHash('sha256').update(JSON.stringify(rows)).digest('hex'),'8feed38c818cfa0abda50d1955cfaa99f360ec60bf501544a7245aa4c779eee5');
  assert.equal(rows.length,1600);assert.equal(rows.filter(r=>r[15]===1).length,224);
+ assert.deepEqual(background.revealWithNext.flatMap((together,index)=>together?[index+1]:[]),[17]);
 });
 
 test('selection uses static exact-alpha geometry and reuses the selected frame without a glyph overlay',()=>{
@@ -128,6 +129,28 @@ function restorePriorMenuNavigation(panel,focusPaths) {
  return prior;
 }
 
+function restorePriorMenuSurfaces(panel){
+ if(panel.name==='menuPanel'){
+  for(const action of ['start','continueRun','titleQuit']){
+   const label=child(child(panel,action),'label');
+   assert.equal(label.text.outlineOpacity,1,action+' retains the shipped title outline');
+   delete label.text.outlineOpacity;
+  }
+  const backdrop=child(panel,'backdrop'),quit=child(panel,'titleQuit');
+  assert.equal(backdrop.image,100001,'retain the released title material');
+  backdrop.image=107271;
+  assert.deepEqual(quit.position,[-464,-170],'retain the released compact title spacing');
+  quit.position=[-464,-282];
+ }
+ const surfaces=panel.name==='menuPanel'?['floor','victories','time','deck'].map(name=>child(child(panel,'result'),'stat_'+name)):
+  panel.name==='exitPanel'?[panel]:[];
+ for(const host of surfaces){
+  const face=child(host,'face');
+  assert.deepEqual([face.image,face.colour],[100001,'#1C1E27'],host.name+' retains the released flat surface');
+  Object.assign(face,{image:107311,colour:'#FFFFFF'});
+ }
+}
+
 test('official host uses direct inventory actions, read-only relic details and explicit run discard',async t=>{
  const {mkdtempSync,mkdirSync,readFileSync,rmSync}=await import('node:fs');
  const {join,resolve}=await import('node:path');
@@ -154,14 +177,9 @@ test('official host uses direct inventory actions, read-only relic details and e
   const panel=child(stage,name);
   assert(all(panel).every(node=>node.focusable!==true&&node.isolateNavigation!==true),'retire authored navigation: '+name);
   const prior=restorePriorMenuNavigation(panel,focusPaths);
-  if(name==='menuPanel')for(const action of ['start','continueRun','titleQuit']){
-   // #963 applied the shipped v2.1.1 outline to these three title labels.
-   const label=child(child(prior,action),'label');
-   assert.equal(label.text.outlineOpacity,1,action+' retains the shipped title outline');
-   delete label.text.outlineOpacity;
-  }
+  restorePriorMenuSurfaces(prior);
   assert.equal(createHash('sha256').update(JSON.stringify(prior)).digest('hex'),sha,
-   'preserve the complete reviewed menu outside the pinned navigation and label edits: '+name);
+   'preserve the reviewed menu outside the explicit navigation and production surface edits: '+name);
  }
  const script=`package.path=${luaString(directory.replaceAll('\\','/')+'/?.lua;src/lua/?.lua')}
 dofile('tests/lua/support/sts_ui_closeout.lua')`;
@@ -191,27 +209,25 @@ test('generated official character selection follows the approved details revisi
  buildUI(output,undefined,{officialAssets:true,refinedReleaseMonsterArt:true,nativePageLifecycle:true,experimentalCharacters:false});
  const tree=JSON.parse(readFileSync(join(output,'game-ui.json'),'utf8'));
  const selection=child(child(tree,'stage'),'characterPanel');
- const details=child(selection,'details');
- const motion=child(details,'infoMotion'),infoLayers=motion?parts(motion):[details];
- assert(infoLayers.length>0);
- for(const info of infoLayers)for(const name of ['name','stats','gold','v25Story','relic','relicText']){
-  assert.equal(child(info,name)?.kind,'text',name);
- }
+ const infoLayers=parts(child(child(selection,'details'),'infoMotion'));
+ assert.equal(infoLayers.length,1);
  const retired=new Set(['deckTitle','deckSummary','deckRule','deckOpen','deckView']);
  const found=all(selection).filter(node=>retired.has(node.name)||/初始牌组|查看牌组/.test(node.text?.content??''));
  assert.deepEqual(found.map(node=>node.name),[],'obsolete starter deck controls in the official selection tree');
- for(const info of infoLayers){
-  const story=child(info,'v25Story'),{content,fontSize,minFontSize}=story.text;
-  const problems=capacityProblems([{path:'characterPanel/details/v25Story',kind:story.kind,visible:true,
-   text:content,size:story.size,font:fontSize,minimum:minFontSize}],nativeTheme.layout.nativeText.lineHeight);
-  assert.deepEqual(problems,[],'reserve both native lines for the mobile synopsis');
-  assert(story.size[1]>=nativeTheme.layout.nativeText.lineHeight*2,'reserve two lines for longer synopses');
-  assert.equal(content,'使用岩元素护盾与结晶应对敌人。');
-  assert.equal(minFontSize,fontSize,'retain the authored text size');
-  const stats=child(info,'stats'),relic=child(info,'relic');
-  assert(story.position[1]+story.size[1]/2<stats.position[1]-stats.size[1]/2,'story clears health');
-  assert(story.position[1]-story.size[1]/2>relic.position[1]+relic.size[1]/2,'story clears the relic title');
+ const [details]=infoLayers;
+ for(const name of ['name','stats','gold','v25Story','relic','relicText']){
+  assert.equal(child(details,name)?.kind,'text',name);
  }
+ const story=child(details,'v25Story'),{content,fontSize,minFontSize}=story.text;
+ const problems=capacityProblems([{path:'characterPanel/details/v25Story',kind:story.kind,visible:true,
+  text:content,size:story.size,font:fontSize,minimum:minFontSize}],nativeTheme.layout.nativeText.lineHeight);
+ assert.deepEqual(problems,[],'reserve both native lines for the mobile synopsis');
+ assert(story.size[1]>=nativeTheme.layout.nativeText.lineHeight*2,'reserve two lines for longer synopses');
+ assert.equal(content,'使用岩元素护盾与结晶应对敌人。');
+ assert.equal(minFontSize,fontSize,'retain the authored text size');
+ const stats=child(details,'stats'),relic=child(details,'relic');
+ assert(story.position[1]+story.size[1]/2<stats.position[1]-stats.size[1]/2,'story clears health');
+ assert(story.position[1]-story.size[1]/2>relic.position[1]+relic.size[1]/2,'story clears the relic title');
 });
 
 test('official generated selection retires the legacy full-screen shade above its approved artwork',()=>{
@@ -247,10 +263,28 @@ Asset.imagePrefabId,Asset.containerPrefabId,Asset.selectionHalfImagePrefabId=41,
 Enum={ImageSource={StaticReference='static'},ImageType={Stretch=23},ImageFillHorizontalType={Right=1}}
 Color={FromRGBA=function(...)return {...}end}
 local methods={}
+local active=setmetatable({},{__mode='k'})
 function methods:SetVisible(value)self.visible=value end
-function methods:SetActive(value)self.active=value end
+function methods:SetActive(value)active[self]=value;F.setEngineActive(self,value)end
 function methods:SetImage(source,id)self.imageId=id end
 for _,name in ipairs({'SetAnchorMin','SetAnchorMax','SetPivot','SetSizeDelta','SetLocalScale','SetLocalRotation','SetAnchoredPosition','SetAsLastSibling','SetFillHorizontal','SetFillUnused'})do methods[name]=function()end end
+local rootMeta=getmetatable(root)
+local readRoot,writeRoot=rootMeta.__index,rootMeta.__newindex
+rootMeta.__index=function(control,key)
+ if key=='active' then return active[control]~=false end
+ return readRoot(control,key)
+end
+rootMeta.__newindex=function(control,key,value)
+ assert(key~='active','native active is read-only')
+ writeRoot(control,key,value)
+end
+local cloneMeta={__index=function(control,key)
+ if key=='active' then return active[control]~=false end
+ return methods[key]
+end,__newindex=function(control,key,value)
+ assert(key~='active','native active is read-only')
+ rawset(control,key,value)
+end}
 local function install(control)
  control.SetActive=methods.SetActive
  for _,c in pairs(control.children)do install(c)end
@@ -260,7 +294,7 @@ local created,destroyed,rejectCreation=0,0,false
 game={InstantiateClientUIControl=function(index,parent)
  assert(index==41 or index==73 or index==99)
  if rejectCreation then return nil end
- created=created+1;return setmetatable({parent=parent,alive=true},{__index=methods})
+ created=created+1;return setmetatable({parent=parent,alive=true},cloneMeta)
 end,DestroyClientUIControl=function()destroyed=destroyed+1 end}
 local portraits=require('abyss_traveler_portraits').new(root,nil,{selectionAvatar=true,battlePortrait=true})
 local covered={}
@@ -270,8 +304,8 @@ local function scope(label)
 end
 portraits:sync('menu',true,false,'ironclad');scope('building')
 assert(fallback.visible and landscape.visible and not transition.visible,'loading fallback is effectively unshaded')
-for _=1,600 do portraits:tick();if portraits:readyForPage('menu',true,'ironclad','characterPanel')then break end end
 assert(portraits:readyForPage('menu',true,'ironclad','characterPanel'))
+for _=1,600 do portraits:tick();if portraits:status().selection.phase=='ready'then break end end
 motion:show({id='ironclad'},true)
 motion:update(1)
 assert(portraits:status().selection.phase=='ready' and art.visible and art:GetChild('figure').visible and not landscape.visible and not transition.visible and transition.imageColor.a==0)
@@ -310,9 +344,16 @@ test('default opt-out retains its existing backdrop shade and no approved native
 async function selectionEntranceFixtureRead(read=readFileSync){
  const {beforeBattlePeriphery}=await import('./helpers/battle-periphery-source.mjs');
  const {beforeChapterBattleScene}=await import('./helpers/chapter-battle-scene-source.mjs');
+ const {beforeOfficialCharacterBackflow}=await import('./helpers/current-replay-fix-sources.mjs');
  const {chapterEvidenceCurrentRead}=await import('./helpers/fork-preflight-source.mjs');
+ const {beforeKnownMasterBackflowSource,productionReadingBackflowOwns}=await import('./helpers/master-backflow-source.mjs');
  const {checkedSelectionEntranceRead}=await import('./helpers/ui-selection-current-source.mjs');
- const readCurrent=chapterEvidenceCurrentRead(checkedSelectionEntranceRead(read));
+ const readLive=checkedSelectionEntranceRead(read);
+ const readCurrent=chapterEvidenceCurrentRead(path=>{
+  const raw=readLive(path,'utf8');
+  if(productionReadingBackflowOwns(path)||beforeOfficialCharacterBackflow(path,raw)!==raw)return raw;
+  return beforeKnownMasterBackflowSource(path,raw);
+ });
  return path=>beforeBattlePeriphery(path,beforeChapterBattleScene(path,readCurrent(path,'utf8')));
 }
 

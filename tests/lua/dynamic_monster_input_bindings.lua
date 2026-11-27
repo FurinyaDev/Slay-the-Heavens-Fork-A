@@ -2,6 +2,7 @@ local Combat=require('abyss_combat')
 local Data=require('abyss_data')
 local Target=require('abyss_battle_target_bindings')
 local Detail=require('abyss_battle_detail_bindings')
+local BattleDetails=require('abyss_battle_details')
 local Native=dofile('tests/lua/support/native_ui_contract.lua')
 local Theme=require('abyss_theme')
 -- Throw after native registration: exercise callbacks installed before a failed bind.
@@ -19,20 +20,29 @@ local function control(name,parent)
  local c={name=name,parent=parent,children={},listeners={},visible=true,alive=true,raycastTarget=true}
  function c:GetChild(n)return assert(self.children[n],self.name..' missing '..n)end
  function c:GetChildren()local a={};for _,v in pairs(self.children)do a[#a+1]=v end;return a end
+ function c:SetVisible(value)self.visible=value end
  function c:AddCursorEventListener(e,f)Native.listener(e,f);assert(not self.listeners[e],self.name..' duplicate '..e);self.listeners[e]=f;registered(self,e,f) end
  if parent then parent.children[name]=c end
  return c
 end
 local function unit(name)
- local c=control(name);control('hit',c);control('intentHit',c);local row=control('statusRow',c);control('hit',row)
+ local c=control(name);control('hit',c);control('intentHit',c);control('hpHit',c);local row=control('statusRow',c);control('hit',row)
  for i=1,Theme.layout.statusIcon.perRow*Theme.layout.statusIcon.rows do control('hit'..i,row)end
  return c
 end
 local battle=Combat.new(Data,{deck={'strike','defend'},enemies={'acid_slime_m','acid_slime_m','acid_slime_m','acid_slime_m','acid_slime_m','acid_slime_m','acid_slime_m'},seed=42})
 local owner={run={phase='combat',combat=battle},active=true,busy=false,dragEnabled=true,selectionEpoch=0}
+local detailPorts={}
+BattleDetails.install(owner,{enemyInputs={}},{},detailPorts)
 local calls={status=0,help=0,down=0,swallowed=0,drag=0,render=0,potion=0,card=0,queue=0,close=0}
 function owner:showStatus(index)calls.status=calls.status+1;calls.index=index end
-function owner:openHelp(spec)calls.help=calls.help+1;calls.spec=spec end
+function owner:openHelp(spec,source,transient)
+ calls.help=calls.help+1;calls.spec=spec;calls.index=spec.index
+ self.info={source=source,transient=transient,powerTips=spec.powerTips,index=spec.index}
+ return true
+end
+function owner:renderDetailsOnly()calls.render=calls.render+1 end
+function owner:dismissActorDetails(source)if self.info and self.info.source==source then self.info=nil end end
 function owner:queueHelp(spec,source,held,touch)calls.queue=calls.queue+1;self.help={spec=spec,source=source,touch=touch,held=held}end
 function owner:render()calls.render=calls.render+1 end
 function owner:setHover(value)self.hover=value end
@@ -46,11 +56,12 @@ function surfaces:control(slot)return self.boxes[slot]end
 function surfaces:slotFor(box)for i,b in pairs(self.boxes)do if b==box then return i end end end
 local host={monsterSurfaces=surfaces,platform={},clickEvent='click',cursor={CursorDown='down',CursorUp='up',CursorEndDrag='endDrag',CursorEnter='enter',CursorExit='exit'}}
 local ownership={enemyInputs={},enemyPointerObserved=false}
-local static={hero=unit('hero'),statusInfo=control('statusInfo')};control('hit',static.statusInfo);control('page',static.statusInfo)
+local static={hero=unit('hero'),statusInfo=control('statusInfo'),statusDismiss=control('statusDismiss')};control('hit',static.statusInfo);control('page',static.statusInfo)
 for i=1,10 do static['card'..i]=unit('card'..i)end
 for i=1,Theme.layout.battlePotions.count do static['potion'..i]=control('potion'..i);static['potionHelp'..i]=control('potionHelp'..i)end
 local deps={}
 function deps.child(name)return assert(static[name],'dynamic init must not request '..name)end
+detailPorts.child=deps.child
 function deps.enemyAt(slot)return surfaces:entry(slot)end
 function deps.sameEnemySlot(slot,actor)local e=surfaces:entry(slot);return e and e.actor==actor and e.id==actor.id end
 function deps.swallowed()calls.swallowed=calls.swallowed+1;return false end
@@ -66,7 +77,7 @@ local target=Target.install(owner,ownership,host,deps);deps.helpActorReady=targe
 local detail=Detail.install(owner,ownership,host,deps)
 target.bindEnemyControls();detail.bindDetailControls()
 local function bind(slot,actor,index,box)
- if not box then box=control('dynamic'..slot);control('hit',box);control('intentHit',box) end
+ if not box then box=control('dynamic'..slot);control('hit',box);control('intentHit',box);control('hpHit',box) end
  surfaces.boxes[slot]=box;surfaces.entries[slot]={index=index,id=actor.id,actor=actor,controlSlot=slot}
  target.bindEnemyControl(slot,box);detail.bindEnemyDetailControls(slot,box)
  return box
@@ -85,6 +96,7 @@ end
 for i=1,7 do
  callbacksFor(boxes[i]:GetChild('hit'),targetEvents)
  callbacksFor(boxes[i]:GetChild('intentHit'),intentEvents)
+ callbacksFor(boxes[i]:GetChild('hpHit'),intentEvents)
  click(boxes[i]:GetChild('hit'),i);assert(calls.index==i)
 end
 -- A surface created from a feedback snapshot must remain usable after actual actor replaces it.
@@ -107,19 +119,22 @@ surfaces.entries[3].actor=shadow;owner.busy=true;owner.busy=false;surfaces.entri
 click(boxes[3]:GetChild('hit'),33);assert(calls.index==3,'snapshot replacement must not permanently disable a surface')
 -- Manager entry/core insertion index changes; stable actor surface must target current core index.
 table.insert(battle.enemies,1,table.remove(battle.enemies,7))
-local staleCount=calls.status
+local staleCount=calls.help
 click(boxes[7]:GetChild('hit'),70)
-assert(calls.status==staleCount,'stale list index must not retarget a different core actor')
+assert(calls.help==staleCount,'stale list index must not retarget a different core actor')
 for slot,e in pairs(surfaces.entries)do for i,a in ipairs(battle.enemies)do if a.id==e.id then e.index=i;e.actor=a end end end
 click(boxes[7]:GetChild('hit'),71);assert(calls.index==1,'target current original list index, not slot')
-local intent=boxes[7]:GetChild('intentHit');click(intent,73);assert(calls.spec.index==1 and calls.spec.controlBox==boxes[7])
+local intent=boxes[7]:GetChild('intentHit');click(intent,73)
+assert(calls.spec.powerTips==true and calls.spec.index==1 and calls.spec.controlBox==boxes[7] and owner.info.source==intent)
+local hp=boxes[7]:GetChild('hpHit');click(hp,731)
+assert(calls.spec.powerTips==true and calls.spec.index==1 and calls.spec.controlBox==boxes[7] and owner.info.source==hp)
 -- Retirement must preserve unrelated control callbacks and detail state.
 local kept=static.hero:GetChild('hit')
 local cardHit=static.card1:GetChild('hit')
 local potion=static.potion1
 local function snapshotListeners()
  local current={}
- for _,control in ipairs({kept,cardHit,potion,boxes[1]:GetChild('hit'),(boxes[1]:GetChild('intentHit'))})do
+ for _,control in ipairs({kept,cardHit,potion,boxes[1]:GetChild('hit'),boxes[1]:GetChild('intentHit'),(boxes[1]:GetChild('hpHit'))})do
   local listeners={}
   for name,fn in pairs(control.listeners)do listeners[name]=fn end
   current[control]=listeners
@@ -134,13 +149,13 @@ end
 local preserved=snapshotListeners()
 local function capture(box,touch)
  local callbacks={}
- for _,name in ipairs({'hit','intentHit'})do
+ for _,name in ipairs({'hit','intentHit','hpHit'})do
   local control=box:GetChild(name)
   for _,fn in pairs(control.listeners)do callbacks[#callbacks+1]=function()fn({touchId=touch})end end
  end
  return callbacks
 end
-local old=boxes[7];local oldHit=old:GetChild('hit');event(oldHit,'down',74);event(intent,'down',75)
+local old=boxes[7];local oldHit=old:GetChild('hit');event(oldHit,'down',74);event(intent,'down',75);event(hp,'down',751)
 local oldCallbacks=capture(old,74)
 surfaces.boxes[7]=nil;surfaces.entries[7]=nil
 owner.info={source=cardHit,transient=true};owner.help={source=cardHit}
@@ -163,7 +178,7 @@ local function retireProbe(box,engineDestroyed)
 end
 -- A native Enter can run while binding before registration raises. Register
 -- cleanup first so the partially bound surface cannot hold the owner's help.
-local partial=control('partial');control('hit',partial);local partialHit=control('intentHit',partial)
+local partial=control('partial');control('hit',partial);local partialHit=control('intentHit',partial);control('hpHit',partial)
 registrations=0;failAt=#targetEvents+1
 beforeFailure=function(control,event,fn)
  assert(control==partialHit and event=='enter')
@@ -181,10 +196,10 @@ preserved()
 failAt=math.huge;registrations=0
 local probe=bind(9,battle.enemies[2],2);local registrationCount=registrations
 failAt=nil;retireProbe(probe)
-assert(registrationCount==#targetEvents+#intentEvents,'all native target and intent registration sites must be covered')
+assert(registrationCount==#targetEvents+2*#intentEvents,'all native target, intent and HP registration sites must be covered')
 for _,reentrant in ipairs({false,true})do
  for site=1,registrationCount do
-  local box=control('probe'..site);control('hit',box);control('intentHit',box)
+  local box=control('probe'..site);control('hit',box);control('intentHit',box);control('hpHit',box)
   registrations=0;failAt=site
   owner.help={source=cardHit};owner.info={source=cardHit,transient=true}
   if reentrant then reentrantRetire=function()retireProbe(box,true)end end

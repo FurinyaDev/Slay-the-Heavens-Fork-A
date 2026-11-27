@@ -131,6 +131,8 @@ function lua(body){
   states[name]=state;controls[name]=c;return c
  end
  for _,name in ipairs({'nodePanel','choicePanel','battlePanel','mapPanel'})do control(name)end
+ local route={SetVisible=function(_,visible)assert(visible==false,'closed map route must stay hidden');tail=tail+1 end}
+ function controls.mapPanel:GetChild(name)if name=='mapRoute' then return route end end
  local owner={mode='menu',choiceUI={visible=false},battleUI={setActive=function()end},mapUI={setVisible=function()end},nodeUI={setVisible=function()end}}
  local function child(name)return assert(controls[name],'missing '..name)end
  local require=function(name)if name=='abyss_native_pages'then return Pages end

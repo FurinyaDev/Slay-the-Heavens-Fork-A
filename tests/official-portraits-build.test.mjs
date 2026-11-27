@@ -15,6 +15,7 @@ test('official runtime inventory preserves every producer field and rejects sele
  const dir=mkdtempSync(join(tmpdir(),'abyss-official-inventory-'));t.after(()=>rmSync(dir,{recursive:true,force:true}));
  writeFileSync(join(dir,'art-render-v2.json'),'{}');
  const source=writePortraitModule(dir,{officialAssets:true,imageTemplateIndex:77,containerTemplateIndex:88,selectionHalfImageTemplateIndex:99});
+ assert.doesNotMatch(source,/^selection133=/m);
  const actual=portraitRuntimeInventory(dir),expected=portraitInventory(officialAssetFlags,{officialAssets:true});
  assert.deepEqual(actual,expected,'complete production inventory, including order, profile, budgets and hashes');
  assert.equal(actual.renderProfile,'selection-budget-v1');

@@ -29,7 +29,8 @@ test('official relic surfaces reuse the battle information-window material and p
   }
 });
 function assertBarGeometry(t) {
-  const [bar] = relicViewControls(t), [tray, ...slots] = bar.children;
+  const [bar] = relicViewControls(t), [tray] = bar.children;
+  const slots = bar.children.slice(1, -2);
   const obstacles = Object.values(t.layout.nativeNode.topBar);
   // Final battle controls use a different top-row height from node/map HUDs.
   const battle = gameLayout(t).controls.find(c => c.name === 'battlePanel');
@@ -60,11 +61,22 @@ function assertBarGeometry(t) {
 test('owned relics use disc art slots in the top bar and detail rows', () => {
   const [bar, panel] = relicViewControls(theme), v = theme.layout.relicView;
   assert.equal(bar.name, 'relicBar');
-  const [tray, ...slots] = bar.children;
+  const [tray] = bar.children;
+  const slots = bar.children.slice(1, -2);
+  const arrows = bar.children.slice(-2);
   assert.equal(tray.name, 'tray');
   assert.equal(slots.length, v.bar.count);
   // Relics now occupy a second row; preserve separation in both axes, not X alone.
   assert.equal(slots.length, 12);
+  assert.deepEqual(arrows.map(arrow => [arrow.name, arrow.position, arrow.size]), [
+    ['previous', [-624, 292], [32, 44]], ['next', [610, 292], [32, 44]],
+  ]);
+  for (const arrow of arrows) {
+    assert.equal(arrow.visible, false);
+    const hit = arrow.children.find(control => control.name === 'hit');
+    assert.equal(hit.kind, 'presetButton');
+    assert.deepEqual(hit.size, arrow.size);
+  }
   assertBarGeometry(theme);
   slots.forEach((slot, i) => {
     assert.ok(Math.abs(slot.position[0] - v.bar.tray[0]) + v.bar.disc / 2 <= v.bar.tray[2] / 2, 'disc inside tray');

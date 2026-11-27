@@ -91,7 +91,7 @@ local function escapeFixture()
  local function draw()
   api.renderEnemyIntent(box,{kind='attack',value='6'},100,{intentX=1,intentY=2,intentWidth=3},true,1)
  end
- return handles,draw,function()hide(box,'enemy')end
+ return handles,draw,function()hide(owner,box,'enemy')end
 end
 for _,failure in ipairs({'success','false','throw'})do
  for _,applyAfter in ipairs({false,true})do

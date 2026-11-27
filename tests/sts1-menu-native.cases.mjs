@@ -13,13 +13,15 @@ test('STS1 menu retains transactions, unplated resting controls and four states'
  applyApprovedNativeMenu(menu);
  assert.equal(kids(start).find(n=>n.name==='hit'),hit,'do not replace input transaction');
  const title=all(menu).find(n=>n.name==='sts1TitleLogo');assert(title,'new painted logo is installed');
- for(const name of ['start','titleQuit','continueRun']){
+ for(const [name,expectedY] of [['continueRun',-58],['start',-114],['titleQuit',-170]]){
   const button=kids(menu).find(n=>n.name===name),face=kids(button).find(n=>n.name==='v25MenuFace');
   assert.deepEqual(kids(face).map(n=>n.name),['normal','hover','pressed','disabled']);
   assert.equal(kids(face)[0].children.length,0,'resting text has no plate');
   assert(kids(face)[1].children.length>0,'hover has warm highlight');
   assert(kids(face)[2].children.length>0,'pressed is distinct');
   const [x,y,w,h]=[...button.position,...button.size];
+  assert.equal(y,expectedY,name+' keeps 56-unit menu spacing');
+  assert.equal(kids(button).find(n=>n.name==='hit').size[1],48,name+' keeps a 48-unit hit height');
   assert(x-w/2>=-600&&x+w/2<=600&&y-h/2>=-340&&y+h/2<=340);
  }
  assert.equal(nativeMenuFrames.start[0],-464);
@@ -33,9 +35,16 @@ test('STS1 menu retains transactions, unplated resting controls and four states'
 import {beforeRebasedRelease} from './helpers/rebased-release-source.mjs';
 import {beforeSts1MenuCiSource} from './helpers/sts1-menu-ci-source.mjs';
 import {beforeNativeFlowFixture} from './helpers/native-flow-fixture-source.mjs';
+import {beforeMasterBackflowSource} from './helpers/master-backflow-source.mjs';
 test('menu historical source continuation projects only exact complete new test bytes',()=>{
  const path='tests/official-assets.test.mjs',source=readFileSync(path,'utf8');
- const project=(path,input)=>beforeSts1MenuCiSource(path,beforeRebasedRelease(path,beforeNativeFlowFixture(path,input)));
+ const project=(path,input)=>{
+  let current=input;
+  try{current=beforeMasterBackflowSource(path,input);}catch(error){
+   if(!(error instanceof assert.AssertionError)) throw error;
+  }
+  return beforeSts1MenuCiSource(path,beforeRebasedRelease(path,beforeNativeFlowFixture(path,current)));
+ };
  const prior=project(path,source);assert.notEqual(prior,source);
  assert.equal(project(path,source+'\n'),source+'\n');
  assert.equal(project('tests/foreign.mjs',source),source);

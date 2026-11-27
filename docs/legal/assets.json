@@ -242,6 +242,26 @@
     "sts1-menu-session-reference": {
       "status": "Session-generated derivative paintings, native geometric reconstruction and diagnostic screenshots based solely on the Owner-selected Slay the Spire 1 PC screenshot. Source game rights remain with Mega Crit; comparison use does not confer an asset sublicense or official device acceptance. No reference raster is loaded at runtime.",
       "evidence": "docs/design/reference-assets/v2.0.0/sts1-main-menu-20261121/REFERENCE.md and docs/evidence/sts1-main-menu-20261121/README.md"
+    },
+    "performance-profiling-evidence": {
+      "status": "Project-generated diagnostic charts drawn from measured Host, Lua and native readback data. Chart text uses system fonts. The SVGs contain no original font binaries, platform textures or screenshot images.",
+      "evidence": "docs/evidence/v2.1.1-performance-20261125/README.md and accompanying numeric receipts, generation scripts and archives."
+    },
+    "sts1-combat-sdk-evidence": {
+      "status": "Project SDK captures and texture comparison sheets for Release battle diagnostics and an offline effects experiment. Platform texture and other game IP rights remain with their owners. Evidence only. No asset sublicense or commercial clearance.",
+      "evidence": "docs/evidence/sts1-combat-reference-20261121/README.md, make-media.py, capture-source-sha256.json and SDK receipts; included by PR #801 before the inventory entries."
+    },
+    "mobile-run-hud-geometry-evidence": {
+      "status": "Project geometry-only diagnostics of the mobile reward picker. Uses rasterized system text and bounding boxes. No platform atlas textures or source font binaries are distributed.",
+      "evidence": "docs/evidence/mobile-run-hud/README.md"
+    },
+    "release-enemy-tooltip-evidence": {
+      "status": "Project UI diagnostic rendered by Chromium from the generated tooltip controls and a project combat fixture. Uses system font fallbacks with no font binaries or artwork redistributed.",
+      "evidence": "docs/evidence/release-enemy-tooltips/README.md"
+    },
+    "viewport-host-evidence": {
+      "status": "Project-generated diagnostic images of the mock Host viewport and hit regions. Records geometry rendered from the project fixture.",
+      "evidence": "docs/evidence/v2.2.0-viewport/README.md and per-canvas result JSON; develop integration PR #984."
     }
   },
   "files": {
@@ -351,7 +371,11 @@
     },
     "experiments/menu-red-fit/input/source.png": {
       "sha256": "16bdf7b614f0fb6fdbc2414271682446c0012a9e8ff8da70abad3b7a0374480d",
-      "category": "menu-red-reference-native"
+      "category": "menu-red-reference-native",
+      "bytes": 1831152,
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "6492e8dccbcf847a0eba7ad3995da50257032e08"
     },
     "docs/evidence/menu-red-20261113/menu.png": {
       "sha256": "b12e36c8cc3e1b127134678b1087f7226b34dab4365cf2ab1bda17b56bdae622",
@@ -10251,11 +10275,19 @@
     },
     "docs/design/reference-assets/v2.0.0/sts1-main-menu-20261121/design-hd.png": {
       "sha256": "0228b36c13b805c1a31eb0cb13d960be2b3b1168d6707412fedee2c7a51c06aa",
-      "category": "sts1-menu-session-reference"
+      "category": "sts1-menu-session-reference",
+      "bytes": 1585970,
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "6492e8dccbcf847a0eba7ad3995da50257032e08"
     },
     "docs/design/reference-assets/v2.0.0/sts1-main-menu-20261121/background-hd.png": {
       "sha256": "780f7428b1389e7ac824a5c2bd086339af19ea284e394ace692a6a4011d57c8c",
-      "category": "sts1-menu-session-reference"
+      "category": "sts1-menu-session-reference",
+      "bytes": 1558535,
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "6492e8dccbcf847a0eba7ad3995da50257032e08"
     },
     "docs/design/reference-assets/v2.0.0/sts1-main-menu-20261121/background-medium.png": {
       "sha256": "7cc1f328257adbcabf47212d4cbe84713193d66f1412566a212c2ca1644bf14f",
@@ -10320,6 +10352,703 @@
     "docs/evidence/sts1-combat-reference-20261121/strength-ritual.png": {
       "sha256": "ca2edd2f41623bf6e4ccbad25102de6e23d0c2fc7ff3144422c747d51743ae53",
       "category": "platform-evidence"
+    },
+    "docs/evidence/v2.1.1-performance-20261125/05-resource-sensitivity.svg": {
+      "category": "performance-profiling-evidence",
+      "sha256": "768016fd0e4afe2c9c49604b50b0ef10c34d7f090716fa88aa8f6238811afe1c"
+    },
+    "docs/evidence/v2.1.1-performance-20261125/06-fault-tree.svg": {
+      "category": "performance-profiling-evidence",
+      "sha256": "3c4465675450f396a9e307c1c509c48a1e3a9009c7fcb5b3378964bcb763f975"
+    },
+    "docs/evidence/v2.1.1-performance-20261125/capacity/capacity-treemap.svg": {
+      "category": "performance-profiling-evidence",
+      "sha256": "d96d88c131377d2653a9d52eea5c22f269a5352f6214a785c70e7b2abd3460e7"
+    },
+    "docs/evidence/v2.1.1-performance-20261125/capacity/dose/static-ui-dose.svg": {
+      "category": "performance-profiling-evidence",
+      "sha256": "63e5132fbd163868395d6f1149a9890540ffd7f3e59d84aa30aa59dae3a32fc0"
+    },
+    "docs/evidence/v2.1.1-performance-20261125/runtime/cpu-lua-call-tree.svg": {
+      "category": "performance-profiling-evidence",
+      "sha256": "db3fecb70f34db305afa4a9f0c12fa988c3d65e1a16c64f37a8181216e5ee47a"
+    },
+    "docs/evidence/v2.1.1-performance-20261125/runtime/resource-trace-live.svg": {
+      "category": "performance-profiling-evidence",
+      "sha256": "8b2a3f9b6526201486f41124aa03b591bd066bf064fbd24649a8041db2fb8b5e"
+    },
+    "docs/evidence/v2.1.1-performance-20261125/runtime/resource-trace.svg": {
+      "category": "performance-profiling-evidence",
+      "sha256": "e4dcff941a6296adf813283f99dfac0e37a46f13c81b0a54b1e1afc5451a64c5"
+    },
+    "docs/evidence/v2.1.1-performance-20261125/startup/startup-waterfall.svg": {
+      "category": "performance-profiling-evidence",
+      "sha256": "12a90327e93917fad8c5e75507b8644b0f350337d23529c94dce0853fbf4e275"
+    },
+    "docs/evidence/run-hud-20261124/after/after-pc-detail-return.png": {
+      "sha256": "5639cb61c376938a6ba5a43c1136369082a5ab6c1f85b7c0e1d9d715c6e63987",
+      "category": "official-assets-offline-diagnostic",
+      "bytes": 93355,
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+    },
+    "docs/evidence/run-hud-20261124/after/after-pc-detail.png": {
+      "sha256": "6f3d1d90a2389b6d4b2faa7be5b2c2b67c2076fdc1c08e124c3277da44b7abdc",
+      "category": "official-assets-offline-diagnostic",
+      "bytes": 100967,
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+    },
+    "docs/evidence/run-hud-20261124/after/after-pc-event26-page1.png": {
+      "sha256": "2e72f75ab4d3d123c883df193a2be5dc1a05d3a3093b3178a9290e115bfca7b8",
+      "category": "official-assets-offline-diagnostic",
+      "bytes": 100886,
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+    },
+    "docs/evidence/run-hud-20261124/after/after-pc-event26-page2.png": {
+      "sha256": "71bf67192b55c5d1e7088cf286fd356bf248f2f90b8f91353dbc17001b2707e8",
+      "category": "official-assets-offline-diagnostic",
+      "bytes": 94672,
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+    },
+    "docs/evidence/run-hud-20261124/after/after-pc-event5.png": {
+      "sha256": "3bbc6f54857b1c01976b922862e75c445d9260cdda7d91a7668301c6859cae62",
+      "category": "official-assets-offline-diagnostic",
+      "bytes": 96202,
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+    },
+    "docs/evidence/run-hud-20261124/after/after-pc-map5.png": {
+      "sha256": "22ae659fe84af1d2802c661d4496b9f40aa7723c263c098d2869bea7c4604bea",
+      "category": "official-assets-offline-diagnostic",
+      "bytes": 93577,
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+    },
+    "docs/evidence/run-hud-20261124/after/after-phone-detail-return.png": {
+      "sha256": "eaddf678faa5cb3225ffc67a39dfc7e8ba19e0c4332173ad89e5b4a2eb3b9563",
+      "category": "official-assets-offline-diagnostic",
+      "bytes": 105869,
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+    },
+    "docs/evidence/run-hud-20261124/after/after-phone-detail.png": {
+      "sha256": "f73aab97c271ab2bad4966d800a2e078ae7b56d142ca1504a4a4cbba54434b54",
+      "category": "official-assets-offline-diagnostic",
+      "bytes": 114209,
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+    },
+    "docs/evidence/run-hud-20261124/after/after-phone-event26-page1.png": {
+      "sha256": "589ae2aa110914085bff9eda712673fd058c26f2d851a5385e442c18d18a8146",
+      "category": "official-assets-offline-diagnostic",
+      "bytes": 110220,
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+    },
+    "docs/evidence/run-hud-20261124/after/after-phone-event26-page2.png": {
+      "sha256": "28eb070224cf3aa8ee7329986a6e4b1f90479d670cc60a1644d7aeac428d0db9",
+      "category": "official-assets-offline-diagnostic",
+      "bytes": 106919,
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+    },
+    "docs/evidence/run-hud-20261124/after/after-phone-event5.png": {
+      "sha256": "749e310868dc8e419f5c4f872c33c9603d94024b6a60137b3234c6462bcd36b8",
+      "category": "official-assets-offline-diagnostic",
+      "bytes": 106606,
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+    },
+    "docs/evidence/run-hud-20261124/after/after-phone-map5.png": {
+      "sha256": "987e7173b9bb11aa75cbed5b5d087c7796a3e630ce59dc75f28667e01a766f31",
+      "category": "official-assets-offline-diagnostic",
+      "bytes": 104906,
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+    },
+    "docs/evidence/run-hud-20261124/before/before-pc-event5.png": {
+      "sha256": "1440a0db91c145c8c654e9fc91bac9c7ae1a90a3656feb241da5c68ee3f0dd32",
+      "category": "official-assets-offline-diagnostic",
+      "bytes": 96571,
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+    },
+    "docs/evidence/run-hud-20261124/before/before-pc-map5.png": {
+      "sha256": "40a79416df57247e5c667cb83316f6154311f62ab1fc9a7473692ad3da042b0a",
+      "category": "official-assets-offline-diagnostic",
+      "bytes": 92486,
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+    },
+    "docs/evidence/run-hud-20261124/before/before-phone-event5.png": {
+      "sha256": "d21f365f60a9d8594c36946aa73c6bbe3107842ae8caabab0ab684e650cae12f",
+      "category": "official-assets-offline-diagnostic",
+      "bytes": 94579,
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+    },
+    "docs/evidence/run-hud-20261124/before/before-phone-map5.png": {
+      "sha256": "725ee2cd8ae987a00e3a64fc55b3dcfab7e744b796f616e966623c600388274f",
+      "category": "official-assets-offline-diagnostic",
+      "bytes": 100373,
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+    },
+    "docs/evidence/shop-828/after-click.png": {
+      "sha256": "d6639f6cedb18da1b32bcd6cdea34ae0d759ed8d0cf9a28257f02ac48c0abdab",
+      "category": "platform-evidence",
+      "evidence": "docs/evidence/shop-828/README.md; generated-layout Fengari control tree projected in Chromium, with atlas stand-ins",
+      "bytes": 216130,
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+    },
+    "docs/evidence/shop-828/after-room.png": {
+      "sha256": "56b49e42f2071660f023959db2d94e7fd2164ae931b0400dd27aea3ce2376a50",
+      "category": "platform-evidence",
+      "evidence": "docs/evidence/shop-828/README.md; generated-layout Fengari control tree projected in Chromium, with atlas stand-ins",
+      "bytes": 216828,
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+    },
+    "docs/evidence/shop-828/after-shelf.png": {
+      "sha256": "bd7fd6ff7c93d9450724241bac3031b7bf0b9426527d7aeeabd1115d27e21efd",
+      "category": "platform-evidence",
+      "evidence": "docs/evidence/shop-828/README.md; generated-layout Fengari control tree projected in Chromium, with atlas stand-ins",
+      "bytes": 153586,
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+    },
+    "docs/evidence/release-power-tips/ui-comparison.png": {
+      "sha256": "7240a09871e162fe4d32c60d8bf95a92cf7517f4a8d21a416c93e168ef161d72",
+      "category": "platform-evidence",
+      "evidence": "PR #887, commit c52f1a603dbff5b358aaf54e8c48a1a6a1b982f2. Offline Chromium comparison of generated status controls with gallery glyph stand-ins. Diagnostic capture only.",
+      "bytes": 142097,
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+    },
+    "docs/evidence/shop-828/after-transition.png": {
+      "sha256": "94c0a78f1b14ad55d52b3576f8fdf494a626a65b219af8266e08e02b730caaf0",
+      "category": "platform-evidence",
+      "evidence": "docs/evidence/shop-828/README.md; generated-layout Fengari control tree projected in Chromium, with atlas stand-ins",
+      "bytes": 161732,
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+    },
+    "docs/evidence/shop-828/before-room.png": {
+      "sha256": "64b3b2e1e8125133509325440baa4f19b97f19a4c1bd79a6be475260ce304f56",
+      "category": "platform-evidence",
+      "evidence": "docs/evidence/shop-828/README.md; generated-layout Fengari control tree projected in Chromium, with atlas stand-ins"
+    },
+    "docs/evidence/shop-828/before-shelf.png": {
+      "sha256": "27051c76c5364053909723834157beac35ef2a69d9b440e8bf18e8684bbfa06b",
+      "category": "platform-evidence",
+      "evidence": "docs/evidence/shop-828/README.md; generated-layout Fengari control tree projected in Chromium, with atlas stand-ins",
+      "bytes": 130700,
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+    },
+    "docs/evidence/release-enemy-tooltips/comparison.png": {
+      "category": "release-enemy-tooltip-evidence",
+      "sha256": "751d8c1937e35cec82192c820b6a4178d6cb32a93bb3533f3af1c98a1e8a106f",
+      "bytes": 132259,
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+    },
+    "docs/evidence/mobile-run-hud/reward-picker-after.png": {
+      "sha256": "454a3ea145adfb8b5680d6781d40d1d099d783232be14f27a0f44ef6402a4c40",
+      "category": "mobile-run-hud-geometry-evidence",
+      "bytes": 222518,
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+    },
+    "docs/evidence/mobile-run-hud/reward-picker-before.png": {
+      "sha256": "897011662160e354640321595d846df1b721d4e55542aa6bd1084ffb9b05b248",
+      "category": "mobile-run-hud-geometry-evidence",
+      "bytes": 236536,
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+    },
+    "docs/evidence/release-layout-20261124/screens/after/iphone-camp.png": {
+      "sha256": "d6ea99eacc6ac818dc4ccd2e422284baf96c58074e0477727ddfd3403ff6bb36",
+      "category": "official-assets-offline-diagnostic"
+    },
+    "docs/evidence/release-layout-20261124/screens/after/iphone-combat.png": {
+      "sha256": "8c6303687e0ebda630404a6018fed12437c04477f607cb289ec8170c30b74c41",
+      "category": "official-assets-offline-diagnostic",
+      "bytes": 110625,
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+    },
+    "docs/evidence/release-layout-20261124/screens/after/iphone-event.png": {
+      "sha256": "a9f5ab949535396d659ffa6457403bdcfc1f41d12a6e98874d5d56a3ccc9b4be",
+      "category": "official-assets-offline-diagnostic"
+    },
+    "docs/evidence/release-layout-20261124/screens/after/iphone-map-relic-detail.png": {
+      "sha256": "c9698dc152a6dd61665036bfbd131d04f58edaf296bdb8066b697038caad9136",
+      "category": "official-assets-offline-diagnostic",
+      "bytes": 75159,
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+    },
+    "docs/evidence/release-layout-20261124/screens/after/iphone-map-relics-page2.png": {
+      "sha256": "faeca0cf042f5597c70c82d4258fa844c97d34722a920f8365ac9673d468a4c8",
+      "category": "official-assets-offline-diagnostic"
+    },
+    "docs/evidence/release-layout-20261124/screens/after/iphone-map-relics.png": {
+      "sha256": "33595aa5d3174c6689f4aa5ac647e034cfca1c8d088a8e448c6b509ca09156fa",
+      "category": "official-assets-offline-diagnostic"
+    },
+    "docs/evidence/release-layout-20261124/screens/after/iphone-map.png": {
+      "sha256": "501b4179464d69d8b90159bcab544e1822aa6c7959b79dfcfe8bfd9c5d92ac70",
+      "category": "official-assets-offline-diagnostic"
+    },
+    "docs/evidence/release-layout-20261124/screens/after/iphone-neow-2.png": {
+      "sha256": "80a1d4dc8480c91b12972300d3da3c876a2b7a5cbafe85702310ebf73288d504",
+      "category": "official-assets-offline-diagnostic",
+      "bytes": 70601,
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+    },
+    "docs/evidence/release-layout-20261124/screens/after/iphone-neow-4.png": {
+      "sha256": "2caacd71f0dbd7e0dfd63ed63b716757b9d1e3b257e7b03059912db9091cba7f",
+      "category": "official-assets-offline-diagnostic",
+      "bytes": 117160,
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+    },
+    "docs/evidence/release-layout-20261124/screens/after/iphone-neow-continue.png": {
+      "sha256": "2660d3059b73c014750011ababa2d36d4740bc1e718424388ef2b2915aaf5d45",
+      "category": "official-assets-offline-diagnostic"
+    },
+    "docs/evidence/release-layout-20261124/screens/after/iphone-reward-list.png": {
+      "sha256": "819a3ad589af442042458d40405298a1d93a5f7b50ba2d3c1193878dfb837ea0",
+      "category": "official-assets-offline-diagnostic",
+      "bytes": 73799,
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+    },
+    "docs/evidence/release-layout-20261124/screens/after/iphone-reward-pick.png": {
+      "sha256": "d623084974792eb5e7862ab92ba310d2698bc1a91ec00f6b8b4357003acd7936",
+      "category": "official-assets-offline-diagnostic",
+      "bytes": 122931,
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+    },
+    "docs/evidence/release-layout-20261124/screens/after/iphone-shop.png": {
+      "sha256": "842b19cdb72a7ff246be8744e08e6bcc11c3255b9b1141f157700075d9d499a6",
+      "category": "official-assets-offline-diagnostic"
+    },
+    "docs/evidence/release-layout-20261124/screens/after/iphone-treasure-closed.png": {
+      "sha256": "730de0e0e4efb9420e973115083f593f77eb6ca85388d4cc24b152d1599bc36b",
+      "category": "official-assets-offline-diagnostic"
+    },
+    "docs/evidence/release-layout-20261124/screens/after/iphone-treasure-rewards.png": {
+      "sha256": "9c06f296147d2aa9b710841270c1ca6c1f6a2824a0dbe9068f1351de11f2f028",
+      "category": "official-assets-offline-diagnostic",
+      "bytes": 106222,
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+    },
+    "docs/evidence/release-layout-20261124/screens/after/pc-camp.png": {
+      "sha256": "731d35f912e0e854ac041e568af1c5544e822525ca1989ff21e8c55fabb8869c",
+      "category": "official-assets-offline-diagnostic"
+    },
+    "docs/evidence/release-layout-20261124/screens/after/pc-combat.png": {
+      "sha256": "5f311d328755d6e956ce77af52c5b6af40376a06d071b53451fb8ae047a7ef10",
+      "category": "official-assets-offline-diagnostic",
+      "bytes": 95235,
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+    },
+    "docs/evidence/release-layout-20261124/screens/after/pc-event.png": {
+      "sha256": "995088a5cb7243631a75fbbb324921ede262bbebef4d401606d61beddc4b831b",
+      "category": "official-assets-offline-diagnostic"
+    },
+    "docs/evidence/release-layout-20261124/screens/after/pc-map-relic-detail.png": {
+      "sha256": "315ae978f46395196fb35d5ccfc144bc6151bf78525d8e5d30e99accd17a85fe",
+      "category": "official-assets-offline-diagnostic"
+    },
+    "docs/evidence/release-layout-20261124/screens/after/pc-map-relics-page2.png": {
+      "sha256": "43feb114d9fd4791ba1a9c1c2fa4e72f7b0feb8a0ca7e8d59c1d19dff75b1af9",
+      "category": "official-assets-offline-diagnostic"
+    },
+    "docs/evidence/release-layout-20261124/screens/after/pc-map-relics.png": {
+      "sha256": "796a102588bd9e8ad1779021b8c8582d2c83d2ae7db0b20b11be9d30813bed2f",
+      "category": "official-assets-offline-diagnostic"
+    },
+    "docs/evidence/release-layout-20261124/screens/after/pc-map.png": {
+      "sha256": "86d0601d91b0659e9e5cc22d30d7932a3701f150a69968eed2326219387d4fab",
+      "category": "official-assets-offline-diagnostic"
+    },
+    "docs/evidence/release-layout-20261124/screens/after/pc-neow-2.png": {
+      "sha256": "625176d18f683aa6d2bcc408380c0746c5573abc9f9dd80a6a7248086d17e815",
+      "category": "official-assets-offline-diagnostic"
+    },
+    "docs/evidence/release-layout-20261124/screens/after/pc-neow-4.png": {
+      "sha256": "2ba42ac90771f9c2455af94135e57cef628573b669911e2388f4af06d511df1a",
+      "category": "official-assets-offline-diagnostic",
+      "bytes": 101900,
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+    },
+    "docs/evidence/release-layout-20261124/screens/after/pc-neow-continue.png": {
+      "sha256": "00defec522690c61ffc0dace039e6c685a5647df4e97ee1aa1e479de7911cff0",
+      "category": "official-assets-offline-diagnostic"
+    },
+    "docs/evidence/release-layout-20261124/screens/after/pc-reward-list.png": {
+      "sha256": "20a99cfea30d9b25ee4ded8f0ee82a9feb043baf6b203bf554dd8363f74b4b9a",
+      "category": "official-assets-offline-diagnostic"
+    },
+    "docs/evidence/release-layout-20261124/screens/after/pc-reward-pick.png": {
+      "sha256": "37869554971febf89daf50f5cb66a85c647ffe9f7aa98559cc8ed555bec316e6",
+      "category": "official-assets-offline-diagnostic",
+      "bytes": 111376,
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+    },
+    "docs/evidence/release-layout-20261124/screens/after/pc-shop.png": {
+      "sha256": "22ffdb322f45c176c190e3464e94b1b6b107d9a4be88612a9bbbe30f2d7859f2",
+      "category": "official-assets-offline-diagnostic"
+    },
+    "docs/evidence/release-layout-20261124/screens/after/pc-treasure-closed.png": {
+      "sha256": "52bbb42740ea24c613626fd9fc1211037f5efd27e9dbd9f41499f4b455d3cbc1",
+      "category": "official-assets-offline-diagnostic"
+    },
+    "docs/evidence/release-layout-20261124/screens/after/pc-treasure-rewards.png": {
+      "sha256": "5bd56c157362a5d4e521f1f8f221d5f928471ee4f2a8c4a3a9854abc0f2e37c0",
+      "category": "official-assets-offline-diagnostic",
+      "bytes": 82744,
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+    },
+    "docs/evidence/release-layout-20261124/screens/before/iphone-camp.png": {
+      "sha256": "30e31e33ff377f93103ea229f9f73e15542c588821cf0f7fbc4cb40432cf5194",
+      "category": "official-assets-offline-diagnostic"
+    },
+    "docs/evidence/release-layout-20261124/screens/before/iphone-combat.png": {
+      "sha256": "95a2e435f4fcd6d66a52ea380436eccde814bc6427c9149513b3bc1814b5065f",
+      "category": "official-assets-offline-diagnostic",
+      "bytes": 110126,
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+    },
+    "docs/evidence/release-layout-20261124/screens/before/iphone-event.png": {
+      "sha256": "87811721e785eb28284e88c061e9a35800ac32e562c6a219843317ffa39c6c18",
+      "category": "official-assets-offline-diagnostic"
+    },
+    "docs/evidence/release-layout-20261124/screens/before/iphone-map-relic-detail.png": {
+      "sha256": "258356c2f2f07497ce81c7a5ad686e529ab4e4494f2e5e2cb56ec925eedf5325",
+      "category": "official-assets-offline-diagnostic",
+      "bytes": 75251,
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+    },
+    "docs/evidence/release-layout-20261124/screens/before/iphone-map-relics-page2.png": {
+      "sha256": "dac883fb251b0b80b840159babeea4de7ba2d87dbb18fe85a2ea1a869d92e5f7",
+      "category": "official-assets-offline-diagnostic"
+    },
+    "docs/evidence/release-layout-20261124/screens/before/iphone-map-relics.png": {
+      "sha256": "87463ca4280cc036b10a777b405a64d412404d7f805621c0b9666bd2b51b16ba",
+      "category": "official-assets-offline-diagnostic"
+    },
+    "docs/evidence/release-layout-20261124/screens/before/iphone-map.png": {
+      "sha256": "26febad96c109efbe150db576b0d3545f89cdd951793f6dd000cf9299d4f5bb0",
+      "category": "official-assets-offline-diagnostic"
+    },
+    "docs/evidence/release-layout-20261124/screens/before/iphone-neow-2.png": {
+      "sha256": "4b9f04a625e0401e5f3c700e63417370e07d3c341c9cacf199954b2f90732503",
+      "category": "official-assets-offline-diagnostic",
+      "bytes": 69422,
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+    },
+    "docs/evidence/release-layout-20261124/screens/before/iphone-neow-4.png": {
+      "sha256": "717e8588c31728194b47c79662b5b1a3e94bbebe91818a61b7babc75caa0a17f",
+      "category": "official-assets-offline-diagnostic",
+      "bytes": 114184,
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+    },
+    "docs/evidence/release-layout-20261124/screens/before/iphone-neow-continue.png": {
+      "sha256": "9f2eee6b6aec2d76cad77978eec2eb10c43f9c5c360f4282ed62d27c5bf51845",
+      "category": "official-assets-offline-diagnostic"
+    },
+    "docs/evidence/release-layout-20261124/screens/before/iphone-reward-list.png": {
+      "sha256": "f55c8939389b5eb90746c9b85fd97f8050e995fa52f1a10a85b66377b9837cb5",
+      "category": "official-assets-offline-diagnostic",
+      "bytes": 70834,
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+    },
+    "docs/evidence/release-layout-20261124/screens/before/iphone-reward-pick.png": {
+      "sha256": "9c62e8999e1d1ac1f8a261c70f26b00209c3d7ba983a939d09f871c23a47b945",
+      "category": "official-assets-offline-diagnostic",
+      "bytes": 122158,
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+    },
+    "docs/evidence/release-layout-20261124/screens/before/iphone-shop.png": {
+      "sha256": "a866ca3efe805d4eb7a85b8e74a721d6140af66e9ba2d54ad1352ec57b2acd83",
+      "category": "official-assets-offline-diagnostic"
+    },
+    "docs/evidence/release-layout-20261124/screens/before/iphone-treasure-closed.png": {
+      "sha256": "68bd90e4351788496f0451ba6b73c453abddd0a1894da9bbae77864847d3e74c",
+      "category": "official-assets-offline-diagnostic"
+    },
+    "docs/evidence/release-layout-20261124/screens/before/iphone-treasure-rewards.png": {
+      "sha256": "a20433fc41ae8a2708bf3df41bd212ca6ef9ac530545985d416eca52ceb47405",
+      "category": "official-assets-offline-diagnostic",
+      "bytes": 93549,
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+    },
+    "docs/evidence/release-layout-20261124/screens/before/pc-camp.png": {
+      "sha256": "0e88e04f83c3c995a9d15f8786cc8aea1087001c5dca2d37ba1d526f52f35390",
+      "category": "official-assets-offline-diagnostic"
+    },
+    "docs/evidence/release-layout-20261124/screens/before/pc-combat.png": {
+      "sha256": "eac678fb2d2a738b4c4aadce54fd76066f435639e89dbc560a19282c12c80332",
+      "category": "official-assets-offline-diagnostic",
+      "bytes": 95426,
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+    },
+    "docs/evidence/release-layout-20261124/screens/before/pc-event.png": {
+      "sha256": "4ca98c6810944c9ca0a3d77b5240bafd6426884ef1ba030589a12ff2ed2c33f5",
+      "category": "official-assets-offline-diagnostic"
+    },
+    "docs/evidence/release-layout-20261124/screens/before/pc-map-relic-detail.png": {
+      "sha256": "585166a8c9f53595b5751c02972773843df772174aea923158132e4a81c6236c",
+      "category": "official-assets-offline-diagnostic"
+    },
+    "docs/evidence/release-layout-20261124/screens/before/pc-map-relics-page2.png": {
+      "sha256": "c80da876316cbf3f3e0dfb7543afc52e44ce0066e61814341700c46425a86175",
+      "category": "official-assets-offline-diagnostic"
+    },
+    "docs/evidence/release-layout-20261124/screens/before/pc-map-relics.png": {
+      "sha256": "96406df1fa841e0d79568193669992a69839c5ca4e393213f0c9967e736cfa09",
+      "category": "official-assets-offline-diagnostic"
+    },
+    "docs/evidence/release-layout-20261124/screens/before/pc-map.png": {
+      "sha256": "701a2cbc2db8427077f6f9729d794e0c7975f5e7011b41de2e5e9f9fb5d3e8fc",
+      "category": "official-assets-offline-diagnostic"
+    },
+    "docs/evidence/release-layout-20261124/screens/before/pc-neow-2.png": {
+      "sha256": "8f7dbc6c3023fff1eef61c3ea5105ad17e8f0dc601138bca42f3c976e6d7a831",
+      "category": "official-assets-offline-diagnostic"
+    },
+    "docs/evidence/release-layout-20261124/screens/before/pc-neow-4.png": {
+      "sha256": "41681b2be7560cd1cc5c0ec1fa54f0ab238082cf869f013aca004482c6818065",
+      "category": "official-assets-offline-diagnostic",
+      "bytes": 101911,
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+    },
+    "docs/evidence/release-layout-20261124/screens/before/pc-neow-continue.png": {
+      "sha256": "0a48ae3d856b1b4cbcccebb4244dc6037cdedbf7bcd711d837ef689656e34a8d",
+      "category": "official-assets-offline-diagnostic"
+    },
+    "docs/evidence/release-layout-20261124/screens/before/pc-reward-list.png": {
+      "sha256": "783d4195c76603e6b82997b2a98db6c52bcf3f9f7402e6df52691a0a10e148b1",
+      "category": "official-assets-offline-diagnostic"
+    },
+    "docs/evidence/release-layout-20261124/screens/before/pc-reward-pick.png": {
+      "sha256": "44a0da3acee71b623d95785698801442c09a392e6ac078bf75acf5537233d9f2",
+      "category": "official-assets-offline-diagnostic",
+      "bytes": 111031,
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+    },
+    "docs/evidence/release-layout-20261124/screens/before/pc-shop.png": {
+      "sha256": "d001256c644f1e1961bf9be4089ee338346565244c7c308a1948d68ba828cf56",
+      "category": "official-assets-offline-diagnostic"
+    },
+    "docs/evidence/release-layout-20261124/screens/before/pc-treasure-closed.png": {
+      "sha256": "cdd562de36bd38e72ba954632298f352f5cba582597e305d9628393f754f46ac",
+      "category": "official-assets-offline-diagnostic"
+    },
+    "docs/evidence/release-layout-20261124/screens/before/pc-treasure-rewards.png": {
+      "sha256": "ad4f514335901b6509a4e93dca846ea2f92b4157263fc669aa769f2069d498b0",
+      "category": "official-assets-offline-diagnostic",
+      "bytes": 82379,
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+    },
+    "docs/evidence/m7-defect-utility-baseline-engineering-20261108.json.gz": {
+      "sha256": "e61634a0b317b58fd2e93b781388bfceda541a524562ab2c1b7132b8b77b7e36",
+      "bytes": 401827,
+      "category": "project-ci-history-evidence",
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "6492e8dccbcf847a0eba7ad3995da50257032e08"
+    },
+    "docs/evidence/m7-defect-utility-current-engineering-20261108.json.gz": {
+      "sha256": "4f61cccf5978587667e319b9be3139800f037faab96ca2a27f9c2d8a43f1d03f",
+      "bytes": 402088,
+      "category": "project-ci-history-evidence",
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "6492e8dccbcf847a0eba7ad3995da50257032e08"
+    },
+    "docs/evidence/m7-reward-query-shop-graph-20261107.jsonl.gz": {
+      "sha256": "b15a1994356684d4e052edb71618265716c2976921daaf7756fef81cc9c9cd09",
+      "bytes": 730316,
+      "category": "project-ci-history-evidence",
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "6492e8dccbcf847a0eba7ad3995da50257032e08"
+    },
+    "experiments/archive/emergency-20261108/card-upgrade-recovery/original-runtime.patch.gz": {
+      "sha256": "06d046e3a52506490c826c7dfcbedd5d86b75f749e2a7570c8957a9623a0b56e",
+      "bytes": 1166600,
+      "category": "project-ci-history-evidence",
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "6492e8dccbcf847a0eba7ad3995da50257032e08"
+    },
+    "docs/design/reference-assets/v2.2.0/battle-scene/act1-geometry.svg": {
+      "sha256": "06ffb448c74cc1aef249358f6107fe67172ff232f610efdc3a1c89c888363f0c",
+      "category": "project-geometry",
+      "sourceCommit": "f3332ff3744e1e3a20470b6b2e65e7fb61da5a76"
+    },
+    "docs/design/reference-assets/v2.2.0/battle-scene/act2-geometry.svg": {
+      "sha256": "4da5d33d0ad28f0290a9cce8acef61060d274af3caccb88a85809d7f2e6e5315",
+      "category": "project-geometry",
+      "sourceCommit": "f3332ff3744e1e3a20470b6b2e65e7fb61da5a76"
+    },
+    "docs/evidence/v2.2.0-viewport/mobile-16-9.png": {
+      "sha256": "e71c5a7e0ca2935e835bb824ecbbd679a868a3abd6781446e6958ed88859b858",
+      "category": "viewport-host-evidence",
+      "sourceCommit": "44d1fd3148e7bbf472adc8110fceb06eeb0f041a"
+    },
+    "docs/evidence/v2.2.0-viewport/mobile-19.5-9.png": {
+      "sha256": "678d1e61dd58fcc3df1a3dc90705ba5d20756de9caaaf9770e7bfd0041afca03",
+      "category": "viewport-host-evidence",
+      "sourceCommit": "44d1fd3148e7bbf472adc8110fceb06eeb0f041a"
+    },
+    "docs/evidence/v2.2.0-viewport/mobile-20-9.png": {
+      "sha256": "d3bb480b77f6ebc0cbad3a7fdb5ff34b4d10f2b2d8fb3a91a0e93fc600d114dd",
+      "category": "viewport-host-evidence",
+      "sourceCommit": "44d1fd3148e7bbf472adc8110fceb06eeb0f041a"
+    },
+    "docs/evidence/v2.2.0-viewport/pc-21-9.png": {
+      "sha256": "cbc49942c5ce03779186ea87a4c77066223d2d2c9a559dbeff71922bad5fd5c5",
+      "category": "viewport-host-evidence",
+      "sourceCommit": "44d1fd3148e7bbf472adc8110fceb06eeb0f041a"
+    },
+    "docs/evidence/v2.1.1-performance-20261125/battle-ui-publication/diagnostics.tar.xz": {
+      "category": "project-ci-history-evidence",
+      "sha256": "ce47cada7bcfcba4de8fe953e141b07a338a7dc1309c0181c27971694e4a2453",
+      "bytes": 619432,
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+    },
+    "docs/evidence/v2.1.1-performance-20261125/battle-ui-publication/host-samples.tar.xz": {
+      "category": "project-ci-history-evidence",
+      "sha256": "91ae7421c65e0a6a456231d5f9e7adc45610c62344bc93830b5843a359f3dee1",
+      "bytes": 611092,
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+    },
+    "docs/evidence/v2.1.1-performance-20261125/capacity/capacity-spans.csv.gz": {
+      "category": "project-ci-history-evidence",
+      "sha256": "72c717b8eb0f4c3b79d700caac7dff81a93e0a168e75031a699c30fd9274f60d",
+      "bytes": 1008619,
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+    },
+    "docs/evidence/v2.1.1-performance-20261125/remediation/deck-remediation-evidence.tar.gz": {
+      "category": "project-ci-history-evidence",
+      "sha256": "28fabfbd56f128faf019ff0e5ee0c22212c8cbf2b26a490a09afb687cd41ac1b",
+      "bytes": 795857,
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+    },
+    "docs/evidence/v2.1.1-performance-20261125/runtime/runtime-evidence.tar.gz": {
+      "category": "project-ci-history-evidence",
+      "sha256": "100567ebf6d01daa9cdf6d316b998b05e6b6ec295ae540e6f8bae06e690d4ec5",
+      "bytes": 1372652,
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+    },
+    "docs/evidence/v2.1.1-performance-20261125/runtime/runtime-stacks.csv.gz": {
+      "category": "project-ci-history-evidence",
+      "sha256": "56ced4f26f56d6e4444bca2bf7c5f12b0c4482e5925fc191b50febf5a56f68b8",
+      "bytes": 371123,
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+    },
+    "docs/evidence/v2.1.1-performance-20261125/runtime/runtime-trace.csv.gz": {
+      "category": "project-ci-history-evidence",
+      "sha256": "3bd54d2097d7532f979285c460cf14aa5114684852dc1a3441331bb695a55d9e",
+      "bytes": 195299,
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
+    },
+    "docs/evidence/v2.1.1-performance-20261125/startup/startup-evidence.tar.gz": {
+      "category": "project-ci-history-evidence",
+      "sha256": "b5ac0ed7dccd676891ae619f46290b479a9f8a83654f967475ca2bb5cf2df440",
+      "bytes": 1089443,
+      "lfs": true,
+      "storage": "ci-media-lfs-v1",
+      "sourceCommit": "d96c9f0d7958148ec1bb027f14a3214da81d06b4"
     }
   }
 }

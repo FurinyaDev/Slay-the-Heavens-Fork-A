@@ -1,0 +1,84 @@
+{
+  "wire": {
+    "scope": "Native A1 storage experiment derived from same Release baseline with scripts and BGM retained. Runtime reference GetChild fails in BeyondSimulator. This is not a candidate or an official MB reading.",
+    "sourceCommit": "380ffdd8de10ffb8472a48725c438c3f77c0d3d4",
+    "baseline": {
+      "sha256": "4f0d1d4687466d5e4a01189562ae5995ac0a01eeebc090455830b3cf77ded027",
+      "bytes": 25399331
+    },
+    "experimental": {
+      "sha256": "3726e361bcb7bb42770aa8759f80abca485fb3d113d7ef4c724616686b6a3f53",
+      "bytes": 18817244
+    },
+    "deltaBytes": -6582087,
+    "nativeTool": {
+      "commit": "59c576e41632a6bf6781bbca83a676d0da0374ec",
+      "adapter": "section50-script-projection-v1",
+      "sourcePath": "src/scene-save.mjs",
+      "sourceSha256": "25dbe281655a21d30401d8001dc3ee04b34038adf8f3f42be4230bf03bd85e2b",
+      "sourceBytes": 337400,
+      "helperPath": "scripts/native-client-check.mjs",
+      "helperSha256": "9af415cdbf10f6dfe8808540e5fd6301092b5412f68fa86cba0f08ffd0fcfdd8",
+      "helperBytes": 2414,
+      "transformedSha256": "7a5c18d2c618d2909803353b912026ed9b6537652eda75d010cc75a61ba1c96d",
+      "anchorCount": 1,
+      "xyzRotations": true,
+      "galleryImageTypes": true
+    },
+    "plan": {
+      "schemaVersion": 1,
+      "profile": "native-card-face-sharing-v1",
+      "logicalHosts": 41,
+      "sharedHosts": 28,
+      "templateNames": [
+        "AbyssSharedCardFace1",
+        "AbyssSharedCardFace2",
+        "AbyssSharedCardFace3",
+        "AbyssSharedCardFace4"
+      ],
+      "beforeControls": 27162,
+      "afterControls": 18626,
+      "sourceDigest": "a5018e8cf8f65ece1af89b2fab541f329474e10638b90e8e2083ebf6dd509f11",
+      "packedDigest": "4005070d294a5ca77eff3af70a8c997e0b92ea01bf388de807d247ab6b42a522"
+    },
+    "templateIndices": {
+      "AbyssSharedCardFace1": 1073769008,
+      "AbyssSharedCardFace2": 1073769362,
+      "AbyssSharedCardFace3": 1073769722,
+      "AbyssSharedCardFace4": 1073770075,
+      "AbyssDeckCard": 1073741845,
+      "AbyssBattlePileCard": 1073742647,
+      "AbyssForgeCard": 1073743003
+    },
+    "expandedNativeReadback": "exact",
+    "scriptReadback": {
+      "status": "exact",
+      "count": 367
+    }
+  },
+  "runtime": {
+    "host": "beyond-simulator-mcp@0.5.2",
+    "mountError": null,
+    "logs": [
+      {
+        "source": "client",
+        "level": "info",
+        "text": "REF_PROBE_INLINE=true ID=1073750005",
+        "time": 0
+      },
+      {
+        "source": "client",
+        "level": "info",
+        "text": "REF_PROBE_DIRECT=false SECOND=false DISTINCT=false",
+        "time": 0
+      },
+      {
+        "source": "client",
+        "level": "info",
+        "text": "REF_PROBE_INSTANTIATE=true",
+        "time": 0
+      }
+    ],
+    "status": "FAILED_GET_CHILD"
+  }
+}

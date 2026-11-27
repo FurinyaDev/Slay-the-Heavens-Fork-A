@@ -28,8 +28,8 @@ test('dynamic monster controls retain actor ownership and precisely retire stale
   const result=runLua(fixture);
   assert.equal(result.status,0,result.stdout+result.stderr);
   assert.match(result.stdout,/DYNAMIC_MONSTER_INPUT_BINDINGS_PASS/);
-  assert.match(result.stdout,/REENTRANT_RETIRE_SITES=11/);
-  assert.match(result.stdout,/PARTIAL_BIND_FAILURE_SITES=11/);
+  assert.match(result.stdout,/REENTRANT_RETIRE_SITES=17/);
+  assert.match(result.stdout,/PARTIAL_BIND_FAILURE_SITES=17/);
 });
 
 test('old actor pointers cannot target the same ID in a replacement battle', t => {

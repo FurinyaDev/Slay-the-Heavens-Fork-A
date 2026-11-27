@@ -1,5 +1,6 @@
 local Theme = require("abyss_theme")
 local RoomMotion = require('abyss_node_ui_motion')
+local RoundedButton = require('abyss_rounded_button')
 local RewardDetail = require('abyss_node_ui_reward_detail')
 local C = Theme.color
 local layout = Theme.layout.nativeNode
@@ -26,14 +27,13 @@ local function neowChoiceChrome(ctx, box, look, hover, pressed)
     for _, part in ipairs(chrome:GetChild('face'):GetChildren()) do ctx.tint(part, face) end
 end
 
-local function roundedPalette(look,hover,pressed)
-    local token=Theme.officialAssets.actionButton
-    local role=look.primary and token.primary or token.secondary
-    local pair=not look.enabled and token.disabled or pressed and role.pressed
-        or hover and role.hover or look.selected and role.selected or role.normal
-    return pair[1],pair[2]
+local function paintLegacyRounded(ctx,chrome,look,state)
+    local style=Theme.officialAssets.actionButton
+    local role=look.primary and style.primary or style.secondary
+    local colours=state=='disabled' and style.disabled or state=='emphasized' and role.selected or role[state]
+    for _,part in ipairs(chrome:GetChild('rim'):GetChildren())do ctx.tint(part,colours[1]) end
+    for _,part in ipairs(chrome:GetChild('cloth'):GetChildren())do ctx.tint(part,colours[2]) end
 end
-
 local function paintRoundedButton(ctx,box,look,hover,pressed)
     local chrome=box:GetChild('roundedButton')
     if not chrome then return end
@@ -42,9 +42,14 @@ local function paintRoundedButton(ctx,box,look,hover,pressed)
     for _,state in ipairs({'border','normal','hover','pressed','disabled','selected'})do
         box:GetChild(state):SetVisible(false)
     end
-    local rim,fill=roundedPalette(look,hover,pressed)
-    for _,part in ipairs(chrome:GetChild('rim'):GetChildren())do ctx.tint(part,rim) end
-    for _,part in ipairs(chrome:GetChild('cloth'):GetChildren())do ctx.tint(part,fill) end
+    local palettes=Theme.officialAssets.roundedButtonPalettes
+    local state=not look.enabled and 'disabled' or pressed and 'pressed' or hover and 'hover'
+        or (look.primary or look.selected) and 'emphasized' or 'normal'
+    if palettes then
+        RoundedButton.paint(chrome,palettes.neutral[state],ctx.options.color)
+    else
+        paintLegacyRounded(ctx,chrome,look,state)
+    end
 end
 
 local function referenceCamp(ctx, box)

@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { cardFaceChildren } from './card-face.mjs';
 import { potionSlotVisual } from './potion-slot-visual.mjs';
 import { nativeFontSize } from './native-ui-theme.mjs';
+import { compactPopupSurface } from './compact-popup-surface.mjs';
 
 // One source of tokens for both the native tree and its Lua controller.
 export const theme = JSON.parse(readFileSync(new URL('../data/presentation/ui_theme.json', import.meta.url), 'utf8'));
@@ -68,7 +69,8 @@ function unit(name, position, portrait, player = false) {
     { ...picture('impact', 0, 0, portrait, portrait, im.diamond, c.geo), visible: false },
     { ...picture('shield', 0, 0, portrait, portrait, theme.icon.block, c.block), visible: false },
     { ...text('floating', 0, portrait / 2, bw + s.xxl, l.nativeText.lineHeight * 2, '', f.number, c.goldBright), visible: false },
-    ...(!player ? [picture('intentIcon', -s.xl, l.intent.offsetY, l.intent.size, l.intent.size, theme.icon.intent.unknown, c.textDim),
+    ...(!player ? [{ ...hit(bw, bh), name: 'hpHit', visible: false },
+      picture('intentIcon', -s.xl, l.intent.offsetY, l.intent.size, l.intent.size, theme.icon.intent.unknown, c.textDim),
       // Keep the existing secondary path, with full-sized horizontal peers.
       { ...picture('intentBadge', 0, l.intent.offsetY, l.intent.size, l.intent.size, theme.icon.intent.debuff, c.debuff), visible: false },
       { ...picture('intentExtra', 0, l.intent.offsetY, l.intent.size, l.intent.size, theme.icon.intent.buff, c.buff), visible: false },
@@ -83,6 +85,7 @@ function unit(name, position, portrait, player = false) {
 
 export function enemyUnitTemplate(name = 'AbyssMonsterActor') {
   const actor = unit(name, [0, 0], l.enemyRow.crowdPortrait);
+  actor.blockCursor = true;
   // Original intent effects draw behind the icon, then above it but below damage text.
   for (const [name, before] of [['intentVfxBehind', 'intentIcon'], ['intentVfxAfter', 'intent']]) {
     actor.children.splice(actor.children.findIndex(child => child.name === before), 0,
@@ -119,7 +122,8 @@ function statusRow(top) {
       { ...panel(`body${i + 1}`, x, y, si.size, si.size, c.panelSunken), visible: false });
     icons.push({ ...picture(`icon${i + 1}`, x, y, si.size, si.size, theme.icon.status.strength, c.text), visible: false });
     badges.push({ ...picture(`badge${i + 1}`, x, y, si.size, si.size, im.disc, c.panelSunken), visible: false });
-    counts.push({ ...text(`count${i + 1}`, x + si.size / 2, y - si.size / 2 + si.gap, si.size, l.nativeText.lineHeight, '', f.small, c.text), visible: false });
+    counts.push({ ...text(`count${i + 1}`, x + si.size / 2, y - si.size / 2 + si.gap,
+      Math.max(si.size, l.nativeText.lineHeight), l.nativeText.lineHeight, '', f.small, c.text), visible: false });
     targets.push({ ...hit(si.minimumTouch, si.minimumTouch), name: `hit${i + 1}`, position: [0, 0], visible: false });
   }
   return { name: 'statusRow', kind: 'container', position: [0, top - (si.rows - 1) * pitch / 2], size: [bw, height],
@@ -171,12 +175,14 @@ function statusInfo() {
 
 function powerTips() {
   const tip = l.powerTips;
+  const copyHeight = 2 * l.nativeText.lineHeight;
+  const height = copyHeight + 2 * tip.padding;
   return { name: 'powerTips', kind: 'container', size: [...theme.canvas.base], visible: false,
     children: Array.from({ length: tip.rows }, (_, i) => ({
-      name: `tip${i + 1}`, kind: 'container', size: [tip.width, l.nativeText.lineHeight], visible: false, children: [
-        panel('edge', 0, 0, tip.width, l.nativeText.lineHeight, tip.border),
-        panel('face', 0, 0, tip.width, l.nativeText.lineHeight, tip.fill),
-        aligned(text('copy', 0, 0, tip.width, l.nativeText.lineHeight, '', tip.font, c.text)),
+      name: `tip${i + 1}`, kind: 'container', size: [tip.width, height], visible: false, children: [
+        panel('edge', 0, 0, tip.width, height, tip.border),
+        panel('face', 0, 0, tip.width - 2, height - 2, tip.fill),
+        aligned(text('copy', 0, 0, tip.width - 2 * tip.padding, copyHeight, '', tip.font, c.text)),
       ],
     })) };
 }
@@ -343,7 +349,7 @@ export function battleLayout() {
   potionHelp.push({name:'potionPopup',kind:'container',position:[l.battlePotions.origin[0],pop.top-ph/2],
     size:[pop.width,ph],visible:false,children:[
       {...hit(...theme.canvas.base),name:'dismiss',position:[-l.battlePotions.origin[0],-(pop.top-ph/2)]},
-      panel('border',0,0,pop.width,ph,c.goldDim),panel('plate',0,0,pop.width-2,ph-2,c.panel),
+      ...compactPopupSurface(theme,[pop.width,ph]),
       hit(pop.width,ph),
       aligned(text('title',0,0,pop.width-pop.padding*2,l.nativeText.lineHeight,'',pop.font,c.goldBright)),
       aligned(text('target',0,0,pop.targetWidth,l.nativeText.lineHeight,'',pop.font,c.textDim),'right'),

@@ -266,8 +266,12 @@ export async function auditNativeCandidate(options) {
         throw Error('Deck browser chunk identities differ from native readback');
       writeFileSync(browserBinding.sourceFile,deckBrowserBindingSource(browser.templateIndex,parts));
     }
+    const storageProfile=buildReceipt?.nativeScriptStorage?.profile;
+    const pack=storageProfile
+      ? (await import(pathToFileURL(join(snapshot,'scripts/native-script-storage.mjs')))).packNativeScript
+      : (_name,source)=>source;
     const modules = deployment.map(({ name, sourceFile }) => {
-      const source = readFileSync(sourceFile, 'utf8');
+      const source = pack(name,readFileSync(sourceFile, 'utf8').replace(/^\uFEFF/,''),storageProfile);
       return { name, source: name === 'abyss_ui' ? candidateEntrySource(source, buildReceipt, before) : source };
     });
     const expectedUi = JSON.parse(readFileSync(join(snapshot, 'build/lua/game-ui.json'), 'utf8'));

@@ -7,6 +7,7 @@ import {mkdtempSync,mkdirSync,readFileSync,rmSync} from 'node:fs';
 import {join,resolve} from 'node:path';
 import {nativeTheme} from '../scripts/native-ui-theme.mjs';
 import {gameLayout} from '../scripts/game-ui-layout.mjs';
+import {experimentalCharacterControls} from '../scripts/character-ui-layout.mjs';
 import {deckCardTemplate} from '../scripts/deck-ui-layout.mjs';
 import {applyOfficialAssets,officialAssetsTheme} from '../scripts/official-assets-layout.mjs';
 import {officialAssetsProfile,officialAssetFlags,validateOfficialAssets,officialAssetsArgs,officialAssetsFromReceipt} from '../scripts/official-assets-profile.mjs';
@@ -85,6 +86,9 @@ test('approved pages keep live input identities while unrelated pages retain the
  styleEvent(expectedEvent,theme);
  applyOfficialNeowLayout({children:[{name:'nodePanel',children:[expectedEvent]}]},theme);
  const eventProjection=new Map(paths(expectedEvent,'/SlayTheAbyss/nodePanel'));
+ const expectedChoice=experimentalCharacterControls(theme).find(node=>node.name==='choicePanel');
+ const choiceProjection=new Map(paths(expectedChoice,'/SlayTheAbyss'));
+ const choicePath=path=>path.replace(/^(\/SlayTheAbyss\/choicePanel\/)card([12])(?=\/|$)/,'$1option$2');
  // The approved minimal menu is an adopted component too. Bind every owned
  // geometry/input field to that projection while retaining unrelated pages.
  const expectedMenuLayout=structuredClone(layout);
@@ -109,7 +113,7 @@ test('approved pages keep live input identities while unrelated pages retain the
  const retiredStarterEntry=path=>/^\/SlayTheAbyss\/characterPanel\/(?:deckView$|details\/deck(?:Open|Rule|Title|Summary)(?:\/|$))/.test(path);
  const retiredOverlay=path=>/^\/SlayTheAbyss\/(?:prologuePanel(?:\/|$)|(?:exitPanel|runMenu)\/(?:help|guide)(?:\/|$)|potionPanel\/)/.test(path);
  const retiredPickerChild=path=>/^\/SlayTheAbyss\/nodePanel\/pickerView\/card[4-6]\//.test(path);
- const retiredChoice=path=>/^\/SlayTheAbyss\/choicePanel\/card(?:[3-9]|10)(?:\/|$)/.test(path);
+ const retiredChoice=path=>/^\/SlayTheAbyss\/choicePanel\/card\d+(?:\/|$)/.test(path)&&!choiceProjection.has(choicePath(path));
  assert.equal(child(child(layout,'characterPanel'),'deckView'),undefined);
  const merchant=new Map(paths(merchantControl(theme),'/SlayTheAbyss/nodePanel'));
   for(const [path,node,before] of semantic){
@@ -137,7 +141,6 @@ test('approved pages keep live input identities while unrelated pages retain the
     }
     continue;
    }
-   assert.equal(current.get(path),node,path);
    if(menuProjection.has(path)){
     const expected=menuProjection.get(path);
     assert.equal(node.kind,before.kind,path+' existing menu semantic control kind');
@@ -153,6 +156,19 @@ test('approved pages keep live input identities while unrelated pages retain the
    }
    if(eventProjection.has(path)){
     assert.deepEqual(node,eventProjection.get(path),path+' shared event projection');continue;
+   }
+   if(choiceProjection.has(choicePath(path))){
+    const expected=choiceProjection.get(choicePath(path));
+    assert.strictEqual(current.get(choicePath(path)),node,path+' choice receiver identity');
+    for(const key of ['kind','position','size','visible','states','focusable','interactable','raycastTarget'])
+     assert.deepEqual(node[key],expected[key],path+' choice '+key);
+    if(node.text){
+     const actualText={...node.text},expectedText={...expected.text};
+     delete actualText.colour;delete expectedText.colour;
+     if(expectedText.autoSize&&expectedText.minFontSize*1.45+4>expected.size[1])expectedText.minFontSize=theme.font.minimum;
+     assert.deepEqual(actualText,expectedText,path+' choice text');
+    }
+    continue;
    }
    if(merchant.has(path)){
     const expected=structuredClone(merchant.get(path));
@@ -190,6 +206,7 @@ test('approved pages keep live input identities while unrelated pages retain the
    assert.deepEqual(node[key],expected,path+' '+key);
   }
    if(node.text){const actual={...node.text},expected={...before.text};delete actual.colour;delete expected.colour;
+    if(/^\/SlayTheAbyss\/relicBar\/slot\d+\/counter$/.test(path))expected.autoSize=false;
     if(cardText.has(node))for(const key of ['outline','outlineColour','outlineOpacity']){
      const canonical=child(child(child(layout,'battlePanel'),'card1'),cardText.get(node)).text;
      assert.deepEqual(actual[key],canonical[key],path+' shared '+key);expected[key]=canonical[key];
@@ -225,6 +242,11 @@ test('approved pages keep live input identities while unrelated pages retain the
    if(menuProjection.has(path)){
     assert.equal(current.get(path),node,path+' menu input owner identity');
     for(const key of Object.keys(before))assert.deepEqual(node[key],menuProjection.get(path)[key],path+' approved menu '+key);
+    continue;
+   }
+   if(choiceProjection.has(choicePath(path))){
+    assert.equal(current.get(choicePath(path)),node,path+' choice receiver identity');
+    for(const key of Object.keys(before))assert.deepEqual(node[key],choiceProjection.get(choicePath(path))[key],path+' choice '+key);
     continue;
    }
    if(restoredPagePath(path)||path.startsWith('/SlayTheAbyss/deckPanel/pileReturn'))continue;
@@ -265,6 +287,9 @@ test('approved pages keep live input identities while unrelated pages retain the
      const bar=theme.officialAssets.battleRelicBar;
      assert.deepEqual(node.position,[bar.origin[0]+bar.step*(Number(relicSlot[1])-1),bar.origin[1]],path+' canonical position');continue;
     }
+    if(key==='size'&&/^\/SlayTheAbyss\/deckEntry\/open\/hit\/(?:normal|hover|pressed|disabled)$/.test(path)){
+     assert.deepEqual(node.size,[104,before.size[1]],path+' room for the fixed-size deck amount');continue;
+    }
     assert.deepEqual(node[key],key==='size'&&cardHosts.has(node)?theme.layout.card.size:expected[key],path+' '+key);
    }
   }
@@ -275,15 +300,24 @@ test('approved pages keep live input identities while unrelated pages retain the
  const retiredChoiceCards=nodes.filter(([path,node])=>retiredChoice(path)&&cardHosts.has(node)).map(([,node])=>node);
  assert.equal(retiredDeckCards.length,12,'the duplicated twelve-card selection modal is retired');
  assert.equal(retiredPickerCards.length,3,'only picker faces four through six are retired');
- assert.equal(retiredChoiceCards.length,8,'only choice faces three through ten are retired');
+ assert.equal(retiredChoiceCards.length,10,'every static choice card face is retired');
+ const choice=child(layout,'choicePanel');
+ assert.deepEqual(child(choice,'cards'),child(expectedChoice,'cards'),'reusable native choice scroller');
+ for(const name of ['confirm','before','after','option1','option2']){
+  const hit=child(child(choice,name),'hit');
+  for(const state of children(hit))assert.equal(child(state,'roundedButton').kind,'container');
+ }
  const retiredCards=[...retiredDeckCards,...retiredPickerCards,...retiredChoiceCards];
  assert.equal(result.cardHosts,cardHosts.size-retiredPickerCards.length-retiredChoiceCards.length,'composition authenticates all capacity-bounded hosts before retiring the duplicate modal');
  assert.equal(cards.length,cardHosts.size-retiredCards.length);
  const focusFacePath='/SlayTheAbyss/deckPanel/cardFocus/face';
- const originalCardPaths=nodes.filter(([path,node])=>path!==focusFacePath&&cardHosts.has(node)&&!retiredCards.includes(node)).map(([path])=>path).sort();
- const liveOriginalPaths=cardPaths.filter(([path])=>path!==focusFacePath).map(([path])=>path).sort();
- assert.equal(originalCardPaths.length,38,'retain the original 38 official card hosts');
- assert.deepEqual(liveOriginalPaths,originalCardPaths,'retain every original active card host path');
+ const choiceFacePaths=['/SlayTheAbyss/choicePanel/card1/face','/SlayTheAbyss/choicePanel/card2/face'];
+ const replacedChoiceFaces=nodes.filter(([path,node])=>choiceFacePaths.includes(path)&&retiredChoiceCards.includes(node));
+ assert.deepEqual(replacedChoiceFaces.map(([path])=>path).sort(),choiceFacePaths,'the shared scroller supersedes the two former static choice hosts');
+ const publishedOriginalPaths=nodes.filter(([path,node])=>path!==focusFacePath&&cardHosts.has(node)&&!retiredCards.includes(node)).map(([path])=>path).sort();
+ assert.equal(publishedOriginalPaths.length+replacedChoiceFaces.length,38,'account for all 38 reviewed original official card hosts');
+ assert.deepEqual(cardPaths.filter(([path])=>path!==focusFacePath).map(([path])=>path).sort(),publishedOriginalPaths,'retain every original active card host path outside the shared scroller');
+ assert.equal(cards.length,37);
  const focusFaces=cardPaths.filter(([path])=>path===focusFacePath);
  assert.equal(focusFaces.length,1,'exactly one approved read-only deck focus face');
  const focus=child(child(layout,'deckPanel'),'cardFocus');
@@ -380,6 +414,12 @@ test('approved pages keep live input identities while unrelated pages retain the
 test('scene and button substitutions preserve semantic icons and all four native button states',()=>{
  const layout=gameLayout(),theme=officialAssetsTheme(nativeTheme);
  const before=new Map(paths(layout).filter(([,node])=>node.kind==='image').map(([path,node])=>[path,node.image]));
+ const replacements=new Map([
+  ['/SlayTheAbyss/nodePanel/eventView/art',theme.icon.eventArt.default],
+  ['/SlayTheAbyss/battlePanel/topBar/battleRoute/icon',theme.icon.map],
+  ['/SlayTheAbyss/mapPanel/mapRoute/icon',theme.icon.map],
+  ['/SlayTheAbyss/nodePanel/runRoute/icon',theme.icon.map],
+ ]);
  applyOfficialAssets([layout],theme);
  const battle=child(layout,'battlePanel'),turn=child(battle,'endTurn');
  assert.deepEqual(turn.states,{normal:'normal',hover:'hover',pressed:'pressed',disabled:'disabled'});
@@ -389,15 +429,17 @@ test('scene and button substitutions preserve semantic icons and all four native
    for(const name of ['border','borderLeft','borderRight','inner','innerLeft','innerRight','plate','plateLeft','plateRight'])assert.equal(child(state,name).visible,false,'legacy '+name+' must not widen the restored turn button');
   }
  for(const [path,node]of paths(layout))if(/\/(portrait|intentIcon|intentBadge|intentExtra|hpIcon|goldIcon|blockedLock|art|art_attack|art_skill|art_power|icon)$/.test(path)&&node.kind==='image'){
-  const expected=path==='/SlayTheAbyss/nodePanel/eventView/art'?theme.icon.eventArt.default:
-   before.get(path)??(/^\/SlayTheAbyss\/relicBar\/slot(?:1[3-9]|2[0-5])\/icon$/.test(path)?before.get('/SlayTheAbyss/relicBar/slot1/icon'):undefined);
+  const expected=replacements.get(path)??before.get(path)??
+   (/^\/SlayTheAbyss\/relicBar\/slot(?:1[3-9]|2[0-5])\/icon$/.test(path)?before.get('/SlayTheAbyss/relicBar/slot1/icon'):undefined);
   assert.equal(node.image,expected,path);
+  replacements.delete(path);
  }
+ assert.deepEqual([...replacements.keys()],[],'every substituted semantic icon must be present');
  assert.equal(child(child(layout,'menuPanel'),'backdrop').image,nativeTheme.image.officialBackdrops.title);
  const menu=child(layout,'menuPanel'),result=child(menu,'result');
  for(const key of ['floor','victories','time','deck']){
-  const stat=child(result,'stat_'+key);assert.equal(child(stat,'face').image,107311);
-  assert.equal(child(stat,'face').colour,'#FFFFFF');assert.equal(child(stat,'border').colour,nativeTheme.color.goldDim);
+  const stat=child(result,'stat_'+key);assert.equal(child(stat,'face').image,nativeTheme.image.rect);
+  assert.equal(child(stat,'face').colour,nativeTheme.color.panel);assert.equal(child(stat,'border').colour,nativeTheme.color.goldDim);
  }
  const map=child(layout,'mapPanel'),field=child(child(map,'mapGroup1'),'mapField');
  assert.equal(field.image,nativeTheme.image.rect);assert.equal(field.colour,nativeTheme.color.mapCanvas.backdrop);
@@ -505,7 +547,10 @@ test('ordinary fade keeps the original input barrier and retires the cinematic a
  assert(child(child(child(layout,'prologuePanel'),'scene'),'seal'),'legacy fixture still retains its reference');
  applyOfficialNoncombatLayout(layout,theme);
  assert.equal(child(layout,'prologuePanel'),undefined);
- assert.deepEqual(children(cover).map(node=>node.name),['veil','blocker','message','cancel']);
+ assert.deepEqual(children(cover).map(node=>node.name),['veil','blocker','subtitle','message','cancel']);
+ const subtitle=child(cover,'subtitle');
+ assert.equal(subtitle.visible,false,'the production boss subtitle starts hidden on ordinary fades');
+ assert.equal(subtitle.raycastTarget,false,'the subtitle never replaces the original input barrier');
  assert.equal(child(cover,'veil').colour,'#000000');
  assert.equal(child(cover,'message').visible,false);
  assert.strictEqual(child(cover,'blocker'),blocker);

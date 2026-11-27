@@ -6,8 +6,11 @@ import {readFileSync} from 'node:fs';
 import {gunzipSync} from 'node:zlib';
 import {exactSourceMatches as matches,sourceConfigLayoutMatches} from './source-fingerprint.mjs';
 import {restoreExactFixtureHunks} from './exact-fixture-hunks.mjs';
-import {beforeCurrentReplayFixes,beforeOfficialCharacterBackflow} from './current-replay-fix-sources.mjs';
+import {beforeCombinedCharacterBackflow,beforeCurrentReplayFixes,beforeOfficialCharacterBackflow,combinedCharacterBackflowOwns} from './current-replay-fix-sources.mjs';
 import {beforeApprovedUiEntrance,matchesApprovedUiEntranceOwner} from './ui-entrance-approved-sources.mjs';
+import {beforeChapterBattleScene} from './chapter-battle-scene-source.mjs';
+import {beforeKnownMasterBackflowSource} from './master-backflow-source.mjs';
+import {beforeReleaseEntranceOwner,readReleaseEntrancePredecessor} from './release-entrance-owner-source.mjs';
 
 const archive=readFileSync(new URL('../fixtures/ui-entrance-source.json.gz',import.meta.url));
 assert.equal(createHash('sha256').update(archive).digest('hex'),
@@ -34,12 +37,23 @@ const replaySources=[...requiredCurrentOwners,
 ];
 const currentInput=(path,source)=>replaySources.includes(path)
  ?beforeCurrentReplayFixes(path,source):beforeApprovedUiEntrance(path,source);
-function currentMatches(path,source,expected){
- if(!matchesApprovedUiEntranceOwner(path,source))return false;
+function matchesEntrance(path,source,expected){
+ const approved=beforeCombinedCharacterBackflow(path,source);
+ if(combinedCharacterBackflowOwns(path)&&approved===source)return false;
+ if(!matchesApprovedUiEntranceOwner(path,approved))return false;
  const normalized=currentInput(path,source);
  if(requiredCurrentOwners.includes(path)&&normalized===source)return false;
  return matches(normalized,expected);
 }
+function currentEntranceSource(path,source,expected){
+ source=beforeReleaseEntranceOwner(path,source);
+ if(matchesEntrance(path,source,expected))return source;
+ const masterPrior=beforeKnownMasterBackflowSource(path,source);
+ if(masterPrior===source)return;
+ const prior=beforeChapterBattleScene(path,masterPrior);
+ if(matchesEntrance(path,prior,expected))return prior;
+}
+const currentMatches=(path,source,expected)=>currentEntranceSource(path,source,expected)!==undefined;
 const predecessors=new Map();
 
 function project(path,source,row){
@@ -58,7 +72,9 @@ function project(path,source,row){
 }
 
 export function beforeUiEntrance(path,source){
- return project(path,source,binding(path));
+ const row=binding(path);
+ const current=row?currentEntranceSource(path,source,row.after):undefined;
+ return project(path,current??source,row);
 }
 
 export function beforeUiEntranceWitness(path,source){
@@ -70,12 +86,15 @@ export function authenticateUiEntrance(read){
  for(const owner of owners){
   let source;
   try{source=read(owner);}catch(error){assert.fail('combined linked owner missing: '+owner+': '+error.message);}
+  source=readReleaseEntrancePredecessor(owner,source,read);
   assert(currentMatches(owner,source,files[owner].after),'combined linked owner identity: '+owner+' during entrance validation');
  }
 }
 
+const underlyingReaders=new WeakMap();
+export const underlyingEntranceReader=read=>underlyingReaders.get(read)??read;
 export function entranceReader(read,authenticated=false){
- return owner=>{
+ const reader=owner=>{
   const source=read(owner);
   const row=binding(owner);
   if(!row)return source;
@@ -87,6 +106,8 @@ export function entranceReader(read,authenticated=false){
   }
   return prior;
  };
+ underlyingReaders.set(reader,underlyingEntranceReader(read));
+ return reader;
 }
 
 export function assertCurrentUiEntrance(path,source){
