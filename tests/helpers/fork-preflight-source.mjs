@@ -1,5 +1,5 @@
 import {beforeKnownMasterBackflowSource,beforeMasterBackflowSource,productionReadingBackflowOwns} from './master-backflow-source.mjs';
-import {beforeReleaseClosureFixture} from './release-closure-fixture-source.mjs';
+import {beforeReleaseClosureFixture,matchesCurrentGilCandidateFixture} from './release-closure-fixture-source.mjs';
 import {beforePosixDeadlineWorkflow,beforeWindowsDeadlineWorkflow} from './auto-merge-workflow.mjs';
 import {beforeHotfixPublicationGate} from './release-ci-workflow.mjs';
 import {assertInputRetirementLuaCurrent,beforeInputRetirementTestInventory,readRetiredInputLuaReceipt} from './input-retirement-inventory.mjs';
@@ -574,6 +574,7 @@ const currentReleaseTests=Object.freeze({
  'tests/gil-candidate-preflight.test.mjs':'7ec29cdbeaf1572fa9713d37fdc17003e4f7843479c5af5ebe3c3c8787b93068',
  [gilCandidateTest]:'e8a08db32ea8a237575f428566093ab18cc60fd0d0ce4acb0b5e2d7e30b364de',
  'tests/production-performance.test.mjs':'102893c9285fc52693ee9a7d1bae36d8cefef418ecf8da5d40e53b4eb98b2947',
+ 'tests/release-archive.test.mjs':'9b66cbebd92e9074939e6ba92179a63f15cd2474a867fe3c2c9c9feff29dab5c',
  'tests/release-metadata.test.mjs':'eceb8ab92f616084fdcdac875e69e761cf2c9674a804be9f0295e89213453cb8',
  'tests/release-performance-artifacts.test.mjs':'c1d0d51314ab0dffac68236a3f722a4a4cdb8a0ebbfc292d1ca36cd0b2b2a941',
  'tests/release-performance-verification.test.mjs':'81aad82bba133bcf372158c5163cb328438a7b4027065436105c2dbaea243fbf',
@@ -810,6 +811,16 @@ function beforeMasterBackflowInventory(paths,bindings,changedTest,read){
  }
  return paths.filter(path=>!Object.hasOwn(bindings,path));
 }
+const releaseInventoryClosureFixtures=new Set([
+ 'tests/release-metadata.test.mjs',
+ 'tests/release-performance-artifacts.test.mjs',
+]);
+const frozenReleaseInventorySuccessors=Object.freeze({
+ 'tests/release-archive.test.mjs':['4fd9549c05a83336f2247867b65e4d0dc4dc6a8ce33973e631191d8ffcf9e601',
+  '7cba71a9eba503a6b729369383ba1b60df28a428'],
+ 'tests/release-performance-verification.test.mjs':['7541ed0927fb6ac6cf4c8d5fa3a00cf9b94e97e4576c3d8831420732bcc86ab6',
+  'abcd7f87105cb3afe618db23be472b08124efe32'],
+});
 export function beforeReleaseAdditionalInventory(paths,kind,read=readFileSync){
  if(kind==='js')paths=beforeMasterBackflowInventory(paths,masterBackflowJsTests,gilCandidateTest,read);
  paths=beforeM05BackflowInventory(paths,kind,(path,encoding)=>beforeCurrentReplayFixes(path,beforeUiEntranceWitness(path,read(path,encoding))));
@@ -819,7 +830,11 @@ export function beforeReleaseAdditionalInventory(paths,kind,read=readFileSync){
   assert.equal(count,1,'single added Release test: '+path);
   const live=read(path,'utf8');
   if(kind==='lua'&&exactCurrentReleaseLuaFixture(path,live))continue;
-  const predecessor=path===gilCandidateTest?beforeKnownMasterBackflowSource(path,live):live;
+  // These tests remain mandatory in live Full. Their authenticated successors
+  // are absent from the older inventory, which predates the release tests.
+  if(exactCheckoutSource(live,frozenReleaseInventorySuccessors[path]))continue;
+  const predecessor=path===gilCandidateTest?beforeKnownMasterBackflowSource(path,live):
+   releaseInventoryClosureFixtures.has(path)?beforeReleaseClosureFixture(path,live):live;
   const source=beforePublishedGilTest(path,beforeFormalAct2ReleaseTest(path,beforeDevelopBackflow(path,predecessor)));
   assert(typeof source==='string'&&!source.includes('\r\r\n')&&hash(normalize(source))===sha,'fresh added inventory source: '+path);
  }
@@ -853,8 +868,7 @@ export function assertCurrentJsInventory(paths,preceding,read=readFileSync){
  read=(path,...args)=>{
   const source=readCurrent(path,...args);
   if(path===gilCandidateTest)
-   assert(exactCheckoutSource(source,['d5ec827fa24b3ad3ff33b304723efddc4205599dbc8e8c28141aa3d22d99c1c6','0e38620640049ad1f0e0a7a8a4c9a82b1f0a629b']),
-    'fresh current GIL test source: '+path);
+   assert(matchesCurrentGilCandidateFixture(source),'fresh current GIL test source: '+path);
   if(path===formalAct2ReleaseTest)
    assert(exactCheckoutSource(source,formalAct2ReleaseTestCurrent),'fresh current Release performance test source: '+path);
   return source;
