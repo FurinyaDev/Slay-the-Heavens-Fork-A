@@ -1506,15 +1506,26 @@ test('first Fork B Full push uses its pinned upstream base in real quality ratch
 test('automatic Fork A Quick is bounded advisory without a complete certificate while manual preflight stays complete',()=>{
  const workflow=readFileSync(new URL('../.github/workflows/quick-feedback.yml',import.meta.url),'utf8').replaceAll('\r\n','\n');
  const expression=value=>value.replace(/^\$\{\{ /,'').replace(/ \}\}$/,'');
- const evaluate=(value,event)=>Function('github','return '+expression(value))({event_name:event});
- const field=name=>workflow.match(new RegExp('^    '+name+': (.+)$','m'))[1];
+ const context=(event,ref='refs/heads/fix/fixture',id='1460097312')=>({
+  event_name:event,ref,repository_id:id,sha:head,event:{repository:{id:Number(id)}},
+ });
+ const evaluate=(value,github,inputs={})=>Function('github','inputs','startsWith','return '+expression(value))(
+  github,inputs,(text,prefix)=>text.toLowerCase().startsWith(prefix.toLowerCase()));
+ const [related,release]=workflow.split(/^  (?:related|release-screen):\n/m).slice(1);
+ const field=(name,job=related)=>job.match(new RegExp('^    '+name+': (.+)$','m'))[1];
+ const title=workflow.match(/^run-name: (.+)$/m)[1];
+ const runTitle=(github,inputs)=>title.replace(/\$\{\{ (.*?) \}\}/g,(_,value)=>evaluate(value,github,inputs));
  assert.match(field('name'),/^\$\{\{ /,'automatic and manual checks must identify their different coverage');
- const steps=workflow.split(/^      - /m).slice(1);
- const enabled=(step,event)=>{const guard=step.match(/^(?:        )?if: (.+)$/m)?.[1];return !guard||evaluate(guard,event);};
+ const steps=related.split(/^      - /m).slice(1);
+ const enabled=(step,github)=>{const guard=step.match(/^(?:        )?if: (.+)$/m)?.[1];return !guard||evaluate(guard,github);};
+ const head='a'.repeat(40),base='b'.repeat(40);
  for(const event of ['push','workflow_dispatch']){
-  const selected=steps.filter(step=>enabled(step,event)).join('\n');
-  assert.equal(evaluate(field('name'),event),event==='push'?'Advisory Quick feedback':'Complete affected preflight');
-  assert.equal(evaluate(field('timeout-minutes'),event),event==='push'?10:30);
+  const github=context(event);
+  const selected=steps.filter(step=>enabled(step,github)).join('\n');
+  assert.equal(evaluate(field('if'),github),true);
+  assert.equal(Boolean(evaluate(field('if',release),github)),false);
+  assert.equal(evaluate(field('name'),github),event==='push'?'Advisory Quick feedback':'Complete affected preflight');
+  assert.equal(evaluate(field('timeout-minutes'),github),event==='push'?10:30);
   if(event==='push'){
    assert.match(selected,/node scripts\/test-affected\.mjs --ci-fast --base "\$BASE_SHA"/);
    assert.doesNotMatch(selected,/--preflight|write-ci-receipt|actions\/upload-artifact|build\/ci-checkout\.json/);
@@ -1528,15 +1539,49 @@ test('automatic Fork A Quick is bounded advisory without a complete certificate 
    assert.match(selected,/PREFLIGHT_BASE_SHA: \$\{\{ steps\.comparison\.outputs\.sha \}\}/);
    assert.match(selected,/name: preflight-\$\{\{ github\.run_id \}\}-\$\{\{ github\.run_attempt \}\}/);
    assert.match(selected,/path: build\/ci-checkout\.json/);
+   assert.match(selected,/retention-days: 7/);
    assert.doesNotMatch(selected,/--ci-fast/);
   }
  }
- assert.match(workflow,/^run-name: \$\{\{ github\.event_name == 'push' && 'Advisory Quick' \|\| 'Preflight' \}\} \/ /m);
+ assert.equal(runTitle(context('push'),{}),`Advisory Quick / ${head} / upstream-develop`);
+ for(const inputs of [{base_sha:base},{mode:'affected',base_sha:base}])
+  assert.equal(runTitle(context('workflow_dispatch'),inputs),`Preflight / ${head} / ${base}`);
+ for(const github of [
+  context('push','refs/heads/develop','1429751262'),context('push','refs/heads/ci/full/fixture'),context('pull_request'),
+ ])assert.equal(evaluate(field('if'),github),false);
  assert.match(workflow,/^permissions:\n  contents: read$/m);
- assert.match(workflow,/https:\/\/github.com\/FurinyaWorks\/Slay-the-Heavens.git refs\/heads\/develop/);
- const head='a'.repeat(40),base='b'.repeat(40);
+ assert.match(related,/https:\/\/github\.com\/FurinyaWorks\/Slay-the-Heavens.git refs\/heads\/develop/);
  const run={path:'.github/workflows/quick-feedback.yml',head_sha:head,status:'completed',conclusion:'success',event:'workflow_dispatch',display_title:`Preflight / ${head} / ${base}`};
  assert.equal(validPreflight(run,{head,base}),true,'manual complete contract remains reusable as before');
  for(const display_title of [`Advisory Quick / ${head} / ${base}`,run.display_title])
   assert.equal(validPreflight({...run,event:'push',display_title},{head,base}),false,'an automatic advisory success cannot be reused as a complete preflight');
+
+ const releaseInputs={mode:'release',base_sha:base};
+ const primary=(event,ref)=>context(event,ref,'1429751262');
+ for(const ref of ['refs/heads/release/v2.2.1','refs/heads/hotfix/v2.2.1']){
+  const github=primary('workflow_dispatch',ref);
+  const display_title=runTitle(github,releaseInputs);
+  assert.equal(display_title,`Release quick / ${head} / ${base}`);
+  assert.equal(evaluate(field('if',release),github,releaseInputs),true);
+  assert.equal(evaluate(field('if'),github,releaseInputs),false);
+  assert.equal(validPreflight({...run,display_title},{head,base}),false,'release smoke is not a complete preflight certificate');
+ }
+ for(const github of [
+  context('workflow_dispatch','refs/heads/release/v2.2.1'),
+  primary('push','refs/heads/release/v2.2.1'),
+  primary('pull_request','refs/heads/release/v2.2.1'),
+  primary('workflow_dispatch','refs/tags/engine-v2.2.1'),
+  primary('workflow_dispatch','refs/heads/develop'),
+  primary('workflow_dispatch','refs/heads/master'),
+ ])assert.equal(evaluate(field('if',release),github,releaseInputs),false,github.event_name+' '+github.ref);
+ assert.equal(field('name',release),'Release quick screen');
+ assert.equal(field('timeout-minutes',release),'10');
+ const versionedRef=new RegExp(release.match(/\[\[ "\$GITHUB_REF" =~ (\^.+?\$) \]\]/)[1]);
+ assert.match('refs/heads/release/v2.2.1',versionedRef);
+ assert.match('refs/heads/hotfix/v2.2.1',versionedRef);
+ for(const ref of ['refs/heads/release/test','refs/heads/hotfix/v02.2.1','refs/heads/release/v2.2.1-rc.1'])
+  assert.doesNotMatch(ref,versionedRef);
+ assert.match(release,/node --test tests\/formal-startup-budget\.test\.mjs/);
+ assert.doesNotMatch(release,/test-affected\.mjs|write-ci-receipt|actions\/upload-artifact|build\/ci-checkout\.json/,
+  'release smoke must remain a separate checkout and test result without a complete preflight certificate');
 });
