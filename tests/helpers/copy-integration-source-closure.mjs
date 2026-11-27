@@ -889,6 +889,33 @@ const releaseReplayReaders=Object.freeze({
     "after": "const descriptionPath='src/lua/abyss_colorless_cards.lua';\nexport function preColorlessCatalogSource(path,source,{readSource=live}={}){\n if(!Object.hasOwn(colorlessCatalogSourceProof.files[path]??{},'beforeSource'))return source;\n readSource=readers.get(readSource)??readSource;\n const projected=sourceEpoch.preCombinedSource(path,source,{target:'colorless',readSource});"
    }
   ]
+ },
+ "tests/helpers/ui-entrance-approved-sources.mjs": {
+  "current": {
+   "sha256": "484c3a3e4f2aeb96fc84bbfc45a890576f6d615311a0c823bc63728bb7055d43",
+   "gitBlob": "b3ec751c07b240729b8454f05e19962060b6d3ce"
+  },
+  "previous": {
+   "sha256": "b5c903614eb19f512e365c8c4024e1c40c37f5ab5df790a016dbeecf7b0efdcb",
+   "gitBlob": "01d014fa21cf6ff4c88ef8fb99a55ae3d644802f"
+  },
+  "hunks": [
+   {
+    "at": 2,
+    "before": "import {readFileSync} from 'node:fs';\nimport {restoreExactFixtureHunks} from './exact-fixture-hunks.mjs';\n\n// Invert only the approved changes on develop since the selection PR's base.",
+    "after": "import {readFileSync} from 'node:fs';\nimport {restoreExactFixtureHunks} from './exact-fixture-hunks.mjs';\nimport {exactSourceMatches} from './source-fingerprint.mjs';\n\n// Invert only the approved changes on develop since the selection PR's base."
+   },
+   {
+    "at": 13,
+    "before": "\nexport function beforeApprovedUiEntrance(path,source){\n const row=bindings.get(path);\n if(!row)return source;",
+    "after": "\nexport function beforeApprovedUiEntrance(path,source){\n source=beforeNativePrologueOwner(path,source);\n const row=bindings.get(path);\n if(!row)return source;"
+   },
+   {
+    "at": 23,
+    "before": " return !bindings.has(path)||beforeApprovedUiEntrance(path,source)!==source;\n}",
+    "after": " return !bindings.has(path)||beforeApprovedUiEntrance(path,source)!==source;\n}\n\n// #1035 changes the two archived entrance owners as a single native-button fix.\nconst nativePrologueOwners=Object.freeze({\n \"src/lua/abyss_node_ui_feedback.lua\": {\n  \"previous\": {\n   \"sha256\": \"b29f9b744bcc148990ee07c43abfef7edc33df38e8e47fab755bec13e8f08ff0\",\n   \"gitBlob\": \"1b2cb6f0b0fd155e0e7b20716f9a9c4d4afcf55e\"\n  },\n  \"current\": {\n   \"sha256\": \"c250e4151120fe75561cb8be053735bd199e377a2d3bcd15bb20c6acb9c46098\",\n   \"gitBlob\": \"e3e57123fb2ff3fc20316bf88db04d5519fdb448\"\n  },\n  \"hunks\": [\n   {\n    \"at\": 87,\n    \"before\": \"\\n-- Installs the feedback responsibility on one node UI instance.\\nfunction M.install(ctx)\\n    ctx.buttonLooks, ctx.buttonHover, ctx.buttonPress = {}, nil, nil\\n\\n    function ctx.paintButton(box)\\n        local look = ctx.buttonLooks[box]\\n        if not look then return end -- a never-shown view can still receive a late native exit\",\n    \"after\": \"\\nlocal function nativeId(box) return box.id end\\n\\n-- Installs the feedback responsibility on one node UI instance.\\nfunction M.install(ctx)\\n    local buttonLooks = {}\\n    ctx.buttonHover, ctx.buttonPress = nil, nil\\n\\n    local function buttonKey(box)\\n        -- The native host can return a fresh Lua wrapper on each GetChild.\\n        local ok,id = pcall(nativeId,box)\\n        if ok and (type(id) == 'string' or (type(id) == 'number' and id == id)) then return id end\\n        return box\\n    end\\n\\n    function ctx.buttonLook(box)\\n        local look = buttonLooks[buttonKey(box)]\\n        if look and look.box == box then return look end\\n    end\\n\\n    function ctx.paintButton(box)\\n        local look = ctx.buttonLook(box)\\n        if not look then return end -- a never-shown view can still receive a late native exit\"\n   },\n   {\n    \"at\": 178,\n    \"before\": \"        for _, input in pairs(ctx.buttonInputs) do input.active, input.released = {}, nil end\\n        for box in pairs(ctx.buttonLooks) do ctx.paintButton(box) end\\n    end\",\n    \"after\": \"        for _, input in pairs(ctx.buttonInputs) do input.active, input.released = {}, nil end\\n        for _, look in pairs(buttonLooks) do ctx.paintButton(look.box) end\\n    end\"\n   },\n   {\n    \"at\": 182,\n    \"before\": \"    function ctx.state(box, enabled, selected, primary)\\n        ctx.buttonLooks[box] = {enabled=enabled == true, selected=selected == true, primary=primary == true}\\n        ctx.paintButton(box)\",\n    \"after\": \"    function ctx.state(box, enabled, selected, primary)\\n        buttonLooks[buttonKey(box)] = {box=box, enabled=enabled == true, selected=selected == true, primary=primary == true}\\n        ctx.paintButton(box)\"\n   }\n  ]\n },\n \"src/lua/abyss_node_ui_input.lua\": {\n  \"previous\": {\n   \"sha256\": \"57595d1bca4fb33eed373d36b51219cb6f5ca42f9dbfce2910e93f73323ae1f5\",\n   \"gitBlob\": \"208140d36c0dd1ce990d25f691f9e63d3c8e28f5\"\n  },\n  \"current\": {\n   \"sha256\": \"c2dd463393b5287f6ecfcb21203d12c1e9de55fbbeff63bd20e27ea3a3111d43\",\n   \"gitBlob\": \"87809b902ae8a3fc6619c4ba15bf2f405e213db0\"\n  },\n  \"hunks\": [\n   {\n    \"at\": 167,\n    \"before\": \"                    local function available()\\n                        local entry, look = visibleAction(), ctx.buttonLooks[box]\\n                        -- Guarded mandatory-picker cards have no framed-button look.\",\n    \"after\": \"                    local function available()\\n                        local entry, look = visibleAction(), ctx.buttonLook(box)\\n                        -- Guarded mandatory-picker cards have no framed-button look.\"\n   }\n  ]\n }\n});\nfunction beforeNativePrologueOwner(path,source){\n if(!Object.hasOwn(nativePrologueOwners,path)||typeof source!=='string')return source;\n const lf=source.replaceAll('\\r\\n','\\n');\n if(lf.includes('\\r')||(source!==lf&&source!==lf.replaceAll('\\n','\\r\\n')))return source;\n const owner=nativePrologueOwners[path];\n if(!exactSourceMatches(lf,owner.current))return source;\n const prior=restoreExactFixtureHunks({path,beforeSha256:owner.previous.sha256,afterSha256:owner.current.sha256,hunks:owner.hunks},path,lf);\n assert(exactSourceMatches(prior,owner.previous),'exact Prologue entrance owner predecessor: '+path);\n return source===lf?prior:prior.replaceAll('\\n','\\r\\n');\n}"
+   }
+  ]
  }
 });
 function beforeReleaseReplayReader(path,raw){

@@ -680,6 +680,27 @@ function beforeFormalAct2ReleaseTest(path,source){
  assert(exactCheckoutSource(prior,formalAct2ReleaseTestBefore),'exact Act II performance test predecessor');
  return source.includes('\r\n')?prior.replaceAll('\n','\r\n'):prior;
 }
+const gilCandidateTestBefore=[currentReleaseTests[gilCandidateTest],'471b3677151b3c77a5b9961bdde8deb83b2c5c8a'];
+const gilCandidateTestCurrent=['ebdd4dfc3b5254d7ee241064b0c60c76e460ef725a775b79b81e852ac5fc0059',
+ 'abe7edbe22347b8f7625f713a889a91dc05a26cc'];
+function beforePublishedGilTest(path,source){
+ if(path!==gilCandidateTest||exactCheckoutSource(source,gilCandidateTestBefore))return source;
+ assert(exactCheckoutSource(source,gilCandidateTestCurrent),'fresh added inventory source: '+path);
+ // Only historical inventories receive the previous test. Live Full still runs the full current checkout.
+ const current=normalize(source);
+ const start="test('automatic build pushes are scoped to primary develop";
+ const end="test('reject missing protected base URL before downloads'";
+ const opening=current.indexOf(start),closing=current.indexOf(end);
+ assert(opening>=0&&closing>opening&&opening===current.lastIndexOf(start)&&closing===current.lastIndexOf(end),
+  'exact published GIL test insertion');
+ const prior=(current.slice(0,opening)+current.slice(closing))
+  .replace('import { existsSync, mkdirSync,','import { mkdirSync,')
+  .replace('verifyDownloadedArtifact, verifyPublishedRebase, verifyReceipts','verifyDownloadedArtifact, verifyReceipts')
+  .replace('approvedRequest, buildOnlyRequest, encoderSha256, validationTarget','encoderSha256')
+  .replace("import { downloadLegacyGilArchive, legacyGilArchive, supportsPublishedGilSeed } from '../scripts/runtime-baseline/published-baseline.mjs';\n",'');
+ assert(exactCheckoutSource(prior,gilCandidateTestBefore),'exact published GIL test predecessor');
+ return source.includes('\r\n')?prior.replaceAll('\n','\r\n'):prior;
+}
 function beforeActorAlphaBuildInput(path,source){
  if(!Object.hasOwn(actorAlphaBuildInputs,path))return source;
  const {current,before,undo}=actorAlphaBuildInputs[path];
@@ -799,7 +820,7 @@ export function beforeReleaseAdditionalInventory(paths,kind,read=readFileSync){
   const live=read(path,'utf8');
   if(kind==='lua'&&exactCurrentReleaseLuaFixture(path,live))continue;
   const predecessor=path===gilCandidateTest?beforeKnownMasterBackflowSource(path,live):live;
-  const source=beforeFormalAct2ReleaseTest(path,beforeDevelopBackflow(path,predecessor));
+  const source=beforePublishedGilTest(path,beforeFormalAct2ReleaseTest(path,beforeDevelopBackflow(path,predecessor)));
   assert(typeof source==='string'&&!source.includes('\r\r\n')&&hash(normalize(source))===sha,'fresh added inventory source: '+path);
  }
  return paths.filter(path=>!Object.hasOwn(newerTests[kind],path));
@@ -831,6 +852,9 @@ export function assertCurrentJsInventory(paths,preceding,read=readFileSync){
  const readCurrent=read;
  read=(path,...args)=>{
   const source=readCurrent(path,...args);
+  if(path===gilCandidateTest)
+   assert(exactCheckoutSource(source,['00edf1510dc067e57ee96b58baae7ee7daf8650e942ed4825e5542a00fe1d4e3','92bfb5d8de345ddc2af9247ada304f84a68cedcd']),
+    'fresh current GIL test source: '+path);
   if(path===formalAct2ReleaseTest)
    assert(exactCheckoutSource(source,formalAct2ReleaseTestCurrent),'fresh current Release performance test source: '+path);
   return source;
@@ -1726,6 +1750,19 @@ function beforePrologueRuntimeFixture(path,source){
  assert(exactCheckoutSource(prior,prologuePrevious),'exact Prologue runtime fixture predecessor');
  return source.includes('\r\n')?prior.replaceAll('\n','\r\n'):prior;
 }
+// #1035 appends native-input coverage to the live fixture. Only the archived
+// CI readers use the exact fixture as it was before that addition.
+const prologueReadinessPath='tests/lua/game_ui_prologue_readiness.lua';
+const prologueReadinessCurrent=['2ac7d82ac274e8ede9d3858fbd7a012ef8c5d1589be76d0f2fa3089a40e86893','0e943bbc8711b565196879554ea78163d57e79ff'];
+const prologueReadinessPrevious=['7f6dd189490b895dabf014c6a633374a8b87920d653cd33643a83c908f63c2bf','e872dc23c6c7006d1f7d092eac250ef1acfebf29'];
+function beforePrologueReadinessFixture(path,source){
+ if(path!==prologueReadinessPath||!exactCheckoutSource(source,prologueReadinessCurrent))return source;
+ const parts=normalize(source).split("\nlocal F=dofile('tests/lua/support/game_ui_fixture.lua')");
+ assert.equal(parts.length,2,'exact Prologue readiness addition boundary');
+ const [prior]=parts;
+ assert(exactCheckoutSource(prior,prologueReadinessPrevious),'exact Prologue readiness predecessor');
+ return source.includes('\r\n')?prior.replaceAll('\n','\r\n'):prior;
+}
 export function beforePreflightSource(path,source,view='prior',read=readFileSync){
  if(path===replayAssetLedger&&typeof source==='string'){
   const lf=normalize(source);
@@ -1772,7 +1809,7 @@ export function beforePreflightSource(path,source,view='prior',read=readFileSync
  source=beforeDevelopReplayMerge(path,source);
  source=beforeReplayFingerprintSource(path,source);
  source=beforeDevelopEpochReplayRuntime(path,source);
- source=beforePrologueRuntimeFixture(path,source);
+ source=beforePrologueRuntimeFixture(path,beforePrologueReadinessFixture(path,source));
  source=beforeDevelopBackflow(path,beforeDeckPagesSuiteSource(path,source));
  source=beforeNativeHostReplay(path,source);
  source=beforeNativeFixtureReplay(path,source);
