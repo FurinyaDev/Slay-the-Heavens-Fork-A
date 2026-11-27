@@ -6,6 +6,7 @@ import { exactSourceMatches } from './source-fingerprint.mjs';
 import { restoreExactFixtureHunks } from './exact-fixture-hunks.mjs';
 import { beforeReleaseEntranceOwner } from './release-entrance-owner-source.mjs';
 import { beforeReleaseClosureFixture } from './release-closure-fixture-source.mjs';
+import { beforeBossEmblemSource } from './sts1-boss-emblem-source.mjs';
 
 const archive = readFileSync(new URL('../fixtures/master-backflow-predecessors.json.gz', import.meta.url));
 assert.equal(createHash('sha256').update(archive).digest('hex'), 'b16492b78553e53e675537d95d3f9ef24557d792f657ba41f0f280e43fab325f');
@@ -148,6 +149,7 @@ function matchesSuccessor(path, source, original) {
 }
 
 export function beforeMasterBackflowSource(path, source) {
+  source = beforeBossEmblemSource(path, source);
   source = beforeReleaseClosureFixture(path, beforeReleaseEntranceOwner(path, source));
   if (!Object.hasOwn(files, path)) return source;
   const { before, after } = files[path];
@@ -166,6 +168,7 @@ export function beforeMasterBackflowSource(path, source) {
 }
 
 export function beforeKnownMasterBackflowSource(path, source) {
+  source = beforeBossEmblemSource(path, source);
   source = beforeReleaseClosureFixture(path, beforeReleaseEntranceOwner(path, source));
   const scope = beforeProductionReadingBackflow(path, source);
   if (scope !== source) return scope;

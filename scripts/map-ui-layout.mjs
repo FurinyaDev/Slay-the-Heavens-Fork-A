@@ -11,13 +11,13 @@ export const mapLegendRows = [['event', '未知'], ['shop', '商人'], ['treasur
 // Positions absent from the shared theme come from PR #19's approved map viewport.
 // These are presentation capacities, never a replacement for Map.view's graph.
 export function mapGeometry(theme = loadMapTheme()) {
-  const { floorGap, viewportHeight, bossNode, bossFloorLift } = theme.layout.map;
+  const { floorGap, viewportHeight, bossEmblemSize, bossEmblemLift } = theme.layout.map;
   const firstY = -308 + 60, top = -308 + viewportHeight;
   return { floors: 17, generatedRows: 15, lanes: 7, maxNodes: 92, maxEdges: 126,
     viewport: { left: -460, right: 440, bottom: -308, top },
     firstY, contentHeight: 17 * floorGap + 120,
     maxScroll: 17 * floorGap + 120 - viewportHeight, focusY: -72,
-    bossTreasureMaxScroll: firstY + 15 * floorGap + bossFloorLift - top + Math.ceil(bossNode * .65) + 8,
+    bossTreasureMaxScroll: firstY + 15 * floorGap + bossEmblemLift - top + bossEmblemSize / 2 + 8,
     scrollStep: floorGap * theme.layout.map.scrollStepFloors, scrollSeconds: theme.motion.base,
     breathSeconds: 1.4, breathScale: 1.5,
     // Ported constants from STS MapRoomNode/MapEdge (aeubanks/sts@319009d, TASK-40 hash).
@@ -84,7 +84,7 @@ export function mapLayout(theme = loadMapTheme()) {
         stroke('outline', [.025, .06], [.975, .94]),
         stroke('brush', [.08, .045], [.97, .96]),
       ] },
-      image('icon', 0, 0, s * .6, s * .6, c.node.locked, theme.icon.node.combat), hit(s, s)];
+      { ...image('icon', 0, 0, s * .6, s * .6, c.node.locked, theme.icon.node.combat), raycastTarget: false }, hit(s, s)];
     children.push({ ...text('emeraldLabel', ...theme.layout.map.emeraldLabel, '绿钥匙', f.label, c.positive), visible: false });
     controls.push({ name: `node${i}`, kind: 'container', position: [0, 0], size: [s, s], visible: false, children });
   }

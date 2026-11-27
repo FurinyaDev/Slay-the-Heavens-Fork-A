@@ -316,7 +316,7 @@ test("displayed edges match real topology and chosen path colours after scrollin
                 local edge = mapControl(panel(root), "edge" .. n)
                 local y1 = Layout.firstY + (node.floor - 1) * Theme.layout.map.floorGap - ui.scroll
                 local y2 = Layout.firstY + (index[id].floor - 1) * Theme.layout.map.floorGap - ui.scroll
-                if index[id].type == "boss" then y2 = y2 + Theme.layout.map.bossFloorLift end
+                if index[id].type == "boss" then y2 = y2 + Theme.layout.map.bossEmblemLift end
                 -- STS MapEdge: ICON_SRC_RADIUS at the source room, ICON_DST_RADIUS (boss 164) at the destination.
                 local target = index[id]
                 local r1 = Theme.layout.map.node * Layout.sts.srcRadius

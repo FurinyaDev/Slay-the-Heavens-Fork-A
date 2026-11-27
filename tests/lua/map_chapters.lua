@@ -42,7 +42,8 @@ end
 local function presentedY(chapter,floor,scroll)
     local row=math.max(0,floor-chapter.first)
     local lift=Theme.layout.map.bossFloorLift
-    local extra=floor==chapter.boss and lift or chapter.act==3 and floor==chapter.last and 2*lift or 0
+    local bossLift=chapter.terminal=='boss_treasure' and Theme.layout.map.bossEmblemLift or lift
+    local extra=floor==chapter.boss and bossLift or chapter.act==3 and floor==chapter.last and 2*lift or 0
     return Layout.firstY+row*Theme.layout.map.floorGap+extra-scroll
 end
 local function focused(map,ui,box)
@@ -51,7 +52,8 @@ local function focused(map,ui,box)
     local maximum=hiddenChest and Layout.bossTreasureMaxScroll
         or Layout.maxScroll+(chapter.act==3 and 2*Theme.layout.map.bossFloorLift or 0)
     local focusFloor=hiddenChest and math.min(chapter.boss,map.floor) or map.floor
-    local expected=math.max(0,math.min(maximum,presentedY(chapter,focusFloor,0)-Layout.focusY))
+    local expected=hiddenChest and map.floor==chapter.boss-1 and maximum
+        or math.max(0,math.min(maximum,presentedY(chapter,focusFloor,0)-Layout.focusY))
     assert(ui.scroll==expected,'focus used a global floor as a map row')
     assert(box('title').text==chapter.name..' · 第 '..map.floor..' 层')
     if map.currentNodeId then

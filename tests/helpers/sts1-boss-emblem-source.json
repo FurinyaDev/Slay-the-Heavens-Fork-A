@@ -1,0 +1,214 @@
+{
+  "src/lua/abyss_map_ui.lua": {
+    "current": {
+      "sha256": "894635c18890b538130d15cbd03309d5eb710763ac4918654121d03a4bc4afb0",
+      "gitBlob": "493039c600db17d35d737d519e8667926edb2b14"
+    },
+    "previous": {
+      "sha256": "645764d987cb57f2cf57db066eeb3e99de967d248b9efabbd3cf65269e7dd379",
+      "gitBlob": "12e42d8d0abe7607b8526d7b89b2e2fc80c92ced"
+    },
+    "hunks": [
+      {
+        "at": 44,
+        "before": "function M.paintRoom(fx)",
+        "after": "local function iconSize(fx)\n    if fx.emblem then return Theme.layout.map.bossEmblemSize end\n    return fx.size * MapLayout.sts.iconPerScale * M.drawScale(fx)\nend\nfunction M.paintRoom(fx)"
+      },
+      {
+        "at": 50,
+        "before": "    local iconSize = fx.size * MapLayout.sts.iconPerScale * M.drawScale(fx)\n    roomSize(fx,icon,iconSize)",
+        "after": "    roomSize(fx,icon,iconSize(fx))"
+      },
+      {
+        "at": 54,
+        "before": "        local alpha = fx.boss or fx.hovered or fx.pressed\n        icon.imageColor = fx.colour(ink.r, ink.g, ink.b, math.floor(ink.a * (alpha and 1 or .82 + .18 * fx.alpha) + .5))",
+        "after": "        local alpha = (fx.boss or fx.hovered or fx.pressed) and 1 or .82 + .18 * fx.alpha\n        if fx.emblem and fx.state == 'available' then alpha = fx.pressed and .78 or fx.hovered and 1 or .9 end\n        icon.imageColor = fx.colour(ink.r, ink.g, ink.b, math.floor(ink.a * alpha + .5))"
+      },
+      {
+        "at": 178,
+        "before": "    local y = MapLayout.firstY + math.max(0, floor - chapter.first) * Theme.layout.map.floorGap\n    if floor == chapter.boss then return y + Theme.layout.map.bossFloorLift end\n    if chapter.act == 3 and floor == chapter.last then return y + 2 * Theme.layout.map.bossFloorLift end",
+        "after": "    local map = Theme.layout.map\n    local y = MapLayout.firstY + math.max(0, floor - chapter.first) * map.floorGap\n    if floor == chapter.boss then\n        return y + (chapter.terminal == 'boss_treasure' and map.bossEmblemLift or map.bossFloorLift)\n    end\n    if chapter.act == 3 and floor == chapter.last then return y + 2 * map.bossFloorLift end"
+      },
+      {
+        "at": 206,
+        "before": "local function trimRoute(source, target, currentNodeId, dashed, x1,y1,x2,y2)",
+        "after": "local function trimRoute(source, target, currentNodeId, dashed, x1,y1,x2,y2, bossIcon)"
+      },
+      {
+        "at": 220,
+        "before": "    local length = len - r1 - r2",
+        "after": "    if bossIcon and target.type == 'boss' and len > 0 then\n        -- Intersect the padded portrait square, including for diagonal approaches.\n        local map = Theme.layout.map\n        r2 = (map.bossEmblemSize / 2 + map.bossEmblemGap) * len / math.max(math.abs(x2-x1), math.abs(y2-y1))\n    end\n    local length = len - r1 - r2"
+      },
+      {
+        "at": 260,
+        "before": "    local iconRadius=fx.size*Sts.iconPerScale*M.drawScale(fx)/2",
+        "after": "    local iconRadius=iconSize(fx)/2"
+      },
+      {
+        "at": 310,
+        "before": "    end",
+        "after": "    end\n    local function focusTarget(chapter, floor)\n        if chapter.terminal == 'boss_treasure' then\n            if floor == chapter.boss - 1 then return scrollLimit(chapter) end\n            floor = math.min(floor, chapter.boss)\n        end\n        return floorY(chapter, floor) - Layout.focusY\n    end"
+      },
+      {
+        "at": 411,
+        "before": "        self.scroll = clamp(floorY(self.chapter, current.floor) - Layout.focusY, 0, scrollLimit(self.chapter))",
+        "after": "        self.scroll = clamp(focusTarget(self.chapter, current.floor), 0, scrollLimit(self.chapter))"
+      },
+      {
+        "at": 439,
+        "before": "    local function line(control, source, target, taken, reachable, far, currentNodeId)",
+        "after": "    local function line(control, source, target, taken, reachable, far, currentNodeId, bossIcon)"
+      },
+      {
+        "at": 446,
+        "before": "        fullLength, x1, y1, x2, y2 = trimRoute(source,target,currentNodeId,firstDash,x1,y1,x2,y2)",
+        "after": "        fullLength, x1, y1, x2, y2 = trimRoute(source,target,currentNodeId,firstDash,x1,y1,x2,y2,bossIcon)"
+      },
+      {
+        "at": 504,
+        "before": "    local function paintMapEdges(current, nodes, taken)",
+        "after": "    local function paintMapEdges(current, nodes, taken, bossIcon)"
+      },
+      {
+        "at": 511,
+        "before": "                line(at(\"edge\" .. edge), node, target, taken[node.id .. \":\" .. id], node.id == current.currentNodeId and target.available, M.isFar(target.floor, current.floor), current.currentNodeId)",
+        "after": "                line(at(\"edge\" .. edge), node, target, taken[node.id .. \":\" .. id], node.id == current.currentNodeId and target.available, M.isFar(target.floor, current.floor), current.currentNodeId, bossIcon)"
+      },
+      {
+        "at": 516,
+        "before": "    local function paintVisibleRoom(i, node, fx, floor, bossName)",
+        "after": "    local function paintVisibleRoom(i, node, fx, floor)"
+      },
+      {
+        "at": 532,
+        "before": "        local iconId = fx.boss and Theme.icon.mapBoss[bossName] or Theme.icon.node[node.type]",
+        "after": "        local iconId = fx.emblem or Theme.icon.node[node.type]"
+      },
+      {
+        "at": 550,
+        "before": "    local function paintMapRoom(i, current, bossName)",
+        "after": "    local function paintMapRoom(i, current, bossIcon)"
+      },
+      {
+        "at": 564,
+        "before": "            fx.hovered,fx.pressed=false,false",
+        "after": "            fx.emblem = fx.boss and bossIcon or nil\n            fx.hovered,fx.pressed=false,false"
+      },
+      {
+        "at": 572,
+        "before": "            if visible then paintVisibleRoom(i, node, fx, current.floor, bossName) end",
+        "after": "            if visible then paintVisibleRoom(i, node, fx, current.floor) end"
+      },
+      {
+        "at": 598,
+        "before": "        paintMapEdges(current, nodes, taken)",
+        "after": "        local bossName = options.bossName and options.bossName(self.map)\n        local bossIcon = Theme.icon.mapBoss[bossName]\n        paintMapEdges(current, nodes, taken, bossIcon)"
+      },
+      {
+        "at": 603,
+        "before": "        local bossName = options.bossName and options.bossName(self.map)\n        for i = 1, Layout.maxNodes do paintMapRoom(i, current, bossName) end",
+        "after": "        for i = 1, Layout.maxNodes do paintMapRoom(i, current, bossIcon) end"
+      },
+      {
+        "at": 703,
+        "before": "        local floor = current.floor\n        if self.chapter.terminal == 'boss_treasure' then floor = math.min(floor, self.chapter.boss) end\n        local target = floorY(self.chapter, floor) - Layout.focusY",
+        "after": "        local target = focusTarget(self.chapter, current.floor)"
+      }
+    ]
+  },
+  "scripts/map-ui-layout.mjs": {
+    "current": {
+      "sha256": "36a0f72a3b2084c90ee2a9ab375d6d050cda27634ed93070a973ff37e10bb6e5",
+      "gitBlob": "9da231ddfa30543441bc21dcdc25581fffe6056e"
+    },
+    "previous": {
+      "sha256": "964ff48081623210a296085dfa891fc6c4dfbbe7d1dc83d1f362001a330fbce6",
+      "gitBlob": "d78dc0a8166e353a9d87e239b3b390c6e21e4e45"
+    },
+    "hunks": [
+      {
+        "at": 13,
+        "before": "  const { floorGap, viewportHeight, bossNode, bossFloorLift } = theme.layout.map;",
+        "after": "  const { floorGap, viewportHeight, bossEmblemSize, bossEmblemLift } = theme.layout.map;"
+      },
+      {
+        "at": 19,
+        "before": "    bossTreasureMaxScroll: firstY + 15 * floorGap + bossFloorLift - top + Math.ceil(bossNode * .65) + 8,",
+        "after": "    bossTreasureMaxScroll: firstY + 15 * floorGap + bossEmblemLift - top + bossEmblemSize / 2 + 8,"
+      },
+      {
+        "at": 86,
+        "before": "      image('icon', 0, 0, s * .6, s * .6, c.node.locked, theme.icon.node.combat), hit(s, s)];",
+        "after": "      { ...image('icon', 0, 0, s * .6, s * .6, c.node.locked, theme.icon.node.combat), raycastTarget: false }, hit(s, s)];"
+      }
+    ]
+  },
+  "data/presentation/ui_theme.json": {
+    "current": {
+      "sha256": "c48b7ba00f58cb0444e2b72b4e3e275db1ef955328c5d73f226ba32b26d246a6",
+      "gitBlob": "9a54de6eeae909b0db78daf11f8ea972bc935e75"
+    },
+    "previous": {
+      "sha256": "6e4d4fd4d63b54d827178c39e584833414852a6720bf9fdb9e3a7bd1d1804d81",
+      "gitBlob": "a8d43c7a4f575987695a7783cb61283ff559f16d"
+    },
+    "hunks": [
+      {
+        "at": 1695,
+        "before": "      \"viewportHeight\": 550,",
+        "after": "      \"bossEmblemSize\": 252,\n      \"bossEmblemLift\": 124,\n      \"bossEmblemGap\": 6,\n      \"viewportHeight\": 550,"
+      }
+    ]
+  },
+  "tests/lua/formal_campaign_entry.lua": {
+    "current": {
+      "sha256": "c4ec028897775f7a6cbc3c95f0924051f3ac169f27aaa58e63c05aaa23a77b0d",
+      "gitBlob": "3a3ee229cc580bb2a956b1105f964c7b8f6d3009"
+    },
+    "previous": {
+      "sha256": "9f5bbe7cff40a944824e679bcead551f5b5b79d6e166c4180157eb8bfadb4c53",
+      "gitBlob": "e59f2ccf1b27d59927bcfbb7f888c0f934e66641"
+    },
+    "hunks": [
+      {
+        "at": 14,
+        "before": "    local ratio=icon.sizeDeltaX/(Theme.layout.map.node*.6)\n    assert(ratio>=2 and ratio<=2.5,'boss emblem size outside STS1 target')",
+        "after": "    assert(icon.sizeDeltaX==252 and icon.sizeDeltaY==252,'boss emblem size outside measured STS1 target')"
+      }
+    ]
+  },
+  "tests/lua/map_ui.lua": {
+    "current": {
+      "sha256": "303cb249ea050cfce03406901defea680afe68f32b57d7125b8b7d4c99bedccd",
+      "gitBlob": "745c0f7758e477dbcd04769933fc98d6dad64ae9"
+    },
+    "previous": {
+      "sha256": "e7e516d0a03ee8bde1d5a30a8571a69921ddabcff47607f02e5b216052a1143c",
+      "gitBlob": "890a30d55c436947b04128ebfbdf7737bf134b97"
+    },
+    "hunks": [
+      {
+        "at": 318,
+        "before": "                if index[id].type == \"boss\" then y2 = y2 + Theme.layout.map.bossFloorLift end",
+        "after": "                if index[id].type == \"boss\" then y2 = y2 + Theme.layout.map.bossEmblemLift end"
+      }
+    ]
+  },
+  "docs/legal/assets.json": {
+    "current": {
+      "sha256": "e7d9542519d0ccea7583864ad7b49784b4529f15e56c2464f907c5a561f647c3",
+      "gitBlob": "7d8d6044053b24d547eb7aeb7cc74234c194fc7b"
+    },
+    "previous": {
+      "sha256": "2fd4b435b871db820568656d28d6afb7e755bc08bcc1afd870a53d8dbba57737",
+      "gitBlob": "8d2d572f49b288faa19abb5fb516f7f6b00f140f"
+    },
+    "hunks": [
+      {
+        "at": 330,
+        "before": "    },",
+        "after": "    },\n    \"docs/evidence/sts1-boss-emblem-20261127/comparison.png\": {\n      \"sha256\": \"628e1efd993e7403ff0aad02d5e0147577515100ddba6969f97a9bc7514d5874\",\n      \"category\": \"project-geometry\",\n      \"evidence\": \"Project-authored geometry diagram of before and after map controls. Uses placeholder boxes and dots, with no SDK textures or reference-game pixels. See docs/evidence/sts1-boss-emblem-20261127/README.md.\"\n    },"
+      }
+    ]
+  }
+}

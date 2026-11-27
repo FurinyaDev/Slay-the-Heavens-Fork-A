@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import {restoreExactFixtureHunks} from './exact-fixture-hunks.mjs';
 import {exactSourceMatches} from './source-fingerprint.mjs';
+import {beforeBossEmblemSource} from './sts1-boss-emblem-source.mjs';
 
 // Current Host checks exercise production. Historical Host and CI replays
 // preserve the exact earlier test sources from the production backflow.
@@ -536,6 +537,7 @@ const unifiedGilFixture={
 
 export function beforeReleaseClosureFixture(path,raw){
  if(!Object.hasOwn(fixtures,path))return raw;
+ raw=beforeBossEmblemSource(path,raw);
  let source=Buffer.isBuffer(raw)?raw.toString('utf8'):raw;
  if(typeof source!=='string'||Buffer.isBuffer(raw)&&!Buffer.from(source).equals(raw))return raw;
  const normalized=source.replaceAll('\r\n','\n');

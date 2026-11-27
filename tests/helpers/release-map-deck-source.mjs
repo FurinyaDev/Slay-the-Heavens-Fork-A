@@ -8,6 +8,7 @@ import {readFileSync} from 'node:fs';
 import {gunzipSync} from 'node:zlib';
 import {beforeLoadingRecoverySource} from './loading-recovery-source.mjs';
 import {beforeHotfixMapDeckHelperSource} from './hotfix-map-deck-helper-source.mjs';
+import {beforeBossEmblemSource} from './sts1-boss-emblem-source.mjs';
 
 const hash=(bytes,algorithm='sha256')=>createHash(algorithm).update(bytes).digest('hex');
 const normalize=source=>source.replaceAll('\r\n','\n');
@@ -175,6 +176,9 @@ export function beforeMapRoomSource(path,source){
 }
 
 export function beforeMapDeckSource(path,source,read){
+  const readLive=read;
+  source=beforeBossEmblemSource(path,source);
+  read=(owner,...args)=>beforeBossEmblemSource(owner,readLive(owner,...args));
   assertProductionMapDeckOwners(path,source,read);
   const forethoughtPrior=beforeProductionForethought(path,source,read);
   if(forethoughtPrior!==source)return forethoughtPrior;

@@ -1,0 +1,78 @@
+{
+  "before": {
+    "act1-The Guardian-mouse": {
+      "image": 112046,
+      "emblemWidth": 83.16,
+      "normalWidth": 21.84,
+      "ratio": 3.81,
+      "paperWidthPercent": 9.92,
+      "bossToCampCentres": 108,
+      "viewportTopClearance": 48.42
+    },
+    "act1-The Guardian-touch": {
+      "image": 112046,
+      "emblemWidth": 83.16,
+      "normalWidth": 21.84,
+      "ratio": 3.81,
+      "paperWidthPercent": 9.92,
+      "bossToCampCentres": 108.0,
+      "viewportTopClearance": 48.42
+    },
+    "act2-Champ-mouse": {
+      "image": 112018,
+      "emblemWidth": 83.16,
+      "normalWidth": 21.84,
+      "ratio": 3.81,
+      "paperWidthPercent": 9.92,
+      "bossToCampCentres": 108,
+      "viewportTopClearance": 48.42
+    },
+    "act2-Champ-touch": {
+      "image": 112018,
+      "emblemWidth": 83.16,
+      "normalWidth": 21.84,
+      "ratio": 3.81,
+      "paperWidthPercent": 9.92,
+      "bossToCampCentres": 108.0,
+      "viewportTopClearance": 48.42
+    }
+  },
+  "after": {
+    "act1-The Guardian-mouse": {
+      "image": 112046,
+      "emblemWidth": 252,
+      "normalWidth": 21.84,
+      "ratio": 11.54,
+      "paperWidthPercent": 30.07,
+      "bossToCampCentres": 200,
+      "viewportTopClearance": 8.0
+    },
+    "act1-The Guardian-touch": {
+      "image": 112046,
+      "emblemWidth": 252,
+      "normalWidth": 21.84,
+      "ratio": 11.54,
+      "paperWidthPercent": 30.07,
+      "bossToCampCentres": 200.0,
+      "viewportTopClearance": 8.0
+    },
+    "act2-Champ-mouse": {
+      "image": 112018,
+      "emblemWidth": 252,
+      "normalWidth": 21.84,
+      "ratio": 11.54,
+      "paperWidthPercent": 30.07,
+      "bossToCampCentres": 200,
+      "viewportTopClearance": 8.0
+    },
+    "act2-Champ-touch": {
+      "image": 112018,
+      "emblemWidth": 252,
+      "normalWidth": 21.84,
+      "ratio": 11.54,
+      "paperWidthPercent": 30.07,
+      "bossToCampCentres": 200.0,
+      "viewportTopClearance": 8.0
+    }
+  }
+}

@@ -1693,6 +1693,9 @@
       "node": 56,
       "bossNode": 126,
       "bossFloorLift": 32,
+      "bossEmblemSize": 252,
+      "bossEmblemLift": 124,
+      "bossEmblemGap": 6,
       "viewportHeight": 550,
       "emeraldLabel": [
         0,

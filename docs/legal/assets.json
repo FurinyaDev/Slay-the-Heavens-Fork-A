@@ -329,6 +329,11 @@
       "sha256": "cafccfd7aa0c47a8d4898626e3be9eb981d5052597f19abd530f8d62f7a70ce7",
       "evidence": "TASK-112 review comparison generated from the project's before and after layout trees, runtime-map.png and rasterized system Noto Sans CJK text."
     },
+    "docs/evidence/sts1-boss-emblem-20261127/comparison.png": {
+      "sha256": "628e1efd993e7403ff0aad02d5e0147577515100ddba6969f97a9bc7514d5874",
+      "category": "project-geometry",
+      "evidence": "Project-authored geometry diagram of before and after map controls. Uses placeholder boxes and dots, with no SDK textures or reference-game pixels. See docs/evidence/sts1-boss-emblem-20261127/README.md."
+    },
     "docs/evidence/deck-pages-20261122/visual/develop-first-open.png": {
       "sha256": "aaa9b562db06d7e2c6a80e87a98e8cdade33770c4dbf7182ec9e4074fd508b5b",
       "category": "deck-browser-host-evidence"
