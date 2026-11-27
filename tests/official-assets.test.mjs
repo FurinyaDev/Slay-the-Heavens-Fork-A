@@ -414,6 +414,12 @@ test('approved pages keep live input identities while unrelated pages retain the
 test('scene and button substitutions preserve semantic icons and all four native button states',()=>{
  const layout=gameLayout(),theme=officialAssetsTheme(nativeTheme);
  const before=new Map(paths(layout).filter(([,node])=>node.kind==='image').map(([path,node])=>[path,node.image]));
+ const replacements=new Map([
+  ['/SlayTheAbyss/nodePanel/eventView/art',theme.icon.eventArt.default],
+  ['/SlayTheAbyss/battlePanel/topBar/battleRoute/icon',theme.icon.map],
+  ['/SlayTheAbyss/mapPanel/mapRoute/icon',theme.icon.map],
+  ['/SlayTheAbyss/nodePanel/runRoute/icon',theme.icon.map],
+ ]);
  applyOfficialAssets([layout],theme);
  const battle=child(layout,'battlePanel'),turn=child(battle,'endTurn');
  assert.deepEqual(turn.states,{normal:'normal',hover:'hover',pressed:'pressed',disabled:'disabled'});
@@ -423,10 +429,12 @@ test('scene and button substitutions preserve semantic icons and all four native
    for(const name of ['border','borderLeft','borderRight','inner','innerLeft','innerRight','plate','plateLeft','plateRight'])assert.equal(child(state,name).visible,false,'legacy '+name+' must not widen the restored turn button');
   }
  for(const [path,node]of paths(layout))if(/\/(portrait|intentIcon|intentBadge|intentExtra|hpIcon|goldIcon|blockedLock|art|art_attack|art_skill|art_power|icon)$/.test(path)&&node.kind==='image'){
-  const expected=path==='/SlayTheAbyss/nodePanel/eventView/art'?theme.icon.eventArt.default:
-   before.get(path)??(/^\/SlayTheAbyss\/relicBar\/slot(?:1[3-9]|2[0-5])\/icon$/.test(path)?before.get('/SlayTheAbyss/relicBar/slot1/icon'):undefined);
+  const expected=replacements.get(path)??before.get(path)??
+   (/^\/SlayTheAbyss\/relicBar\/slot(?:1[3-9]|2[0-5])\/icon$/.test(path)?before.get('/SlayTheAbyss/relicBar/slot1/icon'):undefined);
   assert.equal(node.image,expected,path);
+  replacements.delete(path);
  }
+ assert.deepEqual([...replacements.keys()],[],'every substituted semantic icon must be present');
  assert.equal(child(child(layout,'menuPanel'),'backdrop').image,nativeTheme.image.officialBackdrops.title);
  const menu=child(layout,'menuPanel'),result=child(menu,'result');
  for(const key of ['floor','victories','time','deck']){
