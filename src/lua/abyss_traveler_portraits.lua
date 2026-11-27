@@ -237,7 +237,7 @@ local function controller(host, data, display, templates, options)
             else call(token,c,'SetFillUnused')end
         end
     end
-    local function selectionTransform(token,c,r)
+    local function selectionImage(token,c,r)
         -- The official base and half-triangle templates already have centered
         -- anchors, centered pivot and unit scale. Only write the authored overrides.
         if r[1]~=(r[21]==1 and 100003 or 100001) then call(token,c,'SetImage',Enum.ImageSource.StaticReference,r[1])end
@@ -246,6 +246,11 @@ local function controller(host, data, display, templates, options)
         if r[12]~=1 or r[13]~=1 then call(token,c,'SetLocalScale',r[12],r[13],1)end
         if r[19]~=0 or r[20]~=0 or r[14]~=0 then call(token,c,'SetLocalRotation',r[19],r[20],r[14])end
         call(token,c,'SetAnchoredPosition',r[2],r[3])
+        c.imageColor=rowColour(r);check(token)
+        imageMask(token,c,r)
+        call(token,c,'SetAsLastSibling')
+        if c.active~=true then call(token,c,'SetActive',true)end
+        call(token,c,'SetVisible',true)
     end
     local function image(token,c,r)
         local tri=data.renderProfile=='lowpoly-v1'
@@ -258,15 +263,7 @@ local function controller(host, data, display, templates, options)
             c.imageColor=rowColour(r);check(token)
             call(token,c,'SetVisible',true);return
         end
-        if fixedSelectionTemplate then
-            selectionTransform(token,c,r)
-            c.imageColor=rowColour(r);check(token)
-            imageMask(token,c,r)
-            call(token,c,'SetAsLastSibling')
-            if c.active~=true then call(token,c,'SetActive',true)end
-            call(token,c,'SetVisible',true)
-            return
-        end
+        if fixedSelectionTemplate then selectionImage(token,c,r);return end
         call(token,c,'SetImage',Enum.ImageSource.StaticReference,r[1])
         if r[1]<100001 or r[1]>100006 then
             c.imageType=Enum.ImageType.Stretch;check(token);assert(c.imageType==Enum.ImageType.Stretch,'imageType rejected')
