@@ -111,13 +111,21 @@ assert.equal(hash(forkPushBytes),'d8f0cb25d3884387b232a67ce8a99bf6570bdb50dcbecb
 const forkPushPacket=JSON.parse(gunzipSync(forkPushBytes));
 assert.equal(forkPushPacket.baseCommit,'73c21489efaab409d4c0c46bee517d410d3427fc');
 for(const row of Object.values(forkPushPacket.files))assert.equal(hash(row.before),row.beforeSha256);
+const releaseQuickWorkflow={
+ path:'.github/workflows/quick-feedback.yml',
+ parent:'e4c0fb6058be845a9bcd8cbcd16c6d91a7abd8c8a771a0d1485b12834d473bea',
+ current:['7f8a6bb1f3577baea78e79e9fe371d0b67273397385bd790ec8413a7bc61e168',
+  '72606248df9f325af739dd9ae0609794a7006da2'],
+};
 export function beforeForkPush(path,source){
  source=prePosix16ReceiptSource(path,source);
  if(path==='.github/workflows/quality.yml'&&typeof source==='string')source=beforeHotfixPublicationGate(source);
  const row=Object.hasOwn(forkPushPacket.files,path)?forkPushPacket.files[path]:undefined;
  if(!row||typeof source!=='string'||source.includes('\r\r\n'))return source;
  const digest=hash(normalize(source));
- if(digest!==row.afterSha256&&digest!==row.afterSuccessorSha256)return source;
+ const releaseQuick=path===releaseQuickWorkflow.path&&row.afterSha256===releaseQuickWorkflow.parent&&
+  exactCheckoutSource(source,releaseQuickWorkflow.current);
+ if(digest!==row.afterSha256&&digest!==row.afterSuccessorSha256&&!releaseQuick)return source;
  return source.includes('\r\n')?row.before.replaceAll('\n','\r\n'):row.before;
 }
 // Receipt readers retain the actual Q1 current-source predecessor before their existing replay layers.
@@ -818,8 +826,8 @@ const releaseInventoryClosureFixtures=new Set([
 const frozenReleaseInventorySuccessors=Object.freeze({
  'tests/release-archive.test.mjs':['4fd9549c05a83336f2247867b65e4d0dc4dc6a8ce33973e631191d8ffcf9e601',
   '7cba71a9eba503a6b729369383ba1b60df28a428'],
- 'tests/release-performance-verification.test.mjs':['7541ed0927fb6ac6cf4c8d5fa3a00cf9b94e97e4576c3d8831420732bcc86ab6',
-  'abcd7f87105cb3afe618db23be472b08124efe32'],
+ 'tests/release-performance-verification.test.mjs':['36478ad4f256a684c42a0ff7e2f1558de1edc913e5ea48e171189f5e11199893',
+  '5bc6f008374e91928a3ac76ecd08e90271a14ac5'],
 });
 export function beforeReleaseAdditionalInventory(paths,kind,read=readFileSync){
  if(kind==='js')paths=beforeMasterBackflowInventory(paths,masterBackflowJsTests,gilCandidateTest,read);
