@@ -124,7 +124,7 @@ test("exhausted source pool shows actual Circlet fallback without fabricated gol
     assert(ui.run.nodeFlow.reward.gold==nil)
     assert(get(root,"nodePanel/treasureView/rewardItem1").visible)
     assert(get(root,"nodePanel/treasureView/rewardItem1").visible and not get(root,"nodePanel/treasureView/rewardItem1/disabled").visible)
-    assert(get(root,"nodePanel/treasureView/page").text=='宝箱奖励 · 3 项')
+    assert(get(root,"nodePanel/treasureView/page").text=='首领宝箱奖励 · 3 项')
     local gold=ui.run.gold
     assert(ui.nodeUI:press("treasureView/rewardItem1") and ui.mode=="victory" and ui.run.gold==gold)
     assert(ui.run.relics[#ui.run.relics]=='circlet' and ui.run.relicCounters.circlet==1)
