@@ -30,6 +30,9 @@ local function idleModule(data)
 end
 local owners = setmetatable({}, {__mode='k'})
 local CANCELLED = {}
+local GROUP_SIZE, PAGE_SIZE = 60, 3600
+local SELECTION_BUILD_LIMIT, SELECTION_WARM_LIMIT = 64, 24
+local SELECTION_BUILD_SECONDS, SELECTION_WARM_SECONDS = .004, .0015
 local function integer(n) return type(n)=='number' and n>0 and n<math.huge and n%1==0 end
 local function compactProfile(data)
     return data.renderProfile=='compact-v1' or data.renderProfile=='bounded-2d-v1' or data.renderProfile=='approved-idle-v1'
@@ -88,6 +91,7 @@ local function controller(host, data, display, templates, options)
     local Idle=idleModule(data)
     local Asset=templates or require('abyss_traveler_portrait_assets')
     local retryFailedOnPause=type(options)=='table' and options.retryFailedOnPause==true
+    local fixedSelectionTemplate=type(options)=='table' and options.fixedSelectionTemplate==true
     local nativeLifecycle=type(options)=='table' and options.nativeLifecycle==true
     local ownerEpoch=type(options)=='table' and options.ownerEpoch or function()return 0 end
     local rotation=type(options)=='table' and options.rotation or 0
@@ -101,6 +105,8 @@ local function controller(host, data, display, templates, options)
     local phase,generation,nextIndex='idle',0,1
     local page,group,pageIndex,groupIndex=nil,nil,0,0
     local revealGroups,revealIndex,revealedPages={},1,{}
+    local presenting=false
+    local unmaskedTemplate
     local working,pending,hiding=false,false,false
     local reason,cleanupFailures=nil,0
     local activationEpoch,nativePaused=0,nil
@@ -112,9 +118,14 @@ local function controller(host, data, display, templates, options)
         if not ok or result==false then reason=ok and 'host hide rejected' or tostring(result);return false end
         return true
     end
+    local function resetGroups()
+        page,group,pageIndex,groupIndex=nil,nil,0,0
+        revealGroups,revealIndex,revealedPages={},1,{}
+    end
     local function cleanup()
         local old,retained,blocked=created,{},{};created={};cleanupFailures=0
         idlePages={};idleSample=nil;idleTime=0;wasIdle=nil
+        resetGroups()
         for i=#old,1,-1 do
             if phase=='destroyed'then created={};return true end
             local node=old[i];local c=node.control
@@ -138,8 +149,8 @@ local function controller(host, data, display, templates, options)
     end
     -- Official ClientUIBaseControl: active/visible are read-only observations;
     -- SetActive also gates attached scripts. These slots carry no root script.
-    -- Only V25 opts into checked boundary transitions; old profiles keep their
-    -- original setter ordering. Paused cache is retained, never called released.
+    -- V25 and progressive selection use checked transitions. Legacy profiles
+    -- retain their setter ordering, and pausing keeps the cache.
     local function nativeTransition(active,visible,reset)
         activationEpoch=activationEpoch+1
         local ticket,revision,stage,owner=activationEpoch,generation,phase,ownerEpoch()
@@ -173,7 +184,7 @@ local function controller(host, data, display, templates, options)
             -- The old native setter may finish after a synchronous release.
             -- Read back/deactivate only the still-live released decoration.
             hide()
-            if nativeLifecycle then pcall(nativeTransition,false,false,false)end
+            if nativeLifecycle or fixedSelectionTemplate then pcall(nativeTransition,false,false,false)end
         end
     end
     local function transition(active,visible,reset)
@@ -199,7 +210,8 @@ local function controller(host, data, display, templates, options)
     local function create(token,prefab,parent)
         local c=game.InstantiateClientUIControl(prefab,parent)
         if c then created[#created+1]={control=c,parent=parent}end
-        check(token);assert(c,'portrait template unavailable');call(token,c,'SetVisible',false)
+        check(token);assert(c,'portrait template unavailable')
+        if not fixedSelectionTemplate or c.visible~=false then call(token,c,'SetVisible',false)end
         return c
     end
     local function rowColour(r)
@@ -208,12 +220,32 @@ local function controller(host, data, display, templates, options)
         local function channel(value)return math.floor((luminance+(value-luminance)*tint.saturation)*tint.brightness+.5)end
         return Color.FromRGBA(channel(r[15]),channel(r[16]),channel(r[17]),math.floor(r[18]*tint.opacity+.5))
     end
+    local function usesUnmaskedDefaults(c)
+        if unmaskedTemplate==nil then
+            local known,clear=pcall(function()return c.enableMask==false and c.enableFill==false end)
+            unmaskedTemplate=known and clear
+        end
+        return unmaskedTemplate
+    end
     local function imageMask(token,c,r)
         if #r==21 then
+            -- The shared white template has no mask/fill by default. Fall back
+            -- to explicit initialization when the native clone cannot confirm it.
+            if fixedSelectionTemplate and r[21]~=1 and usesUnmaskedDefaults(c) then return end
             c.enableMask=r[21]==1;check(token)
             if r[21]==1 then call(token,c,'SetFillHorizontal',Enum.ImageFillHorizontalType.Right,.5)
             else call(token,c,'SetFillUnused')end
         end
+    end
+    local function selectionTransform(token,c,r)
+        -- The official base and half-triangle templates already have centered
+        -- anchors, centered pivot and unit scale. Only write the authored overrides.
+        if r[1]~=(r[21]==1 and 100003 or 100001) then call(token,c,'SetImage',Enum.ImageSource.StaticReference,r[1])end
+        if r[6]~=.5 or r[7]~=.5 then call(token,c,'SetPivot',r[6],r[7])end
+        call(token,c,'SetSizeDelta',r[4],r[5])
+        if r[12]~=1 or r[13]~=1 then call(token,c,'SetLocalScale',r[12],r[13],1)end
+        if r[19]~=0 or r[20]~=0 or r[14]~=0 then call(token,c,'SetLocalRotation',r[19],r[20],r[14])end
+        call(token,c,'SetAnchoredPosition',r[2],r[3])
     end
     local function image(token,c,r)
         local tri=data.renderProfile=='lowpoly-v1'
@@ -225,6 +257,15 @@ local function controller(host, data, display, templates, options)
             call(token,c,'SetSizeDelta',r[4],r[5]);call(token,c,'SetAnchoredPosition',r[2],r[3])
             c.imageColor=rowColour(r);check(token)
             call(token,c,'SetVisible',true);return
+        end
+        if fixedSelectionTemplate then
+            selectionTransform(token,c,r)
+            c.imageColor=rowColour(r);check(token)
+            imageMask(token,c,r)
+            call(token,c,'SetAsLastSibling')
+            if c.active~=true then call(token,c,'SetActive',true)end
+            call(token,c,'SetVisible',true)
+            return
         end
         call(token,c,'SetImage',Enum.ImageSource.StaticReference,r[1])
         if r[1]<100001 or r[1]>100006 then
@@ -246,25 +287,46 @@ local function controller(host, data, display, templates, options)
         end
         return {phase=phase,generation=generation,nextIndex=nextIndex,revealIndex=revealIndex,total=#data.rows,owned=#created,
             retained=phase=='release_failed' and #created or 0,reason=reason,cleanupFailures=cleanupFailures,
-            nativeActive=nativeActive,nativeStateKnown=known,nativePaused=nativePaused}
+            nativeActive=nativeActive,nativeStateKnown=known,nativePaused=nativePaused,
+            shown=fixedSelectionTemplate and host.alive~=false and host.visible==true}
     end
-    function self.begin(_)
-        if working or phase=='destroyed' or phase=='failed' or phase=='release_failed'then return false end
+    -- Keep the first broad layers together. The initial base alone is a flat
+    -- underpaint; the second authored group gives the scene readable structure.
+    local function hasSelectionImage()
+        return revealIndex>math.min(2,math.ceil(#data.rows/GROUP_SIZE))
+    end
+    function self.present(_,wanted)
+        presenting=wanted
+        if phase~='building' and phase~='ready' then return false end
+        local visible=wanted and hasSelectionImage()
+        if host.visible==visible and host.active==wanted then return true end
+        return transition(wanted,visible,false)
+    end
+    local function resume()
+        if fixedSelectionTemplate then return true end
+        if nativeLifecycle then return transition(true,phase=='ready',true)end
+        if data.cache or compactProfile(data) then host:SetActive(true);host:SetVisible(phase=='ready')end
+        if base then self:pose(0,0,1,1)end
+        return true
+    end
+    local function canBegin()
+        return not working and phase~='destroyed' and phase~='failed' and phase~='release_failed'
+    end
+    local function templatesBound()
+        return integer(Asset.imagePrefabId) and integer(Asset.containerPrefabId)
+            and Asset.imagePrefabId~=100001 and Asset.containerPrefabId~=100001
+    end
+    function self.begin(_,foreground)
+        if not canBegin() then return false end
         if host.alive==false then self:destroy();return false end
         idlePaused=false
-        if phase=='building' or phase=='revealing' or phase=='ready'then
-            if nativeLifecycle then return transition(true,phase=='ready',true)end
-            if data.cache or compactProfile(data) then host:SetActive(true);host:SetVisible(phase=='ready')end
-            if base then self:pose(0,0,1,1)end
-            return true
-        end
-        if not integer(Asset.imagePrefabId) or not integer(Asset.containerPrefabId)
-            or Asset.imagePrefabId==100001 or Asset.containerPrefabId==100001 then fail('unbound portrait templateIndex');return false end
-        generation=generation+1;phase='building';nextIndex=1;pageIndex=0;groupIndex=0;page=nil;group=nil;reason=nil
-        revealGroups={};revealIndex=1;revealedPages={}
+        if phase=='building' or phase=='revealing' or phase=='ready'then return resume()end
+        if not templatesBound() then fail('unbound portrait templateIndex');return false end
+        generation=generation+1;phase='building';nextIndex=1;reason=nil;resetGroups()
         local token=generation;working=true
         local ok,err=pcall(function()
-            if nativeLifecycle then nativeTransition(true,false,false)
+            if fixedSelectionTemplate then nativeTransition(foreground==true,false,false)
+            elseif nativeLifecycle then nativeTransition(true,false,false)
             else call(token,host,'SetVisible',false);call(token,host,'SetActive',true)end
             call(token,host,'SetAnchorMin',.5,.5);call(token,host,'SetAnchorMax',.5,.5);call(token,host,'SetPivot',.5,.5)
             call(token,host,'SetSizeDelta',data.width,data.height or data.width)
@@ -273,12 +335,60 @@ local function controller(host, data, display, templates, options)
             -- Keep the dedicated slot position; never import ROOT offsets into the shared hero/button.
         end)
         if not ok then
-            if err~=CANCELLED then fail(err)elseif nativeLifecycle then reconcileCancellation()end
+            if err~=CANCELLED then fail(err)elseif nativeLifecycle or fixedSelectionTemplate then reconcileCancellation()end
         end
         if pending then cleanup()end;working=false
         return ok and current(token)
     end
-    -- Exactly one native creation attempt. The owner shares 64 across BOTH hosts.
+    local function finishSelectionGroup(token)
+        -- Complete groups are immutable and ready under the hidden host during
+        -- prewarm. Never publish a partial group or reorder painter layers.
+        if data.revealWithNext and data.revealWithNext[groupIndex] then return end
+        if not revealedPages[page] then
+            call(token,page,'SetVisible',true);revealedPages[page]=true
+        end
+        while revealIndex<=groupIndex do
+            call(token,revealGroups[revealIndex].control,'SetVisible',true)
+            revealIndex=revealIndex+1
+        end
+        if presenting and hasSelectionImage() and not host.visible then call(token,host,'SetVisible',true)end
+    end
+    local function makeContainer(token,parent)
+        local control=create(token,Asset.containerPrefabId,parent)
+        transform(token,control)
+        if fixedSelectionTemplate then
+            if control.active~=true then call(token,control,'SetActive',true)end
+        else
+            call(token,control,'SetActive',not data.runtimeV2)
+            call(token,control,'SetVisible',not data.runtimeV2)
+        end
+        return control
+    end
+    local function buildImage(token)
+        local row=data.rows[nextIndex]
+        local template=row[21]==1 and assert(Asset.selectionHalfImagePrefabId,'missing half-triangle template') or Asset.imagePrefabId
+        local c=create(token,template,group);image(token,c,row);nextIndex=nextIndex+1
+        local complete=nextIndex>#data.rows
+        if fixedSelectionTemplate and (complete or (nextIndex-1)%GROUP_SIZE==0) then finishSelectionGroup(token)end
+        if not complete then return end
+        if fixedSelectionTemplate then phase='ready'
+        elseif data.runtimeV2 then phase='revealing'
+        else call(token,host,'SetVisible',true);phase='ready'end
+    end
+    local function buildNext(token)
+        local p=Idle and data.bandByRow[nextIndex] or math.floor((nextIndex-1)/PAGE_SIZE)+1
+        local g=math.floor((nextIndex-1)/GROUP_SIZE)+1
+        if pageIndex~=p then
+            page=makeContainer(token,host);pageIndex=p
+            if Idle then idlePages[p]=page;groupIndex=0 end
+        elseif groupIndex~=g then
+            group=makeContainer(token,page);groupIndex=g
+            if data.runtimeV2 then revealGroups[#revealGroups+1]={control=group,page=page}end
+        else
+            buildImage(token)
+        end
+    end
+    -- Exactly one native creation attempt.
     function self.step(_)
         if host.alive==false then self:destroy()end
         if working or (phase~='building' and phase~='revealing')then return false end
@@ -301,45 +411,28 @@ local function controller(host, data, display, templates, options)
             end
             if pending then cleanup()end;working=false;return ok,'reveal'
         end
-        local ok,err=pcall(function()
-            local p=Idle and data.bandByRow[nextIndex] or math.floor((nextIndex-1)/3600)+1
-            local g=math.floor((nextIndex-1)/60)+1
-            if pageIndex~=p then
-                page=create(token,Asset.containerPrefabId,host);transform(token,page);pageIndex=p
-                if Idle then idlePages[p]=page;groupIndex=0 end
-                call(token,page,'SetActive',not data.runtimeV2);call(token,page,'SetVisible',not data.runtimeV2)
-            elseif groupIndex~=g then
-                group=create(token,Asset.containerPrefabId,page);transform(token,group);groupIndex=g
-                call(token,group,'SetActive',not data.runtimeV2);call(token,group,'SetVisible',not data.runtimeV2)
-                if data.runtimeV2 then revealGroups[#revealGroups+1]={control=group,page=page}end
-            else
-                local row=data.rows[nextIndex]
-                local template=row[21]==1 and assert(Asset.selectionHalfImagePrefabId,'missing half-triangle template') or Asset.imagePrefabId
-                local c=create(token,template,group);image(token,c,row);nextIndex=nextIndex+1
-                if nextIndex>#data.rows then
-                    if data.runtimeV2 then phase='revealing'
-                    else call(token,host,'SetVisible',true);phase='ready'end
-                end
-            end
-        end)
-        if not ok and err~=CANCELLED then fail(err)end
+        local ok,err=pcall(buildNext,token)
+        if not ok then
+            if err~=CANCELLED then fail(err)
+            elseif fixedSelectionTemplate then reconcileCancellation()end
+        end
         if phase=='destroyed'then created={} elseif pending then cleanup()end
         working=false;return true
     end
     function self.pause(_)
         idlePaused=true
-        -- Only the battle portrait opts into scene-boundary failure recovery.
-        -- Other cached adapters retain their explicit-release retry policy.
+        -- Owners that opt in can retry failed artwork on their next activation.
         if retryFailedOnPause and (phase=='failed' or phase=='release_failed')then return self:release()end
         if not data.cache and not compactProfile(data) then return self:release()end
         if phase=='destroyed' or host.alive==false then return false end
+        if fixedSelectionTemplate then return self:present(false)end
         if nativeLifecycle then return transition(false,false,false)end
         host:SetVisible(false);host:SetActive(false);return true
     end
     function self.release(_)
         if phase=='destroyed'then return true end
         if pending then return true end
-        local wasWorking=working;working=true;generation=generation+1;phase='released';pending=true
+        local wasWorking=working;working=true;generation=generation+1;phase='released';pending=true;presenting=false
         local hidden=hide();if wasWorking then return hidden end
         local cleaned=cleanup();working=false;return hidden and cleaned
     end
@@ -378,7 +471,7 @@ local function controller(host, data, display, templates, options)
         if phase=='destroyed'then created={} elseif pending then cleanup()end
         working=false
     end
-    function self.destroy(_)generation=generation+1;phase='destroyed';pending=false;created={};idlePages={}end
+    function self.destroy(_)generation=generation+1;phase='destroyed';pending=false;created={};idlePages={};resetGroups()end
     return self
 end
 local function activeTargets(mode,characterOpen,stopped,character,preloadSelection)
@@ -392,6 +485,15 @@ end
 local function selectionFigure(Asset,official,profile)
     return official and assert(Asset.lowpolyLumine,'official selection requires approved 1600 background')
                 or profile and Asset.battle133 or lowpoly(Asset.lowpolyHero) and Asset.lowpolyHero or Asset.selection133 or Asset.battle133
+end
+local function officialSelections(Asset)
+    local entries={{id='ironclad',host='lumineSelectionBackground',drawing=selectionFigure(Asset,true)}}
+    for _,entry in ipairs(Asset.selectionVariants or {})do
+        assert(#entries<4 and type(entry.id)=='string' and type(entry.host)=='string'
+            and lowpoly(entry.drawing) and entry.drawing.runtimeV2 and entry.drawing.cache,'invalid selection variant')
+        entries[#entries+1]=entry
+    end
+    return entries
 end
 local function battleFigure(Asset,official)
     if not official then
@@ -437,8 +539,8 @@ local function portraitTemplates(Asset,cardTemplates)
     return integer(Asset.imagePrefabId) and Asset.imagePrefabId~=100001 and integer(Asset.containerPrefabId) and Asset
         or type(cardTemplates)=='table' and {imagePrefabId=cardTemplates.imageTemplateIndex,containerPrefabId=cardTemplates.containerTemplateIndex}
 end
-local function portraitTimeBudget(selecting,fighting,carding,landing,Asset,battleDrawing)
-    return selecting and Asset.avatar96.runtimeV2 or fighting and battleDrawing.runtimeV2 or carding or landing
+local function portraitTimeBudget(avatar,fighting,carding,landing,Asset,battleDrawing)
+    return avatar and Asset.avatar96.runtimeV2 or fighting and battleDrawing.runtimeV2 or carding or landing
 end
 function M.new(stage,report,flags,cardTemplates)
     local selecting=enabled(flags,'selectionAvatar')
@@ -456,6 +558,7 @@ function M.new(stage,report,flags,cardTemplates)
     if landing and not lowpoly(Asset.lowpolyLand) then landing=false end
     if not anyPortrait(selecting,fighting,carding,landing) then return nil end
     local avatar,battle,selection,details,rows=nil,nil,nil,nil,{}
+    local selections,selectionRow,activeSelection={},nil,nil
     local result,resultHost,resultRow,resultOutcome
     local templates=portraitTemplates(Asset,cardTemplates)
     local function prepareLanding()
@@ -470,31 +573,35 @@ function M.new(stage,report,flags,cardTemplates)
             end
         end
     end
-    local function selectionHost(panel)
-        local host
-        if official then
-            host=assert(panel:GetChild('lumineSelectionBackground'),'missing approved selection background host')
-            host=host:GetChild('figure') or host
-        else host=details and details:GetChild('officialSelectionFigure')end
-        return host
-    end
-    local function createSelectionController(host,figure)
-        local display=official and 1280 or profile and profile.selectionDisplay or assert(details:GetChild('portraitFrame').sizeDeltaX)
-        return controller(host,figure,display,Asset,profile and {position=profile.selectionPosition,
-            nativeLifecycle=true,ownerEpoch=function()return epoch end})
+    local function prepareOfficialSelection(panel)
+        assert(Asset.selectionUses=='lowpolyLumine','official selection requires approved background schema')
+        local entries=officialSelections(Asset)
+        local seenHosts={}
+        for _,entry in ipairs(entries)do
+            local container=assert(panel:GetChild(entry.host),'missing approved selection background host')
+            local host=container:GetChild('figure') or container
+            assert(not selections[entry.id] and not seenHosts[host],'duplicate selection variant')
+            seenHosts[host]=true
+            local adapter=controller(host,entry.drawing,1280,Asset,{fixedSelectionTemplate=true,
+                ownerEpoch=function()return epoch end,retryFailedOnPause=true})
+            selections[entry.id]={name='selection',adapter=adapter,fallback=selectionFallback(panel,details,true),
+                active=false,restoreOnPause=true,progressive=true}
+        end
+        for _,entry in ipairs(entries)do rows[#rows+1]=selections[entry.id]end
+        selectionRow=selections.ironclad;selection=selectionRow.adapter
     end
     local function prepareSelectionFigure(panel)
-        local host=selectionHost(panel)
-        if host then
-            if official then assert(Asset.selectionUses=='lowpolyLumine','official selection requires approved background schema')end
-            local figure=selectionFigure(Asset,official,profile)
-            if figure.renderProfile~='lowpoly-v1' then
-                validate(figure,133,4315,'ae2161957033d688b1bed1c7ab2ad2891d5f7bf5e34b291f9ecaef7cfa11f880','f8a7af7b079aa5bbb7e16b502b222f1fd7dbfaa2c30f6eef1bf0d76af0a0a248')
-            end
-            selection=createSelectionController(host,figure)
-            local fallback=selectionFallback(panel,details,official)
-            rows[#rows+1]={name='selection',adapter=selection,fallback=fallback,active=false,restoreOnPause=official}
+        if official then prepareOfficialSelection(panel);return end
+        local host=details and details:GetChild('officialSelectionFigure')
+        if not host then return end
+        local figure=selectionFigure(Asset,false,profile)
+        if figure.renderProfile~='lowpoly-v1' then
+            validate(figure,133,4315,'ae2161957033d688b1bed1c7ab2ad2891d5f7bf5e34b291f9ecaef7cfa11f880','f8a7af7b079aa5bbb7e16b502b222f1fd7dbfaa2c30f6eef1bf0d76af0a0a248')
         end
+        local display=profile and profile.selectionDisplay or assert(details:GetChild('portraitFrame').sizeDeltaX)
+        selection=controller(host,figure,display,Asset,profile and {position=profile.selectionPosition,
+            nativeLifecycle=true,ownerEpoch=function()return epoch end})
+        rows[#rows+1]={name='selection',adapter=selection,fallback=selectionFallback(panel,details,false),active=false}
     end
     local function prepareSelection()
         if selecting then
@@ -543,7 +650,13 @@ function M.new(stage,report,flags,cardTemplates)
         end
     end
     prepareLanding()
-    prepareSelection()
+    if official and selecting then
+        local ok,reason=pcall(prepareSelection)
+        if not ok then
+            avatar,selection,selectionRow,selections=nil,nil,nil,{}
+            if report then pcall(report,'ABYSS_PORTRAIT selection phase=failed reason='..tostring(reason))end
+        end
+    else prepareSelection()end
     prepareCards()
     prepareBattle()
     local function resultController(outcome)
@@ -566,10 +679,17 @@ function M.new(stage,report,flags,cardTemplates)
         end
     end
     prepareResult()
-    if #rows==0 then return nil end
-    local timeBudget=portraitTimeBudget(selecting,fighting,carding,landing,Asset,battleDrawing)
+    if #rows==0 and not (official and selecting) then return nil end
+    local timeBudget=portraitTimeBudget(avatar,fighting,carding,landing,Asset,battleDrawing)
     local self,busy,destroyed,painting={},false,false,false
-    local warmAdmission
+    local warmAdmission=false
+    local pendingSync
+    local function finishSync()
+        busy=false
+        local nextSync=pendingSync
+        pendingSync=nil
+        if nextSync and not destroyed then self:sync(table.unpack(nextSync,1,6))end
+    end
     local fallbackVisibility=setmetatable({},{__mode='k'})
     local function paintFallback(control,visible,phase)
         local setter=control.SetVisible
@@ -589,30 +709,47 @@ function M.new(stage,report,flags,cardTemplates)
         local painted=old:gsub(' · 肖像待补','')
         if painted~=old then note.text=painted end
     end
+    local function presenting(row,state)
+        if not row.active then return false end
+        if row.progressive then return state.shown end
+        return state.phase=='ready'
+    end
+    local function paintRow(row)
+        local state=row.adapter:status()
+        local visible=presenting(row,state)
+        local fallbackVisible=(row.name~='selection' or row.restoreOnPause) and row.fallbackVisible~=false
+        for _,control in ipairs(fallbackControls(row))do
+            if destroyed then return end
+            if control.alive~=false then
+                paintFallback(control,not visible and fallbackVisible,state.phase)
+                if destroyed then return end
+                -- A native setter may synchronously release. Its old hide must not win.
+                if visible and not presenting(row,row.adapter:status()) then
+                    paintFallback(control,fallbackVisible,row.adapter:status().phase)
+                end
+            end
+        end
+        if row.name=='selection' and row.active and state.phase=='ready' then clearPortraitPlaceholder()end
+        if row.lastPhase~=state.phase then
+            row.lastPhase=state.phase
+            if report then pcall(report,'ABYSS_PORTRAIT '..row.name..' phase='..state.phase..' owned='..state.owned..' reason='..tostring(state.reason))end
+        end
+    end
     local function paint()
         if destroyed or painting then return end
         painting=true
         for _,row in ipairs(rows)do
-            local s=row.adapter:status();local ready=row.active and s.phase=='ready'
-            local fallbackVisible=(row.name~='selection' or row.restoreOnPause) and row.fallbackVisible~=false
-            for _,c in ipairs(fallbackControls(row))do
-                if destroyed then painting=false;return end
-                if c and c.alive~=false then
-                    paintFallback(c,not ready and fallbackVisible,s.phase)
-                    if destroyed then painting=false;return end
-                    -- A native setter may synchronously release. Its old hide must not win.
-                    if ready and (not row.active or row.adapter:status().phase~='ready')then
-                        paintFallback(c,fallbackVisible,row.adapter:status().phase)
-                    end
-                end
-            end
-            if row.name=='selection' and ready then clearPortraitPlaceholder() end
-            if row.lastPhase~=s.phase then row.lastPhase=s.phase;if report then pcall(report,'ABYSS_PORTRAIT '..row.name..' phase='..s.phase..' owned='..s.owned..' reason='..tostring(s.reason))end end
+            if destroyed or pendingSync then break end
+            if not row.progressive or row==(activeSelection or selectionRow) then paintRow(row)end
         end
         painting=false
     end
-    function self.status(_)return {avatar=avatar and avatar:status() or {phase='disabled',owned=0},
-        battle=battle and battle:status() or {phase='disabled',owned=0},selection=selection and selection:status(),result=result and result:status(),batchSize=64}end
+    function self.status(_)
+        local adapter=activeSelection and activeSelection.adapter or selection
+        return {avatar=avatar and avatar:status() or {phase='disabled',owned=0},
+            battle=battle and battle:status() or {phase='disabled',owned=0},selection=adapter and adapter:status(),
+            result=result and result:status(),batchSize=SELECTION_BUILD_LIMIT}
+    end
     function self.syncResult(_,mode,stopped)
         if not result or busy or destroyed then return false end
         busy=true;local token=epoch
@@ -630,7 +767,7 @@ function M.new(stage,report,flags,cardTemplates)
         if epoch~=token or destroyed then busy=false;return false end
         local phase=result:status().phase
         local valid=phase~='failed' and phase~='release_failed' and phase~='destroyed'
-        paint();busy=false;return accepted~=false and valid and epoch==token and not destroyed
+        paint();finishSync();return accepted~=false and valid and epoch==token and not destroyed
     end
     local function transitionRow(row,wanted,mode,stopped)
         local accepted=true
@@ -652,28 +789,69 @@ function M.new(stage,report,flags,cardTemplates)
         end
         return wanted
     end
+    local function selectionSuperseded(row,token)
+        if epoch~=token then return true end
+        if not pendingSync then return false end
+        -- A queued refresh for the same role still needs to publish the selected artwork.
+        row.active=false;activeSelection=nil
+        row.adapter:pause()
+        return true
+    end
+    local function showSelected(row,token)
+        row.active=true
+        local state=row.adapter:status()
+        if state.phase=='failed' or state.phase=='release_failed' then
+            if not row.adapter:release() or selectionSuperseded(row,token) then return end
+        end
+        if row.adapter:begin(true) and not selectionSuperseded(row,token) then
+            row.adapter:present(true)
+        end
+    end
+    local function syncSelected(wanted,token)
+        local previous=activeSelection
+        if wanted==previous then return end
+        activeSelection=nil
+        if previous then
+            previous.active=false
+            previous.adapter:pause()
+        end
+        if not wanted or epoch~=token or pendingSync then return end
+        activeSelection=wanted
+        showSelected(wanted,token)
+    end
+    local function syncRows(wanted,mode,stopped,token)
+        for _,row in ipairs(rows)do
+            if pendingSync then break end
+            if not row.progressive then
+                local accepted=transitionRow(row,wanted,mode,stopped)
+                if epoch~=token or destroyed then return false end
+                if profile and accepted==false then return false end
+            end
+        end
+        return true
+    end
+    local function selectedRow(characterOpen,stopped,character,retainedCharacter)
+        if not characterOpen or stopped then return nil end
+        return selections[character] or selections[retainedCharacter]
+    end
     function self.sync(_,mode,characterOpen,stopped,character,preloadSelection,retainedCharacter)
-        if busy or destroyed then return false end
+        if destroyed then return false end
+        if busy then
+            -- Native setters may synchronously dispatch newer UI input.
+            pendingSync={mode,characterOpen,stopped,character,preloadSelection,retainedCharacter}
+            return false
+        end
         busy=true;local token=epoch
-        -- V25 and official pages open selection artwork on demand. The legacy host's warm
-        -- hint must not allocate hidden figures during its title screen.
+        -- The official title has a separate post-admission warm worker.
         if profile or official then preloadSelection=false end
         local wanted=presentationTargets(mode,characterOpen,stopped,character,preloadSelection)
         if characterOpen and not stopped and retainedCharacter=='ironclad' then wanted.selection=true end
-        for _,row in ipairs(rows)do
-            -- Competition hides the one-role legacy roster; its V25 badge has
-            -- its own official symbol and does not consume this avatar drawing.
-            -- MenuView owns result outcome selection; ordinary scene sync may
-            -- pause it on departure, but must never publish a default victory
-            -- figure while a defeat outcome is still being prepared.
-            local accepted=transitionRow(row,wanted,mode,stopped)
-            if epoch~=token or destroyed then busy=false;return false end
-            if profile and accepted==false then paint();busy=false;return false end
-        end
-        paint();busy=false;return not profile or epoch==token and not destroyed
+        syncSelected(selectedRow(characterOpen,stopped,character,retainedCharacter),token)
+        local accepted=epoch==token and syncRows(wanted,mode,stopped,token)
+        if not pendingSync then paint()end
+        finishSync()
+        return accepted and (not profile or epoch==token and not destroyed)
     end
-    -- Prioritize the main selection figure over the small thumbnail.
-    local buildOrder=rows
     local pagePortraits={characterPanel={avatar=true,selection=true,cardFan=true,selectScene=true},
         battlePanel={battle=true,battleScene=true},menuPanel={menuScene=true,result=true}}
     function self.readyForPage(_,mode,characterOpen,character,page)
@@ -690,56 +868,72 @@ function M.new(stage,report,flags,cardTemplates)
         end
         return true
     end
-    function self.tick(_)
+    local function buildStep(foregroundAllowed)
+        if activeSelection and foregroundAllowed~=false then
+            local progressed,kind=activeSelection.adapter:step()
+            if progressed then return true,kind,true end
+        end
+        for _,row in ipairs(rows)do
+            if row.active and not row.progressive then
+                local progressed,kind=row.adapter:step()
+                if progressed then return true,kind,false end
+            end
+        end
+        return false
+    end
+    local function buildForeground(foregroundAllowed)
+        local start=os.clock()
+        for i=1,SELECTION_BUILD_LIMIT do
+            local progressed,kind,selectionWork=buildStep(foregroundAllowed)
+            if pendingSync or not progressed or kind=='reveal' then break end
+            if selectionWork and i%4==0 and os.clock()-start>=SELECTION_BUILD_SECONDS then break end
+            if timeBudget and i%8==0 and os.clock()-start>=.008 then break end
+        end
+    end
+    function self.tick(_,_dt,foregroundAllowed)
         if busy or destroyed then return end
         busy=true
-        local start=os.clock()
-        for i=1,64 do
-            local progressed,kind=false,nil
-            for _,row in ipairs(buildOrder)do if row.active then
-                local advance,phase=row.adapter:step()
-                if advance then progressed=true;kind=phase;break end
-            end end
-            if not progressed or kind=='reveal' or timeBudget and i%8==0 and os.clock()-start>=.008 then break end
-        end
-        paint();busy=false
+        buildForeground(foregroundAllowed)
+        if not pendingSync then paint()end
+        finishSync()
     end
-    local function advanceWarmSelection(phase,start)
-        local token=epoch
-        busy=true
-        if phase~='idle' and phase~='released' or selection:begin() then
-            for _=1,24 do
-                if epoch~=token or os.clock()-start>=.0015 or not selection:step() then break end
-            end
-            -- The parent is hidden on the title page. No staged portrait is
-            -- published until normal selection activation calls begin again.
+    local function buildWarm(adapter,start)
+        if not adapter:begin() then return end
+        for _=1,SELECTION_WARM_LIMIT do
+            if pendingSync or os.clock()-start>=SELECTION_WARM_SECONDS or not adapter:step() then break end
         end
-        busy=false
+    end
+    local function idleFrame(dt)
+        return type(dt)=='number' and dt>=0 and dt<=.05
     end
     function self.warmSelection(_,eligible,dt,frameStarted)
+        if not selectionRow or destroyed then return end
         local admitted=warmAdmission
         warmAdmission=eligible
-        if not (official and selection and eligible and admitted) or busy or destroyed
-            or type(dt)~='number' or not (dt>=0 and dt<=.05) then return end
-        local phase=selection:status().phase
-        if phase~='idle' and phase~='released' and phase~='building' and phase~='revealing' then return end
+        -- Only the default portrait can build offscreen before it is selected.
+        if not eligible or not admitted or busy or activeSelection or not idleFrame(dt) then return end
+        local adapter=selectionRow.adapter
+        local phase=adapter:status().phase
+        if phase~='idle' and phase~='released' and phase~='building' then return end
         local start=os.clock()
-        if start-frameStarted>=.004 then return end
-        advanceWarmSelection(phase,start)
+        if start-frameStarted>=SELECTION_BUILD_SECONDS then return end
+        busy=true
+        buildWarm(adapter,start)
+        finishSync()
     end
     function self.battlePose(_,x,y,sx,sy,dt,motionState)
         if busy or destroyed or not battle then return end
-        busy=true;battle:pose(x,y,sx,sy,dt,motionState);paint();busy=false
+        busy=true;battle:pose(x,y,sx,sy,dt,motionState);paint();finishSync()
     end
     function self.release(_)
         if destroyed then return true end
-        warmAdmission=false
-        epoch=epoch+1;local old=busy;busy=true;local ok=true
+        warmAdmission=false;activeSelection=nil
+        pendingSync=nil;epoch=epoch+1;local old=busy;busy=true;local ok=true
         for _,row in ipairs(rows)do row.active=false;if not row.adapter:release()then ok=false end end
-        paint();busy=old;return ok
+        paint();pendingSync=nil;busy=old;return ok
     end
     function self.onEngineDestroy(_)
-        epoch=epoch+1;destroyed=true;for _,row in ipairs(rows)do row.active=false;row.adapter:destroy()end
+        pendingSync=nil;epoch=epoch+1;destroyed=true;for _,row in ipairs(rows)do row.active=false;row.adapter:destroy()end
         -- Keep owners[stage] as a weak-key tombstone even before engine alive=false.
     end
     owners[stage]=self;return self

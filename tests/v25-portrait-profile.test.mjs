@@ -278,6 +278,15 @@ assert(refreshed==1 and a:status().selection.phase=='ready')
 assert(selectionHost.visible and not backing.visible and LiveCount()==1628,
  'the queued same-role refresh stranded a completed but hidden portrait')
 assert(a:release() and LiveCount()==0)
+selectionHost.SetSizeDelta=function(self,...)
+ a:sync('menu',true,false,nil)
+ return resize(self,...)
+end
+assert(a:sync('menu',true,false,'ironclad'))
+for _=1,120 do a:tick(1/60)end
+assert(not selectionHost.visible and backing.visible and LiveCount()==0,
+ 'a newer empty selection was discarded during native configuration')
+assert(a:release())
 `,{runtimeV2:true,officialAssets:true});
 });
 
