@@ -210,6 +210,28 @@ const fixtures=Object.freeze({
    }
   ]
  },
+ "tests/lua/full_source_campaign_entry.lua": {
+  "current": {
+   "sha256": "5dbb6d598e72e34d5a5d830764e183b4915b0acee830bceab2eee9d645b1f114",
+   "gitBlob": "71c1b48fde18c9344240a9d9301fb5a66de7b1f2"
+  },
+  "previous": {
+   "sha256": "6eb5e8016625dd7d3586d81872814c5d28021371e2d9c4ce78f4741a5f9ea3b3",
+   "gitBlob": "7d9f18b6c5c63d4cf18593f7811fab0334b2d769"
+  },
+  "hunks": [
+   {
+    "at": 6,
+    "before": "local function awaitNativePage(host)\n    for _=1,80 do",
+    "after": "local function awaitNativePage(host,maxTicks)\n    for _=1,maxTicks or 80 do"
+   },
+   {
+    "at": 86,
+    "before": "    awaitNativePage(host)",
+    "after": "    -- Act 1's Guardian entrance can take six seconds with narration and fades.\n    local guardianEntry=host.run.act==1 and nextNode.type=='boss'\n    awaitNativePage(host,guardianEntry and 140 or nil)"
+   }
+  ]
+ },
  "tests/lua/game_ui_boss_treasure.lua": {
   "current": {
    "sha256": "1afa38323838de0a3c08e62f3b7664229515d745644bb1e92f4e70ae6f4a6d11",

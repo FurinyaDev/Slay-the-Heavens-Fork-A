@@ -71,4 +71,49 @@ test('restored later chapters focus local progress and wait for the host grant',
     assert(box(panel,restored,node.id):GetChild('hit').click())
     assert(restored.floor==node.floor)
 end)
+test('restoring either boss or boss treasure retains the route and hides the map exit',function()
+    local Acts=require('abyss_acts')
+    local Layout=require('abyss_map_layout')
+    local Theme=require('abyss_theme')
+    for act=1,2 do
+        local chapter=Acts.get(act)
+        local map=Map.generate(F.Data,'42',act)
+        local ordinary, chest
+        for _,node in ipairs(map.nodes)do
+            if node.floor==chapter.first+8 and node.type=='treasure' then ordinary=node end
+            if node.floor==chapter.last and node.roomKind=='boss_treasure' then chest=node end
+        end
+        assert(ordinary and chest)
+        local ui,panel=fixture(act,map)
+        assert(ui:setScroll(Layout.firstY+8*Theme.layout.map.floorGap-Layout.focusY))
+        assert(box(panel,map,ordinary.id).visible,'ordinary treasure missing')
+
+        while map.floor<chapter.boss-1 do assert(Map.choose(map,Map.available(map)[1].id))end
+        local boss=Map.available(map)[1]
+        assert(boss.nextIds[1]==chest.id)
+        local edgeCount=0
+        for _,node in ipairs(map.nodes)do
+            if node.id~=boss.id then edgeCount=edgeCount+#node.nextIds end
+        end
+        for floor=chapter.boss-1,chapter.last do
+            local snapshot=Map.snapshot(map)
+            local restored=assert(Map.restore(F.Data,snapshot))
+            local restoredUI,restoredPanel=fixture(act,restored)
+            assert(restored.floor==floor and #restored.path==floor-chapter.first+1)
+            assert(restored.currentNodeId==snapshot.currentNodeId and not restoredUI.navigationEnabled)
+            assert(restoredUI:setScroll(Layout.bossTreasureMaxScroll))
+            assert(box(restoredPanel,restored,boss.id).visible,'boss missing from map end')
+            local hidden=box(restoredPanel,restored,chest.id)
+            assert(not hidden.visible and not hidden:GetChild('hit').visible,'treasure has a map target')
+            assert(not F.mapControl(restoredPanel,'edge'..(edgeCount+1)).visible,'treasure has a map edge')
+            assert(not restoredUI:choose(chest.id) and restored.floor==floor)
+            if floor<chapter.last then
+                local available=Map.available(restored)
+                assert(#available==1 and available[1].id==(floor==chapter.boss and chest.id or boss.id))
+                assert(Map.choose(map,available[1].id))
+            end
+            print(('RESTORED_MAP_END act=%d floor=%d boss=visible treasure=hidden edge=hidden'):format(act,floor))
+        end
+    end
+end)
 print('CHAPTER_MAP_PASS '..count)
