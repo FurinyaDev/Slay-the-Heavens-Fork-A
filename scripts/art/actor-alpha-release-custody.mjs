@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {verifyReleaseFull, githubRequest} from '../release-ci.mjs';
+import {verifyReleasePublication, githubRequest} from '../release-ci.mjs';
 import {requireReleasePerformance} from '../runtime-baseline/require-release-performance.mjs';
 import {assertFullMatches, loadArtifact, verifyGilArtifact} from '../runtime-baseline/release-performance-artifacts.mjs';
 import {officialAssetsFromReceipt} from '../official-assets-profile.mjs';
@@ -36,7 +36,7 @@ export async function captureApprovalPins(target, approvalCommit, request) {
 }
 
 export async function finalActorAlphaBinding(inventory, approvalCommit, captureSha256, {
-  request = githubRequest, readFull = verifyReleaseFull, readPerformance = requireReleasePerformance,
+  request = githubRequest, readPublication = verifyReleasePublication, readPerformance = requireReleasePerformance,
   readGil = verifyGilArtifact, loadPerformanceArtifact = loadArtifact,
 } = {}) {
   const {sourceCommit:head, version, profile} = inventory;
@@ -51,7 +51,6 @@ export async function finalActorAlphaBinding(inventory, approvalCommit, captureS
   assert(digest.test(pin.nativeReadbackSha256) && digest.test(pin.simulatorSaveSha256) &&
     typeof pin.approvalReference === 'string' && pin.approvalReference.trim(), 'Incomplete pinned native Simulator readback');
 
-  const full = await readFull(repository, target.branch, head, request);
   let cached;
   const readArtifact = async (locator, names) => {
     if (!cached) {
@@ -61,12 +60,21 @@ export async function finalActorAlphaBinding(inventory, approvalCommit, captureS
     assert.deepEqual([locator, names], [cached.locator, cached.names], 'Formal archive changed while reading the GIL');
     return cached.files;
   };
-  const performance = await readPerformance(full, request, {readArtifact});
+  const readGate = () => readPublication(repository, target.branch, head, request, {
+    gilArtifactId:pin.gilArtifactId,
+    readPerformance:(full, get) => readPerformance(full, get, {readArtifact}),
+  });
+  const publication = await readGate();
+  const {performance} = publication;
   const {receipt, binding:gil} = await readGil(request, performance.gil.id, target);
   const keys = ['id', 'name', 'digest', 'runId', 'attempt', 'controllerSha', 'gilSha256', 'buildId',
     'payloadDigest', 'receiptSha256', 'manifestSha256'];
   assert(keys.every(key => gil[key] === performance.gil[key]), 'Audited GIL archive differs from verified release performance');
-  assertFullMatches(gil, full);
+  if (gil.schemaVersion === 2 || performance.gil.schemaVersion === 2) {
+    assert.deepEqual(gil, performance.gil, 'Audited v2 GIL archive differs from verified release performance');
+  } else {
+    assertFullMatches(gil, publication);
+  }
   assert(receipt.officialAssetsProfile === profile && officialAssetsFromReceipt(receipt),
     'Trusted archive has a different production art profile');
   verifyArtFeatureReceipt(receipt.artFeatures);
@@ -81,7 +89,7 @@ export async function finalActorAlphaBinding(inventory, approvalCommit, captureS
     pin.candidateReceiptSha256 === capture.candidateReceiptSha256 && pin.artConfigSha256 === capture.artConfigSha256 &&
     pin.uiConfigSha256 === capture.uiConfigSha256, 'Capture approval belongs to a different archived GIL or configuration');
   // Refresh remote authorization after the GIL download using only the same immutable report bytes.
-  assert.deepEqual(await readPerformance(full, request, {readArtifact}), performance,
+  assert.deepEqual(await readGate(), publication,
     'Formal release authorization changed while reading the GIL');
   assert.equal(await ref(request, target.branch), head, 'Frozen release changed during capture verification');
   return {

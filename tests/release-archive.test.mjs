@@ -27,7 +27,6 @@ function fixture() {
     gilSha256: digest, buildId: 'e', payloadDigest: 'f'.repeat(64), receiptSha256: '1'.repeat(64), manifestSha256: '2'.repeat(64) };
   const performance = { gil: { ...binding } };
   const artifact = { binding, gilBytes: bytes };
-  const full = {};
   const uploads = [];
   const api = {
     [`/releases/${releaseId}`]: () => ({ ...release, body: formatMetadata(metadata) }),
@@ -44,13 +43,9 @@ function fixture() {
   const dependencies = {
     request,
     prepareSource: source => assert.equal(source, head),
-    verifyFull: async (...args) => {
-      assert.deepEqual(args, [repo.slice('/repos/'.length), branch, head, request]);
-      return full;
-    },
-    verifyPerformance: async (...args) => {
-      assert.deepEqual(args, [full, request]);
-      return performance;
+    verifyPublication: async (...args) => {
+      assert.deepEqual(args, [repo.slice('/repos/'.length), branch, head, request, { gilArtifactId: id }]);
+      return { performance };
     },
     readGil: async (...args) => {
       assert.deepEqual(args, [request, id, { head, branch, version }]);
@@ -97,8 +92,8 @@ test('archive rejects substituted bytes and another artifact with the same GIL d
 
 test('archive binds release metadata and annotated tag across source and performance verification', async () => {
   const f = fixture();
-  const verify = f.dependencies.verifyPerformance;
-  f.dependencies.verifyPerformance = async (...args) => {
+  const verify = f.dependencies.verifyPublication;
+  f.dependencies.verifyPublication = async (...args) => {
     f.metadata.platform_evidence = 'https://example.com/another-approval';
     return verify(...args);
   };
