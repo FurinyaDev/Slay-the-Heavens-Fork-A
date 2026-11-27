@@ -720,7 +720,7 @@ function M.new(stage,report,flags,cardTemplates)
         local admitted=warmAdmission
         warmAdmission=eligible
         if not (official and selection and eligible and admitted) or busy or destroyed
-            or type(dt)~='number' or dt<0 or dt>.05 then return end
+            or type(dt)~='number' or not (dt>=0 and dt<=.05) then return end
         local phase=selection:status().phase
         if phase~='idle' and phase~='released' and phase~='building' and phase~='revealing' then return end
         local start=os.clock()
