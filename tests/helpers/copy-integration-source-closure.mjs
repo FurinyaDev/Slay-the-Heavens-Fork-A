@@ -1,5 +1,6 @@
 import {beforeMasterBackflowSource} from './master-backflow-source.mjs';
 import {exactSourceMatches} from './source-fingerprint.mjs';
+import {restoreExactFixtureHunks} from './exact-fixture-hunks.mjs';
 // Copies only immutable test helper dependencies; production owners remain explicit fixtures.
 import assert from 'node:assert/strict';
 import {officialUiRepairClosure} from './official-ui-repair-closure.mjs';
@@ -680,6 +681,134 @@ const reviewedCopySources=Object.freeze({
   ]
  }
 });
+// Detached historical closures keep the last reviewed copier dependencies.
+// The live release readers add the separately authenticated entrance sources.
+const releaseReplayReaders=Object.freeze({
+ "tests/helpers/master-backflow-source.mjs": {
+  "current": {
+   "sha256": "8e5c7d47e409472f64980185e99b23b86eae2db96d1e066358356c139f7770de",
+   "gitBlob": "49b8c105cb0d017e26e02037ab5918721746b8c0"
+  },
+  "previous": {
+   "sha256": "c03fb1b5bf312b8834aeef53204030ea8544622761278b3ae626cdd1b8d842d5",
+   "gitBlob": "28124a00ba0ebe7d58b6b62e41c9061fddf007f5"
+  },
+  "hunks": [
+   {
+    "at": 4,
+    "before": "import { exactSourceMatches } from './source-fingerprint.mjs';\nimport { restoreExactFixtureHunks } from './exact-fixture-hunks.mjs';\n\nconst archive = readFileSync(new URL('../fixtures/master-backflow-predecessors.json.gz', import.meta.url));",
+    "after": "import { exactSourceMatches } from './source-fingerprint.mjs';\nimport { restoreExactFixtureHunks } from './exact-fixture-hunks.mjs';\nimport { beforeReleaseEntranceOwner } from './release-entrance-owner-source.mjs';\n\nconst archive = readFileSync(new URL('../fixtures/master-backflow-predecessors.json.gz', import.meta.url));"
+   },
+   {
+    "at": 147,
+    "before": "\nexport function beforeMasterBackflowSource(path, source) {\n  if (!Object.hasOwn(files, path)) return source;\n  const { before, after } = files[path];",
+    "after": "\nexport function beforeMasterBackflowSource(path, source) {\n  source = beforeReleaseEntranceOwner(path, source);\n  if (!Object.hasOwn(files, path)) return source;\n  const { before, after } = files[path];"
+   },
+   {
+    "at": 165,
+    "before": "\nexport function beforeKnownMasterBackflowSource(path, source) {\n  const scope = beforeProductionReadingBackflow(path, source);\n  if (scope !== source) return scope;",
+    "after": "\nexport function beforeKnownMasterBackflowSource(path, source) {\n  source = beforeReleaseEntranceOwner(path, source);\n  const scope = beforeProductionReadingBackflow(path, source);\n  if (scope !== source) return scope;"
+   }
+  ]
+ },
+ "tests/helpers/ui-entrance-source.mjs": {
+  "current": {
+   "sha256": "c8a0b30c0c7013702719c7e13dedcc3d7753118d9f02d473e94f831f877377b7",
+   "gitBlob": "3c3c094fbe33e3b783d1602256271e0d2c77dbc1"
+  },
+  "previous": {
+   "sha256": "50851099aed8dca2d5e6da5a715df63ab939f51729b56edab0ca81bec6dee5c0",
+   "gitBlob": "343f6486ebb70ab190d8c28026c6049ff4d48d25"
+  },
+  "hunks": [
+   {
+    "at": 10,
+    "before": "import {beforeChapterBattleScene} from './chapter-battle-scene-source.mjs';\nimport {beforeKnownMasterBackflowSource} from './master-backflow-source.mjs';\n\nconst archive=readFileSync(new URL('../fixtures/ui-entrance-source.json.gz',import.meta.url));",
+    "after": "import {beforeChapterBattleScene} from './chapter-battle-scene-source.mjs';\nimport {beforeKnownMasterBackflowSource} from './master-backflow-source.mjs';\nimport {beforeReleaseEntranceOwner,readReleaseEntrancePredecessor} from './release-entrance-owner-source.mjs';\n\nconst archive=readFileSync(new URL('../fixtures/ui-entrance-source.json.gz',import.meta.url));"
+   },
+   {
+    "at": 46,
+    "before": "}\nfunction currentEntranceSource(path,source,expected){\n if(matchesEntrance(path,source,expected))return source;\n const masterPrior=beforeKnownMasterBackflowSource(path,source);",
+    "after": "}\nfunction currentEntranceSource(path,source,expected){\n source=beforeReleaseEntranceOwner(path,source);\n if(matchesEntrance(path,source,expected))return source;\n const masterPrior=beforeKnownMasterBackflowSource(path,source);"
+   },
+   {
+    "at": 86,
+    "before": "  let source;\n  try{source=read(owner);}catch(error){assert.fail('combined linked owner missing: '+owner+': '+error.message);}\n  assert(currentMatches(owner,source,files[owner].after),'combined linked owner identity: '+owner+' during entrance validation');\n }\n}\n\nexport function entranceReader(read,authenticated=false){\n return owner=>{\n  const source=read(owner);\n  const row=binding(owner);",
+    "after": "  let source;\n  try{source=read(owner);}catch(error){assert.fail('combined linked owner missing: '+owner+': '+error.message);}\n  source=readReleaseEntrancePredecessor(owner,source,read);\n  assert(currentMatches(owner,source,files[owner].after),'combined linked owner identity: '+owner+' during entrance validation');\n }\n}\n\nconst underlyingReaders=new WeakMap();\nexport const underlyingEntranceReader=read=>underlyingReaders.get(read)??read;\nexport function entranceReader(read,authenticated=false){\n const reader=owner=>{\n  const source=read(owner);\n  const row=binding(owner);"
+   },
+   {
+    "at": 106,
+    "before": "  return prior;\n };\n}\n",
+    "after": "  return prior;\n };\n underlyingReaders.set(reader,underlyingEntranceReader(read));\n return reader;\n}\n"
+   }
+  ]
+ },
+ "tests/helpers/input-retirement-source.mjs": {
+  "current": {
+   "sha256": "e52b313959cd8834b1769546603f0d1212563d4b1c9d8592f970abf6f3afc4ba",
+   "gitBlob": "7aeedadf169523e27bc697d9db7aa44821847733"
+  },
+  "previous": {
+   "sha256": "45d451b3bd820d17f282d71d38ef974ad97a82d99e37679c22000af66d493296",
+   "gitBlob": "dc889017f62f554d063d3eae71103b82f810583b"
+  },
+  "hunks": [
+   {
+    "at": 8,
+    "before": "import {beforeNativeHostInputRetirement} from './native-host-replay-source.mjs';\nimport {beforeNativeFlowFixture} from './native-flow-fixture-source.mjs';\nimport {beforeCurrentReplayFixes} from './current-replay-fix-sources.mjs';\nimport {exactSourceMatches as matches,sourceConfigLayoutMatches} from './source-fingerprint.mjs';",
+    "after": "import {beforeNativeHostInputRetirement} from './native-host-replay-source.mjs';\nimport {beforeNativeFlowFixture} from './native-flow-fixture-source.mjs';\nimport {beforeKnownMasterBackflowSource} from './master-backflow-source.mjs';\nimport {beforeCurrentReplayFixes} from './current-replay-fix-sources.mjs';\nimport {exactSourceMatches as matches,sourceConfigLayoutMatches} from './source-fingerprint.mjs';"
+   },
+   {
+    "at": 171,
+    "before": "\nexport function beforeDevelopUiBackflows(path,source){\n return beforeDeckBrowserBackflow(path,beforePotionBackflow(path,source));\n}",
+    "after": "\nexport function beforeDevelopUiBackflows(path,source){\n if(path==='src/lua/abyss_choice_ui.lua')source=beforeKnownMasterBackflowSource(path,source);\n return beforeDeckBrowserBackflow(path,beforePotionBackflow(path,source));\n}"
+   }
+  ]
+ },
+ "tests/helpers/develop-release-backflow-source.mjs": {
+  "current": {
+   "sha256": "b82ba33ba36af9a7991d0dd86bdbac77c0f22fbd8e1a6d1c6ff848692d2071bd",
+   "gitBlob": "2c2beb2e62f10cd0df0df709636df8720cac5a64"
+  },
+  "previous": {
+   "sha256": "7989de2a06f877bf2dc2d0dcb991eef3a0cceda234adcd8724258b2ead1c26c2",
+   "gitBlob": "a0180aa40bdb51b02ebcb7445305265b5e421638"
+  },
+  "hunks": [
+   {
+    "at": 0,
+    "before": "import {beforeCardReadingScope,beforeChapterBattleScene,beforeResponsiveHand,chapterBattleSceneReader} from './chapter-battle-scene-source.mjs';\nimport { beforeUiEntrance, entranceInventory, entrancePredecessor, entranceReader, uiEntranceOwns, assertCurrentUiEntrance } from './ui-entrance-source.mjs';\nimport {battlePeripheryPredecessor,beforeBattlePeriphery} from './battle-periphery-source.mjs';\n// Exact Develop predecessors for historical replay. Live builds read current sources.",
+    "after": "import {beforeCardReadingScope,beforeChapterBattleScene,beforeResponsiveHand,chapterBattleSceneReader} from './chapter-battle-scene-source.mjs';\nimport { beforeUiEntrance, entranceInventory, entrancePredecessor, entranceReader, underlyingEntranceReader, uiEntranceOwns, assertCurrentUiEntrance } from './ui-entrance-source.mjs';\nimport {battlePeripheryPredecessor,beforeBattlePeriphery} from './battle-periphery-source.mjs';\n// Exact Develop predecessors for historical replay. Live builds read current sources."
+   },
+   {
+    "at": 15,
+    "before": "import {beforeReleaseVocabulary,isReleaseVocabularyPredecessor,releaseVocabularyOwns} from './develop-release-vocabulary-source.mjs';\nimport {beforeRunHudDeckLabel} from './run-hud-successors.mjs';\n\nconst hash=(bytes,algorithm='sha256')=>createHash(algorithm).update(bytes).digest('hex');",
+    "after": "import {beforeReleaseVocabulary,isReleaseVocabularyPredecessor,releaseVocabularyOwns} from './develop-release-vocabulary-source.mjs';\nimport {beforeRunHudDeckLabel} from './run-hud-successors.mjs';\nimport {beforeReleaseEntranceOwner,readReleaseEntrancePredecessor} from './release-entrance-owner-source.mjs';\n\nconst hash=(bytes,algorithm='sha256')=>createHash(algorithm).update(bytes).digest('hex');"
+   },
+   {
+    "at": 414,
+    "before": " let epoch;\n const readEntrancePrior=entranceReader(path=>{\n  const raw=read(path);\n  const source=beforeArchitectureOwner(path,path===deckLayoutPath?beforeRunHudDeckLabel(raw):raw);\n  const vocabulary=releaseVocabularyOwns(path);",
+    "after": " let epoch;\n const readEntrancePrior=entranceReader(path=>{\n  const raw=readReleaseEntrancePredecessor(path,read(path),underlyingEntranceReader(read));\n  const source=beforeArchitectureOwner(path,path===deckLayoutPath?beforeRunHudDeckLabel(raw):raw);\n  const vocabulary=releaseVocabularyOwns(path);"
+   },
+   {
+    "at": 535,
+    "before": "}\nexport function beforeDevelopBackflow(path,source,options){\n source=beforeLibraryReadPrompt(path,source);\n source=beforeBattleInputHistory(path,beforeChapterEntranceOwner(path,beforeArchitectureOwner(path,source)));",
+    "after": "}\nexport function beforeDevelopBackflow(path,source,options){\n source=beforeReleaseEntranceOwner(path,source);\n source=beforeLibraryReadPrompt(path,source);\n source=beforeBattleInputHistory(path,beforeChapterEntranceOwner(path,beforeArchitectureOwner(path,source)));"
+   }
+  ]
+ }
+});
+function beforeReleaseReplayReader(path,raw){
+ if(!Object.hasOwn(releaseReplayReaders,path))return raw;
+ const {current,previous,hunks}=releaseReplayReaders[path];
+ const text=integrationClosureBytes(path,raw).toString('utf8');
+ if(!exactSourceMatches(text,current))return raw;
+ const crlf=text.replaceAll('\n','\r\n');
+ assert(raw.equals(Buffer.from(text))||raw.equals(Buffer.from(crlf)),'uniform release replay owner: '+path);
+ const prior=restoreExactFixtureHunks({path,beforeSha256:previous.sha256,afterSha256:current.sha256,hunks},path,text);
+ assert(exactSourceMatches(prior,previous),'exact release replay owner predecessor: '+path);
+ return Buffer.from(prior);
+}
 function beforeReviewedCopySource(path,raw){
  if(!Object.hasOwn(reviewedCopySources,path))return beforeMasterBackflowSource(path,raw);
  const {current,previous,edits}=reviewedCopySources[path];
@@ -704,7 +833,8 @@ export function copyIntegrationSourceClosure(directory,{sourceRoot=process.cwd()
   const exactCurrent=currentProduction&&currentEntranceHelpers.has(path);
   const sha=exactCurrent?reviewedCopySources[path].current.sha256:previousSha;
   assert((path.startsWith('tests/helpers/')||path.startsWith('tests/fixtures/'))&&!path.split('/').includes('..'),'fixed helper path');
-  const source=join(sourceDirectory,path),raw=readFileSync(source);
+  const source=join(sourceDirectory,path),bytes=readFileSync(source);
+  const raw=liveSource?beforeReleaseReplayReader(path,bytes):bytes;
   let prior=raw;
   if(exactCurrent){
    const current=integrationClosureBytes(path,raw);

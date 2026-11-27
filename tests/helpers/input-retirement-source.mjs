@@ -8,6 +8,7 @@ import {beforeActionButtons} from './action-buttons-source.mjs';
 import {beforeNativeFixtureInputRetirement} from './native-fixture-replay-source.mjs';
 import {beforeNativeHostInputRetirement} from './native-host-replay-source.mjs';
 import {beforeNativeFlowFixture} from './native-flow-fixture-source.mjs';
+import {beforeKnownMasterBackflowSource} from './master-backflow-source.mjs';
 import {beforeCurrentReplayFixes} from './current-replay-fix-sources.mjs';
 import {exactSourceMatches as matches,sourceConfigLayoutMatches} from './source-fingerprint.mjs';
 import {restoreExactFixtureHunks} from './exact-fixture-hunks.mjs';
@@ -170,6 +171,7 @@ export function assertCurrentDevelopUiSource(path,source,read){
 }
 
 export function beforeDevelopUiBackflows(path,source){
+ if(path==='src/lua/abyss_choice_ui.lua')source=beforeKnownMasterBackflowSource(path,source);
  return beforeDeckBrowserBackflow(path,beforePotionBackflow(path,source));
 }
 

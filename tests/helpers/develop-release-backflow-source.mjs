@@ -1,5 +1,5 @@
 import {beforeCardReadingScope,beforeChapterBattleScene,beforeResponsiveHand,chapterBattleSceneReader} from './chapter-battle-scene-source.mjs';
-import { beforeUiEntrance, entranceInventory, entrancePredecessor, entranceReader, uiEntranceOwns, assertCurrentUiEntrance } from './ui-entrance-source.mjs';
+import { beforeUiEntrance, entranceInventory, entrancePredecessor, entranceReader, underlyingEntranceReader, uiEntranceOwns, assertCurrentUiEntrance } from './ui-entrance-source.mjs';
 import {battlePeripheryPredecessor,beforeBattlePeriphery} from './battle-periphery-source.mjs';
 // Exact Develop predecessors for historical replay. Live builds read current sources.
 import assert from 'node:assert/strict';
@@ -15,6 +15,7 @@ import {beforeNodeNoticeSource} from './reward-current-source.mjs';
 import {beforeKnownMasterBackflowSource,beforeProductionReadingBackflow} from './master-backflow-source.mjs';
 import {beforeReleaseVocabulary,isReleaseVocabularyPredecessor,releaseVocabularyOwns} from './develop-release-vocabulary-source.mjs';
 import {beforeRunHudDeckLabel} from './run-hud-successors.mjs';
+import {beforeReleaseEntranceOwner,readReleaseEntrancePredecessor} from './release-entrance-owner-source.mjs';
 
 const hash=(bytes,algorithm='sha256')=>createHash(algorithm).update(bytes).digest('hex');
 const blob=source=>hash(`blob ${Buffer.byteLength(source)}\0${source}`,'sha1');
@@ -413,7 +414,7 @@ export function beforeCurrentDeckEntranceOwner(path,source){
 function recentBackflowOwnerReader(read,historicalOwners){
  let epoch;
  const readEntrancePrior=entranceReader(path=>{
-  const raw=read(path);
+  const raw=readReleaseEntrancePredecessor(path,read(path),underlyingEntranceReader(read));
   const source=beforeArchitectureOwner(path,path===deckLayoutPath?beforeRunHudDeckLabel(raw):raw);
   const vocabulary=releaseVocabularyOwns(path);
   if(!uiEntranceOwns(path)&&!vocabulary&&path!==battleActionsPath&&!Object.hasOwn(battleInputHistory,path)&&!Object.hasOwn(linkedBackflow,path))return source;
@@ -534,6 +535,7 @@ function beforeSessionRelic(path,source,options){
  return source.includes('\r\n')?before.replaceAll('\n','\r\n'):before;
 }
 export function beforeDevelopBackflow(path,source,options){
+ source=beforeReleaseEntranceOwner(path,source);
  source=beforeLibraryReadPrompt(path,source);
  source=beforeBattleInputHistory(path,beforeChapterEntranceOwner(path,beforeArchitectureOwner(path,source)));
  if(path===battleUiPath)source=beforeLinkedBackflow(path,source);
