@@ -95,6 +95,11 @@ const currentHashes=Object.freeze({
  'tests/merge-queue.test.mjs':'083d1b134bcf73abbbd5fdbe1783358992fb99fdb5b7d87d1a33e94d22b6ccbd',
  'tests/quick-feedback.test.mjs':'ef3a2a86ebdd206ccb7bc83501465a0f3ea4a9e02ff41cb6bd406aaccd146e0c',
 });
+// Only the two complete current selector sources continue these historical views.
+const mappedFastSuccessors=Object.freeze({
+ 'scripts/ci-impact.mjs':'5f2b4f810794560082a5df8323a53425d369e2b019b0ddb332b808c416983fe3',
+ 'scripts/test-affected.mjs':'bcc258fd566870aa8edc8fe4dd8f202301200c7cb0f455b70b5f2f5625b791d6',
+});
 const transportBytes=readFileSync(new URL('./ci-media-transport-source.json.gz',import.meta.url));
 assert.equal(hash(transportBytes),'56f69f4abc8687edd75d2087dfa890f94cf8d5f1d67fe2450338a0d2258355b2','complete CI media transport predecessor');
 const transport=JSON.parse(gunzipSync(transportBytes));
@@ -1829,7 +1834,10 @@ export function beforePreflightSource(path,source,view='prior',read=readFileSync
   !source.includes('\r\r\n')&&hash(normalize(source))===transportRow.currentSha)
   source=source.includes('\r\n')?transportRow.before.replaceAll('\n','\r\n'):transportRow.before;
  const row=Object.hasOwn(proof.files,path)?proof.files[path]:null;
- if(!row||typeof source!=='string'||source.includes('\r\r\n')||hash(normalize(source))!==(Object.hasOwn(currentHashes,path)?currentHashes[path]:row.currentSha))return source;
+ if(!row||typeof source!=='string'||source.includes('\r\r\n'))return source;
+ const current=Object.hasOwn(currentHashes,path)?currentHashes[path]:row.currentSha;
+ const digest=hash(normalize(source));
+ if(digest!==current&&digest!==mappedFastSuccessors[path])return source;
  assert(['prior','release-bootstrap'].includes(view),'explicit preflight predecessor view');
  const prior=view==='release-bootstrap'?row.releaseBootstrapBefore?.source:row.before;
  // Newly introduced gates have no historical implementation to invent or hide.

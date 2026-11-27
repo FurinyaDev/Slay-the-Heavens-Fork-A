@@ -1,9 +1,9 @@
-import { readFileSync, readdirSync, writeFileSync, appendFileSync } from 'node:fs';
+import { readFileSync, writeFileSync, appendFileSync } from 'node:fs';
 import {qualityShardMatrices} from './ci-quality-shape.mjs';
 import { spawnSync } from 'node:child_process';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { selectTests, parseGitChanges } from './test-affected.mjs';
+import { selectTests, parseGitChanges, readTestGraphSources } from './test-affected.mjs';
 const architectureLayers = JSON.parse(readFileSync(new URL('../config/architecture.json', import.meta.url), 'utf8')).layers;
 // Match the existing Fast job ceilings in quality.yml. Timing estimates do
 // not set fixture deadlines or the three-minute feedback target.
@@ -50,12 +50,6 @@ export function impact(changed, sources, event, timings) {
   return { mode: 'fast', reason: plan.reason, changed, js, lua, ...estimates };
 }
 
-function scan(dir) {
-  return readdirSync(dir, { withFileTypes: true }).flatMap(e => e.isDirectory() ? scan(`${dir}/${e.name}`) : [`${dir}/${e.name}`]);
-}
-function readImpactSources() {
-  return Object.fromEntries(['src/lua', 'scripts', 'tests'].flatMap(scan).filter(p => /\.(lua|mjs)$/.test(p)).map(p => [p, readFileSync(p, 'utf8')]));
-}
 export function main() {
   const event = JSON.parse(readFileSync(process.env.GITHUB_EVENT_PATH, 'utf8'));
   // A merge queue group is a new integration commit, not an ordinary PR.
@@ -75,7 +69,7 @@ export function main() {
     if (git.status !== 0) throw new Error(git.stderr || 'Cannot compare exact base');
     changed = [...new Set(parseGitChanges(git.stdout))];
   }
-  const plan = impact(changed, readImpactSources, { eventName: process.env.GITHUB_EVENT_NAME, base: event.pull_request?.base.ref,
+  const plan = impact(changed, readTestGraphSources, { eventName: process.env.GITHUB_EVENT_NAME, base: event.pull_request?.base.ref,
     forceFull: event.pull_request?.labels?.some(l => l.name === 'ci:full') }, JSON.parse(readFileSync('scripts/ci-test-timings.json', 'utf8')));
   plan.sha = process.env.GITHUB_SHA;
   plan.head = event.pull_request?.head.sha;

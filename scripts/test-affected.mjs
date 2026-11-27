@@ -1,4 +1,4 @@
-import { appendFileSync, readFileSync, readdirSync } from 'node:fs';
+import { appendFileSync, lstatSync, readFileSync, readdirSync } from 'node:fs';
 import { resolve, relative, dirname, posix } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
@@ -13,7 +13,15 @@ import {prepareRuntimePreviews, needsRuntimePreviews} from './ci-reviewed-lfs.mj
 
 // Local and PR advisory feedback share one selector. Full Quality owns coverage.
 const slash = value => value.replaceAll('\\', '/');
-const isGraphInput = path => /^(src\/lua\/.*\.lua|scripts\/.*\.mjs|tests\/.*\.(mjs|lua))$/.test(path) || path === eventCombatRouteInput;
+// These vectors are read by a computed name inside one complete regression.
+const unknownEventVectors = new Set([
+  'tests/fixtures/unknown-events/room-roll-vectors.json',
+  'tests/fixtures/unknown-events/event-pool-vectors.json',
+  'tests/fixtures/unknown-events/eligibility-vectors.json',
+]);
+const unknownEventRegression = 'tests/unknown-events-fixtures.test.mjs';
+const isGraphInput = path => /^(src\/lua\/.*\.lua|scripts\/.*\.mjs|tests\/.*\.(mjs|lua))$/.test(path)
+  || path === eventCombatRouteInput || unknownEventVectors.has(path);
 // Importing runLua does not execute its conditional fixture setup. Keep these
 // helper edges on their real Lua entries, as with the historical replay port.
 const conditionalRunnerFixtures = new Map([
@@ -44,6 +52,12 @@ function files(dir) {
     const path = `${dir}/${entry.name}`;
     return entry.isDirectory() ? files(path) : [path];
   });
+}
+export function readTestGraphSources() {
+  return Object.fromEntries(['src/lua', 'scripts', 'tests'].flatMap(files)
+    .filter(path => /\.(lua|mjs)$/.test(path) || path === eventCombatRouteInput ||
+      unknownEventVectors.has(path) && lstatSync(path).isFile())
+    .map(path => [path, readFileSync(path, 'utf8')]));
 }
 function luaImports(source) {
   const references = new Set(), known = new Set();
@@ -180,12 +194,14 @@ function jsDiscovery(source) {
   return { references, directories, dynamicLua, dynamicScript };
 }
 export function selectTests(changed, sources, {advisory = false, reportDynamicDependencies = false} = {}) {
-  const paths = Object.keys(sources), deps = new Map(), integration = new Set(), dynamicImports = new Set(), dynamicScripts = new Set();
+  // The vectors are data consumed by the named test, never executable graph nodes.
+  const paths = Object.keys(sources).filter(path => !unknownEventVectors.has(path));
+  const deps = new Map(), integration = new Set(), dynamicImports = new Set(), dynamicScripts = new Set();
   for (const [module, producer] of Object.entries(generated)) {
     if (!(producer in sources)) continue;
     for (const directory of ['src/lua', 'build/lua']) deps.set(`${directory}/${module}.lua`, new Set([producer]));
   }
-  const available = path => path in sources || deps.has(path);
+  const available = path => (path in sources && !unknownEventVectors.has(path)) || deps.has(path);
   const js = paths.filter(p => /^tests\/[^/]+\.test\.mjs$/.test(p));
   const lua = paths.filter(p => /^tests\/lua\/[^/]+\.lua$/.test(p));
   const roots = [...js, ...lua];
@@ -196,6 +212,8 @@ export function selectTests(changed, sources, {advisory = false, reportDynamicDe
     let reason;
     if (!(path in sources) || !isGraphInput(path))
       reason=`Unmodelled or deleted input: ${path}`;
+    else if (unknownEventVectors.has(path) && !(unknownEventRegression in sources))
+      reason=`Mapped test missing for input: ${path}`;
     else if (/scripts\/(test-affected|test-lua|build-.*)\.mjs$/.test(path))
       reason=`Shared build/test infrastructure: ${path}`;
     if (reason) { if (!advisory) return fallback(reason); }
@@ -203,6 +221,7 @@ export function selectTests(changed, sources, {advisory = false, reportDynamicDe
   }
   if (!eligible.length) return fallback('No independently mapped inputs; complete Quality is required');
   for (const [path, source] of Object.entries(sources)) {
+    if (unknownEventVectors.has(path)) continue;
     const references = new Set();
     // runLua's CLI discovers all fixtures, but importing runLua does not execute
     // that CLI. Its only layout injection is attached to the exact fixtures below.
@@ -277,7 +296,9 @@ export function selectTests(changed, sources, {advisory = false, reportDynamicDe
     }
     visit(start); return seen;
   };
-  const mapped = new Set(), selected = [], dependenciesByRoot = new Map();
+  const vectorEdit = eligible.some(path => unknownEventVectors.has(path));
+  const mapped = new Set(eligible.filter(path => unknownEventVectors.has(path)));
+  const selected = [], dependenciesByRoot = new Map();
   let unresolvedRuntimeDependency;
   for (const test of roots) {
     const dependencies = closure(test);
@@ -290,7 +311,7 @@ export function selectTests(changed, sources, {advisory = false, reportDynamicDe
   if (unmapped && !advisory) return fallback(`No statically mapped test for input: ${unmapped}`);
   const inputs = advisory ? eligible.filter(path => mapped.has(path)) : eligible;
   if (!inputs.length) return fallback('No statically mapped inputs; complete Quality is required');
-  const affected = new Set(inputs);
+  const affected = new Set(inputs.filter(path => !unknownEventVectors.has(path)));
   const luaChange = inputs.some(p => p.endsWith('.lua')) || [...deps.keys()]
     .some(p => p.startsWith('build/lua/') && [...closure(p)].some(input => affected.has(input)));
   const scriptChange = inputs.some(p => p.endsWith('.mjs'));
@@ -306,10 +327,14 @@ export function selectTests(changed, sources, {advisory = false, reportDynamicDe
     // Keep these for every script change rather than guessing their dynamic IO.
     const dynamicScript = scriptChange && [...runtimeDependencies].some(p => dynamicScripts.has(p));
     if (reportDynamicDependencies && (dynamicLua || dynamicScript)) unresolvedRuntimeDependency ??= test;
-    if ([...dependencies].some(p => affected.has(p)) || dynamicLua || dynamicScript) selected.push(test);
+    // Merely reading a test's source or discovering its filename does not read
+    // the vectors. Only the registered test executes the computed read.
+    if ((vectorEdit && test === unknownEventRegression) ||
+      [...dependencies].some(p => affected.has(p)) || dynamicLua || dynamicScript) selected.push(test);
   }
   const isIntegration = test => [...dependenciesByRoot.get(test)].some(p => integration.has(p));
-  return { full: false, reason: 'Transitive imports and literal fixture references',
+  const reason = affected.size ? 'Transitive imports and literal fixture references' : 'Mapped Unknown Event vector regression';
+  return { full: false, reason,
     ...(unresolvedRuntimeDependency ? {unresolvedRuntimeDependency} : {}), fast: selected.filter(p => js.includes(p) && !isIntegration(p)),
     integration: selected.filter(p => js.includes(p) && isIntegration(p)), lua: selected.filter(p => lua.includes(p)) };
 }
@@ -385,14 +410,16 @@ export function main(args) {
   }
   // Only wholly out-of-scope (or empty) inputs need no corpus. In-scope paths,
   // including unknown/deleted ones, retain graph discovery for mixed feedback.
-  const sources = changed.some(isGraphInput) ? Object.fromEntries(['src/lua', 'scripts', 'tests'].flatMap(files)
-    .filter(p => /\.(lua|mjs)$/.test(p) || p === eventCombatRouteInput).map(p => [p, readFileSync(p, 'utf8')])) : {};
+  const sources = changed.some(isGraphInput) ? readTestGraphSources() : {};
   const plan = selectTests([...new Set(changed)], sources);
   const quickPlan = advisory ? selectQuickPlan(changed, sources, plan) : null;
   const quick = advisory ? selectQuickFeedback(quickPlan, changed,
     JSON.parse(readFileSync(new URL('./ci-test-timings.json', import.meta.url), 'utf8'))) : null;
+  const startupSmoke = ciFast && changed.some(path =>
+    /^(?:src\/lua\/.*\.lua$|art\/|audio\/|data\/|scripts\/(?:build-|.*(?:assets|artwork|audio|layout)))/.test(path))
+    ? 'tests/native-startup-contract.test.mjs' : undefined;
   const planDurationMs = Date.now() - planStarted;
-  console.log(JSON.stringify({ tier, changed, ...plan, ...(advisory ? { feedback: quick, planDurationMs } : {}) }, null, 2));
+  console.log(JSON.stringify({ tier, changed, ...plan, ...(advisory ? { feedback: quick, planDurationMs } : {}), startupSmoke }, null, 2));
   if (planOnly) return;
   const summary = message => {
     console.log(message);
@@ -405,7 +432,7 @@ export function main(args) {
   };
   if (advisory) summary(`Feedback timing: plan ${planDurationMs} ms.`);
   if (advisory && plan.full) summary(`Complete Quality required: ${plan.reason}. Quick feedback covers only independently mapped inputs.`);
-  if (advisory && quickPlan.full) {
+  if (advisory && quickPlan.full && !startupSmoke) {
     summary('Quick feedback unavailable. No tests run here; parallel complete Quality is required. This is not a regression pass.'); return;
   }
   const npm = process.platform === 'win32' ? 'npm.cmd' : 'npm';
@@ -416,7 +443,7 @@ export function main(args) {
   const tests = complete ? complete.tests : advisory ? quick.fast : [...plan.fast, ...plan.integration];
   const fixtures = complete ? complete.fixtures : advisory ? quick.lua : plan.lua;
   if (advisory) summary(`Advisory subset: ${tests.length} fast JS and ${fixtures.length} related Lua files selected; ${quickPlan.integration.length} integration JS and ${quickPlan.lua.length - fixtures.length} Lua files deferred to complete Quality. Lua scheduling estimate ${quick.estimatedLuaMs} ms, not a deadline.`);
-  if (advisory && !tests.length && !fixtures.length) {
+  if (advisory && !tests.length && !fixtures.length && !startupSmoke) {
     summary('No quick tests selected. Complete Quality remains required; this is not a regression pass.');
     return;
   }
@@ -430,6 +457,10 @@ export function main(args) {
   const js = paths => run(process.execPath, ['--test', '--test-concurrency=1', ...paths]);
   const lua = fixture => run(process.execPath, ['scripts/test-lua.mjs', fixture]);
   timed('tests', () => {
+    if (startupSmoke) {
+      summary('Running offline native host startup and generated resource smoke.');
+      js([startupSmoke]);
+    }
     if (advisory) executeQuickFeedback(quick, changed, {js, lua});
     else { if (tests.length) js(tests); for (const fixture of fixtures) lua(fixture); }
   });

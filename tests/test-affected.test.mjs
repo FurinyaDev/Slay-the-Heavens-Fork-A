@@ -32,6 +32,83 @@ test('pure transitive JS imports stay in the fast tier', () => {
   assert.deepEqual(plan.fast, ['tests/pure.test.mjs']);
   assert.deepEqual(plan.integration, []);
 });
+test('formal impact loads reviewed test vectors and fails closed for unknown or missing inputs', () => {
+  const root = mkdtempSync(join(tmpdir(), 'impact-test-vectors-'));
+  const cli = fileURLToPath(new URL('../scripts/ci-impact.mjs', import.meta.url));
+  const vectors = ['room-roll-vectors', 'event-pool-vectors', 'eligibility-vectors']
+    .map(name => `tests/fixtures/unknown-events/${name}.json`);
+  const oracle = 'tests/unknown-events-fixtures.test.mjs';
+  const route = 'tests/lua/event_combat_route_reducers.lua';
+  const git = (...args) => {
+    const result = spawnSync('git', args, { cwd: root, encoding: 'utf8' });
+    assert.ifError(result.error);
+    assert.equal(result.status, 0, result.stderr);
+    return result.stdout.trim();
+  };
+  const write = (path, contents) => writeFileSync(join(root, path), contents);
+  const commit = () => {
+    git('add', '--all');
+    git('-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.invalid', 'commit', '-qm', 'fixture');
+    return git('rev-parse', 'HEAD');
+  };
+  try {
+    for (const dir of ['src/lua', 'scripts', 'tests/lua', 'tests/fixtures/unknown-events'])
+      mkdirSync(join(root, dir), { recursive: true });
+    for (const file of [...vectors, eventCombatRouteInput]) write(file, '{}\n');
+    write(oracle, 'export const assertion = true;\n');
+    write(route, 'return true\n');
+    write('scripts/ci-test-timings.json', JSON.stringify({
+      js: { win32: {}, linux: {} }, lua: {}, unknownJsMs: 1, unknownLuaMs: 1,
+    }));
+    git('init', '--quiet');
+    const base = commit();
+    for (const scenario of [
+      ...vectors.map(file => ({file, js: [oracle], lua: []})),
+      {file: eventCombatRouteInput, js: [], lua: [route]},
+      {file: 'tests/fixtures/unknown-events/unknown.json'},
+      {file: vectors[0], remove: true},
+      {file: oracle, remove: true},
+      {file: vectors[0], forceFull: true},
+    ]) {
+      git('reset', '--hard', base);
+      git('clean', '-fd');
+      mkdirSync(join(root, 'src/lua'), { recursive: true });
+      if (scenario.remove) rmSync(join(root, scenario.file));
+      else write(scenario.file, '[]\n');
+      const head = commit();
+      const event = {pull_request: {base: {ref: 'develop', sha: base}, head: {sha: head},
+        labels: scenario.forceFull ? [{name: 'ci:full'}] : []}};
+      write('event.json', JSON.stringify(event));
+      const env = {...process.env, GITHUB_EVENT_NAME: 'pull_request', GITHUB_SHA: head,
+        GITHUB_EVENT_PATH: join(root, 'event.json'), GITHUB_OUTPUT: join(root, 'output'),
+        GITHUB_STEP_SUMMARY: join(root, 'summary'), GITHUB_RUN_ID: '7', GITHUB_RUN_ATTEMPT: '1'};
+      const result = spawnSync(process.execPath, [cli], {cwd: root, env, encoding: 'utf8'});
+      assert.ifError(result.error);
+      assert.equal(result.status, 0, result.stderr);
+      const plan = JSON.parse(readFileSync(join(root, 'ci-impact.json'), 'utf8'));
+      assert.equal(plan.mode, scenario.js ? 'fast' : 'full', `${scenario.file}: ${plan.reason}`);
+      assert.deepEqual(plan.js, scenario.js ?? []);
+      assert.deepEqual(plan.lua, scenario.lua ?? []);
+    }
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+test('Fork advisory plans offline startup only for affected game and resource inputs', () => {
+  for (const [file, expected] of [
+    ['docs/CI.md', undefined],
+    ['tests/unit.test.mjs', undefined],
+    ['art/missing.png', 'tests/native-startup-contract.test.mjs'],
+    ['audio/missing.wav', 'tests/native-startup-contract.test.mjs'],
+    ['scripts/build-game.mjs', 'tests/native-startup-contract.test.mjs'],
+    ['src/lua/missing.lua', 'tests/native-startup-contract.test.mjs'],
+  ]) {
+    const result = spawnSync(process.execPath, ['scripts/test-affected.mjs', '--ci-fast', '--plan', '--files', file],
+      { encoding: 'utf8', timeout: 30_000 });
+    assert.equal(result.status, 0, result.stderr);
+    assert.equal(JSON.parse(result.stdout).startupSmoke, expected, file);
+  }
+});
 test('directory discovery remains conservative but unrelated process tests stay out', () => {
   const plan = selectTests(['scripts/pure.mjs'], { ...sources,
     'tests/discovery.test.mjs': 'import {readdirSync} from "node:fs"; readdirSync(directory)',
