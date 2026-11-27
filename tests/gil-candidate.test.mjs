@@ -7,6 +7,7 @@ import { join } from 'node:path';
 import { test } from 'node:test';
 import { verifyDownloadedArtifact, verifyPublishedRebase, verifyReceipts } from '../scripts/gil-candidate.mjs';
 import { api, approvedRequest, buildOnlyRequest, candidateTarget, encoderSha256, findArtifact, releaseBuildRequest, releaseBuildTarget, validationTarget, verifySource } from '../scripts/gil-candidate-preflight.mjs';
+import * as preflight from '../scripts/gil-candidate-preflight.mjs';
 import { fileRecord } from '../scripts/evidence-files.mjs';
 import { hostedCandidatePath, verifiedPayloadInputs } from '../scripts/hosted-gil-receipt.mjs';
 import { downloadLegacyGilArchive, legacyGilArchive, supportsPublishedGilSeed } from '../scripts/runtime-baseline/published-baseline.mjs';
@@ -26,7 +27,8 @@ test('only the unified workflow builds, audits and archives the frozen candidate
   const path = new URL('../.github/workflows/gil-build.yml', import.meta.url);
   const workflow = readFileSync(path, 'utf8').replaceAll('\r\n', '\n');
   assert.equal(existsSync(new URL('../.github/workflows/gil-candidate.yml', import.meta.url)), false);
-  assert.doesNotMatch(workflow, /workflow_run:|Quality|Licenses|QUALITY_|LICENSES_/);
+  assert.match(workflow, /workflow_run:\n    workflows: \[Quality, Licenses\]\n    types: \[completed\]\n    branches: \['release\/v2\.2\.0'\]/);
+  assert.match(workflow, /github\.event\.workflow_run\.head_branch == 'release\/v2\.2\.0'/);
   assert.match(workflow, /workflow_dispatch:\n    inputs:\n      source_branch:[\s\S]+      source_sha:/);
   assert.match(workflow, /^    branches: \['test\/gil-build\/\*\*', 'ci\/full\/gil-build\/\*\*'\]$/m);
   assert.match(workflow, /GIL_PRODUCTION_WORK_KEY: \$\{\{ vars\.GIL_PRODUCTION_WORK_KEY \}\}/);
@@ -46,7 +48,8 @@ test('only the unified workflow builds, audits and archives the frozen candidate
   })) assert(audit.includes(`          ${name}: ${'${{'} ${expression} }}\n`), `audit requires ${name}`);
   assert.match(workflow, /upload-artifact@[a-f0-9]{40}[\s\S]+download-artifact@[a-f0-9]{40}[\s\S]+gil-candidate\.mjs readback/);
   const producer = readFileSync(new URL('../scripts/gil-candidate.mjs', import.meta.url), 'utf8');
-  assert.doesNotMatch(workflow + producer, /artifact-url|ARTIFACT_URL|Download the verified GIL/);
+  assert.doesNotMatch(workflow, /artifact-url|ARTIFACT_URL/);
+  assert.match(producer, /if \(legacy\) summarizeLegacyDownload\(/);
   assert.match(producer, /Read-back GIL artifact ID/);
 });
 
@@ -200,10 +203,38 @@ test('only explicit primary develop dispatch can deliver an exact frozen source'
     {ref:'refs/tags/engine-v2.1.1'}, {repoId:'3'}, {controllerSha:'bad'}, {inputs:{source_branch:branch}},
     {source:'bad', inputs:{source_branch:branch, source_sha:'bad'}},
     {branch:'develop', inputs:{source_branch:'develop', source_sha:sourceSha}},
-  ]) assert.throws(() => releaseBuildTarget({...release, ...changes}), /formal GIL|40-character|frozen release/);
+  ]) assert.throws(() => releaseBuildTarget({...release, ...changes}), /formal GIL|40-character|frozen release|trusted legacy/);
   for (const ref of ['develop', 'master', 'test/gil-build/probe']) {
     assert.equal(releaseBuildTarget({...release, ref:'refs/heads/' + ref, branch:ref, source:release.controllerSha, inputs:{}}), undefined);
   }
+});
+
+test('only the active v2.2.0 release retains the trusted Quality or Licenses automatic build', () => {
+  const active = 'release/v2.2.0';
+  const upstream = {repository:repo, head_repository:repo, event:'workflow_dispatch', status:'completed', conclusion:'success',
+    path:'.github/workflows/quality.yml', head_branch:active, head_sha:sourceSha};
+  const event = {repoId:String(repo.id), ref:'refs/heads/develop', controllerSha:policy.controllerSha,
+    source:sourceSha, branch:active, event:'workflow_run', upstream};
+  const expected = {branch:active, version:'v2.2.0', legacy:true};
+  assert.deepEqual(releaseBuildTarget(event), expected);
+  assert.deepEqual(releaseBuildTarget({...event, upstream:{...upstream, path:'.github/workflows/licenses.yml'}}), expected);
+  for (const changes of [{head_repository:{id:3}}, {repository:{id:3}}, {event:'push'}, {path:'.github/workflows/other.yml'},
+    {head_sha:'3'.repeat(40)}, {status:'in_progress'}, {conclusion:'failure'}, {head_branch:'release/v2.3.0'}]) {
+    assert.throws(() => releaseBuildTarget({...event, upstream:{...upstream, ...changes}}), /trusted legacy/);
+  }
+  assert.throws(() => releaseBuildTarget({...event, branch:'release/v2.3.0', upstream:{...upstream, head_branch:'release/v2.3.0'}}), /trusted legacy/);
+  assert.throws(() => releaseBuildTarget({...event, event:'workflow_dispatch', inputs:{source_branch:active, source_sha:sourceSha}}), /existing v2.2.0/);
+});
+
+test('active release keeps the exact v1 request and treats a new legacy Full attempt as different evidence', () => {
+  const target = {branch:'release/v2.2.0', version:'v2.2.0'};
+  const checks = {quality:10, qualityAttempt:2, qualityCheckoutArtifact:90, licenses:11};
+  const request = preflight.legacyReleaseBuildRequest(workKey, sourceSha, target, checks);
+  assert.equal(request.custody, 'gil-build-v1');
+  assert.equal(request.id, '0e7066bae084430ab916b4013d1de7ce510aedf6c2f211abe5fb1f36d04eb6df');
+  assert.notEqual(preflight.legacyReleaseBuildRequest(workKey, sourceSha, target, {...checks, qualityAttempt:3}).id, request.id);
+  assert.throws(() => preflight.legacyReleaseBuildRequest(workKey, sourceSha, target, {...checks, licenses:0}), /legacy.*Full.*Licenses/i);
+  assert.throws(() => preflight.legacyReleaseBuildRequest(workKey, sourceSha, hotfix, checks), /existing v2.2.0/);
 });
 
 test('release build identity contains only frozen source, production inputs and build policy', () => {

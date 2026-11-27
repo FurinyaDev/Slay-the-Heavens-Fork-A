@@ -7,6 +7,7 @@ import {refinedReleaseOfficialAssetsProfile, refinedReleaseOfficialAssetFlags} f
 import {loadArtifact, sha256, verifyGilArtifact} from '../scripts/runtime-baseline/release-performance-artifacts.mjs';
 import {legacyGilArchive} from '../scripts/runtime-baseline/published-baseline.mjs';
 import {findReleaseArtifact} from '../scripts/gil-candidate.mjs';
+import * as preflight from '../scripts/gil-candidate-preflight.mjs';
 import {releaseBuildRequest} from '../scripts/gil-candidate-preflight.mjs';
 
 const id = 1429751262;
@@ -266,6 +267,21 @@ test('equivalent builds reuse the exact verified artifact; expired and partial r
   await assert.rejects(findReleaseArtifact(f.build, '4', lookup([{...f.artifact, expired:true}]), verify), /expired/);
   await assert.rejects(findReleaseArtifact(f.build, String(f.run.id), lookup([f.artifact]), verify), /fresh dispatch/);
   assert.equal(await findReleaseArtifact({...f.build, id:'0'.repeat(64)}, '4', lookup([f.artifact]), verify), undefined);
+});
+
+test('active v2.2.0 automatic builds reuse an exact already audited v1 artifact from the old dispatch', async () => {
+  const checks = {quality:10, qualityAttempt:2, qualityCheckoutArtifact:90, licenses:11};
+  const v1 = preflight.legacyReleaseBuildRequest('confirmed-release', head, {branch:target.branch, version:'v' + target.version}, checks);
+  assert.equal(v1.id, 'fb5a9ce0fb1b598515c4b0791f743ca012d8c719576dfc5bfb42f04e53861f74');
+  const f = unifiedFixture('workflow_dispatch', {requestId:v1.id});
+  f.artifact.name = 'gil-candidate-v' + target.version + '-' + head + '-' + v1.id;
+  const lookup = async path => path.startsWith('actions/artifacts?name=')
+    ? {artifacts:[f.artifact], total_count:1} : f.run;
+  const verify = (id, candidate) => verifyGilArtifact(f.request, id, candidate, f.load);
+  const loaded = await findReleaseArtifact(v1, '9', lookup, verify);
+  assert.equal(loaded.id, f.artifact.id);
+  assert.equal(loaded.custody, 'gil-build-v1');
+  await assert.rejects(findReleaseArtifact({...v1, checks:{...checks, qualityAttempt:3}}, '9', lookup, verify), /current frozen Full/);
 });
 
 async function alphaFixture() {
