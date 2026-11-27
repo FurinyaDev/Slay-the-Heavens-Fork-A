@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - Furinya
 created_date: '2026-11-27 16:33'
-updated_date: '2026-11-27 16:46'
+updated_date: '2026-11-27 16:53'
 labels:
   - engineering
 dependencies: []
@@ -47,4 +47,6 @@ BASE 32a15219aecd145c59cb1b2fcf477e5556766e5d；fork-a/ci/fast-mapped-fixture-sm
 本地验收：正式 ci-impact -> ci-fast 实际回放选择单个完整未知事件回归，合法向量通过，错误 room 期望由原断言拒绝；相关 225 测试全通过。Fork advisory 本地启动/资源冒烟约 16.6 秒，缺少旅行者呈现输入约 0.74 秒且 exit 1，Lua 源语法错误约 6.68 秒且 exit 1。既有 Full workflow/规则未更动。
 
 成本观测：2026-11-27 04:14–15:18 UTC 的 30 个已完成 Quality attempt 中，普通 PR 13 个启动 Fast、7 个启动 Full、4 个执行模式未解析；18 个取消、10 个失败、2 个跳过（全部事件）。#1030 的自然测试 PR run 45770440456 attempt 1 走 Full 失败，运行 wall 32096 秒、runner 执行 522.2 分钟；排队累计 626125 秒有并行重叠。该范围仍 Full。缺相同工作流和覆盖的真实改后样本，保留待验。
+
+独审负控：真实 Git T（普通文件与符号链接相互转换）必须 Full；两种方向均由正式 impact CLI 负控通过。首个 Fork Quick run 46036448176 在 cultist_ui.lua:77 失败；基线与本候选运行同一原夹具均复现该断言失败。预检耗时 wall 118 秒、排队 4 秒、执行 114 秒；保持原断言与 Hosted 门禁，正式 CI 待验。
 <!-- SECTION:NOTES:END -->

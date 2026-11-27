@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync, readdirSync, mkdtempSync, mkdirSync, writeFileSync, rmSync, renameSync } from 'node:fs';
+import { readFileSync, readdirSync, mkdtempSync, mkdirSync, writeFileSync, rmSync, renameSync, symlinkSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { tmpdir } from 'node:os';
 import { spawnSync } from 'node:child_process';
@@ -69,14 +69,27 @@ test('formal impact loads reviewed test vectors and fails closed for unknown or 
       {file: vectors[0], remove: true},
       {file: oracle, remove: true},
       {file: vectors[0], forceFull: true},
+      ...(process.platform === 'win32' ? [] : [
+        {file: eventCombatRouteInput, symlink: 'to'},
+        {file: eventCombatRouteInput, symlink: 'from'},
+      ]),
     ]) {
       git('reset', '--hard', base);
       git('clean', '-fd');
       mkdirSync(join(root, 'src/lua'), { recursive: true });
-      if (scenario.remove) rmSync(join(root, scenario.file));
-      else write(scenario.file, '[]\n');
+      let comparison = base;
+      if (scenario.remove || scenario.symlink) rmSync(join(root, scenario.file));
+      if (scenario.symlink) {
+        symlinkSync('unknown-events/room-roll-vectors.json', join(root, scenario.file));
+        if (scenario.symlink === 'from') {
+          comparison = commit();
+          rmSync(join(root, scenario.file));
+          write(scenario.file, '[]\n');
+        }
+      } else if (!scenario.remove) write(scenario.file, '[]\n');
       const head = commit();
-      const event = {pull_request: {base: {ref: 'develop', sha: base}, head: {sha: head},
+      if (scenario.symlink) assert.equal(git('diff', '--name-status', comparison, head), `T\t${scenario.file}`);
+      const event = {pull_request: {base: {ref: 'develop', sha: comparison}, head: {sha: head},
         labels: scenario.forceFull ? [{name: 'ci:full'}] : []}};
       write('event.json', JSON.stringify(event));
       const env = {...process.env, GITHUB_EVENT_NAME: 'pull_request', GITHUB_SHA: head,
@@ -87,6 +100,7 @@ test('formal impact loads reviewed test vectors and fails closed for unknown or 
       assert.equal(result.status, 0, result.stderr);
       const plan = JSON.parse(readFileSync(join(root, 'ci-impact.json'), 'utf8'));
       assert.equal(plan.mode, scenario.js ? 'fast' : 'full', `${scenario.file}: ${plan.reason}`);
+      if (scenario.symlink) assert.match(plan.reason, /Git file type changed/);
       assert.deepEqual(plan.js, scenario.js ?? []);
       assert.deepEqual(plan.lua, scenario.lua ?? []);
     }

@@ -19,6 +19,7 @@ export function impact(changed, sources, event, timings) {
   const full = reason => ({ mode: 'full', reason, changed, js: [], lua: [] });
   const release = /^release\/[\w][\w./-]*$/.test(event.base ?? '');
   if (event.eventName !== 'pull_request' || event.base !== 'develop' && !release || event.forceFull) return full('Integration or explicit full validation');
+  if (event.typeChanged) return full('Git file type changed');
   if (!changed.length) return full('Empty comparison');
   // Documentation is not generally inert: evidence, design, source ledgers and
   // backlog are consumed by gates. Only this explicit prose allowlist is inert.
@@ -61,16 +62,16 @@ export function main() {
       !/^[0-9a-f]{40}$/.test(group?.base_sha??''))
       throw Error('Invalid native merge group identity');
   }
-  let changed = [];
+  let changed = [], typeChanged = false;
   if (process.env.GITHUB_EVENT_NAME === 'pull_request') {
     const base = event.pull_request.base.sha;
     if (!/^[a-f0-9]{40}$/.test(base)) throw new Error('Invalid base');
     const git = spawnSync('git', ['diff', '--name-status', '-z', '--find-renames', base, 'HEAD', '--'], { encoding: 'utf8' });
     if (git.status !== 0) throw new Error(git.stderr || 'Cannot compare exact base');
-    changed = [...new Set(parseGitChanges(git.stdout))];
+    changed = [...new Set(parseGitChanges(git.stdout, status => { typeChanged ||= status === 'T'; }))];
   }
   const plan = impact(changed, readTestGraphSources, { eventName: process.env.GITHUB_EVENT_NAME, base: event.pull_request?.base.ref,
-    forceFull: event.pull_request?.labels?.some(l => l.name === 'ci:full') }, JSON.parse(readFileSync('scripts/ci-test-timings.json', 'utf8')));
+    typeChanged, forceFull: event.pull_request?.labels?.some(l => l.name === 'ci:full') }, JSON.parse(readFileSync('scripts/ci-test-timings.json', 'utf8')));
   plan.sha = process.env.GITHUB_SHA;
   plan.head = event.pull_request?.head.sha;
   plan.base = event.pull_request?.base.sha;

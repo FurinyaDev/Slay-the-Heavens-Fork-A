@@ -55,8 +55,8 @@ function files(dir) {
 }
 export function readTestGraphSources() {
   return Object.fromEntries(['src/lua', 'scripts', 'tests'].flatMap(files)
-    .filter(path => /\.(lua|mjs)$/.test(path) || path === eventCombatRouteInput ||
-      unknownEventVectors.has(path) && lstatSync(path).isFile())
+    .filter(path => /\.(lua|mjs)$/.test(path) ||
+      (path === eventCombatRouteInput || unknownEventVectors.has(path)) && lstatSync(path).isFile())
     .map(path => [path, readFileSync(path, 'utf8')]));
 }
 function luaImports(source) {
@@ -371,12 +371,13 @@ function run(command, args) {
   if (result.error) throw result.error;
   if (result.status !== 0) throw new Error(`${command} failed (${result.status ?? result.signal})`);
 }
-export function parseGitChanges(output) {
+export function parseGitChanges(output, reportStatus) {
   const fields = output.split('\0'), paths = [];
   if (fields.pop() !== '') throw new Error('Expected NUL-delimited git change records');
   for (let i = 0; i < fields.length;) {
     const status = fields[i++], count = /^[RC]\d+$/.test(status) ? 2 : /^[ACDMRTUXB]$/.test(status) ? 1 : 0;
     if (!count || i + count > fields.length) throw new Error('Invalid git change record');
+    reportStatus?.(status);
     for (let j = 0; j < count; j++) {
       if (!fields[i]) throw new Error('Empty git change path');
       paths.push(fields[i++]);

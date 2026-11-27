@@ -97,8 +97,8 @@ const currentHashes=Object.freeze({
 });
 // Only the two complete current selector sources continue these historical views.
 const mappedFastSuccessors=Object.freeze({
- 'scripts/ci-impact.mjs':'5f2b4f810794560082a5df8323a53425d369e2b019b0ddb332b808c416983fe3',
- 'scripts/test-affected.mjs':'bcc258fd566870aa8edc8fe4dd8f202301200c7cb0f455b70b5f2f5625b791d6',
+ 'scripts/ci-impact.mjs':'d72484f7a36eaca360bd470828c9210be53f12afeaf42d1dfe38fcff8ee8280c',
+ 'scripts/test-affected.mjs':'890b7fa8a6adfef47bad2170905ad2667f97f3e8db9e2333a01f76b383877490',
 });
 const transportBytes=readFileSync(new URL('./ci-media-transport-source.json.gz',import.meta.url));
 assert.equal(hash(transportBytes),'56f69f4abc8687edd75d2087dfa890f94cf8d5f1d67fe2450338a0d2258355b2','complete CI media transport predecessor');
