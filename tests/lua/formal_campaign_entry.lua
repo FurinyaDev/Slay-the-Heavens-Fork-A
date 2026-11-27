@@ -16,8 +16,8 @@ local function verifyBossBadge(host,root)
     assert(ratio>=2 and ratio<=2.5,'boss emblem size outside STS1 target')
     assert(host.mapUI:focusCurrent())
 end
-local function awaitNativePage(host)
-    for _=1,80 do
+local function awaitNativePage(host,maxTicks)
+    for _=1,maxTicks or 80 do
         if not host.starting and not(host.prologue and host.prologue:covering())
             and not(host.pageReveal and host.pageReveal:covered())then assert(not host.disabled);return end
         OnUpdate(0.05)
@@ -163,7 +163,9 @@ local function enterBattle(host,floor)
     assert(nextNode and nextNode.floor==floor)
     local accepted,state=host.mapUI:choose(nextNode.id)
     assert(accepted and state=='selection_pending' and host.mode=='map' and host.run.phase=='map')
-    awaitNativePage(host)
+    -- The Act 1 Guardian's narration and two scene fades take about six seconds.
+    local guardianEntry=host.run.act==1 and nextNode.type=='boss'
+    awaitNativePage(host,guardianEntry and 140 or nil)
     assert(host.map.currentNodeId==nextNode.id and host.mode=='battle' and host.run.phase=='combat')
     return nextNode
 end
