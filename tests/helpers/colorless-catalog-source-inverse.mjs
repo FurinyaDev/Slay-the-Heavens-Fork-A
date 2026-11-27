@@ -1,12 +1,13 @@
 // Proposal facade: the original epoch module and its oracle are byte-for-byte frozen.
 export * from './epochs/colorless/tests/helpers/colorless-catalog-source-inverse.mjs';
-import { preColorlessCatalogSource as original } from './epochs/colorless/tests/helpers/colorless-catalog-source-inverse.mjs';
+import { preColorlessCatalogSource as original,colorlessCatalogSourceProof } from './epochs/colorless/tests/helpers/colorless-catalog-source-inverse.mjs';
 import {authenticateDevelopBackflow,beforeDevelopBackflow} from './develop-release-backflow-source.mjs';
 import {sourceEpoch} from './combined-epoch/source-epoch.mjs';
 import {readFileSync} from 'node:fs';
 const live=p=>readFileSync(new URL('../../'+p,import.meta.url),'utf8');
 const descriptionPath='src/lua/abyss_colorless_cards.lua';
 export function preColorlessCatalogSource(path,source,{readSource=live}={}){
+ if(!Object.hasOwn(colorlessCatalogSourceProof.files[path]??{},'beforeSource'))return source;
  readSource=readers.get(readSource)??readSource;
  const projected=sourceEpoch.preCombinedSource(path,source,{target:'colorless',readSource});
  if(typeof readSource!=='function')return original(path,beforeDevelopBackflow(path,projected),{readSource});

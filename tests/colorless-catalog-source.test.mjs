@@ -76,9 +76,10 @@ test('new catalog retirement checks bytes twice and cannot delete a live-file al
  assert.throws(()=>retire(process.cwd()),/separate historical destination/);
  const directory=mkdtempSync(join(tmpdir(),'colorless-retirement-')),target=join(directory,leaf);
  try{
-  mkdirSync(join(directory,'src/lua'),{recursive:true});writeFileSync(target,read(leaf));
-  const cleanup=retire(directory);assert(existsSync(target));writeFileSync(target,read(leaf)+'\n');assert.throws(cleanup,/unreviewed/);assert(existsSync(target));
-  writeFileSync(target,read(leaf));retire(directory)();assert(!existsSync(target));assert(existsSync(leaf));
+  const historicalLeaf=historicalRead(leaf);
+  mkdirSync(join(directory,'src/lua'),{recursive:true});writeFileSync(target,historicalLeaf);
+  const cleanup=retire(directory);assert(existsSync(target));writeFileSync(target,historicalLeaf+'\n');assert.throws(cleanup,/unreviewed/);assert(existsSync(target));
+  writeFileSync(target,historicalLeaf);retire(directory)();assert(!existsSync(target));assert(existsSync(leaf));
   try{symlinkSync(join(process.cwd(),leaf),target);}catch(error){if(['EPERM','EACCES','ENOTSUP'].includes(error.code)){t.skip('file symlink unavailable: '+error.code);return;}throw error;}
   assert.throws(()=>retire(directory),/aliases live source/);assert(existsSync(leaf));
  }finally{rmSync(directory,{recursive:true,force:true});}
