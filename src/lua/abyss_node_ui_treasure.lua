@@ -25,7 +25,7 @@ function M.install(ctx)
                 for _, link in ipairs(links) do
                     if not link.child or link.child.parent ~= link.owner then return false end
                 end
-                look, parent = ctx.buttonLooks[box], box
+                look, parent = ctx.buttonLook(box), box
                 if control ~= box or box.parent ~= sourceParent or not look or not look.enabled or look.selected then return false end
                 while parent do
                     if not parent.visible then return false end
