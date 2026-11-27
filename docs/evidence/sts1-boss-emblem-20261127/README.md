@@ -4,7 +4,7 @@ TASK-4.13.2 基于主仓 develop `32a15219aecd145c59cb1b2fcf477e5556766e5d`，�
 
 ![第一、二幕终点的离线控件投影](comparison.png)
 
-原版原图为 Cornell 课件第 35 页的 Slime Boss 地图截图。提取图分辨率为 1045×675，使用左上为原点和灰阶 95 阈值，在徽记（294, 4）至（553, 241）以及五个末排营地的范围内量测，取营地宽度中位数。画纸右缘约在 x=840，截图裁到徽记上缘，纵向数值取近似。Hexaghost 和 Slime Boss 的局部图另外用于核对不同徽记轮廓及多条虚线接近终点的构图。[Cornell 原版截图](https://www.cs.cornell.edu/courses/cs5152/2026sp/lectures/lecture14/slides-14.pdf#page=35) · [ITB 第 3 页图 6–7](https://informatika.stei.itb.ac.id/~rinaldi.munir/Stmik/2020-2021/Makalah2021/Makalah-Stima-2021-K1%20%2850%29.pdf#page=3) · [原版独立绘制与命中参数](https://github.com/aeubanks/sts/blob/319009d5df0a82d9fb0f23cc22322286c6a87ec0/map/DungeonMap.java)
+原版原图为 Cornell 课件第 35 页的 Slime Boss 地图截图。提取图分辨率为 1045×675，使用左上为原点和灰阶 95 阈值，在徽记（294, 4）至（553, 241）以及五个末排营地的范围内量测，取营地宽度中位数。画纸右缘约在 x=840，截图裁到徽记上缘，纵向数值取近似。Hexaghost 和 Slime Boss 的局部图另外用于核对不同徽记轮廓及多条虚线接近终点的构图。[Cornell 原版截图](https://www.cs.cornell.edu/courses/cs5152/2026sp/lectures/lecture14/slides-14.pdf#page=35) · [ITB 第 3 页图 8](https://informatika.stei.itb.ac.id/~rinaldi.munir/Stmik/2020-2021/Makalah2021/Makalah-Stima-2021-K1%20%2850%29.pdf#page=3) · [原版独立绘制与命中参数](https://github.com/aeubanks/sts/blob/319009d5df0a82d9fb0f23cc22322286c6a87ec0/map/DungeonMap.java)
 
 | 几何 | 《杀戮尖塔1》截图可见墨迹 | 本作基线控件 | 本作候选控件 |
 | --- | ---: | ---: | ---: |
