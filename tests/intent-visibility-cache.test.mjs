@@ -14,7 +14,7 @@ for(const [name,anchor,replacement,marker] of [
  ['alive','saved.value==value and control.alive~=false','saved.value==value','dead visibility guard bypassed'],
  ['rejected write','accepted~=false and ownsWrite then intentVisibilities','ownsWrite then intentVisibilities','rejected visibility write cached'],
  ['overlap','accepted~=false and ownsWrite then intentVisibilities','accepted~=false then intentVisibilities','overlapping visibility cached'],
- ['escape post-clear','local ok,why=pcall(control.SetVisible,control,false)\n            intentVisibilities[control]=nil','local ok,why=pcall(control.SetVisible,control,false)','escape writer retained nested visibility promise'],
+ ['escape post-clear','local ok,why=pcall(control.SetVisible,control,false)\n        intentVisibilities[control]=nil','local ok,why=pcall(control.SetVisible,control,false)','escape writer retained nested visibility promise'],
  ['no cache','saved and saved.binding','false and saved and saved.binding','unchanged visibility resubmitted'],
 ])for(const [format,newline] of [['LF','\n'],['CRLF','\r\n']])test(`visibility negative control (${format}): ${name}`,()=>{
  const path='src/lua/abyss_battle_render_actors.lua',original=readFileSync(path,'utf8');
