@@ -156,7 +156,7 @@ local function paintPublished(panel,details,state,platform,motion,info,originalS
     if motion then
         local portraits=platform.portraits
         local native=portraits and portraits.status and portraits:status().selection
-        motion:show(info,info and info.id=='ironclad' and native and native.phase=='ready',portrait)
+        motion:show(info,info and info.id=='ironclad' and native and (native.shown==true or native.phase=='ready'),portrait)
     else visible(panel:GetChild('confirm'),info~=nil) end
     local confirm=panel:GetChild('confirm'):GetChild('hit')
     local enabled=info~=nil and state:canConfirm()

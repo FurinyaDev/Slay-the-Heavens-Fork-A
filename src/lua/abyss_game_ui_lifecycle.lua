@@ -68,6 +68,11 @@ local function updateSuspended(self,dt)
     if self.sessionPaused then self:animate(dt);return true end
     return false
 end
+local function selectionCanDraw(self)
+    return self.characterOpen and not self.deckUI.visible and not self.exitOpen
+        and not self.settlementBusy and not self.settlementRequested and not self.sessionPaused
+        and not (self.pageReveal and self.pageReveal:covered())
+end
 local function updateSelection(self,platform,dt)
     local motion=self.selectionMotion
     if not motion or not self.characterOpen or self.deckUI.visible then return end
@@ -75,7 +80,7 @@ local function updateSelection(self,platform,dt)
     local portraits=platform.portraits
     if info and info.id=='ironclad' and portraits and portraits.status then
         local selection=portraits:status().selection
-        motion:syncNative(info.id,selection~=nil and selection.phase=='ready')
+        motion:syncNative(info.id,selection~=nil and (selection.shown==true or selection.phase=='ready'))
     end
     motion:update(dt)
 end
@@ -96,7 +101,7 @@ function M.update(self,platform,openingCovered,bgm)
                 self.easterEgg:tick();return true
             end
             if platform.background then platform.background:tick() end
-            if platform.portraits then platform.portraits:tick(dt) end
+            if platform.portraits then platform.portraits:tick(dt,selectionCanDraw(self)) end
             self:paintArtLoading()
             if self.exitOpen or self.settlementBusy then return true end
             if updateSuspended(self,dt) then return true end
