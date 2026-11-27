@@ -182,6 +182,5 @@ jobs:
         if: steps.upload.outputs.artifact-id != ''
         env:
           GH_TOKEN: ${{ github.token }}
-          ARTIFACT_URL: ${{ steps.upload.outputs.artifact-url }}
           ARTIFACT_ID: ${{ steps.upload.outputs.artifact-id }}
         run: node control/scripts/gil-candidate.mjs readback

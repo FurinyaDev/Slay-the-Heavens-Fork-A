@@ -22,7 +22,7 @@ const branch = 'hotfix/v2.1.1';
 const version = 'v2.1.1';
 const hotfix = candidateTarget(branch, sourceSha);
 
-test('only the unified workflow builds, audits and publishes a gated release download', () => {
+test('only the unified workflow builds, audits and archives the frozen candidate', () => {
   const path = new URL('../.github/workflows/gil-build.yml', import.meta.url);
   const workflow = readFileSync(path, 'utf8').replaceAll('\r\n', '\n');
   assert.equal(existsSync(new URL('../.github/workflows/gil-candidate.yml', import.meta.url)), false);
@@ -45,6 +45,9 @@ test('only the unified workflow builds, audits and publishes a gated release dow
     GIL_RELEASE_ARTIFACT: 'steps.candidate.outputs.archive', CHECKED_FILES: 'steps.candidate.outputs.checked_files',
   })) assert(audit.includes(`          ${name}: ${'${{'} ${expression} }}\n`), `audit requires ${name}`);
   assert.match(workflow, /upload-artifact@[a-f0-9]{40}[\s\S]+download-artifact@[a-f0-9]{40}[\s\S]+gil-candidate\.mjs readback/);
+  const producer = readFileSync(new URL('../scripts/gil-candidate.mjs', import.meta.url), 'utf8');
+  assert.doesNotMatch(workflow + producer, /artifact-url|ARTIFACT_URL|Download the verified GIL/);
+  assert.match(producer, /Read-back GIL artifact ID/);
 });
 
 function formalApi({ comparison = { status: 'ahead', merge_base_commit: { sha: sourceSha } },

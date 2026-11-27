@@ -5,7 +5,7 @@ import { basename, join, relative, resolve } from 'node:path';
 import { pipeline } from 'node:stream/promises';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { api, artifactName, buildOnlyRequest, candidateTarget, digest, encoderSha256, releaseBuildRequest, releaseBuildTarget,
-  frozenBuildCustody, GateError, profile, repository, requireGate, sha, toolCommit, validationTarget, verifyFrozenHead } from './gil-candidate-preflight.mjs';
+  frozenBuildCustody, GateError, profile, requireGate, sha, toolCommit, validationTarget, verifyFrozenHead } from './gil-candidate-preflight.mjs';
 import { verifyGilArtifact } from './runtime-baseline/release-performance-artifacts.mjs';
 import { githubRequest } from './release-ci.mjs';
 import { hostedGilReceipt } from './hosted-gil-receipt.mjs';
@@ -81,8 +81,7 @@ async function preflight() {
   appendFileSync(process.env.GITHUB_STEP_SUMMARY, `Source \`${target.branch}@${source}\`\n`);
   if (existing) {
     await verifyFrozenHead(api, branch, source);
-    const url = `https://github.com/${repository}/actions/runs/${existing.runId}/artifacts/${existing.id}`;
-    summarizeDownload(url, existing.id, request, existing.gilSha256, existing.gilSizeBytes);
+    summarizeArchive(existing.id, request, existing.gilSha256, existing.gilSizeBytes);
     return;
   }
   appendFileSync(process.env.GITHUB_OUTPUT, [
@@ -319,9 +318,9 @@ async function verifyOfflineSmoke(mapPath, toolRoot, expectedSha256) {
   }
 }
 
-function summarizeDownload(url, id, { version, sourceSha }, gilSha256, gilSizeBytes) {
+function summarizeArchive(id, { version, sourceSha }, gilSha256, gilSizeBytes) {
   appendFileSync(process.env.GITHUB_STEP_SUMMARY,
-    `\n[Download the verified GIL](${url}) (artifact ID ${id})\n` +
+    `\nRead-back GIL artifact ID ${id}\n` +
     `${version} · \`${sourceSha}\` · SHA-256 \`${gilSha256}\` · ${gilSizeBytes} GIL bytes\n` +
     'Native audio graph and static audit, offline Host smoke, and archive readback passed.\n');
 }
@@ -331,7 +330,7 @@ async function readback() {
   verifyDownloadedArtifact(upload, 'source/build/gil-readback');
   const { version, sourceCommit: sourceSha, sourceBranch, candidate } = json(join(upload, 'manifest.json'));
   await verifyFrozenHead(api, sourceBranch, sourceSha);
-  summarizeDownload(process.env.ARTIFACT_URL, process.env.ARTIFACT_ID, { version, sourceSha }, candidate.sha256, candidate.bytes);
+  summarizeArchive(process.env.ARTIFACT_ID, { version, sourceSha }, candidate.sha256, candidate.bytes);
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
