@@ -1,4 +1,7 @@
 import assert from 'node:assert/strict';
+import {createHash} from 'node:crypto';
+import {readFileSync} from 'node:fs';
+import {gunzipSync} from 'node:zlib';
 import {restoreExactFixtureHunks} from './exact-fixture-hunks.mjs';
 import {exactSourceMatches} from './source-fingerprint.mjs';
 import {uiEntranceOwns} from './ui-entrance-source.mjs';
@@ -694,20 +697,28 @@ const prologueButtonSources=Object.freeze({
  }
 });
 
-function beforeCurrentPrologueButtons(path,raw,read){
- if(!Object.hasOwn(prologueButtonSources,path))return raw;
- for(const [owner,binding]of Object.entries(prologueButtonSources)){
+const portraitArchive=readFileSync(new URL('../fixtures/selection-portrait-recovery-source.json.gz',import.meta.url));
+assert.equal(createHash('sha256').update(portraitArchive).digest('hex'),
+ '4b59c9ed262c04315d581249a62fa4a9161c26d3a60b06b5165dd1a1cb54fec9','exact Selection portrait recovery archive');
+const {base:portraitBase,reviewedSource:portraitReview,files:portraitSources}=JSON.parse(gunzipSync(portraitArchive));
+assert.equal(portraitBase,'da5eabf33899f4b8254a923b0a010f5aa870eb9e');
+assert.equal(portraitReview,'0cf42cd12666ef01252c6819e5c6fe165f9b2b01');
+
+function beforeCurrentOwners(path,raw,read,owners,label){
+ if(!Object.hasOwn(owners,path))return raw;
+ for(const [owner,binding]of Object.entries(owners)){
   const source=decodedSelectionSource(owner===path?raw:read(owner,'utf8'));
   assert(uniformSelectionSource(source)&&exactSourceMatches(source,binding.current),
-   'fresh prologue button owner: '+owner);
+   'fresh '+label+' owner: '+owner);
  }
- const prior=beforeReceipt(path,decodedSelectionSource(raw),prologueButtonSources[path]);
+ const prior=beforeReceipt(path,decodedSelectionSource(raw),owners[path]);
  return Buffer.isBuffer(raw)?Buffer.from(prior):prior;
 }
 
 export function checkedSelectionEntranceRead(read){
  return (path,encoding)=>{
-  const raw=beforeCurrentPrologueButtons(path,read(path,encoding),read);
+  const beforePrologue=beforeCurrentOwners(path,read(path,encoding),read,prologueButtonSources,'prologue button');
+  const raw=beforeCurrentOwners(path,beforePrologue,read,portraitSources,'Selection portrait');
   if(!uiEntranceOwns(path))return raw;
   const source=decodedSelectionSource(raw);
   assert(uniformSelectionSource(source),'uniform current Selection entrance source: '+path);
