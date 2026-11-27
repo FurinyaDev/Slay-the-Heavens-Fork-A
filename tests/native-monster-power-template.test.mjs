@@ -20,6 +20,12 @@ test('enemy powers use empty unmasked origin and independent seven-control templ
  assert.equal(power.visible,false);assert(power.children.every(n=>n.visible===false));assertNativeUiCapacity(power);
  const hero=preReadableUnitTypography(all(battleLayout()).find(n=>n.name==='hero'),{hero:true});
  const statusRow=hero.children.find(node=>node.name==='statusRow');
+ // Compare the predecessor only after checking all ten live count bounds.
+ for(let index=1;index<=10;index++){
+  const count=statusRow.children.find(node=>node.name===`count${index}`);
+  assert.deepEqual(count.size,[40,40],count.name);
+  count.size[0]=21.333333333333332;
+ }
  const statusHits=['hit',...Array.from({length:10},(_,index)=>`hit${index+1}`)];
  // Reconstruct only #899's retired focus metadata for the original byte check.
  for(const [children,hits] of [[hero.children,['hit']],[statusRow.children,statusHits]]){

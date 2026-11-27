@@ -3,11 +3,13 @@ import assert from 'node:assert/strict';
 import {nativeTheme} from '../scripts/native-ui-theme.mjs';
 import {gameLayout} from '../scripts/game-ui-layout.mjs';
 import {assertNativeUiCapacity} from '../scripts/build-ui.mjs';
+import {officialAssetsTheme} from '../scripts/official-assets-layout.mjs';
+import {applyOfficialNoncombatLayout} from '../scripts/noncombat-v25-layout.mjs';
 test('solid title and readable official selection/battle pictures retain their approved bindings',()=>{
  const ids=nativeTheme.image.officialBackdrops;
- assert.deepEqual(ids,{title:100001,selection:107050,act1_1:107106,act1_2:107107,act1_3:107110,
+ assert.deepEqual(ids,{title:100001,selectionFallback:107271,selection:107050,act1_1:107106,act1_2:107107,act1_3:107110,
   act2_1:107108,act2_2:107109,act2_3:107105,boss1:107280,boss2:107279});
- assert.equal(new Set(Object.values(ids)).size,10);
+ assert.equal(new Set(Object.values(ids)).size,11);
  const layout=gameLayout();assertNativeUiCapacity(layout);
  const menu=layout.controls.find(c=>c.name==='menuPanel');
  const selection=layout.controls.find(c=>c.name==='characterPanel');
@@ -35,4 +37,7 @@ test('solid title and readable official selection/battle pictures retain their a
   assert.equal(veil.opacity,128/255);assert.deepEqual(veil.size,nativeTheme.canvas.base);
  }
  assert(!JSON.stringify(layout).includes('officialVista_'));
+ applyOfficialNoncombatLayout(layout,officialAssetsTheme(nativeTheme));
+ const landscape=selection.children.find(c=>c.name==='v25Background').children.find(c=>c.name==='landscape');
+ assert.equal(landscape.image,107271,'official selection retains the approved loading landscape');
 });
