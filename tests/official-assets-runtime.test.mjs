@@ -185,8 +185,19 @@ assert(counter.text=='2147483647' and counter.sizeDeltaX>=128 and bar:GetChild('
 assert(not bar:GetChild('slot2').visible and not bar:GetChild('slot3').visible)
 for i=3,26 do host.run.relics[i]='burning_blood' end
 host:refresh()
-local overflow=bar:GetChild('slot25'):GetChild('more')
-assert(overflow.visible and overflow.text=='+4','wide relic count must preserve the exact overflow count')
+local previous,nextPage=bar:GetChild('previous'),bar:GetChild('next')
+local function visibleRelicCount()
+ local count=0
+ for i=1,25 do
+  local slot=bar:GetChild('slot'..i)
+  if slot.visible then count=count+1 end
+  assert(not slot:GetChild('more').visible,'owned relic pages must not replace relics with an overflow label')
+ end
+ return count
+end
+assert(visibleRelicCount()==23 and not previous.visible and nextPage.visible)
+assert(nextPage:GetChild('hit').click() and visibleRelicCount()==3 and previous.visible and not nextPage.visible)
+assert(previous:GetChild('hit').click() and visibleRelicCount()==23,'wide counter paging preserves every owned relic')
 host.run.relics,host.run.relicCounters=relics,counters
 local first=assert(F.Nodes.available(host.run,host.map)[1])
 assert(host.mapUI:choose(first.id))
