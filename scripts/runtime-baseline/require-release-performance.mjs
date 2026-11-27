@@ -1,10 +1,11 @@
 import assert from 'node:assert/strict';
 import {execFileSync} from 'node:child_process';
-import {latestFullRun, formalPublishBranch, pages} from '../release-ci.mjs';
+import {assertReleaseHead, latestFullRun, formalPublishBranch, pages} from '../release-ci.mjs';
 import {resolvePublishedBaseline} from './published-baseline.mjs';
 import {productionWorkload, workloadIdentity} from './resource-receipt.mjs';
+import {gilModuleInventoryHash} from './gil-inputs.mjs';
 import {verifyResourceReport} from './verify-release-performance.mjs';
-import {assertFullMatches, gilArtifactExpectation, loadArtifact, readRunArtifact, sha256} from './release-performance-artifacts.mjs';
+import {assertFullMatches, gilArtifactExpectation, loadArtifact, readRunArtifact, sha256, verifyGilArtifact} from './release-performance-artifacts.mjs';
 
 const repository = 'FurinyaWorks/Slay-the-Heavens';
 const prefix = '/repos/' + repository;
@@ -24,19 +25,14 @@ function frozenSource(head) {
 
 export async function requireReleasePerformance(fullProof, request, {
   readSource = frozenSource, readArtifact = loadArtifact, readBaseline = resolvePublishedBaseline,
+  readGil = verifyGilArtifact,
 } = {}) {
   const {repo, branch, head, runId:qualityRun, attempt:qualityAttempt, checkoutArtifactId} = fullProof;
-  assert(repo === repository && formalPublishBranch(branch) && sha.test(head) &&
-    [qualityRun, qualityAttempt, checkoutArtifactId].every(validId), 'Frozen release Full proof required');
+  assert(repo === repository && formalPublishBranch(branch) && sha.test(head), 'Frozen release source proof required');
   const {version, tree, workloadSha256} = readSource(head);
   assert(branch.endsWith('/v' + version) && sha.test(tree) && digest.test(workloadSha256), 'Frozen engineering source identity differs');
   const target = {head, branch, version};
-  const checkRef = async () => {
-    const ref = await request(prefix + '/git/ref/heads/' + branch);
-    assert(ref?.ref === 'refs/heads/' + branch && ref.object?.type === 'commit' && ref.object.sha === head,
-      'Release HEAD changed during evidence verification');
-  };
-  await checkRef();
+  await assertReleaseHead(repo, branch, head, request);
   const title = 'Formal resource release / ' + branch + ' / ' + head;
   const runsPath = prefix + '/actions/workflows/performance-regression.yml/runs?event=workflow_dispatch&branch=' +
     encodeURIComponent(branch) + '&head_sha=' + head;
@@ -57,33 +53,49 @@ export async function requireReleasePerformance(fullProof, request, {
   assert(locator.runId === run.id && locator.attempt === run.run_attempt, 'Formal artifact belongs to another attempt');
   const files = await readArtifact(locator, ['report.json', 'evidence.json']);
   const evidence = JSON.parse(files['evidence.json']);
-  assert(evidence.schemaVersion === 1 && evidence.kind === 'release-performance' && evidence.runId === locator.runId &&
+  assert([1, 2].includes(evidence.schemaVersion) && evidence.kind === 'release-performance' && evidence.runId === locator.runId &&
     evidence.attempt === locator.attempt && evidence.workloadSha256 === workloadSha256 &&
     evidence.reportSha256 === sha256(files['report.json']), 'Sealed formal evidence and downloaded report differ');
   assert.deepEqual(evidence.source, {...target, tree}, 'Formal evidence and frozen source differ');
   const published = await readBaseline(version, request);
   assert.deepEqual(evidence.published, published, 'Formal evidence and published baseline differ');
-  const signals = verifyResourceReport(JSON.parse(files['report.json']), head, tree, published, evidence, workloadSha256);
-  assert.deepEqual(signals, {}, 'Formal performance regression signals require resolution');
-
   const gil = evidence.gil;
-  const expectedGil = gilArtifactExpectation(target);
-  const original = await readRunArtifact(request, gil?.id, expectedGil);
-  for (const [key, value] of Object.entries(original)) {
-    assert.equal(gil[key], value, 'Audited GIL archive changed: ' + key);
+  assert(validId(gil?.id), 'Formal evidence is missing the audited GIL identity');
+  let measured = evidence;
+  if (evidence.schemaVersion === 2) {
+    const {binding, receipt} = await readGil(request, gil.id, target);
+    assert(binding.schemaVersion === 2 && binding.custody === 'gil-build-v2', 'Formal evidence requires a v2 audited GIL');
+    assert.deepEqual(gil, binding, 'Audited GIL archive changed');
+    assert.deepEqual(evidence.artFeatures, receipt.artFeatures, 'Sealed GIL art configuration differs');
+    assert.equal(evidence.moduleDigestsSha256, gilModuleInventoryHash(receipt.moduleDigests),
+      'Sealed GIL module inventory differs');
+    measured = receipt;
+  } else {
+    assert([qualityRun, qualityAttempt, checkoutArtifactId].every(validId), 'Frozen release Full proof required');
+    const original = await readRunArtifact(request, gil.id, gilArtifactExpectation(target));
+    assert(gil.schemaVersion === undefined && original.custody !== 'gil-build-v2',
+      'Legacy formal evidence requires its original GIL proof format');
+    for (const [key, value] of Object.entries(original)) {
+      assert.equal(gil[key], value, 'Audited GIL archive changed: ' + key);
+    }
+    assertFullMatches(gil, fullProof);
   }
-  assertFullMatches(gil, fullProof);
   assert(/^[a-f0-9-]{36}$/.test(gil.buildId) &&
     [gil.gilSha256, gil.payloadDigest, gil.receiptSha256, gil.manifestSha256].every(value => digest.test(value)),
     'Formal evidence is missing the audited GIL identity');
+  const signals = verifyResourceReport(JSON.parse(files['report.json']), head, tree, published, measured, workloadSha256);
+  assert.deepEqual(signals, {}, 'Formal performance regression signals require resolution');
+
   assert.deepEqual(await readRunArtifact(request, locator.id, formal), locator, 'Formal artifact changed during verification');
   const current = await latest();
   assert(current?.id === run.id && current.run_attempt === run.run_attempt && current.status === 'completed' &&
     current.conclusion === 'success', 'Formal workflow run or attempt changed during verification');
-  const currentFull = await latestFullRun(repo, branch, request);
-  assert(currentFull?.id === qualityRun && currentFull.run_attempt === qualityAttempt && currentFull.head_sha === head &&
-    currentFull.status === 'completed' && currentFull.conclusion === 'success', 'Frozen Full changed during performance verification');
-  await checkRef();
-  return {schemaVersion:1, kind:'release-performance', branch, head, tree, runId:locator.runId, attempt:locator.attempt,
+  if (evidence.schemaVersion === 1) {
+    const currentFull = await latestFullRun(repo, branch, request);
+    assert(currentFull?.id === qualityRun && currentFull.run_attempt === qualityAttempt && currentFull.head_sha === head &&
+      currentFull.status === 'completed' && currentFull.conclusion === 'success', 'Frozen Full changed during performance verification');
+  }
+  await assertReleaseHead(repo, branch, head, request);
+  return {schemaVersion:evidence.schemaVersion, kind:'release-performance', branch, head, tree, runId:locator.runId, attempt:locator.attempt,
     artifactId:locator.id, artifactDigest:locator.digest, reportSha256:evidence.reportSha256, gil, published};
 }

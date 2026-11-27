@@ -17,7 +17,7 @@ try {
   mkdirSync(output, {recursive:true});
   writeFileSync(output + '/report.json', raw, {flag:'wx'});
   writeFileSync(output + '/evidence.json', JSON.stringify({
-    schemaVersion:1, kind:'release-performance', source:{...target, tree}, runId, attempt, gil, published,
+    schemaVersion:gil.schemaVersion === 2 ? 2 : 1, kind:'release-performance', source:{...target, tree}, runId, attempt, gil, published,
     workloadSha256, reportSha256:sha256(raw), artFeatures:receipt.artFeatures,
     moduleDigestsSha256:gilModuleInventoryHash(receipt.moduleDigests),
   }, null, 2) + '\n', {flag:'wx'});

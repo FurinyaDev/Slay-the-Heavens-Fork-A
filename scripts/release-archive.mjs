@@ -3,9 +3,8 @@ import { execFileSync } from 'node:child_process';
 import { appendFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { githubRequest, verifyReleaseFull } from './release-ci.mjs';
+import { githubRequest, verifyReleasePublication } from './release-ci.mjs';
 import { readMetadata } from './release-metadata.mjs';
-import { requireReleasePerformance } from './runtime-baseline/require-release-performance.mjs';
 import { sha256, verifyGilArtifact } from './runtime-baseline/release-performance-artifacts.mjs';
 
 const repository = 'FurinyaWorks/Slay-the-Heavens';
@@ -81,8 +80,8 @@ async function uploadGil(releaseId, name, bytes) {
 }
 
 export async function archiveRelease(releaseId, {
-  request = githubRequest, prepareSource = ensureSource, verifyFull = verifyReleaseFull,
-  verifyPerformance = requireReleasePerformance, readGil = verifyGilArtifact, upload = uploadGil,
+  request = githubRequest, prepareSource = ensureSource, verifyPublication = verifyReleasePublication,
+  readGil = verifyGilArtifact, upload = uploadGil,
 } = {}) {
   assert(validId(releaseId), 'GitHub Release numeric ID required');
   const { target } = await readTarget(request, releaseId);
@@ -95,12 +94,15 @@ export async function archiveRelease(releaseId, {
     binding.id === artifactId && binding.gilSha256 === digest, 'Downloaded artifact differs from the platform-approved GIL');
 
   await prepareSource(head);
-  const full = await verifyFull(repository, branch, head, request);
-  const performance = await verifyPerformance(full, request);
+  const { performance } = await verifyPublication(repository, branch, head, request, { gilArtifactId: artifactId });
   assert.equal(binding.custody, performance.gil?.custody, 'Formal performance approved a different GIL custody path');
   for (const key of bindingFields) {
     assert(binding[key] !== undefined && binding[key] === performance.gil?.[key],
       `Formal performance approved a different GIL archive identity: ${key}`);
+  }
+
+  if (binding.schemaVersion === 2 || performance.gil?.schemaVersion === 2) {
+    assert.deepEqual(binding, performance.gil, 'Formal performance approved a different v2 GIL archive');
   }
 
   const readCurrent = async () => {

@@ -172,11 +172,15 @@ test('proposal workflow is manually dispatched, pinned, manifest-driven and cann
   assert.match(workflow, /skip-github-release: true/); assert.doesNotMatch(workflow, /\n\s+release-type:/);
   assert.match(workflow, /target-branch: develop/); assert.doesNotMatch(workflow, /master/);
   assert.match(workflow, /permissions:\n  contents: read/);
-  const metadataJob = workflow.split('  metadata:\n')[1];
-  assert.match(metadataJob, /inputs\.operation != 'propose'/);
+  const [, jobs] = workflow.split('\n  metadata:\n');
+  const [metadataJob, archiveJob] = jobs.split('\n  archive:\n');
+  assert.match(metadataJob, /github\.repository_id == '1429751262' && github\.ref == 'refs\/heads\/develop' && \(inputs\.operation == 'prepare' \|\| inputs\.operation == 'verify'\)/);
   assert.match(metadataJob, /scripts\/release-metadata\.mjs prepare/);
   assert.match(metadataJob, /scripts\/release-metadata\.mjs verify/);
   assert.doesNotMatch(metadataJob, /contents: write|gh release|git push/);
+  assert.match(archiveJob, /github\.repository_id == '1429751262' && github\.ref == 'refs\/heads\/develop' && inputs\.operation == 'archive'/);
+  assert.match(archiveJob, /run: node scripts\/release-archive\.mjs "\$RELEASE_ID"/);
+  assert.doesNotMatch(archiveJob, /gh release|git (?:tag|push)|release-please-action/);
   assert.deepEqual(releaseBuildArgs(['out', '--release-candidate', '--work-key=contest-2026']),
     { paths: ['out'], options: { releaseCandidate: true, workKey: 'contest-2026' } });
   assert.throws(() => releaseBuildArgs(['--publish']), /Unknown/);
