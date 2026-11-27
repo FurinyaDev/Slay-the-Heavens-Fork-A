@@ -91,12 +91,27 @@ local function referenceChrome(ctx, box, look, hover)
     referenceShop(ctx, box, look, hover)
 end
 
+local function nativeId(box) return box.id end
+
 -- Installs the feedback responsibility on one node UI instance.
 function M.install(ctx)
-    ctx.buttonLooks, ctx.buttonHover, ctx.buttonPress = {}, nil, nil
+    local buttonLooks = {}
+    ctx.buttonHover, ctx.buttonPress = nil, nil
+
+    local function buttonKey(box)
+        -- The native host can return a fresh Lua wrapper on each GetChild.
+        local ok,id = pcall(nativeId,box)
+        if ok and (type(id) == 'string' or (type(id) == 'number' and id == id)) then return id end
+        return box
+    end
+
+    function ctx.buttonLook(box)
+        local look = buttonLooks[buttonKey(box)]
+        if look and look.box == box then return look end
+    end
 
     function ctx.paintButton(box)
-        local look = ctx.buttonLooks[box]
+        local look = ctx.buttonLook(box)
         if not look then return end -- a never-shown view can still receive a late native exit
         local enabled = look.enabled and not look.selected
         local pressed = enabled and ctx.buttonPress and ctx.buttonPress.box == box
@@ -167,11 +182,11 @@ function M.install(ctx)
         ctx.buttonHover, ctx.buttonPress, ctx.swipe = nil, nil, nil
         ctx.self.inspectPress=nil
         for _, input in pairs(ctx.buttonInputs) do input.active, input.released = {}, nil end
-        for box in pairs(ctx.buttonLooks) do ctx.paintButton(box) end
+        for _, look in pairs(buttonLooks) do ctx.paintButton(look.box) end
     end
 
     function ctx.state(box, enabled, selected, primary)
-        ctx.buttonLooks[box] = {enabled=enabled == true, selected=selected == true, primary=primary == true}
+        buttonLooks[buttonKey(box)] = {box=box, enabled=enabled == true, selected=selected == true, primary=primary == true}
         ctx.paintButton(box)
     end
 end

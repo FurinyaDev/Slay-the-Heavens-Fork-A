@@ -166,7 +166,7 @@ function M.install(ctx)
                         return entry
                     end
                     local function available()
-                        local entry, look = visibleAction(), ctx.buttonLooks[box]
+                        local entry, look = visibleAction(), ctx.buttonLook(box)
                         -- Guarded mandatory-picker cards have no framed-button look.
                         -- Keep the legacy feedback path for all other controls unchanged.
                         local plainPicker = not look and entry and entry.retire and name:match("^pickerView/card%d+$") ~= nil
