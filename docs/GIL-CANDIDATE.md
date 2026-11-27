@@ -1,6 +1,6 @@
 # 正式有声 GIL 的构建与交付
 
-**GIL build** 是正式有声候选的构建入口。固定主仓获准的 `release/vX.Y.Z` 或 `hotfix/vX.Y.Z` 最新 HEAD，以同一完整 SHA 并行执行 [快速筛查](CI-FAST.md#候选提测与打回重测)和构建。主仓 Actions → **GIL build** → **Run workflow** 的运行分支选择受保护的 `develop`，`source_branch` 填冻结分支，`source_sha` 填其完整小写 SHA。发布候选固定源码、基础 GIL、工具链、构建策略和生产配置。
+**GIL build** 是正式有声候选的构建入口。本页适用于已继承冻结快筛、正式性能和发布核验入口的分支。由尚未继承这些入口的 `master` 切出的热修继续使用该分支现行发布通道。采用本流程时，固定主仓获准的 `release/vX.Y.Z` 或 `hotfix/vX.Y.Z` 最新 HEAD，以同一完整 SHA 并行执行 [快速筛查](CI-FAST.md#候选提测与打回重测)和构建。主仓 Actions → **GIL build** → **Run workflow** 的运行分支选择受保护的 `develop`，`source_branch` 填冻结分支，`source_sha` 填其完整小写 SHA。发布候选固定源码、基础 GIL、工具链、构建策略和生产配置。
 
 在构建摘要核对冻结分支、源码、工件数字 ID、GIL SHA-256、容量和读回结果。按[候选提测流程](CI-FAST.md#候选提测与打回重测)运行 `release-ci freeze`，复核同一 SHA 的冻结快筛和工件。将输出的 `handoff.url`、`artifactId`、`gilSha256` 和 `gilSizeBytes` 交 Owner。该入口也请求正式 Full。若已取得 `handoff` 而 Full 状态为 `full-dispatch-unconfirmed`，可继续原包提测，保留错误并核对该 SHA 的 Full 状态。可在冻结分支手动运行 **Licenses** 的默认审计，正式发布须核对同一 SHA 的成功清单。
 
@@ -20,4 +20,4 @@
 node scripts/audit-native-candidate.mjs --source <SHA> --candidate <解压目录>/candidate.gil --receipt <解压目录>/candidate.json --output <新证据目录> --bgm
 ```
 
-当前 `release/v2.2.0` 保留该发布线既有的 Quality/Licenses 完成后自动触发、分支手动入口与旧工件验证。后续候选按本页显式请求构建，Quality/Licenses 完成或重跑均不会触发新构建。旧工作流制品、旧平台回执和本地诊断按原身份留存。开发和 Fork 的诊断只上传摘要，保留 14 天。它们可用于复核当时的结论。正式提测从本轮冻结源码和唯一正式工件开始。
+当前 `release/v2.2.0` 保留该发布线既有的 Quality/Licenses 成功后自动触发、分支手动入口与旧工件验证。后续候选按本页显式请求构建，Quality/Licenses 完成或重跑均不会触发新构建。旧工作流制品、旧平台回执和本地诊断按原身份留存。开发和 Fork 的诊断只上传摘要，保留 14 天。它们可用于复核当时的结论。正式提测从本轮冻结源码和唯一正式工件开始。

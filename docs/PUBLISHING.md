@@ -14,7 +14,7 @@ node scripts/runtime-baseline/verify-release-performance.mjs <final.gil> <candid
 
 归档生成的 `build/release-performance-evidence.json`、原始测量和对应运行环境。失败、少档、实限不一致、候选身份不符或不可比均阻塞。六档之外的独立诊断需保存极端内存限制下的 OOM 退出和回到支持档后的完整 Host 复跑。`REVIEW_REQUIRED` 保留原信号，待独立评审核对已知开销、设备预算和候选原因。正式线上门禁还要求真实平台冷暖加载、可点击、帧时间及持续游玩等设备证据，按下文同候选负载门禁执行。
 
-正式 Hotfix 发布使用同仓库 `hotfix/v<工程版本>` → `master` PR，并在官方客户端操作前立即执行 `node scripts/release-ci.mjs verify hotfix/v<工程版本> <候选source SHA> <GIL-工件ID>`。沿用既有生产 Environment 审批。历史 Hotfix 继续引用各自归档回执。
+正式 Hotfix 发布使用同仓库 `hotfix/v<工程版本>` → `master` PR。已继承[提前提测入口](GIL-CANDIDATE.md)的 Hotfix 在官方客户端操作前立即执行 `node scripts/release-ci.mjs verify hotfix/v<工程版本> <候选source SHA> <GIL-工件ID>`。沿用既有生产 Environment 审批。历史 Hotfix 继续引用各自归档回执。
 
 正式发布前必须通过[同候选平台负载门禁](PLATFORM_LOAD.md)：对含最终音频/资产的候选执行 `npm run verify:platform-load -- <最终candidate.json> <official-load.json>`，并保留 source SHA、buildId、hash、客户端版本、时间和脱敏原始报告/截图。关卡≤20MB、服务器≤3MB分别核验；关卡>16MB为内部预警。全局/区域静态超标未解决、官方动态四类异常报告缺失、高峰战斗/复杂手牌/敌人特效并发/切换/重复进出未覆盖、官方试玩上传与启动操作或必要手机验收未完成，状态必须BLOCKED/UNVERIFIED，禁止发布。静态/动态推荐指标与平台禁止上传的硬限分别记录，不能提高负载需求档位掩盖问题。CI通过、旧候选基线8.96MB/0.01MB或GIL文件大小均不构成新候选放行证据。发布仍由人完成。
 
