@@ -18,7 +18,7 @@ git push fork-b HEAD:refs/heads/ci/full/<task-name>  # 自动 Full
 
 固定仓库 ID：主1429751262、A1460097312、B1460133275。复用现有 hosted Runner 与同 ref concurrency。查重使用固定 HEAD/BASE/run/attempt；Fork 的 Quick/Full 不取代主仓 PR merge SHA、队列组合 SHA 和发布证据。官方导入及实体设备仍按对应验收合同独立验证。
 
-失败先读准确 run/attempt 的失败步骤：代码冲突、断言失败、无 runner 的排队、权限拒绝和队列退出分别接续。记录作业创建到分配 runner 的等待与实际执行时长；未分配 runner 不计执行。原 HEAD/BASE 已成功或仍在途不重复派发，修复后沿原 PR 推进；入队/本地通过不记交付，实际合并后再用已有交付验证器核验并确认无独有工作才清理。正式候选先定稿版本和 CHANGELOG，再冻结做必要 Full/构建；官方和设备缺项保持未验，不前移为普通 PR 门槛。
+失败先读准确 run/attempt 的失败步骤：代码冲突、断言失败、无 runner 的排队、权限拒绝和队列退出分别接续。记录作业创建到分配 runner 的等待与实际执行时长；未分配 runner 不计执行。原 HEAD/BASE 已成功或仍在途不重复派发，修复后沿原 PR 推进；入队/本地通过不记交付，实际合并后再用已有交付验证器核验并确认无独有工作才清理。正式候选先定稿版本和 CHANGELOG，再按[主仓候选提测流程](CI-FAST.md#候选提测与打回重测)执行冻结快筛、构建和后续 Full。官方和设备缺项按候选记录待验，普通 PR 继续使用现有开发准入。
 
 统计复用 `scripts/ci-run-costs.mjs`，仅按需运行，见[基线](evidence/ci-preflight-20261117/history.md)。额外来源、SHA、历史或证据防护先针对已发生的故障做最小修复，再比较实际拦截、runner 时间和维护返工；没有收益证据就先保留诊断，不默认升级强制门禁。不为这条原则新增检查、报表平台或每 PR 填表。
 
