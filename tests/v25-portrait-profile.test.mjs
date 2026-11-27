@@ -109,7 +109,7 @@ assert(a:release() and LiveCount()==0)
 `,{runtimeV2:true});
 });
 
-test('combined native page readiness waits for the complete 1600 background and ignores the hidden legacy avatar',()=>{
+test('native page readiness allows staged selection art and ignores the hidden legacy avatar',()=>{
  withPortraitVm(`
 local selectionHost=tree();stage.children.characterPanel.children.lumineSelectionBackground=selectionHost
 local frame=tree();rawset(frame,'sizeDeltaX',440)
@@ -118,8 +118,19 @@ stage.children.characterPanel.children.details=tree({officialSelectionFigure=sel
 traveler:SetVisible(false)
 local a=Portraits.new(stage,nil,{selectionAvatar=true,battlePortrait=true})
 assert(a:sync('menu',true,false,'ironclad'))
-assert(not a:readyForPage('menu',true,'ironclad','characterPanel'),'partial background passed readiness')
-for _=1,1000 do a:tick();if a:status().selection.phase=='ready' then break end end
+assert(a:readyForPage('menu',true,'ironclad','characterPanel'),'selection art delayed page input')
+assert(a:status().selection.phase=='building' and not selectionHost.visible,'cold selection published an incomplete group')
+local partial=false
+for _=1,1000 do
+ a:tick()
+ local state=a:status().selection
+ if state.phase=='ready' then break end
+ if selectionHost.visible then
+  assert(state.revealIndex>2,'selection published before its first two complete groups')
+  partial=true
+ end
+end
+assert(partial,'selection waited for all 1600 images before publishing its first groups')
 assert(a:status().selection.total==1600 and a:status().selection.phase=='ready')
 assert(a:status().avatar.owned==0 and a:readyForPage('menu',true,'ironclad','characterPanel'),
  'hidden legacy avatar blocked the complete native page')
@@ -189,7 +200,8 @@ for i,id in ipairs(keys)do
  panel.children[i==1 and 'lumineSelectionBackground' or id]=host
 end
 local backing=tree();backing:SetVisible(true);panel.children.v25Background=backing
-panel.children.details=tree({})
+local note=tree();note.text=''
+panel.children.details=tree({portraitNote=note})
 traveler:SetVisible(false)
 local rows={}
 for i=1,130 do rows[i]=Asset.lowpolyLumine.rows[i]end
@@ -249,7 +261,8 @@ local panel=stage.children.characterPanel
 local selectionHost=tree()
 selectionHost:SetVisible(false);panel.children.lumineSelectionBackground=selectionHost
 local backing=tree();backing:SetVisible(true);panel.children.v25Background=backing
-panel.children.details=tree({})
+local note=tree();note.text=''
+panel.children.details=tree({portraitNote=note})
 traveler:SetVisible(false)
 local a=Portraits.new(stage,nil,{selectionAvatar=true})
 local resize=selectionHost.SetSizeDelta
