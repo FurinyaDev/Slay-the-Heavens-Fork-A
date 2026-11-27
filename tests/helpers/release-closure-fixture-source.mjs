@@ -339,6 +339,28 @@ const fixtures=Object.freeze({
    }
   ]
  },
+ "tests/official-assets.test.mjs": {
+  "current": {
+   "sha256": "17fc945582ab9bda9c0fcba7d20396f3c02f089c18ab2b9be2913e35ddb595a6",
+   "gitBlob": "5b36083005174b20625b20f8c097faf5500cb5c5"
+  },
+  "previous": {
+   "sha256": "1984d8c172e465583f45d45821837733aa2befbe809e066025f0042784cb0ec5",
+   "gitBlob": "8e9b3f1d7559067512d96f7a545bf037277846f7"
+  },
+  "hunks": [
+   {
+    "at": 414,
+    "before": " const layout=gameLayout(),theme=officialAssetsTheme(nativeTheme);\n const before=new Map(paths(layout).filter(([,node])=>node.kind==='image').map(([path,node])=>[path,node.image]));\n applyOfficialAssets([layout],theme);\n const battle=child(layout,'battlePanel'),turn=child(battle,'endTurn');",
+    "after": " const layout=gameLayout(),theme=officialAssetsTheme(nativeTheme);\n const before=new Map(paths(layout).filter(([,node])=>node.kind==='image').map(([path,node])=>[path,node.image]));\n const replacements=new Map([\n  ['/SlayTheAbyss/nodePanel/eventView/art',theme.icon.eventArt.default],\n  ['/SlayTheAbyss/battlePanel/topBar/battleRoute/icon',theme.icon.map],\n  ['/SlayTheAbyss/mapPanel/mapRoute/icon',theme.icon.map],\n  ['/SlayTheAbyss/nodePanel/runRoute/icon',theme.icon.map],\n ]);\n applyOfficialAssets([layout],theme);\n const battle=child(layout,'battlePanel'),turn=child(battle,'endTurn');"
+   },
+   {
+    "at": 429,
+    "before": "  }\n for(const [path,node]of paths(layout))if(/\\/(portrait|intentIcon|intentBadge|intentExtra|hpIcon|goldIcon|blockedLock|art|art_attack|art_skill|art_power|icon)$/.test(path)&&node.kind==='image'){\n  const expected=path==='/SlayTheAbyss/nodePanel/eventView/art'?theme.icon.eventArt.default:\n   before.get(path)??(/^\\/SlayTheAbyss\\/relicBar\\/slot(?:1[3-9]|2[0-5])\\/icon$/.test(path)?before.get('/SlayTheAbyss/relicBar/slot1/icon'):undefined);\n  assert.equal(node.image,expected,path);\n }\n assert.equal(child(child(layout,'menuPanel'),'backdrop').image,nativeTheme.image.officialBackdrops.title);\n const menu=child(layout,'menuPanel'),result=child(menu,'result');",
+    "after": "  }\n for(const [path,node]of paths(layout))if(/\\/(portrait|intentIcon|intentBadge|intentExtra|hpIcon|goldIcon|blockedLock|art|art_attack|art_skill|art_power|icon)$/.test(path)&&node.kind==='image'){\n  const expected=replacements.get(path)??before.get(path)??\n   (/^\\/SlayTheAbyss\\/relicBar\\/slot(?:1[3-9]|2[0-5])\\/icon$/.test(path)?before.get('/SlayTheAbyss/relicBar/slot1/icon'):undefined);\n  assert.equal(node.image,expected,path);\n  replacements.delete(path);\n }\n assert.deepEqual([...replacements.keys()],[],'every substituted semantic icon must be present');\n assert.equal(child(child(layout,'menuPanel'),'backdrop').image,nativeTheme.image.officialBackdrops.title);\n const menu=child(layout,'menuPanel'),result=child(menu,'result');"
+   }
+  ]
+ },
  "tests/official-backdrop-assets.test.mjs": {
   "current": {
    "sha256": "67aa31111e7a7c62171b3211503cc6e75478e32c53e204ec5966483a51abd334",
@@ -402,6 +424,23 @@ const fixtures=Object.freeze({
     "at": 61,
     "before": "  const [bar, panel] = relicViewControls(theme), v = theme.layout.relicView;\n  assert.equal(bar.name, 'relicBar');\n  const [tray, ...slots] = bar.children;\n  assert.equal(tray.name, 'tray');\n  assert.equal(slots.length, v.bar.count);\n  // Relics now occupy a second row; preserve separation in both axes, not X alone.\n  assert.equal(slots.length, 12);\n  assertBarGeometry(theme);\n  slots.forEach((slot, i) => {",
     "after": "  const [bar, panel] = relicViewControls(theme), v = theme.layout.relicView;\n  assert.equal(bar.name, 'relicBar');\n  const [tray] = bar.children;\n  const slots = bar.children.slice(1, -2);\n  const arrows = bar.children.slice(-2);\n  assert.equal(tray.name, 'tray');\n  assert.equal(slots.length, v.bar.count);\n  // Relics now occupy a second row; preserve separation in both axes, not X alone.\n  assert.equal(slots.length, 12);\n  assert.deepEqual(arrows.map(arrow => [arrow.name, arrow.position, arrow.size]), [\n    ['previous', [-624, 292], [32, 44]], ['next', [610, 292], [32, 44]],\n  ]);\n  for (const arrow of arrows) {\n    assert.equal(arrow.visible, false);\n    const hit = arrow.children.find(control => control.name === 'hit');\n    assert.equal(hit.kind, 'presetButton');\n    assert.deepEqual(hit.size, arrow.size);\n  }\n  assertBarGeometry(theme);\n  slots.forEach((slot, i) => {"
+   }
+  ]
+ },
+ "tests/responsibility-complexity.test.mjs": {
+  "current": {
+   "sha256": "eca9f64158443c5b8a112cde2be1289b0faec9364308b7e8447ca7e2ff6de7d6",
+   "gitBlob": "c3618edc3133a492745a6a25b5b0b51922f3d950"
+  },
+  "previous": {
+   "sha256": "a67da6f3394c5411d753c72dc8211a5cbe711846c105be3fead1d6e2f8b52be2",
+   "gitBlob": "b9ef7467331c0e259c64fd07d2f58c5c44a07b9c"
+  },
+  "hunks": [
+   {
+    "at": 86,
+    "before": "    'choiceActions.dualWield','M.applyChoice','commitMultipleChoice','toggleChoice',\n    'chooseMultiple','containsUid','chooseSingle','M.choose','applyDrainedAction','refreshDrainedHand','M.drain',\n    ...['writhingRoll','writhingParasite','giantHeadSlow','timeEater','reptomancerSuicide',\n      'enemyAction','staticRetaliation','classPotion','silentFinal','discover','colorless','originalV4',\n      'relicUpgradeRandomHand','playTop','darklingAction','heartBeat','spireDeathRemove',",
+    "after": "    'choiceActions.dualWield','M.applyChoice','commitMultipleChoice','toggleChoice',\n    'chooseMultiple','containsUid','chooseSingle','M.choose','applyDrainedAction','refreshDrainedHand','M.drain',\n    ...['writhingRoll','writhingParasite','giantHeadSlow','timeEater','reptomancerDismissal',\n      'enemyAction','staticRetaliation','classPotion','silentFinal','discover','colorless','originalV4',\n      'relicUpgradeRandomHand','playTop','darklingAction','heartBeat','spireDeathRemove',"
    }
   ]
  },
