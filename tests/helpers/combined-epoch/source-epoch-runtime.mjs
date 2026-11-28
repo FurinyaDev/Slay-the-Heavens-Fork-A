@@ -1,4 +1,5 @@
 import { entrancePredecessor } from '../ui-entrance-source.mjs';
+import {beforeReleaseClosureFixture} from '../release-closure-fixture-source.mjs';
 import {beforeDevelopBackflow,configSourceTokens,isSessionRelicSuccessor,assertCurrentSessionRelicOwner,bindDevelopBackflow} from '../develop-release-backflow-source.mjs';
 import {beforeInputRetirementReader,retiredControllerPath} from '../input-retirement-source.mjs';
 import {authorizeRebasedDevelop,beforeRebasedCi} from '../rebased-release-source.mjs';
@@ -136,8 +137,14 @@ export function createSourceEpochProjector(input,{root=process.cwd(),allowConfig
  function preCombinedSource(path,source,{target,readSource=readLive}={}){
   const destination=requireTarget(target);
   const liveInput=source;
-  const isLiveReader=liveReaders.has(rawReader(readSource));
-  const projected=entrancePredecessor(path,source,rawReader(readSource),{allowConfigLayout});
+  const readCurrent=rawReader(readSource);
+  const isLiveReader=liveReaders.has(readCurrent);
+  const readRewardPrior=owner=>{
+   const raw=readCurrent(owner);
+   // The title fix has an exact inverse for this linked historical witness.
+   return owner==='src/lua/abyss_battle_reward_layout.lua'?beforeReleaseClosureFixture(owner,raw):raw;
+  };
+  const projected=entrancePredecessor(path,source,readRewardPrior,{allowConfigLayout});
   source=projected.source;readSource=projected.read;
   const rawInput=source,backflow=beforeDevelopBackflow(path,source,{allowConfigLayout}),rebased=beforeRebasedCi(path,backflow);
   const reconciled=beforeSlimeSplitSource(path,rebased),mapPrior=beforeCardFeedbackOwner(path,beforeSts1MapSource(path,reconciled)),guidePrior=beforeReleaseGuideSource(path,mapPrior);

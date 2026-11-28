@@ -66,6 +66,19 @@ test('CRLF and exact input-only JSON formatting retain prior strict token behavi
  let reads=0;for(const value of variants){assert.notEqual(value,source);assert.equal(project(path,value,{readSource:()=>{reads++;throw Error('unexpected');}}),value);}assert.equal(reads,0);
  }
 });
+test('the current reward banner owner has an exact, fresh historical predecessor',()=>{
+ const reward='src/lua/abyss_battle_reward_layout.lua';
+ const input=read(config),current=read(reward);
+ assert.match(current,/local colour=Theme\.color\.rewardBannerTitle/);
+ let owner=current;
+ const wrapped=colorlessCatalogReader(path=>path===reward?owner:read(path));
+ assert.equal(project(config,input,{readSource:wrapped}),proof.files[config].beforeSource);
+ owner=current+'\n-- unreviewed reward owner drift';
+ assert.throws(()=>project(config,input,{readSource:wrapped}),
+  /combined linked owner identity: src\/lua\/abyss_battle_reward_layout\.lua/);
+ owner=current.replaceAll('\n','\r\n');
+ assert.equal(project(config,input,{readSource:wrapped}),proof.files[config].beforeSource);
+});
 test('existing final M7 and relic lifecycle chains consume exact pre-extraction owners',()=>{
  for(const path of originals){assert.equal(preM7FinalSource(path,read(path)),proof.files[path].beforeSource);assert.equal(m7FinalReader(read)(path),proof.files[path].beforeSource);}
  const path='src/lua/abyss_colorless_cards.lua';const baseline=readFileSync('tests/helpers/relic-lifecycle-baseline-391306af.json.gz');assert(baseline.length>0);
