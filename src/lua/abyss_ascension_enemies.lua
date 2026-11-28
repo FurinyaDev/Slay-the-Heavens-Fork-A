@@ -111,6 +111,83 @@ local variants = {
         attack = {slam = {damage = 38}},
         hp = 150,
     },
+    spheric_guardian = {
+        attack = {frail_attack = {damage = 11}, slam = {damage = 11}, harden = {damage = 11}},
+    },
+    centurion = {
+        attack = {slash = {damage = 14}, fury = {damage = 7}},
+        hpRange = {78, 83},
+    },
+    mystic = {
+        attack = {attack = {damage = 9}, buff = {enemyStrengthAll = 3}},
+        hpRange = {50, 58},
+    },
+    snake_plant = {
+        attack = {chomp = {damage = 8}},
+        hpRange = {78, 82},
+    },
+    chosen = {
+        attack = {poke = {damage = 6}, zap = {damage = 21}, debilitate = {damage = 12}},
+        hpRange = {98, 103},
+    },
+    shelled_parasite = {
+        attack = {fell = {damage = 21}, double_strike = {damage = 7}, life_suck = {enemyVampireDamage = 12}},
+        hpRange = {70, 75},
+    },
+    byrd = {
+        attack = {peck = {damage = {times = 6}}, swoop = {damage = 14}},
+        hpRange = {26, 33},
+    },
+    snecko = {
+        attack = {bite = {damage = 18}, tail = {damage = 10}},
+        hpRange = {120, 125},
+    },
+    mugger = {
+        attack = {mug = {damage = 11}, lunge = {damage = 18}},
+        hpRange = {50, 54},
+    },
+    bandit_pointy = {
+        attack = {pointy_special = {damage = 6}},
+        hp = 34,
+    },
+    bandit_leader = {
+        attack = {cross_slash = {damage = 17}, agonizing_slash = {damage = 12}},
+        hpRange = {37, 41},
+    },
+    bandit_bear = {
+        attack = {maul = {damage = 20}, lunge = {damage = 10}},
+        hpRange = {40, 44},
+    },
+    taskmaster = {
+        attack = {whip = {makeTempCardInDiscard = 2}},
+        hpRange = {57, 64},
+    },
+    book_of_stabbing = {
+        attack = {multi_stab = {damage = 7}, big_stab = {damage = 24}},
+        hpRange = {168, 172},
+    },
+    gremlin_leader = {
+        attack = {encourage = {enemyEncourage = 4}},
+        hpRange = {145, 155},
+    },
+    collector = {
+        attack = {fireball = {damage = 21}, buff = {enemyStrengthAll = 4}},
+        guard = {buff = {block = 18}},
+        hp = 300,
+    },
+    automaton = {
+        attack = {flail = {damage = 8}, hyper_beam = {damage = 50}, boost = {gainStatus = 4}},
+        guard = {boost = {block = 12}},
+        hp = 320,
+    },
+    champ = {
+        attack = {heavy_slash = {damage = 18}, face_slap = {damage = 14},
+            gloat = {gainStatus = 3}, anger = {gainStatus = 9}},
+        guard = {defensive_stance = {block = 18, gainStatus = 6}},
+        hp = 440,
+    },
+    torch_head = {hpRange = {40, 45}, statsTier = 'boss'},
+    bronze_orb = {hpRange = {54, 60}, statsTier = 'boss'},
 }
 
 local function range(limits)
@@ -123,7 +200,9 @@ local function applyMoves(enemy, changes)
         local effects = changes[move.id]
         if effects then
             for _, effect in ipairs(move.effects) do
-                effect.value = effects[effect.op] or effect.value
+                local change = effects[effect.op]
+                if type(change) == 'number' then effect.value = change
+                elseif change then effect.times = change.times end
             end
         end
     end
@@ -146,7 +225,7 @@ function M.apply(enemy, level)
     local variant = variants[enemy.id]
     if not variant then return end
     if Rules.active(level, attackRule[enemy.tier]) then applyAttack(enemy, variant) end
-    if Rules.active(level, statsRule[enemy.tier]) then applyStats(enemy, variant) end
+    if Rules.active(level, statsRule[variant.statsTier or enemy.tier]) then applyStats(enemy, variant) end
 end
 
 return M
