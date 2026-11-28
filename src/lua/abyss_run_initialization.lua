@@ -80,6 +80,16 @@ function M.install(Run, shared)
         end
     end
 
+    local function appendAscendersBane(run)
+        local level=run.ascension or 0
+        if level==0 or not require('abyss_ascension_rules').active(level,'ascendersBane') then return end
+        local card=require('abyss_curses').newAscendersBane()
+        local definitions=run.data.cards.cards
+        definitions[#definitions+1]=card
+        run.deck[#run.deck+1]={uid=run.nextDeckUid,cardId=card.id,upgraded=false}
+        run.nextDeckUid=run.nextDeckUid+1
+    end
+
     local function initializeRelicPool(run, data, profile, legacyPrepared, runData, eventSeed)
         if data.relicSource then
             -- RelicLibrary.populateRelicPool appends the chosen class library to
@@ -130,7 +140,6 @@ function M.install(Run, shared)
             gold = data.rules.player.startingGold, deck = {}, nextDeckUid = 1,
             relics = Copy.copy(data.rules.player.startingRelics), potions = {} }
         if ascension~=nil then run.ascension,run.seedSource=ascension,seedSource end
-        finishCatalog(run, ownsCatalog)
         if profile then run.character, run.characterProfile = profile.id, Copy.copy(profile) end
         if profile and profile.originalV4 then run.originalCommands={}end
         if options and options.campaign then
@@ -142,6 +151,8 @@ function M.install(Run, shared)
             run.deck[#run.deck + 1] = { uid = run.nextDeckUid, cardId = id, upgraded = false }
             run.nextDeckUid = run.nextDeckUid + 1
         end
+        appendAscendersBane(run)
+        finishCatalog(run, ownsCatalog)
         initializeRelicPool(run, data, profile, legacyPrepared, runData, eventSeed)
         return run
     end

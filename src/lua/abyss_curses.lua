@@ -2,13 +2,13 @@
 -- exhaust/discard; the permanent-deck transaction must call onRemove once.
 local M={}
 local ids={regret=true,injury=true,doubt=true,pain=true,decay=true,shame=true,
-    writhe=true,clumsy=true,normality=true,parasite=true,curse_of_the_bell=true}
+    writhe=true,clumsy=true,normality=true,parasite=true,curse_of_the_bell=true,ascenders_bane=true}
 -- Ordinary curse definitions share shape requirements before identity traits.
 -- Keep the two checks ordered: dynamic fields and malformed-input failures are
 -- part of the existing validation boundary.
-local function commonShape(card)
+local function commonShape(card,rarity)
     return type(card)=='table' and ids[card.id]==true and card.type=='curse'
-        and card.rarity=='curse' and card.cost==-2 and type(card.effects)=='table'
+        and card.rarity==rarity and card.cost==-2 and type(card.effects)=='table'
         and next(card.effects)==nil and card.upgrade==nil and not card.exhaust
         and not card.repeatable and not card.costMode and not card.condition
 end
@@ -23,7 +23,15 @@ local function curseTraits(card)
 end
 function M.isImplemented(card)
     if card and card.id=='necronomicurse'then return require('abyss_necronomicurse').supported(card)end
-    return commonShape(card) and curseTraits(card)
+    if card and card.id=='ascenders_bane' then
+        return commonShape(card,'special') and card.ethereal==true and not card.innate
+    end
+    return commonShape(card,'curse') and curseTraits(card)
+end
+function M.newAscendersBane()
+    return {id='ascenders_bane',sourceId='AscendersBane',name='进阶之灾',
+        type='curse',rarity='special',cost=-2,target='NONE',effects={},ethereal=true,
+        text='不能打出。虚无。无法从永久牌组中移除。'}
 end
 function M.limitsPlay(state)
     for _,c in ipairs(state.hand) do

@@ -223,6 +223,7 @@ function M.removeCard(run,uid)
         local card,position
         for i,c in ipairs(staged.deck) do if c.uid==uid then card,position=c,i;break end end
         if not card then return false,'invalid_card' end
+        if card.cardId=='ascenders_bane' then return false,'card_not_purgeable' end
         if not cardDefinition(staged,card.cardId) then return false,'card_content_unavailable' end
         table.remove(staged.deck,position)
         require('abyss_curses').onRemove(staged,card)
