@@ -1,10 +1,11 @@
 ---
 id: TASK-117.5
 title: 在选角中选择进阶与种子并展示本局信息
-status: To Do
+status: In Progress
 assignee:
   - '@Furinya'
 created_date: '2026-11-28 10:46'
+updated_date: '2026-11-28 11:16'
 labels:
   - v2.3.0
 dependencies:
@@ -38,3 +39,9 @@ ordinal: 232000
 - [ ] #1 新玩家只可选择 A0，锁定及累计规则清晰，两种开局和种子展示可用
 - [ ] #2 验证 PC、手机、开关两态、无损输入错误处理以及相关 UI 操作的 RNG 隔离
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Fork A 接续 37c3c949 → 82b08930 → e41a860b，定向测试及独立评审通过。Quick 在候选和纯基线均复现 cultist_ui:77。组合回归发现存档读取失败会静默降级，已分派修复及复验；PC、手机仍待同候选实测。
+<!-- SECTION:NOTES:END -->

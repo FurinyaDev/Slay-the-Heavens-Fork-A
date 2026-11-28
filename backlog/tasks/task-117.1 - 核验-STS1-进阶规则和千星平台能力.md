@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@Furinya'
 created_date: '2026-11-28 10:46'
-updated_date: '2026-11-28 10:46'
+updated_date: '2026-11-28 11:15'
 labels:
   - v2.3.0
 dependencies: []
@@ -50,4 +50,6 @@ ordinal: 228000
 
 <!-- SECTION:NOTES:BEGIN -->
 目标 develop，基线 32a15219aecd145c59cb1b2fcf477e5556766e5d；第一片为规则、平台与仓库只读核验，先记录接口边界和独立验收，外部平台能力不阻塞规则开发。
+
+阶段证据：#1083 固定种子及平台存档契约，#1084 固定 A1～A14 规则证据。#1082、#1083、#1084、#1085 已挂原生自动合并，Hosted Full/实际合入仍待确认。真实平台输入和跨实例读写仍有缺口，沿用 TASK-53/#1081 接续。
 <!-- SECTION:NOTES:END -->

@@ -1,10 +1,11 @@
 ---
 id: TASK-117.4
 title: 按进阶难度结算开局、换幕和奖励
-status: To Do
+status: In Progress
 assignee:
   - '@Furinya'
 created_date: '2026-11-28 10:46'
+updated_date: '2026-11-28 11:16'
 labels:
   - v2.3.0
 dependencies:
@@ -39,3 +40,9 @@ ordinal: 231000
 - [ ] #2 验证进阶之灾的虚无、不可打出及永久牌组限制，以及药水槽边界
 - [ ] #3 验证各幕升级奖励概率和 Boss 金币倍率、取整及 A0 回归
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Fork A 独立片固定提交：奖励 80f1e047（Quick 46137542900），换幕 05b2b05a（46137530309），初始状态 26c2001c（46137537041），A10 40d8520f（46137802977）。Quick 与独立评审通过；待 #1085 合入及正式候选复核。
+<!-- SECTION:NOTES:END -->

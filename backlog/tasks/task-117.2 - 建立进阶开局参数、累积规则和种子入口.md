@@ -1,10 +1,11 @@
 ---
 id: TASK-117.2
 title: 建立进阶开局参数、累积规则和种子入口
-status: To Do
+status: In Progress
 assignee:
   - '@Furinya'
 created_date: '2026-11-28 10:46'
+updated_date: '2026-11-28 11:15'
 labels:
   - v2.3.0
 dependencies: []
@@ -38,3 +39,9 @@ ordinal: 229000
 - [ ] #2 A0～A14 参数受校验、规则累积，非法输入及未解锁难度显式处理
 - [ ] #3 玩家指定种子无损往返，重开使用原种子；旧测试入口保留升序行为
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+首片基线 32a15219aecd145c59cb1b2fcf477e5556766e5d，Fork A feature/v230-ascension-foundation；定向命令：node scripts/test-lua.mjs tests/lua/ascension_start_config.lua。#1085 精确 HEAD 51fcf1120efcf418480ce499ba613996cad153b3，Fork A Quick 46138199881 通过，正式 Hosted Full 和实际合入待确认。
+<!-- SECTION:NOTES:END -->

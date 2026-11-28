@@ -1,10 +1,11 @@
 ---
 id: TASK-117.3
 title: 按进阶难度调整精英分布和敌人属性
-status: To Do
+status: In Progress
 assignee:
   - '@Furinya'
 created_date: '2026-11-28 10:46'
+updated_date: '2026-11-28 11:15'
 labels:
   - v2.3.0
 dependencies:
@@ -38,3 +39,9 @@ ordinal: 230000
 - [ ] #1 分难度测试精英比例和取整，验证固定种子布局及 A0 对照
 - [ ] #2 普通、精英、Boss 分别验证精确属性、攻击和 A0 输出
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Fork A 独立片固定提交：A1 51ff0062、第一幕敌人 490c58fd、第二幕敌人 f294ee6a。三片 Quick 和独立评审通过；待 #1085 实际合入后在新基线复核，并走正式准入。
+<!-- SECTION:NOTES:END -->

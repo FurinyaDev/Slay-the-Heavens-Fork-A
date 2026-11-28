@@ -1,10 +1,11 @@
 ---
 id: TASK-117.6
 title: 保存各角色进阶记录并按正式胜利解锁
-status: To Do
+status: In Progress
 assignee:
   - '@Furinya'
 created_date: '2026-11-28 10:46'
+updated_date: '2026-11-28 11:16'
 labels:
   - v2.3.0
 dependencies:
@@ -41,3 +42,9 @@ TASK-53 由 #1081 恢复原编号。官方验收等待真实共享读写接口�
 - [ ] #2 失败、放弃、重结算及固定种子不会推进解锁，固定种子不会推进成就
 - [ ] #3 在官方平台跨会话恢复，通过旧存档、坏数据、写失败重试和单调性回归
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Fork A 24834499 已完成源码独立评审与组合 fixture 对接。官方跨会话读写、真实失败恢复沿用 TASK-53/#1081，正式成就路径沿用 TASK-45，均待对应真实平台接入和验证。
+<!-- SECTION:NOTES:END -->

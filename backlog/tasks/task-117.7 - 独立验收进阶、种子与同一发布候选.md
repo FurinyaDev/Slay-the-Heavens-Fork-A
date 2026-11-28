@@ -1,10 +1,11 @@
 ---
 id: TASK-117.7
 title: 独立验收进阶、种子与同一发布候选
-status: To Do
+status: In Progress
 assignee:
   - '@Furinya'
 created_date: '2026-11-28 10:46'
+updated_date: '2026-11-28 11:16'
 labels:
   - v2.3.0
 dependencies:
@@ -44,3 +45,9 @@ ordinal: 234000
 - [ ] #2 同候选 Full、官方持久化、PC、手机和性能证据通过，GIL 保持 19MB 内部控制线与 20MB 平台硬限
 - [ ] #3 绑定源码、配置及 GIL，启用后复验同包，更新玩家 ChangeLog
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+离线阶段验收记录 87bb3203。原自动策略在纯 BASE 与组合候选同样失败；组合离线容量检查通过；A14 seed 2 自然挑战在第 11 层战败。正式获胜、同一候选的完整 CI 和官方 PC、手机及跨实例存档证据仍待验。
+<!-- SECTION:NOTES:END -->
