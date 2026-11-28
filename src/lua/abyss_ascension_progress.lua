@@ -55,13 +55,24 @@ local function formalVictory(run, map)
     return finalTreasure(flow) and matchingMap(run, map, flow) and wonBoss(run)
 end
 
-function M.recordVictory(section, run, map)
-    if not plain(run) or not Rules.validLevel(run.ascension) or run.seedSource~='random' then
+function M.qualifies(run, map)
+    if not plain(run) or not Rules.validLevel(run.ascension) then
         return nil,'ineligible_ascension_run'
     end
     if not formalVictory(run, map) then return nil,'not_formal_victory' end
-    local characterId = run.character
-    if characterId==nil then characterId='ironclad' end
+    if run.seedSource~='random' then return nil,'ascension_seed_ineligible' end
+    return true
+end
+
+function M.characterId(run)
+    if run.character==nil then return 'ironclad' end
+    return run.character
+end
+
+function M.recordVictory(section, run, map)
+    local qualified, rejected = M.qualifies(run, map)
+    if not qualified then return nil,rejected end
+    local characterId = M.characterId(run)
     local current, reason = M.read(section, characterId)
     if not current then return nil,reason end
     local level = run.ascension

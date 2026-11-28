@@ -214,6 +214,7 @@
     "abyss_game_ui_overlays": "ui",
     "abyss_game_ui_view": "ui",
     "abyss_game_ui_run": "ui",
+    "abyss_game_ascension_flow": "ui",
     "abyss_game_ui_lifecycle": "ui",
     "abyss_game_ui_input": "ui",
     "abyss_game_ui_menu_view": "ui",

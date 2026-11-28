@@ -1,32 +1,10 @@
-local Run = require('abyss_run')
 local Nodes = require('abyss_nodes')
 local Map = require('abyss_map')
-local Queue = require('abyss_encounter_queue')
-local Data = require('abyss_data')
-local finishRewards = dofile('tests/lua/support/finish_combat_rewards.lua')
-
 local registered, Progress = pcall(require, 'abyss_ascension_progress')
 assert(registered, 'missing ascension progress rules')
 
--- Reach the real terminal owner through the public Boss combat, rewards, and chest APIs.
--- Map traversal and the enemy deaths are controlled here, not a playthrough.
-local defaultFlag = Data.rules.ascensionEnabled
-Data.rules.ascensionEnabled = true
-local run = Run.new(Data, '3', {experimental=true, campaign=true, campaignProfile='competition-two-act'},
-    {ascension=0, seedSource='random'})
-Data.rules.ascensionEnabled = defaultFlag
-run.act = 2
-run.bossInitialization, run.encounters = Queue.initializeBoss(Queue.new(run.runSeed, 2))
-local map = Map.generate(run.data, run.runSeed, 2, assert(Run.freezeMapContext(run)))
-while Map.available(map)[1].floor < 33 do
-    assert(Map.choose(map, Map.available(map)[1].id))
-end
-assert(Nodes.enter(run, map, Map.available(map)[1].id))
-for _, enemy in ipairs(run.combat.enemies) do enemy.hp = 0 end
-assert(Run.finishCombat(run))
-assert(Run.claimCardReward(run, 0))
-finishRewards(run)
-assert(Nodes.completeCombat(run, map))
+local prepareVictory = dofile('tests/lua/support/ascension_victory_fixture.lua')
+local run, map = prepareVictory(0, 'random')
 assert(not Progress.recordVictory(nil, run, map), 'Act 2 Boss victory before treasure must not unlock')
 assert(Nodes.enter(run, map, Map.available(map)[1].id))
 assert(not Progress.recordVictory(nil, run, map), 'unfinished Act 2 treasure must not unlock')
