@@ -11,7 +11,7 @@ for _, root in ipairs(require('abyss_ui_layout')) do
 end
 assert(spec)
 local function colour(r,g,b,a) return {r=r,g=g,b=b,a=a} end
-local cursor = {CursorDown='down', CursorUp='up', CursorDrag='drag'}
+local cursor = {CursorDown='down', CursorUp='up', CursorDrag='drag', CursorEnter='enter', CursorExit='exit'}
 local function makeUi(panel, map, hudTop)
     local ui
     ui = UI.new(panel, map, function(node) return Map.choose(ui.map, node.id) end,
@@ -134,6 +134,9 @@ local function sweep(map, capture)
             end
         end
     end
+    if os.getenv('MAP_REFINED') then
+        assert(left>=-304 and right<=304,'outer rooms intrude into paper margins')
+    end
     assert(signature(Map.snapshot(map))==snap,'painting mutated the map or RNG state')
     if capture then
         local function rgba(c) return ('%d,%d,%d,%d'):format(c.r,c.g,c.b,c.a) end
@@ -144,6 +147,15 @@ local function sweep(map, capture)
         for _,pattern in ipairs(patterns) do
             for _,d in ipairs(pattern.dots) do print('DRAW',map.seed,'dash',d[1],d[2],d[3],d[4],d[5],rgba(d[6])) end
         end
+    else
+        local lanes, anchors = {}, {}
+        for _, n in ipairs(map.nodes) do
+            if n.floor == chapter.first then
+                lanes[#lanes+1] = n.lane
+                anchors[#anchors+1] = string.format('%.2f', points[n.id].x)
+            end
+        end
+        print('ENTRY', map.seed, chapter.act, table.concat(lanes, ','), table.concat(anchors, ','))
     end
     return total/count,right-left,#map.nodes,#route,crossings(route,points),bindElapsed,paintElapsed,frames,snap
 end
@@ -165,6 +177,28 @@ local function touch(seed)
     map=ui.map
     assert(ui:focusCurrent() and box.x==x and box.y==y,'map restore shifted the first tap target')
     assert(hit.visible and hit.sizeDeltaX>=44 and hit.sizeDeltaY>=44)
+    if os.getenv('MAP_REFINED') then
+        local ring=box:GetChild('ring')
+        local rim=ring:GetChild('outline')
+        local trigger={GetUIPos=function()return w/2,h/2 end}
+        assert(not ring.visible)
+        local idleSize=box:GetChild('icon').sizeDeltaX
+        hit.listeners.enter(trigger)
+        assert(ring.visible and rim.imageColor.r==247 and rim.imageColor.g==247 and rim.imageColor.b==241,
+            'available node needs a light rim on hover')
+        assert(ring.sizeDeltaX<=hit.sizeDeltaX and not ring:GetChild('brush').visible)
+        if os.getenv('MAP_CAPTURE') then
+            local icon=box:GetChild('icon')
+            print('HOVER',seed,ring.sizeDeltaX,idleSize,icon.sizeDeltaX,map.nodes[slot].type,
+                rim.imageColor.r,rim.imageColor.g,rim.imageColor.b,rim.imageColor.a)
+        end
+        assert(#map.path==0 and box.x==x and box.y==y,'hover changed selection or position')
+        hit.listeners.exit(trigger)
+        assert(not ring.visible)
+        local idleSize=box:GetChild('icon').sizeDeltaX
+        hit.listeners.enter(trigger)
+        assert(ui:setScroll(0) and not ring.visible,'scroll repaint retained stale hover')
+    end
     local scale=Viewport.scale(w,h)
     local function event(id,x,y)
         return {touchId=id,GetUIPos=function()return w/2+x*scale,h/2+y*scale end}
@@ -174,6 +208,10 @@ local function touch(seed)
     hit.listeners.up(start)
     assert(not hit.listeners.click(event(11,box.x,box.y)))
     assert(hit.listeners.click(start) and map.currentNodeId==map.nodes[slot].id)
+    if os.getenv('MAP_REFINED') then
+        local ring=box:GetChild('ring')
+        assert(ring.visible and ring:GetChild('brush').visible,'hover changed the normal visited ring')
+    end
     local bg=F.mapControl(panel,'dragArea')
     local scroll=ui.scroll
     bg.listeners.down(event(10,0,0))
@@ -193,7 +231,12 @@ end
 
 local selection=os.getenv('MAP_CAPTURE')
 if selection then
-    for seed in selection:gmatch('%d+') do sweep(Map.generate(F.Data,seed),true);touch(seed) end
+    for entry in selection:gmatch('%S+') do
+        local seed, act = entry:match('^(%d+):(%d+)$')
+        seed = seed or entry
+        sweep(Map.generate(F.Data,seed,tonumber(act)),true)
+        touch(seed)
+    end
 else
     for seed=1,128 do
         for act=1,3 do

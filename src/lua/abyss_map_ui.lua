@@ -55,8 +55,23 @@ function M.paintRoom(fx)
         local alpha = fx.boss or fx.hovered or fx.pressed
         icon.imageColor = fx.colour(ink.r, ink.g, ink.b, math.floor(ink.a * (alpha and 1 or .82 + .18 * fx.alpha) + .5))
     end
-    local ringSize = fx.size * MapLayout.sts.circlePerScale * (fx.scale * .95 + .2)
+    local ringScale = routeStyle and fx.hovered and .88 or MapLayout.sts.circlePerScale * (fx.scale * .95 + .2)
+    local ringSize = fx.size * ringScale
     roomSize(fx,ring,ringSize)
+end
+-- Reuse the lower ring layer for the available symbol's hover border.
+local function paintRoomFeedback(fx, hovered, pressed)
+    if routeStyle and fx.hovered ~= hovered then
+        local ring = fx.box:GetChild('ring')
+        ring:SetVisible(hovered)
+        if hovered then
+            ring.localRotationZ = 0
+            ring:GetChild('outline').imageColor = fx.colour(247, 247, 241, 255)
+            ring:GetChild('brush'):SetVisible(false)
+        end
+    end
+    fx.hovered, fx.pressed = hovered, pressed
+    M.paintRoom(fx)
 end
 -- Room ink by state: emerald > visited gold > locked faded > official type colour.
 -- Rooms beyond the next row (and routes leaving the next row) are inactive decoration:
@@ -331,8 +346,8 @@ function M.new(root, map, onChoose, clickEvent, options)
         scrollAnimation = nil
         for _,fx in ipairs(self.activeFx or {})do
             if fx.hovered or fx.pressed then
-                fx.hovered,fx.pressed=false,false
-                if fx.visible then M.paintRoom(fx)end
+                if fx.visible then paintRoomFeedback(fx, false, false)
+                else fx.hovered,fx.pressed=false,false end
             end
         end
     end
@@ -548,7 +563,9 @@ function M.new(root, map, onChoose, clickEvent, options)
         if circled then
             local ink = state == 'current' and Theme.color.mapCanvas.currentRing or Theme.color.mapCanvas.visitedRing
             tint(child(ring, 'outline'), ink)
-            tint(child(ring, 'brush'), ink)
+            local brush = child(ring, 'brush')
+            if routeStyle then brush:SetVisible(true) end
+            tint(brush, ink)
         end
         local iconId = fx.boss and Theme.icon.mapBoss[bossName] or Theme.icon.node[node.type]
         icon:SetImage(imageSource, iconId)
@@ -899,7 +916,7 @@ function M.new(root, map, onChoose, clickEvent, options)
             local id=slot and self.slots[slot]
             local fx=id and self.roomFx[id]
             if fx and fx.visible and fx.state=='available' and self.navigationEnabled then
-                fx.hovered,fx.pressed=hovered,pressed;M.paintRoom(fx)
+                paintRoomFeedback(fx, hovered, pressed)
             end
         end
         local function feedbackOwned(event)

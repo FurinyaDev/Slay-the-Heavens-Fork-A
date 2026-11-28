@@ -2,12 +2,12 @@
   "data/presentation/ui_theme.json": {
     "path": "data/presentation/ui_theme.json",
     "beforeSha256": "6e4d4fd4d63b54d827178c39e584833414852a6720bf9fdb9e3a7bd1d1804d81",
-    "afterSha256": "3f072e1fe4a9e5d6fb49ceadaf0cb275b89c72750abdd8b3ff41c77fbdd1931e",
+    "afterSha256": "e9942d3e161d0c1581cd6126e0fa3d4f57c0b55708f0fa768d0c7940745b922e",
     "hunks": [
       {
         "at": 15,
         "before": "  \"officialAssets\": {\n    \"energyOrb\": {",
-        "after": "  \"officialAssets\": {\n    \"mapRoutes\": {\n      \"columnGap\": 116,\n      \"floorGap\": 92,\n      \"jitterX\": 16,\n      \"jitterY\": 14,\n      \"maxShift\": 40,\n      \"dashPitch\": 11,\n      \"dashLength\": 6.5,\n      \"lockedWidth\": 1.7,\n      \"nextWidth\": 1.75,\n      \"takenWidth\": 1.9,\n      \"lockedOpacity\": 0.25\n    },\n    \"energyOrb\": {"
+        "after": "  \"officialAssets\": {\n    \"mapRoutes\": {\n      \"columnGap\": 86,\n      \"floorGap\": 100,\n      \"jitterX\": 14,\n      \"jitterY\": 18,\n      \"maxShift\": 64,\n      \"routeHalfWidth\": 304,\n      \"dashPitch\": 11,\n      \"dashLength\": 6.5,\n      \"lockedWidth\": 1.7,\n      \"nextWidth\": 1.75,\n      \"takenWidth\": 1.9,\n      \"lockedOpacity\": 0.25\n    },\n    \"energyOrb\": {"
       }
     ]
   },
@@ -60,7 +60,7 @@
   "src/lua/abyss_map_ui.lua": {
     "path": "src/lua/abyss_map_ui.lua",
     "beforeSha256": "645764d987cb57f2cf57db066eeb3e99de967d248b9efabbd3cf65269e7dd379",
-    "afterSha256": "2842d663920c80c6edb1c5159f40a9de18015391e6539cd6449bf0ff36b0543e",
+    "afterSha256": "d3ab26b3dd9e938419414b2b87bcfb1ac01a35c97c172fdaf3b7cd33e5dc913f",
     "hunks": [
       {
         "at": 8,
@@ -68,54 +68,74 @@
         "after": "local Viewport = require('abyss_viewport')\nlocal Geometry = require('abyss_map_visual_layout')\nlocal routeStyle = Geometry.routeStyle\nlocal lockedRouteAlpha = routeStyle and math.floor(255 * routeStyle.lockedOpacity + .5) or 0\nlocal M = {}"
       },
       {
-        "at": 175,
+        "at": 56,
+        "before": "    end\n    local ringSize = fx.size * MapLayout.sts.circlePerScale * (fx.scale * .95 + .2)\n    roomSize(fx,ring,ringSize)\nend",
+        "after": "    end\n    local ringScale = routeStyle and fx.hovered and .88 or MapLayout.sts.circlePerScale * (fx.scale * .95 + .2)\n    local ringSize = fx.size * ringScale\n    roomSize(fx,ring,ringSize)\nend\n-- Reuse the lower ring layer for the available symbol's hover border.\nlocal function paintRoomFeedback(fx, hovered, pressed)\n    if routeStyle and fx.hovered ~= hovered then\n        local ring = fx.box:GetChild('ring')\n        ring:SetVisible(hovered)\n        if hovered then\n            ring.localRotationZ = 0\n            ring:GetChild('outline').imageColor = fx.colour(247, 247, 241, 255)\n            ring:GetChild('brush'):SetVisible(false)\n        end\n    end\n    fx.hovered, fx.pressed = hovered, pressed\n    M.paintRoom(fx)\nend"
+      },
+      {
+        "at": 190,
         "before": "end\nlocal function floorY(chapter, floor)\n    local y = MapLayout.firstY + math.max(0, floor - chapter.first) * Theme.layout.map.floorGap\n    if floor == chapter.boss then return y + Theme.layout.map.bossFloorLift end\n    if chapter.act == 3 and floor == chapter.last then return y + 2 * Theme.layout.map.bossFloorLift end\n    return y\nend\n-- ===== Port of STS MapRoomNode update/render state (aeubanks/sts@319009d map/MapRoomNode.java) =====",
         "after": "end\n-- ===== Port of STS MapRoomNode update/render state (aeubanks/sts@319009d map/MapRoomNode.java) ====="
       },
       {
-        "at": 191,
+        "at": 206,
         "before": "    -- route stays attached underneath it without moving the route each frame.\n    local scale = M.drawScale({state=state,scale=state==\"available\" and .91 or Sts.baseScale})\n    return size * Sts.iconPerScale * scale * .45, node.hasEmeraldKey and map.emeraldIconY or 0",
         "after": "    -- route stays attached underneath it without moving the route each frame.\n    local scale = M.drawScale({boss=node.type==\"boss\",state=state,scale=state==\"available\" and .91 or Sts.baseScale,alpha=0})\n    return size * Sts.iconPerScale * scale * .45, node.hasEmeraldKey and map.emeraldIconY or 0"
       },
       {
-        "at": 313,
+        "at": 328,
         "before": "    local view = map and mapView(map)\n    local self = { root = root, map = map, visible = map ~= nil, navigationEnabled = view and atStart(view) or false,",
         "after": "    local view = map and mapView(map)\n    local positions = Geometry.positions(map, initialChapter)\n    local self = { root = root, map = map, visible = map ~= nil, navigationEnabled = view and atStart(view) or false,"
       },
       {
-        "at": 367,
+        "at": 347,
+        "before": "            if fx.hovered or fx.pressed then\n                fx.hovered,fx.pressed=false,false\n                if fx.visible then M.paintRoom(fx)end\n            end",
+        "after": "            if fx.hovered or fx.pressed then\n                if fx.visible then paintRoomFeedback(fx, false, false)\n                else fx.hovered,fx.pressed=false,false end\n            end"
+      },
+      {
+        "at": 382,
         "before": "        far = pathColour(Theme.color.node.path, visual.farFutureOpacity),\n    }\n    local function bind(name, fn)",
         "after": "        far = pathColour(Theme.color.node.path, visual.farFutureOpacity),\n        locked = colour(0, 0, 0, lockedRouteAlpha),\n    }\n    local function routeAppearance(dashed, taken, reachable, far)\n        if dashed and routeStyle then\n            if taken then return routeStyle.takenWidth, pathColours.taken end\n            if reachable then return routeStyle.nextWidth, pathColours.next end\n            return routeStyle.lockedWidth, pathColours.locked\n        end\n        local ink = taken and pathColours.taken or reachable and pathColours.next or far and pathColours.far or pathColours.future\n        return M.pathWidth(taken, reachable), ink\n    end\n    local function bind(name, fn)"
       },
       {
-        "at": 386,
+        "at": 401,
         "before": "    local function position(node)\n        return (node.lane - (Layout.lanes + 1) / 2) * Theme.layout.map.columnGap,\n            floorY(self.chapter, node.floor) - self.scroll\n    end",
         "after": "    local function position(node)\n        local point = positions[node.id]\n        return point.x, point.y - self.scroll\n    end\n    local function focusY(current, floor)\n        local point = floor == current.floor and positions[current.currentNodeId]\n        return point and point.y or Geometry.floorY(self.chapter, floor)\n    end"
       },
       {
-        "at": 399,
+        "at": 414,
         "before": "        self.observedMap, self.observedContext, self.chapter = self.map, current, chapterFor(self.map)\n        self.entryError=nil",
         "after": "        self.observedMap, self.observedContext, self.chapter = self.map, current, chapterFor(self.map)\n        positions = Geometry.positions(self.map, self.chapter)\n        self.entryError=nil"
       },
       {
-        "at": 404,
+        "at": 419,
         "before": "        self.navigationEnabled, self.time = atStart(current), 0\n        self.scroll = clamp(floorY(self.chapter, current.floor) - Layout.focusY, 0, scrollLimit(self.chapter))\n        return true\n    end\n    local function paintRouteDashes(control, firstDash, sourceId, targetId, route, width, ink)\n        local seed=0",
         "after": "        self.navigationEnabled, self.time = atStart(current), 0\n        self.scroll = clamp(focusY(current, current.floor) - Layout.focusY, 0, scrollLimit(self.chapter))\n        return true\n    end\n    local function paintSpacedDashes(control, firstDash, length, a, b, width, ink)\n        -- MapEdge uses fixed pitch along the segment. Stretch the pitch on\n        -- longer diagonals to stay within the existing eight-image pool.\n        local pitch = math.max(routeStyle.dashPitch, length / 8)\n        local count = math.min(8, math.floor(length / pitch) + 1)\n        local start = (length - (count - 1) * pitch) / 2\n        local low, high = a * length, b * length\n        local centre = (low + high) / 2\n        local half = routeStyle.dashLength / 2\n        for i = 1, 8 do\n            local dash = i == 1 and firstDash or child(control, 'routeInk' .. i)\n            local dashCentre = start + (i - 1) * pitch\n            local first, last = math.max(low, dashCentre - half), math.min(high, dashCentre + half)\n            local visible = i <= count and last > first\n            dash:SetVisible(visible)\n            if visible then\n                dash:SetAnchoredPosition((first + last) / 2 - centre, 0)\n                dash:SetSizeDelta(last - first, width)\n                dash.imageColor = ink\n            end\n        end\n    end\n\n    local function paintRouteDashes(control, firstDash, sourceId, targetId, route, width, ink)\n        if routeStyle then\n            paintSpacedDashes(control, firstDash, route.length, route.a, route.b, width, ink)\n            return\n        end\n        local seed=0"
       },
       {
-        "at": 470,
+        "at": 485,
         "before": "        -- TASK-4.13: walked > reachable > unreachable stroke weights (STS taken/available/disabled).\n        local width = M.pathWidth(taken, reachable)\n        local low, high = Layout.viewport.bottom + width / 2, Layout.viewport.top - width / 2",
         "after": "        -- TASK-4.13: walked > reachable > unreachable stroke weights (STS taken/available/disabled).\n        local width, ink = routeAppearance(firstDash, taken, reachable, far)\n        local low, high = Layout.viewport.bottom + width / 2, Layout.viewport.top - width / 2"
       },
       {
-        "at": 484,
+        "at": 499,
         "before": "        control.localRotationZ = math.atan(dy, dx) * 180 / math.pi\n        local ink=taken and pathColours.taken or reachable and pathColours.next or far and pathColours.far or pathColours.future\n        if firstDash then",
         "after": "        control.localRotationZ = math.atan(dy, dx) * 180 / math.pi\n        if firstDash then"
       },
       {
-        "at": 722,
+        "at": 564,
+        "before": "            tint(child(ring, 'outline'), ink)\n            tint(child(ring, 'brush'), ink)\n        end",
+        "after": "            tint(child(ring, 'outline'), ink)\n            local brush = child(ring, 'brush')\n            if routeStyle then brush:SetVisible(true) end\n            tint(brush, ink)\n        end"
+      },
+      {
+        "at": 739,
         "before": "        if self.chapter.terminal == 'boss_treasure' then floor = math.min(floor, self.chapter.boss) end\n        local target = floorY(self.chapter, floor) - Layout.focusY\n        if animated then return animateScrollTo(target) end",
         "after": "        if self.chapter.terminal == 'boss_treasure' then floor = math.min(floor, self.chapter.boss) end\n        local target = focusY(current, floor) - Layout.focusY\n        if animated then return animateScrollTo(target) end"
+      },
+      {
+        "at": 917,
+        "before": "            if fx and fx.visible and fx.state=='available' and self.navigationEnabled then\n                fx.hovered,fx.pressed=hovered,pressed;M.paintRoom(fx)\n            end",
+        "after": "            if fx and fx.visible and fx.state=='available' and self.navigationEnabled then\n                paintRoomFeedback(fx, hovered, pressed)\n            end"
       }
     ]
   }

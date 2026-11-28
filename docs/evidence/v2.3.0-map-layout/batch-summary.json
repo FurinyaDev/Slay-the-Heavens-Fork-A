@@ -30,23 +30,66 @@
     "renderFrames": 2816,
     "maxNodes": 74,
     "maxEdges": 85,
-    "absoluteMeanX": 16.63,
-    "averageSpan": 711.39,
-    "meanBindMs": 0.885,
-    "meanScrollPaintMs": 0.635,
+    "absoluteMeanX": 5.69,
+    "averageSpan": 530.99,
+    "meanBindMs": 0.804,
+    "meanScrollPaintMs": 0.638,
     "examples": {
       "17": {
-        "meanX": 0.0,
-        "span": 720.0
+        "meanX": -0.0,
+        "span": 540.0
       },
       "23": {
-        "meanX": -97.76,
-        "span": 605.0
+        "meanX": -37.14,
+        "span": 444.0
       },
       "63": {
-        "meanX": 77.35,
-        "span": 725.0
+        "meanX": 33.06,
+        "span": 520.0
       }
     }
+  },
+  "startingRows": {
+    "mapsWithTwoOrThreeEntrances": 220,
+    "allEntranceColumnsOnOneSide": 4,
+    "allEntranceAnchorsOnOneSide": 9,
+    "examples": [
+      {
+        "seed": "4",
+        "act": "1",
+        "lanes": [
+          1,
+          3
+        ],
+        "anchors": [
+          -242.32,
+          -51.32
+        ]
+      },
+      {
+        "seed": "19",
+        "act": "1",
+        "lanes": [
+          3,
+          5
+        ],
+        "anchors": [
+          -120.41,
+          54.59
+        ]
+      },
+      {
+        "seed": "49",
+        "act": "2",
+        "lanes": [
+          5,
+          6
+        ],
+        "anchors": [
+          75.95,
+          182.95
+        ]
+      }
+    ]
   }
 }

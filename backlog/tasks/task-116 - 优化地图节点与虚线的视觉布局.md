@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - Furinya
 created_date: '2026-11-28 02:36'
-updated_date: '2026-11-28 02:53'
+updated_date: '2026-11-28 03:04'
 labels:
   - v2.3.0
 milestone: m-8
@@ -56,4 +56,8 @@ ordinal: 226000
 Fork A 分支 feat/v230-map-visual-layout。以 develop 32a15219aecd145c59cb1b2fcf477e5556766e5d 为固定评审基线。128 种子、384 张地图离线通过，地图快照一致，控件树和模板一致。待 Owner 评审及实体设备验收。
 
 Fork A Draft #5 已建，固定评审基线 review/v2.3.0-map-base，已验证代码提交 bf0d37becc057368a8dcb9321d0b7bcb4c451deb。Owner 评审后再安排同候选设备与官方编辑器容量验收。
+
+Owner 复核后按 STS1 约六成纸面宽度重校。列距 86、层距 100，三组地图补做纸边同尺度对照。复用现有环形控件给可达房间增加白色悬停轮廓。384 张地图重跑并校验触区和悬停清除。
+
+已核对原版开局实拍与 MapGenerator 源码。底层入口按随机列绘制，可集中或偏侧。本项目 384 张离线样本中 220 张有 2–3 个入口，覆盖保留偏左、分布较开、偏右的双入口实例。
 <!-- SECTION:NOTES:END -->

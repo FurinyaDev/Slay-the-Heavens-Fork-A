@@ -1240,7 +1240,7 @@
       "backlogTask": "TASK-116",
       "reference": {
         "path": "docs/evidence/v2.3.0-map-layout/REFERENCE.md",
-        "sha256": "12de1b88bed0a9221aa8222d4497e8f5e05521637bcefd3909351854d1287315"
+        "sha256": "82657589086ec40a217d52ded3be392c7e5e996174f1f191f6d9a349e1a34edd"
       },
       "source": "https://github.com/aeubanks/sts/tree/319009d5df0a82d9fb0f23cc22322286c6a87ec0/map",
       "supersedes": [],

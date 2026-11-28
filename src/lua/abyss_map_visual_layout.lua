@@ -46,11 +46,9 @@ function M.positions(map, chapter)
     end
     if count > 0 then
         -- Shift the graph as a whole to soften lateral bias while preserving
-        -- lane order and its silhouette. Reserve space around the outer rooms.
-        local bounds = MapLayout.viewport
-        local margin = Theme.layout.map.node
+        -- lane order and its silhouette. Keep outer rooms clear of the paper edges.
         local shift = clamp(-sum / count, -style.maxShift, style.maxShift)
-        shift = clamp(shift, bounds.left + margin - left, bounds.right - margin - right)
+        shift = clamp(shift, -style.routeHalfWidth - left, style.routeHalfWidth - right)
         for _, point in pairs(positions) do
             if point.generated then point.x = point.x + shift end
         end

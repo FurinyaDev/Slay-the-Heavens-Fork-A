@@ -15,11 +15,12 @@
   },
   "officialAssets": {
     "mapRoutes": {
-      "columnGap": 116,
-      "floorGap": 92,
-      "jitterX": 16,
-      "jitterY": 14,
-      "maxShift": 40,
+      "columnGap": 86,
+      "floorGap": 100,
+      "jitterX": 14,
+      "jitterY": 18,
+      "maxShift": 64,
+      "routeHalfWidth": 304,
       "dashPitch": 11,
       "dashLength": 6.5,
       "lockedWidth": 1.7,
