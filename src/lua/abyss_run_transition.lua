@@ -8,6 +8,13 @@ local Acts = require('abyss_acts')
 
 local M = {}
 
+local function actHealing(run)
+    local level=run.ascension or 0
+    if level==0 or not require('abyss_ascension_rules').active(level,'actHealing') then return run.maxHp end
+    local missing=EventRandom.float32(math.max(0,run.maxHp-run.hp))
+    return math.floor(EventRandom.float32(missing*.75)+.5)
+end
+
 function M.install(Run)
     local function hasEndingKeys(staged)
         return staged.endingUnlocked==true and type(staged.keys)=='table'
@@ -63,7 +70,7 @@ function M.install(Run)
             local tinyChest=staged.unknown.chances.tinyChestCount
             staged.unknown.chances=Unknown.newPc()
             staged.unknown.chances.tinyChestCount=tinyChest
-            Run.heal(staged,staged.maxHp)
+            Run.heal(staged,actHealing(staged))
             staged.act,staged.phase,staged.floor=nextAct,'map',Acts.get(nextAct).first-1
             staged.nodeFlow,staged.pendingAct,staged.pendingCombatRewards,staged.rewards=nil,nil,nil,nil
             staged.combat,staged.lastResult=nil,nil
