@@ -59,6 +59,8 @@ export function officialAssetsTheme(source){
   theme.color.officialBackdropVeil=theme.officialAssets.backdropVeil;
   theme.color.topPanelHp='#EF7777';theme.color.topPanelGold='#F1CA67';
   for(const key of Object.keys(source.v25Battle.layout))theme.layout[key]=structuredClone(approved.layout[key]);
+  const mapRoutes=theme.officialAssets.mapRoutes;
+  if(mapRoutes)Object.assign(theme.layout.map,{columnGap:mapRoutes.columnGap,floorGap:mapRoutes.floorGap});
   for(const key of Object.keys(source.v25Battle.font))theme.font[key]=approved.font[key];
   Object.assign(theme.motion,source.v25Battle.motion);
   // One full illustration slot and five native body rows for every card;

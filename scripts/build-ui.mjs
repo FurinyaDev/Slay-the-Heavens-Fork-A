@@ -252,7 +252,7 @@ export function buildUI(outputDirectory = 'build/lua', python = process.env.ABYS
   if(officialAssets)writeFileSync(officialTheme,JSON.stringify(theme));
   else rmSync(officialTheme,{force:true});
   buildUiTheme(officialAssets?officialTheme:v25BattleChrome?variantTheme:undefined, undefined, join(outputDirectory, 'abyss_theme.lua'));
-  buildMapUI(outputDirectory);
+  buildMapUI(outputDirectory, officialAssets ? theme : undefined);
   writeFileSync(join(outputDirectory,'abyss_monster_art_data.lua'),monsterArtPayloadSource(monsterArt));
   const narrative = JSON.parse(readFileSync('data/presentation/narrative.zh-CN.json', 'utf8'));
   narrative.codeVersion = releaseNotes.build.version;
