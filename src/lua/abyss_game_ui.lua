@@ -105,6 +105,7 @@ function M.new(root, data, presentation, clickEvent, platform)
     local runMenu = child("runMenu")
     local characterPanel = child("characterPanel")
     self.characterSelection=CharacterSelect.new(data,presentation,platform.campaignProfile or platform.characterProfile)
+    CharacterView.installAscension(self.characterSelection,data.rules,characterPanel,platform)
     self.fastMode=false
     self.setFastMode = Overlays.setFastMode(self)
     local openingCovered = Overlays.openingCovered(self)

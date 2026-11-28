@@ -1,6 +1,76 @@
 import { cardFaceChildren } from './card-face.mjs';
 import { deckCardTemplate, fiveColumnCardGrid } from './deck-ui-layout.mjs';
 import { nativeControls, nativeTheme } from './native-ui-theme.mjs';
+import { readFileSync } from 'node:fs';
+
+export function attachAscensionControls(panel, runMenu, theme) {
+  const rules = JSON.parse(readFileSync('data/rules.json', 'utf8').replace(/^\uFEFF/, ''));
+  if (rules.ascensionEnabled !== true) return;
+  attachAscensionPicker(panel, theme);
+  attachSeedEditor(panel, theme);
+  attachRunSeedDetails(runMenu, theme);
+}
+
+function attachAscensionPicker(panel, theme) {
+  const { plate, text, button } = nativeControls(theme);
+  const { color } = theme;
+  const arrow = (name, x, label) => button(name, [x, 16, 58, 52], label,
+    { states: true, inset: [8, 8], fontSize: 25, colour: color.goldBright });
+  panel.children.push({
+    name: 'ascensionPicker', kind: 'container', position: [405, 258], size: [378, 138], visible: false,
+    children: [
+      { ...plate('face', [0, 0, 378, 138], color.panel), raycastTarget: false, opacity: .95 },
+      text('title', [0, 52, 202, 28], '进阶难度', 17, color.goldBright),
+      arrow('previous', -140, '‹'), arrow('next', 140, '›'),
+      text('rank', [0, 16, 130, 46], 'A0', 27, color.goldBright),
+      text('rule', [0, -23, 352, 32], '', 18, color.text),
+      text('unlock', [0, -51, 352, 24], '', 16, color.textDim),
+    ],
+  });
+}
+
+function attachSeedEditor(panel, theme) {
+  const { plate, text, button } = nativeControls(theme);
+  const { color, canvas } = theme;
+  const action = (name, frame, label, fill = color.panelRaised) => button(name, frame, label,
+    { inset: [8, 8], fontSize: 20, fill });
+  const keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '−', '0', '⌫'];
+  const nameFor = key => key === '−' ? 'minus' : key === '⌫' ? 'erase' : 'digit' + key;
+  panel.children.push(
+    { ...action('seedEntry', [405, 157, 378, 52], '随机种子'), visible: false },
+    {
+      name: 'seedEditor', kind: 'container', size: [...canvas.base], visible: false,
+      children: [
+        { ...plate('veil', [0, 0, ...canvas.base], color.backdropVeil), raycastTarget: false },
+        { name: 'blocker', kind: 'cursorArea', size: [...canvas.base], focusable: false },
+        plate('face', [0, 0, 500, 478], color.panel),
+        text('title', [0, 204, 480, 36], '设置种子', 23, color.goldBright),
+        plate('field', [0, 153, 438, 50], color.panelSunken),
+        text('value', [0, 153, 420, 44], '', 24, color.text),
+        text('status', [0, -141, 465, 35], '', 17, color.text),
+        ...keys.map((key, index) => action(nameFor(key),
+          [(index % 3 - 1) * 114, 97 - Math.floor(index / 3) * 65, 102, 56], key)),
+        action('random', [-151, -197, 138, 54], '随机'),
+        action('cancel', [0, -197, 138, 54], '取消'),
+        action('apply', [151, -197, 138, 54], '确认', color.buttonPressedFill),
+      ],
+    },
+  );
+}
+
+function attachRunSeedDetails(menu, theme) {
+  const { plate, text } = nativeControls(theme);
+  const { color } = theme;
+  menu.children.push({
+    name: 'runSeedDetails', kind: 'container', position: [102, 267], size: [372, 126], visible: false,
+    children: [
+      { ...plate('face', [0, 0, 372, 126], color.panel), raycastTarget: false },
+      text('title', [0, 40, 348, 30], '本局种子', 19, color.goldBright),
+      text('seed', [0, 4, 348, 40], '', 26, color.text),
+      text('metadata', [0, -38, 348, 32], '', 17, color.textDim),
+    ],
+  });
+}
 
 export function experimentalCharacterControls(theme = nativeTheme) {
   const { plate, text } = nativeControls(theme);

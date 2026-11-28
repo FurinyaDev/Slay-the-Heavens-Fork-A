@@ -4,6 +4,10 @@ local Select=require('abyss_character_select')
 local number=require('abyss_numbers').integer
 local Motion=require('abyss_character_entrance')
 local M={}
+function M.installAscension(state,rules,panel,platform)
+    if rules.ascensionEnabled~=true then return end
+    state.ascension=require('abyss_character_ascension_ui').new(panel,platform)
+end
 local function visible(control,value)
     if control and control.visible~=value then control:SetVisible(value)end
 end
@@ -162,6 +166,7 @@ local function paintPublished(panel,details,state,platform,motion,info,originalS
     local enabled=info~=nil and state:canConfirm()
     if confirm.interactable~=enabled then confirm.interactable=enabled end
     if confirm.raycastTarget~=enabled then confirm.raycastTarget=enabled end
+    if state.ascension then state.ascension:paint(info and info.id)end
 end
 function M.render(panel,state,platform,published,motion)
     local info=state.info
