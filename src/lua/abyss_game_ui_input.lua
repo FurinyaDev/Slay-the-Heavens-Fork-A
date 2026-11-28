@@ -326,30 +326,32 @@ end
 function M.installCharacters(self,characterPanel,clickEvent,bindCommand)
     characterPanel.disableCursorEventPassthrough=true
     characterPanel:GetChild("blocker"):AddCursorEventListener(clickEvent,function()return true end)
-    bindCommand(characterPanel:GetChild("cancel"),"character_cancel",function() return self:closeCharacters() end)
     local state=self.characterSelection
     local ascension=state.ascension
-    if ascension then ascension:bind(state,bindCommand)end
+    local editingSeed=ascension and ascension.editingSeed
+    if ascension then ascension:bind(self,clickEvent,bindCommand)end
+    bindCommand(characterPanel:GetChild("cancel"),"character_cancel",function() return self:closeCharacters() end,
+        ascension and function()return not editingSeed()end or nil)
     bindCommand(characterPanel:GetChild('confirm'),'character_confirm',function()
         if ascension then return self:confirmCharacter(ascension:request(state.info.id))end
         return self:confirmCharacter()
     end,
-        function()return self.characterSelection:canConfirm() and not self.characterSelection.deckOpen end)
+        function()return state:canConfirm() and not state.deckOpen and not (editingSeed and editingSeed())end)
     local starterDeck=Theme.presentationProfile~='official-assets-first' and characterPanel:GetChild('details'):GetChild('deckOpen')
     if starterDeck then
         bindCommand(starterDeck,'character_deck',function()
             return self:openStarterDeck()
-        end,function()return self.characterSelection.info~=nil and not self.characterSelection.deckOpen end)
+        end,function()return state.info~=nil and not state.deckOpen and not (editingSeed and editingSeed())end)
     end
     for i,id in ipairs(CharacterSelect.characters)do
         local box=characterPanel:GetChild(i==5 and 'traveler' or 'character'..i)
         bindCommand(box,'character_'..i,function()return self:selectCharacter(id)end,
-            function()return self.characterSelection:allowsCharacter(id)end)
+            function()return state:allowsCharacter(id) and not (editingSeed and editingSeed())end)
     end
     for i,id in ipairs(CharacterSelect.elements)do
         bindCommand(characterPanel:GetChild('elements'):GetChild('element'..i),'character_element'..i,
-            function()return self:selectElement(id)end,function()return self.characterSelection.character=='traveler'
-                and self.characterSelection:allowsElement(id)end)
+            function()return self:selectElement(id)end,function()return state.character=='traveler'
+                and state:allowsElement(id) and not (editingSeed and editingSeed())end)
     end
 end
 

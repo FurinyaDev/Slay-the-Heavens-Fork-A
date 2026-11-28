@@ -31,8 +31,11 @@ local function unlocked(read,characterId)
     return 0
 end
 
-function M.new(panel,read)
+function M.new(characterPanel,platform)
+    local panel=characterPanel:GetChild('ascensionPicker')
     if not panel then return nil end
+    local read=platform.getHighestUnlocked
+    local seed=require('abyss_character_seed_ui').new(characterPanel,platform.keyEvents)
     local settings={level=0}
     local previous,nextButton=panel:GetChild('previous'),panel:GetChild('next')
     local rank,detail,unlock=panel:GetChild('rank'),panel:GetChild('rule'),panel:GetChild('unlock')
@@ -46,6 +49,7 @@ function M.new(panel,read)
     function settings:paint(characterId)
         sync(characterId)
         setVisible(panel,characterId~=nil)
+        if seed then seed:paint(characterId~=nil)end
         if not characterId then return end
         setText(rank,'A'..self.level)
         setText(detail,rule[self.level])
@@ -56,14 +60,25 @@ function M.new(panel,read)
 
     function settings:request(characterId)
         sync(characterId)
-        return {ascension=self.level}
+        return {ascension=self.level,seed=seed and seed.value}
     end
 
-    function settings:bind(selection,bindCommand)
+    function settings:reset()
+        if seed then seed:reset()end
+        self:paint(nil)
+    end
+
+    function settings.editingSeed()
+        return seed and seed.open==true
+    end
+
+    function settings:bind(host,clickEvent,bindCommand)
+        local selection=host.characterSelection
+        if seed then seed:bind(host,clickEvent,bindCommand)end
         local function bindArrow(button,kind,step)
             local function available()
                 return panel.visible and selection.info~=nil and self.characterId==selection.info.id
-                    and not selection.deckOpen and button:GetChild('hit').raycastTarget==true
+                    and not selection.deckOpen and not self.editingSeed() and button:GetChild('hit').raycastTarget==true
             end
             bindCommand(button,kind,function()
                 local candidate=self.level+step

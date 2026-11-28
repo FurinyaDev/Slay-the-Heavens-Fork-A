@@ -21,6 +21,36 @@ export function attachAscensionPicker(panel, theme) {
       text('unlock', [0, -51, 352, 24], '', 16, color.textDim),
     ],
   });
+  attachSeedEditor(panel, theme);
+}
+
+function attachSeedEditor(panel, theme) {
+  const { plate, text, button } = nativeControls(theme);
+  const { color, canvas } = theme;
+  const action = (name, frame, label, fill = color.panelRaised) => button(name, frame, label,
+    { inset: [8, 8], fontSize: 20, fill });
+  const keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '−', '0', '⌫'];
+  const nameFor = key => key === '−' ? 'minus' : key === '⌫' ? 'erase' : 'digit' + key;
+  panel.children.push(
+    { ...action('seedEntry', [405, 157, 378, 52], '随机种子'), visible: false },
+    {
+      name: 'seedEditor', kind: 'container', size: [...canvas.base], visible: false,
+      children: [
+        { ...plate('veil', [0, 0, ...canvas.base], color.backdropVeil), raycastTarget: false },
+        { name: 'blocker', kind: 'cursorArea', size: [...canvas.base], focusable: false },
+        plate('face', [0, 0, 500, 478], color.panel),
+        text('title', [0, 204, 480, 36], '设置种子', 23, color.goldBright),
+        plate('field', [0, 153, 438, 50], color.panelSunken),
+        text('value', [0, 153, 420, 44], '', 24, color.text),
+        text('status', [0, -141, 465, 35], '', 17, color.text),
+        ...keys.map((key, index) => action(nameFor(key),
+          [(index % 3 - 1) * 114, 97 - Math.floor(index / 3) * 65, 102, 56], key)),
+        action('random', [-151, -197, 138, 54], '随机'),
+        action('cancel', [0, -197, 138, 54], '取消'),
+        action('apply', [151, -197, 138, 54], '确认', color.buttonPressedFill),
+      ],
+    },
+  );
 }
 
 export function experimentalCharacterControls(theme = nativeTheme) {

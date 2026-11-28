@@ -8,7 +8,7 @@ import test from 'node:test';
 import { luaString } from '../scripts/build-lua-data.mjs';
 
 const require = createRequire(import.meta.url);
-const child = (node, name) => node.children.find(control => control.name === name);
+const child = (node, name) => node.children?.find(control => control.name === name);
 
 function runNode(cwd, args) {
   const result = spawnSync(process.execPath, args, { cwd, encoding: 'utf8', timeout: 60_000 });
@@ -47,19 +47,36 @@ function panel(output) {
   return child(controls.find(row => row.name === 'stage'), 'characterPanel');
 }
 
-test('disabled builds exclude the ascension controls', t => {
-  assert.equal(child(panel(generate(t, false, true)), 'ascensionPicker'), undefined);
+function runLua(output, script) {
+  const files = readdirSync(output).filter(name => name.endsWith('.lua'));
+  const preloads = files.map(name => `package.preload[${luaString(name.slice(0, -4))}]=assert(loadfile(${luaString(join(output, name).replaceAll('\\', '/'))}))`).join('\n');
+  const source = `package.path='src/lua/?.lua;'..package.path
+${preloads}
+dofile(${luaString(script)})`;
+  return runNode(process.cwd(), [require.resolve('fengari-node-cli/src/lua-cli.js'), '-e', source]);
+}
+
+test('disabled builds exclude the ascension and seed controls', t => {
+  const selection = panel(generate(t, false, true));
+  for (const id of ['ascensionPicker', 'seedEntry', 'seedEditor']) assert.equal(child(selection, id), undefined);
 });
 
-test('native ascension picker remains usable across supported viewport ratios', t => {
+test('native difficulty and seed controls are touchable across supported viewport ratios', t => {
   const output = generate(t, true, true);
-  const picker = child(panel(output), 'ascensionPicker');
+  const selection = panel(output);
+  const picker = child(selection, 'ascensionPicker');
+  const editor = child(selection, 'seedEditor');
   assert.ok(picker, 'enabled official UI omitted ascension picker');
+  assert.ok(editor, 'enabled official UI omitted seed editor');
+  const actions = [
+    [picker.position, child(picker, 'previous')], [picker.position, child(picker, 'next')],
+    [[0, 0], child(selection, 'seedEntry')],
+    ...editor.children.filter(row => child(row, 'hit')).map(row => [[0, 0], row]),
+  ];
   for (const width of [1280, 1560, 1600, 1680]) {
-    for (const name of ['previous', 'next']) {
-      const box = child(picker, name);
-      const x = width / 2 + picker.position[0] + box.position[0];
-      const y = 360 + picker.position[1] + box.position[1];
+    for (const [offset, box] of actions) {
+      const x = width / 2 + offset[0] + box.position[0];
+      const y = 360 + offset[1] + box.position[1];
       assert.ok(x - box.size[0] / 2 >= 40 && x + box.size[0] / 2 <= width - 40);
       assert.ok(y - box.size[1] / 2 >= 20 && y + box.size[1] / 2 <= 700);
       assert.ok(box.size[0] >= 48 && box.size[1] >= 48);
@@ -69,10 +86,10 @@ test('native ascension picker remains usable across supported viewport ratios', 
 
 test('real character screen opens at A0, protects locked choices, and starts with the selected difficulty', t => {
   const output = generate(t, true, false);
-  const files = readdirSync(output).filter(name => name.endsWith('.lua'));
-  const preloads = files.map(name => `package.preload[${luaString(name.slice(0, -4))}]=assert(loadfile(${luaString(join(output, name))}))`).join('\n');
-  const source = `package.path='src/lua/?.lua;'..package.path
-${preloads}
-dofile('tests/lua/support/ascension_selection.lua')`;
-  assert.match(runNode(process.cwd(), [require.resolve('fengari-node-cli/src/lua-cli.js'), '-e', source]), /ASCENSION_SELECTION_PASS/);
+  assert.match(runLua(output, 'tests/lua/support/ascension_selection.lua'), /ASCENSION_SELECTION_PASS/);
+});
+
+test('seed editor handles signed64 limits, rejects overflow, and applies only confirmed input', t => {
+  const output = generate(t, true, false);
+  assert.match(runLua(output, 'tests/lua/support/ascension_seed_editor.lua'), /ASCENSION_SEED_EDITOR_PASS/);
 });

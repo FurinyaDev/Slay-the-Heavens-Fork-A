@@ -6,8 +6,7 @@ local Motion=require('abyss_character_entrance')
 local M={}
 function M.installAscension(state,rules,panel,platform)
     if rules.ascensionEnabled~=true then return end
-    state.ascension=require('abyss_character_ascension_ui').new(
-        panel:GetChild('ascensionPicker'),platform.getHighestUnlocked)
+    state.ascension=require('abyss_character_ascension_ui').new(panel,platform)
 end
 local function visible(control,value)
     if control and control.visible~=value then control:SetVisible(value)end
