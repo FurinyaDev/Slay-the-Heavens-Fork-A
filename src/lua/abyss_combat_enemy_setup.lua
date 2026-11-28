@@ -7,6 +7,12 @@ local Random=require('abyss_sts_random')
 local Formation=require('abyss_encounter_formation')
 local SourcePositions=require('abyss_monster_source_positions')
 local M={}
+function M.ascensionLevel(data,options)
+ local level=options.ascension
+ if data.rules.ascensionEnabled~=true or level==nil or level==0 then return nil end
+ assert(require('abyss_ascension_rules').validLevel(level),'invalid enemy ascension')
+ return level
+end
 local function index(entries)
  local result={};for _,entry in ipairs(entries)do result[entry.id]=entry end;return result
 end
@@ -69,6 +75,7 @@ local function sampleHp(state,enemy,explicitHp,hpRandom)
 end
 function M.make(state,id,serial,explicitHp,hpRandom)
  local enemy=Copy(assert(state.catalog.enemies[id],'unknown enemy: '..tostring(id)))
+ if state.enemyAscension then require('abyss_ascension_enemies').apply(enemy,state.enemyAscension)end
  if policy(enemy,'act3','transient')then require('abyss_act3_enemies').bindSharedStatuses(state.catalog.statuses,Copy)end
  sampleHp(state,enemy,explicitHp,hpRandom)
  EnemyAI.prepare(state,enemy,hpRandom)
@@ -146,12 +153,13 @@ function M.prepare(data,options,construct)
  sourceSpec(options)
  local streams=assert(options.roomStreams,'preparation needs source room streams')
  local state={catalog=constructorCatalog(data),monsterHpRng=Random.cloneState(streams.monsterHpRng),
-  enemies={},nextEnemyId=1,roomSeed=options.roomSeed}
+  enemies={},nextEnemyId=1,roomSeed=options.roomSeed,enemyAscension=M.ascensionLevel(data,options)}
  local before=keys(state.catalog)
  M.group(state,options,construct)
  local ids={};for _,actor in ipairs(state.enemies)do ids[#ids+1]=actor.definitionId end
  return {version=1,roomSeed=options.roomSeed,sourceEncounter=options.sourceEncounter,enemyIds=Copy(options.enemies),
-  actorIds=ids,actors=state.enemies,monsterHpRng=Random.snapshot(state.monsterHpRng),catalogAdditions=additions(state.catalog,before)}
+  actorIds=ids,actors=state.enemies,monsterHpRng=Random.snapshot(state.monsterHpRng),
+  catalogAdditions=additions(state.catalog,before),ascension=state.enemyAscension}
 end
 local function validatePrepared(prepared,options)
  assert(type(prepared)=='table'and prepared.version==1,'invalid prepared encounter')
@@ -192,6 +200,7 @@ end
 function M.adopt(state,options)
  local prepared=options.preparedEncounter;validatePrepared(prepared,options)
  assert(state.roomSeed==prepared.roomSeed,'prepared encounter requires source room streams')
+ assert(state.enemyAscension==prepared.ascension,'prepared encounter ascension mismatch')
  adoptAdditions(state.catalog,assert(prepared.catalogAdditions,'prepared constructor definitions missing'))
  state.monsterHpRng=Random.restore(prepared.monsterHpRng)
  state.enemies=Copy(prepared.actors)

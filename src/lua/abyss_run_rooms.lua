@@ -62,6 +62,7 @@ function M.install(Run, shared)
     end
 
     local function configureEncounterOptions(run, encounter, sourceRoom, options)
+        options.ascension=run.ascension
         if run.character and not run.characterProfile.originalV4 then
             options.cardRandomSeed=run.runSeed
             options.enableStances=true

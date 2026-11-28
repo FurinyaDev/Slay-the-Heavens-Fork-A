@@ -254,6 +254,7 @@
     "abyss_run_hud": "ui",
     "abyss_run_seed": "core",
     "abyss_ascension_rules": "core",
+    "abyss_ascension_enemies": "core",
     "abyss_sentry_ai": "core",
     "abyss_shop": "core",
     "abyss_shop_ui": "ui",

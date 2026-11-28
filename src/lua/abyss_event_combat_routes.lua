@@ -38,7 +38,7 @@ function M.prepare(run,source,floor,roomStreams,misc,continuation)
  if not group or run.campaign~=true or (run.act or 1)~=group.act or type(floor)~='number'or floor%1~=0
   or group.act==1 and floor<=6then return nil,'event_constructor_unavailable'end
  local room=roomFor(run,floor,roomStreams,misc,continuation)
- local prepared=C.prepareEncounter(run.data,{roomSeed=room.seed,roomStreams=room,enemies=group.enemies})
+ local prepared=C.prepareEncounter(run.data,{roomSeed=room.seed,roomStreams=room,enemies=group.enemies,ascension=run.ascension})
  for i,actor in ipairs(prepared.actors)do actor.sourcePosition={x=group.positions[i][1],y=group.positions[i][2]}end
  local result={version=1,source=source,floor=floor,runSeed=run.runSeed,roomSeed=room.seed,prepared=prepared}
  if continuation then result.continuation=C.copy(continuation)end

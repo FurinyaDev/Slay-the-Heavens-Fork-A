@@ -21,9 +21,10 @@ local function encounter(source)
  result.tier='normal' -- This is an EventRoom, including when the actors are Bosses.
  return result
 end
-local function roomOptions(room,definition)
+local function roomOptions(room,definition,ascension)
  local options={roomSeed=room.seed,roomStreams=room,enemies=definition.enemies,sourceEncounter=definition.sourceEncounter,
-  encounterSource=definition.source,encounterVisualFloat=function(lo,hi)return R.randomFloatBetween(room.visualRng,lo,hi)end}
+  encounterSource=definition.source,ascension=ascension,
+  encounterVisualFloat=function(lo,hi)return R.randomFloatBetween(room.visualRng,lo,hi)end}
  if definition.sourceEncounter then
   options.encounterBoundary={misc={boolean=function()return R.randomBoolean(room.miscRng)end,
    integer=function(lo,hi)return R.randomIntBetween(room.miscRng,lo,hi)end},
@@ -42,7 +43,7 @@ function M.prepare(run,source,floor,roomStreams,misc)
  end
  local definition=encounter(source);if not definition then return nil,'event_encounter_unavailable'end
  local room=roomStreams(run,floor);room.miscRng=R.cloneState(misc or run.miscRng)
- local prepared=C.prepareEncounter(run.data,roomOptions(room,definition))
+ local prepared=C.prepareEncounter(run.data,roomOptions(room,definition,run.ascension))
  return {version=1,source=source,floor=floor,runSeed=run.runSeed,roomSeed=room.seed,prepared=prepared}
 end
 local function validRequest(flow,request)

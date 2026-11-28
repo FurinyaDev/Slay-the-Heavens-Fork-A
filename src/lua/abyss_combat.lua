@@ -2086,7 +2086,7 @@ local function constructorState(data,catalog,sourcePools,options)
     return { scoreStats = require("abyss_run_score").newBattleStats(), stolenGoldReward = 0, mugged = false, rules = rules,sourcePools=sourcePools,experimentalCharacter=data.experimentalCharacter, catalog = catalog,
         seed = (options.seed or 1) % 65536, turn = 0, energy = 0, phase = "setup", nextUid = 1, nextEnemyId = 1,
         player = { id = "player", gold = gold, hp = hp, maxHp = rules.player.maxHp, block = 0, statuses = {} },
-        enemies = {}, draw = {}, hand = {}, discard = {}, exhaust = {}, events = {} },rules
+        enemies = {}, draw = {}, hand = {}, discard = {}, exhaust = {}, events = {}, enemyAscension = EnemySetup.ascensionLevel(data,options) },rules
 end
 
 local function detectConstructorMechanics(state,data)
