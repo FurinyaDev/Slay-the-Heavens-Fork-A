@@ -167,6 +167,7 @@ local function paintPublished(panel,details,state,platform,motion,info,originalS
     local enabled=info~=nil and state:canConfirm()
     if confirm.interactable~=enabled then confirm.interactable=enabled end
     if confirm.raycastTarget~=enabled then confirm.raycastTarget=enabled end
+    if state.ascension then state.ascension:paint(info and info.id)end
 end
 function M.render(panel,state,platform,published,motion)
     local info=state.info
@@ -190,6 +191,5 @@ function M.render(panel,state,platform,published,motion)
         visible(roster:GetChild('selected'):GetChild('selection'),info~=nil)
     end
     paintPublished(panel,details,state,platform,motion,info,originalSts,nativeV25)
-    if state.ascension then state.ascension:paint(info and info.id)end
 end
 return M
