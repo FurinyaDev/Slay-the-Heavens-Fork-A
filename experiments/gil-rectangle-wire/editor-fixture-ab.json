@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "purpose": "Offline experimental copy. Sparse synchronized rectangles require official import and device verification.",
+  "baseline": {
+    "bytes": 52586,
+    "sha256": "125256477d4b35db52214b1d16ef15daf6fdb6444aa43306011fbb84e441abaf",
+    "uiBytes": 29897,
+    "gzipBytes": 10380
+  },
+  "sparseProbe": {
+    "bytes": 47483,
+    "sha256": "fbd79a4cf49962452d26bc5798b3e11d2fdca54d7888ab199850ecb019de78a1",
+    "uiBytes": 24794,
+    "gzipBytes": 10113
+  },
+  "byteSavings": 5103,
+  "visitedRectangleRecords": 36,
+  "compactedRectangleRecords": 18,
+  "untouchedRectangleRecords": 18,
+  "distinctSynchronizedRectangleRecords": 0,
+  "uiName": "KS_ui",
+  "mainLayoutControls": 14,
+  "templateDefinitions": 1,
+  "checks": {
+    "reversal": "BYTE_EXACT",
+    "nonUiFields": "BYTE_EXACT",
+    "mainLayoutMcpReadback": "DEEP_EQUAL",
+    "templateMcpReadback": "DEEP_EQUAL",
+    "officialImport": "UNVERIFIED",
+    "officialCapacity": "UNVERIFIED",
+    "officialReady": "UNVERIFIED",
+    "devices": "UNVERIFIED"
+  },
+  "node": "v24.19.0",
+  "nativeEncoderSha256": "eed054eea9285d1945ec826299e1e9546e36475d708007b2df1952ebca52f805"
+}

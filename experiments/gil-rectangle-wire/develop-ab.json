@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "purpose": "Offline experimental copy. Sparse synchronized rectangles require official import and device verification.",
+  "baseline": {
+    "bytes": 24453843,
+    "sha256": "e650b32e6c8aca555ebfcbfa9e64ab55712b440b2b4f2da929a93baf9a2e36ba",
+    "uiBytes": 20149948,
+    "gzipBytes": 2662737
+  },
+  "sparseProbe": {
+    "bytes": 16662115,
+    "sha256": "ef3b50c475466e070413f92428f7c016e51b1c21c86d6e57aa67504b0cd34a60",
+    "uiBytes": 12358220,
+    "gzipBytes": 2366721
+  },
+  "baselineBuild": {
+    "sourceCommit": "32a15219aecd145c59cb1b2fcf477e5556766e5d",
+    "buildId": "71588002-db3c-4953-92bf-0d9c6bb22fc3",
+    "sourceDirty": false,
+    "payloadDigest": "6dc2f93184b607ebb48b4f964b85b7bf29913857e008fd5bbe87321eda678e99",
+    "profile": "official-assets-battle-v3",
+    "workKey": "offline-candidate"
+  },
+  "byteSavings": 7791728,
+  "visitedRectangleRecords": 26298,
+  "compactedRectangleRecords": 26298,
+  "untouchedRectangleRecords": 0,
+  "distinctSynchronizedRectangleRecords": 0,
+  "uiName": "SlayTheAbyss",
+  "mainLayoutControls": 24904,
+  "templateDefinitions": 16,
+  "checks": {
+    "reversal": "BYTE_EXACT",
+    "nonUiFields": "BYTE_EXACT",
+    "mainLayoutMcpReadback": "DEEP_EQUAL",
+    "templateMcpReadback": "DEEP_EQUAL",
+    "officialImport": "UNVERIFIED",
+    "officialCapacity": "UNVERIFIED",
+    "officialReady": "UNVERIFIED",
+    "devices": "UNVERIFIED"
+  },
+  "node": "v24.19.0",
+  "nativeEncoderSha256": "eed054eea9285d1945ec826299e1e9546e36475d708007b2df1952ebca52f805"
+}

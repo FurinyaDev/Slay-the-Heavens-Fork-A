@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "purpose": "Offline experimental copy. Sparse synchronized rectangles require official import and device verification.",
+  "baseline": {
+    "bytes": 23780838,
+    "sha256": "afe80c0783d0d4b6046c1f44cba3ef2b71cb8bb34fbc7404d939d12e0f5ff831",
+    "uiBytes": 19577951,
+    "gzipBytes": 2598064
+  },
+  "sparseProbe": {
+    "bytes": 16211294,
+    "sha256": "b6873dd03d7f3781fdaf1fbdd070be32b9bd1d91096779371b20e0d75766669c",
+    "uiBytes": 12008407,
+    "gzipBytes": 2310197
+  },
+  "byteSavings": 7569544,
+  "visitedRectangleRecords": 25521,
+  "compactedRectangleRecords": 25521,
+  "untouchedRectangleRecords": 0,
+  "distinctSynchronizedRectangleRecords": 0,
+  "uiName": "SlayTheAbyss",
+  "mainLayoutControls": 24127,
+  "templateDefinitions": 16,
+  "checks": {
+    "reversal": "BYTE_EXACT",
+    "nonUiFields": "BYTE_EXACT",
+    "mainLayoutMcpReadback": "DEEP_EQUAL",
+    "templateMcpReadback": "DEEP_EQUAL",
+    "officialImport": "UNVERIFIED",
+    "officialCapacity": "UNVERIFIED",
+    "officialReady": "UNVERIFIED",
+    "devices": "UNVERIFIED"
+  },
+  "node": "v24.19.0",
+  "nativeEncoderSha256": "eed054eea9285d1945ec826299e1e9546e36475d708007b2df1952ebca52f805"
+}
