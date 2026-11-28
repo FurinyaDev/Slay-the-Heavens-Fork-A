@@ -102,7 +102,8 @@ end
 
 local function roomSignature(signature, act, chapter, eliteDensity)
     if act~=1 then signature='map-v4:sts-a0-319009d5:'..chapter.id..':'..signature end
-    if eliteDensity then signature='elite-density-a1:'..signature end
+    -- Keep the established chapter prefix and encounter entries intact.
+    if eliteDensity then signature=signature:gsub('^[^|]+','%0:elite-density-a1',1) end
     return signature
 end
 

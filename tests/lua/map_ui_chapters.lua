@@ -31,6 +31,17 @@ test('later chapters expose legal first nodes at local row one',function()
         assert(F.mapControl(panel,'title').text:find(require('abyss_acts').get(act).name,1,true))
     end
 end)
+test('A1 room assignments keep both campaign maps navigable',function()
+    local context={endingUnlocked=false,emeraldOwned=false,eliteDensity=true}
+    for act=1,2 do
+        local map=Map.generate(F.Data,'42',act,context)
+        local ui,panel=fixture(act,map)
+        assert(ui.navigationEnabled,'A1 chapter start incorrectly locked')
+        local node=Map.available(map)[1]
+        assert(box(panel,map,node.id):GetChild('hit').click(),'A1 first room rejected')
+        assert(map.floor==node.floor)
+    end
+end)
 test('each complete chapter route remains reachable within the same viewport',function()
     for _,act in ipairs({2,3,4})do
         local ui,panel,map=fixture(act)
