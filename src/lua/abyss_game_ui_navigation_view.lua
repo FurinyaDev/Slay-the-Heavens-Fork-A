@@ -79,6 +79,20 @@ local function showRunOptions(menu,show)
     if help then help:SetVisible(show)end
     menu:GetChild('catch').raycastTarget=show
 end
+local function paintRunDetails(menu,run)
+    if not menu.visible then return end
+    local panel=menu:GetChild('runSeedDetails')
+    if not panel then return end
+    local available=run~=nil and run.ascension~=nil and type(run.runSeed)=='string'
+    if panel.visible~=available then panel:SetVisible(available)end
+    if not available then return end
+    local seed,metadata=panel:GetChild('seed'),panel:GetChild('metadata')
+    if seed.text~=run.runSeed then seed.text=run.runSeed end
+    local version=require('abyss_narrative').codeVersion or run.version
+    local role=require('abyss_character_select').roleLabel(run.character or 'ironclad')
+    local details=version..' · '..role..' · A'..run.ascension
+    if metadata.text~=details then metadata.text=details end
+end
 function M.runMenu(self,menu,routeEnabled)
     local minimal=Navigation.minimalRunMenu(self)
     showRunOptions(menu,not minimal)
@@ -103,5 +117,6 @@ function M.runMenu(self,menu,routeEnabled)
     else
         compact(menu,routeEnabled,mainEnabled)
     end
+    paintRunDetails(menu,self.run)
 end
 return M

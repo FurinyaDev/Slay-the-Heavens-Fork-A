@@ -42,9 +42,9 @@ function generate(t, flag, official) {
   return join(directory, 'ui');
 }
 
-function panel(output) {
+function stage(output) {
   const { controls } = JSON.parse(readFileSync(join(output, 'game-ui.json'), 'utf8'));
-  return child(controls.find(row => row.name === 'stage'), 'characterPanel');
+  return controls.find(row => row.name === 'stage');
 }
 
 function runLua(output, script) {
@@ -57,13 +57,16 @@ dofile(${luaString(script)})`;
 }
 
 test('disabled builds exclude the ascension and seed controls', t => {
-  const selection = panel(generate(t, false, true));
+  const layout = stage(generate(t, false, true));
+  const selection = child(layout, 'characterPanel');
   for (const id of ['ascensionPicker', 'seedEntry', 'seedEditor']) assert.equal(child(selection, id), undefined);
+  assert.equal(child(child(layout, 'runMenu'), 'runSeedDetails'), undefined);
 });
 
 test('native difficulty and seed controls are touchable across supported viewport ratios', t => {
   const output = generate(t, true, true);
-  const selection = panel(output);
+  const layout = stage(output);
+  const selection = child(layout, 'characterPanel');
   const picker = child(selection, 'ascensionPicker');
   const editor = child(selection, 'seedEditor');
   assert.ok(picker, 'enabled official UI omitted ascension picker');
@@ -82,6 +85,11 @@ test('native difficulty and seed controls are touchable across supported viewpor
       assert.ok(box.size[0] >= 48 && box.size[1] >= 48);
     }
   }
+  const menu = child(layout, 'runMenu');
+  const details = child(menu, 'runSeedDetails');
+  const menuCommand = child(menu, 'mainMenu');
+  assert.ok(details.position[0] + details.size[0] / 2 < menuCommand.position[0] - menuCommand.size[0] / 2,
+    'seed details overlap the pause menu controls');
 });
 
 test('real character screen opens at A0, protects locked choices, and starts with the selected difficulty', t => {
@@ -92,4 +100,9 @@ test('real character screen opens at A0, protects locked choices, and starts wit
 test('seed editor handles signed64 limits, rejects overflow, and applies only confirmed input', t => {
   const output = generate(t, true, false);
   assert.match(runLua(output, 'tests/lua/support/ascension_seed_editor.lua'), /ASCENSION_SEED_EDITOR_PASS/);
+});
+
+test('run menu shows the complete run seed and reproducibility details', t => {
+  const output = generate(t, true, false);
+  assert.match(runLua(output, 'tests/lua/support/ascension_run_seed_display.lua'), /ASCENSION_RUN_SEED_DISPLAY_PASS/);
 });

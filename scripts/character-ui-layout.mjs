@@ -3,9 +3,15 @@ import { deckCardTemplate, fiveColumnCardGrid } from './deck-ui-layout.mjs';
 import { nativeControls, nativeTheme } from './native-ui-theme.mjs';
 import { readFileSync } from 'node:fs';
 
-export function attachAscensionPicker(panel, theme) {
+export function attachAscensionControls(panel, runMenu, theme) {
   const rules = JSON.parse(readFileSync('data/rules.json', 'utf8').replace(/^\uFEFF/, ''));
   if (rules.ascensionEnabled !== true) return;
+  attachAscensionPicker(panel, theme);
+  attachSeedEditor(panel, theme);
+  attachRunSeedDetails(runMenu, theme);
+}
+
+function attachAscensionPicker(panel, theme) {
   const { plate, text, button } = nativeControls(theme);
   const { color } = theme;
   const arrow = (name, x, label) => button(name, [x, 16, 58, 52], label,
@@ -21,7 +27,6 @@ export function attachAscensionPicker(panel, theme) {
       text('unlock', [0, -51, 352, 24], '', 16, color.textDim),
     ],
   });
-  attachSeedEditor(panel, theme);
 }
 
 function attachSeedEditor(panel, theme) {
@@ -51,6 +56,20 @@ function attachSeedEditor(panel, theme) {
       ],
     },
   );
+}
+
+function attachRunSeedDetails(menu, theme) {
+  const { plate, text } = nativeControls(theme);
+  const { color } = theme;
+  menu.children.push({
+    name: 'runSeedDetails', kind: 'container', position: [102, 267], size: [372, 126], visible: false,
+    children: [
+      { ...plate('face', [0, 0, 372, 126], color.panel), raycastTarget: false },
+      text('title', [0, 40, 348, 30], '本局种子', 19, color.goldBright),
+      text('seed', [0, 4, 348, 40], '', 26, color.text),
+      text('metadata', [0, -38, 348, 32], '', 17, color.textDim),
+    ],
+  });
 }
 
 export function experimentalCharacterControls(theme = nativeTheme) {

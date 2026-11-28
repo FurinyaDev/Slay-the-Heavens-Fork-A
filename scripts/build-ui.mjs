@@ -43,7 +43,7 @@ import {applyV25NodeLayout,applyV25RewardLayout} from './v25-node-layout.mjs';
 import {prepareV25CardTemplates} from './v25-card-templates.mjs';
 import {writeV25CardBinding,v25CardModule} from './v25-card-binding.mjs';
 import {eventArtRegistry,loadEventArt} from './lowcost-art.mjs';
-import {attachAscensionPicker} from './character-ui-layout.mjs';
+import {attachAscensionControls} from './character-ui-layout.mjs';
 
 export function assertNativeUiCapacity(layout) {
   const checkFonts = (control, path) => {
@@ -211,7 +211,7 @@ export function buildUI(outputDirectory = 'build/lua', python = process.env.ABYS
   if (!officialAssets) templates.push(plainBrowserCardTemplate(templates[0]));
   const child = (node, name) => (node.controls ?? node.children ?? []).find(control => control.name === name);
   const stage = child(layout, 'stage') ?? layout;
-  attachAscensionPicker(child(stage, 'characterPanel'), theme);
+  attachAscensionControls(child(stage, 'characterPanel'), child(stage, 'runMenu'), theme);
   const nodePanel = child(stage, 'nodePanel');
   attachEntranceLayers(stage, theme, officialAssets && options.experimentalCharacters === false);
   const picker = child(nodePanel, 'pickerView');

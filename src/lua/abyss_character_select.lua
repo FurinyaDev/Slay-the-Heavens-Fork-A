@@ -6,6 +6,10 @@ M.characters={'hutao','arlecchino','furina','raiden','traveler'}
 M.elements={'ironclad','silent','defect','watcher'}
 local names={hutao='胡桃',arlecchino='阿蕾奇诺',furina='芙宁娜',raiden='雷电将军',traveler='旅行者'}
 local elements={ironclad='岩',silent='风',defect='雷',watcher='草'}
+function M.roleLabel(id)
+    if elements[id] then return names.traveler..'（'..elements[id]..'）'end
+    return names[id] or id
+end
 local function contains(list,id)for _,value in ipairs(list)do if value==id then return true end end return false end
 local profiles={dev='full-source',alpha='competition-two-act',['competition-candidate']='competition-two-act',
     production='competition-two-act',['competition-two-act']='competition-two-act',['full-source']='full-source'}
