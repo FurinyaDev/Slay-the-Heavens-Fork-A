@@ -1,0 +1,52 @@
+{
+  "seedCount": 128,
+  "snapshotSha256": "afb785e65f332b5c0d48713816539e5b38c9c87a2c2cc18609f2e70182d9fa19",
+  "before": {
+    "maps": 384,
+    "renderFrames": 2816,
+    "maxNodes": 74,
+    "maxEdges": 85,
+    "absoluteMeanX": 40.28,
+    "averageSpan": 664.71,
+    "meanBindMs": 1.018,
+    "meanScrollPaintMs": 0.862,
+    "examples": {
+      "17": {
+        "meanX": 0.0,
+        "span": 672.0
+      },
+      "23": {
+        "meanX": -131.76,
+        "span": 560.0
+      },
+      "63": {
+        "meanX": 112.0,
+        "span": 672.0
+      }
+    }
+  },
+  "after": {
+    "maps": 384,
+    "renderFrames": 2816,
+    "maxNodes": 74,
+    "maxEdges": 85,
+    "absoluteMeanX": 16.63,
+    "averageSpan": 711.39,
+    "meanBindMs": 0.885,
+    "meanScrollPaintMs": 0.635,
+    "examples": {
+      "17": {
+        "meanX": 0.0,
+        "span": 720.0
+      },
+      "23": {
+        "meanX": -97.76,
+        "span": 605.0
+      },
+      "63": {
+        "meanX": 77.35,
+        "span": 725.0
+      }
+    }
+  }
+}

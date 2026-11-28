@@ -14,6 +14,19 @@
     "quit": [-450,-234,280,56]
   },
   "officialAssets": {
+    "mapRoutes": {
+      "columnGap": 116,
+      "floorGap": 92,
+      "jitterX": 16,
+      "jitterY": 14,
+      "maxShift": 40,
+      "dashPitch": 11,
+      "dashLength": 6.5,
+      "lockedWidth": 1.7,
+      "nextWidth": 1.75,
+      "takenWidth": 1.9,
+      "lockedOpacity": 0.25
+    },
     "energyOrb": {
       "reference": "Owner STS1 screenshots 2026-11-21: 3/3 bright, 0/4 muted; keep complete material and readable numeral",
       "charged": {

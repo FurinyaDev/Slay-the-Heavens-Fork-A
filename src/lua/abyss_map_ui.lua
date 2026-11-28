@@ -7,6 +7,9 @@ local MapLayout = require("abyss_map_layout")
 local Acts = require("abyss_acts")
 local Pointer = require('abyss_pointer_input')
 local Viewport = require('abyss_viewport')
+local Geometry = require('abyss_map_visual_layout')
+local routeStyle = Geometry.routeStyle
+local lockedRouteAlpha = routeStyle and math.floor(255 * routeStyle.lockedOpacity + .5) or 0
 local M = {}
 -- MapRoomNode.render sizes: glyph 128*scale, MAP_CIRCLE_5 192*(scale*.95+.2).
 function M.drawScale(fx)
@@ -171,12 +174,6 @@ local function maxScroll(chapter)
     if chapter.terminal == 'boss_treasure' then return MapLayout.bossTreasureMaxScroll end
     return MapLayout.maxScroll + (chapter.act == 3 and 2 * Theme.layout.map.bossFloorLift or 0)
 end
-local function floorY(chapter, floor)
-    local y = MapLayout.firstY + math.max(0, floor - chapter.first) * Theme.layout.map.floorGap
-    if floor == chapter.boss then return y + Theme.layout.map.bossFloorLift end
-    if chapter.act == 3 and floor == chapter.last then return y + 2 * Theme.layout.map.bossFloorLift end
-    return y
-end
 -- ===== Port of STS MapRoomNode update/render state (aeubanks/sts@319009d map/MapRoomNode.java) =====
 local Sts = MapLayout.sts
 local function roomState(node, currentNodeId)
@@ -193,7 +190,7 @@ local function routeInset(node, currentNodeId)
     end
     -- Use the smallest visible glyph. As an available room breathes, the
     -- route stays attached underneath it without moving the route each frame.
-    local scale = M.drawScale({state=state,scale=state=="available" and .91 or Sts.baseScale})
+    local scale = M.drawScale({boss=node.type=="boss",state=state,scale=state=="available" and .91 or Sts.baseScale,alpha=0})
     return size * Sts.iconPerScale * scale * .45, node.hasEmeraldKey and map.emeraldIconY or 0
 end
 
@@ -315,6 +312,7 @@ function M.new(root, map, onChoose, clickEvent, options)
     -- The title host binds real owners only after Start succeeds.
     local initialChapter = map ~= nil and assert(chapterFor(map), "invalid map chapter context") or nil
     local view = map and mapView(map)
+    local positions = Geometry.positions(map, initialChapter)
     local self = { root = root, map = map, visible = map ~= nil, navigationEnabled = view and atStart(view) or false,
         scroll = 0, slots = {}, time = 0, breathing = {}, roomFx = {}, stage = stage, panel = panel,
         embedded = embedded, scale = 1, chapter = initialChapter, observedMap = map, observedContext = view,
@@ -368,7 +366,17 @@ function M.new(root, map, onChoose, clickEvent, options)
         next = pathColour(Theme.color.node.reachable, visual.nextOpacity),
         future = pathColour(Theme.color.node.path, visual.futureOpacity),
         far = pathColour(Theme.color.node.path, visual.farFutureOpacity),
+        locked = colour(0, 0, 0, lockedRouteAlpha),
     }
+    local function routeAppearance(dashed, taken, reachable, far)
+        if dashed and routeStyle then
+            if taken then return routeStyle.takenWidth, pathColours.taken end
+            if reachable then return routeStyle.nextWidth, pathColours.next end
+            return routeStyle.lockedWidth, pathColours.locked
+        end
+        local ink = taken and pathColours.taken or reachable and pathColours.next or far and pathColours.far or pathColours.future
+        return M.pathWidth(taken, reachable), ink
+    end
     local function bind(name, fn)
         local hit=child(at(name),"hit")
         hit:AddCursorEventListener(clickEvent,function(event)
@@ -377,8 +385,12 @@ function M.new(root, map, onChoose, clickEvent, options)
         end)
     end
     local function position(node)
-        return (node.lane - (Layout.lanes + 1) / 2) * Theme.layout.map.columnGap,
-            floorY(self.chapter, node.floor) - self.scroll
+        local point = positions[node.id]
+        return point.x, point.y - self.scroll
+    end
+    local function focusY(current, floor)
+        local point = floor == current.floor and positions[current.currentNodeId]
+        return point and point.y or Geometry.floorY(self.chapter, floor)
     end
     local function observeMap(current)
         if self.map == self.observedMap and sameContext(current,self.observedContext) then return false end
@@ -386,14 +398,42 @@ function M.new(root, map, onChoose, clickEvent, options)
         -- A restarted run can share floor/node ids with the previous run. Identity
         -- resets its presentation and default gate before the host grants access.
         self.observedMap, self.observedContext, self.chapter = self.map, current, chapterFor(self.map)
+        positions = Geometry.positions(self.map, self.chapter)
         self.entryError=nil
         self:cancelReturnReveal()
         self.observedNodeId, self.observedFloor = current.currentNodeId, current.floor
         self.navigationEnabled, self.time = atStart(current), 0
-        self.scroll = clamp(floorY(self.chapter, current.floor) - Layout.focusY, 0, scrollLimit(self.chapter))
+        self.scroll = clamp(focusY(current, current.floor) - Layout.focusY, 0, scrollLimit(self.chapter))
         return true
     end
+    local function paintSpacedDashes(control, firstDash, length, a, b, width, ink)
+        -- MapEdge uses fixed pitch along the segment. Stretch the pitch on
+        -- longer diagonals to stay within the existing eight-image pool.
+        local pitch = math.max(routeStyle.dashPitch, length / 8)
+        local count = math.min(8, math.floor(length / pitch) + 1)
+        local start = (length - (count - 1) * pitch) / 2
+        local low, high = a * length, b * length
+        local centre = (low + high) / 2
+        local half = routeStyle.dashLength / 2
+        for i = 1, 8 do
+            local dash = i == 1 and firstDash or child(control, 'routeInk' .. i)
+            local dashCentre = start + (i - 1) * pitch
+            local first, last = math.max(low, dashCentre - half), math.min(high, dashCentre + half)
+            local visible = i <= count and last > first
+            dash:SetVisible(visible)
+            if visible then
+                dash:SetAnchoredPosition((first + last) / 2 - centre, 0)
+                dash:SetSizeDelta(last - first, width)
+                dash.imageColor = ink
+            end
+        end
+    end
+
     local function paintRouteDashes(control, firstDash, sourceId, targetId, route, width, ink)
+        if routeStyle then
+            paintSpacedDashes(control, firstDash, route.length, route.a, route.b, width, ink)
+            return
+        end
         local seed=0
         local identity=tostring(sourceId)..':'..tostring(targetId)
         for i=1,#identity do seed=(seed*31+identity:byte(i))%997 end
@@ -429,7 +469,7 @@ function M.new(root, map, onChoose, clickEvent, options)
         if not fullLength then control:SetVisible(false) return end
         -- Clip real graph segments to viewport, with half-stroke padding.
         -- TASK-4.13: walked > reachable > unreachable stroke weights (STS taken/available/disabled).
-        local width = M.pathWidth(taken, reachable)
+        local width, ink = routeAppearance(firstDash, taken, reachable, far)
         local low, high = Layout.viewport.bottom + width / 2, Layout.viewport.top - width / 2
         if y2 < low or y1 > high then control:SetVisible(false) return end
         local a, b = clamp((low - y1) / (y2 - y1), 0, 1), clamp((high - y1) / (y2 - y1), 0, 1)
@@ -443,7 +483,6 @@ function M.new(root, map, onChoose, clickEvent, options)
         -- TASK-4.13: walked routes are heavier than reachable ones (STS taken edges read first).
         control:SetSizeDelta(math.sqrt(dx * dx + dy * dy), width)
         control.localRotationZ = math.atan(dy, dx) * 180 / math.pi
-        local ink=taken and pathColours.taken or reachable and pathColours.next or far and pathColours.far or pathColours.future
         if firstDash then
             paintRouteDashes(control,firstDash,source.id,target.id,
                 {x1=x1,y1=y1,x2=x2,y2=y2,length=fullLength,a=a,b=b,x=x,y=y},width,ink)
@@ -682,7 +721,7 @@ function M.new(root, map, onChoose, clickEvent, options)
         observeMap(current)
         local floor = current.floor
         if self.chapter.terminal == 'boss_treasure' then floor = math.min(floor, self.chapter.boss) end
-        local target = floorY(self.chapter, floor) - Layout.focusY
+        local target = focusY(current, floor) - Layout.focusY
         if animated then return animateScrollTo(target) end
         return self:setScroll(target, deferRender)
     end

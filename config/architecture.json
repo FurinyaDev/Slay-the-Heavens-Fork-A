@@ -231,6 +231,7 @@
     "abyss_map_rooms": "core",
     "abyss_map_topology": "core",
     "abyss_map_ui": "ui",
+    "abyss_map_visual_layout": "ui",
     "abyss_merchant": "ui",
     "abyss_merchant_pages": "ui",
     "abyss_new_run_seed": "core",

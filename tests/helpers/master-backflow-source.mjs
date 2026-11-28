@@ -1,3 +1,4 @@
+import {beforeMapVisualLayout} from './map-visual-layout-source.mjs';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
@@ -148,6 +149,9 @@ function matchesSuccessor(path, source, original) {
 }
 
 export function beforeMasterBackflowSource(path, source) {
+  const textInput = Buffer.isBuffer(source) ? source.toString('utf8') : source;
+  const projected = beforeMapVisualLayout(path, textInput);
+  if (projected !== textInput) source = Buffer.isBuffer(source) ? Buffer.from(projected) : projected;
   source = beforeReleaseClosureFixture(path, beforeReleaseEntranceOwner(path, source));
   if (!Object.hasOwn(files, path)) return source;
   const { before, after } = files[path];

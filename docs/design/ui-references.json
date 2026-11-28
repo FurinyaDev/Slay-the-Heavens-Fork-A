@@ -1221,6 +1221,30 @@
       },
       "supersedes": [],
       "note": "仅用于追溯，当前版本使用 release-sts1-20261122。"
+    },
+    {
+      "codePath": "src/lua/abyss_map_ui.lua",
+      "codePaths": [
+        "src/lua/abyss_map_visual_layout.lua",
+        "scripts/build-ui.mjs",
+        "scripts/map-ui-layout.mjs",
+        "scripts/official-assets-layout.mjs"
+      ],
+      "themeKeys": [
+        "officialAssets.mapRoutes"
+      ],
+      "targetVersion": "v2.3.0",
+      "state": "mapRoutes",
+      "revision": "sts1-route-spacing",
+      "status": "CURRENT_IMPLEMENTATION",
+      "backlogTask": "TASK-116",
+      "reference": {
+        "path": "docs/evidence/v2.3.0-map-layout/REFERENCE.md",
+        "sha256": "12de1b88bed0a9221aa8222d4497e8f5e05521637bcefd3909351854d1287315"
+      },
+      "source": "https://github.com/aeubanks/sts/tree/319009d5df0a82d9fb0f23cc22322286c6a87ec0/map",
+      "supersedes": [],
+      "note": "正式地图的每幕确定性坐标与路线。图例和 HUD 沿用现有布局，Owner 与实机验收待完成。"
     }
   ]
 }

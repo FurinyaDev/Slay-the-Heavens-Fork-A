@@ -1,3 +1,4 @@
+import {beforeMapVisualLayout} from './map-visual-layout-source.mjs';
 import {authenticateDevelopBackflow} from './develop-release-backflow-source.mjs';
 import {authorizeRebasedRelease,beforeRebasedRelease} from './rebased-release-source.mjs';
 import {beforeReconciledReleaseSource} from './release-integration-source.mjs';
@@ -175,6 +176,9 @@ export function beforeMapRoomSource(path,source){
 }
 
 export function beforeMapDeckSource(path,source,read){
+  const liveRead=read;
+  read=(owner,encoding)=>beforeMapVisualLayout(owner,liveRead(owner,encoding));
+  source=beforeMapVisualLayout(path,source);
   assertProductionMapDeckOwners(path,source,read);
   const forethoughtPrior=beforeProductionForethought(path,source,read);
   if(forethoughtPrior!==source)return forethoughtPrior;
