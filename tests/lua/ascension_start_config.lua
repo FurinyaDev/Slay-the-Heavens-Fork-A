@@ -53,7 +53,14 @@ for _, bad in ipairs({
     ok, why = random:confirmCharacter(bad.input)
     assert(not ok and why==bad.reason and calls==1 and random.run==nil and not random.starting, tostring(why))
 end
-assert(random:confirmCharacter() and calls==2)
+local log
+local originalPrint = print
+print = function(line) log=line; originalPrint(line) end
+local accepted=random:confirmCharacter()
+print = originalPrint
+assert(accepted and calls==2)
+local codeVersion=assert(require('abyss_narrative').codeVersion, 'missing generated code version')
+assert(log=='ABYSS_RUN seed=42000 source=random version='..codeVersion..' character=ironclad ascension=0', log)
 assert(random.run.ascension==0 and random.run.seedSource=='random' and random.run.runSeed=='42000')
 assert(random.run.eventRng.counter==disabled.run.eventRng.counter)
 for i, node in ipairs(disabled.map.nodes) do

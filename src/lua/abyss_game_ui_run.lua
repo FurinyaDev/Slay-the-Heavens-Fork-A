@@ -31,9 +31,9 @@ end
 
 local function logStart(run, explicitSeed)
     if run.ascension~=nil then
-        local build=require('abyss_narrative').build
+        local codeVersion=require('abyss_narrative').codeVersion
         print('ABYSS_RUN seed=' .. run.runSeed .. ' source=' .. run.seedSource
-            .. ' version=' .. (build and build.codeVersion or run.version)
+            .. ' version=' .. (codeVersion or run.version)
             .. ' character=' .. (run.character or 'ironclad') .. ' ascension=' .. run.ascension)
         return
     end
@@ -118,6 +118,28 @@ function M.start(self,selectionChanged)
         end
 end
 
+local function openingSelection(platform,character)
+    local selection=CharacterSelect.options(character)
+    -- Native entry selects the competition profile; explicit full-source
+    -- hosts retain future chapters without changing same-run ownership.
+    if platform.campaign==true then
+        selection=selection or {}
+        selection.experimental,selection.campaign=true,true
+        selection.campaignProfile=platform.campaignProfile
+    end
+    return selection
+end
+
+local function openingSeed(self,newSeed,ascension,playerSeed)
+    if playerSeed~=nil then
+        return playerSeed,nil,false,{ascension=ascension,seedSource='player'}
+    end
+    local explicitSeed=self.seed~=nil
+    local seed=explicitSeed and self.seed or newSeed()
+    local config=ascension~=nil and {ascension=ascension,seedSource=explicitSeed and 'internal' or 'random'} or nil
+    return RunSeed.normalize(seed),seed,explicitSeed,config
+end
+
 function M.beginRun(platform,data,self,newSeed,presentation,endingHistory,neowHistory,prologuePanel,owner)
     local function publishRun(run,map,rawSeed,runPresentation,explicitSeed,seed)
             self.characterOpen=false;owner.exitGeneration=owner.exitGeneration+1;owner.menuGeneration=owner.menuGeneration+1
@@ -140,21 +162,10 @@ function M.beginRun(platform,data,self,newSeed,presentation,endingHistory,neowHi
             return true
     end
     return function(character,ascension,playerSeed)
-            local selection=CharacterSelect.options(character)
-            -- Native entry selects the competition profile; explicit full-source
-            -- hosts retain future chapters without changing same-run ownership.
-            if platform.campaign == true then
-                selection = selection or {}
-                selection.experimental, selection.campaign = true, true
-                selection.campaignProfile=platform.campaignProfile
-            end
+            local selection=openingSelection(platform,character)
             if not require('abyss_run_admission').accepts(data,selection)then return false,'competition_character_unavailable'end
             self.openingPrepared=1 -- Selection admitted.
-            local explicitSeed = playerSeed==nil and self.seed~=nil
-            local seed = playerSeed or (explicitSeed and self.seed or newSeed())
-            local rawSeed=RunSeed.normalize(seed)
-            local config=ascension~=nil and {ascension=ascension,
-                seedSource=playerSeed~=nil and 'player' or explicitSeed and 'internal' or 'random'} or nil
+            local rawSeed,seed,explicitSeed,config=openingSeed(self,newSeed,ascension,playerSeed)
             local run = Run.new(data,rawSeed,selection,config)
             self.openingPrepared=2 -- Run/data constructed.
             local runPresentation = (selection and selection.character or run.data.colorlessCards) and require("abyss_character_presentation").prepare(presentation,run.data) or presentation
@@ -176,11 +187,13 @@ end
 local function openingBlocked(self)
     return self.prologue and self.prologue:covering() or self.pageReveal and self.pageReveal:covered()
 end
+local function confirmationBlocked(self)
+    return not self.characterOpen or self.starting or self.disabled or self.exitOpen or self.characterSelection.deckOpen
+        or openingBlocked(self) or self.settlementRequested or self.settlementBusy
+end
 function M.confirmCharacter(self,beginRun)
     return function(_,request)
-            if not self.characterOpen or self.starting or self.disabled or self.exitOpen or self.characterSelection.deckOpen
-                or openingBlocked(self)
-                or self.settlementRequested or self.settlementBusy then return false,'character_choice_unavailable' end
+            if confirmationBlocked(self)then return false,'character_choice_unavailable'end
             local info=self.characterSelection.info
             if not info then return false,'character_required' end
             if not self.characterSelection:canConfirm()then return false,'competition_character_unavailable'end
