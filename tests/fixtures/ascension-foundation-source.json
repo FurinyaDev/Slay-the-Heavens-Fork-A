@@ -8,6 +8,19 @@
       "sha256": "ce82784f44efae33829dcdef94f10ee4d86a1615deadbbaaab41882e990fbf85",
       "gitBlob": "47e11d76d6b5a3ba8ebc43e13cf18c7751ca52cd"
     },
+    "combatRegistration": {
+      "current": {
+        "sha256": "84f7e824ca7f7f12c004c5b0aae8219b0bcd2cf13336cbec7cb4179cd3907c8c",
+        "gitBlob": "ebbc24cdc69a33f23242ef73a3f82e8c2ee65977"
+      },
+      "hunks": [
+        {
+          "at": 255,
+          "before": "    \"abyss_ascension_rules\": \"core\",\n    \"abyss_sentry_ai\": \"core\",",
+          "after": "    \"abyss_ascension_rules\": \"core\",\n    \"abyss_ascension_enemies\": \"core\",\n    \"abyss_sentry_ai\": \"core\","
+        }
+      ]
+    },
     "hunks": [
       {
         "at": 253,
@@ -50,6 +63,62 @@
         "at": 187,
         "before": "    return self.prologue and self.prologue:covering() or self.pageReveal and self.pageReveal:covered()\nend\nfunction M.confirmCharacter(self,beginRun)\n    return function(_)\n            if not self.characterOpen or self.starting or self.disabled or self.exitOpen or self.characterSelection.deckOpen\n                or openingBlocked(self)\n                or self.settlementRequested or self.settlementBusy then return false,'character_choice_unavailable' end\n            local info=self.characterSelection.info\n            if not info then return false,'character_required' end\n            if not self.characterSelection:canConfirm()then return false,'competition_character_unavailable'end\n            self.starting=true\n            -- Latch before the fade and seed generation; one confirmation creates one Run.\n            local function commit()\n                local ok,accepted,reason=pcall(beginRun,info.id)\n                self.starting=false\n                if not ok then error(accepted)end",
         "after": "    return self.prologue and self.prologue:covering() or self.pageReveal and self.pageReveal:covered()\nend\nlocal function confirmationBlocked(self)\n    return not self.characterOpen or self.starting or self.disabled or self.exitOpen or self.characterSelection.deckOpen\n        or openingBlocked(self) or self.settlementRequested or self.settlementBusy\nend\nfunction M.confirmCharacter(self,beginRun)\n    return function(_,request)\n            if confirmationBlocked(self)then return false,'character_choice_unavailable'end\n            local info=self.characterSelection.info\n            if not info then return false,'character_required' end\n            if not self.characterSelection:canConfirm()then return false,'competition_character_unavailable'end\n            local ascension,playerSeed,configReason=configuredStart(self,request)\n            if configReason then return false,configReason end\n            self.starting=true\n            -- Latch before the fade and seed generation; one confirmation creates one Run.\n            local function commit()\n                local ok,accepted,reason=pcall(beginRun,info.id,ascension,playerSeed)\n                self.starting=false\n                if not ok then error(accepted)end"
+      }
+    ]
+  },
+  "src/lua/abyss_combat.lua": {
+    "previous": {
+      "sha256": "fdc7dbf7b8425a54b66b58c8b2dcd09cf48b3ae7193ca7d077a4e71f891ee64f",
+      "gitBlob": "9f4ab631a2e3d0ea0adcc164a3c30125405502b6"
+    },
+    "current": {
+      "sha256": "0cd5ac54238307ad715850cb9e4db4b23b18250487e15f6a73367bf16bbbdbbb",
+      "gitBlob": "3dee1232f670e2bd4af63db0b9ee829ea24e33bb"
+    },
+    "hunks": [
+      {
+        "at": 2087,
+        "before": "        player = { id = \"player\", gold = gold, hp = hp, maxHp = rules.player.maxHp, block = 0, statuses = {} },\n        enemies = {}, draw = {}, hand = {}, discard = {}, exhaust = {}, events = {} },rules\nend",
+        "after": "        player = { id = \"player\", gold = gold, hp = hp, maxHp = rules.player.maxHp, block = 0, statuses = {} },\n        enemies = {}, draw = {}, hand = {}, discard = {}, exhaust = {}, events = {}, enemyAscension = EnemySetup.ascensionLevel(data,options) },rules\nend"
+      }
+    ]
+  },
+  "src/lua/abyss_event_combat.lua": {
+    "previous": {
+      "sha256": "818e322fbaa74f9fabc0608793ffa7edb8493db8de331e655b0776000f13b550",
+      "gitBlob": "934f74a06baa4751bf709af6978310a5ffd0df2d"
+    },
+    "current": {
+      "sha256": "64b370f87ab7e02b790b160c638c10eb5f32650c276455ab06ceb1aa1c4473b4",
+      "gitBlob": "3b8906bb18703495846d53124b7001180654bc7a"
+    },
+    "hunks": [
+      {
+        "at": 22,
+        "before": "end\nlocal function roomOptions(room,definition)\n local options={roomSeed=room.seed,roomStreams=room,enemies=definition.enemies,sourceEncounter=definition.sourceEncounter,\n  encounterSource=definition.source,encounterVisualFloat=function(lo,hi)return R.randomFloatBetween(room.visualRng,lo,hi)end}\n if definition.sourceEncounter then",
+        "after": "end\nlocal function roomOptions(room,definition,ascension)\n local options={roomSeed=room.seed,roomStreams=room,enemies=definition.enemies,sourceEncounter=definition.sourceEncounter,\n  encounterSource=definition.source,ascension=ascension,\n  encounterVisualFloat=function(lo,hi)return R.randomFloatBetween(room.visualRng,lo,hi)end}\n if definition.sourceEncounter then"
+      },
+      {
+        "at": 44,
+        "before": " local room=roomStreams(run,floor);room.miscRng=R.cloneState(misc or run.miscRng)\n local prepared=C.prepareEncounter(run.data,roomOptions(room,definition))\n return {version=1,source=source,floor=floor,runSeed=run.runSeed,roomSeed=room.seed,prepared=prepared}",
+        "after": " local room=roomStreams(run,floor);room.miscRng=R.cloneState(misc or run.miscRng)\n local prepared=C.prepareEncounter(run.data,roomOptions(room,definition,run.ascension))\n return {version=1,source=source,floor=floor,runSeed=run.runSeed,roomSeed=room.seed,prepared=prepared}"
+      }
+    ]
+  },
+  "src/lua/abyss_event_combat_routes.lua": {
+    "previous": {
+      "sha256": "b90ef6a12b2df39e1192c5775525bea696ed0e895196bfb1f7f5387ccc006766",
+      "gitBlob": "40cc29fe3c88dc440d4191a96fcbfb9ee8218a28"
+    },
+    "current": {
+      "sha256": "0ddcde7b2bf818b224214e9988725b1f412f0af4e8d6e5a878145cb53ac61cb8",
+      "gitBlob": "949d3ef448dfdc37121e65d7247aa1bd9224b2b2"
+    },
+    "hunks": [
+      {
+        "at": 39,
+        "before": " local room=roomFor(run,floor,roomStreams,misc,continuation)\n local prepared=C.prepareEncounter(run.data,{roomSeed=room.seed,roomStreams=room,enemies=group.enemies})\n for i,actor in ipairs(prepared.actors)do actor.sourcePosition={x=group.positions[i][1],y=group.positions[i][2]}end",
+        "after": " local room=roomFor(run,floor,roomStreams,misc,continuation)\n local prepared=C.prepareEncounter(run.data,{roomSeed=room.seed,roomStreams=room,enemies=group.enemies,ascension=run.ascension})\n for i,actor in ipairs(prepared.actors)do actor.sourcePosition={x=group.positions[i][1],y=group.positions[i][2]}end"
       }
     ]
   }
