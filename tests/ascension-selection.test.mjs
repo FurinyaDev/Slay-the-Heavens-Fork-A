@@ -106,3 +106,8 @@ test('run menu shows the complete run seed and reproducibility details', t => {
   const output = generate(t, true, false);
   assert.match(runLua(output, 'tests/lua/support/ascension_run_seed_display.lua'), /ASCENSION_RUN_SEED_DISPLAY_PASS/);
 });
+
+test('confirmation submits the visible difficulty through a transient progress read failure', t => {
+  const output = generate(t, true, false);
+  assert.match(runLua(output, 'tests/lua/support/ascension_confirmation_choice.lua'), /ASCENSION_CONFIRMATION_CHOICE_PASS/);
+});

@@ -59,8 +59,13 @@ function M.new(characterPanel,platform)
     end
 
     function settings:request(characterId)
-        sync(characterId)
+        if self.characterId~=characterId then return nil end
+        -- Submit the painted choice. Run admission reads the current unlock level.
         return {ascension=self.level,seed=seed and seed.value}
+    end
+
+    function settings.showLocked()
+        setText(unlock,'此进阶暂不可选，请重试。')
     end
 
     function settings:reset()

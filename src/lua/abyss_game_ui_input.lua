@@ -333,8 +333,12 @@ function M.installCharacters(self,characterPanel,clickEvent,bindCommand)
     bindCommand(characterPanel:GetChild("cancel"),"character_cancel",function() return self:closeCharacters() end,
         ascension and function()return not editingSeed()end or nil)
     bindCommand(characterPanel:GetChild('confirm'),'character_confirm',function()
-        if ascension then return self:confirmCharacter(ascension:request(state.info.id))end
-        return self:confirmCharacter()
+        if not ascension then return self:confirmCharacter()end
+        local request=ascension:request(state.info.id)
+        if not request then return false,'character_choice_unavailable'end
+        local ok,reason=self:confirmCharacter(request)
+        if reason=='ascension_locked' then ascension.showLocked()end
+        return ok,reason
     end,
         function()return state:canConfirm() and not state.deckOpen and not (editingSeed and editingSeed())end)
     local starterDeck=Theme.presentationProfile~='official-assets-first' and characterPanel:GetChild('details'):GetChild('deckOpen')
