@@ -41,6 +41,12 @@ function M.rarity(roll,offset,tier,relics)
     local rare,uncommon=require('abyss_relic_rarity').thresholds(tier,relics)
     return adjusted<rare and 'rare' or adjusted<uncommon and 'uncommon' or 'common'
 end
+local function upgradeChance(run)
+    local chance=Acts.get(run.act or 1).upgradeChance
+    local level=run.ascension or 0
+    if level>0 and require('abyss_ascension_rules').active(level,'upgradedRewards') then return chance*.5 end
+    return chance
+end
 function M.prepareRewards(run)
     local rng=R.cloneState(run.cardRng)
     local offset,choices,used=run.cardRarityOffset or 5,{},{}
@@ -62,7 +68,7 @@ function M.prepareRewards(run)
     end
     -- AbstractDungeon selects every identity before upgrade rolls. Even the
     -- first act's zero chance spends a float; rares never spend one.
-    local chance=Acts.get(run.act or 1).upgradeChance
+    local chance=upgradeChance(run)
     local upgrades={}
     for i,c in ipairs(choices) do
         upgrades[i]=c.rarity~='rare' and R.randomBooleanChance(rng,chance) or false

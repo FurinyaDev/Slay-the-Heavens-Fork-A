@@ -22,7 +22,11 @@ function M.prepare(tier, streams, context)
     local key = tier == 'boss' and 'miscRng' or 'treasureRng'
     local rng = R.cloneState(streams[key])
     local gold
-    if tier == 'boss' then gold = 100 + R.randomIntBetween(rng, -5, 5)
+    if tier == 'boss' then
+        gold = 100 + R.randomIntBetween(rng, -5, 5)
+        if (streams.ascension or 0)>0 and require('abyss_ascension_rules').active(streams.ascension,'bossGold') then
+            gold = math.floor(gold * .75 + .5)
+        end
     elseif tier == 'elite' then gold = R.randomIntBetween(rng, 25, 35)
     else gold = R.randomIntBetween(rng, 10, 20) end
     return gold, key, rng
