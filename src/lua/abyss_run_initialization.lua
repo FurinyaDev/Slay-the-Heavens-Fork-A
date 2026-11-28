@@ -24,6 +24,25 @@ local function ascensionSettings(data, config, seed)
     return config.ascension, source
 end
 
+local function startingPlayer(data, profile, level)
+    local player = data.rules.player
+    local maxHp = player.maxHp
+    if not level or level==0 then return maxHp,maxHp end
+    local Rules = require('abyss_ascension_rules')
+    if Rules.active(level,'startingMaxHp') then
+        local character = profile and profile.id or data.characterId or 'ironclad'
+        local losses = data.rules.ascensionMaxHpLoss
+        maxHp = math.max(1,maxHp-(losses and losses[character] or 0))
+    end
+    local hp = maxHp
+    if Rules.active(level,'startingHealth') then
+        hp = math.floor(EventRandom.float32(EventRandom.float32(maxHp)*EventRandom.float32(.9))+.5)
+    end
+    local potionSlots
+    if Rules.active(level,'potionSlots') then potionSlots=player.potionSlots-1 end
+    return maxHp,hp,potionSlots
+end
+
 function M.install(Run, shared)
     local preparedCharacters=shared.preparedCharacters
     local preparedOriginalRoles=shared.preparedOriginalRoles
@@ -115,6 +134,7 @@ function M.install(Run, shared)
             runData.runCardCatalog,runData.runCardCharacter=nil,nil
         end
         require('abyss_class_potions').register(runData)
+        local maxHp,hp,potionSlots=startingPlayer(data,profile,ascension)
         local run = { version = data.rules.version, data = runData, seed = RunSeed.legacy(eventSeed),runSeed=eventSeed,
             eventSeed = eventSeed, eventRng = EventRandom.fromSeed(eventSeed), miscRng = EventRandom.fromSeed(eventSeed),
             treasureRng = EventRandom.fromSeed(eventSeed),
@@ -124,9 +144,9 @@ function M.install(Run, shared)
             -- duplicates Guardian and spends no monsterRng; no all-unlocked claim.
             bossInitialization={profile='guardian-unseen',bossList={'The Guardian','The Guardian'}},
             unknown = { chances = Unknown.newPc(), pools = EventPool.new(data.rules.events.poolMode or 'restricted-six') },
-            phase = "map", floor = 1, hp = data.rules.player.maxHp, maxHp = data.rules.player.maxHp,
+            phase = "map", floor = 1, hp = hp, maxHp = maxHp, potionSlots=potionSlots,
             elapsedSeconds = 0, victories = 0,
-            scoreStats = require("abyss_run_score").newStats(data.rules.player.maxHp),
+            scoreStats = require("abyss_run_score").newStats(maxHp),
             gold = data.rules.player.startingGold, deck = {}, nextDeckUid = 1,
             relics = Copy.copy(data.rules.player.startingRelics), potions = {} }
         if ascension~=nil then run.ascension,run.seedSource=ascension,seedSource end

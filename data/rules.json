@@ -1,6 +1,9 @@
 {
   "version": "0.1.0",
   "ascensionEnabled": false,
+  "ascensionMaxHpLoss": {
+    "ironclad": 5
+  },
   "player": {
     "maxHp": 80,
     "energyPerTurn": 3,
