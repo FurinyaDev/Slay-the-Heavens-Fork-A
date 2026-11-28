@@ -1,6 +1,27 @@
 import { cardFaceChildren } from './card-face.mjs';
 import { deckCardTemplate, fiveColumnCardGrid } from './deck-ui-layout.mjs';
 import { nativeControls, nativeTheme } from './native-ui-theme.mjs';
+import { readFileSync } from 'node:fs';
+
+export function attachAscensionPicker(panel, theme) {
+  const rules = JSON.parse(readFileSync('data/rules.json', 'utf8').replace(/^\uFEFF/, ''));
+  if (rules.ascensionEnabled !== true) return;
+  const { plate, text, button } = nativeControls(theme);
+  const { color } = theme;
+  const arrow = (name, x, label) => button(name, [x, 16, 58, 52], label,
+    { states: true, inset: [8, 8], fontSize: 25, colour: color.goldBright });
+  panel.children.push({
+    name: 'ascensionPicker', kind: 'container', position: [405, 258], size: [378, 138], visible: false,
+    children: [
+      { ...plate('face', [0, 0, 378, 138], color.panel), raycastTarget: false, opacity: .95 },
+      text('title', [0, 52, 202, 28], '进阶难度', 17, color.goldBright),
+      arrow('previous', -140, '‹'), arrow('next', 140, '›'),
+      text('rank', [0, 16, 130, 46], 'A0', 27, color.goldBright),
+      text('rule', [0, -23, 352, 32], '', 18, color.text),
+      text('unlock', [0, -51, 352, 24], '', 16, color.textDim),
+    ],
+  });
+}
 
 export function experimentalCharacterControls(theme = nativeTheme) {
   const { plate, text } = nativeControls(theme);

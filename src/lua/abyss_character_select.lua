@@ -95,6 +95,7 @@ function M.new(source,presentation,profile)
     end
     function state:clear()
         self.character,self.element,self.info,self.deckOpen=nil,nil,nil,false
+        if self.ascension then self.ascension:paint(nil)end
     end
     function state:select(id)
         if not contains(M.characters,id)then return false,'unknown_character' end

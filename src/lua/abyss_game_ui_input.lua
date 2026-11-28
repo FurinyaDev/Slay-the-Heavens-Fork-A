@@ -327,7 +327,13 @@ function M.installCharacters(self,characterPanel,clickEvent,bindCommand)
     characterPanel.disableCursorEventPassthrough=true
     characterPanel:GetChild("blocker"):AddCursorEventListener(clickEvent,function()return true end)
     bindCommand(characterPanel:GetChild("cancel"),"character_cancel",function() return self:closeCharacters() end)
-    bindCommand(characterPanel:GetChild('confirm'),'character_confirm',function()return self:confirmCharacter()end,
+    local state=self.characterSelection
+    local ascension=state.ascension
+    if ascension then ascension:bind(state,bindCommand)end
+    bindCommand(characterPanel:GetChild('confirm'),'character_confirm',function()
+        if ascension then return self:confirmCharacter(ascension:request(state.info.id))end
+        return self:confirmCharacter()
+    end,
         function()return self.characterSelection:canConfirm() and not self.characterSelection.deckOpen end)
     local starterDeck=Theme.presentationProfile~='official-assets-first' and characterPanel:GetChild('details'):GetChild('deckOpen')
     if starterDeck then

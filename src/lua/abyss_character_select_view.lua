@@ -4,6 +4,11 @@ local Select=require('abyss_character_select')
 local number=require('abyss_numbers').integer
 local Motion=require('abyss_character_entrance')
 local M={}
+function M.installAscension(state,rules,panel,platform)
+    if rules.ascensionEnabled~=true then return end
+    state.ascension=require('abyss_character_ascension_ui').new(
+        panel:GetChild('ascensionPicker'),platform.getHighestUnlocked)
+end
 local function visible(control,value)
     if control and control.visible~=value then control:SetVisible(value)end
 end
@@ -185,5 +190,6 @@ function M.render(panel,state,platform,published,motion)
         visible(roster:GetChild('selected'):GetChild('selection'),info~=nil)
     end
     paintPublished(panel,details,state,platform,motion,info,originalSts,nativeV25)
+    if state.ascension then state.ascension:paint(info and info.id)end
 end
 return M
