@@ -89,6 +89,7 @@ function M.new(root, data, presentation, clickEvent, platform)
     local self = { root = root, data = data, seed = platform.seed, mode = "menu" }
     local owner = {exitGeneration=0, menuGeneration=0, ready=false}
     platform=setmetatable({},{__index=platform})
+    local ascensionFlow=RunFlow.installAscensionFlow(data,platform)
     self.selectionMotion=CharacterView.motion(assert(root:GetChild('characterPanel'),'missing game panel characterPanel'),platform)
     local neowHistory=NeowHistory.new(platform.readNeowHistory)
     local endingHistory=EndingHistory.new({read=platform.readEndingHistory,write=platform.writeEndingHistory})
@@ -130,7 +131,7 @@ function M.new(root, data, presentation, clickEvent, platform)
             if self.map == map and type(bosses) == 'table' then return bosses[1] end
         end })
     self.nodeUI = NodeUI.new(child("nodePanel"), nil, nil,
-        presentation, clickEvent, changed, { color = platform.color, imageSource = platform.imageSource,
+        presentation, clickEvent, RunFlow.ascensionNodeChanged(self,platform,ascensionFlow,changed), { color = platform.color, imageSource = platform.imageSource,
             imageTypes = platform.imageTypes,
             imageFillRight = platform.imageFillRight,
             textAlignments = platform.textAlignments, mobileRunHud=platform.mobileRunHud,
@@ -174,7 +175,6 @@ function M.new(root, data, presentation, clickEvent, platform)
     self.closeExit = Overlays.closeExit(self,owner)
     self.confirmExit = Overlays.confirmExit(self,owner)
     Navigation.install(self,owner,neowHistory)
-
     self.openDeck = Overlays.openDeck(inputCovered,self)
     self.openStarterDeck = Overlays.openStarterDeck(inputCovered,self,platform,owner)
     -- TASK-4.7 owned relics: icon-disc slots, not a text dump. Opening rides
@@ -227,12 +227,12 @@ function M.new(root, data, presentation, clickEvent, platform)
     self.closeCharacters = RunFlow.closeCharacters(self,selectionChanged)
     self.selectCharacter = RunFlow.selectCharacter(self,selectionChanged)
     self.selectElement = RunFlow.selectElement(self,selectionChanged)
-    self.start = RunFlow.start(self,selectionChanged)
+    self.start = RunFlow.start(self,selectionChanged,ascensionFlow)
     local beginRun = RunFlow.beginRun(platform,data,self,newSeed,presentation,endingHistory,neowHistory,prologuePanel,owner)
-    self.confirmCharacter = RunFlow.confirmCharacter(self,beginRun)
+    self.confirmCharacter = RunFlow.confirmCharacter(self,beginRun,ascensionFlow and ascensionFlow.getHighestUnlocked)
     self.advanceAct = RunFlow.advanceAct(self)
     self.settle = RunFlow.settle(self,owner)
-    owner.requestSettlement = RunFlow.requestSettlement(self,platform,neowHistory,owner)
+    owner.requestSettlement = RunFlow.requestSettlement(self,platform,neowHistory,owner,ascensionFlow)
     self.resize = Lifecycle.resize(self,owner)
     self.update = Lifecycle.update(self,platform,openingCovered,bgm)
     self.disable = Lifecycle.disable(self,platform,characterPanel,owner)

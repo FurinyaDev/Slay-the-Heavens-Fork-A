@@ -11,7 +11,11 @@ local M = {}
 local function startBlocked(self)
     return self.exitOpen or self.deckUI.visible or self.settlementRequested or self.settlementBusy
 end
-local function configuredStart(self, request)
+local function unlocked(level, character, getHighestUnlocked)
+    return level==0 or getHighestUnlocked and level<=getHighestUnlocked(character)
+end
+
+local function configuredStart(self, request, character, getHighestUnlocked)
     if self.data.rules.ascensionEnabled~=true then
         if request~=nil then return nil,nil,'ascension_disabled' end
         return
@@ -21,7 +25,7 @@ local function configuredStart(self, request)
     local level=request.ascension
     if level==nil then level=0 end
     if not require('abyss_ascension_rules').validLevel(level) then return nil,nil,'invalid_ascension' end
-    if level>0 then return nil,nil,'ascension_locked' end
+    if not unlocked(level,character,getHighestUnlocked) then return nil,nil,'ascension_locked' end
     if request.seed==nil then return level end
     if type(request.seed)~='string' then return nil,nil,'invalid_player_seed' end
     local valid, canonical=pcall(RunSeed.normalize,request.seed)
@@ -97,15 +101,38 @@ function M.selectElement(self,selectionChanged)
         end
 end
 
-function M.start(self,selectionChanged)
+function M.installAscensionFlow(data, platform)
+    if data.rules.ascensionEnabled~=true then return end
+    local version = require('abyss_narrative').codeVersion
+    local flow = require('abyss_game_ascension_flow').new(platform.playerSave, version)
+    platform.getHighestUnlocked = flow.getHighestUnlocked
+    return flow
+end
+
+function M.ascensionNodeChanged(self, platform, flow, changed)
+    if not flow or platform.isTrial or platform.isDailyRun then return changed end
+    return function(ok, reason, source)
+        if ok and reason=='boss_treasure_complete' and source.run==self.run then
+            flow.complete(self.run, self.map)
+        end
+        return changed(ok, reason, source)
+    end
+end
+
+local function startMode(mode)
+    return mode=='menu' or mode=='defeat' or mode=='victory'
+end
+
+function M.start(self,selectionChanged,ascensionFlow)
     return function(_,character)
             if self.easterEggOpen then return false,'easter_egg_open' end
             if self.disabled or self.starting then return false,"ui_disabled" end
             if self.motion.deathReveal then return false,"result_revealing" end
             if startBlocked(self) then return false end
-            if self.mode~='menu' and self.mode~='defeat' and self.mode~='victory' then return false end
+            if not startMode(self.mode) then return false end
             if self.characterOpen then return false,'character_choice_open' end
             if require('abyss_game_ui_navigation').hasRun(self) then return self:requestNavigation('new') end
+            if ascensionFlow then ascensionFlow.retryPending() end
             self.characterOpen=true;self.characterSelection:clear();self.characterSelection.deckOpen=false
             selectionChanged()
             if character then
@@ -191,13 +218,13 @@ local function confirmationBlocked(self)
     return not self.characterOpen or self.starting or self.disabled or self.exitOpen or self.characterSelection.deckOpen
         or openingBlocked(self) or self.settlementRequested or self.settlementBusy
 end
-function M.confirmCharacter(self,beginRun)
+function M.confirmCharacter(self,beginRun,getHighestUnlocked)
     return function(_,request)
             if confirmationBlocked(self)then return false,'character_choice_unavailable'end
             local info=self.characterSelection.info
             if not info then return false,'character_required' end
             if not self.characterSelection:canConfirm()then return false,'competition_character_unavailable'end
-            local ascension,playerSeed,configReason=configuredStart(self,request)
+            local ascension,playerSeed,configReason=configuredStart(self,request,info.id,getHighestUnlocked)
             if configReason then return false,configReason end
             self.starting=true
             -- Latch before the fade and seed generation; one confirmation creates one Run.
@@ -255,7 +282,7 @@ function M.settle(self,owner)
         end
 end
 
-function M.requestSettlement(self,platform,neowHistory,owner)
+function M.requestSettlement(self,platform,neowHistory,owner,ascensionFlow)
     return function(victory)
             if self.disabled then return false,"ui_disabled" end
             if self.motion.deathReveal or self.run and self.run.phase == "defeat" and self.battleUI.busy then return false,"result_revealing" end
@@ -266,6 +293,7 @@ function M.requestSettlement(self,platform,neowHistory,owner)
                 return false, "settlement_unavailable"
             end
             self.settlementBusy = true
+            if ascensionFlow then ascensionFlow.retryPending() end
             local called, accepted = pcall(platform.settle, victory)
             self.settlementBusy = false
             if not called or accepted == false then

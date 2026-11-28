@@ -5,7 +5,7 @@ local Queue = require('abyss_encounter_queue')
 local Data = require('abyss_data')
 local finishRewards = dofile('tests/lua/support/finish_combat_rewards.lua')
 
-return function(level, source)
+local function newRun(level, source)
     -- Reach the real terminal owner through the public Boss combat, rewards, and chest APIs.
     -- Map traversal and the enemy deaths are controlled here, not a playthrough.
     local defaultFlag = Data.rules.ascensionEnabled
@@ -13,7 +13,12 @@ return function(level, source)
     local run = Run.new(Data, '3', {experimental=true, campaign=true, campaignProfile='competition-two-act'},
         {ascension=level, seedSource=source})
     Data.rules.ascensionEnabled = defaultFlag
-    run.act = 2
+    return run
+end
+
+return function(level, source, existingRun)
+    local run = existingRun or newRun(level, source)
+    run.act, run.floor, run.phase, run.nodeFlow = 2, 17, 'map', nil
     run.bossInitialization, run.encounters = Queue.initializeBoss(Queue.new(run.runSeed, 2))
     local map = Map.generate(run.data, run.runSeed, 2, assert(Run.freezeMapContext(run)))
     while Map.available(map)[1].floor < 33 do

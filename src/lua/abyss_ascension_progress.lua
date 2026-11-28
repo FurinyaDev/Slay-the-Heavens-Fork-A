@@ -69,13 +69,9 @@ function M.characterId(run)
     return run.character
 end
 
-function M.recordVictory(section, run, map)
-    local qualified, rejected = M.qualifies(run, map)
-    if not qualified then return nil,rejected end
-    local characterId = M.characterId(run)
+function M.recordVictory(section, characterId, level)
     local current, reason = M.read(section, characterId)
     if not current then return nil,reason end
-    local level = run.ascension
     if level~=current.highestUnlocked or level==current.highestCleared then return nil,'not_advancing_ascension' end
     if level==Rules.maximum then
         return {highestUnlocked=level, highestCleared=level},'max_cleared'

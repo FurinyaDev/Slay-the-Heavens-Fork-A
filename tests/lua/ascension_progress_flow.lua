@@ -56,11 +56,11 @@ accepted, reason = flow.complete(run, map)
 assert(not accepted and reason=='ascension_save_write_failed' and writes==1)
 assert(flow.getHighestUnlocked('ironclad')==0)
 assert(not flow.complete(run, map) and writes==1, 'repeated finish cannot create another intent')
-assert(not flow.retry(run) and writes==2)
+assert(not flow.retryPending() and writes==2)
 assert(flow.getHighestUnlocked('ironclad')==1, 'read after durable owner accepted the intent')
-accepted, reason = flow.retry(run)
+accepted, reason = flow.retryPending()
 assert(accepted and reason=='unchanged' and writes==3, 'lost acknowledgement replays the same absolute goal')
-assert(not flow.retry(run) and writes==3)
+assert(not flow.retryPending() and writes==3)
 assert(not flow.complete(run, map) and writes==3)
 
 local seeded, seededMap = finish(1, 'player')
@@ -80,12 +80,12 @@ readFailure = true
 accepted, reason = flow.complete(third, thirdMap)
 assert(not accepted and reason=='ascension_save_read_failed' and writes==4)
 readFailure = false
-assert(flow.retry(third) and writes==5, 'restored reader completes the pending intent')
+assert(flow.retryPending() and writes==5, 'restored reader completes the pending intent')
 assert(flow.getHighestUnlocked('ironclad')==3)
 
 section.ironclad.highestUnlocked = 10
 local beforeWrites = writes
 locked, reason = flow.getHighestUnlocked('ironclad')
 assert(locked==0 and reason=='invalid_ascension_save')
-assert(not flow.retry(another) and writes==beforeWrites)
+assert(not flow.retryPending() and writes==beforeWrites)
 print('PASS ascension progress flow: safe reads, failed and lost writes, seeded eligibility, and distinct runs')
