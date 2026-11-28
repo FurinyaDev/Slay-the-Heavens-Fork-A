@@ -75,7 +75,50 @@ e0f761fb6d492ed64cc1c026f61cbc6de16eb695
 | 基线 | 386 | 5,511,922 | 4,105,138 | 181,816 | 26,714 |
 | T01 关闭 | 387 | 5,515,356 | 4,105,138 | 181,816 | 26,714 |
 
-阶段组合的相同离线检查报 `Unreferenced production modules: abyss_ascension_progress`，当时尚无 T05 应用入口引用该独立模块。实际 GIL 和官方存档面板须在同一正式候选上测量。
+阶段组合的相同离线检查报 `Unreferenced production modules: abyss_ascension_progress`，当时尚无 T05 应用入口引用该独立模块。补齐 T05 应用调用后，第二组合的两态离线检查均通过。实际 GIL 和官方存档面板须在同一正式候选上测量。
+
+| 样本 | 映射 Lua 模块 | Lua 字节 | 布局 JSON 字节 | 模板 JSON 字节 | 控件 |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| 第二组合关闭 | 392 | 5,546,430 | 4,105,138 | 181,816 | 26,714 |
+| 第二组合启用 | 392 | 5,546,429 | 4,116,122 | 181,816 | 26,809 |
+
+第二组合关闭的 Lua 比基线多 34,508 字节。启用布局增加 10,984 字节和 95 个控件，模板 JSON 大小相同。
+
+## 补齐种子交互和进度应用后的第二组合
+
+临时提交 `8562dca31f2757c2bb395be73a8b36d99099e44f`，树 `899a8aeecb37bf4495979e0caff893289f396a56`。在上表临时组合后依序 cherry-pick 以下源码。T05 领域前驱已在前一组合，仅加其服务和 Host 两个提交。
+
+```text
+51fcf1120efcf418480ce499ba613996cad153b3
+82b0893036eb4f5dc65e4e0525ae4eeb47f38778
+e41a860b02fc319aa493789a1fc7522e6144d15b
+2e8083881c6772acb89d5316c21e42736f52390c
+20ca447ab4d36a8465ced57b4629513893ea25f5
+```
+
+进度领域、服务与真实 Host 三组 Lua 夹具通过。保存替身覆盖按角色权限、信任正式胜利命令、写入失败及重试和指定种子保留正常结算。正确使用默认非原生夹具生成方式后，旧 `game_ui_seed.lua` 7/7 通过。T01 独立架构和 RunFlow 固定源码样本的两个来源测试通过。
+
+组合执行 `node --test --test-concurrency=1 tests/ascension-foundation-source.test.mjs tests/ascension-map-density.test.mjs tests/ascension-selection.test.mjs`，9/10 通过。失败为 `tests/lua/support/ascension_selection.lua:24`，旧夹具仅注入 `platform.getHighestUnlocked`。T05 应用接入改为从 `playerSave` 提供权威查询，旧夹具凭空显示已解锁值的断言因此失败。保留失败，待夹具改用组合入口再复验。两幕 A1 地图、A0 默认隐藏、四种视口、签名 64 位输入和种子展示均通过。
+
+### 组合回归跟进
+
+在第二组合仅追加 T05 测试夹具 `e0ab4aeba1ee5304f89faec63dbb21a60ea8f54b`，形成临时 `ac2ae160f1514545d35a8628c246104388dd9a15`，树 `841930705338f1eb066d5a44b6eb5e2bee50f870`。测试改用真实 `playerSave` 读取契约。生成三项前置 Lua 产物后，同一组定向 JS 10/10 通过。
+
+再追加 T04 候选 `c64612a0539227804e0ce043181c50afeccfec22`，形成临时 `9d8790bc8ff94df6b886660d88b1e2c7bddf0cac`，树 `52f583d6576f55573370d6db5b2e52692b44dceb`。同一组定向 JS 为 11/11，新增用例覆盖确认时进度读取短暂失败下拒绝当前难度，保留显示的难度并且不消耗新开局随机数。 下列 A0、A14 自然诊断及离线容量使用较早的 `8562dca3` 组合。
+
+### A14 seed 2
+
+复制隔离诊断驱动，为真实 Host 注入试验用 `platform.newSeed` 与 `platform.playerSave`。读端返回初始 `ironclad={highestUnlocked=14,highestCleared=13}`，写端调用进阶领域原有的单调合并入口。正常选角色后调用 `confirmCharacter({ascension=14})`，让 Host 自己执行难度准入。用 `Run.potionCapacity(run)` 检查可用药水，战斗和地图继续使用既有策略与 UI 命令。临时 Lua SHA-256 为 `dbc083a001c29d772ca99291f7a7d82fcd0705099b31b86b623fca992feae1ac`。
+
+启用素材生成及 Fengari 入口沿用上述方案，种子为 `2`。Host 记录 `source=random`、`ascension=14`，开局 68/75 生命和药水槽 2 的断言通过。自动策略于第一幕第 11 层自然战败，341 个动作，胜利断言失败。stdout SHA-256 为 `89a9a30711178f54016c83a50bec3c84bfecf62a70a3691d044c1a5e5c6e8bfb`。此回放保留为开局与失败路径证据，A14 自然通关仍待验收。
+
+### A0 基线与第二组合的第二幕 Boss 对照
+
+在第 28 层旧驱动遇到可选商店动作拒绝后，追加一条诊断策略。仅当真实 `NodeUI:press` 对移除、购药或购卡返回 `unavailable_action` 时记录拒绝，再使用真实的 Back 关闭商店、等待 Back 可用并离店。继续拒绝其他错误，楼层、两幕自然胜利和重开断言保留。诊断 Lua SHA-256 为 `c04177760e8c2b45d52ee26758c440185c3ff5cdf19558662d2fbff4bc912efe`。
+
+基线关闭与第二组合启用均使用 seed 2 和现有内部固定种子开局入口。两者均在第 28 层记录同一可选商店动作拒绝，随后继续自然进入第 33 层的第二幕 Boss。第 962 个动作打出 True Grit 后出现 `hand_choice`，随后旧驱动直接尝试结束回合，两者均停在第 963 个动作的 `assert(h.battleUI.busy)`。驱动当前只检查 `pendingChoice`，而 True Grit 的选择在 `pendingHandChoice`。续验应通过现有手牌选择面板按该选择的约束确认目标，再接续动作和战后结算。
+
+过滤 `CAMPAIGN_`、`ABYSS_FEEDBACK` 与 `T06_DIAGNOSTIC_` 共 2,920 行，逐字相同。按前述方式拼接后的 SHA-256 为 `5bf6c19559059f84292674f6459a8b387b3c0e3ac4a6a588c950f4c14cacc4fb`。原始 stdout 的哈希分别为 `2c6500b5af8121399e3da035109c13b7cbbb1e4a23adbe8ffe30148c6bdd5885` 和 `b77a3d60010eebc5faf4959e3c120f913f5122aabe7aaefa54b6711114718a0a`。
 
 ## 待正式候选验收
 
