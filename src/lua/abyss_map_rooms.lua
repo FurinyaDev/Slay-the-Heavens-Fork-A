@@ -1,4 +1,4 @@
--- Production A0 Act1 room assignment, promoted from the verified candidate.
+-- Production room assignment, promoted from the verified A0 candidate.
 -- Independently authored from the behavior ledger, not upstream implementation.
 -- Scope and source limits: docs/reviews/TASK-12.4-map-room-candidate.md.
 local Topology = require('abyss_map_topology')
@@ -8,8 +8,7 @@ local C = {}
 
 -- Positive binary64 -> binary32 nearest/even, limited to the small finite
 -- products used by room quotas. Binary32 operands multiply exactly in binary64.
-local function roundedProduct(count, chance)
-    local value = count * chance
+local function binary32(value)
     if value == 0 then return 0 end
     local scaled, unit = value, 1.0
     while scaled >= 2 do scaled, unit = scaled / 2, unit * 2 end
@@ -18,16 +17,24 @@ local function roundedProduct(count, chance)
     local base = math.floor(significand)
     local remainder = significand - base
     if remainder > 0.5 or (remainder == 0.5 and base % 2 == 1) then base = base + 1 end
-    return math.floor(base * (unit / 8388608.0) + 0.5)
+    return base * (unit / 8388608.0)
 end
 
-function C.quotas(count)
+local function roundedProduct(count, chance)
+    return math.floor(binary32(count * chance) + 0.5)
+end
+
+function C.quotas(count, eliteDensity)
     assert(type(count) == 'number' and count >= 0 and count <= 105 and count % 1 == 0, 'Expected grid room count')
+    assert(eliteDensity == nil or type(eliteDensity) == 'boolean', 'Invalid elite density')
+    local elite = binary32(count * 0.07999999821186066)
+    -- The source rounds each float multiplication before rounding the quota.
+    if eliteDensity then elite = binary32(elite * 1.600000023841858) end
     -- Exact binary32 representations of Exordium's A0 literals.
     return {
         shop = roundedProduct(count, 0.05000000074505806),
         camp = roundedProduct(count, 0.11999999731779099),
-        elite = roundedProduct(count, 0.07999999821186066),
+        elite = math.floor(elite + 0.5),
         event = roundedProduct(count, 0.2199999988079071),
     }
 end
@@ -87,12 +94,12 @@ function C.assign(grid, pool)
     return fallback
 end
 
-function C.generate(runSeed, act, ...)
+function C.generate(runSeed, act, eliteDensity, ...)
     assert(select('#', ...) == 0, 'Unsupported extra arguments')
     local map = Topology.generate(runSeed,act)
     local quotaCount = 0
     for _, node in ipairs(map.nodes) do if node.y ~= 13 then quotaCount = quotaCount + 1 end end
-    local quotas, pool = C.quotas(quotaCount), {}
+    local quotas, pool = C.quotas(quotaCount, eliteDensity), {}
     for _, kind in ipairs({'shop', 'camp', 'elite', 'event'}) do
         for _ = 1, quotas[kind] do pool[#pool + 1] = kind end
     end

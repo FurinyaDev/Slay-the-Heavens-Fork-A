@@ -21,9 +21,16 @@ local function birth(context)
  for key in pairs(context)do if key~='endingUnlocked'and key~='emeraldOwned'then return false end end
  return true
 end
+local function copyMapContext(run)
+ local context=Copy(run.mapBirthContext)
+ if run.ascension and run.ascension>0 and require('abyss_ascension_rules').active(run.ascension,'eliteDensity')then
+  context.eliteDensity=true
+ end
+ return context
+end
 function M.mapContext(run)
  if run.mapBirthAct~=(run.act or 1)or not birth(run.mapBirthContext)then return nil,'map_birth_context_unavailable'end
- return Copy(run.mapBirthContext)
+ return copyMapContext(run)
 end
 function M.freezeMapContext(run)
  if run.mapBirthAct==(run.act or 1)then return M.mapContext(run)end
@@ -33,7 +40,7 @@ function M.freezeMapContext(run)
  run.mapBirthContext={endingUnlocked=run.campaignProfile~='competition-two-act' and run.campaign==true and run.endingUnlocked==true,
   emeraldOwned=run.campaign==true and run.keys.emerald==true or false}
  run.mapBirthAct=act
- return Copy(run.mapBirthContext)
+ return copyMapContext(run)
 end
 function M.bind(run,boost)
  if not plain(boost)or not plain(boost.effect)or not run.combat or not run.combat.roomSeed

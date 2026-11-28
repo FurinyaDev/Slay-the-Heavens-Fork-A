@@ -67,14 +67,16 @@ local function configuration(data)
     return encounters, table.concat(signature, "|")
 end
 
-local function emeraldContext(context)
-    if context==nil then return end
+local function validateContext(context)
+    if context==nil then return false end
     assert(type(context)=='table' and getmetatable(context)==nil
         and type(context.endingUnlocked)=='boolean' and type(context.emeraldOwned)=='boolean',
-        'invalid trusted emerald context')
+        'invalid trusted map context')
     for key in pairs(context)do
-        assert(key=='endingUnlocked' or key=='emeraldOwned','unexpected trusted emerald context field')
+        assert(key=='endingUnlocked' or key=='emeraldOwned' or key=='eliteDensity','unexpected trusted map context field')
     end
+    assert(context.eliteDensity==nil or type(context.eliteDensity)=='boolean','invalid elite density')
+    return context.eliteDensity==true
 end
 
 local function markEmerald(map,context)
@@ -86,21 +88,26 @@ local function markEmerald(map,context)
 end
 
 local lastRoomSource
-local function roomSource(runSeed,act)
+local function roomSource(runSeed,act,eliteDensity)
     local source=lastRoomSource
-    if source and source.runSeed==runSeed and source.act==act then return source end
-    -- The source topology and room assignment depend only on the seed and act.
+    if source and source.runSeed==runSeed and source.act==act and source.eliteDensity==eliteDensity then return source end
     -- Retain one private source, without its working grid, and build fresh map
     -- nodes and RNG state from it. Restore still replays and compares every path.
-    local generated=Rooms.generate(runSeed,act)
-    source={runSeed=runSeed,act=act,mapSeed=generated.mapSeed,nodes=generated.nodes,edges=generated.edges,
+    local generated=Rooms.generate(runSeed,act,eliteDensity)
+    source={runSeed=runSeed,act=act,eliteDensity=eliteDensity,mapSeed=generated.mapSeed,nodes=generated.nodes,edges=generated.edges,
         topologyState=generated.topologyState,randomState=generated.randomState}
     lastRoomSource=source
     return source
 end
 
+local function roomSignature(signature, act, chapter, eliteDensity)
+    if act~=1 then signature='map-v4:sts-a0-319009d5:'..chapter.id..':'..signature end
+    if eliteDensity then signature='elite-density-a1:'..signature end
+    return signature
+end
+
 function M.generate(data, seed, act, trustedContext)
-    emeraldContext(trustedContext)
+    local eliteDensity=validateContext(trustedContext)
     if act==nil then act=1 end
     local chapter=Acts.get(act)
     local _, signature = configuration(data)
@@ -116,14 +123,13 @@ function M.generate(data, seed, act, trustedContext)
         end
         return map
     end
-    local generated=roomSource(runSeed,act)
+    local generated=roomSource(runSeed,act,eliteDensity)
     local offset=chapter.first-1
-    if act~=1 then signature='map-v4:sts-a0-319009d5:'..chapter.id..':'..signature end
     -- seed preserves the Nodes map-identity ABI; both identities are immutable
     -- raw run strings. mapSeed is the distinct raw+actNum source RNG seed.
     local map = { version = 3, seed = runSeed, runSeed=runSeed, mapSeed=generated.mapSeed,
         topologyState=copy(generated.topologyState),randomState=copy(generated.randomState),
-        sourceSignature = signature,
+        sourceSignature = roomSignature(signature,act,chapter,eliteDensity),
         floor = 0, path = {}, nodes = {} }
     if act~=1 then
         map.version,map.act,map.firstFloor,map.terminalFloor=4,act,chapter.first,chapter.last
