@@ -5,11 +5,13 @@ status: In Progress
 assignee:
   - Furinya
 created_date: '2026-11-28 02:36'
-updated_date: '2026-11-28 02:50'
+updated_date: '2026-11-28 02:53'
 labels:
   - v2.3.0
 milestone: m-8
 dependencies: []
+references:
+  - 'https://github.com/FurinyaDev/Slay-the-Heavens-Fork-A/pull/5'
 documentation:
   - docs/evidence/v2.3.0-map-layout/README.md
 priority: medium
@@ -52,4 +54,6 @@ ordinal: 226000
 
 <!-- SECTION:NOTES:BEGIN -->
 Fork A 分支 feat/v230-map-visual-layout。以 develop 32a15219aecd145c59cb1b2fcf477e5556766e5d 为固定评审基线。128 种子、384 张地图离线通过，地图快照一致，控件树和模板一致。待 Owner 评审及实体设备验收。
+
+Fork A Draft #5 已建，固定评审基线 review/v2.3.0-map-base，已验证代码提交 bf0d37becc057368a8dcb9321d0b7bcb4c451deb。Owner 评审后再安排同候选设备与官方编辑器容量验收。
 <!-- SECTION:NOTES:END -->
