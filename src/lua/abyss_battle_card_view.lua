@@ -210,7 +210,7 @@ end
 local function currentAim(view,dragTarget)
     local explicit=view.cardAim
     if explicit then
-        if explicit.previewReady() then return explicit.uid,explicit.slot end
+        if explicit.previewReady() then return explicit.uid,explicit.aimSlot end
         view.cardAim=nil
     end
     local held = view.gesture or view.carry

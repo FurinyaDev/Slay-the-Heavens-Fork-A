@@ -62,12 +62,14 @@ function M.install(owner, ownership, host, dependencies)
             -- Reuse the same selection/turn/actor checks as the eventual command.
             local function previewEnemy(token)
                 local entry=entryAt()
-                if not entry or not Actors.isActive(entry.actor) or not token.uid or token.aim or not dependencies.enemyReady(token) then return end
+                if not entry or not Actors.isActive(token.aimActor) or not token.uid or token.aim or not dependencies.enemyReady(token) then return end
                 local selected
                 for _,card in ipairs(token.battle.hand)do if card.uid==token.uid then selected=card end end
                 if not selected or not needsTarget(token.battle,selected) then return end
                 token.previewReady=function()
-                    if owner.gesture or not entryAt() or not dependencies.enemyReady(token) then return false end
+                    if owner.gesture or not entryAt() or not dependencies.enemyReady(token)
+                        or token.battle.enemies[token.aimSlot]~=token.aimActor
+                        or not Actors.isActive(token.aimActor) then return false end
                     return input.held==token or input.released==token
                 end
                 owner.cardAim=token
@@ -85,27 +87,36 @@ function M.install(owner, ownership, host, dependencies)
                 if Actors.isActive(current) then owner.target = target end
                 return owner:openHelp({index=target,powerTips=true},control,false)
             end
-            local function chooseEnemy()
-            local entry=entryAt()
-            if not entry then return false end
-            local target=entry.index
-            local current=owner.run and owner.run.combat and owner.run.combat.enemies[target]
-            if not Actors.isPresent(current) or current.id~=entry.id then return false end
-            if owner.potionAim then
-                if not Actors.isActive(current) then return false end
-                local slot = owner.potionAim.slot
-                owner.target = target
-                return owner:commitPotion(slot, target)
+            local function targetAt(event,battle,fallback)
+                if not dependencies.point then return fallback end
+                local x,y,outside=dependencies.point(event)
+                if outside then return end
+                if not x then return fallback end
+                return dependencies.enemyTargetAt(battle,x,y)
             end
-            if owner.active and not owner.busy and owner.run.phase == "combat" then
-                local selected = selectedCard()
-                if selected and needsTarget(owner.run.combat, selected) then
-                    if not Actors.isActive(current) then return false end
-                    owner.target = target
-                    return owner:playSelected(target)
+            local function commitEnemy(event,battle,entry,released,potion)
+                local fallback=entry.index
+                if released then fallback=released.aimSlot end
+                local target=targetAt(event,battle,fallback)
+                local current=target and battle.enemies[target]
+                if not Actors.isActive(current) or released and released.aimActor~=current then return false end
+                owner.target=target
+                if potion then return owner:commitPotion(potion.slot,target) end
+                return owner:playSelected(target)
+            end
+            local function chooseEnemy(event,released)
+                local entry=entryAt()
+                if not entry then return false end
+                local battle=owner.run and owner.run.combat
+                if not battle or battle.enemies[entry.index]~=entry.actor or not Actors.isPresent(entry.actor) then return false end
+                if owner.potionAim or owner.active and not owner.busy and owner.run.phase=="combat" then
+                    local selected=selectedCard()
+                    local potion=owner.potionAim
+                    if not potion and not (selected and needsTarget(battle,selected)) then
+                        return inspectEnemy(entry.index,entry.actor)
+                    end
+                    return commitEnemy(event,battle,entry,released,potion)
                 end
-                return inspectEnemy(target, current)
-            end
             end
             if not entryAt() then return end
             control:AddCursorEventListener(host.clickEvent, function(event)
@@ -116,15 +127,16 @@ function M.install(owner, ownership, host, dependencies)
                     dependencies.discardEnemyPointer(input,event)
                     return
                 end
+                local released
                 if ownership.enemyPointerObserved then
                     -- Existing enemy hosts may send Down/Click without Up. Both
                     -- forms consume the same actor-bound, one-shot ownership.
-                    local released = input.released or input.held
+                    released = input.released or input.held
                     if not released or released.touch ~= (event and event.touchId) then return end
                     input.held, input.released = nil, nil
                     if not dependencies.enemyReady(released) then return end
                 end
-                if not dependencies.consumeReleasedDragClick(event) and not owner.suppressClick and not owner.gesture then return chooseEnemy() end
+                if not dependencies.consumeReleasedDragClick(event) and not owner.suppressClick and not owner.gesture then return chooseEnemy(event,released) end
             end)
             if not entryAt() then return end
             local function bindPointer()
@@ -144,6 +156,8 @@ function M.install(owner, ownership, host, dependencies)
                         uid=owner.selected, selectionEpoch=owner.selectionEpoch,aim=owner.potionAim,
                         turn=battle.turn, touch=event and event.touchId}
                     if dependencies.enemyReady(g) then
+                        g.aimSlot=targetAt(event,battle,entry.index)
+                        g.aimActor=g.aimSlot and battle.enemies[g.aimSlot]
                         input.held = g
                         previewEnemy(g,false)
                     end
@@ -160,7 +174,10 @@ function M.install(owner, ownership, host, dependencies)
                     if held and held.touch == touch then
                         input.held = nil
                         if ended then retireAim(held)
-                        elseif not (event and event.dragging) and dependencies.enemyReady(held) then input.released = held end
+                        elseif not (event and event.dragging) and dependencies.enemyReady(held) then
+                            if targetAt(event,held.battle,held.aimSlot)~=held.aimSlot then held.aimActor=nil end
+                            input.released = held
+                        end
                     elseif ended and input.released and input.released.touch == touch then
                         local released = input.released
                         input.released = nil

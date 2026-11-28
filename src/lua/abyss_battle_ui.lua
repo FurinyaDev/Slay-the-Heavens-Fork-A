@@ -86,7 +86,7 @@ function M.new(root, data, presentation, clickEvent, platform, options)
         "ink"
     })))
     install(services, require("abyss_battle_render_actors").install(self, ownership, host, ports(links, {
-        "dragTarget", "picture", "tint", "ink", "enemySlot",
+        "dragTarget", "picture", "tint", "ink",
         "child", "button", "show", "potionDragTarget", "point"
     })))
     install(services, require("abyss_battle_render").install(self, ownership, host, ports(links, {
@@ -121,7 +121,8 @@ function M.new(root, data, presentation, clickEvent, platform, options)
     })))
     install(services, require("abyss_battle_target_bindings").install(self, ownership, host, ports(links, {
         "child", "enemyAt", "swallowed", "discardEnemyPointer",
-        "enemyReady", "down", "closeInfo", "cancelPotionAim", "sameEnemySlot", "consumeReleasedDragClick"
+        "enemyReady", "down", "closeInfo", "cancelPotionAim", "sameEnemySlot", "consumeReleasedDragClick",
+        "point", "enemyTargetAt"
     })))
     install(services, require("abyss_battle_detail_bindings").install(self, ownership, host, ports(links, {
         "enemyAt", "listen", "child", "closeInfo",

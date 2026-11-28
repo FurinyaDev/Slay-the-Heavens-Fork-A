@@ -150,24 +150,22 @@ function M.install(owner, ownership, host, dependencies)
         end
         return false
     end
-    local function potionHighlighted(enemy, index, pendingTarget)
+    local function potionHighlighted(enemy, index, projection)
         local aim = owner.potionAim
-        if not aim or pendingTarget or not Actors.isActive(enemy) then return false end
+        if not aim or projection.pendingTarget or not Actors.isActive(enemy) then return false end
         if aim.moving then
-            local valid, hovered = dependencies.potionDragTarget(aim)
-            return valid and hovered == index
+            return projection.valid and projection.target == index
         end
         -- Point selection advertises every legal enemy; a moving bottle locks
         -- only the hovered target through potionDragTarget above.
         return true
     end
-    local function enemyHighlighted(frame, enemy, index, pendingTarget)
-        local targetable = frame.active and pendingTarget and Combat.canPlay(frame.battle, owner.selected, index)
-        if owner.gesture and owner.gesture.moving then
-            local valid, hovered = dependencies.dragTarget(owner.gesture)
-            targetable = valid and hovered == index
+    local function enemyHighlighted(frame, enemy, index, projection)
+        local targetable = frame.active and projection.pendingTarget and Combat.canPlay(frame.battle, owner.selected, index)
+        if projection.cardMoving then
+            targetable = projection.valid and projection.target == index
         end
-        return targetable == true or potionHighlighted(enemy,index,pendingTarget) or owner.acting == enemy.id
+        return targetable == true or potionHighlighted(enemy,index,projection) or owner.acting == enemy.id
     end
     local function enemyIntentFace(frame,enemy,index)
         local view, face = host.monsterIntentParticles
@@ -233,8 +231,8 @@ function M.install(owner, ownership, host, dependencies)
     end
     local function enemyAimProjection(frame)
         local aimed = owner.gesture or owner.carry
-        local projection = { pendingTarget = pendingCardTarget(frame) }
-        if aimed and aimed.moving then projection.valid, projection.target = dependencies.dragTarget(aimed) end
+        local projection = { pendingTarget = pendingCardTarget(frame), cardMoving = aimed and aimed.moving }
+        if projection.cardMoving then projection.valid, projection.target = dependencies.dragTarget(aimed) end
         -- Original targeting updates card damage, not future enemy HP. Keep the
         -- legacy preview outside this profile; cloning and playing a detached
         -- battle on pointer input is both unnecessary and expensive here.
@@ -256,20 +254,19 @@ function M.install(owner, ownership, host, dependencies)
         preview.text = loss and loss.loss > 0 and (loss.hp <= 0 and '击杀' or '−' .. number(loss.loss)) or ''
         if loss and loss.loss > 0 then box:GetChild('hpFill').fillAmount = math.max(0, loss.hp / enemy.maxHp) end
     end
-    local function renderEnemySlot(frame, box, entry, slot, count, aim)
+    local function renderEnemySlot(frame, box, entry, aim)
         local enemy = entry.actor
-        local x, width, portrait, step, y = dependencies.enemySlot(count, slot, enemy)
+        local geometry=enemyGeometry(enemy)
+        local x,y,portrait=geometry.x,geometry.y,geometry.portrait
+        local width=L.battleUnit.nameWidth
         box:SetAnchoredPosition(x, y)
-        local selected = enemyHighlighted(frame, enemy, entry.index, aim.pendingTarget)
+        local selected = enemyHighlighted(frame, enemy, entry.index, aim)
             or aim.allEnemies==true and Actors.isActive(enemy)
         local loss = aim.losses and aim.losses[entry.index]
         if aim.valid and not aim.target and loss and loss.loss > 0 then selected = true end
-        local geometry=enemyGeometry(enemy)
-        host.unit(box, enemy, portrait, enemyPortraitIcon(enemy), width, selected,step,geometry)
+        host.unit(box, enemy, portrait, enemyPortraitIcon(enemy), width, selected,nil,geometry)
         host.monsterPowers:render(box,entry.controlSlot,enemy,geometry)
         paintEnemyHealthTarget(box,enemy,geometry)
-        box:GetChild('hit'):SetSizeDelta(geometry.hitWidth,geometry.hitHeight)
-        box:GetChild('hit'):SetAnchoredPosition(geometry.hitX-x,geometry.hitY-y)
         local dim = (aim.pendingTarget or owner.potionAim ~= nil) and not selected
         local portraitTone = C.text
         local tone={r=portraitTone.r,g=portraitTone.g,b=portraitTone.b,a=dim and 102 or 255}
@@ -321,7 +318,7 @@ function M.install(owner, ownership, host, dependencies)
             local state=ownership.nameStates[id] or {timer=0,alpha=0}
             ownership.nameStates[id]=state
             local g=enemyGeometry(actor)
-            local hovered=x and y and math.abs(x-g.hitX)<g.hitWidth/2 and math.abs(y-g.hitY)<g.hitHeight/2
+            local hovered=x and y and EnemyView.contains(g,x,y)
             local offset
             state.timer,state.alpha,offset=EnemyView.nameStep(state.timer,state.alpha,dt,hovered,nameBlocked(actor),1)
             local name=box:GetChild('name');showEnemyName(name,owner.active and offset~=nil and state.alpha>0)
@@ -362,9 +359,9 @@ function M.install(owner, ownership, host, dependencies)
         local aim = enemyAimProjection(frame)
         for _,entry in ipairs(rows)do owner.feedback.bindEnemySlot(entry.controlSlot,entry.id)end
         host.monsterArt:select(rows)
-        for index,entry in ipairs(rows)do
+        for _,entry in ipairs(rows)do
             local box=assert(host.monsterSurfaces:find(entry.id))
-            renderEnemySlot(frame,box,entry,index,#rows,aim)
+            renderEnemySlot(frame,box,entry,aim)
             hideEscapingHud(owner,box,entry.id)
             box:SetVisible(true)
         end

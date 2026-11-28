@@ -1,6 +1,5 @@
 -- Read state, issue Run commands. No damage/energy/outcome rules live in this view.
 local Combat = require("abyss_combat")
-local Actors = require("abyss_actor")
 local Theme = require("abyss_theme")
 local CardInput = require("abyss_card_input")
 local EnemyView = require('abyss_battle_enemy_view')
@@ -34,22 +33,16 @@ function M.install(owner, _ownership, host, dependencies)
         local area = D.playArea
         return math.abs(x-area[1]) <= area[3]/2 and math.abs(y-area[2]) <= area[4]/2
     end
+    local function enemyTargetAt(battle,x,y)
+        if math.abs(x)>Theme.canvas.base[1]/2 or math.abs(y)>Theme.canvas.base[2]/2 then return end
+        return EnemyView.targetAt(battle,x,y,nativeMonsterArtEnabled())
+    end
     local function dragTarget(g)
         if not dependencies.dragReady(g) then return false end
         local battle = g.battle
         local ok, reason = Combat.canPlay(battle,g.uid,nil)
         if not ok and reason ~= "invalid_target" then return false end
-        local hovered
-        local rows = EnemyView.slots(battle,owner.feedback)
-        for _, entry in ipairs(rows) do
-            local enemy = entry.actor
-            local geometry=EnemyView.geometry(enemy,nativeMonsterArtEnabled())
-            if math.abs(g.x-geometry.hitX)<=geometry.hitWidth/2
-                and math.abs(g.y-geometry.hitY)<=geometry.hitHeight/2
-                and Actors.isActive(enemy) then
-                hovered = entry.index; break
-            end
-        end
+        local hovered=enemyTargetAt(battle,g.x,g.y)
         CardInput.sample(g, g.x, g.y, hovered, not ok)
         if g.cancelled then return false, nil, g.aiming end
         if ok then return g.dropZone, nil end
@@ -57,20 +50,12 @@ function M.install(owner, _ownership, host, dependencies)
     end
     local function potionDragTarget(aim)
         if not dependencies.aimReady(aim) or not aim.x or not aim.y then return false,nil,true end
-        if math.abs(aim.x)>Theme.canvas.base[1]/2 or math.abs(aim.y)>Theme.canvas.base[2]/2 then return false,nil,true end
-        local rows=EnemyView.slots(aim.battle,owner.feedback)
-        for _,entry in ipairs(rows)do
-            local geometry=EnemyView.geometry(entry.actor,nativeMonsterArtEnabled())
-            if Actors.isActive(entry.actor) and math.abs(aim.x-geometry.hitX)<=geometry.hitWidth/2
-                and math.abs(aim.y-geometry.hitY)<=geometry.hitHeight/2 then
-                return true,entry.index,true
-            end
-        end
-        return false,nil,true
+        local target=enemyTargetAt(aim.battle,aim.x,aim.y)
+        return target~=nil,target,true
     end
     return {
         enemySlot=enemySlot, enemyPosition=enemyPosition, dragPose=dragPose, inPlayArea=inPlayArea, dragTarget=dragTarget,
-        potionDragTarget=potionDragTarget
+        potionDragTarget=potionDragTarget, enemyTargetAt=enemyTargetAt
     }
 end
 return M

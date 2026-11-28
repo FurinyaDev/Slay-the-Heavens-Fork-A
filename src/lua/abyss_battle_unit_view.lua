@@ -131,7 +131,7 @@ local function targetCornerPosition(corner,axis,x,y,portrait,source)
     -- Each bar extends inward from the portrait corner to form an L.
     local insetX=axis=='H' and corner.sizeDeltaX/2 or 0
     local insetY=axis=='V' and corner.sizeDeltaY/2 or 0
-    if source and source.compactTarget then
+    if source then
         return source.hitX-source.x+x*(source.hitWidth/2-insetX),source.hitY-source.y+y*(source.hitHeight/2-insetY)
     end
     return x*(portrait/2-insetX),y*(portrait/2-insetY)
@@ -141,7 +141,13 @@ function M.new(picture, tint, ink, statusKind)
     local owners={enemies=setmetatable({}, {__mode='k'})}
     local function portraitParts(box, actor, portrait, icon, width, selected, targetWidth, source)
         box:GetChild('portrait'):SetSizeDelta(portrait,portrait)
-        box:GetChild("hit"):SetSizeDelta(math.min(portrait,targetWidth or portrait),portrait)
+        local hit=box:GetChild("hit")
+        if source then
+            hit:SetSizeDelta(source.hitWidth,source.hitHeight)
+            hit:SetAnchoredPosition(source.hitX-source.x,source.hitY-source.y)
+        else
+            hit:SetSizeDelta(math.min(portrait,targetWidth or portrait),portrait)
+        end
         box:GetChild("impact"):SetSizeDelta(portrait, portrait)
         box:GetChild("shield"):SetSizeDelta(portrait, portrait)
         box:GetChild("floating"):SetSizeDelta(width + S.xl, L.nativeText.lineHeight * 2)

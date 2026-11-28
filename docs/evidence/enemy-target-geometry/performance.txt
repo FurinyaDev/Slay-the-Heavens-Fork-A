@@ -1,0 +1,11 @@
+Round order: baseline, candidate. LuaHBTeX process CPU time.
+potion 5 enemies / 20,000 samples CPU ms: 407.978
+potion 5 enemies / 20,000 samples CPU ms: 414.196
+potion 5 enemies / 20,000 samples CPU ms: 390.779
+potion 5 enemies / 20,000 samples CPU ms: 342.090
+potion 5 enemies / 20,000 samples CPU ms: 303.665
+potion 5 enemies / 20,000 samples CPU ms: 311.847
+potion 5 enemies / 20,000 samples CPU ms: 707.859
+potion 5 enemies / 20,000 samples CPU ms: 326.198
+potion 5 enemies / 20,000 samples CPU ms: 328.628
+potion 5 enemies / 20,000 samples CPU ms: 235.471

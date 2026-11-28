@@ -145,6 +145,16 @@ function M.geometry(actor,nativeArtEnabled)
   intentHitWidth=64*sx,intentHitHeight=64*sy}
 
 end
+-- STS1 Hitbox.update uses open edges. MonsterGroup order breaks overlaps.
+function M.contains(g,x,y)
+ local halfWidth,halfHeight=g.hitWidth/2,g.hitHeight/2
+ return x>g.hitX-halfWidth and x<g.hitX+halfWidth and y>g.hitY-halfHeight and y<g.hitY+halfHeight
+end
+function M.targetAt(battle,x,y,nativeArtEnabled)
+ for index,actor in ipairs(battle.enemies)do
+  if Actors.isActive(actor) and M.contains(M.geometry(actor,nativeArtEnabled),x,y) then return index end
+ end
+end
 function M.rowY(_,_,actor)return M.geometry(actor).y end
 function M.position(_,_,actor,nativeArtEnabled)
  local g=M.geometry(actor,nativeArtEnabled)

@@ -150,7 +150,7 @@ function M.install(owner, ownership, host, _dependencies)
         return entry and entry.actor==actor and entry.id==actor.id
     end
     local function enemyReady(g)
-        return (not owner.info or not owner.info.kind) and dragReady(g) and (Actors.isActive(g.actor) or not g.aim and Actors.isPresent(g.actor))
+        return (not owner.info or not owner.info.kind) and dragReady(g) and Actors.isPresent(g.actor)
             and g.battle.enemies[g.slot] == g.actor
             and sameEnemySlot(g.screenSlot,g.actor,g.battle)
             and owner.selected == g.uid and owner.selectionEpoch == g.selectionEpoch
